@@ -1,0 +1,48 @@
+/* eslint-disable no-restricted-properties */
+import { withSentryConfig } from "@sentry/nextjs";
+import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const nextConfig: NextConfig = {
+  reactCompiler: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
+};
+
+const withNextIntl = createNextIntlPlugin();
+
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Disable telemetry to avoid sending data to Sentry
+  telemetry: process.env.NODE_ENV === "production",
+
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  org: "masumi",
+  project: process.env.SENTRY_PROJECT ?? "masumi-saas",
+
+  // Pass the auth token
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  tunnelRoute: true,
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Automatically instrument Next.js middleware with error and performance monitoring.
+  autoInstrumentMiddleware: process.env.NODE_ENV === "production",
+
+  // Enable React component annotation for better error messages
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+});
+

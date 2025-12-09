@@ -1,0 +1,38 @@
+{
+  "name": "masumi-saas",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "web:dev": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "web:build": "pnpm --filter web build",
+    "database:build": "pnpm --filter @masumi/database build",
+    "start": "pnpm -r start",
+    "web:start": "pnpm --filter web start",
+    "lint": "pnpm -r lint",
+    "web:lint": "pnpm --filter web lint",
+    "web:lint:fix": "pnpm --filter web lint:fix",
+    "database:lint": "pnpm --filter @masumi/database lint",
+    "database:lint:fix": "pnpm --filter @masumi/database lint:fix",
+    "format": "pnpm -r format",
+    "web:format": "pnpm --filter web format",
+    "database:format": "pnpm --filter @masumi/database format",
+    "prisma:generate": "pnpm --filter @masumi/database prisma:generate",
+    "prisma:migrate:dev": "pnpm --filter @masumi/database prisma:migrate:dev",
+    "prisma:migrate:deploy": "pnpm --filter @masumi/database prisma:migrate:deploy",
+    "prisma:migrate:reset": "pnpm --filter @masumi/database prisma:migrate:reset",
+    "prisma:studio": "pnpm --filter @masumi/database prisma:studio"
+  },
+  "devDependencies": {
+    "eslint": "9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "eslint-plugin-unused-imports": "4.3.0",
+    "prettier": "3.7.3",
+    "typescript-eslint": "8.48.0"
+  }
+}
+
