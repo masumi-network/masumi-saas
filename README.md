@@ -1,6 +1,6 @@
 # Masumi SaaS
 
-A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth (with organizations and API keys), next-intl, and Sentry. This project mirrors the Sokosumi architecture pattern.
+A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth, next-intl, and Sentry.
 
 ## Tech Stack
 
