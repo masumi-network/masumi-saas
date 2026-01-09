@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuthLayout({
   children,
 }: {

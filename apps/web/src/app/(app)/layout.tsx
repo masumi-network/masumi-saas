@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth.action";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {
