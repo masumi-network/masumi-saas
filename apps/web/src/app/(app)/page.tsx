@@ -5,11 +5,10 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Welcome to Masumi SaaS</h1>
+      <h1 className="text-3xl font-bold">Welcome</h1>
       <p className="text-muted-foreground">
         You are signed in as {authContext.session?.user?.email}
       </p>
     </div>
   );
 }
-

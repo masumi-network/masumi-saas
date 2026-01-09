@@ -1,11 +1,189 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/auth";
+import {
+  signInSchema,
+  signUpSchema,
+  forgotPasswordSchema,
+  type ForgotPasswordInput,
+} from "@/lib/schemas";
 
 export async function signOutAction() {
-  await auth.api.signOut();
+  const headersList = await headers();
+  await auth.api.signOut({
+    headers: headersList,
+  });
   redirect("/signin");
 }
 
+export async function signInAction(formData: FormData) {
+  const rawData = {
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+  };
+
+  const validation = signInSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  try {
+    const result = await auth.api.signInEmail({
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+      },
+    });
+
+    if (!result.user) {
+      return {
+        error: "Invalid email or password",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("denied access") ||
+        errorMessage.includes("database") ||
+        errorMessage.includes("connection") ||
+        errorMessage.includes("not available")
+      ) {
+        return {
+          error:
+            "Database connection error. Please check your database configuration.",
+        };
+      }
+      if (
+        errorMessage.includes("invalid") ||
+        errorMessage.includes("password") ||
+        errorMessage.includes("email") ||
+        errorMessage.includes("credentials")
+      ) {
+        return {
+          error: "Invalid email or password",
+        };
+      }
+      return {
+        error: error.message,
+      };
+    }
+    return {
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+export async function signUpAction(formData: FormData) {
+  const rawData = {
+    name: formData.get("name") as string,
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+    confirmPassword: formData.get("confirmPassword") as string,
+  };
+
+  const validation = signUpSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  try {
+    const result = await auth.api.signUpEmail({
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+        name: validation.data.name,
+      },
+    });
+
+    if (!result.user) {
+      return {
+        error: "Failed to create account",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("denied access") ||
+        errorMessage.includes("database") ||
+        errorMessage.includes("connection") ||
+        errorMessage.includes("not available")
+      ) {
+        return {
+          error:
+            "Database connection error. Please check your database configuration.",
+        };
+      }
+      if (
+        errorMessage.includes("unique") ||
+        errorMessage.includes("duplicate") ||
+        errorMessage.includes("already exists")
+      ) {
+        return {
+          error: "An account with this email already exists",
+        };
+      }
+      return {
+        error: error.message,
+      };
+    }
+    return {
+      error: "An unexpected error occurred",
+    };
+  }
+}
+
+export async function forgotPasswordAction(formData: FormData) {
+  const rawData = {
+    email: formData.get("email") as string,
+  };
+
+  const validation = forgotPasswordSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  try {
+    const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+    await fetch(`${baseURL}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: validation.data.email,
+        redirectTo: "/reset-password",
+      }),
+    });
+
+    return {
+      success: true,
+      message:
+        "If an account exists with this email, you will receive a password reset link.",
+    };
+  } catch (error) {
+    return {
+      success: true,
+      message:
+        "If an account exists with this email, you will receive a password reset link.",
+    };
+  }
+}

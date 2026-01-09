@@ -40,7 +40,6 @@ masumi-saas/
 │       │   │   ├── services/  # Business logic
 │       │   │   ├── schemas/   # Zod schemas
 │       │   │   └── auth/      # Better Auth setup
-│       │   └── middleware.ts  # Next.js middleware
 │       └── messages/           # i18n messages
 ├── packages/
 │   └── database/              # Shared database layer
@@ -67,7 +66,6 @@ masumi-saas/
    ```
 
    Edit `apps/web/.env` with the following values:
-
    - **DATABASE_URL**: Your PostgreSQL connection string
      - Format: `postgresql://username:password@host:port/database?schema=public`
      - Example: `postgresql://postgres:mypassword@localhost:5432/masumi_saas?schema=public`
@@ -101,10 +99,10 @@ masumi-saas/
 
 ## Features
 
-- ✅ User authentication (email/password)
+- ✅ User authentication (email/password, forgot password)
 - ✅ Organization management (multi-tenant)
 - ✅ API key management
-- ✅ Internationalization (i18n) with next-intl
+- ✅ Cookie consent banner
 - ✅ Error tracking with Sentry
 - ✅ Dark/light theme (auto-detect)
 - ✅ Responsive design
@@ -132,9 +130,9 @@ masumi-saas/
 ## Sentry Integration
 
 Sentry is configured for:
+
 - Server-side error tracking
 - Client-side error tracking
 - Edge runtime error tracking
 - Source map uploads (in production)
 - Session replay (1% of sessions, 100% on errors)
-

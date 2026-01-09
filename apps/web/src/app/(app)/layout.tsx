@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth.action";
+import MasumiLogo from "@/components/masumi-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,9 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <Link href="/" className="text-lg font-semibold">
-            Masumi SaaS
+        <div className="max-w-[1400px] mx-auto w-full h-14 px-4 flex items-center justify-between gap-4">
+          <Link href="/">
+            <MasumiLogo />
           </Link>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
@@ -37,10 +38,9 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="flex-1 container py-8">
+      <main className="flex-1 max-w-[1400px] mx-auto w-full px-4 py-8">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
       </main>
     </div>
   );
 }
-

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
 import { auth } from "./auth";
 
 export interface AuthContext {
@@ -9,7 +11,10 @@ export interface AuthContext {
 }
 
 export async function getSession() {
-  return auth.api.getSession();
+  const headersList = await headers();
+  return auth.api.getSession({
+    headers: headersList,
+  });
 }
 
 export async function getAuthContext(): Promise<AuthContext> {
