@@ -78,6 +78,14 @@ masumi-saas/
      - For local development: `http://localhost:3000`
      - For production: Your production domain (e.g., `https://yourdomain.com`)
 
+   - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
+     - Get one from [Postmark](https://postmarkapp.com/)
+     - If not set, password reset emails will be logged to console in development
+
+   - **POSTMARK_FROM_EMAIL**: The email address to send emails from (optional)
+     - Defaults to `noreply@masumi.network` if not set
+     - Must be a verified sender in your Postmark account
+
    - **SENTRY_DSN**: Your Sentry DSN (optional, for error tracking)
    - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
    - **SENTRY_PROJECT**: Your Sentry project name (defaults to "masumi-saas")
