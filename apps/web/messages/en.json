@@ -66,6 +66,11 @@
     "CookieConsent": {
       "description": "We use cookies to ensure you get the best experience on our website.",
       "gotIt": "Got it"
+    },
+    "Header": {
+      "documentation": "Documentation",
+      "support": "Support",
+      "legal": "Legal"
     }
   }
 }

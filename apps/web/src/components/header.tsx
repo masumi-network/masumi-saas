@@ -1,9 +1,13 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BookOpen, MessageSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { BookOpen, MessageSquare, Scale } from "lucide-react";
 import MasumiLogo from "@/components/masumi-logo";
 
 export function Header() {
+  const t = useTranslations("Components.Header");
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md">
       <div className="max-w-container mx-auto w-full">
@@ -19,7 +23,7 @@ export function Header() {
                 className="flex items-center gap-2"
               >
                 <BookOpen className="h-4 w-4" />
-                Documentation
+                {t("documentation")}
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
@@ -29,7 +33,17 @@ export function Header() {
                 className="flex items-center gap-2"
               >
                 <MessageSquare className="h-4 w-4" />
-                Support
+                {t("support")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href="https://www.house-of-communication.com/de/en/footer/imprint.html"
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <Scale className="h-4 w-4" />
+                {t("legal")}
               </Link>
             </Button>
           </div>

@@ -1,9 +1,16 @@
 "use client";
 
+import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 export function Footer() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 p-4 flex justify-center items-center bg-background/80 backdrop-blur-md border-t">
@@ -28,44 +35,18 @@ export function Footer() {
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="text-sm text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            title={
+              mounted && theme
+                ? `Switch to ${theme === "dark" ? "light" : "dark"} theme`
+                : "Toggle theme"
+            }
           >
-            {theme === "dark" ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2" />
-                <path d="M12 20v2" />
-                <path d="m4.93 4.93 1.41 1.41" />
-                <path d="m17.66 17.66 1.41 1.41" />
-                <path d="M2 12h2" />
-                <path d="M20 12h2" />
-                <path d="m6.34 17.66-1.41 1.41" />
-                <path d="m19.07 4.93-1.41 1.41" />
-              </svg>
+            {!mounted ? (
+              <Sun className="h-5 w-5" />
+            ) : theme === "dark" ? (
+              <Sun className="h-5 w-5" />
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-              </svg>
+              <Moon className="h-5 w-5" />
             )}
           </button>
         </div>
