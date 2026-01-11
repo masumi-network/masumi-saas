@@ -59,7 +59,7 @@ export default function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="w-full max-w-[500px] space-y-6">
+      <div className="w-full max-w-form space-y-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">{t("checkEmail.title")}</h1>
           <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
@@ -77,7 +77,7 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-[500px] space-y-6">
+    <div className="w-full max-w-form space-y-6">
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
         <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">

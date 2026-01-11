@@ -28,11 +28,15 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --max-width-container: 1400px;
+  --max-width-form: 500px;
 }
 
 @layer utilities {
   .max-w-container {
     max-width: var(--max-width-container);
+  }
+  .max-w-form {
+    max-width: var(--max-width-form);
   }
 }
 
