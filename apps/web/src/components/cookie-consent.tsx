@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 const COOKIE_NAME = "cookie_consent";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -25,6 +26,7 @@ interface CookieConsentProps {
 }
 
 export default function CookieConsent({ onDismiss }: CookieConsentProps) {
+  const t = useTranslations("Components.CookieConsent");
   const isClient = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -53,8 +55,7 @@ export default function CookieConsent({ onDismiss }: CookieConsentProps) {
     >
       <div className="bg-background rounded-lg border p-4 shadow-lg flex items-center gap-4">
         <p className="text-muted-foreground text-xs leading-relaxed flex-1">
-          We use cookies to enhance your experience, analyze site usage, and
-          assist in our marketing efforts.{" "}
+          {t("description")}{" "}
           <Link
             href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
             target="_blank"
@@ -64,7 +65,7 @@ export default function CookieConsent({ onDismiss }: CookieConsentProps) {
           </Link>
         </p>
         <Button onClick={handleGotIt} size="sm">
-          Got it
+          {t("gotIt")}
         </Button>
       </div>
     </div>

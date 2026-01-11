@@ -3,6 +3,70 @@
     "Loading": "Loading...",
     "Error": "Error",
     "Success": "Success"
+  },
+  "Auth": {
+    "SignIn": {
+      "title": "Login",
+      "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Login",
+      "submitting": "Validating...",
+      "noAccount": "Don't have an account?",
+      "register": "Register",
+      "forgotPassword": "Forgot password?",
+      "success": "Logged in successfully!"
+    },
+    "SignUp": {
+      "title": "Register",
+      "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Register",
+      "submitting": "Registering...",
+      "termsAccepted": "I agree to the",
+      "privacyPolicy": "Privacy Policy",
+      "hasAccount": "Already have an account?",
+      "login": "Login",
+      "success": "Account created successfully!"
+    },
+    "ForgotPassword": {
+      "title": "Reset Password",
+      "description": "Enter your email address and we'll send you a link to reset your password.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "success": "Password reset link sent! Check your email.",
+      "error": "Failed to send password reset email",
+      "successMessage": "If an account exists with this email, you will receive a password reset link.",
+      "rememberPassword": "Remember your password?",
+      "login": "Login",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.",
+        "backToLogin": "Back to Login"
+      }
+    },
+    "ResetPassword": {
+      "title": "Set new password",
+      "description": "Enter your new password below.",
+      "password": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "submit": "Set password",
+      "submitting": "Setting...",
+      "success": "Password reset successfully!",
+      "error": "Failed to reset password. The link may have expired.",
+      "rememberPassword": "Remember your password?",
+      "login": "Login"
+    }
+  },
+  "Components": {
+    "CookieConsent": {
+      "description": "We use cookies to ensure you get the best experience on our website.",
+      "gotIt": "Got it"
+    }
   }
 }
 

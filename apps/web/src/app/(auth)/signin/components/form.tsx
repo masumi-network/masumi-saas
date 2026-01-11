@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ import { signInSchema, type SignInInput } from "@/lib/schemas";
 import { signInAction } from "@/lib/actions/auth.action";
 
 export default function SignInForm() {
+  const t = useTranslations("Auth.SignIn");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignInInput>({
@@ -44,7 +46,7 @@ export default function SignInForm() {
         toast.error(result.error);
         setIsLoading(false);
       } else if (result?.success) {
-        toast.success("Logged in successfully!");
+        toast.success(t("success"));
         window.location.href = "/";
       }
     } catch (error) {
@@ -61,10 +63,9 @@ export default function SignInForm() {
   return (
     <div className="w-full max-w-[500px] space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Login</h1>
+        <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
         <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          Your credentials are needed to access the dashboard. This is required
-          to manage your AI agents, payment settings and view transactions.
+          {t("description")}
         </p>
       </div>
 
@@ -82,7 +83,7 @@ export default function SignInForm() {
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="Email"
+                    placeholder={t("email")}
                     autoComplete="email"
                     className="bg-transparent"
                     {...field}
@@ -103,7 +104,7 @@ export default function SignInForm() {
                   <div className="flex gap-4 items-center w-full">
                     <Input
                       type="password"
-                      placeholder="Password"
+                      placeholder={t("password")}
                       autoComplete="current-password"
                       className="flex-1 bg-transparent"
                       {...field}
@@ -112,10 +113,10 @@ export default function SignInForm() {
                       {isLoading ? (
                         <>
                           <Spinner size={16} className="mr-2" />
-                          Validating...
+                          {t("submitting")}
                         </>
                       ) : (
-                        "Login"
+                        t("submit")
                       )}
                     </Button>
                   </div>
@@ -129,16 +130,16 @@ export default function SignInForm() {
 
       <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between w-full">
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {t("noAccount")}{" "}
           <Link href="/signup" className="underline hover:text-foreground">
-            Register
+            {t("register")}
           </Link>
         </p>
         <Link
           href="/forgot-password"
           className="text-sm text-muted-foreground hover:underline"
         >
-          Forgot password?
+          {t("forgotPassword")}
         </Link>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/schemas";
 import { requestPasswordReset } from "@/lib/auth/auth.client";
 
 export default function ForgotPasswordForm() {
+  const t = useTranslations("Auth.ForgotPassword");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -40,13 +42,11 @@ export default function ForgotPasswordForm() {
       });
 
       if (result.error) {
-        toast.error("Failed to send password reset email");
+        toast.error(t("error"));
         setIsLoading(false);
       } else {
         setIsSuccess(true);
-        toast.success(
-          "If an account exists with this email, you will receive a password reset link.",
-        );
+        toast.success(t("successMessage"));
         setIsLoading(false);
       }
     } catch (error) {
@@ -61,16 +61,15 @@ export default function ForgotPasswordForm() {
     return (
       <div className="w-full max-w-[500px] space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Check your email</h1>
+          <h1 className="text-4xl font-bold mb-4">{t("checkEmail.title")}</h1>
           <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            We&apos;ve sent a password reset link to your email address. Please
-            check your inbox and follow the instructions to reset your password.
+            {t("checkEmail.description")}
           </p>
         </div>
 
         <div className="flex justify-center">
           <Button variant="outline" asChild>
-            <Link href="/signin">Back to Login</Link>
+            <Link href="/signin">{t("checkEmail.backToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -80,10 +79,9 @@ export default function ForgotPasswordForm() {
   return (
     <div className="w-full max-w-[500px] space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Reset password</h1>
+        <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
         <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          Enter your email address and we&apos;ll send you a link to reset your
-          password.
+          {t("description")}
         </p>
       </div>
 
@@ -101,7 +99,7 @@ export default function ForgotPasswordForm() {
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="Email"
+                    placeholder={t("email")}
                     autoComplete="email"
                     className="bg-transparent"
                     {...field}
@@ -122,10 +120,10 @@ export default function ForgotPasswordForm() {
               {isLoading ? (
                 <>
                   <Spinner size={16} className="mr-2" />
-                  Sending...
+                  {t("submitting")}
                 </>
               ) : (
-                "Reset password"
+                t("submit")
               )}
             </Button>
           </div>
@@ -133,9 +131,9 @@ export default function ForgotPasswordForm() {
       </Form>
 
       <p className="text-center text-sm text-muted-foreground">
-        Remember your password?{" "}
+        {t("rememberPassword")}{" "}
         <Link href="/signin" className="underline hover:text-foreground">
-          Login
+          {t("login")}
         </Link>
       </p>
     </div>

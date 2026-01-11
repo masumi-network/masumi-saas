@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ interface ResetPasswordFormProps {
 }
 
 export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+  const t = useTranslations("Auth.ResetPassword");
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,10 +49,10 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       });
 
       if (result.error) {
-        toast.error("Failed to reset password. The link may have expired.");
+        toast.error(t("error"));
         setIsLoading(false);
       } else {
-        toast.success("Password reset successfully!");
+        toast.success(t("success"));
         router.push("/signin");
       }
     } catch (error) {
@@ -64,9 +66,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   return (
     <div className="w-full max-w-[500px] space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Reset password</h1>
+        <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
         <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          Enter your new password below.
+          {t("description")}
         </p>
       </div>
 
@@ -84,7 +86,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 <FormControl>
                   <Input
                     type="password"
-                    placeholder="New Password"
+                    placeholder={t("password")}
                     autoComplete="new-password"
                     className="bg-transparent"
                     {...field}
@@ -104,7 +106,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 <FormControl>
                   <Input
                     type="password"
-                    placeholder="Confirm Password"
+                    placeholder={t("confirmPassword")}
                     autoComplete="new-password"
                     className="bg-transparent"
                     {...field}
@@ -125,10 +127,10 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               {isLoading ? (
                 <>
                   <Spinner size={16} className="mr-2" />
-                  Resetting...
+                  {t("submitting")}
                 </>
               ) : (
-                "Reset password"
+                t("submit")
               )}
             </Button>
           </div>
@@ -136,9 +138,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       </Form>
 
       <p className="text-center text-sm text-muted-foreground">
-        Remember your password?{" "}
+        {t("rememberPassword")}{" "}
         <Link href="/signin" className="underline hover:text-foreground">
-          Login
+          {t("login")}
         </Link>
       </p>
     </div>

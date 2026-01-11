@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ import { signUpAction } from "@/lib/actions/auth.action";
 import { useWatch } from "react-hook-form";
 
 export default function SignUpForm() {
+  const t = useTranslations("Auth.SignUp");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignUpInput>({
@@ -56,7 +58,7 @@ export default function SignUpForm() {
         toast.error(result.error);
         setIsLoading(false);
       } else if (result?.success) {
-        toast.success("Account created successfully!");
+        toast.success(t("success"));
         window.location.href = "/";
       }
     } catch (error) {
@@ -73,10 +75,9 @@ export default function SignUpForm() {
   return (
     <div className="w-full max-w-[500px] space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Register</h1>
+        <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
         <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          Create an account to access the dashboard and manage your AI agents,
-          payment settings, and view transactions.
+          {t("description")}
         </p>
       </div>
 
@@ -94,7 +95,7 @@ export default function SignUpForm() {
                 <FormControl>
                   <Input
                     type="text"
-                    placeholder="Name"
+                    placeholder={t("name")}
                     autoComplete="name"
                     className="bg-transparent"
                     {...field}
@@ -114,7 +115,7 @@ export default function SignUpForm() {
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="Email"
+                    placeholder={t("email")}
                     autoComplete="email"
                     className="bg-transparent"
                     {...field}
@@ -134,7 +135,7 @@ export default function SignUpForm() {
                 <FormControl>
                   <Input
                     type="password"
-                    placeholder="Password"
+                    placeholder={t("password")}
                     autoComplete="new-password"
                     className="bg-transparent"
                     {...field}
@@ -154,7 +155,7 @@ export default function SignUpForm() {
                 <FormControl>
                   <Input
                     type="password"
-                    placeholder="Confirm Password"
+                    placeholder={t("confirmPassword")}
                     autoComplete="new-password"
                     className="bg-transparent"
                     {...field}
@@ -178,13 +179,13 @@ export default function SignUpForm() {
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel className="text-sm font-normal">
-                    I agree to the{" "}
+                    {t("termsAccepted")}{" "}
                     <Link
                       href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
                       target="_blank"
                       className="underline hover:text-foreground"
                     >
-                      Privacy Policy
+                      {t("privacyPolicy")}
                     </Link>
                   </FormLabel>
                 </div>
@@ -203,10 +204,10 @@ export default function SignUpForm() {
               {isLoading ? (
                 <>
                   <Spinner size={16} className="mr-2" />
-                  Registering...
+                  {t("submitting")}
                 </>
               ) : (
-                "Register"
+                t("submit")
               )}
             </Button>
           </div>
@@ -214,9 +215,9 @@ export default function SignUpForm() {
       </Form>
 
       <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("hasAccount")}{" "}
         <Link href="/signin" className="underline hover:text-foreground">
-          Login
+          {t("login")}
         </Link>
       </p>
     </div>
