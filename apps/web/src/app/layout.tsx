@@ -1,6 +1,5 @@
 import "./globals.css";
 
-import * as Sentry from "@sentry/nextjs";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -9,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import CookieConsent from "@/components/cookie-consent";
 
-export function generateMetadata(): Metadata {
-  return {
+export async function generateMetadata(): Promise<Metadata> {
+  const metadata: Metadata = {
     title: "Masumi",
     description: "Masumi Platform",
     icons: {
@@ -18,10 +17,16 @@ export function generateMetadata(): Metadata {
       shortcut: "/assets/logo.png",
       apple: "/assets/logo.png",
     },
-    other: {
-      ...Sentry.getTraceData(),
-    },
   };
+
+  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    const Sentry = await import("@sentry/nextjs");
+    metadata.other = {
+      ...Sentry.getTraceData(),
+    };
+  }
+
+  return metadata;
 }
 
 export default async function RootLayout({
