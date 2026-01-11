@@ -6,7 +6,7 @@ import MasumiLogo from "@/components/masumi-logo";
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md">
-      <div className="max-w-[1400px] mx-auto w-full">
+      <div className="max-w-container mx-auto w-full">
         <div className="h-14 px-4 flex items-center justify-between gap-4">
           <Link href="/">
             <MasumiLogo />

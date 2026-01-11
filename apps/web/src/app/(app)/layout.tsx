@@ -24,7 +24,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-[1400px] mx-auto w-full h-14 px-4 flex items-center justify-between gap-4">
+        <div className="max-w-container mx-auto w-full h-14 px-4 flex items-center justify-between gap-4">
           <Link href="/">
             <MasumiLogo />
           </Link>
@@ -38,7 +38,7 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="flex-1 max-w-[1400px] mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-container mx-auto w-full px-4 py-8">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
       </main>
     </div>

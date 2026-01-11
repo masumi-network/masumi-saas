@@ -27,6 +27,13 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --max-width-container: 1400px;
+}
+
+@layer utilities {
+  .max-w-container {
+    max-width: var(--max-width-container);
+  }
 }
 
 @layer base {
