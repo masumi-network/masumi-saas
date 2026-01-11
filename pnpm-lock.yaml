@@ -110,6 +110,9 @@ importers:
       zod:
         specifier: 4.1.13
         version: 4.1.13
+      zod-form-data:
+        specifier: ^3.0.1
+        version: 3.0.1(zod@4.1.13)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.17
@@ -1677,6 +1680,9 @@ packages:
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
+
+  '@rvf/set-get@7.0.1':
+    resolution: {integrity: sha512-GkTSn9K1GrTYoTUqlUs36k6nJnzjQaFBTTEIqUYmzBcsGsoJM8xG7EAx2WLHWAA4QzFjcwWUSHQ3vM3Fbw50Tg==}
 
   '@schummar/icu-type-parser@1.21.5':
     resolution: {integrity: sha512-bXHSaW5jRTmke9Vd0h5P7BtWZG9Znqb8gSDxZnxaGSJnGwPLDPfS+3g0BKzeWqzgZPsIVZkM7m2tbo18cm5HBw==}
@@ -4734,6 +4740,11 @@ packages:
   zeptomatch@2.0.2:
     resolution: {integrity: sha512-H33jtSKf8Ijtb5BW6wua3G5DhnFjbFML36eFu+VdOoVY4HD9e7ggjqdM6639B+L87rjnR6Y+XeRzBXZdy52B/g==}
 
+  zod-form-data@3.0.1:
+    resolution: {integrity: sha512-uwSrDzpLDoXeAxePjPHrjjMelE5pk5zL5JcwLFISvqidGjtPl7hcheH584xGcS76c9IRHq6tqdGkf+A4eKO6Cw==}
+    peerDependencies:
+      zod: '>= 3.25.0'
+
   zod-validation-error@4.0.2:
     resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
     engines: {node: '>=18.0.0'}
@@ -6052,6 +6063,8 @@ snapshots:
     optional: true
 
   '@rtsao/scc@1.1.0': {}
+
+  '@rvf/set-get@7.0.1': {}
 
   '@schummar/icu-type-parser@1.21.5': {}
 
@@ -9596,6 +9609,11 @@ snapshots:
   zeptomatch@2.0.2:
     dependencies:
       grammex: 3.1.12
+
+  zod-form-data@3.0.1(zod@4.1.13):
+    dependencies:
+      '@rvf/set-get': 7.0.1
+      zod: 4.1.13
 
   zod-validation-error@4.0.2(zod@4.1.13):
     dependencies:

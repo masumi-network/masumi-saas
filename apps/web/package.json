@@ -40,7 +40,8 @@
     "sonner": "2.0.7",
     "tailwind-merge": "3.4.0",
     "tailwindcss-animate": "1.0.7",
-    "zod": "4.1.13"
+    "zod": "4.1.13",
+    "zod-form-data": "^3.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
 import {
@@ -20,12 +21,7 @@ export async function signOutAction() {
 }
 
 export async function signInAction(formData: FormData) {
-  const rawData = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
-
-  const validation = signInSchema.safeParse(rawData);
+  const validation = zfd.formData(signInSchema).safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
@@ -84,14 +80,7 @@ export async function signInAction(formData: FormData) {
 }
 
 export async function signUpAction(formData: FormData) {
-  const rawData = {
-    name: formData.get("name") as string,
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-    confirmPassword: formData.get("confirmPassword") as string,
-  };
-
-  const validation = signUpSchema.safeParse(rawData);
+  const validation = zfd.formData(signUpSchema).safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
@@ -150,11 +139,7 @@ export async function signUpAction(formData: FormData) {
 }
 
 export async function forgotPasswordAction(formData: FormData) {
-  const rawData = {
-    email: formData.get("email") as string,
-  };
-
-  const validation = forgotPasswordSchema.safeParse(rawData);
+  const validation = zfd.formData(forgotPasswordSchema).safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
