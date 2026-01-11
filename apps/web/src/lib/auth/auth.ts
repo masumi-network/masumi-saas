@@ -7,6 +7,7 @@ import { nextCookies } from "better-auth/next-js";
 import { apiKey, organization } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 
+import { authConfig } from "@/lib/config/auth.config";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
@@ -73,17 +74,13 @@ export const auth = betterAuth({
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
-    expiresIn: 7 * 24 * 60 * 60 * 1000,
+    expiresIn: authConfig.emailVerification.expiresIn,
     autoSignInAfterVerification: true,
   },
   plugins: [
     apiKey({
-      rateLimit: {
-        enabled: true,
-        timeWindow: 60,
-        maxRequests: 100,
-      },
-      enableMetadata: true,
+      rateLimit: authConfig.apiKey.rateLimit,
+      enableMetadata: authConfig.apiKey.enableMetadata,
     }),
     organization({
       organizationCreation: {
@@ -119,13 +116,14 @@ export const auth = betterAuth({
           link: inviteLink,
         });
       },
-      invitationLimit: 100,
-      cancelPendingInvitationsOnReInvite: true,
+      invitationLimit: authConfig.organization.invitationLimit,
+      cancelPendingInvitationsOnReInvite:
+        authConfig.organization.cancelPendingInvitationsOnReInvite,
       allowUserToCreateOrganization(user) {
         return user.emailVerified;
       },
-      organizationLimit: 10,
-      invitationExpiresIn: 7 * 24 * 60 * 60 * 1000,
+      organizationLimit: authConfig.organization.organizationLimit,
+      invitationExpiresIn: authConfig.organization.invitationExpiresIn,
     }),
     localization({
       defaultLocale: "default",
