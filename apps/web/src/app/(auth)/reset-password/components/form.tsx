@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { resetPassword } from "@/lib/auth/auth.client";
-import { type ResetPasswordInput,resetPasswordSchema } from "@/lib/schemas";
+import { type ResetPasswordInput, resetPasswordSchema } from "@/lib/schemas";
 
 interface ResetPasswordFormProps {
   token: string;

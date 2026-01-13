@@ -2,7 +2,6 @@
 
 import { createAuthClient } from "better-auth/react";
 
-
 export const authClient = createAuthClient({
   plugins: [],
 });
@@ -16,4 +15,3 @@ export const {
   verifyEmail,
   useSession,
 } = authClient;
-

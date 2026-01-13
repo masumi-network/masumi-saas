@@ -40,7 +40,9 @@ export function Footer() {
             className="text-sm text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"
             title={
               mounted && theme
-                ? t("switchToTheme", { theme: theme === "dark" ? t("light") : t("dark") })
+                ? t("switchToTheme", {
+                    theme: theme === "dark" ? t("light") : t("dark"),
+                  })
                 : t("toggleTheme")
             }
           >
