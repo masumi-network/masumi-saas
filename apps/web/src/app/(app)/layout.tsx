@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getAuthContext } from "@/lib/auth/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth.action";
 import MasumiLogo from "@/components/masumi-logo";
@@ -39,7 +40,9 @@ export default async function AppLayout({
         </div>
       </header>
       <main className="flex-1 max-w-container mx-auto w-full px-4 py-8">
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <Suspense fallback={<Spinner size={24} addContainer containerClassName="min-h-[400px]" />}>
+          {children}
+        </Suspense>
       </main>
     </div>
   );
