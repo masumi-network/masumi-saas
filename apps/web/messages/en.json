@@ -62,10 +62,20 @@
       "login": "Login"
     }
   },
+  "App": {
+    "Home": {
+      "welcome": "Welcome",
+      "signedInAs": "You are signed in as {email}"
+    }
+  },
   "Components": {
     "CookieConsent": {
       "description": "We use cookies to ensure you get the best experience on our website.",
       "gotIt": "Got it"
+    },
+    "Footer": {
+      "about": "About",
+      "privacyPolicy": "Privacy Policy"
     },
     "Header": {
       "documentation": "Documentation",
