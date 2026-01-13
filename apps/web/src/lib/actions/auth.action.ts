@@ -11,6 +11,7 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
 } from "@/lib/schemas";
+import { convertZodError } from "../utils/convert-zod-error";
 
 export async function signOutAction() {
   const headersList = await headers();
@@ -83,7 +84,7 @@ export async function signUpAction(formData: FormData) {
   const validation = zfd.formData(signUpSchema).safeParse(formData);
   if (!validation.success) {
     return {
-      error: validation.error.issues[0]?.message || "Invalid input",
+      error: convertZodError(validation.error),
     };
   }
 
