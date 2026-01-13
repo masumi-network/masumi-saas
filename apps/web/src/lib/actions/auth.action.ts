@@ -5,12 +5,7 @@ import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
-import {
-  signInSchema,
-  signUpSchema,
-  forgotPasswordSchema,
-  type ForgotPasswordInput,
-} from "@/lib/schemas";
+import { signInSchema, signUpSchema } from "@/lib/schemas";
 
 export async function signOutAction() {
   const headersList = await headers();
@@ -148,41 +143,6 @@ export async function signUpAction(formData: FormData) {
     return {
       error: "An unexpected error occurred",
       errorKey: "UnexpectedError",
-    };
-  }
-}
-
-export async function forgotPasswordAction(formData: FormData) {
-  const validation = zfd.formData(forgotPasswordSchema).safeParse(formData);
-  if (!validation.success) {
-    return {
-      error: validation.error.issues[0]?.message || "Invalid input",
-      errorKey: "InvalidInput",
-    };
-  }
-
-  try {
-    const headersList = await headers();
-    await auth.api.forgotPassword({
-      headers: headersList,
-      body: {
-        email: validation.data.email,
-        redirectTo: "/reset-password",
-      },
-    });
-
-    return {
-      success: true,
-      resultKey: "PasswordResetSent",
-      message:
-        "If an account exists with this email, you will receive a password reset link.",
-    };
-  } catch (error) {
-    return {
-      success: true,
-      resultKey: "PasswordResetSent",
-      message:
-        "If an account exists with this email, you will receive a password reset link.",
     };
   }
 }
