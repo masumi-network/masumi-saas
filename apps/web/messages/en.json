@@ -5,6 +5,19 @@
     "Success": "Success"
   },
   "Auth": {
+    "Errors": {
+      "InvalidInput": "Invalid input",
+      "InvalidCredentials": "Invalid email or password",
+      "DatabaseError": "Database connection error. Please check your database configuration.",
+      "UnexpectedError": "An unexpected error occurred",
+      "AccountExists": "An account with this email already exists",
+      "AccountCreationFailed": "Failed to create account"
+    },
+    "Results": {
+      "SignInSuccess": "Logged in successfully!",
+      "SignUpSuccess": "Account created successfully!",
+      "PasswordResetSent": "If an account exists with this email, you will receive a password reset link."
+    },
     "SignIn": {
       "title": "Login",
       "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",

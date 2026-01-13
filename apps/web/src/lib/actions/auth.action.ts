@@ -25,6 +25,7 @@ export async function signInAction(formData: FormData) {
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
     };
   }
 
@@ -39,11 +40,13 @@ export async function signInAction(formData: FormData) {
     if (!result.user) {
       return {
         error: "Invalid email or password",
+        errorKey: "InvalidCredentials",
       };
     }
 
     return {
       success: true,
+      resultKey: "SignInSuccess",
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -57,6 +60,7 @@ export async function signInAction(formData: FormData) {
         return {
           error:
             "Database connection error. Please check your database configuration.",
+          errorKey: "DatabaseError",
         };
       }
       if (
@@ -67,14 +71,17 @@ export async function signInAction(formData: FormData) {
       ) {
         return {
           error: "Invalid email or password",
+          errorKey: "InvalidCredentials",
         };
       }
       return {
         error: error.message,
+        errorKey: "UnexpectedError",
       };
     }
     return {
       error: "An unexpected error occurred",
+      errorKey: "UnexpectedError",
     };
   }
 }
@@ -84,6 +91,7 @@ export async function signUpAction(formData: FormData) {
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
     };
   }
 
@@ -99,11 +107,13 @@ export async function signUpAction(formData: FormData) {
     if (!result.user) {
       return {
         error: "Failed to create account",
+        errorKey: "AccountCreationFailed",
       };
     }
 
     return {
       success: true,
+      resultKey: "SignUpSuccess",
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -117,6 +127,7 @@ export async function signUpAction(formData: FormData) {
         return {
           error:
             "Database connection error. Please check your database configuration.",
+          errorKey: "DatabaseError",
         };
       }
       if (
@@ -126,14 +137,17 @@ export async function signUpAction(formData: FormData) {
       ) {
         return {
           error: "An account with this email already exists",
+          errorKey: "AccountExists",
         };
       }
       return {
         error: error.message,
+        errorKey: "UnexpectedError",
       };
     }
     return {
       error: "An unexpected error occurred",
+      errorKey: "UnexpectedError",
     };
   }
 }
@@ -143,6 +157,7 @@ export async function forgotPasswordAction(formData: FormData) {
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
     };
   }
 
@@ -158,12 +173,14 @@ export async function forgotPasswordAction(formData: FormData) {
 
     return {
       success: true,
+      resultKey: "PasswordResetSent",
       message:
         "If an account exists with this email, you will receive a password reset link.",
     };
   } catch (error) {
     return {
       success: true,
+      resultKey: "PasswordResetSent",
       message:
         "If an account exists with this email, you will receive a password reset link.",
     };

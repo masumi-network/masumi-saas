@@ -23,6 +23,8 @@ import { signInAction } from "@/lib/actions/auth.action";
 
 export default function SignInForm() {
   const t = useTranslations("Auth.SignIn");
+  const tErrors = useTranslations("Auth.Errors");
+  const tResults = useTranslations("Auth.Results");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignInInput>({
@@ -43,10 +45,16 @@ export default function SignInForm() {
       const result = await signInAction(formData);
 
       if (result?.error) {
-        toast.error(result.error);
+        const errorMessage = result.errorKey
+          ? tErrors(result.errorKey as any)
+          : result.error;
+        toast.error(errorMessage);
         setIsLoading(false);
       } else if (result?.success) {
-        toast.success(t("success"));
+        const successMessage = result.resultKey
+          ? tResults(result.resultKey as any)
+          : t("success");
+        toast.success(successMessage);
         window.location.href = "/";
       }
     } catch (error) {
