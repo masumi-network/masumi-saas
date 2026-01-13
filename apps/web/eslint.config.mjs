@@ -1,27 +1,25 @@
-import { defineConfig } from "eslint/config";
 import nextPlugin from "eslint-config-next";
 import prettier from "eslint-config-prettier/flat";
-import tseslint from "typescript-eslint";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import unusedImports from "eslint-plugin-unused-imports";
 
-import { sharedPlugins, sharedRules } from "../../eslint.config.mjs";
-
-export default defineConfig([
-  {
-    languageOptions: {
-      parserOptions: {
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-  ...tseslint.configs.recommended,
+const config = [
   ...nextPlugin,
   prettier,
   {
-    plugins: sharedPlugins,
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+      "unused-imports": unusedImports,
+    },
     rules: {
-      ...sharedRules,
+      // Import organization
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "unused-imports/no-unused-imports": "error",
       // Next.js specific rules
       "@next/next/no-html-link-for-pages": "off",
     },
   },
-]);
+];
+
+export default config;

@@ -1,4 +1,3 @@
-import { defineConfig } from "eslint/config";
 import prettier from "eslint-config-prettier/flat";
 import importPlugin from "eslint-plugin-import";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -41,7 +40,7 @@ export const sharedRules = {
  * Extended by individual packages with their specific needs.
  * For packages using Next.js, import sharedPlugins and sharedRules separately.
  */
-const baseConfig = defineConfig([
+const baseConfig = [
   {
     languageOptions: {
       parserOptions: {
@@ -58,6 +57,6 @@ const baseConfig = defineConfig([
     },
     rules: sharedRules,
   },
-]);
+];
 
 export default baseConfig;
