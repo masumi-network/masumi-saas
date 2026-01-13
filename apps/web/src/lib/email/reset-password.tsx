@@ -37,8 +37,8 @@ export const ResetPasswordEmail = ({
               Hello {name},
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
-              We received a request to reset your password. Click the button below
-              to create a new password.
+              We received a request to reset your password. Click the button
+              below to create a new password.
             </Text>
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button

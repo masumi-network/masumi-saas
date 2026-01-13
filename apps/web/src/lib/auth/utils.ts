@@ -25,4 +25,3 @@ export async function getAuthContext(): Promise<AuthContext> {
     session,
   };
 }
-

@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { requestPasswordReset } from "@/lib/auth/auth.client";
-import { type ForgotPasswordInput,forgotPasswordSchema } from "@/lib/schemas";
+import { type ForgotPasswordInput, forgotPasswordSchema } from "@/lib/schemas";
 
 export default function ForgotPasswordForm() {
   const t = useTranslations("Auth.ForgotPassword");

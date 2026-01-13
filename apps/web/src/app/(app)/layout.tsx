@@ -40,7 +40,15 @@ export default async function AppLayout({
         </div>
       </header>
       <main className="flex-1 max-w-container mx-auto w-full px-4 py-8">
-        <Suspense fallback={<Spinner size={24} addContainer containerClassName="min-h-[400px]" />}>
+        <Suspense
+          fallback={
+            <Spinner
+              size={24}
+              addContainer
+              containerClassName="min-h-[400px]"
+            />
+          }
+        >
           {children}
         </Suspense>
       </main>
