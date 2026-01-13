@@ -23,7 +23,8 @@
     "prisma:migrate:dev": "pnpm --filter @masumi/database prisma:migrate:dev",
     "prisma:migrate:deploy": "pnpm --filter @masumi/database prisma:migrate:deploy",
     "prisma:migrate:reset": "pnpm --filter @masumi/database prisma:migrate:reset",
-    "prisma:studio": "pnpm --filter @masumi/database prisma:studio"
+    "prisma:studio": "pnpm --filter @masumi/database prisma:studio",
+    "prepare": "husky"
   },
   "devDependencies": {
     "eslint": "9.39.1",
@@ -31,8 +32,9 @@
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "eslint-plugin-unused-imports": "4.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "3.7.3",
     "typescript-eslint": "8.48.0"
   }
 }
-
