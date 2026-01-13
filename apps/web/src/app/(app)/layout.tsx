@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import MasumiLogo from "@/components/masumi-logo";
 import { ThemeToggle } from "@/components/theme-toggle";

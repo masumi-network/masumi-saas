@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { requestPasswordReset } from "@/lib/auth/auth.client";
-import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/schemas";
+import { type ForgotPasswordInput,forgotPasswordSchema } from "@/lib/schemas";
 
 export default function ForgotPasswordForm() {
   const t = useTranslations("Auth.ForgotPassword");

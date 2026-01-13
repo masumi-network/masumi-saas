@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-properties */
+ 
 import * as Sentry from "@sentry/nextjs";
 
 export async function register() {

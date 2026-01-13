@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/utils";
-import { Header } from "@/components/header";
+
 import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { getAuthContext } from "@/lib/auth/utils";
 
 export const dynamic = "force-dynamic";
 

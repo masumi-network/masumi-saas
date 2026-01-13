@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-properties */
+ 
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";

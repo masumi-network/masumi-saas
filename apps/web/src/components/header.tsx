@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { BookOpen, Menu, MessageSquare, Scale } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";

@@ -3,9 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
+
 import { auth } from "@/lib/auth/auth";
-import { convertZodError } from "../utils/convert-zod-error";
 import { signInSchema, signUpSchema } from "@/lib/schemas";
+
+import { convertZodError } from "../utils/convert-zod-error";
 
 export async function signOutAction() {
   const headersList = await headers();

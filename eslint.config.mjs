@@ -42,6 +42,13 @@ export const sharedRules = {
  * For packages using Next.js, import sharedPlugins and sharedRules separately.
  */
 const baseConfig = defineConfig([
+  {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   ...tseslint.configs.recommended,
   prettier,
   {
@@ -54,4 +61,3 @@ const baseConfig = defineConfig([
 ]);
 
 export default baseConfig;
-

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import React, { useEffect, useState } from "react";
 
 import kanjiBlack from "@/assets/Kanji.svg";
 import kanjiWhite from "@/assets/Masumi kanji white.svg";
