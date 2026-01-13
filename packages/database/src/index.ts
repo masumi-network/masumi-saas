@@ -23,5 +23,11 @@
  */
 
 // Export types from Prisma client
-export type { Apikey,Invitation, Member, Organization, Prisma, User } from "./generated/prisma/client.js";
-
+export type {
+  Apikey,
+  Invitation,
+  Member,
+  Organization,
+  Prisma,
+  User,
+} from "./generated/prisma/client.js";
