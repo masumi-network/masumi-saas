@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
-import { signInSchema, signUpSchema } from "@/lib/schemas";
+import { signInSchema, signUpFormDataSchema } from "@/lib/schemas";
 
 import { convertZodError } from "../utils/convert-zod-error";
 
@@ -84,7 +84,7 @@ export async function signInAction(formData: FormData) {
 }
 
 export async function signUpAction(formData: FormData) {
-  const validation = zfd.formData(signUpSchema).safeParse(formData);
+  const validation = signUpFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
       error: convertZodError(validation.error),

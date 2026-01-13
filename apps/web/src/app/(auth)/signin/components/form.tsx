@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,12 +20,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
-import { type SignInInput,signInSchema } from "@/lib/schemas";
+import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 export default function SignInForm() {
   const t = useTranslations("Auth.SignIn");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignInInput>({
@@ -46,16 +48,16 @@ export default function SignInForm() {
 
       if (result?.error) {
         const errorMessage = result.errorKey
-          ? tErrors(result.errorKey as any)
+          ? tErrors(result.errorKey)
           : result.error;
         toast.error(errorMessage);
         setIsLoading(false);
       } else if (result?.success) {
         const successMessage = result.resultKey
-          ? tResults(result.resultKey as any)
+          ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        window.location.href = "/";
+        router.push("/");
       }
     } catch (error) {
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {

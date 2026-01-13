@@ -11,6 +11,7 @@ export function Footer() {
   const t = useTranslations("Components.Footer");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
