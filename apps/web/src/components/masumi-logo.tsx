@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import masumiBlack from "@/assets/masumi-logo-black.svg";
-import masumiWhite from "@/assets/Masumi white.svg";
-import { useTheme } from "next-themes";
 import Image from "next/image";
-import kanjiWhite from "@/assets/Masumi kanji white.svg";
+import { useTheme } from "next-themes";
+
 import kanjiBlack from "@/assets/Kanji.svg";
+import kanjiWhite from "@/assets/Masumi kanji white.svg";
+import masumiWhite from "@/assets/Masumi white.svg";
+import masumiBlack from "@/assets/masumi-logo-black.svg";
 
 const MasumiLogo = React.memo(() => {
   const { theme } = useTheme();

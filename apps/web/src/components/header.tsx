@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { BookOpen, Menu, MessageSquare, Scale } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,10 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { BookOpen, MessageSquare, Scale, Menu } from "lucide-react";
-import MasumiLogo from "@/components/masumi-logo";
 
 export function Header() {
   const t = useTranslations("Components.Header");

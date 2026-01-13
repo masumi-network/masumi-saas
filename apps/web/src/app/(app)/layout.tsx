@@ -1,13 +1,13 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { getAuthContext } from "@/lib/auth/utils";
+import MasumiLogo from "@/components/masumi-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth.action";
-import MasumiLogo from "@/components/masumi-logo";
+import { getAuthContext } from "@/lib/auth/utils";
 
 export const dynamic = "force-dynamic";
 

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Spinner } from "@/components/ui/spinner";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -18,10 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { signUpSchema, type SignUpInput } from "@/lib/schemas";
+import { Spinner } from "@/components/ui/spinner";
 import { signUpAction } from "@/lib/actions/auth.action";
-import { useWatch } from "react-hook-form";
+import { signUpSchema, type SignUpInput } from "@/lib/schemas";
 
 export default function SignUpForm() {
   const t = useTranslations("Auth.SignUp");

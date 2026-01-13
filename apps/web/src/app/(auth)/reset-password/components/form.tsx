@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Spinner } from "@/components/ui/spinner";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,8 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/schemas";
+import { Spinner } from "@/components/ui/spinner";
 import { resetPassword } from "@/lib/auth/auth.client";
+import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/schemas";
 
 interface ResetPasswordFormProps {
   token: string;
