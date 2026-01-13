@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";

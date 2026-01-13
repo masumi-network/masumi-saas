@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Spinner } from "@/components/ui/spinner";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { signInSchema, type SignInInput } from "@/lib/schemas";
+import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
+import { signInSchema, type SignInInput } from "@/lib/schemas";
 
 export default function SignInForm() {
   const t = useTranslations("Auth.SignIn");
+  const tErrors = useTranslations("Auth.Errors");
+  const tResults = useTranslations("Auth.Results");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignInInput>({
@@ -43,10 +45,16 @@ export default function SignInForm() {
       const result = await signInAction(formData);
 
       if (result?.error) {
-        toast.error(result.error);
+        const errorMessage = result.errorKey
+          ? tErrors(result.errorKey as any)
+          : result.error;
+        toast.error(errorMessage);
         setIsLoading(false);
       } else if (result?.success) {
-        toast.success(t("success"));
+        const successMessage = result.resultKey
+          ? tResults(result.resultKey as any)
+          : t("success");
+        toast.success(successMessage);
         window.location.href = "/";
       }
     } catch (error) {

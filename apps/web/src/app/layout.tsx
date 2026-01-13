@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
+import CookieConsent from "@/components/cookie-consent";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import CookieConsent from "@/components/cookie-consent";
 
 export async function generateMetadata(): Promise<Metadata> {
   const metadata: Metadata = {

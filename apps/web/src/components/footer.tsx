@@ -1,12 +1,14 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 
 export function Footer() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations("Components.Footer");
 
   useEffect(() => {
     setMounted(true);
@@ -21,14 +23,14 @@ export function Footer() {
             target="_blank"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            About
+            {t("about")}
           </a>
           <a
             href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
             target="_blank"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            Privacy Policy
+            {t("privacyPolicy")}
           </a>
         </div>
         <div>
@@ -37,8 +39,8 @@ export function Footer() {
             className="text-sm text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"
             title={
               mounted && theme
-                ? `Switch to ${theme === "dark" ? "light" : "dark"} theme`
-                : "Toggle theme"
+                ? t("switchToTheme", { theme: theme === "dark" ? t("light") : t("dark") })
+                : t("toggleTheme")
             }
           >
             {!mounted ? (
