@@ -33,6 +33,7 @@ export const sharedRules = {
       destructuredArrayIgnorePattern: "^_",
     },
   ],
+  "@typescript-eslint/no-explicit-any": "error",
 };
 
 /**
