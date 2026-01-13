@@ -7,6 +7,11 @@ import { nextCookies } from "better-auth/next-js";
 import { apiKey, organization } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 
+import { authConfig } from "@/lib/config/auth.config";
+import { postmarkClient } from "@/lib/email/postmark";
+import { reactResetPasswordEmail } from "@/lib/email/reset-password";
+import { reactVerificationEmail } from "@/lib/email/verification";
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -17,20 +22,70 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
     autoSignIn: true,
+    sendResetPassword: async ({ user, url }) => {
+      if (!postmarkClient) {
+        console.log("Password reset email (Postmark not configured):", {
+          to: user.email,
+          resetLink: url,
+        });
+        return;
+      }
+
+      const fromEmail =
+        process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
+
+      await postmarkClient.sendEmail({
+        From: fromEmail,
+        To: user.email,
+        Tag: "reset-password",
+        Subject: "Reset your Masumi password",
+        HtmlBody: await reactResetPasswordEmail({
+          name: user.name || "User",
+          resetLink: url,
+        }),
+        MessageStream: "outbound",
+      });
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      if (!postmarkClient) {
+        console.log("Verification email (Postmark not configured):", {
+          to: user.email,
+          verificationLink: url,
+        });
+        return;
+      }
+
+      const fromEmail =
+        process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
+
+      await postmarkClient.sendEmail({
+        From: fromEmail,
+        To: user.email,
+        Tag: "verification-email",
+        Subject: "Verify your Masumi email address",
+        HtmlBody: await reactVerificationEmail({
+          name: user.name || "User",
+          verificationLink: url,
+        }),
+        MessageStream: "outbound",
+      });
+    },
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    expiresIn: authConfig.emailVerification.expiresIn,
+    autoSignInAfterVerification: true,
   },
   plugins: [
     apiKey({
-      rateLimit: {
-        enabled: true,
-        timeWindow: 60, // 60 seconds
-        maxRequests: 100, // 100 requests per minute
-      },
-      enableMetadata: true,
+      rateLimit: authConfig.apiKey.rateLimit,
+      enableMetadata: authConfig.apiKey.enableMetadata,
     }),
     organization({
       organizationCreation: {
         afterCreate: async ({ organization }) => {
-          // Add any post-creation logic here
+          // post-creation logic here
           console.log("Organization created:", organization.id);
         },
       },
@@ -61,13 +116,14 @@ export const auth = betterAuth({
           link: inviteLink,
         });
       },
-      invitationLimit: 100,
-      cancelPendingInvitationsOnReInvite: true,
+      invitationLimit: authConfig.organization.invitationLimit,
+      cancelPendingInvitationsOnReInvite:
+        authConfig.organization.cancelPendingInvitationsOnReInvite,
       allowUserToCreateOrganization(user) {
         return user.emailVerified;
       },
-      organizationLimit: 10,
-      invitationExpiresIn: 7 * 24 * 60 * 60 * 1000, // 7 days
+      organizationLimit: authConfig.organization.organizationLimit,
+      invitationExpiresIn: authConfig.organization.invitationExpiresIn,
     }),
     localization({
       defaultLocale: "default",
@@ -79,4 +135,3 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 export type SessionUser = typeof auth.$Infer.Session.user;
 export type Invitation = typeof auth.$Infer.Invitation;
-

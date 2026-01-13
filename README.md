@@ -40,7 +40,6 @@ masumi-saas/
 │       │   │   ├── services/  # Business logic
 │       │   │   ├── schemas/   # Zod schemas
 │       │   │   └── auth/      # Better Auth setup
-│       │   └── middleware.ts  # Next.js middleware
 │       └── messages/           # i18n messages
 ├── packages/
 │   └── database/              # Shared database layer
@@ -67,7 +66,6 @@ masumi-saas/
    ```
 
    Edit `apps/web/.env` with the following values:
-
    - **DATABASE_URL**: Your PostgreSQL connection string
      - Format: `postgresql://username:password@host:port/database?schema=public`
      - Example: `postgresql://postgres:mypassword@localhost:5432/masumi_saas?schema=public`
@@ -79,6 +77,14 @@ masumi-saas/
    - **BETTER_AUTH_URL**: Your application's base URL
      - For local development: `http://localhost:3000`
      - For production: Your production domain (e.g., `https://yourdomain.com`)
+
+   - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
+     - Get one from [Postmark](https://postmarkapp.com/)
+     - If not set, password reset emails will be logged to console in development
+
+   - **POSTMARK_FROM_EMAIL**: The email address to send emails from (optional)
+     - Defaults to `noreply@masumi.network` if not set
+     - Must be a verified sender in your Postmark account
 
    - **SENTRY_DSN**: Your Sentry DSN (optional, for error tracking)
    - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
@@ -101,10 +107,10 @@ masumi-saas/
 
 ## Features
 
-- ✅ User authentication (email/password)
+- ✅ User authentication (email/password, forgot password)
 - ✅ Organization management (multi-tenant)
 - ✅ API key management
-- ✅ Internationalization (i18n) with next-intl
+- ✅ Cookie consent banner
 - ✅ Error tracking with Sentry
 - ✅ Dark/light theme (auto-detect)
 - ✅ Responsive design
@@ -132,9 +138,9 @@ masumi-saas/
 ## Sentry Integration
 
 Sentry is configured for:
+
 - Server-side error tracking
 - Client-side error tracking
 - Edge runtime error tracking
 - Source map uploads (in production)
 - Session replay (1% of sessions, 100% on errors)
-
