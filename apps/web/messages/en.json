@@ -75,7 +75,11 @@
     },
     "Footer": {
       "about": "About",
-      "privacyPolicy": "Privacy Policy"
+      "privacyPolicy": "Privacy Policy",
+      "switchToTheme": "Switch to {theme} theme",
+      "toggleTheme": "Toggle theme",
+      "light": "light",
+      "dark": "dark"
     },
     "Header": {
       "documentation": "Documentation",
@@ -84,4 +88,3 @@
     }
   }
 }
-
