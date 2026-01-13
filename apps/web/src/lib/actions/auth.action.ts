@@ -147,16 +147,13 @@ export async function forgotPasswordAction(formData: FormData) {
   }
 
   try {
-    const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-    await fetch(`${baseURL}/api/auth/forgot-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const headersList = await headers();
+    await auth.api.forgotPassword({
+      headers: headersList,
+      body: {
         email: validation.data.email,
         redirectTo: "/reset-password",
-      }),
+      },
     });
 
     return {
