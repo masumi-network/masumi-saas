@@ -11,7 +11,8 @@ export const signUpSchema = z
     email: z.string().email("Please enter a valid email address"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    termsAccepted: z.boolean().refine((val) => val === true, {
+    //transform the string to boolean
+    termsAccepted: z.coerce.boolean().refine((val) => val === true, {
       message: "You must agree to the terms of service and privacy policy",
     }),
   })

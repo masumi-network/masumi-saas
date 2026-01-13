@@ -51,6 +51,7 @@ export default function SignUpForm() {
       formData.append("email", data.email);
       formData.append("password", data.password);
       formData.append("confirmPassword", data.confirmPassword);
+      formData.append("termsAccepted", data.termsAccepted ? "true" : "false");
 
       const result = await signUpAction(formData);
 
