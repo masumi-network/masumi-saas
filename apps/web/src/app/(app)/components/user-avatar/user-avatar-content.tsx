@@ -1,18 +1,21 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils/format-name";
 
 interface UserAvatarContentProps {
   className?: string;
   imageUrl?: string;
   imageAlt?: string;
-  fallbackText?: string;
+  fallbackName?: string;
 }
 
 export default function UserAvatarContent({
   className,
   imageUrl,
   imageAlt,
-  fallbackText,
+  fallbackName,
 }: UserAvatarContentProps) {
+  const initials = getInitials(fallbackName);
+
   return (
     <>
       <Avatar className="h-8 w-8 md:h-10 md:w-10">
@@ -25,9 +28,7 @@ export default function UserAvatarContent({
             }}
           />
         )}
-        <AvatarFallback className={className}>
-          {fallbackText?.charAt(0).toUpperCase() || "U"}
-        </AvatarFallback>
+        <AvatarFallback className={className}>{initials}</AvatarFallback>
       </Avatar>
     </>
   );

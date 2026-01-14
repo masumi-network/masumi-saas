@@ -15,36 +15,38 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Session } from "@/lib/auth/auth";
 
+import UserProfile from "../user-profile";
 import MenuItems from "./menu-items";
 
-export default function Sidebar() {
+interface SidebarProps {
+  session: Session;
+}
+
+export default function Sidebar({ session }: SidebarProps) {
   const { isMobile, toggleSidebar } = useSidebar();
 
   return (
     <ShadcnSidebar collapsible="icon" side={isMobile ? "right" : "left"}>
-      <SidebarHeader className="h-16 border-b">
+      <SidebarHeader className="h-16 md:border-b">
         <div className="flex items-center justify-between gap-2 p-2 group-data-[collapsible=icon]:pt-3! group-data-[collapsible=icon]:pl-2!">
-          <SheetClose asChild>
-            <Link href="/">
-              {isMobile ? (
-                <MasumiIcon className="size-6" />
-              ) : (
-                <>
-                  <span className="group-data-[collapsible=icon]:hidden">
-                    <MasumiLogo />
-                  </span>
-                  <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
-                </>
-              )}
-            </Link>
-          </SheetClose>
+          {!isMobile && (
+            <SheetClose asChild>
+              <Link href="/">
+                <span className="group-data-[collapsible=icon]:hidden">
+                  <MasumiLogo />
+                </span>
+                <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
+              </Link>
+            </SheetClose>
+          )}
           {isMobile ? (
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="h-8 w-8"
+              className="h-8 w-8 ml-auto"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -56,7 +58,11 @@ export default function Sidebar() {
       <SidebarContent className="min-h-0 w-full flex-1">
         <MenuItems />
       </SidebarContent>
-      <SidebarFooter className="shrink-0 px-0" />
+      <SidebarFooter className="shrink-0 px-0">
+        <div className="flex flex-1 gap-2 p-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:justify-center">
+          <UserProfile session={session} />
+        </div>
+      </SidebarFooter>
     </ShadcnSidebar>
   );
 }

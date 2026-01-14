@@ -22,3 +22,28 @@ export function formatName(name: string | null | undefined): string {
 
   return `${firstName} ${secondNameFirstLetter}.`;
 }
+
+/**
+ * Gets initials from a name.
+ * Examples:
+ * - "Isaac Adebayo" -> "IA"
+ * - "John Doe" -> "JD"
+ * - "SingleName" -> "S"
+ * - "" -> "U"
+ */
+export function getInitials(name: string | null | undefined): string {
+  if (!name || name.trim().length === 0) {
+    return "U";
+  }
+
+  const words = name.trim().split(/\s+/);
+
+  if (words.length === 1) {
+    return words[0]![0]?.toUpperCase() ?? "U";
+  }
+
+  const firstInitial = words[0]![0]?.toUpperCase() ?? "";
+  const secondInitial = words[1]![0]?.toUpperCase() ?? "";
+
+  return `${firstInitial}${secondInitial}`;
+}

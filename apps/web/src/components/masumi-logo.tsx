@@ -10,15 +10,14 @@ import masumiWhite from "@/assets/Masumi white.svg";
 import masumiBlack from "@/assets/masumi-logo-black.svg";
 
 const MasumiLogo = React.memo(() => {
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const isDark = mounted && theme === "dark";
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <div className="flex items-end justify-center gap-4">

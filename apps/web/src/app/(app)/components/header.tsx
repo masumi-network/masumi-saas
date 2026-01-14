@@ -1,22 +1,18 @@
 "use client";
 
-import { Menu, Search } from "lucide-react";
+import { Bell, BookOpen, Menu, MessageSquare, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { Session } from "@/lib/auth/auth";
-
-import UserProfile from "./user-profile";
 
 interface HeaderProps {
-  session: Session;
   className?: string;
 }
 
-export default function Header({ session, className }: HeaderProps) {
+export default function Header({ className }: HeaderProps) {
   const [_isSearchOpen, setIsSearchOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
 
@@ -57,16 +53,54 @@ export default function Header({ session, className }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div
-              className="flex md:hidden w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
-              onClick={() => setIsSearchOpen(true)}
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="hidden md:flex"
             >
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <div className="flex items-center gap-2 text-muted-foreground mr-3">
-                <span>Search</span>
-              </div>
-            </div>
-            <UserProfile session={session} />
+              <Link
+                href="https://docs.masumi.network"
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                Documentation
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="hidden md:flex"
+            >
+              <Link
+                href="https://www.masumi.network/contact"
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Support
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 hidden md:flex"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-8 w-8 md:hidden"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8 md:hidden">
+              <Bell className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

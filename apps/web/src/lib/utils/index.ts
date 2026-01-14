@@ -1,2 +1,2 @@
 export { cn } from "./cn";
-export { formatName } from "./format-name";
+export { formatName, getInitials } from "./format-name";

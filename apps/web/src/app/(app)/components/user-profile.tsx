@@ -17,11 +17,11 @@ export default function UserProfile({ session }: UserProfileProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col-reverse gap-4 md:flex-initial md:flex-row md:items-center">
-      <div className="flex items-center gap-2 md:flex-row-reverse">
+    <div className="flex md:flex-1 flex-col-reverse gap-4 md:flex-initial md:flex-row md:items-center">
+      <div className="flex items-center gap-2">
         <UserAvatar session={session} />
-        <div className="hidden flex-col gap-0.5 md:flex md:items-end">
-          <div className="text-sm font-semibold">
+        <div className="flex-col gap-0.5 md:flex md:items-end group-data-[collapsible=icon]:hidden">
+          <div className="text-sm font-semibold truncate">
             {formatName(user.name) || user.email || "User"}
           </div>
         </div>

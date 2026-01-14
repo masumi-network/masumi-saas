@@ -42,6 +42,8 @@ type SidebarContextProps = {
   toggleSidebar: () => void;
   isHovered: boolean;
   setIsHovered: (hovered: boolean) => void;
+  preventCollapse: boolean;
+  setPreventCollapse: (prevent: boolean) => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
@@ -71,6 +73,7 @@ function SidebarProvider({
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
+  const [preventCollapse, setPreventCollapse] = React.useState(false);
 
   const [_open, _setOpen] = React.useState(defaultOpen);
   const open = openProp ?? _open;
@@ -122,6 +125,8 @@ function SidebarProvider({
       toggleSidebar,
       isHovered,
       setIsHovered,
+      preventCollapse,
+      setPreventCollapse,
     }),
     [
       state,
@@ -133,6 +138,8 @@ function SidebarProvider({
       toggleSidebar,
       isHovered,
       setIsHovered,
+      preventCollapse,
+      setPreventCollapse,
     ],
   );
 
@@ -177,8 +184,15 @@ function Sidebar({
   enableHoverExpand?: boolean;
   hoverExpandDelay?: number;
 }) {
-  const { isMobile, state, openMobile, setOpenMobile, open, setIsHovered } =
-    useSidebar();
+  const {
+    isMobile,
+    state,
+    openMobile,
+    setOpenMobile,
+    open,
+    setIsHovered,
+    preventCollapse,
+  } = useSidebar();
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
@@ -290,8 +304,8 @@ function Sidebar({
                     clearTimeout(hoverTimeoutRef.current);
                     hoverTimeoutRef.current = null;
                   }
-                  // Collapse hover expansion when mouse leaves
-                  if (!isMobile) {
+                  // Collapse hover expansion when mouse leaves (unless prevented)
+                  if (!isMobile && !preventCollapse) {
                     setIsHovered(false);
                   }
                 }
