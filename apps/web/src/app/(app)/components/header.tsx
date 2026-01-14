@@ -17,7 +17,6 @@ interface HeaderProps {
 
 export default function Header({ className }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
 
   useEffect(() => {
@@ -89,10 +88,7 @@ export default function Header({ className }: HeaderProps) {
                 </Link>
               </Button>
               <div className="hidden md:flex">
-                <NotificationsDialog
-                  open={isNotificationsOpen}
-                  onOpenChange={setIsNotificationsOpen}
-                />
+                <NotificationsDialog />
               </div>
               <Button
                 variant="outline"
@@ -103,10 +99,7 @@ export default function Header({ className }: HeaderProps) {
                 <Search className="h-4 w-4" />
               </Button>
               <div className="md:hidden">
-                <NotificationsDialog
-                  open={isNotificationsOpen}
-                  onOpenChange={setIsNotificationsOpen}
-                />
+                <NotificationsDialog />
               </div>
               <Button
                 variant="ghost"

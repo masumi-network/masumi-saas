@@ -1,16 +1,22 @@
 "use client";
 
 import {
-  FileText,
+  BookOpen,
+  Building2,
+  CreditCard,
+  ExternalLink,
+  History,
   Key,
   LayoutDashboard,
-  ScrollText,
-  Settings,
+  MessageSquare,
+  Shield,
   User,
+  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
 import {
   CommandDialog,
@@ -35,14 +41,44 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
+  { key: "organizations", href: "/organizations", icon: Building2 },
+  { key: "wallets", href: "/wallets", icon: Wallet },
+  { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
   { key: "apiKeys", href: "/api-keys", icon: Key },
-  { key: "agents", href: "/agents", icon: User },
-  { key: "logs", href: "/logs", icon: ScrollText },
-  { key: "account", href: "/account", icon: Settings },
+  { key: "account", href: "/account", icon: User },
 ];
 
 const quickActions: NavigationItem[] = [
-  { key: "documentation", href: "https://docs.masumi.network", icon: FileText },
+  { key: "documentation", href: "https://docs.masumi.network", icon: BookOpen },
+  {
+    key: "support",
+    href: "https://www.masumi.network/contact",
+    icon: MessageSquare,
+  },
+];
+
+const externalLinks: NavigationItem[] = [
+  { key: "twitter", href: "https://x.com/MasumiNetwork", icon: FaXTwitter },
+  {
+    key: "discord",
+    href: "https://discord.com/invite/aj4QfnTS92",
+    icon: FaDiscord,
+  },
+  {
+    key: "about",
+    href: "https://www.masumi.network/about",
+    icon: ExternalLink,
+  },
+  {
+    key: "privacyPolicy",
+    href: "https://www.house-of-communication.com/de/en/footer/privacy-policy.html",
+    icon: Shield,
+  },
+  {
+    key: "changelog",
+    href: "https://www.masumi.network/product-releases",
+    icon: History,
+  },
 ];
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
@@ -99,6 +135,19 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         <CommandSeparator />
         <CommandGroup heading={t("quickActions")}>
           {quickActions.map((item) => (
+            <CommandItem
+              key={item.key}
+              value={item.key}
+              onSelect={() => handleSelect(item.href)}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              {t(`items.${item.key}`)}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading={t("links")}>
+          {externalLinks.map((item) => (
             <CommandItem
               key={item.key}
               value={item.key}

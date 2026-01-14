@@ -105,13 +105,21 @@
       "noResults": "No results found.",
       "navigation": "Navigation",
       "quickActions": "Quick Actions",
+      "links": "Links",
       "items": {
         "dashboard": "Dashboard",
+        "organizations": "Organizations",
+        "wallets": "Wallets",
+        "paymentMethods": "Payment Methods",
         "apiKeys": "API Keys",
-        "agents": "Agents",
-        "logs": "Logs",
         "account": "Account",
-        "documentation": "Documentation"
+        "documentation": "Documentation",
+        "support": "Support",
+        "twitter": "X / Twitter",
+        "discord": "Discord",
+        "about": "About",
+        "privacyPolicy": "Privacy Policy",
+        "changelog": "Changelog"
       }
     },
     "Notifications": {

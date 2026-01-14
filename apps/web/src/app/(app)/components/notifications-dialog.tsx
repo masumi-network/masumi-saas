@@ -10,19 +10,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface NotificationsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function NotificationsDialog({
-  open,
-  onOpenChange,
-}: NotificationsDialogProps) {
+export function NotificationsDialog() {
   const t = useTranslations("App.Notifications");
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="icon" className="h-8 w-8 relative">
           <Bell className="h-4 w-4" />
