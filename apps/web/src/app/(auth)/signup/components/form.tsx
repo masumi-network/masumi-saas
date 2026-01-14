@@ -107,7 +107,7 @@ export default function SignUpForm() {
                     type="text"
                     placeholder={t("name")}
                     autoComplete="name"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -127,7 +127,7 @@ export default function SignUpForm() {
                     type="email"
                     placeholder={t("email")}
                     autoComplete="email"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -147,7 +147,7 @@ export default function SignUpForm() {
                     type="password"
                     placeholder={t("password")}
                     autoComplete="new-password"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -167,7 +167,7 @@ export default function SignUpForm() {
                     type="password"
                     placeholder={t("confirmPassword")}
                     autoComplete="new-password"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -207,6 +207,7 @@ export default function SignUpForm() {
           <div className="flex gap-4 items-center w-full mt-4">
             <Button
               type="submit"
+              variant="primary"
               className="flex-1"
               disabled={isLoading || !termsAccepted}
               size="lg"

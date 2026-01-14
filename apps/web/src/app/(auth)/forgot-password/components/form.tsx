@@ -101,7 +101,7 @@ export default function ForgotPasswordForm() {
                     type="email"
                     placeholder={t("email")}
                     autoComplete="email"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -113,6 +113,7 @@ export default function ForgotPasswordForm() {
           <div className="flex gap-4 items-center w-full mt-4">
             <Button
               type="submit"
+              variant="primary"
               className="flex-1"
               disabled={isLoading}
               size="lg"

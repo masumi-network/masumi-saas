@@ -41,6 +41,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-sidebar-text: hsl(var(--sidebar-text));
 
   /* Masumi Brand Colors */
   --color-masumi-black: #000000;
@@ -101,8 +102,8 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 300 50% 100%;
     --popover-foreground: 300 0% 4%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 300 100% 66%; /* masumi-iris-flower */
+    --primary-foreground: 0 0% 0%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
@@ -126,8 +127,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 330 0% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 300 100% 66%; /* masumi-iris-flower */
+    --primary-foreground: 0 0% 0%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
@@ -171,13 +172,6 @@ table td {
 
 table tr:last-child:not(:first-child) {
   border-bottom: none !important;
-}
-
-/* Custom styles for light mode inputs */
-.light input {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  color: #171717;
 }
 
 /* Autocomplete background color fix */
@@ -311,6 +305,7 @@ input[type="number"] {
   --sidebar-accent-foreground: hsla(330, 0%, 9%, 1);
   --sidebar-border: hsla(330, 0%, 90%, 1);
   --sidebar-ring: hsla(0, 0%, 63%, 1);
+  --sidebar-text: 240 5.9% 10%;
 }
 
 .dark {
@@ -322,6 +317,7 @@ input[type="number"] {
   --sidebar-accent-foreground: hsla(0, 0%, 98%, 1);
   --sidebar-border: hsla(300, 50%, 100%, 0.1);
   --sidebar-ring: hsla(300, 0%, 45%, 1);
+  --sidebar-text: 0 0% 98%;
 }
 
 @layer base {
