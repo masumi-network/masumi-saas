@@ -4,6 +4,7 @@
  * - "Isaac Adebayo" -> "Isaac A."
  * - "John Doe" -> "John D."
  * - "SingleName" -> "SingleName"
+ * - "John " -> "John" (handles empty second word)
  * - "" -> ""
  */
 export function formatName(name: string | null | undefined): string {
@@ -18,7 +19,17 @@ export function formatName(name: string | null | undefined): string {
   }
 
   const firstName = words[0]!;
-  const secondNameFirstLetter = words[1]![0]?.toUpperCase() ?? "";
+  const secondWord = words[1]?.trim();
+
+  if (!secondWord || secondWord.length === 0) {
+    return firstName;
+  }
+
+  const secondNameFirstLetter = secondWord[0]?.toUpperCase() ?? "";
+
+  if (!secondNameFirstLetter) {
+    return firstName;
+  }
 
   return `${firstName} ${secondNameFirstLetter}.`;
 }
@@ -29,6 +40,7 @@ export function formatName(name: string | null | undefined): string {
  * - "Isaac Adebayo" -> "IA"
  * - "John Doe" -> "JD"
  * - "SingleName" -> "S"
+ * - "John " -> "J" (handles empty second word)
  * - "" -> "U"
  */
 export function getInitials(name: string | null | undefined): string {
@@ -42,8 +54,11 @@ export function getInitials(name: string | null | undefined): string {
     return words[0]![0]?.toUpperCase() ?? "U";
   }
 
-  const firstInitial = words[0]![0]?.toUpperCase() ?? "";
-  const secondInitial = words[1]![0]?.toUpperCase() ?? "";
+  const firstWord = words[0]?.trim();
+  const secondWord = words[1]?.trim();
 
-  return `${firstInitial}${secondInitial}`;
+  const firstInitial = firstWord?.[0]?.toUpperCase() ?? "U";
+  const secondInitial = secondWord?.[0]?.toUpperCase() ?? "";
+
+  return secondInitial ? `${firstInitial}${secondInitial}` : firstInitial;
 }
