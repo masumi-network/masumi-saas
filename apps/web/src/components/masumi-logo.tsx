@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 import kanjiBlack from "@/assets/Kanji.svg";
 import kanjiWhite from "@/assets/Masumi kanji white.svg";
@@ -11,13 +11,7 @@ import masumiBlack from "@/assets/masumi-logo-black.svg";
 
 const MasumiLogo = React.memo(() => {
   const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDark = mounted && resolvedTheme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div className="flex items-end justify-center gap-4">
