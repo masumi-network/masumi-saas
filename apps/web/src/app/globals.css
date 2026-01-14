@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@import "tw-animate-css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -26,9 +28,54 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-ring: var(--ring);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
   --max-width-container: 1400px;
   --max-width-form: 500px;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  /* Masumi Brand Colors */
+  --color-masumi-black: #000000;
+  --color-masumi-crimson-purple: #460a23;
+  --color-masumi-electric-pink: #fa008c;
+  --color-masumi-iris-flower: #ff51ff;
+  --color-masumi-vivid-sakura: #ff6ed2;
+  --color-masumi-peach-blossom: #ffc8f0;
+  --color-masumi-white: #ffffff;
+  --color-masumi-neutral-100: #f5f5f5;
+  --color-masumi-sand: #d7be8c;
+  --color-masumi-persimmon: #ff6400;
+  --color-masumi-scarlet: #fa140a;
+  --color-masumi-golden-yellow: #ffd300;
+
+  @keyframes rotate-once {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(180deg);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  --animate-rotate-once: rotate-once 0.6s ease-in-out;
+  --animate-fade-in: fade-in 0.6s ease-in-out;
 }
 
 @layer utilities {
@@ -38,6 +85,12 @@
   .max-w-form {
     max-width: var(--max-width-form);
   }
+  .min-h-spinner {
+    min-height: 400px;
+  }
+  .max-w-search {
+    max-width: 200px;
+  }
 }
 
 @layer base {
@@ -46,8 +99,8 @@
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 300 50% 100%;
+    --popover-foreground: 300 0% 4%;
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
@@ -60,7 +113,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --ring: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
+    --tooltip: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
+    --tooltip-foreground: hsla(0, 0%, 98%, 1);
     --radius: 0.5rem;
   }
 
@@ -69,7 +124,7 @@
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 330 0% 9%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 0 0% 9%;
@@ -83,7 +138,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --ring: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
+    --tooltip: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
+    --tooltip-foreground: hsla(0, 0%, 98%, 1);
   }
 }
 
@@ -95,7 +152,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-inter), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -105,36 +162,6 @@
   [data-radix-dialog-content] {
     overflow-x: hidden;
   }
-}
-
-/* Custom scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: #fff0;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: #ccc7;
-}
-
-::-webkit-scrollbar-track {
-  border-radius: 5px;
-  background-color: transparent;
-}
-
-::selection {
-  background-color: #ccc4;
-}
-
-div:hover::-webkit-scrollbar-thumb {
-  background-color: #fff3;
 }
 
 table th,
@@ -273,4 +300,35 @@ input[type="number"] {
 
 .Toastify__toast {
   z-index: 10000 !important;
+}
+
+:root {
+  --sidebar: hsla(300, 0%, 98%, 1);
+  --sidebar-foreground: hsla(300, 0%, 4%, 1);
+  --sidebar-primary: hsla(330, 0%, 9%, 1);
+  --sidebar-primary-foreground: hsla(300, 0%, 98%, 1);
+  --sidebar-accent: hsla(300, 0%, 90%, 1);
+  --sidebar-accent-foreground: hsla(330, 0%, 9%, 1);
+  --sidebar-border: hsla(330, 0%, 90%, 1);
+  --sidebar-ring: hsla(0, 0%, 63%, 1);
+}
+
+.dark {
+  --sidebar: hsla(330, 0%, 9%, 1);
+  --sidebar-foreground: hsla(0, 0%, 98%, 1);
+  --sidebar-primary: hsla(225, 84%, 49%, 1);
+  --sidebar-primary-foreground: hsla(0, 0%, 98%, 1);
+  --sidebar-accent: hsla(0, 0%, 15%, 1);
+  --sidebar-accent-foreground: hsla(0, 0%, 98%, 1);
+  --sidebar-border: hsla(300, 50%, 100%, 0.1);
+  --sidebar-ring: hsla(300, 0%, 45%, 1);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

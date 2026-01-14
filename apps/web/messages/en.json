@@ -79,6 +79,69 @@
     "Home": {
       "welcome": "Welcome",
       "signedInAs": "You are signed in as {email}"
+    },
+    "Sidebar": {
+      "MenuItems": {
+        "dashboard": "Dashboard",
+        "organizations": "Organizations",
+        "wallets": "Wallets",
+        "paymentMethods": "Payment Methods",
+        "apiKeys": "API Keys",
+        "account": "Account"
+      }
+    },
+    "Header": {
+      "search": "Search...",
+      "account": "Account",
+      "organizations": "Organizations",
+      "credits": "Credits",
+      "mcp": "MCP",
+      "support": "Support",
+      "logout": "Log out"
+    },
+    "Account": {
+      "title": "Account Settings",
+      "description": "Manage your account settings and preferences.",
+      "Name": {
+        "title": "Change Name",
+        "description": "Update your display name.",
+        "newName": "New Name",
+        "namePlaceholder": "John Doe",
+        "submit": "Update Name",
+        "success": "Name updated successfully!",
+        "error": "Failed to update name. Please try again."
+      },
+      "Email": {
+        "title": "Change Email",
+        "description": "Change your email address.",
+        "newEmail": "New Email",
+        "emailPlaceholder": "mail@example.com",
+        "submit": "Update Email",
+        "success": "Email update request sent! Please check your email.",
+        "error": "Failed to update email. Please try again.",
+        "notImplemented": "Email change functionality is not yet implemented."
+      },
+      "Password": {
+        "title": "Change Password",
+        "description": "Change your password to keep your account secure.",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "submit": "Update Password",
+        "success": "Password updated successfully!",
+        "error": "Failed to update password. Please try again."
+      },
+      "Delete": {
+        "title": "Delete Account",
+        "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+        "button": "Delete Account",
+        "confirmTitle": "Are you absolutely sure?",
+        "confirmDescription": "This action cannot be undone. This will permanently delete your account and remove all your data from our servers.",
+        "currentPassword": "Current Password",
+        "confirm": "Yes, delete my account",
+        "success": "Account deleted successfully",
+        "error": "Failed to delete account. Please check your password and try again."
+      }
     }
   },
   "Components": {
@@ -86,18 +149,41 @@
       "description": "We use cookies to ensure you get the best experience on our website.",
       "gotIt": "Got it"
     },
-    "Footer": {
-      "about": "About",
-      "privacyPolicy": "Privacy Policy",
-      "switchToTheme": "Switch to {theme} theme",
-      "toggleTheme": "Toggle theme",
-      "light": "light",
-      "dark": "dark"
-    },
     "Header": {
       "documentation": "Documentation",
       "support": "Support",
       "legal": "Legal"
     }
+  },
+  "Footer": {
+    "Navigate": {
+      "title": "Navigate",
+      "dashboard": "Dashboard",
+      "documentation": "Documentation"
+    },
+    "Connect": {
+      "title": "Connect",
+      "twitter": "X/Twitter",
+      "discord": "Discord"
+    },
+    "GetInTouch": {
+      "title": "Get In Touch",
+      "contact": "Contact",
+      "support": "Support"
+    },
+    "Services": {
+      "title": "Services",
+      "sokosumi": "Sokosumi",
+      "kodosumi": "Kodosumi"
+    },
+    "about": "About",
+    "privacyPolicy": "Privacy Policy",
+    "changelog": "Changelog"
+  },
+  "NotFound": {
+    "title": "404",
+    "description": "This page could not be found.",
+    "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
+    "returnHome": "Return Home"
   }
 }

@@ -148,3 +148,104 @@ export async function signUpAction(formData: FormData) {
     };
   }
 }
+
+export async function updateUserNameAction(formData: FormData) {
+  const headersList = await headers();
+  const name = formData.get("name") as string;
+
+  if (!name || name.trim().length === 0) {
+    return {
+      error: "Name is required",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.updateUser({
+      headers: headersList,
+      body: {
+        name: name.trim(),
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to update name",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export async function changePasswordAction(formData: FormData) {
+  const headersList = await headers();
+  const currentPassword = formData.get("currentPassword") as string;
+  const newPassword = formData.get("newPassword") as string;
+
+  if (!currentPassword || !newPassword) {
+    return {
+      error: "Both current and new passwords are required",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  if (newPassword.length < 8) {
+    return {
+      error: "Password must be at least 8 characters",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.changePassword({
+      headers: headersList,
+      body: {
+        currentPassword,
+        newPassword,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to change password",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  const headersList = await headers();
+  const currentPassword = formData.get("currentPassword") as string;
+
+  if (!currentPassword) {
+    return {
+      error: "Current password is required",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.deleteUser({
+      headers: headersList,
+      body: {
+        password: currentPassword,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to delete account",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
