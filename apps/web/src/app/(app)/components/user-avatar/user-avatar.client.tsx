@@ -65,6 +65,7 @@ export default function UserAvatarClient({
         setPreventCollapse(true);
       } else {
         setPreventCollapse(false);
+        setIsHovered(false);
       }
     }
   };
@@ -109,7 +110,7 @@ export default function UserAvatarClient({
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={8}>
+            <TooltipContent side="bottom" sideOffset={6} collisionPadding={12}>
               {sessionUser.email}
             </TooltipContent>
           </Tooltip>
