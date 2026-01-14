@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Bot,
   Building2,
   CreditCard,
   ExternalLink,
@@ -41,6 +42,7 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
+  { key: "agents", href: "/agents", icon: Bot },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "wallets", href: "/wallets", icon: Wallet },
   { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },

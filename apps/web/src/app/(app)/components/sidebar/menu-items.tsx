@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bot,
   Building2,
   CreditCard,
   Key,
@@ -39,6 +40,12 @@ export default function MenuItems() {
       href: "/",
       label: t("dashboard"),
       Icon: LayoutDashboard,
+    },
+    {
+      key: "agents",
+      href: "/agents",
+      label: t("agents"),
+      Icon: Bot,
     },
     {
       key: "organizations",
