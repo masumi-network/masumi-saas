@@ -100,6 +100,25 @@
       "support": "Support",
       "logout": "Log out"
     },
+    "Search": {
+      "placeholder": "Type a command or search...",
+      "noResults": "No results found.",
+      "navigation": "Navigation",
+      "quickActions": "Quick Actions",
+      "items": {
+        "dashboard": "Dashboard",
+        "apiKeys": "API Keys",
+        "agents": "Agents",
+        "logs": "Logs",
+        "account": "Account",
+        "documentation": "Documentation"
+      }
+    },
+    "Notifications": {
+      "title": "Notifications",
+      "empty": "No notifications yet",
+      "markAllRead": "Mark all as read"
+    },
     "Account": {
       "title": "Account Settings",
       "description": "Manage your account settings and preferences.",
