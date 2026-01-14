@@ -136,6 +136,12 @@ export function FooterSections({ className }: FooterSectionsProps) {
             {t("privacyPolicy")}
           </Link>
           <Link
+            href="https://www.masumi.network/legal"
+            className="text-sm hover:text-gray-300"
+          >
+            {t("legal")}
+          </Link>
+          <Link
             href="https://www.masumi.network/product-releases"
             className="text-sm hover:text-gray-300"
           >

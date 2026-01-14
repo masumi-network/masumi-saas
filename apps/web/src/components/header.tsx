@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Menu, MessageSquare, Scale } from "lucide-react";
+import { BookOpen, Menu, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -56,16 +56,6 @@ export function Header() {
                 {t("support")}
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                href="https://www.house-of-communication.com/de/en/footer/imprint.html"
-                target="_blank"
-                className="flex items-center gap-2"
-              >
-                <Scale className="h-4 w-4" />
-                {t("legal")}
-              </Link>
-            </Button>
           </div>
           <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
@@ -92,16 +82,6 @@ export function Header() {
                 >
                   <MessageSquare className="h-4 w-4" />
                   {t("support")}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="https://www.house-of-communication.com/de/en/footer/imprint.html"
-                  target="_blank"
-                  className="flex items-center gap-2"
-                >
-                  <Scale className="h-4 w-4" />
-                  {t("legal")}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

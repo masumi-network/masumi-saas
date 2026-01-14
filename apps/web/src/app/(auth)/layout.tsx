@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import Footer from "@/components/footer";
+import { AuthFooter } from "@/components/auth-footer";
 import { Header } from "@/components/header";
 import { getAuthContext } from "@/lib/auth/utils";
 
@@ -23,7 +23,7 @@ export default async function AuthLayout({
       <main className="flex flex-col items-center justify-center min-h-screen py-20 px-4 sm:px-6">
         {children}
       </main>
-      <Footer />
+      <AuthFooter />
     </div>
   );
 }
