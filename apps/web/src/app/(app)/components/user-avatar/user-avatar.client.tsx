@@ -92,7 +92,7 @@ export default function UserAvatarClient({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="relative h-8 w-8 rounded-full md:h-10 md:w-10"
+                  className="relative h-8 w-8 rounded-full px-2 md:h-10 md:w-10 md:px-4"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent
