@@ -30,7 +30,7 @@ export default function NotFound() {
       <div className="relative z-10 max-w-container mx-auto flex min-h-screen w-full flex-col justify-center gap-16 p-8 md:p-16">
         <div className="space-y-4">
           <h1 className="text-9xl leading-none">{t("title")}</h1>
-          <h2 className="text-6xl text-masumi-iris-flower">
+          <h2 className="text-4xl md:text-6xl text-masumi-electric-pink">
             {t("description")}
           </h2>
         </div>
