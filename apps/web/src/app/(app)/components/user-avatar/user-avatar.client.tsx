@@ -4,6 +4,7 @@ import gravatarUrl from "gravatar-url";
 import { Building2, CircleHelp, LogOut, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,9 +22,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { signOutAction } from "@/lib/actions/auth.action";
 import type { SessionUser } from "@/lib/auth/auth";
 
+import LogoutModal from "../logout-modal";
 import UserAvatarContent from "./user-avatar-content";
 
 interface UserAvatarClientProps {
@@ -34,6 +35,7 @@ export default function UserAvatarClient({
   sessionUser,
 }: UserAvatarClientProps) {
   const t = useTranslations("App.Header");
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const handleSupport = () => {
     window.open("https://www.masumi.network/contact", "_blank");
@@ -77,6 +79,7 @@ export default function UserAvatarClient({
                       })
                     }
                     imageAlt={sessionUser.name ?? "User avatar"}
+                    fallbackText={sessionUser.name ?? sessionUser.email}
                   />
                 </Button>
               </DropdownMenuTrigger>
@@ -120,19 +123,20 @@ export default function UserAvatarClient({
             {t("support")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <form action={signOutAction}>
-            <DropdownMenuItem asChild>
-              <button
-                type="submit"
-                className="flex w-full cursor-pointer items-center gap-2"
-              >
-                <LogOut className="text-muted-foreground" />
-                {t("logout")}
-              </button>
-            </DropdownMenuItem>
-          </form>
+          <DropdownMenuItem
+            className="flex cursor-pointer items-center gap-2"
+            onClick={() => setLogoutModalOpen(true)}
+          >
+            <LogOut className="text-muted-foreground" />
+            {t("logout")}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <LogoutModal
+        open={logoutModalOpen}
+        onOpenChange={setLogoutModalOpen}
+        email={sessionUser.email}
+      />
     </>
   );
 }

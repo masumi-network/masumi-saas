@@ -1,17 +1,17 @@
-import { UserIcon } from "lucide-react";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserAvatarContentProps {
   className?: string;
   imageUrl?: string;
   imageAlt?: string;
+  fallbackText?: string;
 }
 
 export default function UserAvatarContent({
   className,
   imageUrl,
   imageAlt,
+  fallbackText,
 }: UserAvatarContentProps) {
   return (
     <>
@@ -26,7 +26,7 @@ export default function UserAvatarContent({
           />
         )}
         <AvatarFallback className={className}>
-          <UserIcon className="text-muted-foreground" />
+          {fallbackText?.charAt(0).toUpperCase() || "U"}
         </AvatarFallback>
       </Avatar>
     </>

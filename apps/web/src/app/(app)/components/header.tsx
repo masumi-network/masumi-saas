@@ -1,8 +1,10 @@
 "use client";
 
 import { Menu, Search } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Session } from "@/lib/auth/auth";
@@ -36,19 +38,12 @@ export default function Header({ session, className }: HeaderProps) {
     >
       <div className="max-w-container mx-auto w-full h-full">
         <div className="h-full px-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          </div>
+          <Link href="/" className="md:hidden">
+            <MasumiLogo />
+          </Link>
 
           <div
-            className="flex w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
+            className="hidden md:flex w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
             onClick={() => setIsSearchOpen(true)}
           >
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -61,8 +56,25 @@ export default function Header({ session, className }: HeaderProps) {
             </div>
           </div>
 
-          <div className="flex">
+          <div className="flex items-center gap-2">
+            <div
+              className="flex md:hidden w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
+              onClick={() => setIsSearchOpen(true)}
+            >
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 text-muted-foreground mr-3">
+                <span>Search</span>
+              </div>
+            </div>
             <UserProfile session={session} />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 min-w-8 md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

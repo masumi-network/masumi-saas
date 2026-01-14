@@ -149,6 +149,14 @@
       "description": "We use cookies to ensure you get the best experience on our website.",
       "gotIt": "Got it"
     },
+    "LogoutModal": {
+      "title": "Do you really want to log out?",
+      "description": "Log out \"{email}\" from Masumi.",
+      "logout": "Log out",
+      "cancel": "Cancel",
+      "success": "Successfully logged out",
+      "error": "Failed to log out"
+    },
     "Header": {
       "documentation": "Documentation",
       "support": "Support",

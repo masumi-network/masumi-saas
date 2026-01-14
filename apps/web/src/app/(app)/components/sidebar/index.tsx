@@ -22,15 +22,21 @@ export default function Sidebar() {
   const { isMobile, toggleSidebar } = useSidebar();
 
   return (
-    <ShadcnSidebar collapsible="icon">
+    <ShadcnSidebar collapsible="icon" side={isMobile ? "right" : "left"}>
       <SidebarHeader className="h-16 border-b">
         <div className="flex items-center justify-between gap-2 p-2 group-data-[collapsible=icon]:pt-3! group-data-[collapsible=icon]:pl-2!">
           <SheetClose asChild>
             <Link href="/">
-              <span className="group-data-[collapsible=icon]:hidden">
-                <MasumiLogo />
-              </span>
-              <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
+              {isMobile ? (
+                <MasumiIcon className="size-6" />
+              ) : (
+                <>
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    <MasumiLogo />
+                  </span>
+                  <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
+                </>
+              )}
             </Link>
           </SheetClose>
           {isMobile ? (
