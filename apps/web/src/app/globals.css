@@ -113,9 +113,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
-    --tooltip: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
-    --tooltip-foreground: hsla(0, 0%, 98%, 1);
+    --ring: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --tooltip: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --tooltip-foreground: hsla(0, 0%, 0%, 1);
     --radius: 0.5rem;
   }
 
@@ -138,9 +138,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
-    --tooltip: hsla(326, 100%, 49%, 1); /* masumi-electric-pink */
-    --tooltip-foreground: hsla(0, 0%, 98%, 1);
+    --ring: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --tooltip: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --tooltip-foreground: hsla(0, 0%, 0%, 1);
   }
 }
 

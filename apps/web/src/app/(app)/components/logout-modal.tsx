@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { signOut } from "@/lib/auth/auth.client";
 
 interface LogoutModalProps {
@@ -71,7 +71,7 @@ export default function LogoutModal({
             onClick={handleLogout}
             disabled={loading}
           >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading && <Spinner size={16} className="mr-2" />}
             {t("logout")}
           </Button>
           <DialogClose asChild>
