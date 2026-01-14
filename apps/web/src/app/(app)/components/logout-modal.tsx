@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { signOutAction } from "@/lib/actions/auth.action";
+import { signOut } from "@/lib/auth/auth.client";
 
 interface LogoutModalProps {
   open: boolean;
@@ -35,18 +35,26 @@ export default function LogoutModal({
 
   const handleLogout = async () => {
     setLoading(true);
-    try {
-      await signOutAction();
-      toast.success(t("success"));
-      router.push("/signin");
-    } catch (_error) {
-      toast.error(t("error"));
-      setLoading(false);
-    }
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/signin");
+        },
+        onError: () => {
+          toast.error(t("error"));
+          setLoading(false);
+        },
+      },
+    });
+  };
+
+  const handleOnOpenChange = (newOpen: boolean) => {
+    if (loading) return; // Prevent closing while loading
+    onOpenChange(newOpen);
   };
 
   return (
-    <Dialog open={loading || open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOnOpenChange}>
       <DialogContent className="w-sm">
         <DialogHeader>
           <DialogTitle className="text-center text-lg font-medium">
