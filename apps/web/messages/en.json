@@ -223,6 +223,6 @@
     "title": "404",
     "description": "This page could not be found.",
     "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
-    "returnHome": "Return Home"
+    "returnHome": "Return to Dashboard"
   }
 }
