@@ -1,16 +1,16 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
+import { getRequestHeaders } from "@/lib/auth/utils";
 import { signInSchema, signUpFormDataSchema } from "@/lib/schemas";
 
 import { convertZodError } from "../utils/convert-zod-error";
 
 export async function signOutAction() {
-  const headersList = await headers();
+  const headersList = await getRequestHeaders();
   await auth.api.signOut({
     headers: headersList,
   });
@@ -150,7 +150,7 @@ export async function signUpAction(formData: FormData) {
 }
 
 export async function updateUserNameAction(formData: FormData) {
-  const headersList = await headers();
+  const headersList = await getRequestHeaders();
   const name = formData.get("name") as string;
 
   if (!name || name.trim().length === 0) {
@@ -180,7 +180,7 @@ export async function updateUserNameAction(formData: FormData) {
 }
 
 export async function changePasswordAction(formData: FormData) {
-  const headersList = await headers();
+  const headersList = await getRequestHeaders();
   const currentPassword = formData.get("currentPassword") as string;
   const newPassword = formData.get("newPassword") as string;
 
@@ -220,7 +220,7 @@ export async function changePasswordAction(formData: FormData) {
 }
 
 export async function deleteAccountAction(formData: FormData) {
-  const headersList = await headers();
+  const headersList = await getRequestHeaders();
   const currentPassword = formData.get("currentPassword") as string;
 
   if (!currentPassword) {

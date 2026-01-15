@@ -1,11 +1,10 @@
-import { headers } from "next/headers";
-
 import { auth } from "@/lib/auth/auth";
+import { getRequestHeaders } from "@/lib/auth/utils";
 
 import { AccountContent } from "./components/account-content";
 
 export default async function AccountPage() {
-  const requestHeaders = await headers();
+  const requestHeaders = await getRequestHeaders();
   const [accounts, session] = await Promise.all([
     auth.api.listUserAccounts({
       headers: requestHeaders,

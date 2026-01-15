@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -34,6 +33,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { deleteAccountAction } from "@/lib/actions/auth.action";
 
 const deleteAccountSchema = z.object({
@@ -107,9 +107,7 @@ export function DeleteAccountForm() {
                       variant="destructive"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
+                      {isSubmitting && <Spinner size={16} className="mr-2" />}
                       {t("confirm")}
                     </Button>
                   </DialogFooter>

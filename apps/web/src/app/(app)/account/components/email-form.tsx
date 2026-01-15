@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -35,6 +34,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { changeEmail } from "@/lib/auth/auth.client";
 
 const emailFormSchema = z.object({
@@ -123,9 +123,7 @@ export function EmailForm({ currentEmail }: EmailFormProps) {
                   disabled={isSubmitting}
                   className="w-full"
                 >
-                  {isSubmitting && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  {isSubmitting && <Spinner size={16} className="mr-2" />}
                   {t("submit")}
                 </Button>
               </CardFooter>
@@ -179,9 +177,7 @@ export function EmailForm({ currentEmail }: EmailFormProps) {
               disabled={isConfirming}
               variant="primary"
             >
-              {isConfirming && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isConfirming && <Spinner size={16} className="mr-2" />}
               {t("confirm")}
             </Button>
           </DialogFooter>
