@@ -5,7 +5,13 @@ import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
 import { getRequestHeaders } from "@/lib/auth/utils";
-import { signInSchema, signUpFormDataSchema } from "@/lib/schemas";
+import {
+  changePasswordFormDataSchema,
+  deleteAccountFormDataSchema,
+  signInSchema,
+  signUpFormDataSchema,
+  updateNameFormDataSchema,
+} from "@/lib/schemas";
 
 import { convertZodError } from "../utils/convert-zod-error";
 
@@ -151,11 +157,11 @@ export async function signUpAction(formData: FormData) {
 
 export async function updateUserNameAction(formData: FormData) {
   const headersList = await getRequestHeaders();
-  const name = formData.get("name") as string;
+  const validation = updateNameFormDataSchema.safeParse(formData);
 
-  if (!name || name.trim().length === 0) {
+  if (!validation.success) {
     return {
-      error: "Name is required",
+      error: validation.error.issues[0]?.message || "Invalid input",
       errorKey: "InvalidInput",
     };
   }
@@ -164,7 +170,7 @@ export async function updateUserNameAction(formData: FormData) {
     await auth.api.updateUser({
       headers: headersList,
       body: {
-        name: name.trim(),
+        name: validation.data.name.trim(),
       },
     });
 
@@ -181,19 +187,11 @@ export async function updateUserNameAction(formData: FormData) {
 
 export async function changePasswordAction(formData: FormData) {
   const headersList = await getRequestHeaders();
-  const currentPassword = formData.get("currentPassword") as string;
-  const newPassword = formData.get("newPassword") as string;
+  const validation = changePasswordFormDataSchema.safeParse(formData);
 
-  if (!currentPassword || !newPassword) {
+  if (!validation.success) {
     return {
-      error: "Both current and new passwords are required",
-      errorKey: "InvalidInput",
-    };
-  }
-
-  if (newPassword.length < 8) {
-    return {
-      error: "Password must be at least 8 characters",
+      error: validation.error.issues[0]?.message || "Invalid input",
       errorKey: "InvalidInput",
     };
   }
@@ -202,8 +200,8 @@ export async function changePasswordAction(formData: FormData) {
     await auth.api.changePassword({
       headers: headersList,
       body: {
-        currentPassword,
-        newPassword,
+        currentPassword: validation.data.currentPassword,
+        newPassword: validation.data.newPassword,
       },
     });
 
@@ -221,11 +219,11 @@ export async function changePasswordAction(formData: FormData) {
 
 export async function deleteAccountAction(formData: FormData) {
   const headersList = await getRequestHeaders();
-  const currentPassword = formData.get("currentPassword") as string;
+  const validation = deleteAccountFormDataSchema.safeParse(formData);
 
-  if (!currentPassword) {
+  if (!validation.success) {
     return {
-      error: "Current password is required",
+      error: validation.error.issues[0]?.message || "Invalid input",
       errorKey: "InvalidInput",
     };
   }
@@ -234,7 +232,7 @@ export async function deleteAccountAction(formData: FormData) {
     await auth.api.deleteUser({
       headers: headersList,
       body: {
-        password: currentPassword,
+        password: validation.data.currentPassword,
       },
     });
 
