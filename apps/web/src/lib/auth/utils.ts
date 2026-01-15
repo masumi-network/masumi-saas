@@ -44,3 +44,16 @@ export async function getAuthContextWithHeaders(): Promise<
     headers: headersList,
   };
 }
+
+export async function getAuthenticatedHeaders() {
+  const headersList = await getRequestHeaders();
+  const session = await auth.api.getSession({
+    headers: headersList,
+  });
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  return headersList;
+}
