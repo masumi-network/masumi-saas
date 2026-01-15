@@ -82,7 +82,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">New Password</FormLabel>
+                <FormLabel className="sr-only">{t("password")}</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
@@ -102,7 +102,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Confirm Password</FormLabel>
+                <FormLabel className="sr-only">
+                  {t("confirmPassword")}
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="password"

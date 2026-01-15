@@ -177,7 +177,8 @@
   "Components": {
     "CookieConsent": {
       "description": "We use cookies to ensure you get the best experience on our website.",
-      "gotIt": "Got it"
+      "gotIt": "Got it",
+      "learnMore": "Learn more"
     },
     "LogoutModal": {
       "title": "Do you really want to log out?",
@@ -191,6 +192,29 @@
       "documentation": "Documentation",
       "support": "Support",
       "legal": "Legal"
+    },
+    "ThemeToggle": {
+      "toggleTheme": "Toggle theme"
+    }
+  },
+  "Email": {
+    "ResetPassword": {
+      "preview": "Reset your Masumi password",
+      "title": "Reset your password",
+      "greeting": "Hello {name},",
+      "message": "We received a request to reset your password. Click the button below to create a new password.",
+      "button": "Reset password",
+      "linkText": "Or copy and paste this link into your browser:",
+      "footer": "If you didn't request a password reset, you can safely ignore this email."
+    },
+    "Verification": {
+      "preview": "Verify your Masumi email address",
+      "title": "Verify your email address",
+      "greeting": "Hello {name},",
+      "message": "Please verify your email address by clicking the button below.",
+      "button": "Verify email",
+      "linkText": "Or copy and paste this link into your browser:",
+      "footer": "If you didn't create an account, you can safely ignore this email."
     }
   },
   "Footer": {

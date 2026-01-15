@@ -170,6 +170,9 @@ importers:
       eslint-config-next:
         specifier: 16.0.6
         version: 16.0.6(@typescript-eslint/parser@8.48.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      eslint-plugin-react:
+        specifier: ^7.37.5
+        version: 7.37.5(eslint@8.57.1)
       postcss:
         specifier: 8.4.38
         version: 8.4.38
