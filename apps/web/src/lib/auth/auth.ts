@@ -135,6 +135,9 @@ export const auth = betterAuth({
     changeEmail: {
       enabled: true,
     },
+    deleteUser: {
+      enabled: true,
+    },
   },
   plugins: [
     apiKey({
