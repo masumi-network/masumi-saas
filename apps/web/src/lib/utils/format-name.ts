@@ -1,10 +1,10 @@
 /**
- * Formats a name by taking the first word and adding the first letter of the second word with a period.
+ * Formats a name by taking the first word and adding the first letter of the last word with a period.
  * Examples:
  * - "Isaac Adebayo" -> "Isaac A."
+ * - "Isaac Markus Smith" -> "Isaac S." (first and last)
  * - "John Doe" -> "John D."
  * - "SingleName" -> "SingleName"
- * - "John " -> "John" (handles empty second word)
  * - "" -> ""
  */
 export function formatName(name: string | null | undefined): string {
@@ -19,28 +19,28 @@ export function formatName(name: string | null | undefined): string {
   }
 
   const firstName = words[0]!;
-  const secondWord = words[1]?.trim();
+  const lastWord = words[words.length - 1]?.trim();
 
-  if (!secondWord || secondWord.length === 0) {
+  if (!lastWord || lastWord.length === 0) {
     return firstName;
   }
 
-  const secondNameFirstLetter = secondWord[0]?.toUpperCase() ?? "";
+  const lastNameFirstLetter = lastWord[0]?.toUpperCase() ?? "";
 
-  if (!secondNameFirstLetter) {
+  if (!lastNameFirstLetter) {
     return firstName;
   }
 
-  return `${firstName} ${secondNameFirstLetter}.`;
+  return `${firstName} ${lastNameFirstLetter}.`;
 }
 
 /**
  * Gets initials from a name.
  * Examples:
  * - "Isaac Adebayo" -> "IA"
+ * - "Isaac Markus Smith" -> "IS" (first and last)
  * - "John Doe" -> "JD"
  * - "SingleName" -> "S"
- * - "John " -> "J" (handles empty second word)
  * - "" -> "U"
  */
 export function getInitials(name: string | null | undefined): string {
@@ -55,10 +55,10 @@ export function getInitials(name: string | null | undefined): string {
   }
 
   const firstWord = words[0]?.trim();
-  const secondWord = words[1]?.trim();
+  const lastWord = words[words.length - 1]?.trim();
 
   const firstInitial = firstWord?.[0]?.toUpperCase() ?? "U";
-  const secondInitial = secondWord?.[0]?.toUpperCase() ?? "";
+  const lastInitial = lastWord?.[0]?.toUpperCase() ?? "";
 
-  return secondInitial ? `${firstInitial}${secondInitial}` : firstInitial;
+  return lastInitial ? `${firstInitial}${lastInitial}` : firstInitial;
 }
