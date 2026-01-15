@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import MasumiLogo from "@/components/masumi-logo";
@@ -17,6 +18,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const authContext = await getAuthContext();
+  const t = await getTranslations("Auth.SignOut");
 
   if (!authContext.isAuthenticated) {
     redirect("/signin");
@@ -24,7 +26,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="max-w-container mx-auto w-full h-14 px-4 flex items-center justify-between gap-4">
           <Link href="/">
             <MasumiLogo />
@@ -33,7 +35,7 @@ export default async function AppLayout({
             <ThemeToggle />
             <form action={signOutAction}>
               <Button type="submit" variant="outline">
-                Sign Out
+                {t("signOut")}
               </Button>
             </form>
           </div>

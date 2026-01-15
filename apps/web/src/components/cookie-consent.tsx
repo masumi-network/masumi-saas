@@ -61,7 +61,7 @@ export default function CookieConsent({ onDismiss }: CookieConsentProps) {
             target="_blank"
             className="underline hover:text-foreground"
           >
-            Learn more
+            {t("learnMore")}
           </Link>
         </p>
         <Button onClick={handleGotIt} size="sm">

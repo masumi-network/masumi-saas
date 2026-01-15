@@ -101,7 +101,7 @@ export default function SignUpForm() {
             name="name"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Name</FormLabel>
+                <FormLabel className="sr-only">{t("name")}</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -121,7 +121,7 @@ export default function SignUpForm() {
             name="email"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Email</FormLabel>
+                <FormLabel className="sr-only">{t("email")}</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -141,7 +141,7 @@ export default function SignUpForm() {
             name="password"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Password</FormLabel>
+                <FormLabel className="sr-only">{t("password")}</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
@@ -161,7 +161,9 @@ export default function SignUpForm() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Confirm Password</FormLabel>
+                <FormLabel className="sr-only">
+                  {t("confirmPassword")}
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="password"

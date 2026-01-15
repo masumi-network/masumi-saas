@@ -89,7 +89,7 @@ export default function SignInForm() {
             name="email"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Email</FormLabel>
+                <FormLabel className="sr-only">{t("email")}</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -109,7 +109,7 @@ export default function SignInForm() {
             name="password"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="sr-only">Password</FormLabel>
+                <FormLabel className="sr-only">{t("password")}</FormLabel>
                 <FormControl>
                   <div className="flex gap-4 items-center w-full">
                     <Input
