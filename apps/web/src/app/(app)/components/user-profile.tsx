@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { Session } from "@/lib/auth/auth";
 import { formatName } from "@/lib/utils";
 
@@ -7,12 +9,13 @@ interface UserProfileProps {
   session: Session;
 }
 
-export default function UserProfile({ session }: UserProfileProps) {
+export default async function UserProfile({ session }: UserProfileProps) {
   const user = session.user;
+  const t = await getTranslations("App.UserProfile");
 
   if (!user) {
     return (
-      <div className="text-muted-foreground text-sm">User unavailable</div>
+      <div className="text-muted-foreground text-sm">{t("unavailable")}</div>
     );
   }
 

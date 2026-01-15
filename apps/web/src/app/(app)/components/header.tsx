@@ -2,6 +2,7 @@
 
 import { BookOpen, Menu, MessageSquare, Search } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import MasumiLogo from "@/components/masumi-logo";
@@ -18,6 +19,7 @@ interface HeaderProps {
 export default function Header({ className }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
+  const t = useTranslations("App.Header");
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,11 +50,11 @@ export default function Header({ className }: HeaderProps) {
             >
               <Search className="h-4 w-4 text-muted-foreground" />
               <div className="flex items-center gap-2 text-muted-foreground">
-                <span>Type</span>
+                <span>{t("type")}</span>
                 <kbd className="bg-muted text-foreground pointer-events-none inline-flex h-6 items-center justify-center rounded-md border px-2 font-mono text-xs">
                   /
                 </kbd>
-                <span>to search</span>
+                <span>{t("toSearch")}</span>
               </div>
             </div>
 
@@ -69,7 +71,7 @@ export default function Header({ className }: HeaderProps) {
                   className="flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4" />
-                  Documentation
+                  {t("documentation")}
                 </Link>
               </Button>
               <Button
@@ -84,7 +86,7 @@ export default function Header({ className }: HeaderProps) {
                   className="flex items-center gap-2"
                 >
                   <MessageSquare className="h-4 w-4" />
-                  Support
+                  {t("support")}
                 </Link>
               </Button>
               <div className="hidden md:flex">

@@ -99,7 +99,9 @@
       "mcp": "MCP",
       "documentation": "Documentation",
       "support": "Support",
-      "logout": "Log out"
+      "logout": "Log out",
+      "type": "Type",
+      "toSearch": "to search"
     },
     "Search": {
       "placeholder": "Type a command or search...",
@@ -128,6 +130,9 @@
       "title": "Notifications",
       "empty": "No notifications yet",
       "markAllRead": "Mark all as read"
+    },
+    "UserProfile": {
+      "unavailable": "User unavailable"
     },
     "Account": {
       "title": "Account Settings",
@@ -195,6 +200,17 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Toggle theme"
+    },
+    "Dialog": {
+      "close": "Close"
+    },
+    "Sheet": {
+      "close": "Close"
+    },
+    "Sidebar": {
+      "title": "Sidebar",
+      "description": "Displays the mobile sidebar.",
+      "toggleSidebar": "Toggle Sidebar"
     }
   },
   "Email": {
