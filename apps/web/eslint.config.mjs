@@ -39,6 +39,7 @@ const config = [
           allowedStrings: [
             // Common separators and formatting
             " ",
+            "/",
             // Common technical strings
             "_blank",
             "_self",
