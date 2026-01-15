@@ -6,6 +6,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { apiKey, organization } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
+import { getTranslations } from "next-intl/server";
 
 import { authConfig } from "@/lib/config/auth.config";
 import { postmarkClient } from "@/lib/email/postmark";
@@ -31,6 +32,11 @@ export const auth = betterAuth({
         return;
       }
 
+      const t = await getTranslations({
+        locale: "en",
+        namespace: "Email.ResetPassword",
+      });
+
       const fromEmail =
         process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
 
@@ -38,10 +44,19 @@ export const auth = betterAuth({
         From: fromEmail,
         To: user.email,
         Tag: "reset-password",
-        Subject: "Reset your Masumi password",
+        Subject: t("preview"),
         HtmlBody: await reactResetPasswordEmail({
           name: user.name || "User",
           resetLink: url,
+          translations: {
+            preview: t("preview"),
+            title: t("title"),
+            greeting: t("greeting"),
+            message: t("message"),
+            button: t("button"),
+            linkText: t("linkText"),
+            footer: t("footer"),
+          },
         }),
         MessageStream: "outbound",
       });
@@ -57,6 +72,11 @@ export const auth = betterAuth({
         return;
       }
 
+      const t = await getTranslations({
+        locale: "en",
+        namespace: "Email.Verification",
+      });
+
       const fromEmail =
         process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
 
@@ -64,10 +84,19 @@ export const auth = betterAuth({
         From: fromEmail,
         To: user.email,
         Tag: "verification-email",
-        Subject: "Verify your Masumi email address",
+        Subject: t("preview"),
         HtmlBody: await reactVerificationEmail({
           name: user.name || "User",
           verificationLink: url,
+          translations: {
+            preview: t("preview"),
+            title: t("title"),
+            greeting: t("greeting"),
+            message: t("message"),
+            button: t("button"),
+            linkText: t("linkText"),
+            footer: t("footer"),
+          },
         }),
         MessageStream: "outbound",
       });
