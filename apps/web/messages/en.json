@@ -154,7 +154,12 @@
         "submit": "Update Email",
         "success": "Email update request sent! Please check your email.",
         "error": "Failed to update email. Please try again.",
-        "notImplemented": "Email change functionality is not yet implemented."
+        "notImplemented": "Email change functionality is not yet implemented.",
+        "confirmTitle": "Confirm Email Change",
+        "confirmDescription": "Are you sure you want to change your email from {oldEmail} to {newEmail}? A verification email will be sent to the new address.",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "currentEmailFallback": "your current email"
       },
       "Password": {
         "title": "Change Password",

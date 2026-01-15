@@ -25,10 +25,24 @@ export const auth = betterAuth({
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       if (!postmarkClient) {
-        console.log("Password reset email (Postmark not configured):", {
-          to: user.email,
-          resetLink: url,
-        });
+        if (process.env.NODE_ENV === "development") {
+          console.log("\n[DEV] Password reset email (Postmark not configured)");
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log(`To: ${user.email}`);
+          console.log(`Reset Link: ${url}`);
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log(
+            "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+          );
+        } else {
+          console.error(
+            "Postmark not configured. Password reset email failed.",
+            {
+              to: user.email,
+              resetLink: url,
+            },
+          );
+        }
         return;
       }
 
@@ -65,10 +79,21 @@ export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
       if (!postmarkClient) {
-        console.log("Verification email (Postmark not configured):", {
-          to: user.email,
-          verificationLink: url,
-        });
+        if (process.env.NODE_ENV === "development") {
+          console.log("\n[DEV] Email verification (Postmark not configured)");
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log(`To: ${user.email}`);
+          console.log(`Verification Link: ${url}`);
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log(
+            "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+          );
+        } else {
+          console.error("Postmark not configured. Email verification failed.", {
+            to: user.email,
+            verificationLink: url,
+          });
+        }
         return;
       }
 
@@ -105,6 +130,11 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     expiresIn: authConfig.emailVerification.expiresIn,
     autoSignInAfterVerification: true,
+  },
+  user: {
+    changeEmail: {
+      enabled: true,
+    },
   },
   plugins: [
     apiKey({

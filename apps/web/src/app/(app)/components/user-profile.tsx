@@ -1,4 +1,6 @@
-import { getTranslations } from "next-intl/server";
+"use client";
+
+import { useTranslations } from "next-intl";
 
 import { Session } from "@/lib/auth/auth";
 import { formatName } from "@/lib/utils";
@@ -9,9 +11,9 @@ interface UserProfileProps {
   session: Session;
 }
 
-export default async function UserProfile({ session }: UserProfileProps) {
+export default function UserProfile({ session }: UserProfileProps) {
   const user = session.user;
-  const t = await getTranslations("App.UserProfile");
+  const t = useTranslations("App.UserProfile");
 
   if (!user) {
     return (

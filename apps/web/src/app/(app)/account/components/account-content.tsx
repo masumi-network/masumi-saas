@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { auth } from "@/lib/auth/auth";
 
 import { DeleteAccountForm } from "./delete-account-form";
+import { EmailForm } from "./email-form";
 import { NameForm } from "./name-form";
 import { PasswordForm } from "./password-form";
 
@@ -38,6 +39,7 @@ export function AccountContent({ accounts, user: _user }: AccountContentProps) {
       <div className="max-w-3xl space-y-8">
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
           <NameForm />
+          <EmailForm currentEmail={_user.email} />
           <div className="md:col-span-2">
             {hasCredentialAccount ? <PasswordForm /> : null}
           </div>
