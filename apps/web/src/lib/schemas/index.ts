@@ -54,3 +54,20 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const updateNameSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export const deleteAccountSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+});
+
+export const updateNameFormDataSchema = zfd.formData(updateNameSchema);
+export const changePasswordFormDataSchema = zfd.formData(changePasswordSchema);
+export const deleteAccountFormDataSchema = zfd.formData(deleteAccountSchema);

@@ -1,16 +1,22 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
-import { signInSchema, signUpFormDataSchema } from "@/lib/schemas";
+import { getAuthenticatedHeaders, getRequestHeaders } from "@/lib/auth/utils";
+import {
+  changePasswordFormDataSchema,
+  deleteAccountFormDataSchema,
+  signInSchema,
+  signUpFormDataSchema,
+  updateNameFormDataSchema,
+} from "@/lib/schemas";
 
 import { convertZodError } from "../utils/convert-zod-error";
 
 export async function signOutAction() {
-  const headersList = await headers();
+  const headersList = await getRequestHeaders();
   await auth.api.signOut({
     headers: headersList,
   });
@@ -144,6 +150,99 @@ export async function signUpAction(formData: FormData) {
     }
     return {
       error: "An unexpected error occurred",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export async function updateUserNameAction(formData: FormData) {
+  const headersList = await getAuthenticatedHeaders();
+  const validation = updateNameFormDataSchema.safeParse(formData);
+
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.updateUser({
+      headers: headersList,
+      body: {
+        name: validation.data.name.trim(),
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to update name",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export async function changePasswordAction(formData: FormData) {
+  const headersList = await getAuthenticatedHeaders();
+  const validation = changePasswordFormDataSchema.safeParse(formData);
+
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.changePassword({
+      headers: headersList,
+      body: {
+        currentPassword: validation.data.currentPassword,
+        newPassword: validation.data.newPassword,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to change password",
+      errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  const headersList = await getAuthenticatedHeaders();
+  const validation = deleteAccountFormDataSchema.safeParse(formData);
+
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0]?.message || "Invalid input",
+      errorKey: "InvalidInput",
+    };
+  }
+
+  try {
+    await auth.api.deleteUser({
+      headers: headersList,
+      body: {
+        password: validation.data.currentPassword,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to delete account",
       errorKey: "UnexpectedError",
     };
   }

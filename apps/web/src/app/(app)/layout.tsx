@@ -1,14 +1,14 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
-import MasumiLogo from "@/components/masumi-logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { FooterSections } from "@/components/footer";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { signOutAction } from "@/lib/actions/auth.action";
 import { getAuthContext } from "@/lib/auth/utils";
+
+import Header from "./components/header";
+import Sidebar from "./components/sidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -18,42 +18,39 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const authContext = await getAuthContext();
-  const t = await getTranslations("Auth.SignOut");
 
-  if (!authContext.isAuthenticated) {
+  if (!authContext.isAuthenticated || !authContext.session) {
     redirect("/signin");
   }
 
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="max-w-container mx-auto w-full h-14 px-4 flex items-center justify-between gap-4">
-          <Link href="/">
-            <MasumiLogo />
-          </Link>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <form action={signOutAction}>
-              <Button type="submit" variant="outline">
-                {t("signOut")}
-              </Button>
-            </form>
-          </div>
+    <SidebarProvider
+      defaultOpen={defaultOpen}
+      className="flex max-w-svw overflow-clip"
+    >
+      <Sidebar session={authContext.session} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-clip">
+        <Header />
+        <main className="max-w-container mx-auto w-full relative min-h-[calc(100svh-64px)] p-4">
+          <Suspense
+            fallback={
+              <Spinner
+                size={24}
+                addContainer
+                containerClassName="min-h-spinner"
+              />
+            }
+          >
+            {children}
+          </Suspense>
+        </main>
+        <div className="max-w-container mx-auto w-full">
+          <FooterSections className="p-4" />
         </div>
-      </header>
-      <main className="flex-1 max-w-container mx-auto w-full px-4 py-8">
-        <Suspense
-          fallback={
-            <Spinner
-              size={24}
-              addContainer
-              containerClassName="min-h-[400px]"
-            />
-          }
-        >
-          {children}
-        </Suspense>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }

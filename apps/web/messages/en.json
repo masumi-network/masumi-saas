@@ -79,6 +79,109 @@
     "Home": {
       "welcome": "Welcome",
       "signedInAs": "You are signed in as {email}"
+    },
+    "Sidebar": {
+      "MenuItems": {
+        "dashboard": "Dashboard",
+        "agents": "Agents",
+        "organizations": "Organizations",
+        "wallets": "Wallets",
+        "paymentMethods": "Payment Methods",
+        "apiKeys": "API Keys",
+        "account": "Account"
+      }
+    },
+    "Header": {
+      "search": "Search...",
+      "account": "Account",
+      "organizations": "Organizations",
+      "credits": "Credits",
+      "mcp": "MCP",
+      "documentation": "Documentation",
+      "support": "Support",
+      "logout": "Log out",
+      "type": "Type",
+      "toSearch": "to search"
+    },
+    "Search": {
+      "placeholder": "Type a command or search...",
+      "noResults": "No results found.",
+      "navigation": "Navigation",
+      "quickActions": "Quick Actions",
+      "links": "Links",
+      "items": {
+        "dashboard": "Dashboard",
+        "agents": "Agents",
+        "organizations": "Organizations",
+        "wallets": "Wallets",
+        "paymentMethods": "Payment Methods",
+        "apiKeys": "API Keys",
+        "account": "Account",
+        "documentation": "Documentation",
+        "support": "Support",
+        "twitter": "X / Twitter",
+        "discord": "Discord",
+        "about": "About",
+        "privacyPolicy": "Privacy Policy",
+        "changelog": "Changelog"
+      }
+    },
+    "Notifications": {
+      "title": "Notifications",
+      "empty": "No notifications yet",
+      "markAllRead": "Mark all as read"
+    },
+    "UserProfile": {
+      "unavailable": "User unavailable"
+    },
+    "Account": {
+      "title": "Account Settings",
+      "description": "Manage your account settings and preferences.",
+      "Name": {
+        "title": "Change Name",
+        "description": "Update your display name.",
+        "newName": "New Name",
+        "namePlaceholder": "John Doe",
+        "submit": "Update Name",
+        "success": "Name updated successfully!",
+        "error": "Failed to update name. Please try again."
+      },
+      "Email": {
+        "title": "Change Email",
+        "description": "Change your email address.",
+        "newEmail": "New Email",
+        "emailPlaceholder": "mail@example.com",
+        "submit": "Update Email",
+        "success": "Email update request sent! Please check your email.",
+        "error": "Failed to update email. Please try again.",
+        "notImplemented": "Email change functionality is not yet implemented.",
+        "confirmTitle": "Confirm Email Change",
+        "confirmDescription": "Are you sure you want to change your email from {oldEmail} to {newEmail}? A verification email will be sent to the new address.",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "currentEmailFallback": "your current email"
+      },
+      "Password": {
+        "title": "Change Password",
+        "description": "Change your password to keep your account secure.",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "submit": "Update Password",
+        "success": "Password updated successfully!",
+        "error": "Failed to update password. Please try again."
+      },
+      "Delete": {
+        "title": "Delete Account",
+        "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+        "button": "Delete Account",
+        "confirmTitle": "Are you absolutely sure?",
+        "confirmDescription": "This action cannot be undone. This will permanently delete your account and remove all your data from our servers.",
+        "currentPassword": "Current Password",
+        "confirm": "Yes, delete my account",
+        "success": "Account deleted successfully",
+        "error": "Failed to delete account. Please check your password and try again."
+      }
     }
   },
   "Components": {
@@ -87,13 +190,13 @@
       "gotIt": "Got it",
       "learnMore": "Learn more"
     },
-    "Footer": {
-      "about": "About",
-      "privacyPolicy": "Privacy Policy",
-      "switchToTheme": "Switch to {theme} theme",
-      "toggleTheme": "Toggle theme",
-      "light": "light",
-      "dark": "dark"
+    "LogoutModal": {
+      "title": "Do you really want to log out?",
+      "description": "Log out \"{email}\" from Masumi.",
+      "logout": "Log out",
+      "cancel": "Cancel",
+      "success": "Successfully logged out",
+      "error": "Failed to log out"
     },
     "Header": {
       "documentation": "Documentation",
@@ -102,6 +205,17 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Toggle theme"
+    },
+    "Dialog": {
+      "close": "Close"
+    },
+    "Sheet": {
+      "close": "Close"
+    },
+    "Sidebar": {
+      "title": "Sidebar",
+      "description": "Displays the mobile sidebar.",
+      "toggleSidebar": "Toggle Sidebar"
     }
   },
   "Email": {
@@ -123,5 +237,37 @@
       "linkText": "Or copy and paste this link into your browser:",
       "footer": "If you didn't create an account, you can safely ignore this email."
     }
+  },
+  "Footer": {
+    "Navigate": {
+      "title": "Navigate",
+      "dashboard": "Dashboard",
+      "documentation": "Documentation"
+    },
+    "Connect": {
+      "title": "Connect",
+      "twitter": "X/Twitter",
+      "discord": "Discord"
+    },
+    "GetInTouch": {
+      "title": "Get In Touch",
+      "contact": "Contact",
+      "support": "Support"
+    },
+    "Services": {
+      "title": "Services",
+      "sokosumi": "Sokosumi",
+      "kodosumi": "Kodosumi"
+    },
+    "about": "About",
+    "privacyPolicy": "Privacy Policy",
+    "legal": "Legal",
+    "changelog": "Changelog"
+  },
+  "NotFound": {
+    "title": "404",
+    "description": "This page could not be found.",
+    "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
+    "returnHome": "Return to Dashboard"
   }
 }

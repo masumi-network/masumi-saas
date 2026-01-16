@@ -88,7 +88,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                     type="password"
                     placeholder={t("password")}
                     autoComplete="new-password"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -110,7 +110,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                     type="password"
                     placeholder={t("confirmPassword")}
                     autoComplete="new-password"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -122,6 +122,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <div className="flex gap-4 items-center w-full mt-4">
             <Button
               type="submit"
+              variant="primary"
               className="flex-1"
               disabled={isLoading}
               size="lg"

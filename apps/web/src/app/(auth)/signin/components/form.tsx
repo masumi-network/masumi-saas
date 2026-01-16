@@ -95,7 +95,7 @@ export default function SignInForm() {
                     type="email"
                     placeholder={t("email")}
                     autoComplete="email"
-                    className="bg-transparent"
+                    className="bg-background"
                     {...field}
                   />
                 </FormControl>
@@ -116,10 +116,15 @@ export default function SignInForm() {
                       type="password"
                       placeholder={t("password")}
                       autoComplete="current-password"
-                      className="flex-1 bg-transparent"
+                      className="flex-1 bg-background"
                       {...field}
                     />
-                    <Button type="submit" disabled={isLoading} size="lg">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={isLoading}
+                      size="lg"
+                    >
                       {isLoading ? (
                         <>
                           <Spinner size={16} className="mr-2" />
