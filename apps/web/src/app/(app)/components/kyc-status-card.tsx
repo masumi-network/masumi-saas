@@ -23,7 +23,19 @@ export async function KycStatusCard() {
 
   const { kycStatus, kycCompletedAt, kycRejectionReason } = result.data;
 
-  const statusConfig = {
+  type KycStatus = "PENDING" | "REVIEW" | "APPROVED" | "REJECTED";
+
+  const statusConfig: Record<
+    KycStatus,
+    {
+      icon: typeof AlertCircle;
+      iconColor: string;
+      title: string;
+      description: string;
+      action: string | null;
+      actionHref: string | null;
+    }
+  > = {
     PENDING: {
       icon: AlertCircle,
       iconColor: "text-muted-foreground",
@@ -62,7 +74,7 @@ export async function KycStatusCard() {
     },
   };
 
-  const config = statusConfig[kycStatus];
+  const config = statusConfig[kycStatus as KycStatus];
   const Icon = config.icon;
 
   return (
