@@ -90,6 +90,16 @@ masumi-saas/
    - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
    - **SENTRY_PROJECT**: Your Sentry project name (defaults to "masumi-saas")
 
+   - **SUMSUB_APP_TOKEN**: Your Sumsub application token (optional, for KYC/KYB verification)
+     - Get one from [Sumsub Dashboard](https://sumsub.com/)
+     - Required for identity verification features
+   - **SUMSUB_SECRET_KEY**: Your Sumsub secret key (optional, for KYC/KYB verification)
+     - Get one from [Sumsub Dashboard](https://sumsub.com/)
+     - Required for webhook signature verification and API authentication
+   - **SUMSUB_BASE_URL**: Sumsub API base URL (optional)
+     - Defaults to `https://api.sumsub.com` for production
+     - Use `https://api.sumsub.com` for sandbox/testing
+
 3. **Set up the database:**
 
    ```bash

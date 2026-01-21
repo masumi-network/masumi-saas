@@ -18,6 +18,16 @@ const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : [],
   });
 
+// Test connection on startup in development
+if (process.env.NODE_ENV === "development") {
+  prisma.$connect().catch((error) => {
+    console.error("Database connection error:", error.message);
+    console.error(
+      "Please check:\n1. DATABASE_URL is set in apps/web/.env\n2. PostgreSQL is running\n3. Database exists",
+    );
+  });
+}
+
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;

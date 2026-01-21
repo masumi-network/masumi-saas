@@ -15,10 +15,15 @@ export async function getRequestHeaders() {
 }
 
 export async function getSession() {
-  const headersList = await getRequestHeaders();
-  return auth.api.getSession({
-    headers: headersList,
-  });
+  try {
+    const headersList = await getRequestHeaders();
+    return await auth.api.getSession({
+      headers: headersList,
+    });
+  } catch (error) {
+    console.error("Failed to get session:", error);
+    return null;
+  }
 }
 
 export async function getAuthContext(): Promise<AuthContext> {
@@ -31,17 +36,28 @@ export async function getAuthContext(): Promise<AuthContext> {
 }
 
 export async function getAuthContextWithHeaders(): Promise<
-  AuthContext & { headers: Awaited<ReturnType<typeof getRequestHeaders>> }
+  AuthContext & {
+    headers: Awaited<ReturnType<typeof getRequestHeaders>>;
+    user: NonNullable<
+      NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>["user"]
+    >;
+  }
 > {
   const headersList = await getRequestHeaders();
   const session = await auth.api.getSession({
     headers: headersList,
   });
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
   return {
-    isAuthenticated: !!session?.user,
-    userId: session?.user?.id ?? null,
+    isAuthenticated: true,
+    userId: session.user.id,
     session,
     headers: headersList,
+    user: session.user,
   };
 }
 

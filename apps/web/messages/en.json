@@ -134,6 +134,53 @@
     "UserProfile": {
       "unavailable": "User unavailable"
     },
+    "Onboarding": {
+      "title": "Identity Verification",
+      "description": "Complete your identity verification to unlock full access to Masumi.",
+      "steps": {
+        "intro": {
+          "title": "Introduction & Consent",
+          "description": "Learn about the verification process"
+        },
+        "verification": {
+          "title": "Verification",
+          "description": "Complete your identity verification"
+        },
+        "completion": {
+          "title": "Completion",
+          "description": "Verification status"
+        }
+      },
+      "errors": {
+        "consentRequired": "Please accept the consent to proceed",
+        "tokenGenerationFailed": "Failed to generate verification token. Please try again.",
+        "verificationFailed": "Verification failed. Please try again."
+      },
+      "Intro": {
+        "rejectionTitle": "Verification Rejected",
+        "purposeTitle": "Why We Need Verification",
+        "purpose": "Identity verification is required for compliance and to enable agent monetization features. This helps us maintain trust and security across the platform.",
+        "gdprTitle": "GDPR & Data Protection",
+        "gdpr": "We follow GDPR principles and only collect the minimum data necessary for verification. Your data is processed securely and will be retained according to our privacy policy.",
+        "biometricTitle": "Biometric Consent",
+        "biometric": "The verification process includes biometric checks (selfie and liveness detection) to ensure you are a real person matching your identity documents.",
+        "credentialTitle": "Veridian Credential",
+        "credential": "Upon successful verification, a Veridian credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
+        "consentLabel": "I understand and consent to the identity verification process.",
+        "startButton": "Start Verification"
+      },
+      "Verification": {
+        "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
+        "error": "An error occurred during verification. Please try again."
+      },
+      "Completion": {
+        "successTitle": "Verification Submitted",
+        "successMessage": "Your verification has been submitted successfully. We'll review it and notify you once it's complete.",
+        "processingTitle": "Processing Verification",
+        "processingMessage": "Your verification is being processed. This may take a few moments.",
+        "continueButton": "Continue to Dashboard"
+      }
+    },
     "Account": {
       "title": "Account Settings",
       "description": "Manage your account settings and preferences.",

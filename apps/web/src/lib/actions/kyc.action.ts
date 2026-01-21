@@ -1,4 +1,4 @@
-import "server-only";
+"use server";
 
 import { getAuthenticatedHeaders } from "@/lib/auth/utils";
 import { generateSumsubAccessToken } from "@/lib/sumsub";
@@ -13,12 +13,7 @@ export async function generateKycAccessTokenAction(
   try {
     const { user } = await getAuthenticatedHeaders();
 
-    // Generate token with user ID as externalUserId
-    const token = await generateSumsubAccessToken(
-      user.id,
-      levelName,
-      600, // 10 minutes TTL
-    );
+    const token = await generateSumsubAccessToken(user.id, levelName, 600);
 
     return {
       success: true,
@@ -48,11 +43,10 @@ export async function generateKybAccessTokenAction(
   try {
     await getAuthenticatedHeaders();
 
-    // Generate token with organization ID as externalUserId
     const token = await generateSumsubAccessToken(
       organizationId,
       levelName,
-      600, // 10 minutes TTL
+      600,
     );
 
     return {

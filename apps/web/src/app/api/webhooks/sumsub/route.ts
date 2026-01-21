@@ -1,7 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApplicantData,verifySumsubWebhookSignature } from "@/lib/sumsub";
+import { getApplicantData, verifySumsubWebhookSignature } from "@/lib/sumsub";
 
 /**
  * Sumsub webhook handler
@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify webhook signature
     const isValid = verifySumsubWebhookSignature(body, signature, timestamp);
     if (!isValid) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
@@ -39,11 +38,9 @@ export async function POST(request: NextRequest) {
       };
     };
 
-    // Handle different webhook event types
     if (payload.type === "applicantWorkflowCompleted") {
       const { applicantId, externalUserId, reviewResult } = payload;
 
-      // Fetch full applicant data for more details (for future use if needed)
       await getApplicantData(applicantId);
 
       const isApproved = reviewResult?.reviewAnswer === "GREEN";
@@ -53,14 +50,11 @@ export async function POST(request: NextRequest) {
         reviewResult?.clientComment ||
         "Verification rejected";
 
-      // Determine if this is a user (KYC) or organization (KYB) based on externalUserId
-      // Check if externalUserId matches a user ID or organization ID
       const user = await prisma.user.findUnique({
         where: { id: externalUserId },
       });
 
       if (user) {
-        // Update user KYC status
         await prisma.user.update({
           where: { id: externalUserId },
           data: {
@@ -75,21 +69,17 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // TODO: MAS-226 - Trigger Veridian credential issuance for approved KYC
         if (isApproved) {
-          // Placeholder for Veridian integration
           console.log(
             `[MAS-226] Trigger Veridian credential issuance for user ${externalUserId}`,
           );
         }
       } else {
-        // Check if it's an organization
         const organization = await prisma.organization.findUnique({
           where: { id: externalUserId },
         });
 
         if (organization) {
-          // Update organization KYB status
           await prisma.organization.update({
             where: { id: externalUserId },
             data: {
@@ -104,9 +94,7 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // TODO: MAS-226 - Trigger Veridian credential issuance for approved KYB
           if (isApproved) {
-            // Placeholder for Veridian integration
             console.log(
               `[MAS-226] Trigger Veridian credential issuance for organization ${externalUserId}`,
             );

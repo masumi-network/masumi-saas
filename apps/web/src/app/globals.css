@@ -159,6 +159,16 @@
     text-rendering: optimizeLegibility;
   }
 
+  ::selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  ::-moz-selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
   [role="dialog"],
   [data-radix-dialog-content] {
     overflow-x: hidden;
