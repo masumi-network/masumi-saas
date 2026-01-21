@@ -89,6 +89,12 @@
   .min-h-spinner {
     min-height: 400px;
   }
+  .min-h-sdk-container {
+    min-height: 600px;
+  }
+  .min-h-main-content {
+    min-height: calc(100svh - 64px);
+  }
   .max-w-search {
     max-width: 200px;
   }

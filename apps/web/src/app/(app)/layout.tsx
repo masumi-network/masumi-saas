@@ -34,7 +34,7 @@ export default async function AppLayout({
       <Sidebar session={authContext.session} />
       <div className="flex min-w-0 flex-1 flex-col overflow-clip">
         <Header />
-        <main className="max-w-container mx-auto w-full relative min-h-[calc(100svh-64px)] p-4">
+        <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
           <Suspense
             fallback={
               <Spinner

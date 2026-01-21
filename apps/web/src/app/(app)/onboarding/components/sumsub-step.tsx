@@ -74,7 +74,7 @@ export function SumsubStep({
       <div
         ref={containerRef}
         id="sumsub-websdk-container"
-        className="min-h-[600px] w-full"
+        className="min-h-sdk-container w-full"
       />
     </div>
   );
