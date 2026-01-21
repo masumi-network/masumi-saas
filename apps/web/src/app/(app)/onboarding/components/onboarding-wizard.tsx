@@ -157,7 +157,6 @@ export function OnboardingWizard({
                     accessToken={accessToken}
                     onComplete={handleVerificationComplete}
                     onError={handleVerificationError}
-                    onManualContinue={handleVerificationComplete}
                   />
                 )}
                 {currentStep === 3 && (

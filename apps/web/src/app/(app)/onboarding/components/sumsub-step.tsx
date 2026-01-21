@@ -2,6 +2,7 @@
 
 import snsWebSdk from "@sumsub/websdk";
 import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
@@ -10,14 +11,12 @@ interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
   onError: (error: string) => void;
-  onManualContinue?: () => void;
 }
 
 export function SumsubStep({
   accessToken,
   onComplete,
   onError,
-  onManualContinue,
 }: SumsubStepProps) {
   const t = useTranslations("App.Onboarding.Verification");
   const { resolvedTheme } = useTheme();
@@ -61,7 +60,7 @@ export function SumsubStep({
             console.error("Sumsub SDK error:", error);
             onError(error?.message || t("error"));
           })
-           
+
           .on("idCheck.onApplicantSubmitted", () => {
             setVerificationComplete(true);
           })
@@ -131,22 +130,15 @@ export function SumsubStep({
             id="sumsub-websdk-container"
             className="w-full rounded-lg overflow-hidden border border-border"
           />
-          {onManualContinue && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => {
-                  if (containerRef.current) {
-                    containerRef.current.style.display = "none";
-                  }
-                  onManualContinue();
-                }}
-                className="text-sm text-primary hover:underline"
-                type="button"
-              >
-                {t("continueManually")}
-              </button>
-            </div>
-          )}
+          <div className="flex justify-end">
+            <Link
+              href="https://www.masumi.network/contact"
+              target="_blank"
+              className="text-sm text-primary hover:underline"
+            >
+              {t("havingIssues")}
+            </Link>
+          </div>
         </>
       )}
     </div>

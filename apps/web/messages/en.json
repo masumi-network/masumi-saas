@@ -193,7 +193,7 @@
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
         "error": "An error occurred during verification. Please try again.",
-        "continueManually": "I've completed verification →",
+        "havingIssues": "I'm having issues →",
         "successTitle": "Your profile has been verified",
         "successMessage": "You may close this page"
       },
