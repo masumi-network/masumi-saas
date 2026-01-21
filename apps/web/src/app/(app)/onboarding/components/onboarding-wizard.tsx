@@ -121,7 +121,7 @@ export function OnboardingWizard({
                 <CardDescription>
                   {kycStatus === "REVIEW"
                     ? t("Completion.processingMessage")
-                    : rejectionReason || t("Completion.processingMessage")}
+                    : rejectionReason || t("Completion.rejectedMessage")}
                 </CardDescription>
               </CardHeader>
               <CardContent>

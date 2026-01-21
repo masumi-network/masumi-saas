@@ -44,14 +44,8 @@ export function CompletionStep({
 
   if (kycStatus === "REVIEW") {
     return (
-      <div className="space-y-6 text-center">
-        <div className="flex justify-center">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-        <div>
-          <h3 className="text-xl font-semibold">{t("processingTitle")}</h3>
-          <p className="text-muted-foreground mt-2">{t("processingMessage")}</p>
-        </div>
+      <div className="flex justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
@@ -112,17 +106,9 @@ export function CompletionStep({
           </Button>
         </>
       ) : (
-        <>
-          <div className="flex justify-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold">{t("processingTitle")}</h3>
-            <p className="text-muted-foreground mt-2">
-              {t("processingMessage")}
-            </p>
-          </div>
-        </>
+        <div className="flex justify-center">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
       )}
     </div>
   );
