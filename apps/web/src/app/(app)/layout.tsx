@@ -1,10 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner";
 import { getAuthContext } from "@/lib/auth/utils";
 
 import Header from "./components/header";
@@ -35,17 +33,7 @@ export default async function AppLayout({
       <div className="flex min-w-0 flex-1 flex-col overflow-clip">
         <Header />
         <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-          <Suspense
-            fallback={
-              <Spinner
-                size={24}
-                addContainer
-                containerClassName="min-h-spinner"
-              />
-            }
-          >
-            {children}
-          </Suspense>
+          {children}
         </main>
         <div className="max-w-container mx-auto w-full">
           <FooterSections className="p-4" />

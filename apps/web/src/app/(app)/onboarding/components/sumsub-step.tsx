@@ -1,11 +1,10 @@
 "use client";
 
 import snsWebSdk from "@sumsub/websdk";
-import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface SumsubStepProps {
   accessToken: string;
@@ -23,7 +22,6 @@ export function SumsubStep({
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sdkRef = useRef<any>(null);
-  const [verificationComplete, setVerificationComplete] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || !accessToken) return;
@@ -49,10 +47,7 @@ export function SumsubStep({
               payload?.actionId === "verificationCompleted" ||
               payload?.type === "verificationCompleted"
             ) {
-              if (containerRef.current) {
-                containerRef.current.style.display = "none";
-              }
-              setVerificationComplete(true);
+              onComplete();
             }
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,7 +57,7 @@ export function SumsubStep({
           })
 
           .on("idCheck.onApplicantSubmitted", () => {
-            setVerificationComplete(true);
+            onComplete();
           })
           .build();
 
@@ -111,36 +106,20 @@ export function SumsubStep({
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">{t("description")}</div>
-      {verificationComplete ? (
-        <div className="w-full rounded-lg border border-border bg-card p-8 text-center">
-          <div className="flex flex-col items-center space-y-4">
-            <ShieldCheck className="h-16 w-16 text-green-500" />
-            <div>
-              <h3 className="text-xl font-semibold">{t("successTitle")}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t("successMessage")}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div
-            ref={containerRef}
-            id="sumsub-websdk-container"
-            className="w-full rounded-lg overflow-hidden border border-border"
-          />
-          <div className="flex justify-end">
-            <Link
-              href="https://www.masumi.network/contact"
-              target="_blank"
-              className="text-sm text-primary hover:underline"
-            >
-              {t("havingIssues")}
-            </Link>
-          </div>
-        </>
-      )}
+      <div
+        ref={containerRef}
+        id="sumsub-websdk-container"
+        className="w-full rounded-lg overflow-hidden border border-border"
+      />
+      <div className="flex justify-end">
+        <Link
+          href="https://www.masumi.network/contact"
+          target="_blank"
+          className="text-sm text-primary hover:underline"
+        >
+          {t("havingIssues")}
+        </Link>
+      </div>
     </div>
   );
 }

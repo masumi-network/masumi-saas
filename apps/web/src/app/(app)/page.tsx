@@ -1,10 +1,14 @@
 import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
 import { getAuthContext } from "@/lib/auth/utils";
 
-import { KycStatusCard } from "./components/kyc-status-card";
+import {
+  UserProfileCard,
+  UserProfileCardSkeleton,
+} from "./components/user-profile-card";
 
 export default async function HomePage() {
   const authContext = await getAuthContext();
@@ -32,7 +36,9 @@ export default async function HomePage() {
             {t("signedInAs", { email: authContext.session.user.email || "" })}
           </p>
         </div>
-        <KycStatusCard />
+        <Suspense fallback={<UserProfileCardSkeleton />}>
+          <UserProfileCard />
+        </Suspense>
       </div>
     );
   }

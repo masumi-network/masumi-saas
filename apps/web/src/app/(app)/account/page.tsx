@@ -1,7 +1,12 @@
+import { Suspense } from "react";
+
 import { auth } from "@/lib/auth/auth";
 import { getRequestHeaders } from "@/lib/auth/utils";
 
-import { KycStatusCard } from "../components/kyc-status-card";
+import {
+  UserProfileCard,
+  UserProfileCardSkeleton,
+} from "../components/user-profile-card";
 import { AccountContent } from "./components/account-content";
 
 export default async function AccountPage() {
@@ -24,7 +29,11 @@ export default async function AccountPage() {
       <AccountContent
         accounts={accounts}
         user={session.user}
-        kycStatusCard={<KycStatusCard />}
+        userProfileCard={
+          <Suspense fallback={<UserProfileCardSkeleton />}>
+            <UserProfileCard />
+          </Suspense>
+        }
       />
     </div>
   );

@@ -116,17 +116,77 @@ export async function getApplicantData(applicantId: string) {
     );
   }
 
-  return (await response.json()) as {
+  const data = await response.json();
+
+  return data as {
     id: string;
     externalUserId: string;
-    reviewStatus: string;
-    reviewResult: {
-      reviewAnswer: "GREEN" | "RED";
-      reviewRejectType?: "FINAL" | "RETRY";
-      moderationComment?: string;
-      clientComment?: string;
+    review?: {
+      reviewStatus?: string;
+      reviewResult?: {
+        reviewAnswer: "GREEN" | "RED";
+        reviewRejectType?: "FINAL" | "RETRY";
+        moderationComment?: string;
+        clientComment?: string;
+      };
     };
     createdAt: string;
-    updatedAt: string;
+    updatedAt?: string;
+  };
+}
+
+/**
+ * Get applicant by externalUserId (fallback when webhook doesn't provide applicantId)
+ * @param externalUserId - Your internal user/org ID
+ */
+export async function getApplicantByExternalUserId(externalUserId: string) {
+  if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+    throw new Error("Sumsub credentials not configured");
+  }
+
+  const path = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
+  const url = `${SUMSUB_BASE_URL}${path}`;
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = crypto
+    .createHmac("sha256", SUMSUB_SECRET_KEY)
+    .update(`${timestamp}GET${path}`)
+    .digest("hex");
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "X-App-Token": SUMSUB_APP_TOKEN,
+      "X-App-Access-Ts": timestamp.toString(),
+      "X-App-Access-Sig": signature,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null;
+    }
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to get applicant by externalUserId: ${response.status} ${errorText}`,
+    );
+  }
+
+  const data = await response.json();
+
+  return data as {
+    id: string;
+    externalUserId: string;
+    review?: {
+      reviewStatus?: string;
+      reviewResult?: {
+        reviewAnswer: "GREEN" | "RED";
+        reviewRejectType?: "FINAL" | "RETRY";
+        moderationComment?: string;
+        clientComment?: string;
+      };
+    };
+    createdAt: string;
+    updatedAt?: string;
   };
 }

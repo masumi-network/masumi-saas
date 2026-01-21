@@ -1,6 +1,6 @@
-import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 
+import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthContextWithHeaders } from "@/lib/auth/utils";
 
 import { OnboardingWizard } from "./components/onboarding-wizard";
@@ -14,26 +14,24 @@ export default async function OnboardingPage() {
     redirect("/signin");
   }
 
-  const userWithKyc = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      kycStatus: true,
-      kycCompletedAt: true,
-      kycRejectionReason: true,
-    },
-  });
+  const result = await getKycStatusAction();
 
-  if (userWithKyc?.kycStatus === "APPROVED") {
+  if (!result.success || !result.data) {
+    redirect("/");
+  }
+
+  const { kycStatus, kycCompletedAt, kycRejectionReason } = result.data;
+
+  if (kycStatus === "APPROVED") {
     redirect("/");
   }
 
   return (
     <div>
       <OnboardingWizard
-        kycStatus={userWithKyc?.kycStatus || "PENDING"}
-        rejectionReason={userWithKyc?.kycRejectionReason}
-        kycCompletedAt={userWithKyc?.kycCompletedAt}
+        kycStatus={kycStatus as "PENDING" | "APPROVED" | "REJECTED" | "REVIEW"}
+        rejectionReason={kycRejectionReason}
+        kycCompletedAt={kycCompletedAt}
       />
     </div>
   );

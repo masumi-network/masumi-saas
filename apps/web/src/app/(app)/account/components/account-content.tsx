@@ -18,13 +18,13 @@ interface AccountContentProps {
     name: string | null;
     email: string | null;
   };
-  kycStatusCard: React.ReactNode;
+  userProfileCard: React.ReactNode;
 }
 
 export function AccountContent({
   accounts,
   user: _user,
-  kycStatusCard,
+  userProfileCard,
 }: AccountContentProps) {
   const t = useTranslations("App.Account");
 
@@ -42,7 +42,7 @@ export function AccountContent({
       </div>
 
       <div className="max-w-3xl space-y-8">
-        {kycStatusCard}
+        {userProfileCard}
 
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
           <NameForm />
