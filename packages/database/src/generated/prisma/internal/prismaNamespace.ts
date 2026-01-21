@@ -1191,6 +1191,11 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
+  kycStatus: "kycStatus",
+  sumsubApplicantId: "sumsubApplicantId",
+  kycCompletedAt: "kycCompletedAt",
+  kycRejectionReason: "kycRejectionReason",
+  veridianCredentialId: "veridianCredentialId",
 } as const;
 
 export type UserScalarFieldEnum =
@@ -1251,6 +1256,11 @@ export const OrganizationScalarFieldEnum = {
   createdAt: "createdAt",
   stripeCustomerId: "stripeCustomerId",
   invoiceEmail: "invoiceEmail",
+  kybStatus: "kybStatus",
+  sumsubApplicantId: "sumsubApplicantId",
+  kybCompletedAt: "kybCompletedAt",
+  kybRejectionReason: "kybRejectionReason",
+  veridianCredentialId: "veridianCredentialId",
 } as const;
 
 export type OrganizationScalarFieldEnum =
@@ -1378,6 +1388,22 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
   "DateTime[]"
+>;
+
+/**
+ * Reference to a field of type 'KycStatus'
+ */
+export type EnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "KycStatus"
+>;
+
+/**
+ * Reference to a field of type 'KycStatus[]'
+ */
+export type ListEnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "KycStatus[]"
 >;
 
 /**

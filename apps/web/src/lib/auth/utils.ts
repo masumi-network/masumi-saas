@@ -55,5 +55,9 @@ export async function getAuthenticatedHeaders() {
     throw new Error("Unauthorized");
   }
 
-  return headersList;
+  return {
+    headers: headersList,
+    user: session.user,
+    session,
+  };
 }

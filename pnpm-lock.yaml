@@ -6,6 +6,10 @@ settings:
 
 importers:
   .:
+    dependencies:
+      "@sumsub/websdk":
+        specifier: ^2.6.1
+        version: 2.6.1
     devDependencies:
       eslint:
         specifier: 9.39.1
@@ -76,6 +80,9 @@ importers:
       "@sentry/nextjs":
         specifier: 10.27.0
         version: 10.27.0(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(webpack@5.104.1)
+      "@sumsub/websdk":
+        specifier: ^2.6.1
+        version: 2.6.1
       better-auth:
         specifier: 1.4.4
         version: 1.4.4(next@16.0.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -3141,6 +3148,12 @@ packages:
     resolution:
       {
         integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==,
+      }
+
+  "@sumsub/websdk@2.6.1":
+    resolution:
+      {
+        integrity: sha512-4NGJa0o1FnZR0IhayPvUwoW2N3wCXrsajnysJFgdsrnv0rSn3hB8CVAJgoxoeAc7AZjCordgXSTLLDiJfgOqlw==,
       }
 
   "@swc/core-darwin-arm64@1.15.7":
@@ -10186,6 +10199,8 @@ snapshots:
   "@standard-schema/spec@1.1.0": {}
 
   "@standard-schema/utils@0.3.0": {}
+
+  "@sumsub/websdk@2.6.1": {}
 
   "@swc/core-darwin-arm64@1.15.7":
     optional: true

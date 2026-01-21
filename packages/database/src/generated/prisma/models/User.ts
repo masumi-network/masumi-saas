@@ -37,6 +37,11 @@ export type UserMinAggregateOutputType = {
   marketingOptIn: boolean | null;
   onboardingCompleted: boolean | null;
   stripeCustomerId: string | null;
+  kycStatus: $Enums.KycStatus | null;
+  sumsubApplicantId: string | null;
+  kycCompletedAt: Date | null;
+  kycRejectionReason: string | null;
+  veridianCredentialId: string | null;
 };
 
 export type UserMaxAggregateOutputType = {
@@ -52,6 +57,11 @@ export type UserMaxAggregateOutputType = {
   marketingOptIn: boolean | null;
   onboardingCompleted: boolean | null;
   stripeCustomerId: string | null;
+  kycStatus: $Enums.KycStatus | null;
+  sumsubApplicantId: string | null;
+  kycCompletedAt: Date | null;
+  kycRejectionReason: string | null;
+  veridianCredentialId: string | null;
 };
 
 export type UserCountAggregateOutputType = {
@@ -67,6 +77,11 @@ export type UserCountAggregateOutputType = {
   marketingOptIn: number;
   onboardingCompleted: number;
   stripeCustomerId: number;
+  kycStatus: number;
+  sumsubApplicantId: number;
+  kycCompletedAt: number;
+  kycRejectionReason: number;
+  veridianCredentialId: number;
   _all: number;
 };
 
@@ -83,6 +98,11 @@ export type UserMinAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  kycStatus?: true;
+  sumsubApplicantId?: true;
+  kycCompletedAt?: true;
+  kycRejectionReason?: true;
+  veridianCredentialId?: true;
 };
 
 export type UserMaxAggregateInputType = {
@@ -98,6 +118,11 @@ export type UserMaxAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  kycStatus?: true;
+  sumsubApplicantId?: true;
+  kycCompletedAt?: true;
+  kycRejectionReason?: true;
+  veridianCredentialId?: true;
 };
 
 export type UserCountAggregateInputType = {
@@ -113,6 +138,11 @@ export type UserCountAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  kycStatus?: true;
+  sumsubApplicantId?: true;
+  kycCompletedAt?: true;
+  kycRejectionReason?: true;
+  veridianCredentialId?: true;
   _all?: true;
 };
 
@@ -208,6 +238,11 @@ export type UserGroupByOutputType = {
   marketingOptIn: boolean;
   onboardingCompleted: boolean;
   stripeCustomerId: string | null;
+  kycStatus: $Enums.KycStatus;
+  sumsubApplicantId: string | null;
+  kycCompletedAt: Date | null;
+  kycRejectionReason: string | null;
+  veridianCredentialId: string | null;
   _count: UserCountAggregateOutputType | null;
   _min: UserMinAggregateOutputType | null;
   _max: UserMaxAggregateOutputType | null;
@@ -241,6 +276,11 @@ export type UserWhereInput = {
   marketingOptIn?: Prisma.BoolFilter<"User"> | boolean;
   onboardingCompleted?: Prisma.BoolFilter<"User"> | boolean;
   stripeCustomerId?: Prisma.StringNullableFilter<"User"> | string | null;
+  kycStatus?: Prisma.EnumKycStatusFilter<"User"> | $Enums.KycStatus;
+  sumsubApplicantId?: Prisma.StringNullableFilter<"User"> | string | null;
+  kycCompletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+  kycRejectionReason?: Prisma.StringNullableFilter<"User"> | string | null;
+  veridianCredentialId?: Prisma.StringNullableFilter<"User"> | string | null;
   sessions?: Prisma.SessionListRelationFilter;
   accounts?: Prisma.AccountListRelationFilter;
   members?: Prisma.MemberListRelationFilter;
@@ -261,6 +301,11 @@ export type UserOrderByWithRelationInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycRejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   sessions?: Prisma.SessionOrderByRelationAggregateInput;
   accounts?: Prisma.AccountOrderByRelationAggregateInput;
   members?: Prisma.MemberOrderByRelationAggregateInput;
@@ -285,6 +330,15 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     termsAccepted?: Prisma.BoolFilter<"User"> | boolean;
     marketingOptIn?: Prisma.BoolFilter<"User"> | boolean;
     onboardingCompleted?: Prisma.BoolFilter<"User"> | boolean;
+    kycStatus?: Prisma.EnumKycStatusFilter<"User"> | $Enums.KycStatus;
+    sumsubApplicantId?: Prisma.StringNullableFilter<"User"> | string | null;
+    kycCompletedAt?:
+      | Prisma.DateTimeNullableFilter<"User">
+      | Date
+      | string
+      | null;
+    kycRejectionReason?: Prisma.StringNullableFilter<"User"> | string | null;
+    veridianCredentialId?: Prisma.StringNullableFilter<"User"> | string | null;
     sessions?: Prisma.SessionListRelationFilter;
     accounts?: Prisma.AccountListRelationFilter;
     members?: Prisma.MemberListRelationFilter;
@@ -307,6 +361,11 @@ export type UserOrderByWithAggregationInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kycRejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.UserCountOrderByAggregateInput;
   _max?: Prisma.UserMaxOrderByAggregateInput;
   _min?: Prisma.UserMinOrderByAggregateInput;
@@ -335,6 +394,26 @@ export type UserScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"User">
     | string
     | null;
+  kycStatus?:
+    | Prisma.EnumKycStatusWithAggregatesFilter<"User">
+    | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.StringNullableWithAggregatesFilter<"User">
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.DateTimeNullableWithAggregatesFilter<"User">
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.StringNullableWithAggregatesFilter<"User">
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.StringNullableWithAggregatesFilter<"User">
+    | string
+    | null;
 };
 
 export type UserCreateInput = {
@@ -350,6 +429,11 @@ export type UserCreateInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -370,6 +454,11 @@ export type UserUncheckedCreateInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -390,6 +479,24 @@ export type UserUpdateInput = {
   marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -416,6 +523,24 @@ export type UserUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -436,6 +561,11 @@ export type UserCreateManyInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
 };
 
 export type UserUpdateManyMutationInput = {
@@ -451,6 +581,24 @@ export type UserUpdateManyMutationInput = {
   marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -472,6 +620,24 @@ export type UserUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
 };
 
 export type UserCountOrderByAggregateInput = {
@@ -487,6 +653,11 @@ export type UserCountOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  kycStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kycCompletedAt?: Prisma.SortOrder;
+  kycRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type UserMaxOrderByAggregateInput = {
@@ -502,6 +673,11 @@ export type UserMaxOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  kycStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kycCompletedAt?: Prisma.SortOrder;
+  kycRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type UserMinOrderByAggregateInput = {
@@ -517,6 +693,11 @@ export type UserMinOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  kycStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kycCompletedAt?: Prisma.SortOrder;
+  kycRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type UserScalarRelationFilter = {
@@ -538,6 +719,14 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string;
+};
+
+export type EnumKycStatusFieldUpdateOperationsInput = {
+  set?: $Enums.KycStatus;
+};
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null;
 };
 
 export type UserCreateNestedOneWithoutSessionsInput = {
@@ -683,6 +872,11 @@ export type UserCreateWithoutSessionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -702,6 +896,11 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
@@ -752,6 +951,24 @@ export type UserUpdateWithoutSessionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -774,6 +991,24 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
@@ -793,6 +1028,11 @@ export type UserCreateWithoutAccountsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -812,6 +1052,11 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
@@ -862,6 +1107,24 @@ export type UserUpdateWithoutAccountsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -884,6 +1147,24 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
@@ -903,6 +1184,11 @@ export type UserCreateWithoutMembersInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -922,6 +1208,11 @@ export type UserUncheckedCreateWithoutMembersInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
@@ -972,6 +1263,24 @@ export type UserUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -994,6 +1303,24 @@ export type UserUncheckedUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
@@ -1013,6 +1340,11 @@ export type UserCreateWithoutInvitationsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1032,6 +1364,11 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -1082,6 +1419,24 @@ export type UserUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1104,6 +1459,24 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -1123,6 +1496,11 @@ export type UserCreateWithoutApikeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1142,6 +1520,11 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  kycStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kycCompletedAt?: Date | string | null;
+  kycRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -1192,6 +1575,24 @@ export type UserUpdateWithoutApikeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1211,6 +1612,24 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kycCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kycRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -1323,6 +1742,11 @@ export type UserSelect<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    kycStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kycCompletedAt?: boolean;
+    kycRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
     sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
     accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
     members?: boolean | Prisma.User$membersArgs<ExtArgs>;
@@ -1350,6 +1774,11 @@ export type UserSelectCreateManyAndReturn<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    kycStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kycCompletedAt?: boolean;
+    kycRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
   },
   ExtArgs["result"]["user"]
 >;
@@ -1371,6 +1800,11 @@ export type UserSelectUpdateManyAndReturn<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    kycStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kycCompletedAt?: boolean;
+    kycRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
   },
   ExtArgs["result"]["user"]
 >;
@@ -1388,6 +1822,11 @@ export type UserSelectScalar = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: boolean;
+  kycStatus?: boolean;
+  sumsubApplicantId?: boolean;
+  kycCompletedAt?: boolean;
+  kycRejectionReason?: boolean;
+  veridianCredentialId?: boolean;
 };
 
 export type UserOmit<
@@ -1405,7 +1844,12 @@ export type UserOmit<
   | "termsAccepted"
   | "marketingOptIn"
   | "onboardingCompleted"
-  | "stripeCustomerId",
+  | "stripeCustomerId"
+  | "kycStatus"
+  | "sumsubApplicantId"
+  | "kycCompletedAt"
+  | "kycRejectionReason"
+  | "veridianCredentialId",
   ExtArgs["result"]["user"]
 >;
 export type UserInclude<
@@ -1454,6 +1898,11 @@ export type $UserPayload<
       marketingOptIn: boolean;
       onboardingCompleted: boolean;
       stripeCustomerId: string | null;
+      kycStatus: $Enums.KycStatus;
+      sumsubApplicantId: string | null;
+      kycCompletedAt: Date | null;
+      kycRejectionReason: string | null;
+      veridianCredentialId: string | null;
     },
     ExtArgs["result"]["user"]
   >;
@@ -2113,6 +2562,11 @@ export interface UserFieldRefs {
   readonly marketingOptIn: Prisma.FieldRef<"User", "Boolean">;
   readonly onboardingCompleted: Prisma.FieldRef<"User", "Boolean">;
   readonly stripeCustomerId: Prisma.FieldRef<"User", "String">;
+  readonly kycStatus: Prisma.FieldRef<"User", "KycStatus">;
+  readonly sumsubApplicantId: Prisma.FieldRef<"User", "String">;
+  readonly kycCompletedAt: Prisma.FieldRef<"User", "DateTime">;
+  readonly kycRejectionReason: Prisma.FieldRef<"User", "String">;
+  readonly veridianCredentialId: Prisma.FieldRef<"User", "String">;
 }
 
 // Custom InputTypes

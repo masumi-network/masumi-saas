@@ -36,5 +36,8 @@
     "lint-staged": "^16.2.7",
     "prettier": "3.7.3",
     "typescript-eslint": "8.48.0"
+  },
+  "dependencies": {
+    "@sumsub/websdk": "^2.6.1"
   }
 }

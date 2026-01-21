@@ -8,5 +8,11 @@
  * 🟢 You can import this file directly.
  */
 
-// This file is empty because there are no enums in the schema.
-export {};
+export const KycStatus = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  REVIEW: "REVIEW",
+} as const;
+
+export type KycStatus = (typeof KycStatus)[keyof typeof KycStatus];

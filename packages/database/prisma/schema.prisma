@@ -32,6 +32,13 @@ model User {
   onboardingCompleted Boolean @default(false)
   stripeCustomerId String?
 
+  // KYC fields
+  kycStatus KycStatus @default(PENDING)
+  sumsubApplicantId String?
+  kycCompletedAt DateTime?
+  kycRejectionReason String?
+  veridianCredentialId String? // Placeholder for MAS-226
+
   @@unique([email])
   @@unique([stripeCustomerId])
   @@map("user")
@@ -97,6 +104,13 @@ model Organization {
 
   stripeCustomerId String?
   invoiceEmail     String?
+
+  // KYB fields
+  kybStatus KycStatus @default(PENDING)
+  sumsubApplicantId String?
+  kybCompletedAt DateTime?
+  kybRejectionReason String?
+  veridianCredentialId String? // Placeholder for MAS-226
 
   @@unique([slug])
   @@unique([stripeCustomerId])
@@ -164,3 +178,9 @@ model RateLimit {
   @@map("rateLimit")
 }
 
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVIEW
+}

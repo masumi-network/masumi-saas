@@ -33,6 +33,11 @@ export type OrganizationMinAggregateOutputType = {
   createdAt: Date | null;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybStatus: $Enums.KycStatus | null;
+  sumsubApplicantId: string | null;
+  kybCompletedAt: Date | null;
+  kybRejectionReason: string | null;
+  veridianCredentialId: string | null;
 };
 
 export type OrganizationMaxAggregateOutputType = {
@@ -44,6 +49,11 @@ export type OrganizationMaxAggregateOutputType = {
   createdAt: Date | null;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybStatus: $Enums.KycStatus | null;
+  sumsubApplicantId: string | null;
+  kybCompletedAt: Date | null;
+  kybRejectionReason: string | null;
+  veridianCredentialId: string | null;
 };
 
 export type OrganizationCountAggregateOutputType = {
@@ -55,6 +65,11 @@ export type OrganizationCountAggregateOutputType = {
   createdAt: number;
   stripeCustomerId: number;
   invoiceEmail: number;
+  kybStatus: number;
+  sumsubApplicantId: number;
+  kybCompletedAt: number;
+  kybRejectionReason: number;
+  veridianCredentialId: number;
   _all: number;
 };
 
@@ -67,6 +82,11 @@ export type OrganizationMinAggregateInputType = {
   createdAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybStatus?: true;
+  sumsubApplicantId?: true;
+  kybCompletedAt?: true;
+  kybRejectionReason?: true;
+  veridianCredentialId?: true;
 };
 
 export type OrganizationMaxAggregateInputType = {
@@ -78,6 +98,11 @@ export type OrganizationMaxAggregateInputType = {
   createdAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybStatus?: true;
+  sumsubApplicantId?: true;
+  kybCompletedAt?: true;
+  kybRejectionReason?: true;
+  veridianCredentialId?: true;
 };
 
 export type OrganizationCountAggregateInputType = {
@@ -89,6 +114,11 @@ export type OrganizationCountAggregateInputType = {
   createdAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybStatus?: true;
+  sumsubApplicantId?: true;
+  kybCompletedAt?: true;
+  kybRejectionReason?: true;
+  veridianCredentialId?: true;
   _all?: true;
 };
 
@@ -181,6 +211,11 @@ export type OrganizationGroupByOutputType = {
   createdAt: Date;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybStatus: $Enums.KycStatus;
+  sumsubApplicantId: string | null;
+  kybCompletedAt: Date | null;
+  kybRejectionReason: string | null;
+  veridianCredentialId: string | null;
   _count: OrganizationCountAggregateOutputType | null;
   _min: OrganizationMinAggregateOutputType | null;
   _max: OrganizationMaxAggregateOutputType | null;
@@ -214,6 +249,24 @@ export type OrganizationWhereInput = {
     | string
     | null;
   invoiceEmail?: Prisma.StringNullableFilter<"Organization"> | string | null;
+  kybStatus?: Prisma.EnumKycStatusFilter<"Organization"> | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.StringNullableFilter<"Organization">
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.DateTimeNullableFilter<"Organization">
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.StringNullableFilter<"Organization">
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.StringNullableFilter<"Organization">
+    | string
+    | null;
   members?: Prisma.MemberListRelationFilter;
   invitations?: Prisma.InvitationListRelationFilter;
 };
@@ -227,6 +280,11 @@ export type OrganizationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybRejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   members?: Prisma.MemberOrderByRelationAggregateInput;
   invitations?: Prisma.InvitationOrderByRelationAggregateInput;
 };
@@ -244,6 +302,24 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     metadata?: Prisma.StringNullableFilter<"Organization"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string;
     invoiceEmail?: Prisma.StringNullableFilter<"Organization"> | string | null;
+    kybStatus?: Prisma.EnumKycStatusFilter<"Organization"> | $Enums.KycStatus;
+    sumsubApplicantId?:
+      | Prisma.StringNullableFilter<"Organization">
+      | string
+      | null;
+    kybCompletedAt?:
+      | Prisma.DateTimeNullableFilter<"Organization">
+      | Date
+      | string
+      | null;
+    kybRejectionReason?:
+      | Prisma.StringNullableFilter<"Organization">
+      | string
+      | null;
+    veridianCredentialId?:
+      | Prisma.StringNullableFilter<"Organization">
+      | string
+      | null;
     members?: Prisma.MemberListRelationFilter;
     invitations?: Prisma.InvitationListRelationFilter;
   },
@@ -259,6 +335,11 @@ export type OrganizationOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybRejectionReason?: Prisma.SortOrderInput | Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.OrganizationCountOrderByAggregateInput;
   _max?: Prisma.OrganizationMaxOrderByAggregateInput;
   _min?: Prisma.OrganizationMinOrderByAggregateInput;
@@ -295,6 +376,26 @@ export type OrganizationScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"Organization">
     | string
     | null;
+  kybStatus?:
+    | Prisma.EnumKycStatusWithAggregatesFilter<"Organization">
+    | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.StringNullableWithAggregatesFilter<"Organization">
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.DateTimeNullableWithAggregatesFilter<"Organization">
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.StringNullableWithAggregatesFilter<"Organization">
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.StringNullableWithAggregatesFilter<"Organization">
+    | string
+    | null;
 };
 
 export type OrganizationCreateInput = {
@@ -306,6 +407,11 @@ export type OrganizationCreateInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
 };
@@ -319,6 +425,11 @@ export type OrganizationUncheckedCreateInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
 };
@@ -335,6 +446,24 @@ export type OrganizationUpdateInput = {
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -357,6 +486,24 @@ export type OrganizationUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
@@ -370,6 +517,11 @@ export type OrganizationCreateManyInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
 };
 
 export type OrganizationUpdateManyMutationInput = {
@@ -384,6 +536,24 @@ export type OrganizationUpdateManyMutationInput = {
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -404,6 +574,24 @@ export type OrganizationUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
 };
 
 export type OrganizationCountOrderByAggregateInput = {
@@ -415,6 +603,11 @@ export type OrganizationCountOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kybCompletedAt?: Prisma.SortOrder;
+  kybRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type OrganizationMaxOrderByAggregateInput = {
@@ -426,6 +619,11 @@ export type OrganizationMaxOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kybCompletedAt?: Prisma.SortOrder;
+  kybRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type OrganizationMinOrderByAggregateInput = {
@@ -437,6 +635,11 @@ export type OrganizationMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybStatus?: Prisma.SortOrder;
+  sumsubApplicantId?: Prisma.SortOrder;
+  kybCompletedAt?: Prisma.SortOrder;
+  kybRejectionReason?: Prisma.SortOrder;
+  veridianCredentialId?: Prisma.SortOrder;
 };
 
 export type OrganizationScalarRelationFilter = {
@@ -505,6 +708,11 @@ export type OrganizationCreateWithoutMembersInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -517,6 +725,11 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -563,6 +776,24 @@ export type OrganizationUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
 };
 
@@ -581,6 +812,24 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
@@ -593,6 +842,11 @@ export type OrganizationCreateWithoutInvitationsInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -605,6 +859,11 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   createdAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybStatus?: $Enums.KycStatus;
+  sumsubApplicantId?: string | null;
+  kybCompletedAt?: Date | string | null;
+  kybRejectionReason?: string | null;
+  veridianCredentialId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -651,6 +910,24 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
 };
 
@@ -666,6 +943,24 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybCompletedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  kybRejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -735,6 +1030,11 @@ export type OrganizationSelect<
     createdAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kybCompletedAt?: boolean;
+    kybRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
     members?: boolean | Prisma.Organization$membersArgs<ExtArgs>;
     invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
@@ -755,6 +1055,11 @@ export type OrganizationSelectCreateManyAndReturn<
     createdAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kybCompletedAt?: boolean;
+    kybRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
   },
   ExtArgs["result"]["organization"]
 >;
@@ -772,6 +1077,11 @@ export type OrganizationSelectUpdateManyAndReturn<
     createdAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybStatus?: boolean;
+    sumsubApplicantId?: boolean;
+    kybCompletedAt?: boolean;
+    kybRejectionReason?: boolean;
+    veridianCredentialId?: boolean;
   },
   ExtArgs["result"]["organization"]
 >;
@@ -785,6 +1095,11 @@ export type OrganizationSelectScalar = {
   createdAt?: boolean;
   stripeCustomerId?: boolean;
   invoiceEmail?: boolean;
+  kybStatus?: boolean;
+  sumsubApplicantId?: boolean;
+  kybCompletedAt?: boolean;
+  kybRejectionReason?: boolean;
+  veridianCredentialId?: boolean;
 };
 
 export type OrganizationOmit<
@@ -798,7 +1113,12 @@ export type OrganizationOmit<
   | "metadata"
   | "createdAt"
   | "stripeCustomerId"
-  | "invoiceEmail",
+  | "invoiceEmail"
+  | "kybStatus"
+  | "sumsubApplicantId"
+  | "kybCompletedAt"
+  | "kybRejectionReason"
+  | "veridianCredentialId",
   ExtArgs["result"]["organization"]
 >;
 export type OrganizationInclude<
@@ -837,6 +1157,11 @@ export type $OrganizationPayload<
       createdAt: Date;
       stripeCustomerId: string | null;
       invoiceEmail: string | null;
+      kybStatus: $Enums.KycStatus;
+      sumsubApplicantId: string | null;
+      kybCompletedAt: Date | null;
+      kybRejectionReason: string | null;
+      veridianCredentialId: string | null;
     },
     ExtArgs["result"]["organization"]
   >;
@@ -1465,6 +1790,11 @@ export interface OrganizationFieldRefs {
   readonly createdAt: Prisma.FieldRef<"Organization", "DateTime">;
   readonly stripeCustomerId: Prisma.FieldRef<"Organization", "String">;
   readonly invoiceEmail: Prisma.FieldRef<"Organization", "String">;
+  readonly kybStatus: Prisma.FieldRef<"Organization", "KycStatus">;
+  readonly sumsubApplicantId: Prisma.FieldRef<"Organization", "String">;
+  readonly kybCompletedAt: Prisma.FieldRef<"Organization", "DateTime">;
+  readonly kybRejectionReason: Prisma.FieldRef<"Organization", "String">;
+  readonly veridianCredentialId: Prisma.FieldRef<"Organization", "String">;
 }
 
 // Custom InputTypes
