@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 
 import { getAuthContext } from "@/lib/auth/utils";
 
+import { KycStatusCard } from "./components/kyc-status-card";
+
 export default async function HomePage() {
   const authContext = await getAuthContext();
   const t = await getTranslations("App.Home");
@@ -16,9 +18,23 @@ export default async function HomePage() {
       },
     });
 
+    // Only redirect to onboarding if KYC hasn't been started (PENDING)
+    // REVIEW and REJECTED statuses can access the dashboard
     if (user?.kycStatus === "PENDING") {
       redirect("/onboarding");
     }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">{t("welcome")}</h1>
+          <p className="text-muted-foreground">
+            {t("signedInAs", { email: authContext.session.user.email || "" })}
+          </p>
+        </div>
+        <KycStatusCard />
+      </div>
+    );
   }
 
   return (

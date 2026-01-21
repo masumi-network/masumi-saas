@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { getRequestHeaders } from "@/lib/auth/utils";
 
+import { KycStatusCard } from "../components/kyc-status-card";
 import { AccountContent } from "./components/account-content";
 
 export default async function AccountPage() {
@@ -20,7 +21,11 @@ export default async function AccountPage() {
 
   return (
     <div>
-      <AccountContent accounts={accounts} user={session.user} />
+      <AccountContent
+        accounts={accounts}
+        user={session.user}
+        kycStatusCard={<KycStatusCard />}
+      />
     </div>
   );
 }

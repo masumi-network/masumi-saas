@@ -78,7 +78,28 @@
   "App": {
     "Home": {
       "welcome": "Welcome",
-      "signedInAs": "You are signed in as {email}"
+      "signedInAs": "You are signed in as {email}",
+      "KycStatus": {
+        "pending": {
+          "title": "Identity Verification Required",
+          "description": "Complete your identity verification to unlock full access to Masumi.",
+          "action": "Start Verification"
+        },
+        "review": {
+          "title": "Verification Under Review",
+          "description": "Your identity verification is being processed. We'll notify you once it's complete."
+        },
+        "approved": {
+          "title": "Identity Verified",
+          "description": "Your identity has been successfully verified.",
+          "descriptionWithDate": "Your identity was verified on {date}."
+        },
+        "rejected": {
+          "title": "Verification Rejected",
+          "description": "Your verification was rejected. Please review the reason and try again.",
+          "action": "Retry Verification"
+        }
+      }
     },
     "Sidebar": {
       "MenuItems": {
@@ -171,14 +192,18 @@
       },
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
-        "error": "An error occurred during verification. Please try again."
+        "error": "An error occurred during verification. Please try again.",
+        "continueManually": "I've completed verification →"
       },
       "Completion": {
         "successTitle": "Verification Submitted",
         "successMessage": "Your verification has been submitted successfully. We'll review it and notify you once it's complete.",
         "processingTitle": "Processing Verification",
         "processingMessage": "Your verification is being processed. This may take a few moments.",
-        "continueButton": "Continue to Dashboard"
+        "continueButton": "Continue to Dashboard",
+        "rejectedTitle": "Verification Rejected",
+        "rejectedMessage": "Your verification was rejected. Please review the reason above and try again.",
+        "retryButton": "Try Again"
       }
     },
     "Account": {

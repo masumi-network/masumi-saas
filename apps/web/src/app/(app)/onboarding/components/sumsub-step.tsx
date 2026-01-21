@@ -9,12 +9,14 @@ interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
   onError: (error: string) => void;
+  onManualContinue?: () => void;
 }
 
 export function SumsubStep({
   accessToken,
   onComplete,
   onError,
+  onManualContinue,
 }: SumsubStepProps) {
   const t = useTranslations("App.Onboarding.Verification");
   const { resolvedTheme } = useTheme();
@@ -42,6 +44,16 @@ export function SumsubStep({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .on("idCheck.onStepCompleted", (payload: any) => {
             console.log("Step completed:", payload);
+            // Check if this is the final step (verification complete)
+            // The payload might indicate completion status
+            if (
+              payload?.reviewStatus === "completed" ||
+              payload?.actionId === "verificationCompleted" ||
+              payload?.type === "verificationCompleted"
+            ) {
+              console.log("Verification completed via onStepCompleted");
+              onComplete();
+            }
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .on("idCheck.onError", (error: any) => {
@@ -49,7 +61,9 @@ export function SumsubStep({
             onError(error?.message || t("error"));
           })
           .on("idCheck.onApplicantSubmitted", () => {
-            console.log("Applicant submitted");
+            console.log("Applicant submitted - moving to completion step");
+            // When applicant submits, move to completion step
+            // The actual approval/rejection will come via webhook
             onComplete();
           })
           .build();
@@ -111,6 +125,17 @@ export function SumsubStep({
         id="sumsub-websdk-container"
         className="w-full rounded-lg overflow-hidden border border-border"
       />
+      {onManualContinue && (
+        <div className="flex justify-end">
+          <button
+            onClick={onManualContinue}
+            className="text-sm text-primary hover:underline"
+            type="button"
+          >
+            {t("continueManually")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

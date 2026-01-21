@@ -13,7 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Steps } from "@/components/ui/steps";
-import { generateKycAccessTokenAction } from "@/lib/actions/kyc.action";
+import {
+  generateKycAccessTokenAction,
+  markKycAsSubmittedAction,
+} from "@/lib/actions/kyc.action";
 
 import { CompletionStep } from "./completion-step";
 import { IntroStep } from "./intro-step";
@@ -73,7 +76,9 @@ export function OnboardingWizard({
     }
   };
 
-  const handleVerificationComplete = () => {
+  const handleVerificationComplete = async () => {
+    // Mark KYC as submitted immediately
+    await markKycAsSubmittedAction();
     setVerificationCompleted(true);
     setCurrentStep(3);
     setTimeout(() => {
@@ -85,6 +90,9 @@ export function OnboardingWizard({
     toast.error(error || t("errors.verificationFailed"));
   };
 
+  const isVerificationSubmitted =
+    kycStatus === "REVIEW" || kycStatus === "REJECTED";
+
   return (
     <div className="w-full space-y-12 px-2">
       <div className="space-y-2">
@@ -95,37 +103,68 @@ export function OnboardingWizard({
       </div>
 
       <div className="max-w-3xl space-y-8">
-        <Steps currentStep={currentStep} steps={steps} />
+        {!isVerificationSubmitted && (
+          <Steps currentStep={currentStep} steps={steps} />
+        )}
 
         <Card>
-          <CardHeader>
-            <CardTitle>{steps[currentStep - 1]?.title}</CardTitle>
-            <CardDescription>
-              {steps[currentStep - 1]?.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {currentStep === 1 && (
-              <IntroStep
-                consentAccepted={consentAccepted}
-                onConsentChange={setConsentAccepted}
-                onStart={handleStartVerification}
-                isLoading={isLoadingToken}
-                kycStatus={kycStatus}
-                rejectionReason={rejectionReason}
-              />
-            )}
-            {currentStep === 2 && accessToken && (
-              <SumsubStep
-                accessToken={accessToken}
-                onComplete={handleVerificationComplete}
-                onError={handleVerificationError}
-              />
-            )}
-            {currentStep === 3 && (
-              <CompletionStep verificationCompleted={verificationCompleted} />
-            )}
-          </CardContent>
+          {isVerificationSubmitted ? (
+            <>
+              <CardHeader>
+                <CardTitle>
+                  {kycStatus === "REVIEW"
+                    ? t("Completion.processingTitle")
+                    : t("Intro.rejectionTitle")}
+                </CardTitle>
+                <CardDescription>
+                  {kycStatus === "REVIEW"
+                    ? t("Completion.processingMessage")
+                    : rejectionReason || t("Completion.processingMessage")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CompletionStep
+                  verificationCompleted={kycStatus === "REVIEW"}
+                  kycStatus={kycStatus}
+                  rejectionReason={rejectionReason}
+                />
+              </CardContent>
+            </>
+          ) : (
+            <>
+              <CardHeader>
+                <CardTitle>{steps[currentStep - 1]?.title}</CardTitle>
+                <CardDescription>
+                  {steps[currentStep - 1]?.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentStep === 1 && (
+                  <IntroStep
+                    consentAccepted={consentAccepted}
+                    onConsentChange={setConsentAccepted}
+                    onStart={handleStartVerification}
+                    isLoading={isLoadingToken}
+                    kycStatus={kycStatus}
+                    rejectionReason={rejectionReason}
+                  />
+                )}
+                {currentStep === 2 && accessToken && (
+                  <SumsubStep
+                    accessToken={accessToken}
+                    onComplete={handleVerificationComplete}
+                    onError={handleVerificationError}
+                    onManualContinue={handleVerificationComplete}
+                  />
+                )}
+                {currentStep === 3 && (
+                  <CompletionStep
+                    verificationCompleted={verificationCompleted}
+                  />
+                )}
+              </CardContent>
+            </>
+          )}
         </Card>
       </div>
     </div>
