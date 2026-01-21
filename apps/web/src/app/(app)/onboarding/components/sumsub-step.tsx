@@ -4,8 +4,6 @@ import snsWebSdk from "@sumsub/websdk";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
-import { Spinner } from "@/components/ui/spinner";
-
 interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
@@ -78,11 +76,6 @@ export function SumsubStep({
         id="sumsub-websdk-container"
         className="min-h-[600px] w-full"
       />
-      {!containerRef.current && (
-        <div className="flex items-center justify-center py-8">
-          <Spinner size={24} />
-        </div>
-      )}
     </div>
   );
 }

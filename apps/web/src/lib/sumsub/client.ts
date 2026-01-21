@@ -27,12 +27,13 @@ export async function generateSumsubAccessToken(
     throw new Error("Sumsub credentials not configured");
   }
 
-  const url = `${SUMSUB_BASE_URL}/resources/accessTokens?userId=${encodeURIComponent(externalUserId)}&levelName=${encodeURIComponent(levelName)}&ttlInSecs=${ttlInSecs}`;
+  const path = `/resources/accessTokens?userId=${encodeURIComponent(externalUserId)}&levelName=${encodeURIComponent(levelName)}&ttlInSecs=${ttlInSecs}`;
+  const url = `${SUMSUB_BASE_URL}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = crypto
     .createHmac("sha256", SUMSUB_SECRET_KEY)
-    .update(`${timestamp}POST${url.replace(SUMSUB_BASE_URL, "")}`)
+    .update(`${timestamp}POST${path}`)
     .digest("hex");
 
   const response = await fetch(url, {
@@ -47,6 +48,12 @@ export async function generateSumsubAccessToken(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("Sumsub API Error:", {
+      status: response.status,
+      statusText: response.statusText,
+      url,
+      error: errorText,
+    });
     throw new Error(
       `Failed to generate Sumsub access token: ${response.status} ${errorText}`,
     );
