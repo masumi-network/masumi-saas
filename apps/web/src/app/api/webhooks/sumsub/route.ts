@@ -13,16 +13,30 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("X-Payload-Digest");
     const timestamp = request.headers.get("X-Payload-Digest-Ts");
 
+    const isDevelopment = process.env.NODE_ENV === "development";
+    const isTestWebhook =
+      request.headers.get("user-agent")?.includes("PMI Service") &&
+      (!signature || !timestamp);
+
     if (!signature || !timestamp) {
-      return NextResponse.json(
-        { error: "Missing signature or timestamp" },
-        { status: 401 },
-      );
+      if (!isDevelopment || !isTestWebhook) {
+        console.error("[Sumsub Webhook] Missing signature or timestamp");
+        return NextResponse.json(
+          { error: "Missing signature or timestamp" },
+          { status: 401 },
+        );
+      }
     }
 
-    const isValid = verifySumsubWebhookSignature(body, signature, timestamp);
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    if (signature && timestamp) {
+      const isValid = verifySumsubWebhookSignature(body, signature, timestamp);
+      if (!isValid && (!isDevelopment || !isTestWebhook)) {
+        console.error("[Sumsub Webhook] Invalid signature");
+        return NextResponse.json(
+          { error: "Invalid signature" },
+          { status: 401 },
+        );
+      }
     }
 
     const payload = JSON.parse(body) as {
@@ -40,6 +54,13 @@ export async function POST(request: NextRequest) {
 
     if (payload.type === "applicantWorkflowCompleted") {
       const { applicantId, externalUserId, reviewResult } = payload;
+
+      if (isDevelopment && isTestWebhook) {
+        return NextResponse.json({
+          success: true,
+          message: "Test webhook received (no database update)",
+        });
+      }
 
       await getApplicantData(applicantId);
 
@@ -68,12 +89,6 @@ export async function POST(request: NextRequest) {
             kycRejectionReason: isRejected ? rejectionReason : null,
           },
         });
-
-        if (isApproved) {
-          console.log(
-            `[MAS-226] Trigger Veridian credential issuance for user ${externalUserId}`,
-          );
-        }
       } else {
         const organization = await prisma.organization.findUnique({
           where: { id: externalUserId },
@@ -93,16 +108,6 @@ export async function POST(request: NextRequest) {
               kybRejectionReason: isRejected ? rejectionReason : null,
             },
           });
-
-          if (isApproved) {
-            console.log(
-              `[MAS-226] Trigger Veridian credential issuance for organization ${externalUserId}`,
-            );
-          }
-        } else {
-          console.warn(
-            `Unknown externalUserId in Sumsub webhook: ${externalUserId}`,
-          );
         }
       }
     }

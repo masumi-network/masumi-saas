@@ -3,7 +3,7 @@
 import prisma from "@masumi/database/client";
 
 import { getAuthenticatedHeaders } from "@/lib/auth/utils";
-import { generateSumsubAccessToken } from "@/lib/sumsub";
+import { generateSumsubAccessToken, getApplicantData } from "@/lib/sumsub";
 
 const DEFAULT_KYC_LEVEL = process.env.SUMSUB_KYC_LEVEL || "id-only";
 const DEFAULT_KYB_LEVEL = process.env.SUMSUB_KYB_LEVEL || "id-only";
@@ -71,13 +71,15 @@ export async function generateKybAccessTokenAction(
 }
 
 /**
- * Mark KYC verification as submitted (status: REVIEW)
+ * Mark KYC verification as submitted and check status immediately
  * Called when user submits verification in Sumsub SDK
+ * Checks Sumsub API for instant status update if already processed
  */
 export async function markKycAsSubmittedAction() {
   try {
     const { user } = await getAuthenticatedHeaders();
 
+    // Simply mark as submitted - webhook will save applicantId and update status
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -102,6 +104,7 @@ export async function markKycAsSubmittedAction() {
 
 /**
  * Get current user's KYC status
+ * If status is REVIEW, checks Sumsub API for latest status
  */
 export async function getKycStatusAction() {
   try {
@@ -113,6 +116,7 @@ export async function getKycStatusAction() {
         kycStatus: true,
         kycCompletedAt: true,
         kycRejectionReason: true,
+        sumsubApplicantId: true,
       },
     });
 
@@ -121,6 +125,51 @@ export async function getKycStatusAction() {
         success: false,
         error: "User not found",
       };
+    }
+
+    if (userWithKyc.kycStatus === "REVIEW") {
+      if (userWithKyc.sumsubApplicantId) {
+        try {
+          const applicantData = await getApplicantData(
+            userWithKyc.sumsubApplicantId,
+          );
+          const reviewResult = applicantData.reviewResult;
+
+          if (reviewResult) {
+            const isApproved = reviewResult.reviewAnswer === "GREEN";
+            const isRejected = reviewResult.reviewAnswer === "RED";
+            const rejectionReason =
+              reviewResult.moderationComment ||
+              reviewResult.clientComment ||
+              "Verification rejected";
+
+            if (isApproved || isRejected) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  kycStatus: isApproved ? "APPROVED" : "REJECTED",
+                  kycCompletedAt: new Date(),
+                  kycRejectionReason: isRejected ? rejectionReason : null,
+                },
+              });
+
+              return {
+                success: true,
+                data: {
+                  kycStatus: isApproved ? "APPROVED" : "REJECTED",
+                  kycCompletedAt: new Date(),
+                  kycRejectionReason: isRejected ? rejectionReason : null,
+                },
+              };
+            }
+          }
+        } catch (error) {
+          console.error(
+            `Failed to fetch status from Sumsub for applicant ${userWithKyc.sumsubApplicantId}:`,
+            error,
+          );
+        }
+      }
     }
 
     return {

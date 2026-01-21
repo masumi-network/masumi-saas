@@ -25,11 +25,13 @@ import { SumsubStep } from "./sumsub-step";
 interface OnboardingWizardProps {
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
   rejectionReason?: string | null;
+  kycCompletedAt?: Date | null;
 }
 
 export function OnboardingWizard({
   kycStatus,
   rejectionReason,
+  kycCompletedAt,
 }: OnboardingWizardProps) {
   const t = useTranslations("App.Onboarding");
   const router = useRouter();
@@ -77,7 +79,7 @@ export function OnboardingWizard({
   };
 
   const handleVerificationComplete = async () => {
-    // Mark KYC as submitted immediately
+    // Mark KYC as submitted - webhook will save applicantId and update status
     await markKycAsSubmittedAction();
     setVerificationCompleted(true);
     setCurrentStep(3);
@@ -127,6 +129,7 @@ export function OnboardingWizard({
                   verificationCompleted={kycStatus === "REVIEW"}
                   kycStatus={kycStatus}
                   rejectionReason={rejectionReason}
+                  kycCompletedAt={kycCompletedAt}
                 />
               </CardContent>
             </>
@@ -160,6 +163,9 @@ export function OnboardingWizard({
                 {currentStep === 3 && (
                   <CompletionStep
                     verificationCompleted={verificationCompleted}
+                    kycStatus={kycStatus}
+                    rejectionReason={rejectionReason}
+                    kycCompletedAt={kycCompletedAt}
                   />
                 )}
               </CardContent>

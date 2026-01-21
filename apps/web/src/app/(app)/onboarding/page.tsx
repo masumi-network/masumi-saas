@@ -33,6 +33,7 @@ export default async function OnboardingPage() {
       <OnboardingWizard
         kycStatus={userWithKyc?.kycStatus || "PENDING"}
         rejectionReason={userWithKyc?.kycRejectionReason}
+        kycCompletedAt={userWithKyc?.kycCompletedAt}
       />
     </div>
   );

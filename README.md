@@ -107,7 +107,20 @@ masumi-saas/
      - Defaults to `"id-only"`
      - Must match an existing verification level in your Sumsub dashboard
 
-3. **Set up the database:**
+3. **Configure Sumsub Webhook** (required for automatic status updates):
+   - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
+   - Add a new webhook with:
+     - **URL**: `https://yourdomain.com/api/webhooks/sumsub`
+     - **Events**: Select `applicantWorkflowCompleted` (or all events)
+     - **Secret**: Use the same `SUMSUB_SECRET_KEY` from your `.env` file
+   - For local development, use a tool like [ngrok](https://ngrok.com/) to expose your local server:
+     ```bash
+     ngrok http 3000
+     # Then use the ngrok URL: https://your-ngrok-url.ngrok.io/api/webhooks/sumsub
+     ```
+   - **Note**: The webhook is required for automatic status updates. Without it, you'll need to manually refresh or rely on the instant status check when users submit verification.
+
+4. **Set up the database:**
 
    ```bash
    # Generate Prisma client
@@ -117,7 +130,7 @@ masumi-saas/
    pnpm prisma:migrate:dev
    ```
 
-4. **Start the development server:**
+5. **Start the development server:**
    ```bash
    pnpm dev
    ```

@@ -48,12 +48,6 @@ export async function generateSumsubAccessToken(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Sumsub API Error:", {
-      status: response.status,
-      statusText: response.statusText,
-      url,
-      error: errorText,
-    });
     throw new Error(
       `Failed to generate Sumsub access token: ${response.status} ${errorText}`,
     );

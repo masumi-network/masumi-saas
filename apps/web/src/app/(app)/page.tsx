@@ -27,7 +27,7 @@ export default async function HomePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">{t("welcome")}</h1>
+          <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
           <p className="text-muted-foreground">
             {t("signedInAs", { email: authContext.session.user.email || "" })}
           </p>
@@ -39,7 +39,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">{t("welcome")}</h1>
+      <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
       <p className="text-muted-foreground">
         {t("signedInAs", { email: authContext.session?.user?.email || "" })}
       </p>

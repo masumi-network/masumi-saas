@@ -1,4 +1,4 @@
-import { AlertCircle,CheckCircle2, Clock, XCircle } from "lucide-react";
+import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -41,12 +41,12 @@ export async function KycStatusCard() {
       actionHref: null,
     },
     APPROVED: {
-      icon: CheckCircle2,
+      icon: ShieldCheck,
       iconColor: "text-green-500",
       title: t("approved.title"),
       description: kycCompletedAt
         ? t("approved.descriptionWithDate", {
-            date: new Date(kycCompletedAt).toLocaleDateString(),
+            date: new Date(kycCompletedAt).toLocaleString(),
           })
         : t("approved.description"),
       action: null,

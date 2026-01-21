@@ -1,9 +1,10 @@
 "use client";
 
 import snsWebSdk from "@sumsub/websdk";
+import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SumsubStepProps {
   accessToken: string;
@@ -23,6 +24,7 @@ export function SumsubStep({
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sdkRef = useRef<any>(null);
+  const [verificationComplete, setVerificationComplete] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || !accessToken) return;
@@ -43,16 +45,15 @@ export function SumsubStep({
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .on("idCheck.onStepCompleted", (payload: any) => {
-            console.log("Step completed:", payload);
-            // Check if this is the final step (verification complete)
-            // The payload might indicate completion status
             if (
               payload?.reviewStatus === "completed" ||
               payload?.actionId === "verificationCompleted" ||
               payload?.type === "verificationCompleted"
             ) {
-              console.log("Verification completed via onStepCompleted");
-              onComplete();
+              if (containerRef.current) {
+                containerRef.current.style.display = "none";
+              }
+              setVerificationComplete(true);
             }
           })
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,11 +61,9 @@ export function SumsubStep({
             console.error("Sumsub SDK error:", error);
             onError(error?.message || t("error"));
           })
+           
           .on("idCheck.onApplicantSubmitted", () => {
-            console.log("Applicant submitted - moving to completion step");
-            // When applicant submits, move to completion step
-            // The actual approval/rejection will come via webhook
-            onComplete();
+            setVerificationComplete(true);
           })
           .build();
 
@@ -73,20 +72,13 @@ export function SumsubStep({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sdkInstance = sdk as any;
 
-        // Try launch() with container selector (WebSDK 2.0)
         if (sdkInstance && typeof sdkInstance.launch === "function") {
           sdkInstance.launch("#sumsub-websdk-container");
         } else if (sdkInstance?.iframe && containerRef.current) {
-          // If SDK has iframe property, append it to container
           containerRef.current.appendChild(sdkInstance.iframe);
         } else {
           console.error(
-            "SDK launch method not available. SDK object:",
-            sdkInstance,
-          );
-          console.error(
-            "Available properties:",
-            Object.keys(sdkInstance || {}),
+            "Failed to initialize Sumsub SDK: launch method not available",
           );
           onError("Failed to initialize verification SDK");
         }
@@ -120,21 +112,42 @@ export function SumsubStep({
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">{t("description")}</div>
-      <div
-        ref={containerRef}
-        id="sumsub-websdk-container"
-        className="w-full rounded-lg overflow-hidden border border-border"
-      />
-      {onManualContinue && (
-        <div className="flex justify-end">
-          <button
-            onClick={onManualContinue}
-            className="text-sm text-primary hover:underline"
-            type="button"
-          >
-            {t("continueManually")}
-          </button>
+      {verificationComplete ? (
+        <div className="w-full rounded-lg border border-border bg-card p-8 text-center">
+          <div className="flex flex-col items-center space-y-4">
+            <ShieldCheck className="h-16 w-16 text-green-500" />
+            <div>
+              <h3 className="text-xl font-semibold">{t("successTitle")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("successMessage")}
+              </p>
+            </div>
+          </div>
         </div>
+      ) : (
+        <>
+          <div
+            ref={containerRef}
+            id="sumsub-websdk-container"
+            className="w-full rounded-lg overflow-hidden border border-border"
+          />
+          {onManualContinue && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  if (containerRef.current) {
+                    containerRef.current.style.display = "none";
+                  }
+                  onManualContinue();
+                }}
+                className="text-sm text-primary hover:underline"
+                type="button"
+              >
+                {t("continueManually")}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -10,14 +10,17 @@ interface CompletionStepProps {
   verificationCompleted: boolean;
   kycStatus?: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
   rejectionReason?: string | null;
+  kycCompletedAt?: Date | null;
 }
 
 export function CompletionStep({
   verificationCompleted,
   kycStatus,
   rejectionReason,
+  kycCompletedAt,
 }: CompletionStepProps) {
   const t = useTranslations("App.Onboarding.Completion");
+  const tStatus = useTranslations("App.Home.KycStatus");
   const router = useRouter();
 
   if (kycStatus === "REJECTED") {
@@ -53,12 +56,43 @@ export function CompletionStep({
     );
   }
 
+  if (kycStatus === "APPROVED") {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="flex justify-center">
+          <ShieldCheck className="h-16 w-16 text-green-500" />
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold">{tStatus("approved.title")}</h3>
+          <p className="text-muted-foreground mt-2">
+            {kycCompletedAt
+              ? tStatus("approved.descriptionWithDate", {
+                  date: new Date(kycCompletedAt).toLocaleString(),
+                })
+              : tStatus("approved.description")}
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            router.refresh();
+            setTimeout(() => {
+              router.push("/");
+            }, 500);
+          }}
+          className="w-full"
+        >
+          {t("continueButton")}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 text-center">
       {verificationCompleted ? (
         <>
           <div className="flex justify-center">
-            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <ShieldCheck className="h-16 w-16 text-green-500" />
           </div>
           <div>
             <h3 className="text-xl font-semibold">{t("successTitle")}</h3>

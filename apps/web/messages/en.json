@@ -92,7 +92,7 @@
         "approved": {
           "title": "Identity Verified",
           "description": "Your identity has been successfully verified.",
-          "descriptionWithDate": "Your identity was verified on {date}."
+          "descriptionWithDate": "KYC status verified on {date}."
         },
         "rejected": {
           "title": "Verification Rejected",
@@ -193,7 +193,9 @@
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
         "error": "An error occurred during verification. Please try again.",
-        "continueManually": "I've completed verification →"
+        "continueManually": "I've completed verification →",
+        "successTitle": "Your profile has been verified",
+        "successMessage": "You may close this page"
       },
       "Completion": {
         "successTitle": "Verification Submitted",
