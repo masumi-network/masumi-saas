@@ -3,12 +3,15 @@
 import { getAuthenticatedHeaders } from "@/lib/auth/utils";
 import { generateSumsubAccessToken } from "@/lib/sumsub";
 
+const DEFAULT_KYC_LEVEL = process.env.SUMSUB_KYC_LEVEL || "id-only";
+const DEFAULT_KYB_LEVEL = process.env.SUMSUB_KYB_LEVEL || "id-only";
+
 /**
  * Generate Sumsub access token for KYC verification
- * @param levelName - Verification level name (default: "basic-kyc-level")
+ * @param levelName - Verification level name (defaults to SUMSUB_KYC_LEVEL env var or "id-only")
  */
 export async function generateKycAccessTokenAction(
-  levelName: string = "basic-kyc-level",
+  levelName: string = DEFAULT_KYC_LEVEL,
 ) {
   try {
     const { user } = await getAuthenticatedHeaders();
@@ -34,11 +37,11 @@ export async function generateKycAccessTokenAction(
 /**
  * Generate Sumsub access token for KYB verification (organization)
  * @param organizationId - Organization ID
- * @param levelName - Verification level name (default: "basic-kyb-level")
+ * @param levelName - Verification level name (defaults to SUMSUB_KYB_LEVEL env var or "id-only")
  */
 export async function generateKybAccessTokenAction(
   organizationId: string,
-  levelName: string = "basic-kyb-level",
+  levelName: string = DEFAULT_KYB_LEVEL,
 ) {
   try {
     await getAuthenticatedHeaders();

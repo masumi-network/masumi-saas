@@ -99,6 +99,13 @@ masumi-saas/
    - **SUMSUB_BASE_URL**: Sumsub API base URL (optional)
      - Defaults to `https://api.sumsub.com` for production
      - Use `https://api.sumsub.com` for sandbox/testing
+   - **SUMSUB_KYC_LEVEL**: Verification level name for KYC (optional)
+     - Defaults to `"id-only"` (simpler, faster for development)
+     - Recommended: `"id-and-liveness"` for production (includes liveness check)
+     - Must match an existing verification level in your Sumsub dashboard
+   - **SUMSUB_KYB_LEVEL**: Verification level name for KYB (optional)
+     - Defaults to `"id-only"`
+     - Must match an existing verification level in your Sumsub dashboard
 
 3. **Set up the database:**
 
