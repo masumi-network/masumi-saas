@@ -647,6 +647,10 @@ export type OrganizationScalarRelationFilter = {
   isNot?: Prisma.OrganizationWhereInput;
 };
 
+export type EnumKycStatusFieldUpdateOperationsInput = {
+  set?: $Enums.KycStatus;
+};
+
 export type OrganizationCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<
     Prisma.OrganizationCreateWithoutMembersInput,

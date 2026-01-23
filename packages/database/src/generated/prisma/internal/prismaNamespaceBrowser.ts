@@ -63,6 +63,7 @@ export const ModelName = {
   Invitation: "Invitation",
   Apikey: "Apikey",
   RateLimit: "RateLimit",
+  KycVerification: "KycVerification",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -94,10 +95,7 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
-  kycStatus: "kycStatus",
-  sumsubApplicantId: "sumsubApplicantId",
-  kycCompletedAt: "kycCompletedAt",
-  kycRejectionReason: "kycRejectionReason",
+  currentKycVerificationId: "currentKycVerificationId",
   veridianCredentialId: "veridianCredentialId",
 } as const;
 
@@ -227,6 +225,21 @@ export const RateLimitScalarFieldEnum = {
 
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
+
+export const KycVerificationScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycVerificationScalarFieldEnum =
+  (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",

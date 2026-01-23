@@ -32,11 +32,10 @@ model User {
   onboardingCompleted Boolean @default(false)
   stripeCustomerId String?
 
-  // KYC fields
-  kycStatus KycStatus @default(PENDING)
-  sumsubApplicantId String?
-  kycCompletedAt DateTime?
-  kycRejectionReason String?
+  // KYC verification history
+  kycVerifications KycVerification[]
+  currentKycVerificationId String?
+  currentKycVerification KycVerification? @relation("CurrentKycVerification", fields: [currentKycVerificationId], references: [id], onDelete: SetNull)
   veridianCredentialId String? // Placeholder for MAS-226
 
   @@unique([email])
@@ -176,6 +175,26 @@ model RateLimit {
   lastRequest BigInt?
 
   @@map("rateLimit")
+}
+
+model KycVerification {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            KycStatus @default(PENDING)
+  sumsubApplicantId String?
+  completedAt       DateTime?
+  rejectionReason   String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Reverse relation for currentKycVerification
+  currentUsers User[] @relation("CurrentKycVerification")
+
+  @@index([userId])
+  @@index([status])
+  @@map("kyc_verification")
 }
 
 enum KycStatus {

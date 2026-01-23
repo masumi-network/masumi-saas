@@ -89,3 +89,8 @@ export type Apikey = Prisma.ApikeyModel;
  *
  */
 export type RateLimit = Prisma.RateLimitModel;
+/**
+ * Model KycVerification
+ *
+ */
+export type KycVerification = Prisma.KycVerificationModel;

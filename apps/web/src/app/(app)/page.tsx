@@ -1,14 +1,8 @@
 import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Suspense } from "react";
 
 import { getAuthContext } from "@/lib/auth/utils";
-
-import {
-  UserProfileCard,
-  UserProfileCardSkeleton,
-} from "./components/user-profile-card";
 
 export default async function HomePage() {
   const authContext = await getAuthContext();
@@ -18,13 +12,18 @@ export default async function HomePage() {
     const user = await prisma.user.findUnique({
       where: { id: authContext.session.user.id },
       select: {
-        kycStatus: true,
+        currentKycVerification: {
+          select: {
+            status: true,
+          },
+        },
       },
     });
 
     // Only redirect to onboarding if KYC hasn't been started (PENDING)
     // REVIEW and REJECTED statuses can access the dashboard
-    if (user?.kycStatus === "PENDING") {
+    const kycStatus = user?.currentKycVerification?.status || "PENDING";
+    if (kycStatus === "PENDING") {
       redirect("/onboarding");
     }
 
@@ -36,9 +35,6 @@ export default async function HomePage() {
             {t("signedInAs", { email: authContext.session.user.email || "" })}
           </p>
         </div>
-        <Suspense fallback={<UserProfileCardSkeleton />}>
-          <UserProfileCard />
-        </Suspense>
       </div>
     );
   }

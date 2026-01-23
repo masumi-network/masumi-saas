@@ -76,17 +76,50 @@ export async function POST(request: NextRequest) {
       });
 
       if (user) {
+        // Find existing verification by applicantId or create new one
+        let kycVerification = await prisma.kycVerification.findFirst({
+          where: {
+            userId: externalUserId,
+            sumsubApplicantId: applicantId,
+          },
+        });
+
+        if (!kycVerification) {
+          // Create new verification record
+          kycVerification = await prisma.kycVerification.create({
+            data: {
+              userId: externalUserId,
+              status: isApproved
+                ? "APPROVED"
+                : isRejected
+                  ? "REJECTED"
+                  : "REVIEW",
+              sumsubApplicantId: applicantId,
+              completedAt: isApproved || isRejected ? new Date() : null,
+              rejectionReason: isRejected ? rejectionReason : null,
+            },
+          });
+        } else {
+          // Update existing verification
+          kycVerification = await prisma.kycVerification.update({
+            where: { id: kycVerification.id },
+            data: {
+              status: isApproved
+                ? "APPROVED"
+                : isRejected
+                  ? "REJECTED"
+                  : "REVIEW",
+              completedAt: isApproved || isRejected ? new Date() : null,
+              rejectionReason: isRejected ? rejectionReason : null,
+            },
+          });
+        }
+
+        // Set as current verification
         await prisma.user.update({
           where: { id: externalUserId },
           data: {
-            kycStatus: isApproved
-              ? "APPROVED"
-              : isRejected
-                ? "REJECTED"
-                : "REVIEW",
-            sumsubApplicantId: applicantId,
-            kycCompletedAt: isApproved || isRejected ? new Date() : null,
-            kycRejectionReason: isRejected ? rejectionReason : null,
+            currentKycVerificationId: kycVerification.id,
           },
         });
       } else {

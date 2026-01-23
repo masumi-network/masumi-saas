@@ -421,6 +421,7 @@ export const ModelName = {
   Invitation: "Invitation",
   Apikey: "Apikey",
   RateLimit: "RateLimit",
+  KycVerification: "KycVerification",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -451,7 +452,8 @@ export type TypeMap<
       | "member"
       | "invitation"
       | "apikey"
-      | "rateLimit";
+      | "rateLimit"
+      | "kycVerification";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -1139,6 +1141,82 @@ export type TypeMap<
         };
       };
     };
+    KycVerification: {
+      payload: Prisma.$KycVerificationPayload<ExtArgs>;
+      fields: Prisma.KycVerificationFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.KycVerificationFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.KycVerificationFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        findFirst: {
+          args: Prisma.KycVerificationFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.KycVerificationFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        findMany: {
+          args: Prisma.KycVerificationFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>[];
+        };
+        create: {
+          args: Prisma.KycVerificationCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        createMany: {
+          args: Prisma.KycVerificationCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.KycVerificationCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>[];
+        };
+        delete: {
+          args: Prisma.KycVerificationDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        update: {
+          args: Prisma.KycVerificationUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        deleteMany: {
+          args: Prisma.KycVerificationDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.KycVerificationUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.KycVerificationUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>[];
+        };
+        upsert: {
+          args: Prisma.KycVerificationUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycVerificationPayload>;
+        };
+        aggregate: {
+          args: Prisma.KycVerificationAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKycVerification>;
+        };
+        groupBy: {
+          args: Prisma.KycVerificationGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.KycVerificationGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.KycVerificationCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.KycVerificationCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -1191,10 +1269,7 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
-  kycStatus: "kycStatus",
-  sumsubApplicantId: "sumsubApplicantId",
-  kycCompletedAt: "kycCompletedAt",
-  kycRejectionReason: "kycRejectionReason",
+  currentKycVerificationId: "currentKycVerificationId",
   veridianCredentialId: "veridianCredentialId",
 } as const;
 
@@ -1324,6 +1399,21 @@ export const RateLimitScalarFieldEnum = {
 
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
+
+export const KycVerificationScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycVerificationScalarFieldEnum =
+  (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
@@ -1550,6 +1640,7 @@ export type GlobalOmitConfig = {
   invitation?: Prisma.InvitationOmit;
   apikey?: Prisma.ApikeyOmit;
   rateLimit?: Prisma.RateLimitOmit;
+  kycVerification?: Prisma.KycVerificationOmit;
 };
 
 /* Types for Logging */
