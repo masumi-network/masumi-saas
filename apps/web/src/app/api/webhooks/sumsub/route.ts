@@ -1,10 +1,32 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { verifySumsubWebhookSignature } from "@/lib/sumsub";
+import { parseReviewResult } from "@/lib/sumsub/verification-utils";
 
 // Maximum age for webhook timestamps (5 minutes)
 const MAX_TIMESTAMP_AGE_SECONDS = 300;
+
+/**
+ * Zod schema for Sumsub webhook payload
+ */
+const sumsubWebhookSchema = z.object({
+  type: z.string(),
+  applicantId: z.string().optional(),
+  externalUserId: z.string(),
+  reviewStatus: z.string().optional(),
+  reviewResult: z
+    .object({
+      reviewAnswer: z.enum(["GREEN", "RED"]),
+      reviewRejectType: z.enum(["FINAL", "RETRY"]).optional(),
+      moderationComment: z.string().optional(),
+      clientComment: z.string().optional(),
+    })
+    .optional(),
+});
+
+type SumsubWebhookPayload = z.infer<typeof sumsubWebhookSchema>;
 
 /**
  * Sumsub webhook handler
@@ -57,18 +79,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const payload = JSON.parse(body) as {
-      type: string;
-      applicantId: string;
-      externalUserId: string;
-      reviewStatus: string;
-      reviewResult?: {
-        reviewAnswer: "GREEN" | "RED";
-        reviewRejectType?: "FINAL" | "RETRY";
-        moderationComment?: string;
-        clientComment?: string;
-      };
-    };
+    // Parse and validate webhook payload
+    let payload: SumsubWebhookPayload;
+    try {
+      const rawPayload = JSON.parse(body);
+      payload = sumsubWebhookSchema.parse(rawPayload);
+    } catch (error) {
+      console.error("[Sumsub Webhook] Invalid payload format:", error);
+      return NextResponse.json(
+        { error: "Invalid payload format" },
+        { status: 400 },
+      );
+    }
 
     if (payload.type === "applicantWorkflowCompleted") {
       const { applicantId, externalUserId, reviewResult } = payload;
@@ -80,12 +102,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      const isApproved = reviewResult?.reviewAnswer === "GREEN";
-      const isRejected = reviewResult?.reviewAnswer === "RED";
-      const rejectionReason =
-        reviewResult?.moderationComment ||
-        reviewResult?.clientComment ||
-        "Verification rejected";
+      // Use shared utility to parse review result
+      const verificationData = parseReviewResult(
+        reviewResult,
+        applicantId ?? null,
+      );
 
       const user = await prisma.user.findUnique({
         where: { id: externalUserId },
@@ -93,76 +114,56 @@ export async function POST(request: NextRequest) {
       });
 
       if (user) {
-        const kycData = {
-          status: isApproved
-            ? ("APPROVED" as const)
-            : isRejected
-              ? ("REJECTED" as const)
-              : ("REVIEW" as const),
-          sumsubApplicantId: applicantId,
-          completedAt: isApproved || isRejected ? new Date() : null,
-          rejectionReason: isRejected ? rejectionReason : null,
-        };
-
         if (user.kycVerification) {
           // Update existing verification
           await prisma.kycVerification.update({
             where: { id: user.kycVerification.id },
-            data: kycData,
+            data: verificationData,
           });
         } else {
           // Create new verification and link to user
           await prisma.kycVerification.create({
             data: {
-              ...kycData,
+              ...verificationData,
               user: { connect: { id: externalUserId } },
             },
           });
         }
-      } else {
-        const organization = await prisma.organization.findUnique({
-          where: { id: externalUserId },
-          include: { kybVerification: true },
-        });
+        return NextResponse.json({ success: true });
+      }
 
-        if (organization) {
-          const kybData = {
-            status: isApproved
-              ? ("APPROVED" as const)
-              : isRejected
-                ? ("REJECTED" as const)
-                : ("REVIEW" as const),
-            sumsubApplicantId: applicantId,
-            completedAt: isApproved || isRejected ? new Date() : null,
-            rejectionReason: isRejected ? rejectionReason : null,
-          };
+      const organization = await prisma.organization.findUnique({
+        where: { id: externalUserId },
+        include: { kybVerification: true },
+      });
 
-          if (organization.kybVerification) {
-            // Update existing verification
-            await prisma.kybVerification.update({
-              where: { id: organization.kybVerification.id },
-              data: kybData,
-            });
-          } else {
-            // Create new verification and link to organization
-            await prisma.kybVerification.create({
-              data: {
-                ...kybData,
-                organization: { connect: { id: externalUserId } },
-              },
-            });
-          }
+      if (organization) {
+        if (organization.kybVerification) {
+          // Update existing verification
+          await prisma.kybVerification.update({
+            where: { id: organization.kybVerification.id },
+            data: verificationData,
+          });
         } else {
-          // No user or organization found for this externalUserId
-          console.warn(
-            `[Sumsub Webhook] No user or organization found for externalUserId: ${externalUserId}, applicantId: ${applicantId}`,
-          );
-          return NextResponse.json({
-            success: true,
-            warning: "No matching user or organization found",
+          // Create new verification and link to organization
+          await prisma.kybVerification.create({
+            data: {
+              ...verificationData,
+              organization: { connect: { id: externalUserId } },
+            },
           });
         }
+        return NextResponse.json({ success: true });
       }
+
+      // No user or organization found - return 404 so Sumsub can retry
+      console.error(
+        `[Sumsub Webhook] No user or organization found for externalUserId: ${externalUserId}, applicantId: ${applicantId}`,
+      );
+      return NextResponse.json(
+        { error: "No matching user or organization found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ success: true });

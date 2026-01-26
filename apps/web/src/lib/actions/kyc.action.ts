@@ -7,6 +7,8 @@ import {
   generateSumsubAccessToken,
   getApplicantByExternalUserId,
   getApplicantData,
+  isVerificationFinal,
+  parseReviewResult,
 } from "@/lib/sumsub";
 
 const DEFAULT_KYC_LEVEL = process.env.SUMSUB_KYC_LEVEL || "id-only";
@@ -209,38 +211,29 @@ export async function getKycStatusAction() {
         }
       }
 
-      if (applicantData?.review?.reviewResult) {
-        const reviewResult = applicantData.review.reviewResult;
-        const isApproved = reviewResult.reviewAnswer === "GREEN";
-        const isRejected = reviewResult.reviewAnswer === "RED";
-        const rejectionReason =
-          reviewResult.moderationComment ||
-          reviewResult.clientComment ||
-          "Verification rejected";
+      if (
+        applicantData?.review?.reviewResult &&
+        isVerificationFinal(applicantData.review.reviewResult)
+      ) {
+        const verificationData = parseReviewResult(
+          applicantData.review.reviewResult,
+          applicantId,
+        );
 
-        if (isApproved || isRejected) {
-          const kycData = {
-            status: isApproved ? ("APPROVED" as const) : ("REJECTED" as const),
-            sumsubApplicantId: applicantId,
-            completedAt: new Date(),
-            rejectionReason: isRejected ? rejectionReason : null,
-          };
+        // Update existing verification linked to user
+        const updatedVerification = await prisma.kycVerification.update({
+          where: { id: currentVerification.id },
+          data: verificationData,
+        });
 
-          // Update existing verification linked to user
-          const updatedVerification = await prisma.kycVerification.update({
-            where: { id: currentVerification.id },
-            data: kycData,
-          });
-
-          return {
-            success: true,
-            data: {
-              kycStatus: isApproved ? "APPROVED" : "REJECTED",
-              kycCompletedAt: updatedVerification.completedAt,
-              kycRejectionReason: updatedVerification.rejectionReason,
-            },
-          };
-        }
+        return {
+          success: true,
+          data: {
+            kycStatus: updatedVerification.status,
+            kycCompletedAt: updatedVerification.completedAt,
+            kycRejectionReason: updatedVerification.rejectionReason,
+          },
+        };
       }
     }
 
