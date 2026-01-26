@@ -50,7 +50,22 @@ export async function generateKybAccessTokenAction(
   levelName: string = DEFAULT_KYB_LEVEL,
 ) {
   try {
-    await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedHeaders();
+
+    // Verify user is a member of the organization
+    const member = await prisma.member.findFirst({
+      where: {
+        userId: user.id,
+        organizationId,
+      },
+    });
+
+    if (!member) {
+      return {
+        success: false,
+        error: "You do not have permission to access this organization",
+      };
+    }
 
     const token = await generateSumsubAccessToken(
       organizationId,
