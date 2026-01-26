@@ -1,6 +1,12 @@
+import { Suspense } from "react";
+
 import { auth } from "@/lib/auth/auth";
 import { getRequestHeaders } from "@/lib/auth/utils";
 
+import {
+  UserProfileCard,
+  UserProfileCardSkeleton,
+} from "../components/user-profile-card";
 import { AccountContent } from "./components/account-content";
 
 export default async function AccountPage() {
@@ -20,7 +26,15 @@ export default async function AccountPage() {
 
   return (
     <div>
-      <AccountContent accounts={accounts} user={session.user} />
+      <AccountContent
+        accounts={accounts}
+        user={session.user}
+        userProfileCard={
+          <Suspense fallback={<UserProfileCardSkeleton />}>
+            <UserProfileCard />
+          </Suspense>
+        }
+      />
     </div>
   );
 }

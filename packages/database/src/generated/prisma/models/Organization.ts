@@ -31,8 +31,10 @@ export type OrganizationMinAggregateOutputType = {
   logo: string | null;
   metadata: string | null;
   createdAt: Date | null;
+  updatedAt: Date | null;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybVerificationId: string | null;
 };
 
 export type OrganizationMaxAggregateOutputType = {
@@ -42,8 +44,10 @@ export type OrganizationMaxAggregateOutputType = {
   logo: string | null;
   metadata: string | null;
   createdAt: Date | null;
+  updatedAt: Date | null;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybVerificationId: string | null;
 };
 
 export type OrganizationCountAggregateOutputType = {
@@ -53,8 +57,10 @@ export type OrganizationCountAggregateOutputType = {
   logo: number;
   metadata: number;
   createdAt: number;
+  updatedAt: number;
   stripeCustomerId: number;
   invoiceEmail: number;
+  kybVerificationId: number;
   _all: number;
 };
 
@@ -65,8 +71,10 @@ export type OrganizationMinAggregateInputType = {
   logo?: true;
   metadata?: true;
   createdAt?: true;
+  updatedAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybVerificationId?: true;
 };
 
 export type OrganizationMaxAggregateInputType = {
@@ -76,8 +84,10 @@ export type OrganizationMaxAggregateInputType = {
   logo?: true;
   metadata?: true;
   createdAt?: true;
+  updatedAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybVerificationId?: true;
 };
 
 export type OrganizationCountAggregateInputType = {
@@ -87,8 +97,10 @@ export type OrganizationCountAggregateInputType = {
   logo?: true;
   metadata?: true;
   createdAt?: true;
+  updatedAt?: true;
   stripeCustomerId?: true;
   invoiceEmail?: true;
+  kybVerificationId?: true;
   _all?: true;
 };
 
@@ -179,8 +191,10 @@ export type OrganizationGroupByOutputType = {
   logo: string | null;
   metadata: string | null;
   createdAt: Date;
+  updatedAt: Date;
   stripeCustomerId: string | null;
   invoiceEmail: string | null;
+  kybVerificationId: string | null;
   _count: OrganizationCountAggregateOutputType | null;
   _min: OrganizationMinAggregateOutputType | null;
   _max: OrganizationMaxAggregateOutputType | null;
@@ -209,13 +223,22 @@ export type OrganizationWhereInput = {
   logo?: Prisma.StringNullableFilter<"Organization"> | string | null;
   metadata?: Prisma.StringNullableFilter<"Organization"> | string | null;
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string;
+  updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string;
   stripeCustomerId?:
     | Prisma.StringNullableFilter<"Organization">
     | string
     | null;
   invoiceEmail?: Prisma.StringNullableFilter<"Organization"> | string | null;
+  kybVerificationId?:
+    | Prisma.StringNullableFilter<"Organization">
+    | string
+    | null;
   members?: Prisma.MemberListRelationFilter;
   invitations?: Prisma.InvitationListRelationFilter;
+  kybVerification?: Prisma.XOR<
+    Prisma.KybVerificationNullableScalarRelationFilter,
+    Prisma.KybVerificationWhereInput
+  > | null;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -225,10 +248,13 @@ export type OrganizationOrderByWithRelationInput = {
   logo?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   members?: Prisma.MemberOrderByRelationAggregateInput;
   invitations?: Prisma.InvitationOrderByRelationAggregateInput;
+  kybVerification?: Prisma.KybVerificationOrderByWithRelationInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -236,6 +262,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     id?: string;
     slug?: string;
     stripeCustomerId?: string;
+    kybVerificationId?: string;
     AND?: Prisma.OrganizationWhereInput | Prisma.OrganizationWhereInput[];
     OR?: Prisma.OrganizationWhereInput[];
     NOT?: Prisma.OrganizationWhereInput | Prisma.OrganizationWhereInput[];
@@ -243,11 +270,16 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     logo?: Prisma.StringNullableFilter<"Organization"> | string | null;
     metadata?: Prisma.StringNullableFilter<"Organization"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string;
     invoiceEmail?: Prisma.StringNullableFilter<"Organization"> | string | null;
     members?: Prisma.MemberListRelationFilter;
     invitations?: Prisma.InvitationListRelationFilter;
+    kybVerification?: Prisma.XOR<
+      Prisma.KybVerificationNullableScalarRelationFilter,
+      Prisma.KybVerificationWhereInput
+    > | null;
   },
-  "id" | "slug" | "stripeCustomerId"
+  "id" | "kybVerificationId" | "slug" | "stripeCustomerId"
 >;
 
 export type OrganizationOrderByWithAggregationInput = {
@@ -257,8 +289,10 @@ export type OrganizationOrderByWithAggregationInput = {
   logo?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrderInput | Prisma.SortOrder;
+  kybVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.OrganizationCountOrderByAggregateInput;
   _max?: Prisma.OrganizationMaxOrderByAggregateInput;
   _min?: Prisma.OrganizationMinOrderByAggregateInput;
@@ -287,11 +321,19 @@ export type OrganizationScalarWhereWithAggregatesInput = {
     | Prisma.DateTimeWithAggregatesFilter<"Organization">
     | Date
     | string;
+  updatedAt?:
+    | Prisma.DateTimeWithAggregatesFilter<"Organization">
+    | Date
+    | string;
   stripeCustomerId?:
     | Prisma.StringNullableWithAggregatesFilter<"Organization">
     | string
     | null;
   invoiceEmail?:
+    | Prisma.StringNullableWithAggregatesFilter<"Organization">
+    | string
+    | null;
+  kybVerificationId?:
     | Prisma.StringNullableWithAggregatesFilter<"Organization">
     | string
     | null;
@@ -304,10 +346,12 @@ export type OrganizationCreateInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -317,8 +361,10 @@ export type OrganizationUncheckedCreateInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
 };
@@ -330,6 +376,7 @@ export type OrganizationUpdateInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -340,6 +387,7 @@ export type OrganizationUpdateInput = {
     | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -349,11 +397,16 @@ export type OrganizationUncheckedUpdateInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -368,8 +421,10 @@ export type OrganizationCreateManyInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
 };
 
 export type OrganizationUpdateManyMutationInput = {
@@ -379,6 +434,7 @@ export type OrganizationUpdateManyMutationInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -396,11 +452,16 @@ export type OrganizationUncheckedUpdateManyInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -413,8 +474,10 @@ export type OrganizationCountOrderByAggregateInput = {
   logo?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybVerificationId?: Prisma.SortOrder;
 };
 
 export type OrganizationMaxOrderByAggregateInput = {
@@ -424,8 +487,10 @@ export type OrganizationMaxOrderByAggregateInput = {
   logo?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybVerificationId?: Prisma.SortOrder;
 };
 
 export type OrganizationMinOrderByAggregateInput = {
@@ -435,13 +500,76 @@ export type OrganizationMinOrderByAggregateInput = {
   logo?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
   invoiceEmail?: Prisma.SortOrder;
+  kybVerificationId?: Prisma.SortOrder;
+};
+
+export type OrganizationNullableScalarRelationFilter = {
+  is?: Prisma.OrganizationWhereInput | null;
+  isNot?: Prisma.OrganizationWhereInput | null;
 };
 
 export type OrganizationScalarRelationFilter = {
   is?: Prisma.OrganizationWhereInput;
   isNot?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationCreateNestedOneWithoutKybVerificationInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutKybVerificationInput;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUncheckedCreateNestedOneWithoutKybVerificationInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutKybVerificationInput;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUpdateOneWithoutKybVerificationNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutKybVerificationInput;
+  upsert?: Prisma.OrganizationUpsertWithoutKybVerificationInput;
+  disconnect?: Prisma.OrganizationWhereInput | boolean;
+  delete?: Prisma.OrganizationWhereInput | boolean;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrganizationUpdateToOneWithWhereWithoutKybVerificationInput,
+      Prisma.OrganizationUpdateWithoutKybVerificationInput
+    >,
+    Prisma.OrganizationUncheckedUpdateWithoutKybVerificationInput
+  >;
+};
+
+export type OrganizationUncheckedUpdateOneWithoutKybVerificationNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutKybVerificationInput;
+  upsert?: Prisma.OrganizationUpsertWithoutKybVerificationInput;
+  disconnect?: Prisma.OrganizationWhereInput | boolean;
+  delete?: Prisma.OrganizationWhereInput | boolean;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrganizationUpdateToOneWithWhereWithoutKybVerificationInput,
+      Prisma.OrganizationUpdateWithoutKybVerificationInput
+    >,
+    Prisma.OrganizationUncheckedUpdateWithoutKybVerificationInput
+  >;
 };
 
 export type OrganizationCreateNestedOneWithoutMembersInput = {
@@ -496,6 +624,102 @@ export type OrganizationUpdateOneRequiredWithoutInvitationsNestedInput = {
   >;
 };
 
+export type OrganizationCreateWithoutKybVerificationInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationCreateOrConnectWithoutKybVerificationInput = {
+  where: Prisma.OrganizationWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+};
+
+export type OrganizationUpsertWithoutKybVerificationInput = {
+  update: Prisma.XOR<
+    Prisma.OrganizationUpdateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedUpdateWithoutKybVerificationInput
+  >;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedCreateWithoutKybVerificationInput
+  >;
+  where?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationUpdateToOneWithWhereWithoutKybVerificationInput = {
+  where?: Prisma.OrganizationWhereInput;
+  data: Prisma.XOR<
+    Prisma.OrganizationUpdateWithoutKybVerificationInput,
+    Prisma.OrganizationUncheckedUpdateWithoutKybVerificationInput
+  >;
+};
+
+export type OrganizationUpdateWithoutKybVerificationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+};
+
 export type OrganizationCreateWithoutMembersInput = {
   id?: string;
   name: string;
@@ -503,9 +727,11 @@ export type OrganizationCreateWithoutMembersInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutMembersInput = {
@@ -515,8 +741,10 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -555,6 +783,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -564,6 +793,7 @@ export type OrganizationUpdateWithoutMembersInput = {
     | string
     | null;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutMembersInput = {
@@ -573,11 +803,16 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -591,9 +826,11 @@ export type OrganizationCreateWithoutInvitationsInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
+  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -603,8 +840,10 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   logo?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
+  updatedAt?: Date | string;
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
@@ -643,6 +882,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -652,6 +892,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     | string
     | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
+  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -661,11 +902,16 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stripeCustomerId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
   invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -733,10 +979,15 @@ export type OrganizationSelect<
     logo?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
+    updatedAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybVerificationId?: boolean;
     members?: boolean | Prisma.Organization$membersArgs<ExtArgs>;
     invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
+    kybVerification?:
+      | boolean
+      | Prisma.Organization$kybVerificationArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["organization"]
@@ -753,8 +1004,13 @@ export type OrganizationSelectCreateManyAndReturn<
     logo?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
+    updatedAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybVerificationId?: boolean;
+    kybVerification?:
+      | boolean
+      | Prisma.Organization$kybVerificationArgs<ExtArgs>;
   },
   ExtArgs["result"]["organization"]
 >;
@@ -770,8 +1026,13 @@ export type OrganizationSelectUpdateManyAndReturn<
     logo?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
+    updatedAt?: boolean;
     stripeCustomerId?: boolean;
     invoiceEmail?: boolean;
+    kybVerificationId?: boolean;
+    kybVerification?:
+      | boolean
+      | Prisma.Organization$kybVerificationArgs<ExtArgs>;
   },
   ExtArgs["result"]["organization"]
 >;
@@ -783,8 +1044,10 @@ export type OrganizationSelectScalar = {
   logo?: boolean;
   metadata?: boolean;
   createdAt?: boolean;
+  updatedAt?: boolean;
   stripeCustomerId?: boolean;
   invoiceEmail?: boolean;
+  kybVerificationId?: boolean;
 };
 
 export type OrganizationOmit<
@@ -797,8 +1060,10 @@ export type OrganizationOmit<
   | "logo"
   | "metadata"
   | "createdAt"
+  | "updatedAt"
   | "stripeCustomerId"
-  | "invoiceEmail",
+  | "invoiceEmail"
+  | "kybVerificationId",
   ExtArgs["result"]["organization"]
 >;
 export type OrganizationInclude<
@@ -807,16 +1072,21 @@ export type OrganizationInclude<
 > = {
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>;
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
+  kybVerification?: boolean | Prisma.Organization$kybVerificationArgs<ExtArgs>;
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrganizationIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
-> = {};
+> = {
+  kybVerification?: boolean | Prisma.Organization$kybVerificationArgs<ExtArgs>;
+};
 export type OrganizationIncludeUpdateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
-> = {};
+> = {
+  kybVerification?: boolean | Prisma.Organization$kybVerificationArgs<ExtArgs>;
+};
 
 export type $OrganizationPayload<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -826,6 +1096,7 @@ export type $OrganizationPayload<
   objects: {
     members: Prisma.$MemberPayload<ExtArgs>[];
     invitations: Prisma.$InvitationPayload<ExtArgs>[];
+    kybVerification: Prisma.$KybVerificationPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -835,8 +1106,10 @@ export type $OrganizationPayload<
       logo: string | null;
       metadata: string | null;
       createdAt: Date;
+      updatedAt: Date;
       stripeCustomerId: string | null;
       invoiceEmail: string | null;
+      kybVerificationId: string | null;
     },
     ExtArgs["result"]["organization"]
   >;
@@ -1415,6 +1688,21 @@ export interface Prisma__OrganizationClient<
       >
     | Null
   >;
+  kybVerification<
+    T extends Prisma.Organization$kybVerificationArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Organization$kybVerificationArgs<ExtArgs>>,
+  ): Prisma.Prisma__KybVerificationClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$KybVerificationPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1463,8 +1751,10 @@ export interface OrganizationFieldRefs {
   readonly logo: Prisma.FieldRef<"Organization", "String">;
   readonly metadata: Prisma.FieldRef<"Organization", "String">;
   readonly createdAt: Prisma.FieldRef<"Organization", "DateTime">;
+  readonly updatedAt: Prisma.FieldRef<"Organization", "DateTime">;
   readonly stripeCustomerId: Prisma.FieldRef<"Organization", "String">;
   readonly invoiceEmail: Prisma.FieldRef<"Organization", "String">;
+  readonly kybVerificationId: Prisma.FieldRef<"Organization", "String">;
 }
 
 // Custom InputTypes
@@ -1756,6 +2046,10 @@ export type OrganizationCreateManyAndReturnArgs<
     | Prisma.OrganizationCreateManyInput
     | Prisma.OrganizationCreateManyInput[];
   skipDuplicates?: boolean;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrganizationIncludeCreateManyAndReturn<ExtArgs> | null;
 };
 
 /**
@@ -1844,6 +2138,10 @@ export type OrganizationUpdateManyAndReturnArgs<
    * Limit how many Organizations to update.
    */
   limit?: number;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrganizationIncludeUpdateManyAndReturn<ExtArgs> | null;
 };
 
 /**
@@ -1985,6 +2283,28 @@ export type Organization$invitationsArgs<
   distinct?:
     | Prisma.InvitationScalarFieldEnum
     | Prisma.InvitationScalarFieldEnum[];
+};
+
+/**
+ * Organization.kybVerification
+ */
+export type Organization$kybVerificationArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the KybVerification
+   */
+  select?: Prisma.KybVerificationSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the KybVerification
+   */
+  omit?: Prisma.KybVerificationOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KybVerificationInclude<ExtArgs> | null;
+  where?: Prisma.KybVerificationWhereInput;
 };
 
 /**

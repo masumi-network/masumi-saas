@@ -10,7 +10,7 @@ export function AuthFooter() {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 h-16 flex justify-center items-center bg-background/80 backdrop-blur-md border-t">
-      <div className="max-w-[1400px] mx-auto w-full h-full px-4 flex justify-between items-center">
+      <div className="max-w-container mx-auto w-full h-full px-4 flex justify-between items-center">
         <div className="flex gap-4">
           <Link
             href="https://www.masumi.network/about"

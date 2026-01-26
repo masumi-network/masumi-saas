@@ -59,10 +59,12 @@ export const ModelName = {
   Account: "Account",
   Verification: "Verification",
   Organization: "Organization",
+  KybVerification: "KybVerification",
   Member: "Member",
   Invitation: "Invitation",
   Apikey: "Apikey",
   RateLimit: "RateLimit",
+  KycVerification: "KycVerification",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -94,6 +96,8 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
+  kycVerificationId: "kycVerificationId",
+  veridianCredentialId: "veridianCredentialId",
 } as const;
 
 export type UserScalarFieldEnum =
@@ -152,12 +156,27 @@ export const OrganizationScalarFieldEnum = {
   logo: "logo",
   metadata: "metadata",
   createdAt: "createdAt",
+  updatedAt: "updatedAt",
   stripeCustomerId: "stripeCustomerId",
   invoiceEmail: "invoiceEmail",
+  kybVerificationId: "kybVerificationId",
 } as const;
 
 export type OrganizationScalarFieldEnum =
   (typeof OrganizationScalarFieldEnum)[keyof typeof OrganizationScalarFieldEnum];
+
+export const KybVerificationScalarFieldEnum = {
+  id: "id",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybVerificationScalarFieldEnum =
+  (typeof KybVerificationScalarFieldEnum)[keyof typeof KybVerificationScalarFieldEnum];
 
 export const MemberScalarFieldEnum = {
   id: "id",
@@ -217,6 +236,20 @@ export const RateLimitScalarFieldEnum = {
 
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
+
+export const KycVerificationScalarFieldEnum = {
+  id: "id",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycVerificationScalarFieldEnum =
+  (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",

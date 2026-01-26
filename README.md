@@ -90,7 +90,37 @@ masumi-saas/
    - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
    - **SENTRY_PROJECT**: Your Sentry project name (defaults to "masumi-saas")
 
-3. **Set up the database:**
+   - **SUMSUB_APP_TOKEN**: Your Sumsub application token (optional, for KYC/KYB verification)
+     - Get one from [Sumsub Dashboard](https://sumsub.com/)
+     - Required for identity verification features
+   - **SUMSUB_SECRET_KEY**: Your Sumsub secret key (optional, for KYC/KYB verification)
+     - Get one from [Sumsub Dashboard](https://sumsub.com/)
+     - Required for webhook signature verification and API authentication
+   - **SUMSUB_BASE_URL**: Sumsub API base URL (optional)
+     - Defaults to `https://api.sumsub.com` for production
+     - Use `https://api.sumsub.com` for sandbox/testing
+   - **SUMSUB_KYC_LEVEL**: Verification level name for KYC (optional)
+     - Defaults to `"id-only"` (simpler, faster for development)
+     - Recommended: `"id-and-liveness"` for production (includes liveness check)
+     - Must match an existing verification level in your Sumsub dashboard
+   - **SUMSUB_KYB_LEVEL**: Verification level name for KYB (optional)
+     - Defaults to `"id-only"`
+     - Must match an existing verification level in your Sumsub dashboard
+
+3. **Configure Sumsub Webhook** (required for automatic status updates):
+   - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
+   - Add a new webhook with:
+     - **URL**: `https://yourdomain.com/api/webhooks/sumsub`
+     - **Events**: Select `applicantWorkflowCompleted` (or all events)
+     - **Secret**: Use the same `SUMSUB_SECRET_KEY` from your `.env` file
+   - For local development, use a tool like [ngrok](https://ngrok.com/) to expose your local server:
+     ```bash
+     ngrok http 3000
+     # Then use the ngrok URL: https://your-ngrok-url.ngrok.io/api/webhooks/sumsub
+     ```
+   - **Note**: The webhook is required for automatic status updates. Without it, you'll need to manually refresh or rely on the instant status check when users submit verification.
+
+4. **Set up the database:**
 
    ```bash
    # Generate Prisma client
@@ -100,7 +130,7 @@ masumi-saas/
    pnpm prisma:migrate:dev
    ```
 
-4. **Start the development server:**
+5. **Start the development server:**
    ```bash
    pnpm dev
    ```

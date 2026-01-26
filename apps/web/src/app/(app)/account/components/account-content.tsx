@@ -18,9 +18,14 @@ interface AccountContentProps {
     name: string | null;
     email: string | null;
   };
+  userProfileCard: React.ReactNode;
 }
 
-export function AccountContent({ accounts, user: _user }: AccountContentProps) {
+export function AccountContent({
+  accounts,
+  user: _user,
+  userProfileCard,
+}: AccountContentProps) {
   const t = useTranslations("App.Account");
 
   const hasCredentialAccount = accounts.some(
@@ -37,6 +42,8 @@ export function AccountContent({ accounts, user: _user }: AccountContentProps) {
       </div>
 
       <div className="max-w-3xl space-y-8">
+        {userProfileCard}
+
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
           <NameForm />
           <EmailForm currentEmail={_user.email} />

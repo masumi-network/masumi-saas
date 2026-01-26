@@ -89,6 +89,12 @@
   .min-h-spinner {
     min-height: 400px;
   }
+  .min-h-sdk-container {
+    min-height: 600px;
+  }
+  .min-h-main-content {
+    min-height: calc(100svh - 64px);
+  }
   .max-w-search {
     max-width: 200px;
   }
@@ -157,6 +163,16 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  ::-moz-selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   [role="dialog"],

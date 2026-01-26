@@ -156,7 +156,7 @@ export async function signUpAction(formData: FormData) {
 }
 
 export async function updateUserNameAction(formData: FormData) {
-  const headersList = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedHeaders();
   const validation = updateNameFormDataSchema.safeParse(formData);
 
   if (!validation.success) {
@@ -186,7 +186,7 @@ export async function updateUserNameAction(formData: FormData) {
 }
 
 export async function changePasswordAction(formData: FormData) {
-  const headersList = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedHeaders();
   const validation = changePasswordFormDataSchema.safeParse(formData);
 
   if (!validation.success) {
@@ -218,7 +218,7 @@ export async function changePasswordAction(formData: FormData) {
 }
 
 export async function deleteAccountAction(formData: FormData) {
-  const headersList = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedHeaders();
   const validation = deleteAccountFormDataSchema.safeParse(formData);
 
   if (!validation.success) {

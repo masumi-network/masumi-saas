@@ -11,26 +11,31 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
   imageHash     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
-  apikeys       Apikey[]
+  sessions    Session[]
+  accounts    Account[]
+  members     Member[]
+  invitations Invitation[]
+  apikeys     Apikey[]
 
   // Additional fields
-  termsAccepted Boolean @default(false)
-  marketingOptIn Boolean @default(false)
+  termsAccepted       Boolean @default(false)
+  marketingOptIn      Boolean @default(false)
   onboardingCompleted Boolean @default(false)
-  stripeCustomerId String?
+  stripeCustomerId    String?
+
+  // KYC verification (one-to-one)
+  kycVerificationId    String?          @unique
+  kycVerification      KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
+  veridianCredentialId String? // Placeholder for MAS-226
 
   @@unique([email])
   @@unique([stripeCustomerId])
@@ -67,8 +72,8 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@map("account")
 }
@@ -91,16 +96,35 @@ model Organization {
   logo      String?
   metadata  String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  members            Member[]
-  invitations        Invitation[]
+  members     Member[]
+  invitations Invitation[]
 
   stripeCustomerId String?
   invoiceEmail     String?
 
+  // KYB fields
+  kybVerificationId String?          @unique
+  kybVerification   KybVerification? @relation(fields: [kybVerificationId], references: [id], onDelete: SetNull)
+
   @@unique([slug])
   @@unique([stripeCustomerId])
   @@map("organization")
+}
+
+model KybVerification {
+  id                String             @id @default(cuid())
+  status            VerificationStatus @default(PENDING)
+  sumsubApplicantId String?
+  completedAt       DateTime?
+  rejectionReason   String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  organization      Organization?
+
+  @@index([sumsubApplicantId])
+  @@map("kyb_verification")
 }
 
 model Member {
@@ -164,3 +188,25 @@ model RateLimit {
   @@map("rateLimit")
 }
 
+model KycVerification {
+  id                String             @id @default(uuid())
+  status            VerificationStatus @default(PENDING)
+  sumsubApplicantId String?
+  completedAt       DateTime?
+  rejectionReason   String?
+  expiresAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User?
+
+  @@index([status])
+  @@index([sumsubApplicantId])
+  @@map("kyc_verification")
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVIEW
+}
