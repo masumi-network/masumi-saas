@@ -8,11 +8,12 @@
  * 🟢 You can import this file directly.
  */
 
-export const KycStatus = {
+export const VerificationStatus = {
   PENDING: "PENDING",
   APPROVED: "APPROVED",
   REJECTED: "REJECTED",
   REVIEW: "REVIEW",
 } as const;
 
-export type KycStatus = (typeof KycStatus)[keyof typeof KycStatus];
+export type VerificationStatus =
+  (typeof VerificationStatus)[keyof typeof VerificationStatus];

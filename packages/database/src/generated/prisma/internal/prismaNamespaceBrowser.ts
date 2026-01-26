@@ -59,6 +59,7 @@ export const ModelName = {
   Account: "Account",
   Verification: "Verification",
   Organization: "Organization",
+  KybVerification: "KybVerification",
   Member: "Member",
   Invitation: "Invitation",
   Apikey: "Apikey",
@@ -95,7 +96,7 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
-  currentKycVerificationId: "currentKycVerificationId",
+  kycVerificationId: "kycVerificationId",
   veridianCredentialId: "veridianCredentialId",
 } as const;
 
@@ -155,17 +156,27 @@ export const OrganizationScalarFieldEnum = {
   logo: "logo",
   metadata: "metadata",
   createdAt: "createdAt",
+  updatedAt: "updatedAt",
   stripeCustomerId: "stripeCustomerId",
   invoiceEmail: "invoiceEmail",
-  kybStatus: "kybStatus",
-  sumsubApplicantId: "sumsubApplicantId",
-  kybCompletedAt: "kybCompletedAt",
-  kybRejectionReason: "kybRejectionReason",
-  veridianCredentialId: "veridianCredentialId",
+  kybVerificationId: "kybVerificationId",
 } as const;
 
 export type OrganizationScalarFieldEnum =
   (typeof OrganizationScalarFieldEnum)[keyof typeof OrganizationScalarFieldEnum];
+
+export const KybVerificationScalarFieldEnum = {
+  id: "id",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybVerificationScalarFieldEnum =
+  (typeof KybVerificationScalarFieldEnum)[keyof typeof KybVerificationScalarFieldEnum];
 
 export const MemberScalarFieldEnum = {
   id: "id",
@@ -228,7 +239,6 @@ export type RateLimitScalarFieldEnum =
 
 export const KycVerificationScalarFieldEnum = {
   id: "id",
-  userId: "userId",
   status: "status",
   sumsubApplicantId: "sumsubApplicantId",
   completedAt: "completedAt",

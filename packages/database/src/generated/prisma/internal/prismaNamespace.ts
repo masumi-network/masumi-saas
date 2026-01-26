@@ -417,6 +417,7 @@ export const ModelName = {
   Account: "Account",
   Verification: "Verification",
   Organization: "Organization",
+  KybVerification: "KybVerification",
   Member: "Member",
   Invitation: "Invitation",
   Apikey: "Apikey",
@@ -449,6 +450,7 @@ export type TypeMap<
       | "account"
       | "verification"
       | "organization"
+      | "kybVerification"
       | "member"
       | "invitation"
       | "apikey"
@@ -833,6 +835,82 @@ export type TypeMap<
           args: Prisma.OrganizationCountArgs<ExtArgs>;
           result:
             | runtime.Types.Utils.Optional<Prisma.OrganizationCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    KybVerification: {
+      payload: Prisma.$KybVerificationPayload<ExtArgs>;
+      fields: Prisma.KybVerificationFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.KybVerificationFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.KybVerificationFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        findFirst: {
+          args: Prisma.KybVerificationFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.KybVerificationFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        findMany: {
+          args: Prisma.KybVerificationFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>[];
+        };
+        create: {
+          args: Prisma.KybVerificationCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        createMany: {
+          args: Prisma.KybVerificationCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.KybVerificationCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>[];
+        };
+        delete: {
+          args: Prisma.KybVerificationDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        update: {
+          args: Prisma.KybVerificationUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        deleteMany: {
+          args: Prisma.KybVerificationDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.KybVerificationUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.KybVerificationUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>[];
+        };
+        upsert: {
+          args: Prisma.KybVerificationUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybVerificationPayload>;
+        };
+        aggregate: {
+          args: Prisma.KybVerificationAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKybVerification>;
+        };
+        groupBy: {
+          args: Prisma.KybVerificationGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.KybVerificationGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.KybVerificationCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.KybVerificationCountAggregateOutputType>
             | number;
         };
       };
@@ -1269,7 +1347,7 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
-  currentKycVerificationId: "currentKycVerificationId",
+  kycVerificationId: "kycVerificationId",
   veridianCredentialId: "veridianCredentialId",
 } as const;
 
@@ -1329,17 +1407,27 @@ export const OrganizationScalarFieldEnum = {
   logo: "logo",
   metadata: "metadata",
   createdAt: "createdAt",
+  updatedAt: "updatedAt",
   stripeCustomerId: "stripeCustomerId",
   invoiceEmail: "invoiceEmail",
-  kybStatus: "kybStatus",
-  sumsubApplicantId: "sumsubApplicantId",
-  kybCompletedAt: "kybCompletedAt",
-  kybRejectionReason: "kybRejectionReason",
-  veridianCredentialId: "veridianCredentialId",
+  kybVerificationId: "kybVerificationId",
 } as const;
 
 export type OrganizationScalarFieldEnum =
   (typeof OrganizationScalarFieldEnum)[keyof typeof OrganizationScalarFieldEnum];
+
+export const KybVerificationScalarFieldEnum = {
+  id: "id",
+  status: "status",
+  sumsubApplicantId: "sumsubApplicantId",
+  completedAt: "completedAt",
+  rejectionReason: "rejectionReason",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybVerificationScalarFieldEnum =
+  (typeof KybVerificationScalarFieldEnum)[keyof typeof KybVerificationScalarFieldEnum];
 
 export const MemberScalarFieldEnum = {
   id: "id",
@@ -1402,7 +1490,6 @@ export type RateLimitScalarFieldEnum =
 
 export const KycVerificationScalarFieldEnum = {
   id: "id",
-  userId: "userId",
   status: "status",
   sumsubApplicantId: "sumsubApplicantId",
   completedAt: "completedAt",
@@ -1481,20 +1568,16 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
- * Reference to a field of type 'KycStatus'
+ * Reference to a field of type 'VerificationStatus'
  */
-export type EnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "KycStatus"
->;
+export type EnumVerificationStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "VerificationStatus">;
 
 /**
- * Reference to a field of type 'KycStatus[]'
+ * Reference to a field of type 'VerificationStatus[]'
  */
-export type ListEnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "KycStatus[]"
->;
+export type ListEnumVerificationStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "VerificationStatus[]">;
 
 /**
  * Reference to a field of type 'Int'
@@ -1636,6 +1719,7 @@ export type GlobalOmitConfig = {
   account?: Prisma.AccountOmit;
   verification?: Prisma.VerificationOmit;
   organization?: Prisma.OrganizationOmit;
+  kybVerification?: Prisma.KybVerificationOmit;
   member?: Prisma.MemberOmit;
   invitation?: Prisma.InvitationOmit;
   apikey?: Prisma.ApikeyOmit;

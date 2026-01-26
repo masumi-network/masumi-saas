@@ -12,7 +12,7 @@ export default async function HomePage() {
     const user = await prisma.user.findUnique({
       where: { id: authContext.session.user.id },
       select: {
-        currentKycVerification: {
+        kycVerification: {
           select: {
             status: true,
           },
@@ -22,7 +22,7 @@ export default async function HomePage() {
 
     // Only redirect to onboarding if KYC hasn't been started (PENDING)
     // REVIEW and REJECTED statuses can access the dashboard
-    const kycStatus = user?.currentKycVerification?.status || "PENDING";
+    const kycStatus = user?.kycVerification?.status || "PENDING";
     if (kycStatus === "PENDING") {
       redirect("/onboarding");
     }

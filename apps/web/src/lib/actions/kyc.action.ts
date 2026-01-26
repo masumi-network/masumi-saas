@@ -83,22 +83,27 @@ export async function markKycAsSubmittedAction() {
   try {
     const { user } = await getAuthenticatedHeaders();
 
-    // Create a new verification record with REVIEW status
-    // Webhook will update it with applicantId and final status
-    const kycVerification = await prisma.kycVerification.create({
-      data: {
-        userId: user.id,
-        status: "REVIEW",
-      },
+    // Check if user already has a verification record
+    const existingUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { kycVerificationId: true },
     });
 
-    // Set as current verification
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        currentKycVerificationId: kycVerification.id,
-      },
-    });
+    if (existingUser?.kycVerificationId) {
+      // Update existing verification to REVIEW status
+      await prisma.kycVerification.update({
+        where: { id: existingUser.kycVerificationId },
+        data: { status: "REVIEW" },
+      });
+    } else {
+      // Create new verification and link to user
+      await prisma.kycVerification.create({
+        data: {
+          status: "REVIEW",
+          user: { connect: { id: user.id } },
+        },
+      });
+    }
 
     return {
       success: true,
@@ -126,7 +131,7 @@ export async function getKycStatusAction() {
     const userWithKyc = await prisma.user.findUnique({
       where: { id: user.id },
       select: {
-        currentKycVerification: {
+        kycVerification: {
           select: {
             id: true,
             status: true,
@@ -145,7 +150,7 @@ export async function getKycStatusAction() {
       };
     }
 
-    const currentVerification = userWithKyc.currentKycVerification;
+    const currentVerification = userWithKyc.kycVerification;
 
     // If no current verification, return PENDING status
     if (!currentVerification) {
@@ -199,43 +204,17 @@ export async function getKycStatusAction() {
           "Verification rejected";
 
         if (isApproved || isRejected) {
-          // Update or create verification record
-          let updatedVerification = await prisma.kycVerification.findFirst({
-            where: {
-              userId: user.id,
-              sumsubApplicantId: applicantId,
-            },
-          });
+          const kycData = {
+            status: isApproved ? ("APPROVED" as const) : ("REJECTED" as const),
+            sumsubApplicantId: applicantId,
+            completedAt: new Date(),
+            rejectionReason: isRejected ? rejectionReason : null,
+          };
 
-          if (!updatedVerification) {
-            // Create new verification if not found
-            updatedVerification = await prisma.kycVerification.create({
-              data: {
-                userId: user.id,
-                status: isApproved ? "APPROVED" : "REJECTED",
-                sumsubApplicantId: applicantId,
-                completedAt: new Date(),
-                rejectionReason: isRejected ? rejectionReason : null,
-              },
-            });
-          } else {
-            // Update existing verification
-            updatedVerification = await prisma.kycVerification.update({
-              where: { id: updatedVerification.id },
-              data: {
-                status: isApproved ? "APPROVED" : "REJECTED",
-                completedAt: new Date(),
-                rejectionReason: isRejected ? rejectionReason : null,
-              },
-            });
-          }
-
-          // Set as current verification
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              currentKycVerificationId: updatedVerification.id,
-            },
+          // Update existing verification linked to user
+          const updatedVerification = await prisma.kycVerification.update({
+            where: { id: currentVerification.id },
+            data: kycData,
           });
 
           return {

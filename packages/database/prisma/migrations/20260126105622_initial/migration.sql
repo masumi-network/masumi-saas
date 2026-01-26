@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "VerificationStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'REVIEW');
+
 -- CreateTable
 CREATE TABLE "user" (
     "id" TEXT NOT NULL,
@@ -12,6 +15,8 @@ CREATE TABLE "user" (
     "marketingOptIn" BOOLEAN NOT NULL DEFAULT false,
     "onboardingCompleted" BOOLEAN NOT NULL DEFAULT false,
     "stripeCustomerId" TEXT,
+    "kycVerificationId" TEXT,
+    "veridianCredentialId" TEXT,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
@@ -70,10 +75,25 @@ CREATE TABLE "organization" (
     "logo" TEXT,
     "metadata" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "stripeCustomerId" TEXT,
     "invoiceEmail" TEXT,
+    "kybVerificationId" TEXT,
 
     CONSTRAINT "organization_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "kyb_verification" (
+    "id" TEXT NOT NULL,
+    "status" "VerificationStatus" NOT NULL DEFAULT 'PENDING',
+    "sumsubApplicantId" TEXT,
+    "completedAt" TIMESTAMP(3),
+    "rejectionReason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "kyb_verification_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -135,6 +155,23 @@ CREATE TABLE "rateLimit" (
     CONSTRAINT "rateLimit_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "kyc_verification" (
+    "id" TEXT NOT NULL,
+    "status" "VerificationStatus" NOT NULL DEFAULT 'PENDING',
+    "sumsubApplicantId" TEXT,
+    "completedAt" TIMESTAMP(3),
+    "rejectionReason" TEXT,
+    "expiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "kyc_verification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_kycVerificationId_key" ON "user"("kycVerificationId");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
@@ -145,19 +182,37 @@ CREATE UNIQUE INDEX "user_stripeCustomerId_key" ON "user"("stripeCustomerId");
 CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "organization_kybVerificationId_key" ON "organization"("kybVerificationId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "organization_slug_key" ON "organization"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "organization_stripeCustomerId_key" ON "organization"("stripeCustomerId");
 
 -- CreateIndex
+CREATE INDEX "kyb_verification_sumsubApplicantId_idx" ON "kyb_verification"("sumsubApplicantId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "member_userId_organizationId_key" ON "member"("userId", "organizationId");
+
+-- CreateIndex
+CREATE INDEX "kyc_verification_status_idx" ON "kyc_verification"("status");
+
+-- CreateIndex
+CREATE INDEX "kyc_verification_sumsubApplicantId_idx" ON "kyc_verification"("sumsubApplicantId");
+
+-- AddForeignKey
+ALTER TABLE "user" ADD CONSTRAINT "user_kycVerificationId_fkey" FOREIGN KEY ("kycVerificationId") REFERENCES "kyc_verification"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "organization" ADD CONSTRAINT "organization_kybVerificationId_fkey" FOREIGN KEY ("kybVerificationId") REFERENCES "kyb_verification"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "member" ADD CONSTRAINT "member_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

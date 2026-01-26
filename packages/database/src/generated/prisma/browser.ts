@@ -42,6 +42,11 @@ export type Verification = Prisma.VerificationModel;
  */
 export type Organization = Prisma.OrganizationModel;
 /**
+ * Model KybVerification
+ *
+ */
+export type KybVerification = Prisma.KybVerificationModel;
+/**
  * Model Member
  *
  */

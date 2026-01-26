@@ -173,27 +173,37 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
 };
 
-export type EnumKycStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.KycStatus | Prisma.EnumKycStatusFieldRefInput<$PrismaModel>;
-  in?: $Enums.KycStatus[] | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+export type EnumVerificationStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   notIn?:
-    | $Enums.KycStatus[]
-    | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedEnumKycStatusFilter<$PrismaModel> | $Enums.KycStatus;
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>
+    | $Enums.VerificationStatus;
 };
 
-export type EnumKycStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.KycStatus | Prisma.EnumKycStatusFieldRefInput<$PrismaModel>;
-  in?: $Enums.KycStatus[] | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+export type EnumVerificationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   notIn?:
-    | $Enums.KycStatus[]
-    | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumKycStatusWithAggregatesFilter<$PrismaModel>
-    | $Enums.KycStatus;
+    | Prisma.NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.VerificationStatus;
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
-  _min?: Prisma.NestedEnumKycStatusFilter<$PrismaModel>;
-  _max?: Prisma.NestedEnumKycStatusFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>;
 };
 
 export type IntNullableFilter<$PrismaModel = never> = {
@@ -467,27 +477,39 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
 };
 
-export type NestedEnumKycStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.KycStatus | Prisma.EnumKycStatusFieldRefInput<$PrismaModel>;
-  in?: $Enums.KycStatus[] | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+export type NestedEnumVerificationStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   notIn?:
-    | $Enums.KycStatus[]
-    | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedEnumKycStatusFilter<$PrismaModel> | $Enums.KycStatus;
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>
+    | $Enums.VerificationStatus;
 };
 
-export type NestedEnumKycStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.KycStatus | Prisma.EnumKycStatusFieldRefInput<$PrismaModel>;
-  in?: $Enums.KycStatus[] | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+export type NestedEnumVerificationStatusWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   notIn?:
-    | $Enums.KycStatus[]
-    | Prisma.ListEnumKycStatusFieldRefInput<$PrismaModel>;
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumKycStatusWithAggregatesFilter<$PrismaModel>
-    | $Enums.KycStatus;
+    | Prisma.NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.VerificationStatus;
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
-  _min?: Prisma.NestedEnumKycStatusFilter<$PrismaModel>;
-  _max?: Prisma.NestedEnumKycStatusFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumVerificationStatusFilter<$PrismaModel>;
 };
 
 export type NestedBoolNullableFilter<$PrismaModel = never> = {

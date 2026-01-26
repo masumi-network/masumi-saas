@@ -1,7 +1,10 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApplicantData, verifySumsubWebhookSignature } from "@/lib/sumsub";
+import { verifySumsubWebhookSignature } from "@/lib/sumsub";
+
+// Maximum age for webhook timestamps (5 minutes)
+const MAX_TIMESTAMP_AGE_SECONDS = 300;
 
 /**
  * Sumsub webhook handler
@@ -18,17 +21,32 @@ export async function POST(request: NextRequest) {
       request.headers.get("user-agent")?.includes("PMI Service") &&
       (!signature || !timestamp);
 
-    if (!signature || !timestamp) {
-      if (!isDevelopment || !isTestWebhook) {
-        console.error("[Sumsub Webhook] Missing signature or timestamp");
-        return NextResponse.json(
-          { error: "Missing signature or timestamp" },
-          { status: 401 },
-        );
-      }
+    const isValidTestWebhook = isDevelopment && isTestWebhook;
+
+    if ((!signature || !timestamp) && !isValidTestWebhook) {
+      console.error("[Sumsub Webhook] Missing signature or timestamp");
+      return NextResponse.json(
+        { error: "Missing signature or timestamp" },
+        { status: 401 },
+      );
     }
 
     if (signature && timestamp) {
+      // Validate timestamp to prevent replay attacks
+      const webhookTime = parseInt(timestamp, 10);
+      const currentTime = Math.floor(Date.now() / 1000);
+      const timestampAge = currentTime - webhookTime;
+
+      if (timestampAge > MAX_TIMESTAMP_AGE_SECONDS || timestampAge < 0) {
+        console.error(
+          `[Sumsub Webhook] Timestamp too old or in future: ${timestampAge}s`,
+        );
+        return NextResponse.json(
+          { error: "Webhook timestamp expired" },
+          { status: 401 },
+        );
+      }
+
       const isValid = verifySumsubWebhookSignature(body, signature, timestamp);
       if (!isValid && (!isDevelopment || !isTestWebhook)) {
         console.error("[Sumsub Webhook] Invalid signature");
@@ -62,8 +80,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      await getApplicantData(applicantId);
-
       const isApproved = reviewResult?.reviewAnswer === "GREEN";
       const isRejected = reviewResult?.reviewAnswer === "RED";
       const rejectionReason =
@@ -73,73 +89,77 @@ export async function POST(request: NextRequest) {
 
       const user = await prisma.user.findUnique({
         where: { id: externalUserId },
+        include: { kycVerification: true },
       });
 
       if (user) {
-        // Find existing verification by applicantId or create new one
-        let kycVerification = await prisma.kycVerification.findFirst({
-          where: {
-            userId: externalUserId,
-            sumsubApplicantId: applicantId,
-          },
-        });
+        const kycData = {
+          status: isApproved
+            ? ("APPROVED" as const)
+            : isRejected
+              ? ("REJECTED" as const)
+              : ("REVIEW" as const),
+          sumsubApplicantId: applicantId,
+          completedAt: isApproved || isRejected ? new Date() : null,
+          rejectionReason: isRejected ? rejectionReason : null,
+        };
 
-        if (!kycVerification) {
-          // Create new verification record
-          kycVerification = await prisma.kycVerification.create({
-            data: {
-              userId: externalUserId,
-              status: isApproved
-                ? "APPROVED"
-                : isRejected
-                  ? "REJECTED"
-                  : "REVIEW",
-              sumsubApplicantId: applicantId,
-              completedAt: isApproved || isRejected ? new Date() : null,
-              rejectionReason: isRejected ? rejectionReason : null,
-            },
+        if (user.kycVerification) {
+          // Update existing verification
+          await prisma.kycVerification.update({
+            where: { id: user.kycVerification.id },
+            data: kycData,
           });
         } else {
-          // Update existing verification
-          kycVerification = await prisma.kycVerification.update({
-            where: { id: kycVerification.id },
+          // Create new verification and link to user
+          await prisma.kycVerification.create({
             data: {
-              status: isApproved
-                ? "APPROVED"
-                : isRejected
-                  ? "REJECTED"
-                  : "REVIEW",
-              completedAt: isApproved || isRejected ? new Date() : null,
-              rejectionReason: isRejected ? rejectionReason : null,
+              ...kycData,
+              user: { connect: { id: externalUserId } },
             },
           });
         }
-
-        // Set as current verification
-        await prisma.user.update({
-          where: { id: externalUserId },
-          data: {
-            currentKycVerificationId: kycVerification.id,
-          },
-        });
       } else {
         const organization = await prisma.organization.findUnique({
           where: { id: externalUserId },
+          include: { kybVerification: true },
         });
 
         if (organization) {
-          await prisma.organization.update({
-            where: { id: externalUserId },
-            data: {
-              kybStatus: isApproved
-                ? "APPROVED"
-                : isRejected
-                  ? "REJECTED"
-                  : "REVIEW",
-              sumsubApplicantId: applicantId,
-              kybCompletedAt: isApproved || isRejected ? new Date() : null,
-              kybRejectionReason: isRejected ? rejectionReason : null,
-            },
+          const kybData = {
+            status: isApproved
+              ? ("APPROVED" as const)
+              : isRejected
+                ? ("REJECTED" as const)
+                : ("REVIEW" as const),
+            sumsubApplicantId: applicantId,
+            completedAt: isApproved || isRejected ? new Date() : null,
+            rejectionReason: isRejected ? rejectionReason : null,
+          };
+
+          if (organization.kybVerification) {
+            // Update existing verification
+            await prisma.kybVerification.update({
+              where: { id: organization.kybVerification.id },
+              data: kybData,
+            });
+          } else {
+            // Create new verification and link to organization
+            await prisma.kybVerification.create({
+              data: {
+                ...kybData,
+                organization: { connect: { id: externalUserId } },
+              },
+            });
+          }
+        } else {
+          // No user or organization found for this externalUserId
+          console.warn(
+            `[Sumsub Webhook] No user or organization found for externalUserId: ${externalUserId}, applicantId: ${applicantId}`,
+          );
+          return NextResponse.json({
+            success: true,
+            warning: "No matching user or organization found",
           });
         }
       }
