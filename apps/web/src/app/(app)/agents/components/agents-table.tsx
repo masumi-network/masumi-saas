@@ -145,7 +145,8 @@ export function AgentsTable({
                     ))}
                     {agent.tags.length > 3 && (
                       <Badge variant="outline" className="text-xs">
-                        +{agent.tags.length - 3}
+                        {"+"}
+                        {agent.tags.length - 3}
                       </Badge>
                     )}
                   </div>

@@ -2,13 +2,7 @@
 
 import { Plus, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +33,6 @@ export function AgentsContent() {
   const [activeTab, setActiveTab] = useState("all");
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -52,7 +45,7 @@ export function AgentsContent() {
     });
   }, []);
 
-  const filterAgents = useCallback(() => {
+  const filteredAgents = useMemo(() => {
     let filtered = [...agents];
 
     if (activeTab === "verified") {
@@ -81,12 +74,8 @@ export function AgentsContent() {
       });
     }
 
-    setFilteredAgents(filtered);
+    return filtered;
   }, [agents, searchQuery, activeTab]);
-
-  useEffect(() => {
-    filterAgents();
-  }, [filterAgents]);
 
   const handleRegisterSuccess = () => {
     startTransition(async () => {

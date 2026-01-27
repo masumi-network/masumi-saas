@@ -80,7 +80,7 @@ export function RefreshButton({
         className={cn(iconSizes[size], isRefreshing && "animate-spin")}
         style={isRefreshing ? { animationDuration: "1s" } : undefined}
       />
-      <span className={textSizes[size]}>Refresh</span>
+      <span className={textSizes[size]}>{"Refresh"}</span>
     </Button>
   );
 }
