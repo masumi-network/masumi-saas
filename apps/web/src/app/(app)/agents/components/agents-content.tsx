@@ -134,34 +134,21 @@ export function AgentsContent() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground text-sm leading-6">
             {t("description")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <RefreshButton
-            onRefresh={() => {
-              startTransition(async () => {
-                const result = await getAgentsAction();
-                if (result.success && result.data) {
-                  setAgents(result.data as Agent[]);
-                }
-              });
-            }}
-            isRefreshing={isPending}
-          />
-          <Button
-            onClick={() => setIsRegisterDialogOpen(true)}
-            variant="primary"
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            {t("registerAgent")}
-          </Button>
-        </div>
+        <Button
+          onClick={() => setIsRegisterDialogOpen(true)}
+          variant="primary"
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          {t("registerAgent")}
+        </Button>
       </div>
 
       <div className="space-y-6">
@@ -187,6 +174,17 @@ export function AgentsContent() {
               className="pl-10"
             />
           </div>
+          <RefreshButton
+            onRefresh={() => {
+              startTransition(async () => {
+                const result = await getAgentsAction();
+                if (result.success && result.data) {
+                  setAgents(result.data as Agent[]);
+                }
+              });
+            }}
+            isRefreshing={isPending}
+          />
         </div>
 
         <AgentsTable

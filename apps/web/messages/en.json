@@ -268,8 +268,13 @@
         "error": "Failed to register agent. Please try again."
       },
       "Details": {
+        "description": "Description",
+        "noDescription": "No description provided",
         "apiUrl": "API URL",
+        "endpoint": "Endpoint",
         "tags": "Tags",
+        "noTags": "No tags",
+        "additionalDetails": "Additional Details",
         "metadata": "Metadata",
         "createdAt": "Created",
         "updatedAt": "Updated",

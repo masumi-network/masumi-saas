@@ -7,26 +7,17 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import {
-  deleteAgentAction,
-} from "@/lib/actions";
-import { cn } from "@/lib/utils";
+import { deleteAgentAction } from "@/lib/actions";
 
 import { AgentVerificationCard } from "./agent-verification-card";
 
@@ -48,25 +39,6 @@ interface AgentDetailsDialogProps {
   onVerificationSuccess: () => void;
 }
 
-const getStatusBadgeVariant = (
-  status: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null,
-): "default" | "secondary" | "destructive" | "outline" => {
-  if (status === "APPROVED") return "default";
-  if (status === "REJECTED") return "destructive";
-  if (status === "REVIEW") return "default";
-  return "secondary";
-};
-
-const getStatusLabel = (
-  status: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null,
-  t: (key: string) => string,
-): string => {
-  if (status === "APPROVED") return t("status.verified");
-  if (status === "REJECTED") return t("status.rejected");
-  if (status === "REVIEW") return t("status.underReview");
-  return t("status.pending");
-};
-
 export function AgentDetailsDialog({
   agent,
   onClose,
@@ -74,7 +46,6 @@ export function AgentDetailsDialog({
   onVerificationSuccess,
 }: AgentDetailsDialogProps) {
   const t = useTranslations("App.Agents.Details");
-  const tStatus = useTranslations("App.Agents");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [, startTransition] = useTransition();
@@ -114,36 +85,26 @@ export function AgentDetailsDialog({
   return (
     <>
       <Dialog open={!!agent} onOpenChange={onClose}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <DialogTitle className="text-xl">{agent.name}</DialogTitle>
-                <DialogDescription className="mt-2">
-                  {agent.description}
-                </DialogDescription>
-              </div>
-              <Badge
-                variant={getStatusBadgeVariant(agent.verificationStatus)}
-                className={cn(
-                  agent.verificationStatus === "APPROVED" &&
-                    "bg-green-500 text-white hover:bg-green-500/80",
-                  "ml-4",
-                )}
-              >
-                {getStatusLabel(agent.verificationStatus, tStatus)}
-              </Badge>
-            </div>
+        <DialogContent className="max-w-[600px] px-0 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="px-6">
+            <DialogTitle>{agent.name}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 px-6">
+            {/* Description */}
+            <div>
+              <h3 className="font-medium mb-2">{t("description")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {agent.description || t("noDescription")}
+              </p>
+            </div>
+
             <AgentVerificationCard
               agent={agent}
               onVerificationSuccess={onVerificationSuccess}
             />
 
-            <Separator />
-
+            {/* API URL */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -151,34 +112,58 @@ export function AgentDetailsDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between gap-2 p-2 bg-muted/40 rounded-lg border">
-                  <span className="text-sm text-muted-foreground font-mono truncate flex-1">
-                    {agent.apiUrl}
+                <div className="flex items-center justify-between py-2 gap-2 bg-muted/40 p-2 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">
+                    {t("endpoint")}
                   </span>
-                  <CopyButton value={agent.apiUrl} />
+                  <div className="font-mono text-sm flex items-center gap-2 truncate">
+                    <a
+                      href={agent.apiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline text-primary truncate"
+                    >
+                      {agent.apiUrl}
+                    </a>
+                    <CopyButton value={agent.apiUrl} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {agent.tags.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">
-                    {t("tags")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {agent.tags.map((tag, index) => (
+            {/* Tags */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">
+                  {t("tags")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {agent.tags && agent.tags.length > 0 ? (
+                    agent.tags.map((tag, index) => (
                       <Badge key={index} variant="secondary">
                         {tag}
                       </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t("noTags")}
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
+            <div className="flex items-center gap-4 pt-2">
+              <Separator className="flex-1" />
+              <h3 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                {t("additionalDetails")}
+              </h3>
+              <Separator className="flex-1" />
+            </div>
+
+            {/* Metadata */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">

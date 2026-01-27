@@ -97,7 +97,7 @@ export function AgentsTable({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -106,14 +106,16 @@ export function AgentsTable({
               <TableHead>{t("table.apiUrl")}</TableHead>
               <TableHead>{t("table.status")}</TableHead>
               <TableHead>{t("table.tags")}</TableHead>
-              <TableHead className="text-right">{t("table.actions")}</TableHead>
+              <TableHead className="text-right sticky right-0 z-10 w-[80px] min-w-[80px] bg-gradient-to-r from-transparent via-background/80 to-background">
+                {t("table.actions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {agents.map((agent) => (
               <TableRow
                 key={agent.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 group"
                 onClick={() => onAgentClick(agent)}
               >
                 <TableCell className="font-medium">{agent.name}</TableCell>
@@ -148,7 +150,7 @@ export function AgentsTable({
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right sticky right-0 z-10 w-[80px] min-w-[200px] bg-gradient-to-r from-transparent via-background/80 to-background">
                   <Button
                     variant="ghost"
                     size="icon"

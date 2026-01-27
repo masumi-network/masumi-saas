@@ -10,7 +10,7 @@ import {
 
 export default function AgentsLoading() {
   return (
-    <div className="w-full space-y-12 px-2">
+    <div className="w-full space-y-12">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
