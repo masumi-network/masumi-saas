@@ -90,7 +90,7 @@ export function AgentsTable({
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead>{t("table.name")}</TableHead>
               <TableHead>{t("table.description")}</TableHead>
               <TableHead>{t("table.apiUrl")}</TableHead>

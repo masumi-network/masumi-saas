@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -104,14 +105,14 @@ export function AgentDetailsDialog({
                     {t("endpoint")}
                   </span>
                   <div className="font-mono text-sm flex items-center gap-2 truncate">
-                    <a
+                    <Link
                       href={agent.apiUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline text-primary truncate"
                     >
                       {agent.apiUrl}
-                    </a>
+                    </Link>
                     <CopyButton value={agent.apiUrl} />
                   </div>
                 </div>
