@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { type Agent } from "@/lib/api/agent.client";
+import { type Agent,agentApiClient } from "@/lib/api/agent.client";
 
 import { AgentVerificationCard } from "./agent-verification-card";
 
