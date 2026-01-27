@@ -303,7 +303,8 @@
           },
           "requestVerification": "Request Verification",
           "requestSuccess": "Verification request submitted successfully!",
-          "requestError": "Failed to request verification. Please try again."
+          "requestError": "Failed to request verification. Please try again.",
+          "completeKyc": "Complete KYC Verification"
         }
       }
     },

@@ -98,6 +98,9 @@
   .max-w-search {
     max-width: 200px;
   }
+  .max-h-dialog {
+    max-height: 90vh;
+  }
 }
 
 @layer base {

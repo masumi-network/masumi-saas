@@ -134,21 +134,11 @@ export function AgentsContent() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
-        <Button
-          onClick={() => setIsRegisterDialogOpen(true)}
-          variant="primary"
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          {t("registerAgent")}
-        </Button>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground text-sm leading-6">
+          {t("description")}
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -164,7 +154,7 @@ export function AgentsContent() {
         />
 
         <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -174,17 +164,36 @@ export function AgentsContent() {
               className="pl-10"
             />
           </div>
-          <RefreshButton
-            onRefresh={() => {
-              startTransition(async () => {
-                const result = await getAgentsAction();
-                if (result.success && result.data) {
-                  setAgents(result.data as Agent[]);
-                }
-              });
-            }}
-            isRefreshing={isPending}
-          />
+          <div className="flex items-center gap-2">
+            <RefreshButton
+              onRefresh={() => {
+                startTransition(async () => {
+                  const result = await getAgentsAction();
+                  if (result.success && result.data) {
+                    setAgents(result.data as Agent[]);
+                  }
+                });
+              }}
+              size="md"
+              isRefreshing={isPending}
+            />
+            <Button
+              onClick={() => setIsRegisterDialogOpen(true)}
+              variant="primary"
+              size="icon"
+              className="md:hidden"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => setIsRegisterDialogOpen(true)}
+              variant="primary"
+              className="hidden md:flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {t("registerAgent")}
+            </Button>
+          </div>
         </div>
 
         <AgentsTable

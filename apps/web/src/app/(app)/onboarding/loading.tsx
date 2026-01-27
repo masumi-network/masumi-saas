@@ -19,7 +19,7 @@ export default function OnboardingLoading() {
   ];
 
   return (
-    <div className="w-full space-y-12 px-2">
+    <div className="w-full space-y-12">
       <div className="space-y-2">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-5 w-96" />

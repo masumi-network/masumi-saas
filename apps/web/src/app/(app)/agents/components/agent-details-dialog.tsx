@@ -85,7 +85,7 @@ export function AgentDetailsDialog({
   return (
     <>
       <Dialog open={!!agent} onOpenChange={onClose}>
-        <DialogContent className="max-w-[600px] px-0 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl px-0 max-h-dialog overflow-y-auto">
           <DialogHeader className="px-6">
             <DialogTitle>{agent.name}</DialogTitle>
           </DialogHeader>

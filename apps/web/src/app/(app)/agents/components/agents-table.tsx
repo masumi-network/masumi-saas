@@ -106,7 +106,7 @@ export function AgentsTable({
               <TableHead>{t("table.apiUrl")}</TableHead>
               <TableHead>{t("table.status")}</TableHead>
               <TableHead>{t("table.tags")}</TableHead>
-              <TableHead className="text-right sticky right-0 z-10 w-[80px] min-w-[80px] bg-gradient-to-r from-transparent via-background/80 to-background">
+              <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
                 {t("table.actions")}
               </TableHead>
             </TableRow>
@@ -150,7 +150,7 @@ export function AgentsTable({
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right sticky right-0 z-10 w-[80px] min-w-[200px] bg-gradient-to-r from-transparent via-background/80 to-background">
+                <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -177,6 +177,7 @@ export function AgentsTable({
         confirmText={t("delete")}
         cancelText={t("cancel")}
         isLoading={isDeleting}
+        variant="destructive"
       />
     </>
   );

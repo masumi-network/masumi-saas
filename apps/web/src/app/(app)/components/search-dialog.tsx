@@ -103,7 +103,12 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && !open) {
+      const isTyping =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable);
+
+      if (e.key === "/" && !open && !isTyping) {
         e.preventDefault();
         onOpenChange(true);
       }

@@ -1,8 +1,9 @@
 "use client";
 
 import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { requestAgentVerificationAction } from "@/lib/actions";
+import {
+  getKycStatusAction,
+  requestAgentVerificationAction,
+} from "@/lib/actions";
 import { cn } from "@/lib/utils";
 
 type Agent = {
@@ -41,9 +45,23 @@ export function AgentVerificationCard({
   const t = useTranslations("App.Agents.Details.Verification");
   const tStatus = useTranslations("App.Agents");
   const [isRequesting, setIsRequesting] = useState(false);
+  const [kycStatus, setKycStatus] = useState<
+    "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
+  >(null);
+  const [isLoadingKyc, setIsLoadingKyc] = useState(true);
   const [, startTransition] = useTransition();
 
   const status = agent.verificationStatus || "PENDING";
+
+  useEffect(() => {
+    startTransition(async () => {
+      const result = await getKycStatusAction();
+      if (result.success && result.data) {
+        setKycStatus(result.data.kycStatus);
+      }
+      setIsLoadingKyc(false);
+    });
+  }, []);
 
   const statusConfig = {
     PENDING: {
@@ -130,15 +148,21 @@ export function AgentVerificationCard({
       </CardHeader>
       {config.showButton && (
         <CardFooter>
-          <Button
-            variant="primary"
-            onClick={handleRequestVerification}
-            disabled={isRequesting}
-            className="w-full"
-          >
-            {isRequesting && <Spinner size={16} className="mr-2" />}
-            {t("requestVerification")}
-          </Button>
+          {!isLoadingKyc && (!kycStatus || kycStatus === "PENDING") ? (
+            <Button variant="primary" className="w-full" asChild>
+              <Link href="/onboarding">{t("completeKyc")}</Link>
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={handleRequestVerification}
+              disabled={isRequesting}
+              className="w-full"
+            >
+              {isRequesting && <Spinner size={16} className="mr-2" />}
+              {t("requestVerification")}
+            </Button>
+          )}
         </CardFooter>
       )}
     </Card>
