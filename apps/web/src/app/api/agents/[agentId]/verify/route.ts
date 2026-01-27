@@ -5,14 +5,15 @@ import { getAuthenticatedHeaders } from "@/lib/auth/utils";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { agentId: string } },
+  { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
     const { user } = await getAuthenticatedHeaders();
+    const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
       where: {
-        id: params.agentId,
+        id: agentId,
         userId: user.id,
       },
     });
@@ -57,7 +58,7 @@ export async function POST(
 
     const updatedAgent = await prisma.agent.update({
       where: {
-        id: params.agentId,
+        id: agentId,
       },
       data: {
         verificationStatus: "REVIEW",

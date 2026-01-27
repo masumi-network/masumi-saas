@@ -5,14 +5,15 @@ import { getAuthenticatedHeaders } from "@/lib/auth/utils";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { agentId: string } },
+  { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
     const { user } = await getAuthenticatedHeaders();
+    const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
       where: {
-        id: params.agentId,
+        id: agentId,
         userId: user.id,
       },
     });
@@ -45,14 +46,15 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { agentId: string } },
+  { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
     const { user } = await getAuthenticatedHeaders();
+    const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
       where: {
-        id: params.agentId,
+        id: agentId,
         userId: user.id,
       },
     });
@@ -69,7 +71,7 @@ export async function DELETE(
 
     await prisma.agent.delete({
       where: {
-        id: params.agentId,
+        id: agentId,
       },
     });
 
