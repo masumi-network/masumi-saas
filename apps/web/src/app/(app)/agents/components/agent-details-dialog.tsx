@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { type Agent,agentApiClient } from "@/lib/api/agent.client";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import { AgentVerificationCard } from "./agent-verification-card";
 
@@ -74,13 +74,12 @@ export function AgentDetailsDialog({
   return (
     <>
       <Dialog open={!!agent} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl px-0 max-h-dialog overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl px-0 max-h-dialog overflow-y-auto">
           <DialogHeader className="px-6">
             <DialogTitle>{agent.name}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4 px-6">
-            {/* Description */}
             <div>
               <h3 className="font-medium mb-2">{t("description")}</h3>
               <p className="text-sm text-muted-foreground">
@@ -93,7 +92,6 @@ export function AgentDetailsDialog({
               onVerificationSuccess={onVerificationSuccess}
             />
 
-            {/* API URL */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -120,7 +118,6 @@ export function AgentDetailsDialog({
               </CardContent>
             </Card>
 
-            {/* Tags */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -152,7 +149,6 @@ export function AgentDetailsDialog({
               <Separator className="flex-1" />
             </div>
 
-            {/* Metadata */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">

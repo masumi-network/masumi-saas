@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Agent,agentApiClient } from "@/lib/api/agent.client";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { cn } from "@/lib/utils";
 
 interface AgentsTableProps {
@@ -107,12 +108,20 @@ export function AgentsTable({
                 className="cursor-pointer hover:bg-muted/50 group"
                 onClick={() => onAgentClick(agent)}
               >
-                <TableCell className="font-medium">{agent.name}</TableCell>
-                <TableCell className="max-w-48 truncate">
+                <TableCell className="font-medium max-w-48 truncate text-xs sm:text-sm">
+                  {agent.name}
+                </TableCell>
+                <TableCell className="max-w-48 truncate text-xs sm:text-sm">
                   {agent.description}
                 </TableCell>
-                <TableCell className="font-mono text-sm max-w-48 truncate">
-                  {agent.apiUrl}
+                <TableCell className="font-mono text-xs sm:text-sm max-w-48 truncate">
+                  <Link
+                    href={agent.apiUrl}
+                    target="_blank"
+                    className="text-xs sm:text-sm hover:underline text-muted-foreground"
+                  >
+                    {agent.apiUrl}
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <Badge

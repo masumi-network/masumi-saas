@@ -304,6 +304,16 @@
             "description": "Verification was rejected. You can try requesting verification again."
           },
           "requestVerification": "Request Verification",
+          "requestDescription": "Review the information below and confirm to request verification for this agent.",
+          "agentInformation": "Agent Information",
+          "agentName": "Agent Name",
+          "apiUrl": "API URL",
+          "kycStatus": "KYC Status",
+          "kycStatusDescription": "Your identity has been verified and approved.",
+          "whatWillBeIssued": "What Will Be Issued",
+          "credentialDescription": "A Veridian credential will be issued linking your verified KYC status to this agent. This credential can be used to verify the agent's authenticity.",
+          "submitRequest": "Submit Request",
+          "cancel": "Cancel",
           "requestSuccess": "Verification request submitted successfully!",
           "requestError": "Failed to request verification. Please try again.",
           "completeKyc": "Complete KYC Verification"

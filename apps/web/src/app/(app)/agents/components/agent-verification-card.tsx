@@ -4,7 +4,6 @@ import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
-import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,10 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import { getKycStatusAction } from "@/lib/actions";
-import { type Agent,agentApiClient } from "@/lib/api/agent.client";
+import { type Agent } from "@/lib/api/agent.client";
 import { cn } from "@/lib/utils";
+
+import { RequestVerificationDialog } from "./request-verification-dialog";
 
 interface AgentVerificationCardProps {
   agent: Agent;
@@ -31,7 +31,7 @@ export function AgentVerificationCard({
 }: AgentVerificationCardProps) {
   const t = useTranslations("App.Agents.Details.Verification");
   const tStatus = useTranslations("App.Agents");
-  const [isRequesting, setIsRequesting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
@@ -85,20 +85,6 @@ export function AgentVerificationCard({
     statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
   const Icon = config.icon;
 
-  const handleRequestVerification = () => {
-    setIsRequesting(true);
-    startTransition(async () => {
-      const result = await agentApiClient.requestVerification(agent.id);
-      if (result.success) {
-        toast.success(t("requestSuccess"));
-        onVerificationSuccess();
-      } else {
-        toast.error(result.error || t("requestError"));
-      }
-      setIsRequesting(false);
-    });
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -142,16 +128,22 @@ export function AgentVerificationCard({
           ) : (
             <Button
               variant="primary"
-              onClick={handleRequestVerification}
-              disabled={isRequesting}
+              onClick={() => setDialogOpen(true)}
               className="w-full"
             >
-              {isRequesting && <Spinner size={16} className="mr-2" />}
               {t("requestVerification")}
             </Button>
           )}
         </CardFooter>
       )}
+
+      <RequestVerificationDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        agent={agent}
+        kycStatus={kycStatus}
+        onSuccess={onVerificationSuccess}
+      />
     </Card>
   );
 }
