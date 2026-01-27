@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { auth } from "@/lib/auth/auth";
@@ -8,6 +10,14 @@ import {
   UserProfileCardSkeleton,
 } from "../components/user-profile-card";
 import { AccountContent } from "./components/account-content";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("App.Account");
+  return {
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
+  };
+}
 
 export default async function AccountPage() {
   const requestHeaders = await getRequestHeaders();

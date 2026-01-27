@@ -3,16 +3,12 @@
 import {
   BookOpen,
   Bot,
-  Building2,
-  CreditCard,
   ExternalLink,
   History,
-  Key,
   LayoutDashboard,
   MessageSquare,
   Shield,
   User,
-  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -43,10 +39,6 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/agents", icon: Bot },
-  { key: "organizations", href: "/organizations", icon: Building2 },
-  { key: "wallets", href: "/wallets", icon: Wallet },
-  { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
-  { key: "apiKeys", href: "/api-keys", icon: Key },
   { key: "account", href: "/account", icon: User },
 ];
 
