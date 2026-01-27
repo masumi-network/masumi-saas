@@ -16,22 +16,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  getKycStatusAction,
-  requestAgentVerificationAction,
-} from "@/lib/actions";
+import { getKycStatusAction } from "@/lib/actions";
+import { type Agent,agentApiClient } from "@/lib/api/agent.client";
 import { cn } from "@/lib/utils";
-
-type Agent = {
-  id: string;
-  name: string;
-  description: string;
-  apiUrl: string;
-  tags: string[];
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 interface AgentVerificationCardProps {
   agent: Agent;
@@ -101,7 +88,7 @@ export function AgentVerificationCard({
   const handleRequestVerification = () => {
     setIsRequesting(true);
     startTransition(async () => {
-      const result = await requestAgentVerificationAction(agent.id);
+      const result = await agentApiClient.requestVerification(agent.id);
       if (result.success) {
         toast.success(t("requestSuccess"));
         onVerificationSuccess();

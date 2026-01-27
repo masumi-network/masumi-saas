@@ -16,19 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { deleteAgentAction } from "@/lib/actions";
+import { type Agent,agentApiClient } from "@/lib/api/agent.client";
 import { cn } from "@/lib/utils";
-
-type Agent = {
-  id: string;
-  name: string;
-  description: string;
-  apiUrl: string;
-  tags: string[];
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 interface AgentsTableProps {
   agents: Agent[];
@@ -78,7 +67,7 @@ export function AgentsTable({
 
     setIsDeleting(true);
     startTransition(async () => {
-      const result = await deleteAgentAction(selectedAgentToDelete.id);
+      const result = await agentApiClient.deleteAgent(selectedAgentToDelete.id);
       if (result.success) {
         toast.success(t("deleteSuccess"));
         onDeleteSuccess();
@@ -119,10 +108,10 @@ export function AgentsTable({
                 onClick={() => onAgentClick(agent)}
               >
                 <TableCell className="font-medium">{agent.name}</TableCell>
-                <TableCell className="max-w-md truncate">
+                <TableCell className="max-w-48 truncate">
                   {agent.description}
                 </TableCell>
-                <TableCell className="font-mono text-sm max-w-xs truncate">
+                <TableCell className="font-mono text-sm max-w-48 truncate">
                   {agent.apiUrl}
                 </TableCell>
                 <TableCell>
@@ -137,14 +126,21 @@ export function AgentsTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex gap-1 overflow-x-auto">
                     {agent.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="text-xs whitespace-nowrap"
+                      >
                         {tag}
                       </Badge>
                     ))}
                     {agent.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className="text-xs whitespace-nowrap"
+                      >
                         {"+"}
                         {agent.tags.length - 3}
                       </Badge>

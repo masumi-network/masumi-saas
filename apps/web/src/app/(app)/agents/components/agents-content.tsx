@@ -8,23 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
-import { getAgentsAction } from "@/lib/actions";
+import { type Agent,agentApiClient } from "@/lib/api/agent.client";
 
 import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
-
-type Agent = {
-  id: string;
-  name: string;
-  description: string;
-  apiUrl: string;
-  tags: string[];
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
@@ -38,9 +27,9 @@ export function AgentsContent() {
 
   useEffect(() => {
     startTransition(async () => {
-      const result = await getAgentsAction();
+      const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
-        setAgents(result.data as Agent[]);
+        setAgents(result.data);
       }
       setIsLoading(false);
     });
@@ -80,18 +69,18 @@ export function AgentsContent() {
 
   const handleRegisterSuccess = () => {
     startTransition(async () => {
-      const result = await getAgentsAction();
+      const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
-        setAgents(result.data as Agent[]);
+        setAgents(result.data);
       }
     });
   };
 
   const handleDeleteSuccess = () => {
     startTransition(async () => {
-      const result = await getAgentsAction();
+      const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
-        setAgents(result.data as Agent[]);
+        setAgents(result.data);
       }
     });
     setSelectedAgent(null);
@@ -99,15 +88,13 @@ export function AgentsContent() {
 
   const handleVerificationSuccess = () => {
     startTransition(async () => {
-      const result = await getAgentsAction();
+      const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
-        setAgents(result.data as Agent[]);
+        setAgents(result.data);
         if (selectedAgent) {
-          const updated = result.data.find(
-            (a: Agent) => a.id === selectedAgent.id,
-          );
+          const updated = result.data.find((a) => a.id === selectedAgent.id);
           if (updated) {
-            setSelectedAgent(updated as Agent);
+            setSelectedAgent(updated);
           }
         }
       }
@@ -158,9 +145,9 @@ export function AgentsContent() {
             <RefreshButton
               onRefresh={() => {
                 startTransition(async () => {
-                  const result = await getAgentsAction();
+                  const result = await agentApiClient.getAgents();
                   if (result.success && result.data) {
-                    setAgents(result.data as Agent[]);
+                    setAgents(result.data);
                   }
                 });
               }}
@@ -198,8 +185,14 @@ export function AgentsContent() {
 
             {filteredAgents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-muted-foreground">
-                  {searchQuery ? t("noAgentsMatchingSearch") : t("noAgents")}
+                <p className="text-muted-foreground text-sm">
+                  {searchQuery
+                    ? t("noAgentsMatchingSearch")
+                    : activeTab === "verified"
+                      ? t("noVerifiedAgents")
+                      : activeTab === "unverified"
+                        ? t("noUnverifiedAgents")
+                        : t("noAgents")}
                 </p>
               </div>
             )}

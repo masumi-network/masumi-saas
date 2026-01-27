@@ -35,7 +35,7 @@ export function AgentsTableSkeleton() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <TableRow key={i}>
               <TableCell>
                 <Skeleton className="h-4 w-32" />

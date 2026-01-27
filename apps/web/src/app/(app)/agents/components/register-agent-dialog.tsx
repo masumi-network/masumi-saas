@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { registerAgentAction } from "@/lib/actions";
+import { agentApiClient } from "@/lib/api/agent.client";
 
 type RegisterAgentFormType = {
   name: string;
@@ -100,13 +100,12 @@ export function RegisterAgentDialog({
   const onSubmit = async (data: RegisterAgentFormType) => {
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description);
-      formData.append("apiUrl", data.apiUrl);
-      formData.append("tags", tags.join(", "));
-
-      const result = await registerAgentAction(formData);
+      const result = await agentApiClient.registerAgent({
+        name: data.name,
+        description: data.description,
+        apiUrl: data.apiUrl,
+        tags: tags.join(", "),
+      });
 
       if (result.success) {
         toast.success(t("success"));

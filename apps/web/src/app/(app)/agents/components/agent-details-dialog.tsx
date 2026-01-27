@@ -17,20 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { deleteAgentAction } from "@/lib/actions";
+import { type Agent } from "@/lib/api/agent.client";
 
 import { AgentVerificationCard } from "./agent-verification-card";
-
-type Agent = {
-  id: string;
-  name: string;
-  description: string;
-  apiUrl: string;
-  tags: string[];
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 interface AgentDetailsDialogProps {
   agent: Agent | null;
@@ -61,7 +50,7 @@ export function AgentDetailsDialog({
   const handleDeleteConfirm = () => {
     setIsDeleting(true);
     startTransition(async () => {
-      const result = await deleteAgentAction(agent.id);
+      const result = await agentApiClient.deleteAgent(agent.id);
       if (result.success) {
         toast.success(t("deleteSuccess"));
         onDeleteSuccess();
