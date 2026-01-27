@@ -12,6 +12,7 @@ import { getAgentsAction } from "@/lib/actions";
 
 import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
+import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
 type Agent = {
@@ -185,18 +186,24 @@ export function AgentsContent() {
           </div>
         </div>
 
-        <AgentsTable
-          agents={filteredAgents}
-          onAgentClick={(agent) => setSelectedAgent(agent)}
-          onDeleteSuccess={handleDeleteSuccess}
-        />
+        {isLoading ? (
+          <AgentsTableSkeleton />
+        ) : (
+          <>
+            <AgentsTable
+              agents={filteredAgents}
+              onAgentClick={(agent) => setSelectedAgent(agent)}
+              onDeleteSuccess={handleDeleteSuccess}
+            />
 
-        {filteredAgents.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground">
-              {searchQuery ? t("noAgentsMatchingSearch") : t("noAgents")}
-            </p>
-          </div>
+            {filteredAgents.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground">
+                  {searchQuery ? t("noAgentsMatchingSearch") : t("noAgents")}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
