@@ -100,11 +100,11 @@ export function AgentDetailsDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between py-2 gap-2 bg-muted/40 p-2 rounded-lg border">
-                  <span className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between py-2 gap-2 bg-muted/40 p-2 rounded-lg border w-full truncate">
+                  <span className="text-sm text-muted-foreground min-w-fit">
                     {t("endpoint")}
                   </span>
-                  <div className="font-mono text-sm flex items-center gap-2 truncate">
+                  <div className="flex items-center gap-2 w-full justify-end">
                     <Link
                       href={agent.apiUrl}
                       target="_blank"
