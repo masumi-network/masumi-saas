@@ -24,6 +24,7 @@
 
 // Export types from Prisma client
 export type {
+  Agent,
   Apikey,
   Invitation,
   Member,

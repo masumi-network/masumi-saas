@@ -423,6 +423,7 @@ export const ModelName = {
   Apikey: "Apikey",
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
+  Agent: "Agent",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -455,7 +456,8 @@ export type TypeMap<
       | "invitation"
       | "apikey"
       | "rateLimit"
-      | "kycVerification";
+      | "kycVerification"
+      | "agent";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -1295,6 +1297,82 @@ export type TypeMap<
         };
       };
     };
+    Agent: {
+      payload: Prisma.$AgentPayload<ExtArgs>;
+      fields: Prisma.AgentFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.AgentFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.AgentFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        findFirst: {
+          args: Prisma.AgentFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.AgentFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        findMany: {
+          args: Prisma.AgentFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>[];
+        };
+        create: {
+          args: Prisma.AgentCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        createMany: {
+          args: Prisma.AgentCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.AgentCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>[];
+        };
+        delete: {
+          args: Prisma.AgentDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        update: {
+          args: Prisma.AgentUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        deleteMany: {
+          args: Prisma.AgentDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.AgentUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.AgentUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>[];
+        };
+        upsert: {
+          args: Prisma.AgentUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentPayload>;
+        };
+        aggregate: {
+          args: Prisma.AgentAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAgent>;
+        };
+        groupBy: {
+          args: Prisma.AgentGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AgentGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.AgentCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.AgentCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -1501,6 +1579,23 @@ export const KycVerificationScalarFieldEnum = {
 
 export type KycVerificationScalarFieldEnum =
   (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
+
+export const AgentScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  description: "description",
+  apiUrl: "apiUrl",
+  userId: "userId",
+  verificationStatus: "verificationStatus",
+  veridianCredentialId: "veridianCredentialId",
+  tags: "tags",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentScalarFieldEnum =
+  (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
@@ -1725,6 +1820,7 @@ export type GlobalOmitConfig = {
   apikey?: Prisma.ApikeyOmit;
   rateLimit?: Prisma.RateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
+  agent?: Prisma.AgentOmit;
 };
 
 /* Types for Logging */
