@@ -38,18 +38,13 @@ export function AgentsContent() {
     });
   }, []);
 
-  useEffect(() => {
-    const agentId = searchParams.get("agentId");
-    if (!agentId) return;
-    if (agents.length === 0) return;
-    if (selectedAgent?.id === agentId) return;
+  const agentIdFromUrl = searchParams.get("agentId");
+  const agentFromUrl = useMemo(() => {
+    if (!agentIdFromUrl) return null;
+    return agents.find((a) => a.id === agentIdFromUrl) || null;
+  }, [agents, agentIdFromUrl]);
 
-    const match = agents.find((a) => a.id === agentId);
-    if (match) {
-      setSelectedAgent(match);
-      router.replace("/agents");
-    }
-  }, [agents, searchParams, router, selectedAgent?.id]);
+  const dialogAgent = selectedAgent ?? agentFromUrl;
 
   const filteredAgents = useMemo(() => {
     let filtered = [...agents];
@@ -103,16 +98,14 @@ export function AgentsContent() {
   };
 
   const handleVerificationSuccess = () => {
+    const currentAgentId = dialogAgent?.id;
+    if (!currentAgentId) return;
     startTransition(async () => {
       const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
         setAgents(result.data);
-        if (selectedAgent) {
-          const updated = result.data.find((a) => a.id === selectedAgent.id);
-          if (updated) {
-            setSelectedAgent(updated);
-          }
-        }
+        const updated = result.data.find((a) => a.id === currentAgentId);
+        if (updated) setSelectedAgent(updated);
       }
     });
   };
@@ -223,8 +216,11 @@ export function AgentsContent() {
       />
 
       <AgentDetailsDialog
-        agent={selectedAgent}
-        onClose={() => setSelectedAgent(null)}
+        agent={dialogAgent}
+        onClose={() => {
+          setSelectedAgent(null);
+          if (agentIdFromUrl) router.replace("/agents");
+        }}
         onDeleteSuccess={handleDeleteSuccess}
         onVerificationSuccess={handleVerificationSuccess}
       />
