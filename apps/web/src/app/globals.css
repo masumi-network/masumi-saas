@@ -347,3 +347,11 @@ input[type="number"] {
     @apply bg-background text-foreground;
   }
 }
+
+/* QR Code Container Styling for Veridian Wallet */
+#veridian-qr-container {
+  div {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}

@@ -1,7 +1,19 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import {
+  fetchContactCredentials,
+  findCredentialBySchema,
+  getAgentVerificationSchemaSaid,
+  validateCredential,
+} from "@/lib/veridian";
+
+const verifyAgentSchema = z.object({
+  aid: z.string().min(1, "AID is required"),
+  schemaSaid: z.string().optional(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +22,23 @@ export async function POST(
   try {
     const { user } = await getAuthenticatedHeaders();
     const { agentId } = await params;
+
+    // Parse and validate request body
+    const body = await request.json().catch(() => ({}));
+    const validation = verifyAgentSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request",
+          details: validation.error.issues.map((issue) => issue.message),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { aid, schemaSaid } = validation.data;
 
     const agent = await prisma.agent.findFirst({
       where: {
@@ -56,13 +85,78 @@ export async function POST(
       );
     }
 
+    // Fetch and validate credentials from Veridian
+    let credentialId: string | null = null;
+    try {
+      const credentials = await fetchContactCredentials(aid);
+
+      if (credentials.length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "No credentials found for this identifier. Please ensure you have credentials issued to this AID.",
+          },
+          { status: 400 },
+        );
+      }
+
+      // Determine which schema to use (prefer provided, fallback to env config)
+      const expectedSchemaSaid = schemaSaid || getAgentVerificationSchemaSaid();
+
+      // Find credential matching the expected schema
+      const selectedCredential = findCredentialBySchema(
+        credentials,
+        expectedSchemaSaid,
+      );
+
+      if (!selectedCredential) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Required credential with schema SAID '${expectedSchemaSaid}' not found. Please ensure you have the correct credential issued to this identifier.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Validate the credential
+      const validationResult = validateCredential(selectedCredential);
+
+      if (!validationResult.isValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Credential validation failed: ${validationResult.message}`,
+            details: validationResult.details,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Store the credential ID (schema SAID)
+      credentialId = validationResult.details?.schemaSaid || null;
+    } catch (error) {
+      console.error("Failed to fetch/validate credentials:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            error instanceof Error
+              ? `Failed to validate credentials: ${error.message}`
+              : "Failed to validate credentials",
+        },
+        { status: 500 },
+      );
+    }
+
     const updatedAgent = await prisma.agent.update({
       where: {
         id: agentId,
       },
       data: {
         verificationStatus: "REVIEW",
-        // veridianCredentialId: credentialId, // Uncomment when API is integrated
+        veridianCredentialId: credentialId,
       },
     });
 
