@@ -118,6 +118,7 @@ export function AgentsTable({
                   <Link
                     href={agent.apiUrl}
                     target="_blank"
+                    onClick={(e) => e.stopPropagation()}
                     className="text-xs sm:text-sm hover:underline text-muted-foreground"
                   >
                     {agent.apiUrl}
