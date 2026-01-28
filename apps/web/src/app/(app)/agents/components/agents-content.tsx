@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
-import { type Agent,agentApiClient } from "@/lib/api/agent.client";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
@@ -17,6 +18,8 @@ import { RegisterAgentDialog } from "./register-agent-dialog";
 
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,6 +37,19 @@ export function AgentsContent() {
       setIsLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    const agentId = searchParams.get("agentId");
+    if (!agentId) return;
+    if (agents.length === 0) return;
+    if (selectedAgent?.id === agentId) return;
+
+    const match = agents.find((a) => a.id === agentId);
+    if (match) {
+      setSelectedAgent(match);
+      router.replace("/agents");
+    }
+  }, [agents, searchParams, router, selectedAgent?.id]);
 
   const filteredAgents = useMemo(() => {
     let filtered = [...agents];

@@ -12,7 +12,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
 import {
@@ -24,6 +30,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 interface SearchDialogProps {
   open: boolean;
@@ -79,6 +86,8 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const t = useTranslations("App.Search");
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [, startTransition] = useTransition();
 
   const handleSelect = useCallback(
     (href: string) => {
@@ -110,6 +119,22 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onOpenChange]);
 
+  useEffect(() => {
+    if (!open) return;
+    startTransition(async () => {
+      const result = await agentApiClient.getAgents();
+      if (result.success && result.data) {
+        setAgents(result.data);
+      }
+    });
+  }, [open]);
+
+  const agentResults = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return agents.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [agents, search]);
+
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
@@ -119,6 +144,23 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
       />
       <CommandList>
         <CommandEmpty>{t("noResults")}</CommandEmpty>
+        {agentResults.length > 0 && (
+          <>
+            <CommandGroup heading={t("agents")}>
+              {agentResults.map((agent) => (
+                <CommandItem
+                  key={agent.id}
+                  value={`agent-${agent.id}-${agent.name}`}
+                  onSelect={() => handleSelect(`/agents?agentId=${agent.id}`)}
+                >
+                  <Bot className="mr-2 h-4 w-4" />
+                  {agent.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
         <CommandGroup heading={t("navigation")}>
           {navigationItems.map((item) => (
             <CommandItem

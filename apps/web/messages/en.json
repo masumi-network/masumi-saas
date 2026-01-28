@@ -127,6 +127,7 @@
     "Search": {
       "placeholder": "Type a command or search...",
       "noResults": "No results found.",
+      "agents": "Agents",
       "navigation": "Navigation",
       "quickActions": "Quick Actions",
       "links": "Links",
