@@ -109,7 +109,7 @@ export function AgentDetailsDialog({
                       href={agent.apiUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline text-primary truncate"
+                      className="font-mono text-xs sm:text-sm hover:underline text-primary truncate max-w-36 sm:max-w-48 lg:max-w-60 xl:max-w-72"
                     >
                       {agent.apiUrl}
                     </Link>
