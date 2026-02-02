@@ -321,6 +321,22 @@
         }
       }
     },
+    "Components": {
+      "VeridianWallet": {
+        "connectButton": "Connect Veridian Wallet",
+        "connected": "Connected to Veridian",
+        "disconnect": "Disconnect",
+        "scanQRCode": "Scan QR code with Veridian Wallet",
+        "scanDescription": "Open Veridian wallet on your mobile device and scan this QR code to connect",
+        "cantScan": "Can't scan? Copy the connection ID:",
+        "cancel": "Cancel",
+        "error": "Error",
+        "tryAgain": "Try Again",
+        "connectionTimeout": "Connection timeout. Please try scanning the QR code again.",
+        "failedToGenerateQR": "Failed to generate QR code",
+        "failedToInitialize": "Failed to initialize connection"
+      }
+    },
     "Account": {
       "title": "Account Settings",
       "description": "Manage your account settings and preferences.",

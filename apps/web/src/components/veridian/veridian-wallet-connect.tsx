@@ -3,6 +3,7 @@
 
 import type { DAppPeerConnect } from "@fabianbormann/cardano-peer-connect";
 import { QrCode, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export function VeridianWalletConnect({
   appName = "Masumi",
   className,
 }: VeridianWalletConnectProps) {
+  const t = useTranslations("App.Components.VeridianWallet");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [aid, setAid] = useState<string | null>(null);
@@ -221,8 +223,9 @@ export function VeridianWalletConnect({
         }
       } catch (qrError) {
         console.error("QR code generation error:", qrError);
-        setError("Failed to generate QR code");
-        onError?.("Failed to generate QR code");
+        const errorMsg = t("failedToGenerateQR");
+        setError(errorMsg);
+        onError?.(errorMsg);
       }
 
       // Set timeout to prevent infinite pending state
@@ -230,8 +233,7 @@ export function VeridianWalletConnect({
         if (isConnecting) {
           console.log("Connection timeout");
           setIsConnecting(false);
-          const errorMsg =
-            "Connection timeout. Please try scanning the QR code again.";
+          const errorMsg = t("connectionTimeout");
           setError(errorMsg);
           onError?.(errorMsg);
         }
@@ -239,7 +241,7 @@ export function VeridianWalletConnect({
     } catch (err) {
       console.error("Failed to initialize CIP-45:", err);
       const errorMsg =
-        err instanceof Error ? err.message : "Failed to initialize connection";
+        err instanceof Error ? err.message : t("failedToInitialize");
       setError(errorMsg);
       onError?.(errorMsg);
       setIsConnecting(false);
@@ -275,7 +277,7 @@ export function VeridianWalletConnect({
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-green-500" />
             <div className="flex-1">
-              <p className="text-sm font-medium">Connected to Veridian</p>
+              <p className="text-sm font-medium">{t("connected")}</p>
               <p className="text-xs text-muted-foreground font-mono truncate">
                 {aid}
               </p>
@@ -287,7 +289,7 @@ export function VeridianWalletConnect({
             onClick={handleDisconnect}
             className="w-full"
           >
-            Disconnect
+            {t("disconnect")}
           </Button>
         </div>
       </div>
@@ -304,7 +306,7 @@ export function VeridianWalletConnect({
             variant="default"
           >
             <Wallet className="mr-2 h-4 w-4" />
-            Connect Veridian Wallet
+            {t("connectButton")}
           </Button>
         )}
 
@@ -328,19 +330,16 @@ export function VeridianWalletConnect({
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">
-                    Scan QR code with Veridian Wallet
-                  </p>
+                  <p className="text-sm font-medium">{t("scanQRCode")}</p>
                   <p className="text-xs text-muted-foreground">
-                    Open Veridian wallet on your mobile device and scan this QR
-                    code to connect
+                    {t("scanDescription")}
                   </p>
                 </div>
 
                 {meerkatId && (
                   <div className="mt-4 w-full space-y-2">
                     <p className="text-xs text-muted-foreground text-center">
-                      Can't scan? Copy the connection ID:
+                      {t("cantScan")}
                     </p>
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-2">
                       <p className="flex-1 text-xs font-mono truncate">
@@ -366,14 +365,14 @@ export function VeridianWalletConnect({
               }}
               className="w-full"
             >
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         )}
 
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-            <p className="text-sm text-destructive font-medium">Error</p>
+            <p className="text-sm text-destructive font-medium">{t("error")}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
             <Button
               variant="outline"
@@ -381,7 +380,7 @@ export function VeridianWalletConnect({
               onClick={initializeCIP45}
               className="mt-3 w-full"
             >
-              Try Again
+              {t("tryAgain")}
             </Button>
           </div>
         )}
