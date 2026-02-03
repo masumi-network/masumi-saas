@@ -317,7 +317,14 @@
           "cancel": "Cancel",
           "requestSuccess": "Verification request submitted successfully!",
           "requestError": "Failed to request verification. Please try again.",
-          "completeKyc": "Complete KYC Verification"
+          "completeKyc": "Complete KYC Verification",
+          "veridianWalletConnection": "Veridian Wallet Connection",
+          "fetchingCredentials": "Fetching credentials...",
+          "identifierAid": "Identifier (AID)",
+          "credentialsFound": "{count} credential(s) found",
+          "requiredSchema": "Required Schema",
+          "requiredCredentialFound": "✓ Required credential found",
+          "requiredCredentialNotFound": "✗ Required credential not found"
         }
       }
     },

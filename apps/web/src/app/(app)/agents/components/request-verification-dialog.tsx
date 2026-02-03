@@ -197,7 +197,9 @@ export function RequestVerificationDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Veridian Wallet Connection</h3>
+            <h3 className="text-sm font-medium">
+              {t("veridianWalletConnection")}
+            </h3>
             <VeridianWalletConnect
               key={veridianConnectKeyRef.current}
               onConnect={handleWalletConnect}
@@ -208,38 +210,38 @@ export function RequestVerificationDialog({
             {isFetchingCredentials && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Spinner size={16} />
-                <span>Fetching credentials...</span>
+                <span>{t("fetchingCredentials")}</span>
               </div>
             )}
             {aid && credentialsCount !== null && (
               <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Identifier (AID)
+                    {t("identifierAid")}
                   </p>
                   <p className="text-xs font-mono truncate">{aid}</p>
                 </div>
                 {credentialsCount > 0 && (
                   <div>
                     <p className="text-xs text-muted-foreground">
-                      {credentialsCount} credential(s) found
+                      {t("credentialsFound", { count: credentialsCount })}
                     </p>
                     {expectedSchemaSaid && (
                       <div className="mt-2">
                         <p className="text-xs text-muted-foreground mb-1">
-                          Required Schema
+                          {t("requiredSchema")}
                         </p>
                         <p className="text-xs font-mono truncate">
                           {expectedSchemaSaid}
                         </p>
                         {hasExpectedCredential === true && (
                           <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            ✓ Required credential found
+                            {t("requiredCredentialFound")}
                           </p>
                         )}
                         {hasExpectedCredential === false && (
                           <p className="text-xs text-destructive mt-1">
-                            ✗ Required credential not found
+                            {t("requiredCredentialNotFound")}
                           </p>
                         )}
                       </div>
