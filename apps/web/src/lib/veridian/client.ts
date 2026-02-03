@@ -8,12 +8,6 @@ const VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID =
   process.env.VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID ||
   "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO";
 
-if (!VERIDIAN_CREDENTIAL_SERVER_URL) {
-  throw new Error(
-    "VERIDIAN_CREDENTIAL_SERVER_URL is required. Please set it in your .env file.",
-  );
-}
-
 /**
  * Get the credential server URL
  * @returns The credential server base URL
