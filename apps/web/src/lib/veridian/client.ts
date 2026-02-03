@@ -6,7 +6,7 @@ const VERIDIAN_CREDENTIAL_SERVER_URL =
   process.env.VERIDIAN_CREDENTIAL_SERVER_URL;
 const VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID =
   process.env.VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID ||
-  "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"; // Default: Foundation Employee
+  "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO";
 
 if (!VERIDIAN_CREDENTIAL_SERVER_URL) {
   throw new Error(
@@ -70,7 +70,6 @@ export async function fetchContactCredentials(
     return data.data || [];
   } catch (error) {
     if (error instanceof Error) {
-      // Re-throw with context
       throw new Error(`Failed to fetch contact credentials: ${error.message}`);
     }
     throw new Error("Failed to fetch contact credentials: Unknown error");
@@ -78,7 +77,7 @@ export async function fetchContactCredentials(
 }
 
 /**
- * Request credential disclosure (legacy endpoint, not actively used)
+ * Request credential disclosure
  * @param schemaSaid - The schema SAID to request
  * @param aid - The KERI identifier (AID)
  * @param attributes - Optional attributes to include in the request
@@ -107,7 +106,6 @@ export async function requestDisclosure(
     aid,
   };
 
-  // Add attributes if provided
   if (attributes && Object.keys(attributes).length > 0) {
     const attribute: Record<string, string> = {};
     Object.entries(attributes).forEach(([key, value]) => {

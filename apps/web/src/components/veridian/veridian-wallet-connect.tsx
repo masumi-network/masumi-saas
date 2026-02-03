@@ -39,33 +39,34 @@ export function VeridianWalletConnect({
   const dAppConnectRef = useRef<DAppPeerConnect | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /**
-   * Clean up the QR code div from the DOM
-   * Safely removes the QR code element if it exists
-   */
   const cleanupQRCode = () => {
-    if (
-      qrDivRef.current &&
-      qrContainerRef.current?.contains(qrDivRef.current)
-    ) {
+    if (dAppConnectRef.current) {
       try {
-        qrContainerRef.current.removeChild(qrDivRef.current);
+        (dAppConnectRef.current as { close?: () => void }).close?.();
       } catch (err) {
-        // Ignore errors if already removed
-        console.debug("QR div cleanup error:", err);
+        console.debug("DAppPeerConnect close error:", err);
       }
-      qrDivRef.current = null;
+      dAppConnectRef.current = null;
     }
+
+    if (qrContainerRef.current) {
+      while (qrContainerRef.current.firstChild) {
+        qrContainerRef.current.removeChild(qrContainerRef.current.firstChild);
+      }
+      qrContainerRef.current.innerHTML = "";
+    }
+    qrDivRef.current = null;
   };
 
   const initializeCIP45 = async () => {
     if (typeof window === "undefined") return;
 
     try {
+      cleanupQRCode();
+
       setIsConnecting(true);
       setError(null);
 
-      // Dynamic import to avoid SSR issues
       const { DAppPeerConnect } =
         await import("@fabianbormann/cardano-peer-connect");
 
@@ -83,28 +84,24 @@ export function VeridianWalletConnect({
           ) => void,
         ) => {
           console.log("Wallet connection request:", walletInfo);
-          callback(true, true, walletInfo); // Auto-accept connection
+          callback(true, true, walletInfo);
         },
         onApiInject: async (injectedWalletName: string) => {
           console.log("CIP-45 API injected:", injectedWalletName);
           setWalletName(injectedWalletName);
-          // Store the wallet name, but wait for onConnect to actually connect
-          // The API is injected but not yet enabled until user confirms
         },
         onConnect: async (address: string, walletInfo: unknown) => {
           console.log("CIP-45 connected", address, walletInfo);
           setIsConnecting(false);
           setIsConnected(true);
 
-          // Store wallet name
           const walletInfoObj = walletInfo as { name?: string } | null;
           const connectedWalletName = walletInfoObj?.name || "idw_p2p";
           setWalletName(connectedWalletName);
 
-          // Poll for API availability (API might not be immediately available)
           const start = Date.now();
           const interval = 100;
-          const timeout = 10000; // 10 second timeout for onConnect
+          const timeout = 10000;
 
           const checkApi = setInterval(async () => {
             const api = (window as { cardano?: Record<string, unknown> })
@@ -133,7 +130,6 @@ export function VeridianWalletConnect({
                     if (keriIdentifier?.id) {
                       setAid(keriIdentifier.id);
                       onConnect(keriIdentifier.id);
-                      // Clear timeout on successful connection
                       if (timeoutRef.current) {
                         clearTimeout(timeoutRef.current);
                         timeoutRef.current = null;
@@ -146,7 +142,6 @@ export function VeridianWalletConnect({
                 }
               }
 
-              // Fallback: try to get identifier from walletInfo
               const walletInfoObj = walletInfo as {
                 identifier?: string;
                 aid?: string;
@@ -156,7 +151,6 @@ export function VeridianWalletConnect({
               if (identifier) {
                 setAid(identifier);
                 onConnect(identifier);
-                // Clear timeout on successful connection
                 if (timeoutRef.current) {
                   clearTimeout(timeoutRef.current);
                   timeoutRef.current = null;
@@ -179,13 +173,11 @@ export function VeridianWalletConnect({
           setWalletName(null);
           setMeerkatId(null);
           cleanupQRCode();
-          dAppConnectRef.current = null;
         },
       });
 
       dAppConnectRef.current = dAppConnectInstance;
 
-      // Get and store meerkat ID for manual entry
       try {
         const meerkatIdValue = (
           dAppConnectInstance as unknown as {
@@ -200,13 +192,8 @@ export function VeridianWalletConnect({
         console.error("Failed to get meerkat ID:", err);
       }
 
-      // Generate QR code for wallet connection
       try {
         if (qrContainerRef.current) {
-          // Clean up any existing QR code div
-          cleanupQRCode();
-
-          // Create a separate div for QR code (not managed by React)
           const qrDiv = document.createElement("div");
           qrDiv.style.width = "256px";
           qrDiv.style.height = "256px";
@@ -214,10 +201,8 @@ export function VeridianWalletConnect({
           qrDiv.style.alignItems = "center";
           qrDiv.style.justifyContent = "center";
 
-          // Generate QR code into the separate div
           await dAppConnectInstance.generateQRCode(qrDiv);
 
-          // Append the QR div to the container
           qrContainerRef.current.appendChild(qrDiv);
           qrDivRef.current = qrDiv;
         }
@@ -228,7 +213,6 @@ export function VeridianWalletConnect({
         onError?.(errorMsg);
       }
 
-      // Set timeout to prevent infinite pending state
       timeoutRef.current = setTimeout(() => {
         if (isConnecting) {
           console.log("Connection timeout");
@@ -237,7 +221,7 @@ export function VeridianWalletConnect({
           setError(errorMsg);
           onError?.(errorMsg);
         }
-      }, 30000); // 30 second timeout
+      }, 30000);
     } catch (err) {
       console.error("Failed to initialize CIP-45:", err);
       const errorMsg =
@@ -249,22 +233,18 @@ export function VeridianWalletConnect({
   };
 
   const handleDisconnect = () => {
-    if (dAppConnectRef.current) {
-      // Disconnect logic if needed
-      setIsConnected(false);
-      setAid(null);
-      setWalletName(null);
-      setMeerkatId(null);
-      cleanupQRCode();
-      dAppConnectRef.current = null;
-    }
+    setIsConnected(false);
+    setAid(null);
+    setWalletName(null);
+    setMeerkatId(null);
+    cleanupQRCode();
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
       cleanupQRCode();
     };
@@ -351,22 +331,6 @@ export function VeridianWalletConnect({
                 )}
               </div>
             </div>
-
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsConnecting(false);
-                setMeerkatId(null);
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                }
-                cleanupQRCode();
-                dAppConnectRef.current = null;
-              }}
-              className="w-full"
-            >
-              {t("cancel")}
-            </Button>
           </div>
         )}
 

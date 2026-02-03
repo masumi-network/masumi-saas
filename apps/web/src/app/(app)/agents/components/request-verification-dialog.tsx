@@ -2,7 +2,7 @@
 
 import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -47,13 +47,23 @@ export function RequestVerificationDialog({
   const [hasExpectedCredential, setHasExpectedCredential] = useState<
     boolean | null
   >(null);
+  const veridianConnectKeyRef = useRef(0);
+
+  useEffect(() => {
+    if (!open) {
+      veridianConnectKeyRef.current += 1;
+      setAid(null);
+      setCredentialsCount(null);
+      setExpectedSchemaSaid(null);
+      setHasExpectedCredential(null);
+    }
+  }, [open]);
 
   const handleWalletConnect = async (connectedAid: string) => {
     setAid(connectedAid);
     setIsFetchingCredentials(true);
 
     try {
-      // Fetch credentials for the connected AID
       const response = await fetch(
         `/api/test/veridian?aid=${encodeURIComponent(connectedAid)}`,
       );
@@ -115,7 +125,6 @@ export function RequestVerificationDialog({
         toast.success(t("requestSuccess"));
         onSuccess();
         onOpenChange(false);
-        // Reset state
         setAid(null);
         setCredentialsCount(null);
         setExpectedSchemaSaid(null);
@@ -190,6 +199,7 @@ export function RequestVerificationDialog({
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Veridian Wallet Connection</h3>
             <VeridianWalletConnect
+              key={veridianConnectKeyRef.current}
               onConnect={handleWalletConnect}
               onError={(error) => {
                 toast.error(`Connection error: ${error}`);

@@ -85,7 +85,6 @@ export async function POST(
       );
     }
 
-    // Fetch and validate credentials from Veridian
     let credentialId: string | null = null;
     try {
       const credentials = await fetchContactCredentials(aid);
@@ -101,10 +100,8 @@ export async function POST(
         );
       }
 
-      // Determine which schema to use (prefer provided, fallback to env config)
       const expectedSchemaSaid = schemaSaid || getAgentVerificationSchemaSaid();
 
-      // Find credential matching the expected schema
       const selectedCredential = findCredentialBySchema(
         credentials,
         expectedSchemaSaid,
@@ -120,7 +117,6 @@ export async function POST(
         );
       }
 
-      // Validate the credential
       const validationResult = validateCredential(selectedCredential);
 
       if (!validationResult.isValid) {
@@ -134,7 +130,6 @@ export async function POST(
         );
       }
 
-      // Store the credential ID (schema SAID)
       credentialId = validationResult.details?.schemaSaid || null;
     } catch (error) {
       console.error("Failed to fetch/validate credentials:", error);

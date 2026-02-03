@@ -52,7 +52,6 @@ export async function GET(request: NextRequest) {
     const { aid: validatedAid, schemaSaid: validatedSchemaSaid } =
       validation.data;
 
-    // Fetch credentials
     const credentials = await fetchContactCredentials(validatedAid);
 
     if (credentials.length === 0) {
@@ -67,8 +66,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // If schemaSaid is provided, find specific credential
-    // Otherwise, use the expected agent verification schema
     const schemaToFind =
       validatedSchemaSaid || getAgentVerificationSchemaSaid();
 
@@ -92,7 +89,6 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Format and validate the matching credential
       const formatted = formatCredential(matchingCredential);
       const validationResult = validateCredential(matchingCredential);
 
@@ -114,14 +110,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Format and validate all credentials
     const formattedCredentials = credentials.map((cred) => ({
       raw: cred,
       formatted: formatCredential(cred),
       validation: validateCredential(cred),
     }));
 
-    // Check if expected schema credential exists
     const expectedSchemaSaid = getAgentVerificationSchemaSaid();
     const expectedCredential = findCredentialBySchema(
       credentials,

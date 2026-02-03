@@ -17,7 +17,6 @@ export function extractCredentialAttributes(
   const attributes = credential.sad?.a || {};
   const credentialAttributes: Record<string, unknown> = {};
 
-  // Filter out metadata fields and keep only actual attributes
   Object.keys(attributes).forEach((key) => {
     if (!["d", "i", "dt", "ri", "s"].includes(key)) {
       credentialAttributes[key] = attributes[key];
@@ -45,14 +44,12 @@ export function formatCredential(credential: Credential): FormattedCredential {
   const issuanceDateTime = credential.sad?.a?.dt || "";
   const credentialStatusRegistry = credential.sad?.ri || "";
 
-  // Determine status
   const statusValue = credential.status?.s;
   const eventType = credential.status?.et;
   const hasRevObject = !!credential.rev;
   const isRevoked = statusValue === "1" || eventType === "rev" || hasRevObject;
   const isIssued = statusValue === "0" && eventType !== "rev" && !hasRevObject;
 
-  // Check expiration (1 year default)
   let isExpired = false;
   if (issuanceDateTime) {
     const issuanceDate = new Date(issuanceDateTime);
@@ -69,7 +66,7 @@ export function formatCredential(credential: Credential): FormattedCredential {
   } else if (isIssued) {
     status = "issued";
   } else {
-    status = "revoked"; // Default to revoked if status is unknown
+    status = "revoked";
   }
 
   const isValid = isIssued && !isExpired && !isRevoked;
@@ -103,14 +100,12 @@ export function validateCredential(
   const credentialType =
     credential.schema?.credentialType || credential.schema?.title || "Unknown";
 
-  // Check credential status
   const statusValue = credential.status?.s;
   const eventType = credential.status?.et;
   const hasRevObject = !!credential.rev;
   const isRevoked = statusValue === "1" || eventType === "rev" || hasRevObject;
   const isIssued = statusValue === "0" && eventType !== "rev" && !hasRevObject;
 
-  // Check expiration
   const issuanceDateTime = credential.sad?.a?.dt;
   let isExpired = false;
   let expiresAt: string | undefined;
@@ -125,7 +120,6 @@ export function validateCredential(
     expiresAt = expirationDate.toISOString();
   }
 
-  // Build validation result
   if (isRevoked) {
     const revokedAt = credential.rev?.dt || credential.status?.dt || "Unknown";
 
