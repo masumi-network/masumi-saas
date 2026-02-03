@@ -34,6 +34,7 @@ export function VeridianWalletConnect({
   const [error, setError] = useState<string | null>(null);
   const [_walletName, setWalletName] = useState<string | null>(null);
   const [meerkatId, setMeerkatId] = useState<string | null>(null);
+  const [qrCodeReady, setQrCodeReady] = useState(false);
   const qrContainerRef = useRef<HTMLDivElement>(null);
   const qrDivRef = useRef<HTMLDivElement | null>(null);
   const dAppConnectRef = useRef<DAppPeerConnect | null>(null);
@@ -56,6 +57,7 @@ export function VeridianWalletConnect({
       qrContainerRef.current.innerHTML = "";
     }
     qrDivRef.current = null;
+    setQrCodeReady(false);
   };
 
   const initializeCIP45 = async () => {
@@ -205,6 +207,7 @@ export function VeridianWalletConnect({
 
           qrContainerRef.current.appendChild(qrDiv);
           qrDivRef.current = qrDiv;
+          setQrCodeReady(true);
         }
       } catch (qrError) {
         console.error("QR code generation error:", qrError);
@@ -300,7 +303,7 @@ export function VeridianWalletConnect({
                     ref={qrContainerRef}
                     className="flex w-full items-center justify-center min-h-[256px]"
                   >
-                    {!qrDivRef.current && (
+                    {!qrCodeReady && (
                       <div className="flex flex-col items-center gap-2">
                         <QrCode className="h-24 w-24 text-muted-foreground/50" />
                         <Spinner size={24} />
