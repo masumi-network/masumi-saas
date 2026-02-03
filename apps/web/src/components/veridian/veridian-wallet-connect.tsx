@@ -1,14 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- DAppPeerConnect types require any */
+ 
 "use client";
 
-import type { DAppPeerConnect } from "@fabianbormann/cardano-peer-connect";
-import { QrCode, Wallet } from "lucide-react";
+import { useCardano } from "@cardano-foundation/cardano-connect-with-wallet";
+import { NetworkType } from "@cardano-foundation/cardano-connect-with-wallet-core";
+import { Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { QRCode } from "react-qrcode-logo";
 
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
-import { Spinner } from "@/components/ui/spinner";
+
+interface IWalletInfoExtended {
+  name: string;
+  address: string;
+  oobi: string;
+}
 
 interface VeridianWalletConnectProps {
   onConnect: (aid: string) => void;
@@ -28,232 +35,189 @@ export function VeridianWalletConnect({
   className,
 }: VeridianWalletConnectProps) {
   const t = useTranslations("App.Components.VeridianWallet");
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [aid, setAid] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [_walletName, setWalletName] = useState<string | null>(null);
-  const [meerkatId, setMeerkatId] = useState<string | null>(null);
-  const [qrCodeReady, setQrCodeReady] = useState(false);
-  const qrContainerRef = useRef<HTMLDivElement>(null);
-  const qrDivRef = useRef<HTMLDivElement | null>(null);
-  const dAppConnectRef = useRef<DAppPeerConnect | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showAcceptButton, setShowAcceptButton] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const cleanupQRCode = () => {
-    if (dAppConnectRef.current) {
-      try {
-        (dAppConnectRef.current as { close?: () => void }).close?.();
-      } catch (err) {
-        console.debug("DAppPeerConnect close error:", err);
-      }
-      dAppConnectRef.current = null;
-    }
-
-    if (qrContainerRef.current) {
-      while (qrContainerRef.current.firstChild) {
-        qrContainerRef.current.removeChild(qrContainerRef.current.firstChild);
-      }
-      qrContainerRef.current.innerHTML = "";
-    }
-    qrDivRef.current = null;
-    setQrCodeReady(false);
+  const defaultWallet: IWalletInfoExtended = {
+    name: "",
+    address: "",
+    oobi: "",
   };
 
-  const initializeCIP45 = async () => {
-    if (typeof window === "undefined") return;
+  const [peerConnectWalletInfo, setPeerConnectWalletInfo] =
+    useState<IWalletInfoExtended>(defaultWallet);
 
-    try {
-      cleanupQRCode();
+  const [onPeerConnectAccept, setOnPeerConnectAccept] = useState<() => void>(
+    () => () => {},
+  );
+  const [onPeerConnectReject, setOnPeerConnectReject] = useState<() => void>(
+    () => () => {},
+  );
 
-      setIsConnecting(true);
-      setError(null);
+  const { dAppConnect, meerkatAddress, initDappConnect, disconnect, connect } =
+    useCardano({
+      limitNetwork: NetworkType.TESTNET,
+    });
 
-      const { DAppPeerConnect } =
-        await import("@fabianbormann/cardano-peer-connect");
+  const pollForApi = (walletName: string) => {
+    const start = Date.now();
+    const interval = 100;
+    const timeout = 5000;
 
-      const dAppConnectInstance = new DAppPeerConnect({
-        dAppInfo: {
-          name: appName,
-          url: window.location.origin,
-        },
-        verifyConnection: (
-          walletInfo: any,
-          callback: (
-            granted: boolean,
-            allowAutoConnect: boolean,
-            walletInfo?: any,
-          ) => void,
-        ) => {
-          console.log("Wallet connection request:", walletInfo);
-          callback(true, true, walletInfo);
-        },
-        onApiInject: async (injectedWalletName: string) => {
-          console.log("CIP-45 API injected:", injectedWalletName);
-          setWalletName(injectedWalletName);
-        },
-        onConnect: async (address: string, walletInfo: unknown) => {
-          console.log("CIP-45 connected", address, walletInfo);
-          setIsConnecting(false);
-          setIsConnected(true);
-
-          const walletInfoObj = walletInfo as { name?: string } | null;
-          const connectedWalletName = walletInfoObj?.name || "idw_p2p";
-          setWalletName(connectedWalletName);
-
-          const start = Date.now();
-          const interval = 100;
-          const timeout = 10000;
-
-          const checkApi = setInterval(async () => {
-            const api = (window as { cardano?: Record<string, unknown> })
-              .cardano?.[connectedWalletName];
-
-            if (api || Date.now() - start > timeout) {
-              clearInterval(checkApi);
-
-              if (
-                api &&
-                typeof api === "object" &&
-                "enable" in api &&
-                typeof api.enable === "function"
-              ) {
-                try {
-                  const enabledApi = await (
-                    api.enable as () => Promise<{
-                      experimental?: {
-                        getKeriIdentifier?: () => Promise<{ id?: string }>;
-                      };
-                    }>
-                  )();
-                  if (enabledApi?.experimental?.getKeriIdentifier) {
-                    const keriIdentifier =
-                      await enabledApi.experimental.getKeriIdentifier();
-                    if (keriIdentifier?.id) {
-                      setAid(keriIdentifier.id);
-                      onConnect(keriIdentifier.id);
-                      if (timeoutRef.current) {
-                        clearTimeout(timeoutRef.current);
-                        timeoutRef.current = null;
-                      }
-                      return;
-                    }
-                  }
-                } catch (err) {
-                  console.error("Failed to get KERI identifier:", err);
-                }
+    const checkApi = setInterval(async () => {
+      const api = (window as { cardano?: Record<string, unknown> }).cardano?.[
+        walletName
+      ];
+      if (api || Date.now() - start > timeout) {
+        clearInterval(checkApi);
+        if (api) {
+          try {
+            const enabledApi = (await (
+              api as {
+                enable: () => Promise<{
+                  experimental?: {
+                    getKeriIdentifier?: () => Promise<{
+                      id: string;
+                      oobi: string;
+                    }>;
+                  };
+                }>;
               }
-
-              const walletInfoObj = walletInfo as {
-                identifier?: string;
-                aid?: string;
-              } | null;
-              const identifier =
-                walletInfoObj?.identifier || walletInfoObj?.aid;
-              if (identifier) {
-                setAid(identifier);
-                onConnect(identifier);
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                  timeoutRef.current = null;
-                }
-              } else {
-                const errorMsg =
-                  "Failed to get KERI identifier. API not available.";
-                setError(errorMsg);
-                onError?.(errorMsg);
-                setIsConnecting(false);
-              }
+            ).enable()) as {
+              experimental?: {
+                getKeriIdentifier?: () => Promise<{ id: string; oobi: string }>;
+              };
+            };
+            const keriIdentifier =
+              await enabledApi.experimental?.getKeriIdentifier?.();
+            if (keriIdentifier && keriIdentifier.id) {
+              setPeerConnectWalletInfo({
+                ...peerConnectWalletInfo,
+                address: keriIdentifier.id,
+                oobi: keriIdentifier.oobi,
+              });
+              setShowAcceptButton(false);
+              setError("");
+              onConnect(keriIdentifier.id);
             }
-          }, interval);
-        },
-        onDisconnect: () => {
-          console.log("CIP-45 disconnected");
-          setIsConnected(false);
-          setIsConnecting(false);
-          setAid(null);
-          setWalletName(null);
-          setMeerkatId(null);
-          cleanupQRCode();
-        },
-      });
-
-      dAppConnectRef.current = dAppConnectInstance;
-
-      try {
-        const meerkatIdValue = (
-          dAppConnectInstance as unknown as {
-            meerkat?: { identifier?: string };
+          } catch {
+            setError("Failed to get KERI identifier");
+            onError?.("Failed to get KERI identifier");
           }
-        ).meerkat?.identifier;
-        if (meerkatIdValue) {
-          setMeerkatId(meerkatIdValue);
-          console.log("Meerkat ID:", meerkatIdValue);
+        } else {
+          setError(`Timeout while connecting P2P ${walletName} wallet`);
         }
-      } catch (err) {
-        console.error("Failed to get meerkat ID:", err);
       }
-
-      try {
-        if (qrContainerRef.current) {
-          const qrDiv = document.createElement("div");
-          qrDiv.style.width = "256px";
-          qrDiv.style.height = "256px";
-          qrDiv.style.display = "flex";
-          qrDiv.style.alignItems = "center";
-          qrDiv.style.justifyContent = "center";
-
-          await dAppConnectInstance.generateQRCode(qrDiv);
-
-          qrContainerRef.current.appendChild(qrDiv);
-          qrDivRef.current = qrDiv;
-          setQrCodeReady(true);
-        }
-      } catch (qrError) {
-        console.error("QR code generation error:", qrError);
-        const errorMsg = t("failedToGenerateQR");
-        setError(errorMsg);
-        onError?.(errorMsg);
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        if (isConnecting) {
-          console.log("Connection timeout");
-          setIsConnecting(false);
-          const errorMsg = t("connectionTimeout");
-          setError(errorMsg);
-          onError?.(errorMsg);
-        }
-      }, 30000);
-    } catch (err) {
-      console.error("Failed to initialize CIP-45:", err);
-      const errorMsg =
-        err instanceof Error ? err.message : t("failedToInitialize");
-      setError(errorMsg);
-      onError?.(errorMsg);
-      setIsConnecting(false);
-    }
-  };
-
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    setAid(null);
-    setWalletName(null);
-    setMeerkatId(null);
-    cleanupQRCode();
+    }, interval);
   };
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      cleanupQRCode();
-    };
-  }, []);
+    if (dAppConnect.current === null) {
+      const verifyConnection = (
+        walletInfo: IWalletInfoExtended,
+        callback: (granted: boolean, autoconnect: boolean) => void,
+      ) => {
+        setPeerConnectWalletInfo(walletInfo);
+        setShowAcceptButton(true);
 
-  if (isConnected && aid) {
+        setOnPeerConnectAccept(() => () => callback(true, true));
+        setOnPeerConnectReject(() => () => callback(false, false));
+      };
+
+      const onApiInject = async (name: string) => {
+        const api = (window as { cardano?: Record<string, unknown> }).cardano?.[
+          name
+        ];
+        if (api) {
+          const enabledApi = (await (
+            api as {
+              enable: () => Promise<{
+                experimental?: {
+                  getKeriIdentifier?: () => Promise<{
+                    id: string;
+                    oobi: string;
+                  }>;
+                };
+              }>;
+            }
+          ).enable()) as {
+            experimental?: {
+              getKeriIdentifier?: () => Promise<{ id: string; oobi: string }>;
+            };
+          };
+          const keriIdentifier =
+            await enabledApi.experimental?.getKeriIdentifier?.();
+
+          if (keriIdentifier && keriIdentifier.id) {
+            setPeerConnectWalletInfo({
+              ...peerConnectWalletInfo,
+              name: name,
+              address: keriIdentifier.id,
+              oobi: keriIdentifier.oobi,
+            });
+
+            setError("");
+            onConnect(keriIdentifier.id);
+          }
+        } else {
+          setError(`Timeout while connecting P2P ${name} wallet`);
+        }
+      };
+
+      const onApiEject = (): void => {
+        setPeerConnectWalletInfo(defaultWallet);
+        setError("");
+        disconnect();
+        setShowAcceptButton(false);
+      };
+
+      const onP2PConnect = (): void => {};
+
+      initDappConnect(
+        appName,
+        window.location.href,
+        verifyConnection,
+        onApiInject,
+        onApiEject,
+        [
+          "wss://tracker.webtorrent.dev:443/announce",
+          "wss://dev.btt.cf-identity-wallet.metadata.dev.cf-deployments.org",
+        ],
+        onP2PConnect,
+      );
+    }
+  }, [appName, initDappConnect, disconnect, onConnect]);
+
+  const disconnectWallet = () => {
+    disconnect();
+    setPeerConnectWalletInfo(defaultWallet);
+    setShowAcceptButton(false);
+    setError("");
+  };
+
+  const handleAcceptWallet = () => {
+    if (peerConnectWalletInfo) {
+      onPeerConnectAccept();
+      connect(peerConnectWalletInfo.name)
+        .then(async () => {
+          if (peerConnectWalletInfo.name === "idw_p2p") {
+            pollForApi(peerConnectWalletInfo.name);
+          } else {
+            setError(`Wrong wallet: ${peerConnectWalletInfo.name}`);
+          }
+        })
+        .catch(() => {
+          if (peerConnectWalletInfo.name === "idw_p2p") {
+            pollForApi(peerConnectWalletInfo.name);
+          }
+        });
+    }
+  };
+
+  if (
+    peerConnectWalletInfo.address &&
+    peerConnectWalletInfo.address.length > 0
+  ) {
     return (
       <div className={className}>
         <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
@@ -262,14 +226,14 @@ export function VeridianWalletConnect({
             <div className="flex-1">
               <p className="text-sm font-medium">{t("connected")}</p>
               <p className="text-xs text-muted-foreground font-mono truncate">
-                {aid}
+                {peerConnectWalletInfo.address}
               </p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDisconnect}
+            onClick={disconnectWallet}
             className="w-full"
           >
             {t("disconnect")}
@@ -282,73 +246,91 @@ export function VeridianWalletConnect({
   return (
     <div className={className}>
       <div className="space-y-4">
-        {!isConnecting && !error && (
-          <Button
-            onClick={initializeCIP45}
-            className="w-full"
-            variant="default"
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            {t("connectButton")}
-          </Button>
-        )}
+        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+          <div className="text-center space-y-4">
+            {meerkatAddress && (
+              <div className="p-4 rounded-lg flex items-center justify-center relative bg-background">
+                <QRCode
+                  value={meerkatAddress}
+                  size={256}
+                  fgColor={"black"}
+                  bgColor={"white"}
+                  qrStyle={"squares"}
+                  quietZone={10}
+                />
+              </div>
+            )}
 
-        {isConnecting && (
-          <div className="space-y-4">
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-              <div className="text-center space-y-4">
-                <div className="p-4 rounded-lg flex items-center justify-center relative bg-background">
-                  <div
-                    id="veridian-qr-container"
-                    ref={qrContainerRef}
-                    className="flex w-full items-center justify-center min-h-[256px]"
-                  >
-                    {!qrCodeReady && (
-                      <div className="flex flex-col items-center gap-2">
-                        <QrCode className="h-24 w-24 text-muted-foreground/50" />
-                        <Spinner size={24} />
-                      </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("scanQRCode")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("scanDescription")}
+              </p>
+            </div>
+
+            {meerkatAddress && (
+              <div className="mt-4 w-full space-y-2">
+                <p className="text-xs text-muted-foreground text-center">
+                  {t("cantScan")}
+                </p>
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-2">
+                  <p className="flex-1 text-xs font-mono truncate">
+                    {meerkatAddress}
+                  </p>
+                  <CopyButton value={meerkatAddress} />
+                </div>
+              </div>
+            )}
+
+            {showAcceptButton && peerConnectWalletInfo && (
+              <div className="mt-4 w-full space-y-2">
+                <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                  <p className="text-sm font-medium text-center">
+                    {t("connectionRequest")}
+                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {t("walletName")}:{" "}
+                      {peerConnectWalletInfo.name || "Unknown"}
+                    </p>
+                    {peerConnectWalletInfo.address && (
+                      <p className="text-xs text-muted-foreground font-mono truncate">
+                        {peerConnectWalletInfo.address}
+                      </p>
                     )}
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{t("scanQRCode")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("scanDescription")}
-                  </p>
-                </div>
-
-                {meerkatId && (
-                  <div className="mt-4 w-full space-y-2">
-                    <p className="text-xs text-muted-foreground text-center">
-                      {t("cantScan")}
-                    </p>
-                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-2">
-                      <p className="flex-1 text-xs font-mono truncate">
-                        {meerkatId}
-                      </p>
-                      <CopyButton value={meerkatId} />
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleAcceptWallet}
+                      className="flex-1"
+                    >
+                      {t("accept")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onPeerConnectReject();
+                        setShowAcceptButton(false);
+                        setPeerConnectWalletInfo(defaultWallet);
+                      }}
+                      className="flex-1"
+                    >
+                      {t("reject")}
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
             <p className="text-sm text-destructive font-medium">{t("error")}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={initializeCIP45}
-              className="mt-3 w-full"
-            >
-              {t("tryAgain")}
-            </Button>
           </div>
         )}
       </div>

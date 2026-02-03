@@ -341,7 +341,11 @@
         "tryAgain": "Try Again",
         "connectionTimeout": "Connection timeout. Please try scanning the QR code again.",
         "failedToGenerateQR": "Failed to generate QR code",
-        "failedToInitialize": "Failed to initialize connection"
+        "failedToInitialize": "Failed to initialize connection",
+        "connectionRequest": "Connection Request",
+        "walletName": "Wallet",
+        "accept": "Accept",
+        "reject": "Reject"
       }
     },
     "Account": {
