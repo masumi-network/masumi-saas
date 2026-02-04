@@ -39,60 +39,17 @@ export function RequestVerificationDialog({
   const tStatus = useTranslations("App.Agents");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aid, setAid] = useState<string | null>(null);
-  const [isFetchingCredentials, setIsFetchingCredentials] = useState(false);
-  const [credentialsCount, setCredentialsCount] = useState<number | null>(null);
-  const [expectedSchemaSaid, setExpectedSchemaSaid] = useState<string | null>(
-    null,
-  );
-  const [hasExpectedCredential, setHasExpectedCredential] = useState<
-    boolean | null
-  >(null);
   const veridianConnectKeyRef = useRef(0);
 
   useEffect(() => {
     if (!open) {
       veridianConnectKeyRef.current += 1;
       setAid(null);
-      setCredentialsCount(null);
-      setExpectedSchemaSaid(null);
-      setHasExpectedCredential(null);
     }
   }, [open]);
 
-  const handleWalletConnect = async (connectedAid: string) => {
+  const handleWalletConnect = (connectedAid: string) => {
     setAid(connectedAid);
-    setIsFetchingCredentials(true);
-
-    try {
-      const response = await fetch(
-        `/api/test/veridian?aid=${encodeURIComponent(connectedAid)}`,
-      );
-      const data = await response.json();
-
-      if (data.success) {
-        const count = data.data.credentialsCount || 0;
-        setCredentialsCount(count);
-        setExpectedSchemaSaid(data.data.expectedSchemaSaid || null);
-        setHasExpectedCredential(data.data.hasExpectedCredential ?? null);
-
-        if (count === 0) {
-          toast.info("No credentials found for this identifier");
-        } else if (data.data.hasExpectedCredential) {
-          toast.success(`Found required credential for agent verification`);
-        } else {
-          toast.warning(
-            `Found ${count} credential(s), but the required credential for agent verification was not found`,
-          );
-        }
-      } else {
-        toast.error(data.error || "Failed to fetch credentials");
-      }
-    } catch (error) {
-      console.error("Failed to fetch credentials:", error);
-      toast.error("Failed to fetch credentials");
-    } finally {
-      setIsFetchingCredentials(false);
-    }
   };
 
   const handleSubmit = async () => {
@@ -101,23 +58,9 @@ export function RequestVerificationDialog({
       return;
     }
 
-    if (credentialsCount === 0) {
-      toast.error(
-        "No credentials found. Please ensure you have credentials issued to this identifier.",
-      );
-      return;
-    }
-
-    if (hasExpectedCredential === false) {
-      toast.error(
-        "Required credential for agent verification not found. Please ensure you have the correct credential issued to this identifier.",
-      );
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      // Backend will use the configured schema SAID, so we don't need to send it
+      // Backend will validate credentials and use the configured schema SAID
       const result = await agentApiClient.requestVerification(agent.id, {
         aid,
       });
@@ -126,9 +69,6 @@ export function RequestVerificationDialog({
         onSuccess();
         onOpenChange(false);
         setAid(null);
-        setCredentialsCount(null);
-        setExpectedSchemaSaid(null);
-        setHasExpectedCredential(null);
       } else {
         toast.error(result.error || t("requestError"));
       }
@@ -207,47 +147,12 @@ export function RequestVerificationDialog({
                 toast.error(`Connection error: ${error}`);
               }}
             />
-            {isFetchingCredentials && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Spinner size={16} />
-                <span>{t("fetchingCredentials")}</span>
-              </div>
-            )}
-            {aid && credentialsCount !== null && (
-              <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {t("identifierAid")}
-                  </p>
-                  <p className="text-xs font-mono truncate">{aid}</p>
-                </div>
-                {credentialsCount > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {t("credentialsFound", { count: credentialsCount })}
-                    </p>
-                    {expectedSchemaSaid && (
-                      <div className="mt-2">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          {t("requiredSchema")}
-                        </p>
-                        <p className="text-xs font-mono truncate">
-                          {expectedSchemaSaid}
-                        </p>
-                        {hasExpectedCredential === true && (
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            {t("requiredCredentialFound")}
-                          </p>
-                        )}
-                        {hasExpectedCredential === false && (
-                          <p className="text-xs text-destructive mt-1">
-                            {t("requiredCredentialNotFound")}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+            {aid && (
+              <div className="rounded-lg border bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground mb-1">
+                  {t("identifierAid")}
+                </p>
+                <p className="text-xs font-mono truncate">{aid}</p>
               </div>
             )}
           </div>
@@ -273,7 +178,7 @@ export function RequestVerificationDialog({
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isSubmitting || !aid || hasExpectedCredential === false}
+            disabled={isSubmitting || !aid}
           >
             {isSubmitting && <Spinner size={16} className="mr-2" />}
             {t("submitRequest")}
