@@ -23,6 +23,12 @@ interface VeridianWalletConnectProps {
   className?: string;
 }
 
+const defaultWallet: IWalletInfoExtended = {
+  name: "",
+  address: "",
+  oobi: "",
+};
+
 /**
  * Veridian Wallet Connection Component
  * Handles CIP-45 peer-to-peer connection with Veridian wallet via QR code
@@ -36,12 +42,6 @@ export function VeridianWalletConnect({
   const t = useTranslations("App.Components.VeridianWallet");
   const [showAcceptButton, setShowAcceptButton] = useState(false);
   const [error, setError] = useState<string>("");
-
-  const defaultWallet: IWalletInfoExtended = {
-    name: "",
-    address: "",
-    oobi: "",
-  };
 
   const [peerConnectWalletInfo, setPeerConnectWalletInfo] =
     useState<IWalletInfoExtended>(defaultWallet);
@@ -99,11 +99,11 @@ export function VeridianWalletConnect({
             const keriIdentifier =
               await enabledApi.experimental?.getKeriIdentifier?.();
             if (keriIdentifier && keriIdentifier.id) {
-              setPeerConnectWalletInfo({
-                ...peerConnectWalletInfo,
+              setPeerConnectWalletInfo((prev) => ({
+                ...prev,
                 address: keriIdentifier.id,
                 oobi: keriIdentifier.oobi,
-              });
+              }));
               setShowAcceptButton(false);
               setError("");
               onConnect(keriIdentifier.id);
@@ -159,12 +159,12 @@ export function VeridianWalletConnect({
             await enabledApi.experimental?.getKeriIdentifier?.();
 
           if (keriIdentifier && keriIdentifier.id) {
-            setPeerConnectWalletInfo({
-              ...peerConnectWalletInfo,
+            setPeerConnectWalletInfo((prev) => ({
+              ...prev,
               name: name,
               address: keriIdentifier.id,
               oobi: keriIdentifier.oobi,
-            });
+            }));
 
             setError("");
             onConnect(keriIdentifier.id);
@@ -204,7 +204,7 @@ export function VeridianWalletConnect({
         pollingIntervalRef.current = null;
       }
     };
-  }, [appName, initDappConnect, disconnect, onConnect]);
+  }, [appName, initDappConnect, disconnect, onConnect, dAppConnect]);
 
   const disconnectWallet = () => {
     disconnect();
@@ -312,7 +312,8 @@ export function VeridianWalletConnect({
                   </p>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">
-                      {t("walletName")}:{" "}
+                      {t("walletName")}
+                      {": "}
                       {peerConnectWalletInfo.name || "Unknown"}
                     </p>
                     {peerConnectWalletInfo.address && (
