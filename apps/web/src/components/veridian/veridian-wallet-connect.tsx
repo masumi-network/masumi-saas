@@ -4,7 +4,7 @@ import { useCardano } from "@cardano-foundation/cardano-connect-with-wallet";
 import { NetworkType } from "@cardano-foundation/cardano-connect-with-wallet-core";
 import { Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
 
 import { Button } from "@/components/ui/button";
@@ -53,12 +53,20 @@ export function VeridianWalletConnect({
     () => () => {},
   );
 
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const { dAppConnect, meerkatAddress, initDappConnect, disconnect, connect } =
     useCardano({
       limitNetwork: NetworkType.TESTNET,
     });
 
   const pollForApi = (walletName: string) => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
     const start = Date.now();
     const interval = 100;
     const timeout = 5000;
@@ -69,6 +77,7 @@ export function VeridianWalletConnect({
       ];
       if (api || Date.now() - start > timeout) {
         clearInterval(checkApi);
+        pollingIntervalRef.current = null;
         if (api) {
           try {
             const enabledApi = (await (
@@ -108,6 +117,8 @@ export function VeridianWalletConnect({
         }
       }
     }, interval);
+
+    pollingIntervalRef.current = checkApi;
   };
 
   useEffect(() => {
@@ -185,6 +196,14 @@ export function VeridianWalletConnect({
         onP2PConnect,
       );
     }
+
+    // Cleanup polling interval on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
   }, [appName, initDappConnect, disconnect, onConnect]);
 
   const disconnectWallet = () => {
