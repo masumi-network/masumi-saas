@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function RequestVerificationDialog({
   open,
   onOpenChange,
   agent,
-  kycStatus: _kycStatus,
+  kycStatus,
   onSuccess,
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
@@ -53,6 +53,11 @@ export function RequestVerificationDialog({
   };
 
   const handleSubmit = async () => {
+    if (kycStatus !== "APPROVED") {
+      toast.error("Please complete your KYC verification first");
+      return;
+    }
+
     if (!aid) {
       toast.error("Please connect your Veridian wallet first");
       return;
@@ -117,23 +122,85 @@ export function RequestVerificationDialog({
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{t("kycStatus")}</h3>
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-              <ShieldCheck className="h-5 w-5 text-green-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  {tStatus("status.verified")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t("kycStatusDescription")}
-                </p>
+            {kycStatus === "APPROVED" ? (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
+                <ShieldCheck className="h-5 w-5 text-green-500" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {tStatus("status.verified")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("kycStatusDescription")}
+                  </p>
+                </div>
+                <Badge
+                  variant="default"
+                  className="bg-green-500 text-white hover:bg-green-500/80"
+                >
+                  {tStatus("status.approvedValue")}
+                </Badge>
               </div>
-              <Badge
-                variant="default"
-                className="bg-green-500 text-white hover:bg-green-500/80"
-              >
-                {tStatus("status.approvedValue")}
-              </Badge>
-            </div>
+            ) : kycStatus === "PENDING" ? (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
+                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {tStatus("status.pending")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("kycStatusPendingDescription")}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {tStatus("status.pendingValue")}
+                </Badge>
+              </div>
+            ) : kycStatus === "REVIEW" ? (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
+                <Clock className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {tStatus("status.underReview")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("kycStatusReviewDescription")}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {tStatus("status.reviewValue")}
+                </Badge>
+              </div>
+            ) : kycStatus === "REJECTED" ? (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
+                <XCircle className="h-5 w-5 text-destructive" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {tStatus("status.rejected")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("kycStatusRejectedDescription")}
+                  </p>
+                </div>
+                <Badge variant="destructive">
+                  {tStatus("status.rejectedValue")}
+                </Badge>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
+                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {tStatus("status.pending")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("kycStatusPendingDescription")}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {tStatus("status.pendingValue")}
+                </Badge>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -178,7 +245,7 @@ export function RequestVerificationDialog({
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isSubmitting || !aid}
+            disabled={isSubmitting || !aid || kycStatus !== "APPROVED"}
           >
             {isSubmitting && <Spinner size={16} className="mr-2" />}
             {t("submitRequest")}

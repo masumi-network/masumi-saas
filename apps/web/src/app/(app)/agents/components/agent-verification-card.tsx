@@ -125,17 +125,17 @@ export function AgentVerificationCard({
             <Button variant="primary" className="w-full" disabled>
               {t("loading")}
             </Button>
-          ) : !kycStatus || kycStatus === "PENDING" ? (
-            <Button variant="primary" className="w-full" asChild>
-              <Link href="/onboarding">{t("completeKyc")}</Link>
-            </Button>
-          ) : (
+          ) : kycStatus === "APPROVED" ? (
             <Button
               variant="primary"
               onClick={() => setDialogOpen(true)}
               className="w-full"
             >
               {t("requestVerification")}
+            </Button>
+          ) : (
+            <Button variant="primary" className="w-full" asChild>
+              <Link href="/onboarding">{t("completeKyc")}</Link>
             </Button>
           )}
         </CardFooter>
