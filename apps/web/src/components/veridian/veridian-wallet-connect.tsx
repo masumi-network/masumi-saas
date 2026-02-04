@@ -1,4 +1,3 @@
- 
 "use client";
 
 import { useCardano } from "@cardano-foundation/cardano-connect-with-wallet";
@@ -256,6 +255,10 @@ export function VeridianWalletConnect({
                   fgColor={"black"}
                   bgColor={"white"}
                   qrStyle={"squares"}
+                  logoImage="/assets/qr-logo.png"
+                  logoWidth={60}
+                  logoHeight={60}
+                  logoOpacity={1}
                   quietZone={10}
                 />
               </div>
