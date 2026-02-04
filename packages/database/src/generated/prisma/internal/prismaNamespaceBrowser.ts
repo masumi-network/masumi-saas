@@ -65,6 +65,7 @@ export const ModelName = {
   Apikey: "Apikey",
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
+  Agent: "Agent",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -250,6 +251,23 @@ export const KycVerificationScalarFieldEnum = {
 
 export type KycVerificationScalarFieldEnum =
   (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
+
+export const AgentScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  description: "description",
+  apiUrl: "apiUrl",
+  userId: "userId",
+  verificationStatus: "verificationStatus",
+  veridianCredentialId: "veridianCredentialId",
+  tags: "tags",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentScalarFieldEnum =
+  (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",

@@ -303,6 +303,49 @@ export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>;
 };
 
+export type EnumVerificationStatusNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>
+    | $Enums.VerificationStatus
+    | null;
+};
+
+export type EnumVerificationStatusNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumVerificationStatusNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.VerificationStatus
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>;
+};
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>;
@@ -607,4 +650,47 @@ export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>;
   _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>;
   _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>;
+};
+
+export type NestedEnumVerificationStatusNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>
+    | $Enums.VerificationStatus
+    | null;
+};
+
+export type NestedEnumVerificationStatusNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.VerificationStatus
+    | Prisma.EnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.VerificationStatus[]
+    | Prisma.ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumVerificationStatusNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.VerificationStatus
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumVerificationStatusNullableFilter<$PrismaModel>;
 };

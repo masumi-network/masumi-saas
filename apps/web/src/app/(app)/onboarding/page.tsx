@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthContextWithHeaders } from "@/lib/auth/utils";
@@ -6,6 +8,14 @@ import { getAuthContextWithHeaders } from "@/lib/auth/utils";
 import { OnboardingWizard } from "./components/onboarding-wizard";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("App.Onboarding.Intro");
+  return {
+    title: "Masumi - Identity Verification",
+    description: t("purpose"),
+  };
+}
 
 export default async function OnboardingPage() {
   const { user, session } = await getAuthContextWithHeaders();

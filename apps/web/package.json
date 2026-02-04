@@ -15,6 +15,9 @@
     "shadcn-add": "pnpm dlx shadcn-ui@latest add"
   },
   "dependencies": {
+    "@cardano-foundation/cardano-connect-with-wallet": "^0.2.15",
+    "@cardano-foundation/cardano-connect-with-wallet-core": "^0.2.8",
+    "@fabianbormann/cardano-peer-connect": "^1.2.18",
     "@hookform/resolvers": "5.2.2",
     "@masumi/database": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -45,6 +48,7 @@
     "react-email": "^5.2.1",
     "react-hook-form": "7.67.0",
     "react-icons": "^5.5.0",
+    "react-qrcode-logo": "^4.0.0",
     "server-only": "0.0.1",
     "sonner": "2.0.7",
     "tailwind-merge": "3.4.0",
