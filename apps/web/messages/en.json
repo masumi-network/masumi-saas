@@ -304,6 +304,7 @@
             "title": "Verification Rejected",
             "description": "Verification was rejected. You can try requesting verification again."
           },
+          "loading": "Loading...",
           "requestVerification": "Request Verification",
           "requestDescription": "Review the information below and confirm to request verification for this agent.",
           "agentInformation": "Agent Information",

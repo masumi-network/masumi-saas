@@ -121,7 +121,11 @@ export function AgentVerificationCard({
       </CardHeader>
       {config.showButton && (
         <CardFooter>
-          {!isLoadingKyc && (!kycStatus || kycStatus === "PENDING") ? (
+          {isLoadingKyc ? (
+            <Button variant="primary" className="w-full" disabled>
+              {t("loading")}
+            </Button>
+          ) : !kycStatus || kycStatus === "PENDING" ? (
             <Button variant="primary" className="w-full" asChild>
               <Link href="/onboarding">{t("completeKyc")}</Link>
             </Button>
