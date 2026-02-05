@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
         foundAgent.registrationState === "RegistrationFailed" ||
         foundAgent.registrationState === "DeregistrationRequested" ||
         foundAgent.registrationState === "DeregistrationInitiated" ||
+        foundAgent.registrationState === "DeregistrationConfirmed" ||
         foundAgent.registrationState === "DeregistrationFailed"
       ) {
         return NextResponse.json(
