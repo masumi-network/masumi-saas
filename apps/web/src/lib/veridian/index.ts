@@ -11,7 +11,6 @@ export {
   getCredentialServerUrl,
   getIssuerOobi,
   issueCredential,
-  requestDisclosure,
   resolveOobi,
   verifyKeriSignature,
 } from "./client";
