@@ -130,7 +130,7 @@ export async function POST(
         );
       }
 
-      credentialId = validationResult.details?.schemaSaid || null;
+      credentialId = selectedCredential.sad?.d || null;
     } catch (error) {
       console.error("Failed to fetch/validate credentials:", error);
       return NextResponse.json(
