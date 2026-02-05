@@ -45,6 +45,9 @@ export async function POST(
         id: agentId,
         userId: user.id,
       },
+      include: {
+        veridianCredentials: true,
+      },
     });
 
     if (!agent) {
@@ -81,6 +84,28 @@ export async function POST(
         {
           success: false,
           error: `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify AID ownership by checking if we have a credential record for this agent and AID
+    // This ensures the user actually owns the AID (credential was issued with signature verification)
+    const existingCredential = await prisma.veridianCredential.findFirst({
+      where: {
+        agentId: agentId,
+        userId: user.id,
+        aid: aid,
+        status: "ISSUED",
+      },
+    });
+
+    if (!existingCredential) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "No credential found for this agent and AID. Please issue a credential first using the Request Credential dialog.",
         },
         { status: 400 },
       );
