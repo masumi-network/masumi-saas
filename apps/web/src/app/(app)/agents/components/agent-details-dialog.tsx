@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
 
 import { AgentVerificationCard } from "./agent-verification-card";
 
@@ -129,11 +128,7 @@ export function AgentDetailsDialog({
                 variant={getRegistrationStatusBadgeVariant(
                   agent.registrationState,
                 )}
-                className={cn(
-                  agent.registrationState === "RegistrationConfirmed" &&
-                    "bg-green-500 text-white hover:bg-green-500/80",
-                  "w-fit min-w-fit",
-                )}
+                className="w-fit min-w-fit"
               >
                 {parseAgentRegistrationStatus(agent.registrationState)}
               </Badge>

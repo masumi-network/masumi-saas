@@ -18,7 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
 
 interface AgentsTableProps {
   agents: Agent[];
@@ -145,10 +144,6 @@ export function AgentsTable({
                   <Badge
                     variant={getRegistrationStatusBadgeVariant(
                       agent.registrationState,
-                    )}
-                    className={cn(
-                      agent.registrationState === "RegistrationConfirmed" &&
-                        "bg-green-500 text-white hover:bg-green-500/80",
                     )}
                   >
                     {parseAgentRegistrationStatus(agent.registrationState)}
