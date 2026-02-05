@@ -8,6 +8,7 @@ import {
   getApplicantByExternalUserId,
   getApplicantData,
   isVerificationFinal,
+  type KycStatus,
   parseReviewResult,
 } from "@/lib/sumsub";
 
@@ -233,7 +234,7 @@ export async function getKycStatusAction() {
         return {
           success: true,
           data: {
-            kycStatus: updatedVerification.status,
+            kycStatus: updatedVerification.status as KycStatus,
             kycCompletedAt: updatedVerification.completedAt,
             kycRejectionReason: updatedVerification.rejectionReason,
           },
@@ -244,7 +245,7 @@ export async function getKycStatusAction() {
     return {
       success: true,
       data: {
-        kycStatus: currentVerification.status,
+        kycStatus: currentVerification.status as KycStatus,
         kycCompletedAt: currentVerification.completedAt,
         kycRejectionReason: currentVerification.rejectionReason,
       },
