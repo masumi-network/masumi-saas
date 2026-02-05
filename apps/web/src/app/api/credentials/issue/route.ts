@@ -242,7 +242,27 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Protected fields that cannot be overridden by user-provided attributes
+    const protectedFields = [
+      "kycVerificationId",
+      "agentId",
+      "agentName",
+      "agentDescription",
+      "agentApiUrl",
+    ];
+
+    // Filter out protected fields from user-provided attributes
+    const filteredAttributes = attributes
+      ? Object.fromEntries(
+          Object.entries(attributes).filter(
+            ([key]) => !protectedFields.includes(key),
+          ),
+        )
+      : {};
+
+    // Build credential attributes with internal fields taking precedence
     const credentialAttributes = {
+      ...filteredAttributes,
       kycVerificationId: userWithKyc.kycVerification.id,
       ...(agent && {
         agentId: agent.id,
@@ -250,7 +270,6 @@ export async function POST(request: NextRequest) {
         agentDescription: agent.description,
         agentApiUrl: agent.apiUrl,
       }),
-      ...attributes,
     };
 
     if (organizationId) {
