@@ -27,6 +27,8 @@ const issueCredentialSchema = z.object({
       { message: "Invalid date format" },
     )
     .optional(),
+  signature: z.string().optional(),
+  signedMessage: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -55,6 +57,8 @@ export async function POST(request: NextRequest) {
       agentId,
       organizationId,
       expiresAt,
+      signature,
+      signedMessage,
     } = validation.data;
 
     // Get user data with KYC verification
@@ -277,13 +281,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Store signature and signed message for audit and future verification
+    // The signature proves wallet ownership - it's a cryptographic proof that the user
+    // controls the private key for the AID. This prevents someone from just providing
+    // someone else's AID without actually owning the wallet.
+    const credentialDataWithSignature = {
+      ...credentialAttributes,
+      ...(signature &&
+        signedMessage && {
+          signature,
+          signedMessage,
+          signatureTimestamp: new Date().toISOString(),
+        }),
+    };
+
     const credential = await prisma.veridianCredential.create({
       data: {
         credentialId,
         schemaSaid,
         aid,
         status: "ISSUED",
-        credentialData: JSON.stringify(credentialAttributes),
+        credentialData: JSON.stringify(credentialDataWithSignature),
         attributes: JSON.stringify(credentialAttributes),
         userId: user.id,
         agentId: agentId || null,

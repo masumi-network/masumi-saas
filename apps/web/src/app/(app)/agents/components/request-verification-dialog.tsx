@@ -125,7 +125,10 @@ export function RequestVerificationDialog({
     }
   };
 
-  const signMessage = async (): Promise<string | null> => {
+  const signMessage = async (): Promise<{
+    signature: string;
+    message: string;
+  } | null> => {
     if (!aid) {
       toast.error("Please connect your Veridian wallet first");
       return null;
@@ -163,7 +166,7 @@ export function RequestVerificationDialog({
         return null;
       }
 
-      // Create message to sign
+      // Create message to sign - this proves wallet ownership
       const message = `Issue credential for agent verification\n\nAgent: ${agent.name}\nAgent ID: ${agent.id}\nAID: ${aid}\nTimestamp: ${new Date().toISOString()}\n\nBy signing this message, you confirm that you want to issue a verification credential for this agent.`;
 
       const signature = await enabledApi.experimental.signKeri(aid, message);
@@ -180,7 +183,10 @@ export function RequestVerificationDialog({
         return null;
       }
 
-      return signature as string;
+      // Return signature and message for verification
+      // The signature proves wallet ownership - cryptographic proof that the user
+      // controls the private key for the AID
+      return { signature: signature as string, message };
     } catch (error) {
       const err = error as { code?: number; info?: string };
       if (err.code === 2) {
@@ -208,9 +214,9 @@ export function RequestVerificationDialog({
 
     setIsSubmitting(true);
     try {
-      // First, request message signature
-      const signature = await signMessage();
-      if (!signature) {
+      // Request message signature to prove wallet ownership
+      const signatureData = await signMessage();
+      if (!signatureData) {
         setIsSubmitting(false);
         return;
       }
@@ -223,6 +229,8 @@ export function RequestVerificationDialog({
         schemaSaid,
         oobi: oobi || undefined,
         agentId: agent.id,
+        signature: signatureData.signature,
+        signedMessage: signatureData.message,
       });
 
       if (result.success) {
