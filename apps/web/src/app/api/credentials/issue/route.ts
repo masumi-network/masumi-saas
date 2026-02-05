@@ -28,8 +28,8 @@ const issueCredentialSchema = z.object({
       { message: "Invalid date format" },
     )
     .optional(),
-  signature: z.string().optional(),
-  signedMessage: z.string().optional(),
+  signature: z.string().min(1, "Signature is required"),
+  signedMessage: z.string().min(1, "Signed message is required"),
 });
 
 export async function POST(request: NextRequest) {
