@@ -306,7 +306,9 @@ export async function fetchKeyState(aid: string): Promise<{
       );
     }
 
-    return { k: publicKey, ...data };
+    // Return with extracted public key, excluding original k field
+    const { k: _, ...rest } = data;
+    return { k: publicKey, ...rest };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch key state: ${error.message}`);
