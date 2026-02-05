@@ -49,7 +49,7 @@ export default function LogoutModal({
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (loading) return; // Prevent closing while loading
+    if (loading) return;
     onOpenChange(newOpen);
   };
 

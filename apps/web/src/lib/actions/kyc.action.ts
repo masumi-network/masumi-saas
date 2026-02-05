@@ -8,6 +8,7 @@ import {
   getApplicantByExternalUserId,
   getApplicantData,
   isVerificationFinal,
+  type KycStatus,
   parseReviewResult,
 } from "@/lib/sumsub";
 
@@ -181,8 +182,12 @@ export async function getKycStatusAction() {
       };
     }
 
-    // If status is REVIEW, check Sumsub API for latest status
-    if (currentVerification.status === "REVIEW") {
+    // If status is PENDING or REVIEW, check Sumsub API for latest status
+    // REVIEW means verification is in progress, PENDING means not started
+    if (
+      currentVerification.status === "PENDING" ||
+      currentVerification.status === "REVIEW"
+    ) {
       let applicantData = null;
       let applicantId = currentVerification.sumsubApplicantId;
 
@@ -229,7 +234,7 @@ export async function getKycStatusAction() {
         return {
           success: true,
           data: {
-            kycStatus: updatedVerification.status,
+            kycStatus: updatedVerification.status as KycStatus,
             kycCompletedAt: updatedVerification.completedAt,
             kycRejectionReason: updatedVerification.rejectionReason,
           },
@@ -240,7 +245,7 @@ export async function getKycStatusAction() {
     return {
       success: true,
       data: {
-        kycStatus: currentVerification.status,
+        kycStatus: currentVerification.status as KycStatus,
         kycCompletedAt: currentVerification.completedAt,
         kycRejectionReason: currentVerification.rejectionReason,
       },

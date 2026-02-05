@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { useGlobalModalsContext } from "@/components/modals/global-modals-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,7 +31,6 @@ import {
 } from "@/components/ui/tooltip";
 import type { SessionUser } from "@/lib/auth/auth";
 
-import LogoutModal from "../logout-modal";
 import UserAvatarContent from "./user-avatar-content";
 
 interface UserAvatarClientProps {
@@ -41,7 +41,7 @@ export default function UserAvatarClient({
   sessionUser,
 }: UserAvatarClientProps) {
   const t = useTranslations("App.Header");
-  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const { showLogoutModal } = useGlobalModalsContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleSupport = () => {
@@ -58,7 +58,6 @@ export default function UserAvatarClient({
 
   const handleDropdownOpenChange = (open: boolean) => {
     setDropdownOpen(open);
-    // Keep sidebar expanded when dropdown is open
     if (!isMobile) {
       if (open) {
         setIsHovered(true);
@@ -78,7 +77,6 @@ export default function UserAvatarClient({
     }
 
     router.push(path);
-    // Close sidebar if on mobile
     if (isMobile) {
       toggleSidebar();
     }
@@ -160,18 +158,13 @@ export default function UserAvatarClient({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="flex cursor-pointer items-center gap-2"
-            onClick={() => setLogoutModalOpen(true)}
+            onClick={() => showLogoutModal(sessionUser.email)}
           >
             <LogOut className="text-muted-foreground" />
             {t("logout")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <LogoutModal
-        open={logoutModalOpen}
-        onOpenChange={setLogoutModalOpen}
-        email={sessionUser.email}
-      />
     </>
   );
 }
