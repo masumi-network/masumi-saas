@@ -7,6 +7,7 @@ import {
   fetchContactCredentials,
   issueCredential,
   resolveOobi,
+  verifyKeriSignature,
 } from "@/lib/veridian";
 
 const issueCredentialSchema = z.object({
@@ -60,6 +61,94 @@ export async function POST(request: NextRequest) {
       signature,
       signedMessage,
     } = validation.data;
+
+    // Validate signature and message are provided together
+    if (signature && !signedMessage) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Signed message is required when signature is provided",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (signedMessage && !signature) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Signature is required when signed message is provided",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify KERI signature cryptographically
+    if (signature && signedMessage) {
+      // Basic format validation
+      if (typeof signature !== "string" || signature.length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid signature format",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (typeof signedMessage !== "string" || signedMessage.length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid signed message format",
+          },
+          { status: 400 },
+        );
+      }
+
+      // Verify the message contains the AID to prevent signature replay attacks
+      if (!signedMessage.includes(aid)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Signed message must contain the AID",
+          },
+          { status: 400 },
+        );
+      }
+
+      // Perform full cryptographic verification of the KERI signature
+      try {
+        const isValid = await verifyKeriSignature(
+          signature,
+          signedMessage,
+          aid,
+        );
+
+        if (!isValid) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "Signature verification failed. The signature does not match the AID's public key.",
+            },
+            { status: 400 },
+          );
+        }
+      } catch (error) {
+        console.error("Failed to verify KERI signature:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              error instanceof Error
+                ? `Signature verification failed: ${error.message}`
+                : "Signature verification failed. Please ensure VERIDIAN_KERIA_URL is configured.",
+          },
+          { status: 500 },
+        );
+      }
+    }
 
     // Get user data with KYC verification
     const userWithKyc = await prisma.user.findUnique({
@@ -281,10 +370,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store signature and signed message for audit and future verification
-    // The signature proves wallet ownership - it's a cryptographic proof that the user
-    // controls the private key for the AID. This prevents someone from just providing
-    // someone else's AID without actually owning the wallet.
+    // Store signature and signed message for audit purposes
+    // The signature has been cryptographically verified against the AID's public key
     const credentialDataWithSignature = {
       ...credentialAttributes,
       ...(signature &&

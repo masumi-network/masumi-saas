@@ -6,12 +6,14 @@
 // Client functions
 export {
   fetchContactCredentials,
+  fetchKeyState,
   getAgentVerificationSchemaSaid,
   getCredentialServerUrl,
   getIssuerOobi,
   issueCredential,
   requestDisclosure,
   resolveOobi,
+  verifyKeriSignature,
 } from "./client";
 
 // Utility functions

@@ -109,8 +109,14 @@ masumi-saas/
 
    - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional, for agent verification)
      - For local development: `http://localhost:3001`
-     - For production: Your deployed credential server URL (e.g., `https://cred-issuance-production.up.railway.app`)
+     - For production: Your deployed credential server URL (e.g., `https://cred-issuance.yourdomain.com`)
      - Required for Veridian wallet integration and agent verification features
+
+   - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, for signature verification)
+     - For local development: `http://localhost:3901` (use the connect URL, not the boot URL)
+     - For production: Your deployed KERIA connect URL (e.g., `https://keria.yourdomain.com`)
+     - **Important**: Use the connect URL (port 3901), not the boot URL (port 3903)
+     - Required for cryptographic signature verification when issuing credentials
 
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
      - The credential schema SAID to use for agent verification credentials

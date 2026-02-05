@@ -20,7 +20,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { VeridianWalletConnect } from "@/components/veridian";
 import { type Agent } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
-import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
 
 import { EstablishConnectionDialog } from "./establish-connection-dialog";
 
@@ -221,12 +220,17 @@ export function RequestVerificationDialog({
         return;
       }
 
-      // Issue credential to the linked AID
-      const schemaSaid = getAgentVerificationSchemaSaid();
+      const schemaSaidResult = await credentialApiClient.getSchemaSaid();
+      if (!schemaSaidResult.success || !schemaSaidResult.data) {
+        toast.error("Failed to get credential schema");
+        setIsSubmitting(false);
+        return;
+      }
 
+      // Issue credential to the linked AID
       const result = await credentialApiClient.issueCredential({
         aid,
-        schemaSaid,
+        schemaSaid: schemaSaidResult.data.schemaSaid,
         oobi: oobi || undefined,
         agentId: agent.id,
         signature: signatureData.signature,

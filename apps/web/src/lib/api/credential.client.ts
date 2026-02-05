@@ -87,6 +87,12 @@ class CredentialApiClient {
       method: "GET",
     });
   }
+
+  async getSchemaSaid(): Promise<ApiResponse<{ schemaSaid: string }>> {
+    return this.request<{ schemaSaid: string }>("/schema-said", {
+      method: "GET",
+    });
+  }
 }
 
 export const credentialApiClient = new CredentialApiClient();
