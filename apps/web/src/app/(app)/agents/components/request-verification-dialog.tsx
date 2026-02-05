@@ -323,7 +323,7 @@ export function RequestVerificationDialog({
                   {tStatus("status.pendingValue")}
                 </Badge>
               </div>
-            ) : kycStatus === "REVOKED" ? (
+            ) : kycStatus === "REJECTED" ? (
               <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
                 <XCircle className="h-5 w-5 text-destructive" />
                 <div className="flex-1">
