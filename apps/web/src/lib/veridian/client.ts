@@ -254,11 +254,11 @@ function getKeriaUrl(): string {
 /**
  * Fetch the key state for a KERI identifier (AID) from KERIA
  * @param aid - The KERI identifier (AID) to fetch the key state for
- * @returns The key state containing the public key
+ * @returns The key state containing the public key (first key from the array)
  * @throws Error if the request fails
  */
 export async function fetchKeyState(aid: string): Promise<{
-  k: string; // Public key
+  k: string; // Public key (extracted from array)
   [key: string]: unknown;
 }> {
   if (!aid || typeof aid !== "string" || aid.trim().length === 0) {
@@ -284,7 +284,7 @@ export async function fetchKeyState(aid: string): Promise<{
     }
 
     const data = (await response.json()) as {
-      k?: string;
+      k?: string | string[]; // KERI protocol: k is an array of signing keys for multi-sig support
       [key: string]: unknown;
     };
 
@@ -292,7 +292,21 @@ export async function fetchKeyState(aid: string): Promise<{
       throw new Error("Key state does not contain public key");
     }
 
-    return data as { k: string; [key: string]: unknown };
+    // Extract the first key from the array (KERI supports weighted multi-signature)
+    const publicKey =
+      Array.isArray(data.k) && data.k.length > 0
+        ? data.k[0]
+        : typeof data.k === "string"
+          ? data.k
+          : null;
+
+    if (!publicKey || typeof publicKey !== "string") {
+      throw new Error(
+        "Invalid public key format: expected string or non-empty array of strings",
+      );
+    }
+
+    return { k: publicKey, ...data };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch key state: ${error.message}`);
