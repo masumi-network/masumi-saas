@@ -306,72 +306,80 @@ export async function fetchKeyState(aid: string): Promise<{
  * @param signature - The base64-encoded signature
  * @param message - The message that was signed
  * @param aid - The KERI identifier (AID) that should have signed the message
- * @returns true if the signature is valid, false otherwise
- * @throws Error if verification fails due to configuration or network issues
+ * @returns true if the signature is valid, false if the signature does not match
+ * @throws Error if verification fails due to configuration or network issues (e.g., KERIA unavailable, misconfigured)
  */
 export async function verifyKeriSignature(
   signature: string,
   message: string,
   aid: string,
 ): Promise<boolean> {
+  // Fetch the key state to get the public key
+  // This will throw if KERIA is unavailable or misconfigured
+  const keyState = await fetchKeyState(aid);
+  const publicKeyBase64 = keyState.k;
+
+  if (!publicKeyBase64) {
+    throw new Error("Public key not found in key state");
+  }
+
+  // Decode the public key and signature from base64url
+  // KERI uses base64url encoding (RFC 4648 Section 5)
+  let publicKeyBuffer: Buffer;
+  let signatureBuffer: Buffer;
+
   try {
-    // Fetch the key state to get the public key
-    const keyState = await fetchKeyState(aid);
-    const publicKeyBase64 = keyState.k;
-
-    if (!publicKeyBase64) {
-      throw new Error("Public key not found in key state");
-    }
-
-    // Decode the public key and signature from base64url
-    // KERI uses base64url encoding (RFC 4648 Section 5)
-    const publicKeyBuffer = Buffer.from(publicKeyBase64, "base64url");
-    const signatureBuffer = Buffer.from(signature, "base64url");
-
-    // Ed25519 signatures are 64 bytes and public keys are 32 bytes
-    if (publicKeyBuffer.length !== 32) {
-      throw new Error(
-        `Invalid public key length: expected 32 bytes, got ${publicKeyBuffer.length}`,
-      );
-    }
-
-    if (signatureBuffer.length !== 64) {
-      throw new Error(
-        `Invalid signature length: expected 64 bytes, got ${signatureBuffer.length}`,
-      );
-    }
-
-    // Verify the Ed25519 signature using Node.js crypto
-    // Node.js 12+ supports Ed25519, but TypeScript types may not fully reflect this
-    const messageBuffer = Buffer.from(message, "utf8");
-
-    // Use crypto.verify with Ed25519
-    // The 'ed25519' algorithm doesn't require a hash function
-    try {
-      // Create public key object - Node.js accepts raw Ed25519 keys as Buffer
-      // TypeScript types don't fully support Ed25519 raw format, so we use type assertion
-      const keyInput = {
-        key: publicKeyBuffer,
-        format: "raw" as const,
-        type: "ed25519" as const,
-      };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node.js crypto types don't fully support Ed25519 raw format
-      const keyObject = crypto.createPublicKey(keyInput as any);
-
-      return crypto.verify(null, messageBuffer, keyObject, signatureBuffer);
-    } catch (error) {
-      // If verification fails, throw an error with details
-      throw new Error(
-        `Ed25519 signature verification failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }. Please ensure Node.js version 12+ is used and VERIDIAN_KERIA_URL is configured.`,
-      );
-    }
+    publicKeyBuffer = Buffer.from(publicKeyBase64, "base64url");
+    signatureBuffer = Buffer.from(signature, "base64url");
   } catch (error) {
-    // If KERIA is not configured or unavailable, we can't verify
-    // Log the error but don't throw - let the caller decide how to handle
-    console.error("Failed to verify KERI signature:", error);
-    return false;
+    throw new Error(
+      `Failed to decode public key or signature: ${
+        error instanceof Error ? error.message : "Invalid base64url encoding"
+      }`,
+    );
+  }
+
+  // Ed25519 signatures are 64 bytes and public keys are 32 bytes
+  if (publicKeyBuffer.length !== 32) {
+    throw new Error(
+      `Invalid public key length: expected 32 bytes, got ${publicKeyBuffer.length}`,
+    );
+  }
+
+  if (signatureBuffer.length !== 64) {
+    throw new Error(
+      `Invalid signature length: expected 64 bytes, got ${signatureBuffer.length}`,
+    );
+  }
+
+  // Verify the Ed25519 signature using Node.js crypto
+  // Node.js 12+ supports Ed25519, but TypeScript types may not fully reflect this
+  const messageBuffer = Buffer.from(message, "utf8");
+
+  // Use crypto.verify with Ed25519
+  // The 'ed25519' algorithm doesn't require a hash function
+  try {
+    // Create public key object - Node.js accepts raw Ed25519 keys as Buffer
+    // TypeScript types don't fully support Ed25519 raw format, so we use type assertion
+    const keyInput = {
+      key: publicKeyBuffer,
+      format: "raw" as const,
+      type: "ed25519" as const,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node.js crypto types don't fully support Ed25519 raw format
+    const keyObject = crypto.createPublicKey(keyInput as any);
+
+    // crypto.verify returns true if signature is valid, false otherwise
+    // This is the only case where we return false (signature doesn't match)
+    return crypto.verify(null, messageBuffer, keyObject, signatureBuffer);
+  } catch (error) {
+    // If crypto operations fail (e.g., invalid key format, Node.js version issue),
+    // this is a configuration/implementation error, not a signature mismatch
+    throw new Error(
+      `Ed25519 signature verification failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }. Please ensure Node.js version 12+ is used and VERIDIAN_KERIA_URL is configured.`,
+    );
   }
 }
