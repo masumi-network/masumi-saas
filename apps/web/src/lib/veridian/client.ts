@@ -144,9 +144,9 @@ export async function resolveOobi(
       const errorText = await response.text().catch(() => "Unknown error");
       let errorData: { data?: string } = {};
       try {
-        errorData = (await response.json()) as { data?: string };
+        errorData = JSON.parse(errorText) as { data?: string };
       } catch {
-        // If JSON parsing fails, use the error text
+        // If JSON parsing fails, use the error text as-is
       }
 
       throw new Error(
@@ -216,9 +216,9 @@ export async function issueCredential(
       const errorText = await response.text().catch(() => "Unknown error");
       let errorData: { data?: string } = {};
       try {
-        errorData = (await response.json()) as { data?: string };
+        errorData = JSON.parse(errorText) as { data?: string };
       } catch {
-        // If JSON parsing fails, use the error text
+        // If JSON parsing fails, use the error text as-is
       }
 
       throw new Error(
