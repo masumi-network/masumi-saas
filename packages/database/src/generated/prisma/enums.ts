@@ -10,9 +10,9 @@
 
 export const VerificationStatus = {
   PENDING: "PENDING",
-  APPROVED: "APPROVED",
-  REJECTED: "REJECTED",
-  REVIEW: "REVIEW",
+  VERIFIED: "VERIFIED",
+  REVOKED: "REVOKED",
+  EXPIRED: "EXPIRED",
 } as const;
 
 export type VerificationStatus =

@@ -2,8 +2,9 @@ import "server-only";
 
 /**
  * Verification status enum matching Prisma schema
+ * Note: This is for agent verification status, not KYC status
  */
-export type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
+export type VerificationStatus = "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED";
 
 /**
  * Review result from Sumsub API
@@ -42,11 +43,13 @@ export function parseReviewResult(
       "Verification rejected"
     : null;
 
+  // Map Sumsub statuses to VerificationStatus enum
+  // APPROVED (GREEN) → VERIFIED, REJECTED (RED) → REVOKED, REVIEW → PENDING
   const status: VerificationStatus = isApproved
-    ? "APPROVED"
+    ? "VERIFIED"
     : isRejected
-      ? "REJECTED"
-      : "REVIEW";
+      ? "REVOKED"
+      : "PENDING";
 
   return {
     status,

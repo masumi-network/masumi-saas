@@ -181,8 +181,9 @@ export async function getKycStatusAction() {
       };
     }
 
-    // If status is REVIEW, check Sumsub API for latest status
-    if (currentVerification.status === "REVIEW") {
+    // If status is PENDING, check Sumsub API for latest status
+    // (Previously REVIEW, now PENDING represents in-progress verification)
+    if (currentVerification.status === "PENDING") {
       let applicantData = null;
       let applicantId = currentVerification.sumsubApplicantId;
 

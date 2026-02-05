@@ -179,7 +179,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (userWithKyc.kycVerification.status !== "APPROVED") {
+    // KYC status VERIFIED means the user's identity is verified
+    if (userWithKyc.kycVerification.status !== "VERIFIED") {
       return NextResponse.json(
         {
           success: false,
@@ -396,6 +397,19 @@ export async function POST(request: NextRequest) {
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
     });
+
+    // Update agent verification status to VERIFIED when credential is successfully issued
+    // The credential has been cryptographically verified (signature validation) and
+    // successfully issued, so the agent is verified
+    if (agentId) {
+      await prisma.agent.update({
+        where: { id: agentId },
+        data: {
+          verificationStatus: "VERIFIED" as const,
+          veridianCredentialId: credentialId,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

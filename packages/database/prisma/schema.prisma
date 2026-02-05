@@ -208,9 +208,9 @@ model KycVerification {
 
 enum VerificationStatus {
   PENDING
-  APPROVED
-  REJECTED
-  REVIEW
+  VERIFIED
+  REVOKED
+  EXPIRED
 }
 
 enum RegistrationState {

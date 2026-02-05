@@ -15,7 +15,7 @@ type Agent = {
     | "DeregistrationInitiated"
     | "DeregistrationConfirmed"
     | "DeregistrationFailed";
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
+  verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -60,7 +60,7 @@ class AgentApiClient {
   }
 
   async getAgents(filters?: {
-    verificationStatus?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
+    verificationStatus?: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
     unverified?: boolean;
   }): Promise<ApiResponse<Agent[]>> {
     const params = new URLSearchParams();

@@ -75,7 +75,8 @@ export async function POST(
       );
     }
 
-    if (userWithKyc.kycVerification.status !== "APPROVED") {
+    // KYC status VERIFIED means the user's identity is verified
+    if (userWithKyc.kycVerification.status !== "VERIFIED") {
       return NextResponse.json(
         {
           success: false,
@@ -145,12 +146,14 @@ export async function POST(
       );
     }
 
+    // Update agent verification status to VERIFIED when credential validation succeeds
+    // The credential has been validated and is valid, so the agent is verified
     const updatedAgent = await prisma.agent.update({
       where: {
         id: agentId,
       },
       data: {
-        verificationStatus: "REVIEW",
+        verificationStatus: "VERIFIED" as const,
         veridianCredentialId: credentialId,
       },
     });

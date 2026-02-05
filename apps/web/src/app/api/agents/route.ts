@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const verificationStatus = searchParams.get("verificationStatus") as
-      | "APPROVED"
       | "PENDING"
-      | "REJECTED"
-      | "REVIEW"
+      | "VERIFIED"
+      | "REVOKED"
+      | "EXPIRED"
       | null;
     const unverified = searchParams.get("unverified") === "true";
 
@@ -39,13 +39,13 @@ export async function GET(request: NextRequest) {
       userId: string;
       verificationStatus?:
         | {
-            not?: "APPROVED";
-            equals?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
+            not?: "VERIFIED";
+            equals?: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
           }
-        | "APPROVED"
         | "PENDING"
-        | "REJECTED"
-        | "REVIEW"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
         | null;
     } = {
       userId: user.id,
@@ -53,10 +53,15 @@ export async function GET(request: NextRequest) {
 
     if (unverified) {
       where.verificationStatus = {
-        not: "APPROVED",
+        not: "VERIFIED" as const,
       };
     } else if (verificationStatus !== null) {
-      where.verificationStatus = verificationStatus;
+      where.verificationStatus = verificationStatus as
+        | "PENDING"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
+        | null;
     }
 
     const agents = await prisma.agent.findMany({

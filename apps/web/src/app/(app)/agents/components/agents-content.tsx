@@ -51,11 +51,11 @@ export function AgentsContent() {
 
     if (activeTab === "verified") {
       filtered = filtered.filter(
-        (agent) => agent.verificationStatus === "APPROVED",
+        (agent) => agent.verificationStatus === "VERIFIED",
       );
     } else if (activeTab === "unverified") {
       filtered = filtered.filter(
-        (agent) => agent.verificationStatus !== "APPROVED",
+        (agent) => agent.verificationStatus !== "VERIFIED",
       );
     }
 

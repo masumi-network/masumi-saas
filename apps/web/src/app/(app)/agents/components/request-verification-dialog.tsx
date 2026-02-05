@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
+import { AlertCircle, ShieldCheck, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ interface RequestVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agent: Agent;
-  kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
+  kycStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   onSuccess: () => void;
 }
 
@@ -201,7 +201,7 @@ export function RequestVerificationDialog({
   };
 
   const handleSubmit = async () => {
-    if (kycStatus !== "APPROVED") {
+    if (kycStatus !== "VERIFIED") {
       toast.error("Please complete your KYC verification first");
       return;
     }
@@ -290,7 +290,7 @@ export function RequestVerificationDialog({
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{t("kycStatus")}</h3>
-            {kycStatus === "APPROVED" ? (
+            {kycStatus === "VERIFIED" ? (
               <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
                 <ShieldCheck className="h-5 w-5 text-green-500" />
                 <div className="flex-1">
@@ -305,7 +305,7 @@ export function RequestVerificationDialog({
                   variant="default"
                   className="bg-green-500 text-white hover:bg-green-500/80"
                 >
-                  {tStatus("status.approvedValue")}
+                  {tStatus("status.verifiedValue")}
                 </Badge>
               </div>
             ) : kycStatus === "PENDING" ? (
@@ -323,22 +323,7 @@ export function RequestVerificationDialog({
                   {tStatus("status.pendingValue")}
                 </Badge>
               </div>
-            ) : kycStatus === "REVIEW" ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-                <Clock className="h-5 w-5 text-primary" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {tStatus("status.underReview")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("kycStatusReviewDescription")}
-                  </p>
-                </div>
-                <Badge variant="secondary">
-                  {tStatus("status.reviewValue")}
-                </Badge>
-              </div>
-            ) : kycStatus === "REJECTED" ? (
+            ) : kycStatus === "REVOKED" ? (
               <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
                 <XCircle className="h-5 w-5 text-destructive" />
                 <div className="flex-1">
@@ -350,7 +335,7 @@ export function RequestVerificationDialog({
                   </p>
                 </div>
                 <Badge variant="destructive">
-                  {tStatus("status.rejectedValue")}
+                  {tStatus("status.revokedValue")}
                 </Badge>
               </div>
             ) : (
@@ -457,7 +442,7 @@ export function RequestVerificationDialog({
             variant="primary"
             onClick={handleSubmit}
             disabled={
-              isSubmitting || isSigning || !aid || kycStatus !== "APPROVED"
+              isSubmitting || isSigning || !aid || kycStatus !== "VERIFIED"
             }
           >
             {(isSubmitting || isSigning) && (

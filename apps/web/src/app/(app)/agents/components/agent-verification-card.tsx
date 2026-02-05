@@ -31,7 +31,7 @@ export function AgentVerificationCard({
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState<
-    "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
+    "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null
   >(null);
   const [isLoadingKyc, setIsLoadingKyc] = useState(true);
   const [, startTransition] = useTransition();
@@ -56,25 +56,25 @@ export function AgentVerificationCard({
       description: t("pending.description"),
       showButton: true,
     },
-    REVIEW: {
-      icon: Clock,
-      iconColor: "text-primary",
-      title: t("review.title"),
-      description: t("review.description"),
-      showButton: false,
-    },
-    APPROVED: {
+    VERIFIED: {
       icon: ShieldCheck,
       iconColor: "text-green-500",
-      title: t("approved.title"),
-      description: t("approved.description"),
+      title: t("verified.title"),
+      description: t("verified.description"),
       showButton: false,
     },
-    REJECTED: {
+    REVOKED: {
       icon: XCircle,
       iconColor: "text-destructive",
-      title: t("rejected.title"),
-      description: t("rejected.description"),
+      title: t("revoked.title"),
+      description: t("revoked.description"),
+      showButton: true,
+    },
+    EXPIRED: {
+      icon: Clock,
+      iconColor: "text-orange-500",
+      title: t("expired.title"),
+      description: t("expired.description"),
       showButton: true,
     },
   };
@@ -98,7 +98,7 @@ export function AgentVerificationCard({
             <Button variant="primary" className="w-full" disabled>
               {t("loading")}
             </Button>
-          ) : kycStatus === "APPROVED" ? (
+          ) : kycStatus === "VERIFIED" ? (
             <Button
               variant="primary"
               onClick={() => setDialogOpen(true)}

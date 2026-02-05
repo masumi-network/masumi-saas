@@ -229,9 +229,9 @@
         "underReview": "Under Review",
         "pending": "Pending",
         "pendingValue": "PENDING",
-        "approvedValue": "APPROVED",
-        "rejectedValue": "REJECTED",
-        "reviewValue": "REVIEW"
+        "verifiedValue": "VERIFIED",
+        "revokedValue": "REVOKED",
+        "expiredValue": "EXPIRED"
       },
       "table": {
         "name": "Name",
@@ -300,9 +300,17 @@
             "title": "Agent Verified",
             "description": "This agent has been successfully verified with your KYC status."
           },
-          "rejected": {
-            "title": "Verification Rejected",
-            "description": "Verification was rejected. You can try requesting verification again."
+          "verified": {
+            "title": "Agent Verified",
+            "description": "This agent has been successfully verified with a Veridian credential."
+          },
+          "revoked": {
+            "title": "Credential Revoked",
+            "description": "The credential for this agent has been revoked. You can request a new credential."
+          },
+          "expired": {
+            "title": "Credential Expired",
+            "description": "The credential for this agent has expired. You can request a new credential."
           },
           "loading": "Loading...",
           "requestVerification": "Request Credential",
