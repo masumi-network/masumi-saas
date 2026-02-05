@@ -235,6 +235,7 @@ export type OrganizationWhereInput = {
     | null;
   members?: Prisma.MemberListRelationFilter;
   invitations?: Prisma.InvitationListRelationFilter;
+  veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
   kybVerification?: Prisma.XOR<
     Prisma.KybVerificationNullableScalarRelationFilter,
     Prisma.KybVerificationWhereInput
@@ -254,6 +255,7 @@ export type OrganizationOrderByWithRelationInput = {
   kybVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   members?: Prisma.MemberOrderByRelationAggregateInput;
   invitations?: Prisma.InvitationOrderByRelationAggregateInput;
+  veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput;
   kybVerification?: Prisma.KybVerificationOrderByWithRelationInput;
 };
 
@@ -274,6 +276,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     invoiceEmail?: Prisma.StringNullableFilter<"Organization"> | string | null;
     members?: Prisma.MemberListRelationFilter;
     invitations?: Prisma.InvitationListRelationFilter;
+    veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
     kybVerification?: Prisma.XOR<
       Prisma.KybVerificationNullableScalarRelationFilter,
       Prisma.KybVerificationWhereInput
@@ -351,6 +354,7 @@ export type OrganizationCreateInput = {
   invoiceEmail?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
@@ -367,6 +371,7 @@ export type OrganizationUncheckedCreateInput = {
   kybVerificationId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -387,6 +392,7 @@ export type OrganizationUpdateInput = {
     | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
@@ -412,6 +418,7 @@ export type OrganizationUncheckedUpdateInput = {
     | null;
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -624,6 +631,34 @@ export type OrganizationUpdateOneRequiredWithoutInvitationsNestedInput = {
   >;
 };
 
+export type OrganizationCreateNestedOneWithoutVeridianCredentialsInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutVeridianCredentialsInput;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUpdateOneWithoutVeridianCredentialsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutVeridianCredentialsInput;
+  upsert?: Prisma.OrganizationUpsertWithoutVeridianCredentialsInput;
+  disconnect?: Prisma.OrganizationWhereInput | boolean;
+  delete?: Prisma.OrganizationWhereInput | boolean;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrganizationUpdateToOneWithWhereWithoutVeridianCredentialsInput,
+      Prisma.OrganizationUpdateWithoutVeridianCredentialsInput
+    >,
+    Prisma.OrganizationUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+};
+
 export type OrganizationCreateWithoutKybVerificationInput = {
   id?: string;
   name: string;
@@ -636,6 +671,7 @@ export type OrganizationCreateWithoutKybVerificationInput = {
   invoiceEmail?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
@@ -650,6 +686,7 @@ export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
   invoiceEmail?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutKybVerificationInput = {
@@ -698,6 +735,7 @@ export type OrganizationUpdateWithoutKybVerificationInput = {
     | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
@@ -718,6 +756,7 @@ export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
     | null;
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutMembersInput = {
@@ -731,6 +770,7 @@ export type OrganizationCreateWithoutMembersInput = {
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
@@ -746,6 +786,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   invoiceEmail?: string | null;
   kybVerificationId?: string | null;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutMembersInput = {
@@ -793,6 +834,7 @@ export type OrganizationUpdateWithoutMembersInput = {
     | string
     | null;
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
@@ -817,6 +859,7 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
     | string
     | null;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -830,6 +873,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   stripeCustomerId?: string | null;
   invoiceEmail?: string | null;
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
 };
 
@@ -845,6 +889,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   invoiceEmail?: string | null;
   kybVerificationId?: string | null;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -892,6 +937,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
     | string
     | null;
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
 };
 
@@ -916,6 +962,110 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
     | string
     | null;
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationCreateWithoutVeridianCredentialsInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
+};
+
+export type OrganizationUncheckedCreateWithoutVeridianCredentialsInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationCreateOrConnectWithoutVeridianCredentialsInput = {
+  where: Prisma.OrganizationWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+};
+
+export type OrganizationUpsertWithoutVeridianCredentialsInput = {
+  update: Prisma.XOR<
+    Prisma.OrganizationUpdateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  where?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationUpdateToOneWithWhereWithoutVeridianCredentialsInput = {
+  where?: Prisma.OrganizationWhereInput;
+  data: Prisma.XOR<
+    Prisma.OrganizationUpdateWithoutVeridianCredentialsInput,
+    Prisma.OrganizationUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+};
+
+export type OrganizationUpdateWithoutVeridianCredentialsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
+};
+
+export type OrganizationUncheckedUpdateWithoutVeridianCredentialsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 /**
@@ -925,6 +1075,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
 export type OrganizationCountOutputType = {
   members: number;
   invitations: number;
+  veridianCredentials: number;
 };
 
 export type OrganizationCountOutputTypeSelect<
@@ -933,6 +1084,9 @@ export type OrganizationCountOutputTypeSelect<
 > = {
   members?: boolean | OrganizationCountOutputTypeCountMembersArgs;
   invitations?: boolean | OrganizationCountOutputTypeCountInvitationsArgs;
+  veridianCredentials?:
+    | boolean
+    | OrganizationCountOutputTypeCountVeridianCredentialsArgs;
 };
 
 /**
@@ -968,6 +1122,16 @@ export type OrganizationCountOutputTypeCountInvitationsArgs<
   where?: Prisma.InvitationWhereInput;
 };
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountVeridianCredentialsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.VeridianCredentialWhereInput;
+};
+
 export type OrganizationSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -985,6 +1149,9 @@ export type OrganizationSelect<
     kybVerificationId?: boolean;
     members?: boolean | Prisma.Organization$membersArgs<ExtArgs>;
     invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
+    veridianCredentials?:
+      | boolean
+      | Prisma.Organization$veridianCredentialsArgs<ExtArgs>;
     kybVerification?:
       | boolean
       | Prisma.Organization$kybVerificationArgs<ExtArgs>;
@@ -1072,6 +1239,9 @@ export type OrganizationInclude<
 > = {
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>;
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>;
+  veridianCredentials?:
+    | boolean
+    | Prisma.Organization$veridianCredentialsArgs<ExtArgs>;
   kybVerification?: boolean | Prisma.Organization$kybVerificationArgs<ExtArgs>;
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
@@ -1096,6 +1266,7 @@ export type $OrganizationPayload<
   objects: {
     members: Prisma.$MemberPayload<ExtArgs>[];
     invitations: Prisma.$InvitationPayload<ExtArgs>[];
+    veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[];
     kybVerification: Prisma.$KybVerificationPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
@@ -1682,6 +1853,22 @@ export interface Prisma__OrganizationClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$InvitationPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  veridianCredentials<
+    T extends Prisma.Organization$veridianCredentialsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.Organization$veridianCredentialsArgs<ExtArgs>
+    >,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$VeridianCredentialPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -2283,6 +2470,37 @@ export type Organization$invitationsArgs<
   distinct?:
     | Prisma.InvitationScalarFieldEnum
     | Prisma.InvitationScalarFieldEnum[];
+};
+
+/**
+ * Organization.veridianCredentials
+ */
+export type Organization$veridianCredentialsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the VeridianCredential
+   */
+  select?: Prisma.VeridianCredentialSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the VeridianCredential
+   */
+  omit?: Prisma.VeridianCredentialOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VeridianCredentialInclude<ExtArgs> | null;
+  where?: Prisma.VeridianCredentialWhereInput;
+  orderBy?:
+    | Prisma.VeridianCredentialOrderByWithRelationInput
+    | Prisma.VeridianCredentialOrderByWithRelationInput[];
+  cursor?: Prisma.VeridianCredentialWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.VeridianCredentialScalarFieldEnum
+    | Prisma.VeridianCredentialScalarFieldEnum[];
 };
 
 /**

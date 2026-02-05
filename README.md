@@ -107,6 +107,15 @@ masumi-saas/
      - Defaults to `"id-only"`
      - Must match an existing verification level in your Sumsub dashboard
 
+   - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional, for agent verification)
+     - For local development: `http://localhost:3001`
+     - For production: Your deployed credential server URL (e.g., `https://cred-issuance-production.up.railway.app`)
+     - Required for Veridian wallet integration and agent verification features
+
+   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
+     - The credential schema SAID to use for agent verification credentials
+     - Must match a schema registered in your Veridian credential server
+
 3. **Configure Sumsub Webhook** (required for automatic status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
    - Add a new webhook with:

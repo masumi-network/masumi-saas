@@ -17,3 +17,26 @@ export const VerificationStatus = {
 
 export type VerificationStatus =
   (typeof VerificationStatus)[keyof typeof VerificationStatus];
+
+export const RegistrationState = {
+  RegistrationRequested: "RegistrationRequested",
+  RegistrationInitiated: "RegistrationInitiated",
+  RegistrationConfirmed: "RegistrationConfirmed",
+  RegistrationFailed: "RegistrationFailed",
+  DeregistrationRequested: "DeregistrationRequested",
+  DeregistrationInitiated: "DeregistrationInitiated",
+  DeregistrationConfirmed: "DeregistrationConfirmed",
+  DeregistrationFailed: "DeregistrationFailed",
+} as const;
+
+export type RegistrationState =
+  (typeof RegistrationState)[keyof typeof RegistrationState];
+
+export const CredentialStatus = {
+  ISSUED: "ISSUED",
+  REVOKED: "REVOKED",
+  EXPIRED: "EXPIRED",
+} as const;
+
+export type CredentialStatus =
+  (typeof CredentialStatus)[keyof typeof CredentialStatus];

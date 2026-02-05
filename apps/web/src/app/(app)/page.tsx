@@ -1,8 +1,17 @@
 import prisma from "@masumi/database/client";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { getAuthContext } from "@/lib/auth/utils";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("App.Home");
+  return {
+    title: `Masumi - ${t("welcome")}`,
+    description: t("signedInAs", { email: "" }),
+  };
+}
 
 export default async function HomePage() {
   const authContext = await getAuthContext();
@@ -28,19 +37,17 @@ export default async function HomePage() {
     }
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
-          <p className="text-muted-foreground">
-            {t("signedInAs", { email: authContext.session.user.email || "" })}
-          </p>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
+        <p className="text-muted-foreground">
+          {t("signedInAs", { email: authContext.session.user.email || "" })}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
       <p className="text-muted-foreground">
         {t("signedInAs", { email: authContext.session?.user?.email || "" })}

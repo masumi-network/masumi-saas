@@ -65,6 +65,8 @@ export const ModelName = {
   Apikey: "Apikey",
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
+  Agent: "Agent",
+  VeridianCredential: "VeridianCredential",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -97,7 +99,6 @@ export const UserScalarFieldEnum = {
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
   kycVerificationId: "kycVerificationId",
-  veridianCredentialId: "veridianCredentialId",
 } as const;
 
 export type UserScalarFieldEnum =
@@ -250,6 +251,45 @@ export const KycVerificationScalarFieldEnum = {
 
 export type KycVerificationScalarFieldEnum =
   (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
+
+export const AgentScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  description: "description",
+  apiUrl: "apiUrl",
+  userId: "userId",
+  registrationState: "registrationState",
+  verificationStatus: "verificationStatus",
+  veridianCredentialId: "veridianCredentialId",
+  tags: "tags",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentScalarFieldEnum =
+  (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const VeridianCredentialScalarFieldEnum = {
+  id: "id",
+  credentialId: "credentialId",
+  schemaSaid: "schemaSaid",
+  aid: "aid",
+  status: "status",
+  credentialData: "credentialData",
+  attributes: "attributes",
+  userId: "userId",
+  agentId: "agentId",
+  organizationId: "organizationId",
+  issuedAt: "issuedAt",
+  expiresAt: "expiresAt",
+  revokedAt: "revokedAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type VeridianCredentialScalarFieldEnum =
+  (typeof VeridianCredentialScalarFieldEnum)[keyof typeof VeridianCredentialScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
