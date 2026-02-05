@@ -27,7 +27,7 @@ interface RequestVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agent: Agent;
-  kycStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
+  kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
   onSuccess: () => void;
 }
 
@@ -201,7 +201,7 @@ export function RequestVerificationDialog({
   };
 
   const handleSubmit = async () => {
-    if (kycStatus !== "VERIFIED") {
+    if (kycStatus !== "APPROVED") {
       toast.error("Please complete your KYC verification first");
       return;
     }
@@ -290,7 +290,7 @@ export function RequestVerificationDialog({
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{t("kycStatus")}</h3>
-            {kycStatus === "VERIFIED" ? (
+            {kycStatus === "APPROVED" ? (
               <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
                 <ShieldCheck className="h-5 w-5 text-green-500" />
                 <div className="flex-1">
@@ -442,7 +442,7 @@ export function RequestVerificationDialog({
             variant="primary"
             onClick={handleSubmit}
             disabled={
-              isSubmitting || isSigning || !aid || kycStatus !== "VERIFIED"
+              isSubmitting || isSigning || !aid || kycStatus !== "APPROVED"
             }
           >
             {(isSubmitting || isSigning) && (
