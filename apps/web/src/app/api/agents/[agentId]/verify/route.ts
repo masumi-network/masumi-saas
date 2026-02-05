@@ -75,8 +75,8 @@ export async function POST(
       );
     }
 
-    // KYC status VERIFIED means the user's identity is verified
-    if (userWithKyc.kycVerification.status !== "VERIFIED") {
+    // KYC status APPROVED means the user's identity is verified
+    if (userWithKyc.kycVerification.status !== "APPROVED") {
       return NextResponse.json(
         {
           success: false,
