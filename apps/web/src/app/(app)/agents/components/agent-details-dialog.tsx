@@ -20,43 +20,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
+import {
+  getRegistrationStatusBadgeVariant,
+  parseAgentRegistrationStatus,
+} from "./agent-utils";
 import { AgentVerificationCard } from "./agent-verification-card";
-
-const parseAgentRegistrationStatus = (
-  status: Agent["registrationState"],
-): string => {
-  switch (status) {
-    case "RegistrationRequested":
-      return "Pending";
-    case "RegistrationInitiated":
-      return "Registering";
-    case "RegistrationConfirmed":
-      return "Registered";
-    case "RegistrationFailed":
-      return "Registration Failed";
-    case "DeregistrationRequested":
-      return "Pending";
-    case "DeregistrationInitiated":
-      return "Deregistering";
-    case "DeregistrationConfirmed":
-      return "Deregistered";
-    case "DeregistrationFailed":
-      return "Deregistration Failed";
-    default:
-      return status;
-  }
-};
-
-const getRegistrationStatusBadgeVariant = (
-  status: Agent["registrationState"],
-) => {
-  if (status === "RegistrationConfirmed") return "default";
-  if (status.includes("Failed")) return "destructive";
-  if (status.includes("Initiated")) return "secondary";
-  if (status.includes("Requested")) return "secondary";
-  if (status === "DeregistrationConfirmed") return "secondary";
-  return "secondary";
-};
 
 interface AgentDetailsDialogProps {
   agent: Agent | null;
