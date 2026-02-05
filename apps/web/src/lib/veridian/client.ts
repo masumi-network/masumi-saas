@@ -146,7 +146,7 @@ export async function resolveOobi(
       try {
         errorData = JSON.parse(errorText) as { data?: string };
       } catch {
-        // If JSON parsing fails, use the error text as-is
+        // If JSON parsing fails, errorData remains empty and we'll use the fallback error message
       }
 
       throw new Error(
@@ -218,7 +218,7 @@ export async function issueCredential(
       try {
         errorData = JSON.parse(errorText) as { data?: string };
       } catch {
-        // If JSON parsing fails, use the error text as-is
+        // If JSON parsing fails, errorData remains empty and we'll use the fallback error message
       }
 
       throw new Error(
