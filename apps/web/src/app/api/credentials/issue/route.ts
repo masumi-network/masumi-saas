@@ -2,7 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
   issueCredential,
@@ -34,7 +34,7 @@ const issueCredentialSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const body = await request.json().catch(() => ({}));
     const validation = issueCredentialSchema.safeParse(body);

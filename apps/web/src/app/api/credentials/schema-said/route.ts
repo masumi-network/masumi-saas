@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
 
 export async function GET(_request: NextRequest) {
   try {
-    await getAuthenticatedHeaders();
+    await getAuthenticatedOrThrow();
 
     const schemaSaid = getAgentVerificationSchemaSaid();
 

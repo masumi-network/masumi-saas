@@ -15,13 +15,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { getInitials } from "@/lib/utils/format-name";
 
 export async function UserProfileCard() {
   const t = await getTranslations("App.Home.KycStatus");
 
-  const { user } = await getAuthenticatedHeaders();
+  const { user } = await getAuthenticatedOrThrow();
   const result = await getKycStatusAction();
 
   if (!result.success || !result.data) {

@@ -13,14 +13,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { formatName } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/format-name";
 
 export async function UserProfileCard() {
   const t = await getTranslations("App.Home.KycStatus");
 
-  const { user } = await getAuthenticatedHeaders();
+  const { user } = await getAuthenticatedOrThrow();
   const result = await getKycStatusAction();
 
   if (!result.success || !result.data) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { getCredentialServerUrl } from "@/lib/veridian";
 
 const checkConnectionSchema = z.object({
@@ -10,7 +10,7 @@ const checkConnectionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedHeaders();
+    await getAuthenticatedOrThrow();
 
     const body = await request.json().catch(() => ({}));
     const validation = checkConnectionSchema.safeParse(body);

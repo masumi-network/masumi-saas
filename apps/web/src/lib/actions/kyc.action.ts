@@ -2,7 +2,7 @@
 
 import prisma from "@masumi/database/client";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   generateSumsubAccessToken,
   getApplicantByExternalUserId,
@@ -23,7 +23,7 @@ export async function generateKycAccessTokenAction(
   levelName: string = DEFAULT_KYC_LEVEL,
 ) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const token = await generateSumsubAccessToken(user.id, levelName, 600);
 
@@ -53,7 +53,7 @@ export async function generateKybAccessTokenAction(
   levelName: string = DEFAULT_KYB_LEVEL,
 ) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     // Verify user is a member of the organization
     const member = await prisma.member.findFirst({
@@ -99,7 +99,7 @@ export async function generateKybAccessTokenAction(
  */
 export async function markKycAsSubmittedAction() {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     // Check if user already has a verification record
     const existingUser = await prisma.user.findUnique({
@@ -144,7 +144,7 @@ export async function markKycAsSubmittedAction() {
  */
 export async function getKycStatusAction() {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const userWithKyc = await prisma.user.findUnique({
       where: { id: user.id },
