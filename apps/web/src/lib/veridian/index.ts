@@ -5,6 +5,7 @@
 
 // Client functions
 export {
+  checkContactExists,
   fetchContactCredentials,
   fetchKeyState,
   getAgentVerificationSchemaSaid,

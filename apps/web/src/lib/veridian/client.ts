@@ -1,8 +1,14 @@
 import crypto from "crypto";
+import { z } from "zod";
 
 import { veridianConfig } from "@/lib/config/veridian.config";
 
 import type { Credential, CredentialServerResponse } from "./types";
+
+const contactsResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.array(z.object({ id: z.string().optional() })),
+});
 
 /**
  * Get the credential server URL
@@ -108,6 +114,45 @@ export async function fetchContactCredentials(
     }
     throw new Error("Failed to fetch contact credentials: Unknown error");
   }
+}
+
+/**
+ * Check whether the credential server has a contact (AID) in its contacts list.
+ * Fetches the contacts endpoint, parses the response with zod, and returns true if the AID exists.
+ * @param aid - The KERI identifier (AID) to check
+ * @returns true if the contact exists, false if not or if the response shape is invalid
+ * @throws Error if the request fails (e.g. network or non-2xx response)
+ */
+export async function checkContactExists(aid: string): Promise<boolean> {
+  if (!aid || typeof aid !== "string" || aid.trim().length === 0) {
+    throw new Error("Invalid AID: AID must be a non-empty string");
+  }
+
+  const credentialServerUrl = getCredentialServerUrl();
+  const url = `${credentialServerUrl}/contacts`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "Unknown error");
+    throw new Error(
+      `Failed to fetch contacts: ${response.status} ${response.statusText}. ${errorText}`,
+    );
+  }
+
+  const raw = (await response.json()) as unknown;
+  const parsed = contactsResponseSchema.safeParse(raw);
+
+  if (!parsed.success || !parsed.data.success) {
+    return false;
+  }
+
+  return parsed.data.data.some((contact) => contact.id === aid);
 }
 
 /**
