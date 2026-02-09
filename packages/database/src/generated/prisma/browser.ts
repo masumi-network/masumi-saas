@@ -71,3 +71,8 @@ export type RateLimit = Prisma.RateLimitModel;
  *
  */
 export type KycVerification = Prisma.KycVerificationModel;
+/**
+ * Model Agent
+ *
+ */
+export type Agent = Prisma.AgentModel;

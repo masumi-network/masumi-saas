@@ -28,6 +28,7 @@ interface MenuItemConfig {
   href: string;
   label: string;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  disabled?: boolean;
 }
 
 export default function MenuItems() {
@@ -52,24 +53,28 @@ export default function MenuItems() {
       href: "/organizations",
       label: t("organizations"),
       Icon: Building2,
+      disabled: true,
     },
     {
       key: "wallets",
       href: "/wallets",
       label: t("wallets"),
       Icon: Wallet,
+      disabled: true,
     },
     {
       key: "payment-methods",
       href: "/payment-methods",
       label: t("paymentMethods"),
       Icon: CreditCard,
+      disabled: true,
     },
     {
       key: "api-keys",
       href: "/api-keys",
       label: t("apiKeys"),
       Icon: Key,
+      disabled: true,
     },
     {
       key: "account",
@@ -83,27 +88,37 @@ export default function MenuItems() {
     <SidebarGroup className="w-full">
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map(({ key, href, label, Icon }) => {
+          {items.map(({ key, href, label, Icon, disabled }) => {
             const isActive = pathname === href;
 
             return (
               <SidebarMenuItem key={key}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive}
-                  className="px-4 py-5"
-                >
-                  <SheetClose asChild>
-                    <Link
-                      href={href}
-                      aria-current={isActive ? "page" : undefined}
-                      className="text-sidebar-text flex w-full items-center gap-2"
-                    >
-                      <Icon className="size-4" aria-hidden />
-                      <span className="flex-1 truncate">{label}</span>
-                    </Link>
-                  </SheetClose>
-                </SidebarMenuButton>
+                {disabled ? (
+                  <SidebarMenuButton
+                    disabled
+                    className="px-4 py-5 opacity-50 cursor-not-allowed"
+                  >
+                    <Icon className="size-4" aria-hidden />
+                    <span className="flex-1 truncate">{label}</span>
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    className="px-4 py-5"
+                  >
+                    <SheetClose asChild>
+                      <Link
+                        href={href}
+                        aria-current={isActive ? "page" : undefined}
+                        className="text-sidebar-text flex w-full items-center gap-2"
+                      >
+                        <Icon className="size-4" aria-hidden />
+                        <span className="flex-1 truncate">{label}</span>
+                      </Link>
+                    </SheetClose>
+                  </SidebarMenuButton>
+                )}
               </SidebarMenuItem>
             );
           })}

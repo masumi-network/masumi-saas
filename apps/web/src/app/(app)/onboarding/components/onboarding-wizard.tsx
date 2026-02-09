@@ -96,7 +96,7 @@ export function OnboardingWizard({
     kycStatus === "REVIEW" || kycStatus === "REJECTED";
 
   return (
-    <div className="w-full space-y-12 px-2">
+    <div className="w-full space-y-12">
       <div className="space-y-2">
         <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm leading-6">
