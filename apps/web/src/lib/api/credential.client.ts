@@ -15,7 +15,7 @@ type IssueCredentialRequest = {
   schemaSaid: string;
   oobi?: string;
   attributes?: Record<string, unknown>;
-  agentId?: string;
+  agentId: string;
   organizationId?: string;
   expiresAt?: string;
   signature?: string;

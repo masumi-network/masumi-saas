@@ -16,7 +16,7 @@ const issueCredentialSchema = z.object({
   schemaSaid: z.string().min(1, "Schema SAID is required"),
   oobi: z.string().optional(),
   attributes: z.record(z.string(), z.unknown()).optional(),
-  agentId: z.string().optional(),
+  agentId: z.string().min(1, "Agent ID is required"),
   organizationId: z.string().optional(),
   expiresAt: z
     .string()
@@ -191,57 +191,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let agent: {
-      id: string;
-      name: string;
-      description: string;
-      apiUrl: string;
-    } | null = null;
+    const foundAgent = await prisma.agent.findFirst({
+      where: {
+        id: agentId,
+        userId: user.id,
+      },
+    });
 
-    if (agentId) {
-      const foundAgent = await prisma.agent.findFirst({
-        where: {
-          id: agentId,
-          userId: user.id,
+    if (!foundAgent) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Agent not found or you don't have permission to issue credentials for this agent",
         },
-      });
-
-      if (!foundAgent) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Agent not found or you don't have permission to issue credentials for this agent",
-          },
-          { status: 404 },
-        );
-      }
-
-      if (
-        foundAgent.registrationState === "RegistrationRequested" ||
-        foundAgent.registrationState === "RegistrationInitiated" ||
-        foundAgent.registrationState === "RegistrationFailed" ||
-        foundAgent.registrationState === "DeregistrationRequested" ||
-        foundAgent.registrationState === "DeregistrationInitiated" ||
-        foundAgent.registrationState === "DeregistrationConfirmed" ||
-        foundAgent.registrationState === "DeregistrationFailed"
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
-          },
-          { status: 400 },
-        );
-      }
-
-      agent = {
-        id: foundAgent.id,
-        name: foundAgent.name,
-        description: foundAgent.description,
-        apiUrl: foundAgent.apiUrl,
-      };
+        { status: 404 },
+      );
     }
+
+    if (
+      foundAgent.registrationState === "RegistrationRequested" ||
+      foundAgent.registrationState === "RegistrationInitiated" ||
+      foundAgent.registrationState === "RegistrationFailed" ||
+      foundAgent.registrationState === "DeregistrationRequested" ||
+      foundAgent.registrationState === "DeregistrationInitiated" ||
+      foundAgent.registrationState === "DeregistrationConfirmed" ||
+      foundAgent.registrationState === "DeregistrationFailed"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const agent = {
+      id: foundAgent.id,
+      name: foundAgent.name,
+      description: foundAgent.description,
+      apiUrl: foundAgent.apiUrl,
+    };
 
     // Protected fields that cannot be overridden by user-provided attributes
     const protectedFields = [
@@ -265,12 +256,10 @@ export async function POST(request: NextRequest) {
     const credentialAttributes = {
       ...filteredAttributes,
       kycVerificationId: userWithKyc.kycVerification.id,
-      ...(agent && {
-        agentId: agent.id,
-        agentName: agent.name,
-        agentDescription: agent.description,
-        agentApiUrl: agent.apiUrl,
-      }),
+      agentId: agent.id,
+      agentName: agent.name,
+      agentDescription: agent.description,
+      agentApiUrl: agent.apiUrl,
     };
 
     if (organizationId) {
@@ -360,7 +349,7 @@ export async function POST(request: NextRequest) {
           credentialData: JSON.stringify(credentialDataWithSignature),
           attributes: JSON.stringify(credentialAttributes),
           userId: user.id,
-          agentId: agentId || null,
+          agentId,
           organizationId: organizationId || null,
           expiresAt: expiresAt ? new Date(expiresAt) : null,
         },
@@ -389,10 +378,9 @@ export async function POST(request: NextRequest) {
             return false;
           }
 
-          // If agentId was provided, filter by agentId from credential attributes
-          // This ensures we get the correct credential when multiple credentials
+          // Filter by agentId so we get the correct credential when multiple credentials
           // of the same schema exist for the same AID
-          if (agentId && cred.sad?.a) {
+          if (cred.sad?.a) {
             const credAgentId = cred.sad.a.agentId as string | undefined;
             return credAgentId === agentId;
           }
@@ -440,15 +428,13 @@ export async function POST(request: NextRequest) {
         expiresAt: updated.expiresAt,
       };
 
-      if (agentId) {
-        await prisma.agent.update({
-          where: { id: agentId },
-          data: {
-            verificationStatus: "VERIFIED" as const,
-            veridianCredentialId: credentialId,
-          },
-        });
-      }
+      await prisma.agent.update({
+        where: { id: agentId },
+        data: {
+          verificationStatus: "VERIFIED" as const,
+          veridianCredentialId: credentialId,
+        },
+      });
     } catch (error) {
       console.error("Failed to issue credential via Veridian:", error);
       return NextResponse.json(
