@@ -218,10 +218,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Resolve OOBI before issuing credential (required for credential server to know about the recipient AID)
+    // Resolve OOBI so the credential server knows the recipient; validate it matches the request AID
     if (oobi) {
       try {
-        await resolveOobi(oobi);
+        const resolveResult = await resolveOobi(oobi);
+        if (
+          resolveResult.data &&
+          resolveResult.data.trim().length > 0 &&
+          resolveResult.data.trim() !== aid.trim()
+        ) {
+          return apiError(
+            "Resolved OOBI does not correspond to the AID in this request. The OOBI must introduce the same identifier as the AID you are issuing the credential to.",
+            400,
+          );
+        }
       } catch (error) {
         console.error("Failed to resolve OOBI:", error);
         return apiError(
