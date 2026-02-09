@@ -233,7 +233,10 @@
         "pendingValue": "PENDING",
         "verifiedValue": "VERIFIED",
         "revokedValue": "REVOKED",
-        "expiredValue": "EXPIRED"
+        "expiredValue": "EXPIRED",
+        "approvedValue": "APPROVED",
+        "rejectedValue": "REJECTED",
+        "reviewValue": "REVIEW"
       },
       "table": {
         "name": "Name",
@@ -313,6 +316,10 @@
           "expired": {
             "title": "Credential Expired",
             "description": "The credential for this agent has expired. You can request a new credential."
+          },
+          "rejected": {
+            "title": "Verification Rejected",
+            "description": "Verification was rejected. You can try requesting verification again."
           },
           "loading": "Loading...",
           "requestVerification": "Request Credential",
