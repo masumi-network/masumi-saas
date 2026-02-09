@@ -38,10 +38,7 @@ export async function GET(request: NextRequest) {
     const where: {
       userId: string;
       verificationStatus?:
-        | {
-            not?: "VERIFIED";
-            equals?: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
-          }
+        | { not: "VERIFIED" }
         | "PENDING"
         | "VERIFIED"
         | "REVOKED"
