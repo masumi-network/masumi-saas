@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
@@ -41,13 +42,10 @@ export async function POST(request: NextRequest) {
     const validation = issueCredentialSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid request",
-          details: validation.error.issues.map((issue) => issue.message),
-        },
-        { status: 400 },
+      return apiError(
+        "Invalid request",
+        400,
+        validation.error.issues.map((issue) => issue.message),
       );
     }
 
@@ -63,24 +61,17 @@ export async function POST(request: NextRequest) {
       signedMessage,
     } = validation.data;
 
-    // Validate signature and message are provided together
     if (signature && !signedMessage) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Signed message is required when signature is provided",
-        },
-        { status: 400 },
+      return apiError(
+        "Signed message is required when signature is provided",
+        400,
       );
     }
 
     if (signedMessage && !signature) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Signature is required when signed message is provided",
-        },
-        { status: 400 },
+      return apiError(
+        "Signature is required when signed message is provided",
+        400,
       );
     }
 
@@ -88,34 +79,15 @@ export async function POST(request: NextRequest) {
     if (signature && signedMessage) {
       // Basic format validation
       if (typeof signature !== "string" || signature.length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Invalid signature format",
-          },
-          { status: 400 },
-        );
+        return apiError("Invalid signature format", 400);
       }
 
       if (typeof signedMessage !== "string" || signedMessage.length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Invalid signed message format",
-          },
-          { status: 400 },
-        );
+        return apiError("Invalid signed message format", 400);
       }
 
-      // Verify the message contains the AID to prevent signature replay attacks
       if (!signedMessage.includes(aid)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Signed message must contain the AID",
-          },
-          { status: 400 },
-        );
+        return apiError("Signed message must contain the AID", 400);
       }
 
       // Perform full cryptographic verification of the KERI signature
@@ -127,26 +99,18 @@ export async function POST(request: NextRequest) {
         );
 
         if (!isValid) {
-          return NextResponse.json(
-            {
-              success: false,
-              error:
-                "Signature verification failed. The signature does not match the AID's public key.",
-            },
-            { status: 400 },
+          return apiError(
+            "Signature verification failed. The signature does not match the AID's public key.",
+            400,
           );
         }
       } catch (error) {
         console.error("Failed to verify KERI signature:", error);
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              error instanceof Error
-                ? `Signature verification failed: ${error.message}`
-                : "Signature verification failed. Please ensure VERIDIAN_KERIA_URL is configured.",
-          },
-          { status: 500 },
+        return apiError(
+          error instanceof Error
+            ? `Signature verification failed: ${error.message}`
+            : "Signature verification failed. Please ensure VERIDIAN_KERIA_URL is configured.",
+          500,
         );
       }
     }
@@ -160,34 +124,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!userWithKyc) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-        },
-        { status: 404 },
-      );
+      return apiError("User not found", 404);
     }
 
     if (!userWithKyc.kycVerification) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "KYC verification not found. Please complete KYC verification first.",
-        },
-        { status: 400 },
+      return apiError(
+        "KYC verification not found. Please complete KYC verification first.",
+        400,
       );
     }
 
-    // KYC status APPROVED means the user's identity is verified
     if (userWithKyc.kycVerification.status !== "APPROVED") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
-        },
-        { status: 400 },
+      return apiError(
+        `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
+        400,
       );
     }
 
@@ -199,13 +149,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!foundAgent) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Agent not found or you don't have permission to issue credentials for this agent",
-        },
-        { status: 404 },
+      return apiError(
+        "Agent not found or you don't have permission to issue credentials for this agent",
+        404,
       );
     }
 
@@ -218,12 +164,9 @@ export async function POST(request: NextRequest) {
       foundAgent.registrationState === "DeregistrationConfirmed" ||
       foundAgent.registrationState === "DeregistrationFailed"
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
-        },
-        { status: 400 },
+      return apiError(
+        `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
+        400,
       );
     }
 
@@ -271,13 +214,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!member) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Organization not found or you're not a member",
-          },
-          { status: 404 },
-        );
+        return apiError("Organization not found or you're not a member", 404);
       }
     }
 
@@ -287,15 +224,11 @@ export async function POST(request: NextRequest) {
         await resolveOobi(oobi);
       } catch (error) {
         console.error("Failed to resolve OOBI:", error);
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              error instanceof Error
-                ? `Failed to resolve OOBI: ${error.message}`
-                : "Failed to resolve OOBI. The credential server needs to know about the recipient AID before issuing credentials.",
-          },
-          { status: 500 },
+        return apiError(
+          error instanceof Error
+            ? `Failed to resolve OOBI: ${error.message}`
+            : "Failed to resolve OOBI. The credential server needs to know about the recipient AID before issuing credentials.",
+          500,
         );
       }
     }
@@ -329,14 +262,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (!result.success) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Failed to issue credential",
-            details: result.data,
-          },
-          { status: 500 },
-        );
+        return apiError("Failed to issue credential", 500, result.data);
       }
 
       const placeholderCredentialId = `pending-${randomUUID()}`;
@@ -399,13 +325,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (!issuedCredential || !issuedCredential.sad?.d) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Credential was issued but could not be retrieved. The credential may still be processing. A PENDING record was saved for later reconciliation.",
-          },
-          { status: 500 },
+        return apiError(
+          "Credential was issued but could not be retrieved. The credential may still be processing. A PENDING record was saved for later reconciliation.",
+          500,
         );
       }
 
@@ -437,15 +359,11 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error("Failed to issue credential via Veridian:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            error instanceof Error
-              ? `Failed to issue credential: ${error.message}`
-              : "Failed to issue credential",
-        },
-        { status: 500 },
+      return apiError(
+        error instanceof Error
+          ? `Failed to issue credential: ${error.message}`
+          : "Failed to issue credential",
+        500,
       );
     }
 
@@ -463,13 +381,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to issue credential:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to issue credential",
-      },
-      { status: 500 },
+    return apiError(
+      error instanceof Error ? error.message : "Failed to issue credential",
+      500,
     );
   }
 }
