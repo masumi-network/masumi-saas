@@ -220,17 +220,8 @@ export function RequestVerificationDialog({
         return;
       }
 
-      const schemaSaidResult = await credentialApiClient.getSchemaSaid();
-      if (!schemaSaidResult.success || !schemaSaidResult.data) {
-        toast.error("Failed to get credential schema");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Issue credential to the linked AID
       const result = await credentialApiClient.issueCredential({
         aid,
-        schemaSaid: schemaSaidResult.data.schemaSaid,
         oobi: oobi || undefined,
         agentId: agent.id,
         signature: signatureData.signature,

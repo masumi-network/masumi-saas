@@ -7,6 +7,7 @@ import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
+  getAgentVerificationSchemaSaid,
   issueCredential,
   resolveOobi,
   verifyKeriSignature,
@@ -14,7 +15,6 @@ import {
 
 const issueCredentialSchema = z.object({
   aid: z.string().min(1, "AID is required"),
-  schemaSaid: z.string().min(1, "Schema SAID is required"),
   oobi: z.string().optional(),
   attributes: z.record(z.string(), z.unknown()).optional(),
   agentId: z.string().min(1, "Agent ID is required"),
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
 
     const {
       aid,
-      schemaSaid,
       oobi,
       attributes,
       agentId,
@@ -60,6 +59,8 @@ export async function POST(request: NextRequest) {
       signature,
       signedMessage,
     } = validation.data;
+
+    const schemaSaid = getAgentVerificationSchemaSaid();
 
     if (signature && !signedMessage) {
       return apiError(

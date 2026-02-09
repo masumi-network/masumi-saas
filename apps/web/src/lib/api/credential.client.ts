@@ -12,7 +12,6 @@ type VeridianCredential = {
 
 type IssueCredentialRequest = {
   aid: string;
-  schemaSaid: string;
   oobi?: string;
   attributes?: Record<string, unknown>;
   agentId: string;
