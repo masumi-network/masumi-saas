@@ -155,15 +155,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      foundAgent.registrationState === "RegistrationRequested" ||
-      foundAgent.registrationState === "RegistrationInitiated" ||
-      foundAgent.registrationState === "RegistrationFailed" ||
-      foundAgent.registrationState === "DeregistrationRequested" ||
-      foundAgent.registrationState === "DeregistrationInitiated" ||
-      foundAgent.registrationState === "DeregistrationConfirmed" ||
-      foundAgent.registrationState === "DeregistrationFailed"
-    ) {
+    if (foundAgent.registrationState !== "RegistrationConfirmed") {
       return apiError(
         `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
         400,
