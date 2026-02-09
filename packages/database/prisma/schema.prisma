@@ -291,6 +291,7 @@ model VeridianCredential {
 }
 
 enum CredentialStatus {
+  PENDING
   ISSUED
   REVOKED
   EXPIRED

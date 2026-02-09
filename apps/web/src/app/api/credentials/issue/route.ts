@@ -1,4 +1,5 @@
 import prisma from "@masumi/database/client";
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -310,7 +311,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const credentialDataWithSignature = {
+      ...credentialAttributes,
+      ...(signature &&
+        signedMessage && {
+          signature,
+          signedMessage,
+          signatureTimestamp: new Date().toISOString(),
+        }),
+    };
+
     let credentialId: string;
+    let credential: {
+      id: string;
+      credentialId: string;
+      schemaSaid: string;
+      aid: string;
+      status: string;
+      issuedAt: Date;
+      expiresAt: Date | null;
+    };
+
     try {
       const result = await issueCredential(
         schemaSaid,
@@ -328,6 +349,31 @@ export async function POST(request: NextRequest) {
           { status: 500 },
         );
       }
+
+      const placeholderCredentialId = `pending-${randomUUID()}`;
+      const pendingCredential = await prisma.veridianCredential.create({
+        data: {
+          credentialId: placeholderCredentialId,
+          schemaSaid,
+          aid,
+          status: "PENDING",
+          credentialData: JSON.stringify(credentialDataWithSignature),
+          attributes: JSON.stringify(credentialAttributes),
+          userId: user.id,
+          agentId: agentId || null,
+          organizationId: organizationId || null,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+        },
+      });
+      credential = {
+        id: pendingCredential.id,
+        credentialId: pendingCredential.credentialId,
+        schemaSaid: pendingCredential.schemaSaid,
+        aid: pendingCredential.aid,
+        status: pendingCredential.status,
+        issuedAt: pendingCredential.issuedAt,
+        expiresAt: pendingCredential.expiresAt,
+      };
 
       const maxAttempts = 10;
       const pollInterval = 500;
@@ -369,13 +415,40 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error:
-              "Credential was issued but could not be retrieved. The credential may still be processing.",
+              "Credential was issued but could not be retrieved. The credential may still be processing. A PENDING record was saved for later reconciliation.",
           },
           { status: 500 },
         );
       }
 
       credentialId = issuedCredential.sad.d;
+
+      const updated = await prisma.veridianCredential.update({
+        where: { id: pendingCredential.id },
+        data: {
+          credentialId,
+          status: "ISSUED",
+        },
+      });
+      credential = {
+        id: updated.id,
+        credentialId: updated.credentialId,
+        schemaSaid: updated.schemaSaid,
+        aid: updated.aid,
+        status: updated.status,
+        issuedAt: updated.issuedAt,
+        expiresAt: updated.expiresAt,
+      };
+
+      if (agentId) {
+        await prisma.agent.update({
+          where: { id: agentId },
+          data: {
+            verificationStatus: "VERIFIED" as const,
+            veridianCredentialId: credentialId,
+          },
+        });
+      }
     } catch (error) {
       console.error("Failed to issue credential via Veridian:", error);
       return NextResponse.json(
@@ -388,46 +461,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 },
       );
-    }
-
-    // Store signature and signed message for audit purposes
-    // The signature has been cryptographically verified against the AID's public key
-    const credentialDataWithSignature = {
-      ...credentialAttributes,
-      ...(signature &&
-        signedMessage && {
-          signature,
-          signedMessage,
-          signatureTimestamp: new Date().toISOString(),
-        }),
-    };
-
-    const credential = await prisma.veridianCredential.create({
-      data: {
-        credentialId,
-        schemaSaid,
-        aid,
-        status: "ISSUED",
-        credentialData: JSON.stringify(credentialDataWithSignature),
-        attributes: JSON.stringify(credentialAttributes),
-        userId: user.id,
-        agentId: agentId || null,
-        organizationId: organizationId || null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      },
-    });
-
-    // Update agent verification status to VERIFIED when credential is successfully issued
-    // The credential has been cryptographically verified (signature validation) and
-    // successfully issued, so the agent is verified
-    if (agentId) {
-      await prisma.agent.update({
-        where: { id: agentId },
-        data: {
-          verificationStatus: "VERIFIED" as const,
-          veridianCredentialId: credentialId,
-        },
-      });
     }
 
     return NextResponse.json({

@@ -36,6 +36,7 @@ export type RegistrationState =
   (typeof RegistrationState)[keyof typeof RegistrationState];
 
 export const CredentialStatus = {
+  PENDING: "PENDING",
   ISSUED: "ISSUED",
   REVOKED: "REVOKED",
   EXPIRED: "EXPIRED",
