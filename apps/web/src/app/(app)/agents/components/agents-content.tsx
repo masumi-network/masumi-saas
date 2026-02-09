@@ -26,13 +26,29 @@ export function AgentsContent() {
   const [activeTab, setActiveTab] = useState("all");
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const PAGE_SIZE = 10;
+
+  const loadPage = async (cursorId?: string) => {
+    const result = await agentApiClient.getAgents(undefined, {
+      cursorId,
+      take: PAGE_SIZE,
+    });
+    if (result.success) {
+      return { data: result.data, nextCursor: result.nextCursor };
+    }
+    return null;
+  };
 
   useEffect(() => {
     startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
       }
       setIsLoading(false);
     });
@@ -80,18 +96,20 @@ export function AgentsContent() {
 
   const handleRegisterSuccess = () => {
     startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
       }
     });
   };
 
   const handleDeleteSuccess = () => {
     startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
       }
     });
     setSelectedAgent(null);
@@ -101,12 +119,25 @@ export function AgentsContent() {
     const currentAgentId = dialogAgent?.id;
     if (!currentAgentId) return;
     startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
-        const updated = result.data.find((a) => a.id === currentAgentId);
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
+        const updated = page.data.find((a) => a.id === currentAgentId);
         if (updated) setSelectedAgent(updated);
       }
+    });
+  };
+
+  const handleLoadMore = () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    loadPage(nextCursor).then((page) => {
+      if (page) {
+        setAgents((prev) => [...prev, ...page.data]);
+        setNextCursor(page.nextCursor);
+      }
+      setIsLoadingMore(false);
     });
   };
 
@@ -154,9 +185,10 @@ export function AgentsContent() {
             <RefreshButton
               onRefresh={() => {
                 startTransition(async () => {
-                  const result = await agentApiClient.getAgents();
-                  if (result.success && result.data) {
-                    setAgents(result.data);
+                  const page = await loadPage();
+                  if (page) {
+                    setAgents(page.data);
+                    setNextCursor(page.nextCursor);
                   }
                 });
               }}
@@ -194,6 +226,18 @@ export function AgentsContent() {
               }}
               onDeleteSuccess={handleDeleteSuccess}
             />
+
+            {nextCursor && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? t("loadingMore") : t("loadMore")}
+                </Button>
+              </div>
+            )}
 
             {filteredAgents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">

@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
       | "EXPIRED"
       | null;
     const unverified = searchParams.get("unverified") === "true";
+    const cursorId = searchParams.get("cursor") ?? undefined;
+    const take = Math.min(
+      Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
+      50,
+    );
 
     const where: {
       userId: string;
@@ -66,11 +71,19 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      take: take + 1,
+      ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
     });
+
+    const hasMore = agents.length > take;
+    const page = hasMore ? agents.slice(0, take) : agents;
+    const nextCursor =
+      hasMore && page.length > 0 ? page[page.length - 1]!.id : null;
 
     return NextResponse.json({
       success: true,
-      data: agents,
+      data: page,
+      nextCursor,
     });
   } catch (error) {
     console.error("Failed to get agents:", error);

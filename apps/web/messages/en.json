@@ -216,6 +216,8 @@
       "registerAgent": "Register Agent",
       "noAgents": "No agents found. Register your first agent to get started.",
       "noAgentsMatchingSearch": "No agents found matching your search",
+      "loadMore": "Load more",
+      "loadingMore": "Loading…",
       "noVerifiedAgents": "No verified agents found",
       "noUnverifiedAgents": "No unverified agents found",
       "tabs": {
