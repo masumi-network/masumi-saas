@@ -1,24 +1,20 @@
 import crypto from "crypto";
 
-import type { Credential, CredentialServerResponse } from "./types";
+import { veridianConfig } from "@/lib/config/veridian.config";
 
-const VERIDIAN_CREDENTIAL_SERVER_URL =
-  process.env.VERIDIAN_CREDENTIAL_SERVER_URL;
-const VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID =
-  process.env.VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID;
-const VERIDIAN_KERIA_URL = process.env.VERIDIAN_KERIA_URL;
+import type { Credential, CredentialServerResponse } from "./types";
 
 /**
  * Get the credential server URL
  * @returns The credential server base URL
  */
 export function getCredentialServerUrl(): string {
-  if (!VERIDIAN_CREDENTIAL_SERVER_URL) {
+  if (!veridianConfig.credentialServerUrl) {
     throw new Error(
       "VERIDIAN_CREDENTIAL_SERVER_URL is required. Please set it in your .env file.",
     );
   }
-  return VERIDIAN_CREDENTIAL_SERVER_URL;
+  return veridianConfig.credentialServerUrl;
 }
 
 /**
@@ -27,12 +23,12 @@ export function getCredentialServerUrl(): string {
  * @throws Error if VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID is not set
  */
 export function getAgentVerificationSchemaSaid(): string {
-  if (!VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID) {
+  if (!veridianConfig.agentVerificationSchemaSaid) {
     throw new Error(
       "VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID is required. Please set it in your .env file.",
     );
   }
-  return VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID;
+  return veridianConfig.agentVerificationSchemaSaid;
 }
 
 /**
@@ -243,12 +239,12 @@ export async function issueCredential(
  * @throws Error if VERIDIAN_KERIA_URL is not set
  */
 function getKeriaUrl(): string {
-  if (!VERIDIAN_KERIA_URL) {
+  if (!veridianConfig.keriaUrl) {
     throw new Error(
       "VERIDIAN_KERIA_URL is required for signature verification. Please set it in your .env file. Use the KERIA connect URL (port 3901), not the boot URL.",
     );
   }
-  return VERIDIAN_KERIA_URL;
+  return veridianConfig.keriaUrl;
 }
 
 /**
@@ -395,7 +391,7 @@ export async function verifyKeriSignature(
     throw new Error(
       `Ed25519 signature verification failed: ${
         error instanceof Error ? error.message : "Unknown error"
-      }. Please ensure Node.js version 12+ is used and VERIDIAN_KERIA_URL is configured.`,
+      }. Please ensure Node.js version 12+ is used and VERIDIAN_KERIA_URL is set in your config.`,
     );
   }
 }
