@@ -188,7 +188,10 @@ export function AgentsContent() {
           <>
             <AgentsTable
               agents={filteredAgents}
-              onAgentClick={(agent) => setSelectedAgent(agent)}
+              onAgentClick={(agent) => {
+                setSelectedAgent(agent);
+                router.push(`/agents?agentId=${agent.id}`);
+              }}
               onDeleteSuccess={handleDeleteSuccess}
             />
 
@@ -219,7 +222,7 @@ export function AgentsContent() {
         agent={dialogAgent}
         onClose={() => {
           setSelectedAgent(null);
-          if (agentIdFromUrl) router.replace("/agents");
+          router.replace("/agents");
         }}
         onDeleteSuccess={handleDeleteSuccess}
         onVerificationSuccess={handleVerificationSuccess}

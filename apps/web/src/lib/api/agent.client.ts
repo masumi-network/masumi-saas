@@ -88,9 +88,13 @@ class AgentApiClient {
     });
   }
 
-  async requestVerification(agentId: string): Promise<ApiResponse<Agent>> {
+  async requestVerification(
+    agentId: string,
+    data: { aid: string; schemaSaid?: string },
+  ): Promise<ApiResponse<Agent>> {
     return this.request<Agent>(`/${agentId}/verify`, {
       method: "POST",
+      body: JSON.stringify(data),
     });
   }
 }

@@ -304,6 +304,7 @@
             "title": "Verification Rejected",
             "description": "Verification was rejected. You can try requesting verification again."
           },
+          "loading": "Loading...",
           "requestVerification": "Request Verification",
           "requestDescription": "Review the information below and confirm to request verification for this agent.",
           "agentInformation": "Agent Information",
@@ -311,14 +312,44 @@
           "apiUrl": "API URL",
           "kycStatus": "KYC Status",
           "kycStatusDescription": "Your identity has been verified and approved.",
+          "kycStatusPendingDescription": "Please complete your KYC verification first.",
+          "kycStatusReviewDescription": "Your KYC verification is being processed.",
+          "kycStatusRejectedDescription": "Your KYC verification was rejected. Please complete it again.",
           "whatWillBeIssued": "What Will Be Issued",
           "credentialDescription": "A Veridian credential will be issued linking your verified KYC status to this agent. This credential can be used to verify the agent's authenticity.",
           "submitRequest": "Submit Request",
           "cancel": "Cancel",
           "requestSuccess": "Verification request submitted successfully!",
           "requestError": "Failed to request verification. Please try again.",
-          "completeKyc": "Complete KYC Verification"
+          "completeKyc": "Complete KYC Verification",
+          "veridianWalletConnection": "Veridian Wallet Connection",
+          "fetchingCredentials": "Fetching credentials...",
+          "identifierAid": "Identifier (AID)",
+          "credentialsFound": "{count} credential(s) found",
+          "requiredSchema": "Required Schema",
+          "requiredCredentialFound": "✓ Required credential found",
+          "requiredCredentialNotFound": "✗ Required credential not found"
         }
+      }
+    },
+    "Components": {
+      "VeridianWallet": {
+        "connectButton": "Connect Veridian Wallet",
+        "connected": "Connected to Veridian",
+        "disconnect": "Disconnect",
+        "scanQRCode": "Scan QR code with Veridian Wallet",
+        "scanDescription": "Open Veridian wallet on your mobile device and scan this QR code to connect",
+        "cantScan": "Can't scan? Copy the connection ID:",
+        "cancel": "Cancel",
+        "error": "Error",
+        "tryAgain": "Try Again",
+        "connectionTimeout": "Connection timeout. Please try scanning the QR code again.",
+        "failedToGenerateQR": "Failed to generate QR code",
+        "failedToInitialize": "Failed to initialize connection",
+        "connectionRequest": "Connection Request",
+        "walletName": "Wallet",
+        "accept": "Accept",
+        "reject": "Reject"
       }
     },
     "Account": {
