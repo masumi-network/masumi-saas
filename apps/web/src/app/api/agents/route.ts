@@ -97,6 +97,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// TODO: Replace with on-chain registration + signed data; this flow currently
+// creates the agent in DB and sets registrationState to RegistrationConfirmed
+// without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow();
