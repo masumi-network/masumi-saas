@@ -192,7 +192,7 @@ export function AgentsContent() {
 
         {isLoading ? (
           <AgentsTableSkeleton />
-        ) : fetchError ? (
+        ) : fetchError && agents.length === 0 ? (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center space-y-3">
             <p className="text-sm text-destructive font-medium">{fetchError}</p>
             <Button
