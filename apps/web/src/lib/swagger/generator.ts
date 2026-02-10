@@ -63,6 +63,14 @@ registry.registerPath({
             "Filter by verification status. Defaults to APPROVED if not specified.",
           example: "APPROVED",
         }),
+      page: z.coerce.number().int().min(1).optional().openapi({
+        description: "Page number for pagination. Defaults to 1.",
+        example: 1,
+      }),
+      limit: z.coerce.number().int().min(1).max(100).optional().openapi({
+        description: "Number of results per page. Defaults to 50, max 100.",
+        example: 50,
+      }),
     }),
   },
   responses: {
@@ -74,6 +82,12 @@ registry.registerPath({
             .object({
               success: z.literal(true),
               data: z.array(AgentSchema),
+              pagination: z.object({
+                page: z.number().int().openapi({ example: 1 }),
+                limit: z.number().int().openapi({ example: 50 }),
+                total: z.number().int().openapi({ example: 1 }),
+                totalPages: z.number().int().openapi({ example: 1 }),
+              }),
             })
             .openapi({
               example: {
@@ -93,6 +107,12 @@ registry.registerPath({
                     updatedAt: "2026-01-26T12:00:00.000Z",
                   },
                 ],
+                pagination: {
+                  page: 1,
+                  limit: 50,
+                  total: 1,
+                  totalPages: 1,
+                },
               },
             }),
         },

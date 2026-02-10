@@ -34,10 +34,10 @@ export function checkRateLimit(
 ): RateLimitResult {
   const windowMs =
     options?.windowMs ??
-    parseInt(process.env.PUBLIC_API_RATE_LIMIT_WINDOW ?? "60000", 10);
+    parseInt(process.env.PUBLIC_API_RATE_LIMIT_WINDOW || "60000", 10);
   const maxRequests =
     options?.maxRequests ??
-    parseInt(process.env.PUBLIC_API_RATE_LIMIT_MAX ?? "60", 10);
+    parseInt(process.env.PUBLIC_API_RATE_LIMIT_MAX || "60", 10);
 
   const now = Date.now();
   const entry = store.get(key);
