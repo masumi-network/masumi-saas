@@ -87,11 +87,15 @@ export function AgentsContent() {
   }, [agents, searchQuery, activeTab]);
 
   const handleRegisterSuccess = () => {
-    void fetchAgents();
+    startTransition(async () => {
+      await fetchAgents();
+    });
   };
 
   const handleDeleteSuccess = () => {
-    void fetchAgents();
+    startTransition(async () => {
+      await fetchAgents();
+    });
     setSelectedAgent(null);
   };
 
@@ -151,7 +155,9 @@ export function AgentsContent() {
           <div className="flex items-center gap-2">
             <RefreshButton
               onRefresh={() => {
-                void fetchAgents();
+                startTransition(async () => {
+                  await fetchAgents();
+                });
               }}
               size="md"
               isRefreshing={isPending}
