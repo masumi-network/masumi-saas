@@ -12,6 +12,12 @@ export default function AgentPageLoading() {
         </div>
       </div>
 
+      <div className="flex gap-6 border-b">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-4 w-20 pb-4" />
+        ))}
+      </div>
+
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Left column — details, metadata, danger zone (max-w-3xl) */}
         <div className="w-full max-w-3xl space-y-6">

@@ -135,13 +135,8 @@ export function AgentsContent() {
       <div className="space-y-6">
         <Tabs
           tabs={tabs}
-          activeTab={
-            tabs.find((tab) => tab.key === activeTab)?.name || tabs[0]!.name
-          }
-          onTabChange={(tabName) => {
-            const tab = tabs.find((t) => t.name === tabName);
-            if (tab) setActiveTab(tab.key);
-          }}
+          activeTab={activeTab}
+          onTabChange={(key) => setActiveTab(key)}
         />
 
         <div className="flex items-center justify-between gap-4">
