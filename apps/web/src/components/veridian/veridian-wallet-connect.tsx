@@ -210,7 +210,7 @@ export function VeridianWalletConnect({
         pollingIntervalRef.current = null;
       }
     };
-  }, [appName, initDappConnect, disconnect, onConnect, dAppConnect]);
+  }, [appName, initDappConnect, disconnect, onConnect, onError, dAppConnect]);
 
   const disconnectWallet = () => {
     disconnect();
