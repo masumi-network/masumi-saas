@@ -27,12 +27,18 @@ export function AgentsContent() {
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     startTransition(async () => {
       const result = await agentApiClient.getAgents();
       if (result.success && result.data) {
         setAgents(result.data);
+        setFetchError(null);
+      } else {
+        setFetchError(
+          result.success === false ? result.error : "Failed to load agents",
+        );
       }
       setIsLoading(false);
     });
@@ -184,6 +190,34 @@ export function AgentsContent() {
 
         {isLoading ? (
           <AgentsTableSkeleton />
+        ) : fetchError ? (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center space-y-3">
+            <p className="text-sm text-destructive font-medium">{fetchError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFetchError(null);
+                setIsLoading(true);
+                startTransition(async () => {
+                  const result = await agentApiClient.getAgents();
+                  if (result.success && result.data) {
+                    setAgents(result.data);
+                    setFetchError(null);
+                  } else {
+                    setFetchError(
+                      result.success === false
+                        ? result.error
+                        : "Failed to load agents",
+                    );
+                  }
+                  setIsLoading(false);
+                });
+              }}
+            >
+              {t("retry") ?? "Retry"}
+            </Button>
+          </div>
         ) : (
           <>
             <AgentsTable

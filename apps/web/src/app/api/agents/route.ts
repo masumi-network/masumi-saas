@@ -3,67 +3,56 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
-const registerAgentSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(250, "Name must be less than 250 characters"),
-  description: z
-    .string()
-    .min(1, "Description is required")
-    .max(1000, "Description must be less than 1000 characters"),
-  apiUrl: z
-    .string()
-    .url("API URL must be a valid URL")
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "API URL must start with http:// or https://",
-    }),
-  tags: z.string().optional(),
+const querySchema = z.object({
+  verificationStatus: z
+    .enum(["APPROVED", "PENDING", "REJECTED", "REVIEW"])
+    .optional(),
+  unverified: z.enum(["true", "false"]).optional(),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedHeaders();
 
-    const searchParams = request.nextUrl.searchParams;
-    const verificationStatus = searchParams.get("verificationStatus") as
-      | "APPROVED"
-      | "PENDING"
-      | "REJECTED"
-      | "REVIEW"
-      | null;
-    const unverified = searchParams.get("unverified") === "true";
+    const rawParams = Object.fromEntries(
+      request.nextUrl.searchParams.entries(),
+    );
+    const queryValidation = querySchema.safeParse(rawParams);
+    if (!queryValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: queryValidation.error.issues.map((e) => e.message).join(", "),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { verificationStatus, unverified } = queryValidation.data;
 
     const where: {
       userId: string;
       verificationStatus?:
-        | {
-            not?: "APPROVED";
-            equals?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
-          }
+        | { not?: "APPROVED" }
         | "APPROVED"
         | "PENDING"
         | "REJECTED"
-        | "REVIEW"
-        | null;
+        | "REVIEW";
     } = {
       userId: user.id,
     };
 
-    if (unverified) {
-      where.verificationStatus = {
-        not: "APPROVED",
-      };
-    } else if (verificationStatus !== null) {
+    if (unverified === "true") {
+      where.verificationStatus = { not: "APPROVED" };
+    } else if (verificationStatus) {
       where.verificationStatus = verificationStatus;
     }
 
     const agents = await prisma.agent.findMany({
       where,
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({
@@ -73,10 +62,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Failed to get agents:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to get agents",
-      },
+      { success: false, error: "Failed to get agents" },
       { status: 500 },
     );
   }
@@ -87,7 +73,7 @@ export async function POST(request: NextRequest) {
     const { user } = await getAuthenticatedHeaders();
 
     const body = await request.json();
-    const validation = registerAgentSchema.safeParse(body);
+    const validation = registerAgentBodySchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
         {
@@ -125,11 +111,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Failed to register agent:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to register agent",
-      },
+      { success: false, error: "Failed to register agent" },
       { status: 500 },
     );
   }

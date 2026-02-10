@@ -94,8 +94,11 @@ export async function requestDisclosure(
   const credentialServerUrl = getCredentialServerUrl();
   const url = `${credentialServerUrl}/requestDisclosure`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Request body structure from credential server
-  const requestBody: any = {
+  const requestBody: {
+    schemaSaid: string;
+    aid: string;
+    attribute?: Record<string, string>;
+  } = {
     schemaSaid,
     aid,
   };

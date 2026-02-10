@@ -113,7 +113,9 @@ export function VeridianWalletConnect({
             onError?.("Failed to get KERI identifier");
           }
         } else {
-          setError(`Timeout while connecting P2P ${walletName} wallet`);
+          const errorMsg = `Timeout while connecting P2P ${walletName} wallet`;
+          setError(errorMsg);
+          onError?.(errorMsg);
         }
       }
     }, interval);
@@ -170,7 +172,9 @@ export function VeridianWalletConnect({
             onConnect(keriIdentifier.id);
           }
         } else {
-          setError(`Timeout while connecting P2P ${name} wallet`);
+          const errorMsg = `Timeout while connecting P2P ${name} wallet`;
+          setError(errorMsg);
+          onError?.(errorMsg);
         }
       };
 
@@ -183,16 +187,18 @@ export function VeridianWalletConnect({
 
       const onP2PConnect = (): void => {};
 
+      const trackers = (
+        process.env.NEXT_PUBLIC_P2P_TRACKER_URLS ??
+        "wss://tracker.webtorrent.dev:443/announce,wss://dev.btt.cf-identity-wallet.metadata.dev.cf-deployments.org"
+      ).split(",");
+
       initDappConnect(
         appName,
         window.location.href,
         verifyConnection,
         onApiInject,
         onApiEject,
-        [
-          "wss://tracker.webtorrent.dev:443/announce",
-          "wss://dev.btt.cf-identity-wallet.metadata.dev.cf-deployments.org",
-        ],
+        trackers,
         onP2PConnect,
       );
     }

@@ -136,10 +136,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error:
-            error instanceof Error
-              ? `Failed to validate credentials: ${error.message}`
-              : "Failed to validate credentials",
+          error: "Failed to validate credentials",
         },
         { status: 500 },
       );
@@ -164,10 +161,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to request agent verification",
+        error: "Failed to request agent verification",
       },
       { status: 500 },
     );
