@@ -3,7 +3,13 @@
 import { Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,22 +35,26 @@ export function AgentsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     const result = await agentApiClient.getAgents();
     if (result.success && result.data) {
       setAgents(result.data);
       setFetchError(null);
+      return result.data;
     } else {
       setFetchError(
         result.success === false ? result.error : "Failed to load agents",
       );
+      return null;
     }
-    setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    void fetchAgents();
-  }, []);
+    startTransition(async () => {
+      await fetchAgents();
+      setIsLoading(false);
+    });
+  }, [fetchAgents]);
 
   const agentIdFromUrl = searchParams.get("agentId");
   const agentFromUrl = useMemo(() => {
@@ -87,11 +97,15 @@ export function AgentsContent() {
   }, [agents, searchQuery, activeTab]);
 
   const handleRegisterSuccess = () => {
-    void fetchAgents();
+    startTransition(async () => {
+      await fetchAgents();
+    });
   };
 
   const handleDeleteSuccess = () => {
-    void fetchAgents();
+    startTransition(async () => {
+      await fetchAgents();
+    });
     setSelectedAgent(null);
   };
 
@@ -99,10 +113,9 @@ export function AgentsContent() {
     const currentAgentId = dialogAgent?.id;
     if (!currentAgentId) return;
     startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
-        const updated = result.data.find((a) => a.id === currentAgentId);
+      const data = await fetchAgents();
+      if (data) {
+        const updated = data.find((a) => a.id === currentAgentId);
         if (updated) setSelectedAgent(updated);
       }
     });
@@ -151,7 +164,9 @@ export function AgentsContent() {
           <div className="flex items-center gap-2">
             <RefreshButton
               onRefresh={() => {
-                void fetchAgents();
+                startTransition(async () => {
+                  await fetchAgents();
+                });
               }}
               size="md"
               isRefreshing={isPending}
@@ -186,7 +201,10 @@ export function AgentsContent() {
               onClick={() => {
                 setFetchError(null);
                 setIsLoading(true);
-                void fetchAgents();
+                startTransition(async () => {
+                  await fetchAgents();
+                  setIsLoading(false);
+                });
               }}
             >
               {t("retry") ?? "Retry"}
