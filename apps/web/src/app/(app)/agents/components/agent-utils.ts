@@ -1,5 +1,31 @@
 import { type Agent } from "@/lib/api/agent.client";
 
+export function parseVerificationStatus(
+  status: Agent["verificationStatus"],
+): string {
+  if (status === null || status === undefined) return "Pending";
+  switch (status) {
+    case "VERIFIED":
+      return "Verified";
+    case "PENDING":
+      return "Pending";
+    case "REVOKED":
+      return "Revoked";
+    case "EXPIRED":
+      return "Expired";
+    default:
+      return status;
+  }
+}
+
+export function getVerificationStatusBadgeVariant(
+  status: Agent["verificationStatus"],
+): "default" | "secondary" | "destructive" | "outline" {
+  if (status === "VERIFIED") return "default";
+  if (status === "REVOKED" || status === "EXPIRED") return "destructive";
+  return "secondary";
+}
+
 export function parseAgentRegistrationStatus(
   status: Agent["registrationState"],
 ): string {

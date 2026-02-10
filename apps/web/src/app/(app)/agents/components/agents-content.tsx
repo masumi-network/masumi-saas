@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -11,7 +11,6 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
-import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
@@ -19,9 +18,7 @@ import { RegisterAgentDialog } from "./register-agent-dialog";
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isPending, startTransition] = useTransition();
@@ -53,14 +50,6 @@ export function AgentsContent() {
       setIsLoading(false);
     });
   }, []);
-
-  const agentIdFromUrl = searchParams.get("agentId");
-  const agentFromUrl = useMemo(() => {
-    if (!agentIdFromUrl) return null;
-    return agents.find((a) => a.id === agentIdFromUrl) || null;
-  }, [agents, agentIdFromUrl]);
-
-  const dialogAgent = selectedAgent ?? agentFromUrl;
 
   const filteredAgents = useMemo(() => {
     let filtered = [...agents];
@@ -110,21 +99,6 @@ export function AgentsContent() {
       if (page) {
         setAgents(page.data);
         setNextCursor(page.nextCursor);
-      }
-    });
-    setSelectedAgent(null);
-  };
-
-  const handleVerificationSuccess = () => {
-    const currentAgentId = dialogAgent?.id;
-    if (!currentAgentId) return;
-    startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
-        const updated = page.data.find((a) => a.id === currentAgentId);
-        if (updated) setSelectedAgent(updated);
       }
     });
   };
@@ -221,8 +195,7 @@ export function AgentsContent() {
             <AgentsTable
               agents={filteredAgents}
               onAgentClick={(agent) => {
-                setSelectedAgent(agent);
-                router.push(`/agents?agentId=${agent.id}`);
+                router.push(`/agents/${agent.id}`);
               }}
               onDeleteSuccess={handleDeleteSuccess}
             />
@@ -260,16 +233,6 @@ export function AgentsContent() {
         open={isRegisterDialogOpen}
         onClose={() => setIsRegisterDialogOpen(false)}
         onSuccess={handleRegisterSuccess}
-      />
-
-      <AgentDetailsDialog
-        agent={dialogAgent}
-        onClose={() => {
-          setSelectedAgent(null);
-          router.replace("/agents");
-        }}
-        onDeleteSuccess={handleDeleteSuccess}
-        onVerificationSuccess={handleVerificationSuccess}
       />
     </>
   );

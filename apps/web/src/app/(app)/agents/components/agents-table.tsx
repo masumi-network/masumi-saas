@@ -20,8 +20,8 @@ import {
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import {
-  getRegistrationStatusBadgeVariant,
-  parseAgentRegistrationStatus,
+  getVerificationStatusBadgeVariant,
+  parseVerificationStatus,
 } from "./agent-utils";
 
 interface AgentsTableProps {
@@ -111,11 +111,11 @@ export function AgentsTable({
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={getRegistrationStatusBadgeVariant(
-                      agent.registrationState,
+                    variant={getVerificationStatusBadgeVariant(
+                      agent.verificationStatus,
                     )}
                   >
-                    {parseAgentRegistrationStatus(agent.registrationState)}
+                    {parseVerificationStatus(agent.verificationStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell>
