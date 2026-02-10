@@ -29,19 +29,21 @@ export function AgentsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  const fetchAgents = async () => {
+    const result = await agentApiClient.getAgents();
+    if (result.success && result.data) {
+      setAgents(result.data);
+      setFetchError(null);
+    } else {
+      setFetchError(
+        result.success === false ? result.error : "Failed to load agents",
+      );
+    }
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    startTransition(async () => {
-      const result = await agentApiClient.getAgents();
-      if (result.success && result.data) {
-        setAgents(result.data);
-        setFetchError(null);
-      } else {
-        setFetchError(
-          result.success === false ? result.error : "Failed to load agents",
-        );
-      }
-      setIsLoading(false);
-    });
+    startTransition(fetchAgents);
   }, []);
 
   const agentIdFromUrl = searchParams.get("agentId");
@@ -199,20 +201,7 @@ export function AgentsContent() {
               onClick={() => {
                 setFetchError(null);
                 setIsLoading(true);
-                startTransition(async () => {
-                  const result = await agentApiClient.getAgents();
-                  if (result.success && result.data) {
-                    setAgents(result.data);
-                    setFetchError(null);
-                  } else {
-                    setFetchError(
-                      result.success === false
-                        ? result.error
-                        : "Failed to load agents",
-                    );
-                  }
-                  setIsLoading(false);
-                });
+                startTransition(fetchAgents);
               }}
             >
               {t("retry") ?? "Retry"}

@@ -68,19 +68,24 @@ export async function GET(request: NextRequest) {
     };
 
     // 4. Query
-    const agents = await prisma.agent.findMany({
-      where,
-      select: publicAgentSelect,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    const [agents, total] = await Promise.all([
+      prisma.agent.findMany({
+        where,
+        select: publicAgentSelect,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      prisma.agent.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     // 5. Return response
     const res = NextResponse.json({
       success: true,
       data: agents,
-      pagination: { page, limit },
+      pagination: { page, limit, total, totalPages },
     });
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
