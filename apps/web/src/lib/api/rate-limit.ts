@@ -1,13 +1,5 @@
 type RateLimitEntry = { count: number; resetAt: number };
 
-/**
- * In-memory rate limiter for public API routes.
- *
- * ⚠️  Limitation: In serverless environments (e.g., Vercel), each function
- * invocation may get a fresh instance. The rate limit state is NOT shared
- * across instances and will reset on cold starts. For production use with
- * strict rate limiting, consider using Redis/Upstash instead.
- */
 const store = new Map<string, RateLimitEntry>();
 
 // Periodically clean up expired entries to prevent memory leaks
@@ -34,10 +26,10 @@ export function checkRateLimit(
 ): RateLimitResult {
   const windowMs =
     options?.windowMs ??
-    parseInt(process.env.PUBLIC_API_RATE_LIMIT_WINDOW ?? "60000", 10);
+    parseInt(process.env.PUBLIC_API_RATE_LIMIT_WINDOW || "60000", 10);
   const maxRequests =
     options?.maxRequests ??
-    parseInt(process.env.PUBLIC_API_RATE_LIMIT_MAX ?? "60", 10);
+    parseInt(process.env.PUBLIC_API_RATE_LIMIT_MAX || "60", 10);
 
   const now = Date.now();
   const entry = store.get(key);
