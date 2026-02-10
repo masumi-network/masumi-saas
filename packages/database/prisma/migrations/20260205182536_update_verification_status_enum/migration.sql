@@ -4,11 +4,8 @@ ALTER TYPE "VerificationStatus" ADD VALUE IF NOT EXISTS 'VERIFIED';
 ALTER TYPE "VerificationStatus" ADD VALUE IF NOT EXISTS 'REVOKED';
 ALTER TYPE "VerificationStatus" ADD VALUE IF NOT EXISTS 'EXPIRED';
 
--- Update existing data: APPROVED -> VERIFIED, REJECTED -> REVOKED, REVIEW -> PENDING
-UPDATE "kyc_verification" SET status = 'VERIFIED' WHERE status = 'APPROVED';
-UPDATE "kyc_verification" SET status = 'REVOKED' WHERE status = 'REJECTED';
-UPDATE "kyc_verification" SET status = 'PENDING' WHERE status = 'REVIEW';
-
+-- Update existing agent data: APPROVED -> VERIFIED, REJECTED -> REVOKED, REVIEW -> PENDING
+-- Note: We do NOT update kyc_verification data as it still uses the old status values
 UPDATE "agent" SET "verificationStatus" = 'VERIFIED' WHERE "verificationStatus" = 'APPROVED';
 UPDATE "agent" SET "verificationStatus" = 'REVOKED' WHERE "verificationStatus" = 'REJECTED';
 UPDATE "agent" SET "verificationStatus" = 'PENDING' WHERE "verificationStatus" = 'REVIEW';

@@ -326,7 +326,7 @@ export function RequestVerificationDialog({
                   </p>
                 </div>
                 <Badge variant="destructive">
-                  {tStatus("status.revokedValue")}
+                  {tStatus("status.rejectedValue")}
                 </Badge>
               </div>
             ) : (

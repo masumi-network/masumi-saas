@@ -194,6 +194,8 @@ export function VeridianWalletConnect({
         setError("");
         disconnect();
         setShowAcceptButton(false);
+        setWalletIsConnected(false);
+        onAddressChange?.(null);
       };
 
       const onP2PConnect = (): void => {};
