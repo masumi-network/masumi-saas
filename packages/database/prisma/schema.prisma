@@ -55,6 +55,7 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   activeOrganizationId String?
+  activeOrganization   Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
 
   @@unique([token])
   @@map("session")
@@ -101,6 +102,7 @@ model Organization {
 
   members             Member[]
   invitations         Invitation[]
+  sessions            Session[]
   veridianCredentials VeridianCredential[]
 
   stripeCustomerId String?
