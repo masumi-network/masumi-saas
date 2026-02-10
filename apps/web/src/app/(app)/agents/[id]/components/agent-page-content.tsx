@@ -68,9 +68,9 @@ export function AgentPageContent({
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column — main details */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        {/* Left column — details, metadata, danger zone (max-w-3xl) */}
+        <div className="w-full max-w-3xl space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
@@ -140,14 +140,6 @@ export function AgentPageContent({
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right column — verification + metadata */}
-        <div className="space-y-6">
-          <AgentVerificationCard
-            agent={agent}
-            onVerificationSuccess={handleVerificationSuccess}
-          />
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4">
@@ -203,6 +195,14 @@ export function AgentPageContent({
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Right column — credential issuing only */}
+        <div className="w-full shrink-0 lg:min-w-96 lg:max-w-md">
+          <AgentVerificationCard
+            agent={agent}
+            onVerificationSuccess={handleVerificationSuccess}
+          />
         </div>
       </div>
 

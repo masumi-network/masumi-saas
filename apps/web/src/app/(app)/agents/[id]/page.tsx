@@ -39,7 +39,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
   const agent = result.data as unknown as Agent;
 
   return (
-    <div className="w-full max-w-3xl space-y-8">
+    <div className="w-full space-y-8">
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
