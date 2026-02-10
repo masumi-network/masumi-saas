@@ -12,9 +12,9 @@ export default function AgentPageLoading() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column — description, API URL, tags */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        {/* Left column — details, metadata, danger zone (max-w-3xl) */}
+        <div className="w-full max-w-3xl space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
@@ -49,20 +49,6 @@ export default function AgentPageLoading() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right column — verification card, metadata, delete */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-full max-w-xs mt-2" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-10 w-full rounded-md" />
-            </CardContent>
-          </Card>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4">
@@ -87,7 +73,28 @@ export default function AgentPageLoading() {
             </Card>
           </div>
 
-          <Skeleton className="h-10 w-full rounded-md" />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-px flex-1" />
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-px flex-1" />
+            </div>
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
+        </div>
+
+        {/* Right column — credential issuing card only */}
+        <div className="w-full shrink-0 lg:w-auto">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-full max-w-xs mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
