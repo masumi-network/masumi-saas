@@ -8,6 +8,7 @@ interface Tab {
   name: string;
   count?: number | null;
   key?: string;
+  disabled?: boolean;
 }
 
 interface TabsProps {
@@ -24,9 +25,13 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
     width: 0,
   });
 
+  const getTabValue = (tab: Tab) => tab.key ?? tab.name;
+
   useEffect(() => {
     const updateIndicator = () => {
-      const activeIndex = tabs.findIndex((tab) => tab.name === activeTab);
+      const activeIndex = tabs.findIndex(
+        (tab) => getTabValue(tab) === activeTab && !tab.disabled,
+      );
       const activeTabElement = tabsRef.current[activeIndex];
 
       if (activeTabElement) {
@@ -53,14 +58,19 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
       />
       {tabs.map((tab, index) => (
         <button
-          key={tab.name}
+          key={getTabValue(tab)}
           ref={(el) => {
             if (el) tabsRef.current[index] = el;
           }}
-          onClick={() => onTabChange(tab.name)}
+          type="button"
+          onClick={() => !tab.disabled && onTabChange(getTabValue(tab))}
+          disabled={tab.disabled}
           className={cn(
             "pb-4 relative text-sm transition-colors duration-200",
-            activeTab === tab.name ? "text-primary" : "text-muted-foreground",
+            getTabValue(tab) === activeTab
+              ? "text-primary"
+              : "text-muted-foreground",
+            tab.disabled && "cursor-not-allowed opacity-50",
           )}
         >
           <div className="flex items-center gap-2">

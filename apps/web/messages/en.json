@@ -225,6 +225,12 @@
         "verified": "Verified",
         "unverified": "Unverified"
       },
+      "detailTabs": {
+        "details": "Details",
+        "earnings": "Earnings",
+        "credentials": "Credentials",
+        "transactions": "Transactions"
+      },
       "status": {
         "verified": "Verified",
         "rejected": "Rejected",

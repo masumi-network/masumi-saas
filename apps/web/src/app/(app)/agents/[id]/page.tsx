@@ -27,7 +27,6 @@ export async function generateMetadata({
 }
 
 export default async function AgentPage({ params }: AgentPageProps) {
-  const t = await getTranslations("App.Agents");
   const { id } = await params;
 
   const result = await getAgentAction(id);
@@ -51,10 +50,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
             <ChevronLeft className="h-5 w-5" />
           </Link>
         </Button>
-        <div>
-          <p className="text-xs text-muted-foreground mb-0.5">{t("title")}</p>
-          <h1 className="text-2xl font-light tracking-tight">{agent.name}</h1>
-        </div>
+        <h1 className="text-2xl font-light tracking-tight">{agent.name}</h1>
       </div>
 
       <AgentPageContent agent={agent} />
