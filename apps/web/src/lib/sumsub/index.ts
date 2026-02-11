@@ -6,6 +6,7 @@ export {
 } from "./client";
 export {
   isVerificationFinal,
+  type KycStatus,
   parseReviewResult,
   type SumsubReviewResult,
   type VerificationStatus,

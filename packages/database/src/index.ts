@@ -31,4 +31,5 @@ export type {
   Organization,
   Prisma,
   User,
+  VeridianCredential,
 } from "./generated/prisma/client.js";

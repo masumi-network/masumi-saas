@@ -17,10 +17,11 @@ interface IWalletInfoExtended {
 }
 
 interface VeridianWalletConnectProps {
-  onConnect: (aid: string) => void;
+  onConnect: (aid: string, oobi?: string) => void;
   onError?: (error: string) => void;
   appName?: string;
   className?: string;
+  onAddressChange?: (address: string | null) => void;
 }
 
 const defaultWallet: IWalletInfoExtended = {
@@ -38,10 +39,12 @@ export function VeridianWalletConnect({
   onError,
   appName = "Masumi",
   className,
+  onAddressChange,
 }: VeridianWalletConnectProps) {
   const t = useTranslations("App.Components.VeridianWallet");
   const [showAcceptButton, setShowAcceptButton] = useState(false);
   const [error, setError] = useState<string>("");
+  const [walletIsConnected, setWalletIsConnected] = useState(false);
 
   const [peerConnectWalletInfo, setPeerConnectWalletInfo] =
     useState<IWalletInfoExtended>(defaultWallet);
@@ -54,6 +57,7 @@ export function VeridianWalletConnect({
   );
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const acceptButtonRef = useRef<HTMLDivElement | null>(null);
 
   const { dAppConnect, meerkatAddress, initDappConnect, disconnect, connect } =
     useCardano({
@@ -105,8 +109,10 @@ export function VeridianWalletConnect({
                 oobi: keriIdentifier.oobi,
               }));
               setShowAcceptButton(false);
+              setWalletIsConnected(true);
               setError("");
-              onConnect(keriIdentifier.id);
+              onConnect(keriIdentifier.id, keriIdentifier.oobi);
+              onAddressChange?.(keriIdentifier.id);
             }
           } catch {
             setError("Failed to get KERI identifier");
@@ -139,35 +145,44 @@ export function VeridianWalletConnect({
           name
         ];
         if (api) {
-          const enabledApi = (await (
-            api as {
-              enable: () => Promise<{
-                experimental?: {
-                  getKeriIdentifier?: () => Promise<{
-                    id: string;
-                    oobi: string;
-                  }>;
-                };
-              }>;
-            }
-          ).enable()) as {
-            experimental?: {
-              getKeriIdentifier?: () => Promise<{ id: string; oobi: string }>;
+          try {
+            const enabledApi = (await (
+              api as {
+                enable: () => Promise<{
+                  experimental?: {
+                    getKeriIdentifier?: () => Promise<{
+                      id: string;
+                      oobi: string;
+                    }>;
+                  };
+                }>;
+              }
+            ).enable()) as {
+              experimental?: {
+                getKeriIdentifier?: () => Promise<{ id: string; oobi: string }>;
+              };
             };
-          };
-          const keriIdentifier =
-            await enabledApi.experimental?.getKeriIdentifier?.();
+            const keriIdentifier =
+              await enabledApi.experimental?.getKeriIdentifier?.();
 
-          if (keriIdentifier && keriIdentifier.id) {
-            setPeerConnectWalletInfo((prev) => ({
-              ...prev,
-              name: name,
-              address: keriIdentifier.id,
-              oobi: keriIdentifier.oobi,
-            }));
+            if (keriIdentifier && keriIdentifier.id) {
+              setPeerConnectWalletInfo((prev) => ({
+                ...prev,
+                name: name,
+                address: keriIdentifier.id,
+                oobi: keriIdentifier.oobi,
+              }));
 
-            setError("");
-            onConnect(keriIdentifier.id);
+              setWalletIsConnected(true);
+              setError("");
+              onConnect(keriIdentifier.id, keriIdentifier.oobi);
+              onAddressChange?.(keriIdentifier.id);
+            } else {
+              setError(`Timeout while connecting P2P ${name} wallet`);
+            }
+          } catch {
+            setError("Failed to get KERI identifier");
+            onError?.("Failed to get KERI identifier");
           }
         } else {
           setError(`Timeout while connecting P2P ${name} wallet`);
@@ -204,13 +219,41 @@ export function VeridianWalletConnect({
         pollingIntervalRef.current = null;
       }
     };
-  }, [appName, initDappConnect, disconnect, onConnect, dAppConnect]);
+  }, [
+    appName,
+    initDappConnect,
+    disconnect,
+    onConnect,
+    onError,
+    onAddressChange,
+    dAppConnect,
+  ]);
+
+  useEffect(() => {
+    if (
+      peerConnectWalletInfo.address &&
+      peerConnectWalletInfo.address.length > 0
+    ) {
+      onAddressChange?.(peerConnectWalletInfo.address);
+    }
+  }, [peerConnectWalletInfo.address, onAddressChange]);
+
+  useEffect(() => {
+    if (showAcceptButton && acceptButtonRef.current) {
+      acceptButtonRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [showAcceptButton]);
 
   const disconnectWallet = () => {
     disconnect();
     setPeerConnectWalletInfo(defaultWallet);
     setShowAcceptButton(false);
+    setWalletIsConnected(false);
     setError("");
+    onAddressChange?.(null);
   };
 
   const handleAcceptWallet = () => {
@@ -233,6 +276,7 @@ export function VeridianWalletConnect({
   };
 
   if (
+    walletIsConnected &&
     peerConnectWalletInfo.address &&
     peerConnectWalletInfo.address.length > 0
   ) {
@@ -305,7 +349,7 @@ export function VeridianWalletConnect({
             )}
 
             {showAcceptButton && peerConnectWalletInfo && (
-              <div className="mt-4 w-full space-y-2">
+              <div ref={acceptButtonRef} className="mt-4 w-full space-y-2">
                 <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
                   <p className="text-sm font-medium text-center">
                     {t("connectionRequest")}

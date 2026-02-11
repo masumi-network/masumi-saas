@@ -61,7 +61,7 @@ export async function getAuthContextWithHeaders(): Promise<
   };
 }
 
-export async function getAuthenticatedHeaders() {
+export async function getAuthenticatedOrThrow() {
   const headersList = await getRequestHeaders();
   const session = await auth.api.getSession({
     headers: headersList,

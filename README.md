@@ -109,12 +109,19 @@ masumi-saas/
 
    - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional, for agent verification)
      - For local development: `http://localhost:3001`
-     - For production: Your deployed credential server URL (e.g., `https://cred-issuance-production.up.railway.app`)
+     - For production: Your deployed credential server URL (e.g., `https://cred-issuance.yourdomain.com` or `https://cred-issuance-production.up.railway.app`)
      - Required for Veridian wallet integration and agent verification features
 
-   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (optional)
-     - Defaults to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema)
-     - Override if using a different credential schema for agent verification
+   - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, for signature verification)
+     - For local development: `http://localhost:3901` (use the connect URL, not the boot URL)
+     - For production: Your deployed KERIA connect URL (e.g., `https://keria.yourdomain.com`)
+     - **Important**: Use the connect URL (port 3901), not the boot URL (port 3903)
+     - Required for cryptographic signature verification when issuing credentials
+
+   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
+     - The credential schema SAID to use for agent verification credentials
+     - Must match a schema registered in your Veridian credential server
+     - Can default to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema) if not set
 
 3. **Configure Sumsub Webhook** (required for automatic status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks

@@ -4,7 +4,7 @@ import prisma from "@masumi/database/client";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { convertZodError } from "@/lib/utils/convert-zod-error";
 
 const registerAgentSchema = zfd.formData(
@@ -32,7 +32,7 @@ const registerAgentSchema = zfd.formData(
 
 export async function registerAgentAction(formData: FormData) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const validation = registerAgentSchema.safeParse(formData);
     if (!validation.success) {
@@ -81,7 +81,7 @@ export async function getAgentsAction(filters?: {
   unverified?: boolean;
 }) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const where: {
       userId: string;
@@ -129,7 +129,7 @@ export async function getAgentsAction(filters?: {
 
 export async function getAgentAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const agent = await prisma.agent.findFirst({
       where: {
@@ -160,7 +160,7 @@ export async function getAgentAction(agentId: string) {
 
 export async function deleteAgentAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const agent = await prisma.agent.findFirst({
       where: {
@@ -196,7 +196,7 @@ export async function deleteAgentAction(agentId: string) {
 
 export async function requestAgentVerificationAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const agent = await prisma.agent.findFirst({
       where: {

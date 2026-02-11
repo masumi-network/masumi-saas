@@ -2,7 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
 const registerAgentSchema = z.object({
   name: z
@@ -24,28 +24,30 @@ const registerAgentSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const searchParams = request.nextUrl.searchParams;
     const verificationStatus = searchParams.get("verificationStatus") as
-      | "APPROVED"
       | "PENDING"
-      | "REJECTED"
-      | "REVIEW"
+      | "VERIFIED"
+      | "REVOKED"
+      | "EXPIRED"
       | null;
     const unverified = searchParams.get("unverified") === "true";
+    const cursorId = searchParams.get("cursor") ?? undefined;
+    const take = Math.min(
+      Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
+      50,
+    );
 
     const where: {
       userId: string;
       verificationStatus?:
-        | {
-            not?: "APPROVED";
-            equals?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
-          }
-        | "APPROVED"
+        | { not: "VERIFIED" }
         | "PENDING"
-        | "REJECTED"
-        | "REVIEW"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
         | null;
     } = {
       userId: user.id,
@@ -53,10 +55,15 @@ export async function GET(request: NextRequest) {
 
     if (unverified) {
       where.verificationStatus = {
-        not: "APPROVED",
+        not: "VERIFIED" as const,
       };
     } else if (verificationStatus !== null) {
-      where.verificationStatus = verificationStatus;
+      where.verificationStatus = verificationStatus as
+        | "PENDING"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
+        | null;
     }
 
     const agents = await prisma.agent.findMany({
@@ -64,11 +71,19 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      take: take + 1,
+      ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
     });
+
+    const hasMore = agents.length > take;
+    const page = hasMore ? agents.slice(0, take) : agents;
+    const nextCursor =
+      hasMore && page.length > 0 ? page[page.length - 1]!.id : null;
 
     return NextResponse.json({
       success: true,
-      data: agents,
+      data: page,
+      nextCursor,
     });
   } catch (error) {
     console.error("Failed to get agents:", error);
@@ -82,9 +97,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// TODO: Replace with on-chain registration + signed data; this flow currently
+// creates the agent in DB and sets registrationState to RegistrationConfirmed
+// without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const body = await request.json();
     const validation = registerAgentSchema.safeParse(body);
@@ -114,7 +132,7 @@ export async function POST(request: NextRequest) {
         apiUrl,
         tags: tagsArray,
         userId: user.id,
-        verificationStatus: "PENDING",
+        registrationState: "RegistrationConfirmed",
       },
     });
 

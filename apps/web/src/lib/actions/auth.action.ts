@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
-import { getAuthenticatedHeaders, getRequestHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
   deleteAccountFormDataSchema,
@@ -156,7 +156,7 @@ export async function signUpAction(formData: FormData) {
 }
 
 export async function updateUserNameAction(formData: FormData) {
-  const { headers: headersList } = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedOrThrow();
   const validation = updateNameFormDataSchema.safeParse(formData);
 
   if (!validation.success) {
@@ -186,7 +186,7 @@ export async function updateUserNameAction(formData: FormData) {
 }
 
 export async function changePasswordAction(formData: FormData) {
-  const { headers: headersList } = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedOrThrow();
   const validation = changePasswordFormDataSchema.safeParse(formData);
 
   if (!validation.success) {
@@ -218,7 +218,7 @@ export async function changePasswordAction(formData: FormData) {
 }
 
 export async function deleteAccountAction(formData: FormData) {
-  const { headers: headersList } = await getAuthenticatedHeaders();
+  const { headers: headersList } = await getAuthenticatedOrThrow();
   const validation = deleteAccountFormDataSchema.safeParse(formData);
 
   if (!validation.success) {

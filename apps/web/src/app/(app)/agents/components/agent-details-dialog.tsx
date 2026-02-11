@@ -20,6 +20,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
+import {
+  getRegistrationStatusBadgeVariant,
+  parseAgentRegistrationStatus,
+} from "./agent-utils";
 import { AgentVerificationCard } from "./agent-verification-card";
 
 interface AgentDetailsDialogProps {
@@ -81,11 +85,21 @@ export function AgentDetailsDialog({
           </DialogHeader>
 
           <div className="space-y-6 py-4 px-6">
-            <div>
-              <h3 className="font-medium mb-2">{t("description")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {agent.description || t("noDescription")}
-              </p>
+            <div className="flex items-start justify-between w-full gap-4">
+              <div className="flex-1">
+                <h3 className="font-medium mb-2">{t("description")}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {agent.description || t("noDescription")}
+                </p>
+              </div>
+              <Badge
+                variant={getRegistrationStatusBadgeVariant(
+                  agent.registrationState,
+                )}
+                className="w-fit min-w-fit"
+              >
+                {parseAgentRegistrationStatus(agent.registrationState)}
+              </Badge>
             </div>
 
             <AgentVerificationCard

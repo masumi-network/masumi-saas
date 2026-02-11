@@ -30,6 +30,7 @@ export type AgentMinAggregateOutputType = {
   description: string | null;
   apiUrl: string | null;
   userId: string | null;
+  registrationState: $Enums.RegistrationState | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   metadata: string | null;
@@ -43,6 +44,7 @@ export type AgentMaxAggregateOutputType = {
   description: string | null;
   apiUrl: string | null;
   userId: string | null;
+  registrationState: $Enums.RegistrationState | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   metadata: string | null;
@@ -56,6 +58,7 @@ export type AgentCountAggregateOutputType = {
   description: number;
   apiUrl: number;
   userId: number;
+  registrationState: number;
   verificationStatus: number;
   veridianCredentialId: number;
   tags: number;
@@ -71,6 +74,7 @@ export type AgentMinAggregateInputType = {
   description?: true;
   apiUrl?: true;
   userId?: true;
+  registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   metadata?: true;
@@ -84,6 +88,7 @@ export type AgentMaxAggregateInputType = {
   description?: true;
   apiUrl?: true;
   userId?: true;
+  registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   metadata?: true;
@@ -97,6 +102,7 @@ export type AgentCountAggregateInputType = {
   description?: true;
   apiUrl?: true;
   userId?: true;
+  registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   tags?: true;
@@ -191,6 +197,7 @@ export type AgentGroupByOutputType = {
   description: string;
   apiUrl: string;
   userId: string;
+  registrationState: $Enums.RegistrationState;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   tags: string[];
@@ -223,6 +230,9 @@ export type AgentWhereInput = {
   description?: Prisma.StringFilter<"Agent"> | string;
   apiUrl?: Prisma.StringFilter<"Agent"> | string;
   userId?: Prisma.StringFilter<"Agent"> | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFilter<"Agent">
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableFilter<"Agent">
     | $Enums.VerificationStatus
@@ -233,6 +243,7 @@ export type AgentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+  veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
 };
 
 export type AgentOrderByWithRelationInput = {
@@ -241,6 +252,7 @@ export type AgentOrderByWithRelationInput = {
   description?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
+  registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
@@ -248,6 +260,7 @@ export type AgentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
+  veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput;
 };
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<
@@ -260,6 +273,9 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     description?: Prisma.StringFilter<"Agent"> | string;
     apiUrl?: Prisma.StringFilter<"Agent"> | string;
     userId?: Prisma.StringFilter<"Agent"> | string;
+    registrationState?:
+      | Prisma.EnumRegistrationStateFilter<"Agent">
+      | $Enums.RegistrationState;
     verificationStatus?:
       | Prisma.EnumVerificationStatusNullableFilter<"Agent">
       | $Enums.VerificationStatus
@@ -270,6 +286,7 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+    veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
   },
   "id"
 >;
@@ -280,6 +297,7 @@ export type AgentOrderByWithAggregationInput = {
   description?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
+  registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
@@ -304,6 +322,9 @@ export type AgentScalarWhereWithAggregatesInput = {
   description?: Prisma.StringWithAggregatesFilter<"Agent"> | string;
   apiUrl?: Prisma.StringWithAggregatesFilter<"Agent"> | string;
   userId?: Prisma.StringWithAggregatesFilter<"Agent"> | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateWithAggregatesFilter<"Agent">
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableWithAggregatesFilter<"Agent">
     | $Enums.VerificationStatus
@@ -323,6 +344,7 @@ export type AgentCreateInput = {
   name: string;
   description: string;
   apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
@@ -330,6 +352,7 @@ export type AgentCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateInput = {
@@ -338,12 +361,14 @@ export type AgentUncheckedCreateInput = {
   description: string;
   apiUrl: string;
   userId: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUpdateInput = {
@@ -351,6 +376,9 @@ export type AgentUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -364,6 +392,7 @@ export type AgentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateInput = {
@@ -372,6 +401,9 @@ export type AgentUncheckedUpdateInput = {
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -384,6 +416,7 @@ export type AgentUncheckedUpdateInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateManyInput = {
@@ -392,6 +425,7 @@ export type AgentCreateManyInput = {
   description: string;
   apiUrl: string;
   userId: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
@@ -405,6 +439,9 @@ export type AgentUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -425,6 +462,9 @@ export type AgentUncheckedUpdateManyInput = {
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -463,6 +503,7 @@ export type AgentCountOrderByAggregateInput = {
   description?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
+  registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   tags?: Prisma.SortOrder;
@@ -477,6 +518,7 @@ export type AgentMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
+  registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
@@ -490,11 +532,17 @@ export type AgentMinOrderByAggregateInput = {
   description?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
+  registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
+};
+
+export type AgentNullableScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput | null;
+  isNot?: Prisma.AgentWhereInput | null;
 };
 
 export type AgentCreateNestedManyWithoutUserInput = {
@@ -587,6 +635,10 @@ export type AgentCreatetagsInput = {
   set: string[];
 };
 
+export type EnumRegistrationStateFieldUpdateOperationsInput = {
+  set?: $Enums.RegistrationState;
+};
+
 export type NullableEnumVerificationStatusFieldUpdateOperationsInput = {
   set?: $Enums.VerificationStatus | null;
 };
@@ -596,17 +648,47 @@ export type AgentUpdatetagsInput = {
   push?: string | string[];
 };
 
+export type AgentCreateNestedOneWithoutVeridianCredentialsInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutVeridianCredentialsInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+};
+
+export type AgentUpdateOneWithoutVeridianCredentialsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutVeridianCredentialsInput;
+  upsert?: Prisma.AgentUpsertWithoutVeridianCredentialsInput;
+  disconnect?: Prisma.AgentWhereInput | boolean;
+  delete?: Prisma.AgentWhereInput | boolean;
+  connect?: Prisma.AgentWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.AgentUpdateToOneWithWhereWithoutVeridianCredentialsInput,
+      Prisma.AgentUpdateWithoutVeridianCredentialsInput
+    >,
+    Prisma.AgentUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+};
+
 export type AgentCreateWithoutUserInput = {
   id?: string;
   name: string;
   description: string;
   apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutUserInput = {
@@ -614,12 +696,14 @@ export type AgentUncheckedCreateWithoutUserInput = {
   name: string;
   description: string;
   apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutUserInput = {
@@ -672,6 +756,9 @@ export type AgentScalarWhereInput = {
   description?: Prisma.StringFilter<"Agent"> | string;
   apiUrl?: Prisma.StringFilter<"Agent"> | string;
   userId?: Prisma.StringFilter<"Agent"> | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFilter<"Agent">
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableFilter<"Agent">
     | $Enums.VerificationStatus
@@ -683,11 +770,116 @@ export type AgentScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
 };
 
+export type AgentCreateWithoutVeridianCredentialsInput = {
+  id?: string;
+  name: string;
+  description: string;
+  apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+};
+
+export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
+  id?: string;
+  name: string;
+  description: string;
+  apiUrl: string;
+  userId: string;
+  registrationState?: $Enums.RegistrationState;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
+export type AgentCreateOrConnectWithoutVeridianCredentialsInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+};
+
+export type AgentUpsertWithoutVeridianCredentialsInput = {
+  update: Prisma.XOR<
+    Prisma.AgentUpdateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedCreateWithoutVeridianCredentialsInput
+  >;
+  where?: Prisma.AgentWhereInput;
+};
+
+export type AgentUpdateToOneWithWhereWithoutVeridianCredentialsInput = {
+  where?: Prisma.AgentWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateWithoutVeridianCredentialsInput,
+    Prisma.AgentUncheckedUpdateWithoutVeridianCredentialsInput
+  >;
+};
+
+export type AgentUpdateWithoutVeridianCredentialsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.StringFieldUpdateOperationsInput | string;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+};
+
+export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.StringFieldUpdateOperationsInput | string;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
 export type AgentCreateManyUserInput = {
   id?: string;
   name: string;
   description: string;
   apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
@@ -701,6 +893,9 @@ export type AgentUpdateWithoutUserInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -713,6 +908,7 @@ export type AgentUpdateWithoutUserInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutUserInput = {
@@ -720,6 +916,32 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.StringFieldUpdateOperationsInput | string;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.StringFieldUpdateOperationsInput | string;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -734,23 +956,44 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type AgentUncheckedUpdateManyWithoutUserInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  description?: Prisma.StringFieldUpdateOperationsInput | string;
-  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
-  verificationStatus?:
-    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
-    | $Enums.VerificationStatus
-    | null;
-  veridianCredentialId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  tags?: Prisma.AgentUpdatetagsInput | string[];
-  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+/**
+ * Count Type AgentCountOutputType
+ */
+
+export type AgentCountOutputType = {
+  veridianCredentials: number;
+};
+
+export type AgentCountOutputTypeSelect<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  veridianCredentials?:
+    | boolean
+    | AgentCountOutputTypeCountVeridianCredentialsArgs;
+};
+
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeDefaultArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the AgentCountOutputType
+   */
+  select?: Prisma.AgentCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeCountVeridianCredentialsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.VeridianCredentialWhereInput;
 };
 
 export type AgentSelect<
@@ -763,6 +1006,7 @@ export type AgentSelect<
     description?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
+    registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     tags?: boolean;
@@ -770,6 +1014,10 @@ export type AgentSelect<
     createdAt?: boolean;
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    veridianCredentials?:
+      | boolean
+      | Prisma.Agent$veridianCredentialsArgs<ExtArgs>;
+    _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["agent"]
 >;
@@ -784,6 +1032,7 @@ export type AgentSelectCreateManyAndReturn<
     description?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
+    registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     tags?: boolean;
@@ -805,6 +1054,7 @@ export type AgentSelectUpdateManyAndReturn<
     description?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
+    registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     tags?: boolean;
@@ -822,6 +1072,7 @@ export type AgentSelectScalar = {
   description?: boolean;
   apiUrl?: boolean;
   userId?: boolean;
+  registrationState?: boolean;
   verificationStatus?: boolean;
   veridianCredentialId?: boolean;
   tags?: boolean;
@@ -839,6 +1090,7 @@ export type AgentOmit<
   | "description"
   | "apiUrl"
   | "userId"
+  | "registrationState"
   | "verificationStatus"
   | "veridianCredentialId"
   | "tags"
@@ -852,6 +1104,8 @@ export type AgentInclude<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+  veridianCredentials?: boolean | Prisma.Agent$veridianCredentialsArgs<ExtArgs>;
+  _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type AgentIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -873,6 +1127,7 @@ export type $AgentPayload<
   name: "Agent";
   objects: {
     user: Prisma.$UserPayload<ExtArgs>;
+    veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -881,6 +1136,7 @@ export type $AgentPayload<
       description: string;
       apiUrl: string;
       userId: string;
+      registrationState: $Enums.RegistrationState;
       verificationStatus: $Enums.VerificationStatus | null;
       veridianCredentialId: string | null;
       tags: string[];
@@ -1451,6 +1707,19 @@ export interface Prisma__AgentClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  veridianCredentials<
+    T extends Prisma.Agent$veridianCredentialsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Agent$veridianCredentialsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$VeridianCredentialPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1498,6 +1767,7 @@ export interface AgentFieldRefs {
   readonly description: Prisma.FieldRef<"Agent", "String">;
   readonly apiUrl: Prisma.FieldRef<"Agent", "String">;
   readonly userId: Prisma.FieldRef<"Agent", "String">;
+  readonly registrationState: Prisma.FieldRef<"Agent", "RegistrationState">;
   readonly verificationStatus: Prisma.FieldRef<"Agent", "VerificationStatus">;
   readonly veridianCredentialId: Prisma.FieldRef<"Agent", "String">;
   readonly tags: Prisma.FieldRef<"Agent", "String[]">;
@@ -1950,6 +2220,37 @@ export type AgentDeleteManyArgs<
    * Limit how many Agents to delete.
    */
   limit?: number;
+};
+
+/**
+ * Agent.veridianCredentials
+ */
+export type Agent$veridianCredentialsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the VeridianCredential
+   */
+  select?: Prisma.VeridianCredentialSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the VeridianCredential
+   */
+  omit?: Prisma.VeridianCredentialOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VeridianCredentialInclude<ExtArgs> | null;
+  where?: Prisma.VeridianCredentialWhereInput;
+  orderBy?:
+    | Prisma.VeridianCredentialOrderByWithRelationInput
+    | Prisma.VeridianCredentialOrderByWithRelationInput[];
+  cursor?: Prisma.VeridianCredentialWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.VeridianCredentialScalarFieldEnum
+    | Prisma.VeridianCredentialScalarFieldEnum[];
 };
 
 /**
