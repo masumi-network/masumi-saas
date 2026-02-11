@@ -67,7 +67,14 @@ export default async function DashboardOverview({
   const greeting = getGreeting();
   const isNewUser =
     organizationCount === 0 && apiKeyCount === 0 && agentCount === 0;
-  const showStartKycCta = kycStatus === "PENDING";
+  const isKycCompleted = kycStatus === "APPROVED" || kycStatus === "VERIFIED";
+  const needsKycAction =
+    kycStatus === "PENDING" ||
+    kycStatus === "REVIEW" ||
+    kycStatus === "REJECTED" ||
+    kycStatus === "REVOKED" ||
+    kycStatus === "EXPIRED";
+  const showStartKycCta = needsKycAction;
 
   return (
     <div className="space-y-8">
@@ -236,9 +243,7 @@ export default async function DashboardOverview({
                 )}
               </li>
               <li className="flex items-center gap-3">
-                {kycStatus !== "PENDING" &&
-                kycStatus !== "REVIEW" &&
-                kycStatus !== "REJECTED" ? (
+                {isKycCompleted ? (
                   <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
                 ) : (
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
@@ -246,15 +251,13 @@ export default async function DashboardOverview({
                   </span>
                 )}
                 <span
-                  className={`flex-1 text-sm ${kycStatus !== "PENDING" && kycStatus !== "REVIEW" && kycStatus !== "REJECTED" ? "text-muted-foreground" : ""}`}
+                  className={`flex-1 text-sm ${isKycCompleted ? "text-muted-foreground" : ""}`}
                 >
-                  {kycStatus === "PENDING" || kycStatus === "REVIEW"
+                  {needsKycAction
                     ? t("getStarted.completeKyc")
-                    : kycStatus === "REJECTED"
-                      ? t("getStarted.completeKyc")
-                      : t("getStarted.completeKycDone")}
+                    : t("getStarted.completeKycDone")}
                 </span>
-                {(kycStatus === "PENDING" || kycStatus === "REJECTED") && (
+                {needsKycAction && (
                   <Button asChild size="sm" variant="ghost">
                     <Link href="/onboarding">{t("getStarted.doIt")}</Link>
                   </Button>
