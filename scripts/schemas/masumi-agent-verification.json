@@ -41,6 +41,10 @@
           "description": "Attributes block",
           "type": "object",
           "properties": {
+            "d": {
+              "description": "Attributes block SAID",
+              "type": "string"
+            },
             "i": {
               "description": "Issuee AID",
               "type": "string"
@@ -59,7 +63,7 @@
               "type": "string"
             }
           },
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": ["i", "dt", "agentId"]
         }
       ]
