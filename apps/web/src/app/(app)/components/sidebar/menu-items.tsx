@@ -53,7 +53,6 @@ export default function MenuItems() {
       href: "/organizations",
       label: t("organizations"),
       Icon: Building2,
-      disabled: true,
     },
     {
       key: "wallets",
