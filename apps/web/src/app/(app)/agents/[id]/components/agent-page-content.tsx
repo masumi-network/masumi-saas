@@ -14,6 +14,7 @@ import { AgentDetails } from "./tabs/agent-details";
 
 interface AgentPageContentProps {
   agent: Agent;
+  header: React.ReactNode;
 }
 
 const VALID_TAB_KEYS = ["details", "credentials"] as const;
@@ -31,6 +32,7 @@ const DEFAULT_TAB = "details";
 
 export function AgentPageContent({
   agent: initialAgent,
+  header,
 }: AgentPageContentProps) {
   const t = useTranslations("App.Agents.Details");
   const tTabs = useTranslations("App.Agents");
@@ -47,13 +49,7 @@ export function AgentPageContent({
 
   const tabs = [
     { name: tTabs("detailTabs.details"), key: "details" },
-    { name: tTabs("detailTabs.earnings"), key: "earnings", disabled: true },
     { name: tTabs("detailTabs.credentials"), key: "credentials" },
-    {
-      name: tTabs("detailTabs.transactions"),
-      key: "transactions",
-      disabled: true,
-    },
   ];
 
   const handleTabChange = (key: string) => {
@@ -85,7 +81,10 @@ export function AgentPageContent({
 
   return (
     <>
-      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+      <div className="flex flex-col gap-12 pb-3 pt-1">
+        {header}
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
 
       {activeTab === "details" && (
         <AgentDetails

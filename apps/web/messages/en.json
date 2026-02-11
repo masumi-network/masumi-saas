@@ -282,9 +282,13 @@
         "error": "Failed to register agent. Please try again."
       },
       "Details": {
+        "backToAgents": "Back to agents",
         "description": "Description",
         "noDescription": "No description provided",
         "apiUrl": "API URL",
+        "verification": "Verification",
+        "viewInCredentialsTab": "View in Credentials",
+        "refresh": "Refresh",
         "endpoint": "Endpoint",
         "tags": "Tags",
         "noTags": "No tags",
@@ -294,6 +298,7 @@
         "createdAt": "Created",
         "updatedAt": "Updated",
         "delete": "Delete Agent",
+        "deleteDescription": "Once you delete an agent there is no going back.",
         "deleteSuccess": "Agent deleted successfully",
         "deleteError": "Failed to delete agent",
         "deleteConfirmTitle": "Delete Agent",
