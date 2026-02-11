@@ -6,48 +6,60 @@ import type { DashboardOverview } from "@/lib/types/dashboard";
 export async function getDashboardOverview(
   userId: string,
 ): Promise<DashboardOverview> {
-  const [userWithOrgs, kycResult, apiKeyCount, agentCounts, agents] =
-    await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          emailVerified: true,
-          members: {
-            select: {
-              role: true,
-              organization: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
+  const [
+    userWithOrgs,
+    kycResult,
+    apiKeysResult,
+    apiKeyCount,
+    agentCounts,
+    agents,
+  ] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        members: {
+          select: {
+            role: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
               },
             },
           },
         },
-      }),
-      getKycStatusAction(),
-      prisma.apikey.count({ where: { userId } }),
-      prisma.agent.groupBy({
-        by: ["verificationStatus"],
-        where: { userId },
-        _count: true,
-      }),
-      prisma.agent.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          name: true,
-          registrationState: true,
-          verificationStatus: true,
-        },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-      }),
-    ]);
+      },
+    }),
+    getKycStatusAction(),
+    prisma.apikey.findMany({
+      where: { userId },
+      select: { id: true, name: true, prefix: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.apikey.count({ where: { userId } }),
+    prisma.agent.groupBy({
+      by: ["verificationStatus"],
+      where: { userId },
+      _count: true,
+    }),
+    prisma.agent.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        registrationState: true,
+        verificationStatus: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
+  ]);
 
   if (!userWithOrgs) {
     throw new Error("User not found");
@@ -55,11 +67,12 @@ export async function getDashboardOverview(
 
   const kycData =
     kycResult.success && kycResult.data
-      ? kycResult.data
+      ? { ...kycResult.data, kycError: undefined as string | undefined }
       : {
           kycStatus: "PENDING" as const,
           kycCompletedAt: null,
           kycRejectionReason: null,
+          kycError: kycResult.error ?? "Failed to load verification status",
         };
 
   const agentCount = agentCounts.reduce((sum, g) => sum + g._count, 0);
@@ -81,6 +94,12 @@ export async function getDashboardOverview(
     verificationStatus: a.verificationStatus,
   }));
 
+  const apiKeysList = apiKeysResult.map((k) => ({
+    id: k.id,
+    name: k.name,
+    prefix: k.prefix,
+  }));
+
   return {
     user: {
       id: userWithOrgs.id,
@@ -91,12 +110,15 @@ export async function getDashboardOverview(
     kycStatus: kycData.kycStatus,
     kycCompletedAt: kycData.kycCompletedAt,
     kycRejectionReason: kycData.kycRejectionReason,
+    kycError: kycData.kycError,
     organizations,
     organizationCount: organizations.length,
     agents: agentsList,
+    apiKeys: apiKeysList,
     apiKeyCount,
     agentCount,
     verifiedAgentCount,
+    // TODO: Integrate real balance from payment/wallet service
     balance: "0",
   };
 }

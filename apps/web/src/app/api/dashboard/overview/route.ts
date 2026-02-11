@@ -14,7 +14,12 @@ export async function GET() {
     const data = await getDashboardOverview(user.id);
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Failed to get dashboard overview:", error);
+    const isUnauthorized =
+      error instanceof Error && error.message === "Unauthorized";
+    const status = isUnauthorized ? 401 : 500;
+    if (!isUnauthorized) {
+      console.error("Failed to get dashboard overview:", error);
+    }
     return NextResponse.json(
       {
         success: false,
@@ -23,7 +28,7 @@ export async function GET() {
             ? error.message
             : "Failed to load dashboard overview",
       },
-      { status: 500 },
+      { status },
     );
   }
 }

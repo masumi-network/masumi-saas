@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("App.TopUp");
+  const t = await getTranslations("App.ApiKeys");
   return {
     title: `Masumi - ${t("title")}`,
     description: t("description"),
   };
 }
 
-export default async function TopUpPage() {
-  const t = await getTranslations("App.TopUp");
+export default async function ApiKeysPage() {
+  const t = await getTranslations("App.ApiKeys");
 
-  // TODO: Implement top-up flow - payment provider integration, amount selection, confirmation
+  // TODO: Implement full API keys page - list keys, create, revoke, toggle sidebar disabled when ready
   return (
     <div className="space-y-12">
       <div className="space-y-2">
@@ -20,9 +20,6 @@ export default async function TopUpPage() {
         <p className="text-muted-foreground text-sm leading-6">
           {t("description")}
         </p>
-      </div>
-      <div className="rounded-lg border border-dashed p-12 text-center">
-        <p className="text-muted-foreground text-sm">{t("comingSoon")}</p>
       </div>
     </div>
   );

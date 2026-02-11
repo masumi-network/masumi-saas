@@ -130,11 +130,13 @@
           "topUp": "Top up",
           "withdraw": "Withdraw",
           "agentsCardAria": "View agents, {count} registered",
-          "organizationsCardAria": "View organizations, {count} workspaces"
+          "organizationsCardAria": "View organizations, {count} workspaces",
+          "apiKeys": "API Keys"
         },
         "createOrganization": "Create Organization",
         "startKyc": "Start KYC",
         "startKycPrompt": "Complete identity verification to unlock full access.",
+        "kycLoadError": "Unable to load verification status. Please try again later.",
         "organizations": "Organizations",
         "organizationsDescription": "Workspaces you belong to",
         "viewAll": "View all",
@@ -142,6 +144,9 @@
         "noAgentsYet": "No agents yet. Register one to get started.",
         "agentLinkAria": "View agent {name}",
         "registerAgent": "Register Agent",
+        "createApiKey": "Create API Key",
+        "apiKeysSectionDescription": "API keys for authenticating your applications",
+        "noApiKeysYet": "No API keys yet. Create one to get started.",
         "getStarted": {
           "title": "Get started",
           "description": "Complete these steps to make the most of Masumi.",
@@ -156,6 +161,20 @@
           "step2": "2",
           "step3": "3",
           "step4": "4"
+        },
+        "ApiKey": {
+          "title": "Create API Key",
+          "description": "Create a new API key to authenticate your applications.",
+          "name": "Name",
+          "namePlaceholder": "My API Key",
+          "submit": "Create",
+          "submitting": "Creating...",
+          "cancel": "Cancel",
+          "error": "Failed to create API key. Please try again.",
+          "createdTitle": "API Key Created",
+          "createdDescription": "Copy your API key now. You won't be able to see it again.",
+          "copyWarning": "Store this key securely. It cannot be recovered if lost.",
+          "done": "Done"
         }
       }
     },
@@ -179,6 +198,10 @@
         "apiKeys": "API Keys",
         "account": "Account"
       }
+    },
+    "ApiKeys": {
+      "title": "API Keys",
+      "description": "Manage your API keys for authenticating applications."
     },
     "Organizations": {
       "title": "Organizations",

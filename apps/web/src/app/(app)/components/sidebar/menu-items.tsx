@@ -54,6 +54,7 @@ export default function MenuItems() {
       label: t("organizations"),
       Icon: Building2,
     },
+    // TODO: Enable when /wallets page is implemented
     {
       key: "wallets",
       href: "/wallets",
@@ -61,6 +62,7 @@ export default function MenuItems() {
       Icon: Wallet,
       disabled: true,
     },
+    // TODO: Enable when /payment-methods page is implemented
     {
       key: "payment-methods",
       href: "/payment-methods",
@@ -68,6 +70,7 @@ export default function MenuItems() {
       Icon: CreditCard,
       disabled: true,
     },
+    // TODO: Enable when API keys page has full list/revoke UI (dashboard already has create)
     {
       key: "api-keys",
       href: "/api-keys",

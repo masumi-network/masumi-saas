@@ -1,9 +1,5 @@
-import { DashboardOverviewSkeleton } from "./components/dashboard/dashboard-overview";
+import { AppPageSkeleton } from "./components/app-page-skeleton";
 
 export default function AppLoading() {
-  return (
-    <div className="space-y-12">
-      <DashboardOverviewSkeleton />
-    </div>
-  );
+  return <AppPageSkeleton />;
 }

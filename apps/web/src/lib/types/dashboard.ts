@@ -15,6 +15,8 @@ export type DashboardOverview = {
     | "EXPIRED";
   kycCompletedAt: Date | null;
   kycRejectionReason: string | null;
+  /** Set when KYC status lookup failed; UI should show error instead of status-driven prompts */
+  kycError?: string;
   organizations: Array<{
     id: string;
     name: string;
@@ -27,6 +29,11 @@ export type DashboardOverview = {
     name: string;
     registrationState: string;
     verificationStatus: string | null;
+  }>;
+  apiKeys: Array<{
+    id: string;
+    name: string | null;
+    prefix: string | null;
   }>;
   apiKeyCount: number;
   agentCount: number;

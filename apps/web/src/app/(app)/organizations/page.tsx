@@ -12,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function OrganizationsPage() {
   const t = await getTranslations("App.Organizations");
 
+  // TODO: Re-add CreateOrganizationDialog and OrganizationsContent so users can view and create organizations
   return (
     <div className="space-y-12">
       <div className="space-y-2">

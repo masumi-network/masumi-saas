@@ -3,7 +3,7 @@ import {
   Building2,
   CheckCircle2,
   ChevronRight,
-  Plus,
+  Key,
   ShieldCheck,
   Wallet,
 } from "lucide-react";
@@ -27,6 +27,8 @@ import {
   getRegistrationStatusBadgeVariant,
   parseAgentRegistrationStatus,
 } from "../../agents/components/agent-utils";
+import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
+import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 
 function getGreeting(): "morning" | "afternoon" | "evening" {
   const hour = new Date().getHours();
@@ -55,7 +57,9 @@ export default async function DashboardOverview({
   const {
     user,
     kycStatus,
+    kycError,
     agents,
+    apiKeys,
     organizationCount,
     apiKeyCount,
     agentCount,
@@ -69,11 +73,12 @@ export default async function DashboardOverview({
     organizationCount === 0 && apiKeyCount === 0 && agentCount === 0;
   const isKycCompleted = kycStatus === "APPROVED" || kycStatus === "VERIFIED";
   const needsKycAction =
-    kycStatus === "PENDING" ||
-    kycStatus === "REVIEW" ||
-    kycStatus === "REJECTED" ||
-    kycStatus === "REVOKED" ||
-    kycStatus === "EXPIRED";
+    !kycError &&
+    (kycStatus === "PENDING" ||
+      kycStatus === "REVIEW" ||
+      kycStatus === "REJECTED" ||
+      kycStatus === "REVOKED" ||
+      kycStatus === "EXPIRED");
   const showStartKycCta = needsKycAction;
 
   return (
@@ -199,6 +204,13 @@ export default async function DashboardOverview({
         </Link>
       </div>
 
+      {/* KYC load error - when lookup failed */}
+      {kycError && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-muted-foreground">{t("kycLoadError")}</p>
+        </div>
+      )}
+
       {/* Start KYC CTA - compact banner when KYC not submitted */}
       {showStartKycCta && (
         <div className="flex items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
@@ -253,9 +265,11 @@ export default async function DashboardOverview({
                 <span
                   className={`flex-1 text-sm ${isKycCompleted ? "text-muted-foreground" : ""}`}
                 >
-                  {needsKycAction
-                    ? t("getStarted.completeKyc")
-                    : t("getStarted.completeKycDone")}
+                  {kycError
+                    ? t("kycLoadError")
+                    : needsKycAction
+                      ? t("getStarted.completeKyc")
+                      : t("getStarted.completeKycDone")}
                 </span>
                 {needsKycAction && (
                   <Button asChild size="sm" variant="ghost">
@@ -290,79 +304,128 @@ export default async function DashboardOverview({
         </Card>
       )}
 
-      {/* Agents section */}
-      <Card className="rounded-lg shadow-none">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1.5">
-              <CardTitle>{t("stats.agents")}</CardTitle>
-              <CardDescription>{t("agentsSectionDescription")}</CardDescription>
+      {/* Agents and API Keys - same row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Agents section */}
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <CardTitle>{t("stats.agents")}</CardTitle>
+                <CardDescription>
+                  {t("agentsSectionDescription")}
+                </CardDescription>
+              </div>
+              {agentCount > 0 && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/agents" className="flex items-center gap-1">
+                    {t("viewAll")}
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
             </div>
-            {agentCount > 0 ? (
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/agents" className="flex items-center gap-1">
-                  {t("viewAll")}
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* TODO: Make agent rows navigable - wrap each item in Link to /agents/[id] and use agentLinkAria for accessibility */}
+            {agents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+                <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("noAgentsYet")}
+                </p>
+              </div>
             ) : (
-              <Button asChild size="sm">
-                <Link href="/agents" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  {t("registerAgent")}
-                </Link>
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {agents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-              <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
-              <p className="mb-4 text-center text-sm text-muted-foreground">
-                {t("noAgentsYet")}
-              </p>
-              <Button asChild>
-                <Link href="/agents" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  {t("registerAgent")}
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {agents.map((agent) => (
-                <li key={agent.id}>
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <Bot className="h-5 w-5 text-muted-foreground" />
+              <ul className="space-y-3">
+                {agents.map((agent) => (
+                  <li key={agent.id}>
+                    <div className="flex items-center justify-between rounded-md border p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                          <Bot className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium">{agent.name}</p>
                       </div>
-                      <p className="font-medium">{agent.name}</p>
-                    </div>
-                    <Badge
-                      variant={
-                        agent.verificationStatus === "VERIFIED"
-                          ? "default"
-                          : getRegistrationStatusBadgeVariant(
+                      <Badge
+                        variant={
+                          agent.verificationStatus === "VERIFIED"
+                            ? "default"
+                            : getRegistrationStatusBadgeVariant(
+                                agent.registrationState as Agent["registrationState"],
+                              )
+                        }
+                        className="capitalize"
+                      >
+                        {agent.verificationStatus === "VERIFIED"
+                          ? "Verified"
+                          : parseAgentRegistrationStatus(
                               agent.registrationState as Agent["registrationState"],
-                            )
-                      }
-                      className="capitalize"
-                    >
-                      {agent.verificationStatus === "VERIFIED"
-                        ? "Verified"
-                        : parseAgentRegistrationStatus(
-                            agent.registrationState as Agent["registrationState"],
-                          )}
-                    </Badge>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                            )}
+                      </Badge>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <DashboardRegisterAgentButton />
+          </CardContent>
+        </Card>
+
+        {/* API Keys section */}
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <CardTitle>{t("stats.apiKeys")}</CardTitle>
+                <CardDescription>
+                  {t("apiKeysSectionDescription")}
+                </CardDescription>
+              </div>
+              {apiKeyCount > 0 && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/api-keys" className="flex items-center gap-1">
+                    {t("viewAll")}
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {apiKeys.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+                <Key className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("noApiKeysYet")}
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {apiKeys.map((key) => (
+                  <li key={key.id}>
+                    <div className="flex items-center justify-between rounded-md border p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                          <Key className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium">
+                          {key.name || key.prefix || "API Key"}
+                        </p>
+                      </div>
+                      {key.prefix && (
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {key.prefix}…
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <DashboardCreateApiKeyButton />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

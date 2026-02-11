@@ -12,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function WithdrawPage() {
   const t = await getTranslations("App.Withdraw");
 
+  // TODO: Implement withdraw flow - payout method selection, amount, confirmation
   return (
     <div className="space-y-12">
       <div className="space-y-2">
