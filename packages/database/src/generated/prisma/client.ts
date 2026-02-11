@@ -104,3 +104,80 @@ export type KycVerification = Prisma.KycVerificationModel;
  *
  */
 export type Agent = Prisma.AgentModel;
+/**
+ * Model OrgApiKey
+ * Organization-scoped API keys for programmatic access to the platform.
+ *
+ * NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
+ * codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
+ * These are completely different — Better Auth's Apikey is user-scoped and
+ * manages authentication tokens. OrgApiKey is org-scoped, supports custom
+ * scopes, and is meant for machine-to-machine / programmatic access.
+ * DB table: api_key
+ */
+export type OrgApiKey = Prisma.OrgApiKeyModel;
+/**
+ * Model KycSubmission
+ * Tracks each individual KYC (Know Your Customer) document submission attempt
+ * for a user via Sumsub. Provides an audit trail of all attempts.
+ *
+ * Distinct from KycVerification — KycVerification holds the overall/current
+ * status (one-to-one with User), while KycSubmission records every attempt
+ * (one-to-many with User), enabling retry tracking and history.
+ */
+export type KycSubmission = Prisma.KycSubmissionModel;
+/**
+ * Model KybSubmission
+ * Tracks each individual KYB (Know Your Business) document submission attempt
+ * for an organization via Sumsub. Provides an audit trail of all attempts.
+ *
+ * Distinct from KybVerification — KybVerification holds the overall/current
+ * status (one-to-one with Organization), while KybSubmission records every
+ * attempt (one-to-many with Organization).
+ */
+export type KybSubmission = Prisma.KybSubmissionModel;
+/**
+ * Model StripePaymentMethod
+ * Stores Stripe payment methods (cards, bank accounts, etc.) belonging to
+ * a user or an organization. Mirrors Stripe's PaymentMethod object locally
+ * so the UI can display saved methods without extra Stripe API calls.
+ *
+ * Either userId or organizationId should be set — not both at the same time.
+ * isDefault flags the preferred payment method for that owner.
+ */
+export type StripePaymentMethod = Prisma.StripePaymentMethodModel;
+/**
+ * Model WalletCache
+ * Caches wallet connection state and identifiers for a user.
+ * Supports both Cardano wallets (identifier = wallet address) and
+ * Veridian wallets (identifier = KERI AID).
+ *
+ * The composite unique on (userId, walletType, identifier) ensures
+ * each user can only have one cache entry per wallet address/AID,
+ * while still supporting multiple wallets of different types.
+ */
+export type WalletCache = Prisma.WalletCacheModel;
+/**
+ * Model AgentReference
+ * Links a local Agent to its entry in the external Masumi decentralized
+ * registry. One-to-one with Agent — an agent may or may not have a
+ * registry entry yet (status: "pending" until registered).
+ *
+ * Stores the external registry URL, network identifier, and any metadata
+ * needed to look up or verify the agent in the Masumi network.
+ */
+export type AgentReference = Prisma.AgentReferenceModel;
+/**
+ * Model VeridianCredential
+ * Stores full Veridian KERI credential data for users and agents.
+ * Replaces the plain string `veridianCredentialId` placeholders on
+ * User and Agent with structured, queryable credential records.
+ *
+ * A credential can belong to a user (identity credential) or an agent
+ * (verification credential), or both. Uses SET NULL on delete so a
+ * credential record survives if the linked user/agent is removed.
+ *
+ * credentialSaid: the Self-Addressing Identifier (SAID) — the credential's
+ * unique cryptographic identifier in the KERI ecosystem.
+ */
+export type VeridianCredential = Prisma.VeridianCredentialModel;

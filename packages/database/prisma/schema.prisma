@@ -38,6 +38,13 @@ model User {
   kycVerification      KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
   veridianCredentialId String? // Placeholder for MAS-226
 
+  // New domain relations
+  createdOrgApiKeys    OrgApiKey[]           @relation("OrgApiKeyCreator")
+  kycSubmissions       KycSubmission[]
+  stripePaymentMethods StripePaymentMethod[]
+  walletCaches         WalletCache[]
+  veridianCredentials  VeridianCredential[]  @relation("UserVeridianCredential")
+
   @@unique([email])
   @@unique([stripeCustomerId])
   @@map("user")
@@ -109,6 +116,11 @@ model Organization {
   kybVerificationId String?          @unique
   kybVerification   KybVerification? @relation(fields: [kybVerificationId], references: [id], onDelete: SetNull)
 
+  // New domain relations
+  orgApiKeys           OrgApiKey[]
+  kybSubmissions       KybSubmission[]
+  stripePaymentMethods StripePaymentMethod[]
+
   @@unique([slug])
   @@unique([stripeCustomerId])
   @@map("organization")
@@ -123,6 +135,7 @@ model KybVerification {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   organization      Organization?
+  submissions       KybSubmission[]
 
   @@index([sumsubApplicantId])
   @@map("kyb_verification")
@@ -199,6 +212,7 @@ model KycVerification {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   user              User?
+  submissions       KycSubmission[]
 
   @@index([status])
   @@index([sumsubApplicantId])
@@ -219,19 +233,252 @@ model Agent {
   apiUrl      String
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   // Verification
-  verificationStatus VerificationStatus? @default(PENDING)
-  veridianCredentialId String? // Credential ID from Veridian API
-  
+  verificationStatus   VerificationStatus? @default(PENDING)
+  veridianCredentialId String?             // Credential ID from Veridian API
+
   // Metadata
-  tags        String[] @default([])
-  metadata    String?  // JSON string for additional data
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tags     String[] @default([])
+  metadata String?  // JSON string for additional data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // New domain relations
+  agentReference      AgentReference?
+  veridianCredentials VeridianCredential[] @relation("AgentVeridianCredential")
 
   @@index([userId])
   @@index([verificationStatus])
   @@map("agent")
+}
+
+// ─── New Domain Entity Models ─────────────────────────────────────────────────
+
+/// Organization-scoped API keys for programmatic access to the platform.
+///
+/// NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
+/// codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
+/// These are completely different — Better Auth's Apikey is user-scoped and
+/// manages authentication tokens. OrgApiKey is org-scoped, supports custom
+/// scopes, and is meant for machine-to-machine / programmatic access.
+/// DB table: api_key
+model OrgApiKey {
+  id             String       @id @default(cuid())
+  name           String
+  keyHash        String       @unique // Hashed full key — never store plaintext
+  keyPrefix      String                // First 8 chars shown in UI for identification
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation("OrgApiKeyCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  scopes         String[]     @default([]) // Valid: "agents:read", "agents:write", "billing:read", "billing:write", "members:read", "members:write"
+  enabled        Boolean      @default(true)
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@map("api_key")
+}
+
+/// Tracks each individual KYC (Know Your Customer) document submission attempt
+/// for a user via Sumsub. Provides an audit trail of all attempts.
+///
+/// Distinct from KycVerification — KycVerification holds the overall/current
+/// status (one-to-one with User), while KycSubmission records every attempt
+/// (one-to-many with User), enabling retry tracking and history.
+model KycSubmission {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kycVerificationId String
+  kycVerification   KycVerification    @relation(fields: [kycVerificationId], references: [id], onDelete: Cascade)
+  sumsubApplicantId String?            // Sumsub applicant ID for this submission
+  status            VerificationStatus @default(PENDING)
+  submittedAt       DateTime?          // Set explicitly when the user submits to Sumsub
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  metadata          Json?              // Additional Sumsub response data
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([kycVerificationId])
+  @@index([status])
+  @@map("kyc_submission")
+}
+
+/// Tracks each individual KYB (Know Your Business) document submission attempt
+/// for an organization via Sumsub. Provides an audit trail of all attempts.
+///
+/// Distinct from KybVerification — KybVerification holds the overall/current
+/// status (one-to-one with Organization), while KybSubmission records every
+/// attempt (one-to-many with Organization).
+model KybSubmission {
+  id                String             @id @default(cuid())
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kybVerificationId String
+  kybVerification   KybVerification    @relation(fields: [kybVerificationId], references: [id], onDelete: Cascade)
+  sumsubApplicantId String?            // Sumsub applicant ID for this submission
+  status            VerificationStatus @default(PENDING)
+  submittedAt       DateTime?          // Set explicitly when the org submits to Sumsub
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  metadata          Json?              // Additional Sumsub response data
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([organizationId])
+  @@index([kybVerificationId])
+  @@index([status])
+  @@map("kyb_submission")
+}
+
+/// Stores Stripe payment methods (cards, bank accounts, etc.) belonging to
+/// a user or an organization. Mirrors Stripe's PaymentMethod object locally
+/// so the UI can display saved methods without extra Stripe API calls.
+///
+/// Either userId or organizationId should be set — not both at the same time.
+/// isDefault flags the preferred payment method for that owner.
+model StripePaymentMethod {
+  id                    String        @id @default(cuid())
+  stripePaymentMethodId String        @unique // Stripe pm_xxx identifier
+  type                  String                // "card", "us_bank_account", "sepa_debit", etc.
+  last4                 String?               // Last 4 digits of card/account
+  brand                 String?               // "visa", "mastercard", "amex", etc.
+  expiryMonth           Int?
+  expiryYear            Int?
+  isDefault             Boolean       @default(false)
+  userId                String?
+  user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId        String?
+  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("stripe_payment_method")
+}
+
+/// Caches wallet connection state and identifiers for a user.
+/// Supports both Cardano wallets (identifier = wallet address) and
+/// Veridian wallets (identifier = KERI AID).
+///
+/// The composite unique on (userId, walletType, identifier) ensures
+/// each user can only have one cache entry per wallet address/AID,
+/// while still supporting multiple wallets of different types.
+model WalletCache {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletType      WalletType // CARDANO or VERIDIAN
+  identifier      String     // Cardano: wallet address | Veridian: KERI AID
+  label           String?    // User-friendly wallet name/alias
+  networkId       String?    // e.g. "mainnet", "preprod", "preview"
+  connectionState WalletConnectionState? // Current wallet connection status
+  metadata        Json?      // Balance, staking info, or other wallet data
+  lastSyncedAt    DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([userId, walletType, identifier])
+  @@index([userId])
+  @@map("wallet_cache")
+}
+
+/// Links a local Agent to its entry in the external Masumi decentralized
+/// registry. One-to-one with Agent — an agent may or may not have a
+/// registry entry yet (status: "pending" until registered).
+///
+/// Stores the external registry URL, network identifier, and any metadata
+/// needed to look up or verify the agent in the Masumi network.
+model AgentReference {
+  id                String    @id @default(cuid())
+  agentId           String    @unique
+  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  registryUrl       String?   // URL of the agent's entry in the Masumi registry
+  externalId        String?   // Agent's ID within the external registry
+  networkIdentifier String?   // Masumi network identifier (e.g. mainnet, testnet)
+  registeredAt      DateTime?
+  lastVerifiedAt    DateTime?
+  status            AgentReferenceStatus @default(PENDING)
+  metadata          Json?     // Additional registry data
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([externalId])
+  @@index([networkIdentifier])
+  @@map("agent_reference")
+}
+
+/// Stores full Veridian KERI credential data for users and agents.
+/// Replaces the plain string `veridianCredentialId` placeholders on
+/// User and Agent with structured, queryable credential records.
+///
+/// A credential can belong to a user (identity credential) or an agent
+/// (verification credential), or both. Uses SET NULL on delete so a
+/// credential record survives if the linked user/agent is removed.
+///
+/// credentialSaid: the Self-Addressing Identifier (SAID) — the credential's
+/// unique cryptographic identifier in the KERI ecosystem.
+model VeridianCredential {
+  id             String    @id @default(cuid())
+  credentialSaid String    @unique  // SAID — cryptographic credential identifier
+  schemaSaid     String             // Schema SAID (e.g. "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO")
+  credentialType String             // Human-readable type, e.g. "Foundation Employee"
+  issueeAid      String             // KERI AID of the credential holder
+  issuerAid      String?            // KERI AID of the issuer (optional, may not always be available)
+  status         CredentialStatus @default(ISSUED)
+  attributes     Json?              // Credential-specific attributes (extracted from SAD)
+  issuedAt       DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  rawCredential  Json?              // Full raw credential object from Veridian server
+  userId         String?
+  user           User?     @relation("UserVeridianCredential", fields: [userId], references: [id], onDelete: SetNull)
+  agentId        String?
+  agent          Agent?    @relation("AgentVeridianCredential", fields: [agentId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([schemaSaid])
+  @@index([issueeAid])
+  @@index([status])
+  @@index([userId])
+  @@index([agentId])
+  @@map("veridian_credential")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum WalletType {
+  CARDANO
+  VERIDIAN
+}
+
+/// Connection status of a cached wallet.
+enum WalletConnectionState {
+  CONNECTED     // Wallet is actively connected
+  DISCONNECTED  // Wallet was previously connected but is now disconnected
+}
+
+/// Status of an agent's registration in the Masumi decentralized registry.
+enum AgentReferenceStatus {
+  PENDING       // Registered locally, not yet submitted to the network registry
+  ACTIVE        // Live and discoverable in the registry
+  INACTIVE      // Temporarily disabled in the registry
+  DEREGISTERED  // Permanently removed from the registry
+}
+
+/// Lifecycle status of a Veridian KERI credential.
+enum CredentialStatus {
+  ISSUED   // Valid and currently active
+  REVOKED  // Revoked by the issuer — no longer trusted
+  EXPIRED  // Past its expiry date
 }

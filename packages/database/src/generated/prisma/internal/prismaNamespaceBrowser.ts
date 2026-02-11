@@ -66,6 +66,13 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  OrgApiKey: "OrgApiKey",
+  KycSubmission: "KycSubmission",
+  KybSubmission: "KybSubmission",
+  StripePaymentMethod: "StripePaymentMethod",
+  WalletCache: "WalletCache",
+  AgentReference: "AgentReference",
+  VeridianCredential: "VeridianCredential",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -269,12 +276,146 @@ export const AgentScalarFieldEnum = {
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
 
+export const OrgApiKeyScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  keyHash: "keyHash",
+  keyPrefix: "keyPrefix",
+  organizationId: "organizationId",
+  createdById: "createdById",
+  scopes: "scopes",
+  enabled: "enabled",
+  lastUsedAt: "lastUsedAt",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OrgApiKeyScalarFieldEnum =
+  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
+
+export const KycSubmissionScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  kycVerificationId: "kycVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycSubmissionScalarFieldEnum =
+  (typeof KycSubmissionScalarFieldEnum)[keyof typeof KycSubmissionScalarFieldEnum];
+
+export const KybSubmissionScalarFieldEnum = {
+  id: "id",
+  organizationId: "organizationId",
+  kybVerificationId: "kybVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybSubmissionScalarFieldEnum =
+  (typeof KybSubmissionScalarFieldEnum)[keyof typeof KybSubmissionScalarFieldEnum];
+
+export const StripePaymentMethodScalarFieldEnum = {
+  id: "id",
+  stripePaymentMethodId: "stripePaymentMethodId",
+  type: "type",
+  last4: "last4",
+  brand: "brand",
+  expiryMonth: "expiryMonth",
+  expiryYear: "expiryYear",
+  isDefault: "isDefault",
+  userId: "userId",
+  organizationId: "organizationId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type StripePaymentMethodScalarFieldEnum =
+  (typeof StripePaymentMethodScalarFieldEnum)[keyof typeof StripePaymentMethodScalarFieldEnum];
+
+export const WalletCacheScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  walletType: "walletType",
+  identifier: "identifier",
+  label: "label",
+  networkId: "networkId",
+  connectionState: "connectionState",
+  metadata: "metadata",
+  lastSyncedAt: "lastSyncedAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type WalletCacheScalarFieldEnum =
+  (typeof WalletCacheScalarFieldEnum)[keyof typeof WalletCacheScalarFieldEnum];
+
+export const AgentReferenceScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  registryUrl: "registryUrl",
+  externalId: "externalId",
+  networkIdentifier: "networkIdentifier",
+  registeredAt: "registeredAt",
+  lastVerifiedAt: "lastVerifiedAt",
+  status: "status",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentReferenceScalarFieldEnum =
+  (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
+
+export const VeridianCredentialScalarFieldEnum = {
+  id: "id",
+  credentialSaid: "credentialSaid",
+  schemaSaid: "schemaSaid",
+  credentialType: "credentialType",
+  issueeAid: "issueeAid",
+  issuerAid: "issuerAid",
+  status: "status",
+  attributes: "attributes",
+  issuedAt: "issuedAt",
+  expiresAt: "expiresAt",
+  revokedAt: "revokedAt",
+  rawCredential: "rawCredential",
+  userId: "userId",
+  agentId: "agentId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type VeridianCredentialScalarFieldEnum =
+  (typeof VeridianCredentialScalarFieldEnum)[keyof typeof VeridianCredentialScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc",
 } as const;
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+export const NullableJsonNullValueInput = {
+  DbNull: "DbNull",
+  JsonNull: "JsonNull",
+} as const;
+
+export type NullableJsonNullValueInput =
+  (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 
 export const QueryMode = {
   default: "default",
@@ -289,3 +430,12 @@ export const NullsOrder = {
 } as const;
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
+
+export const JsonNullValueFilter = {
+  DbNull: "DbNull",
+  JsonNull: "JsonNull",
+  AnyNull: "AnyNull",
+} as const;
+
+export type JsonNullValueFilter =
+  (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];

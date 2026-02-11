@@ -17,3 +17,37 @@ export const VerificationStatus = {
 
 export type VerificationStatus =
   (typeof VerificationStatus)[keyof typeof VerificationStatus];
+
+export const WalletType = {
+  CARDANO: "CARDANO",
+  VERIDIAN: "VERIDIAN",
+} as const;
+
+export type WalletType = (typeof WalletType)[keyof typeof WalletType];
+
+export const WalletConnectionState = {
+  CONNECTED: "CONNECTED",
+  DISCONNECTED: "DISCONNECTED",
+} as const;
+
+export type WalletConnectionState =
+  (typeof WalletConnectionState)[keyof typeof WalletConnectionState];
+
+export const AgentReferenceStatus = {
+  PENDING: "PENDING",
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  DEREGISTERED: "DEREGISTERED",
+} as const;
+
+export type AgentReferenceStatus =
+  (typeof AgentReferenceStatus)[keyof typeof AgentReferenceStatus];
+
+export const CredentialStatus = {
+  ISSUED: "ISSUED",
+  REVOKED: "REVOKED",
+  EXPIRED: "EXPIRED",
+} as const;
+
+export type CredentialStatus =
+  (typeof CredentialStatus)[keyof typeof CredentialStatus];
