@@ -15,10 +15,10 @@ import {
   AgentEarnings,
   AgentTransactions,
 } from "./tabs";
+import { AgentPageHeader } from "./agent-page-header";
 
 interface AgentPageContentProps {
   agent: Agent;
-  header: React.ReactNode;
 }
 
 const VALID_TAB_KEYS = [
@@ -41,7 +41,6 @@ const DEFAULT_TAB = "details";
 
 export function AgentPageContent({
   agent: initialAgent,
-  header,
 }: AgentPageContentProps) {
   const t = useTranslations("App.Agents.Details");
   const tTabs = useTranslations("App.Agents");
@@ -93,7 +92,7 @@ export function AgentPageContent({
   return (
     <>
       <div className="flex flex-col gap-12 pb-3 pt-1">
-        {header}
+        <AgentPageHeader agent={agent} />
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
