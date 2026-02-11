@@ -6,7 +6,6 @@ import { getAgentAction } from "@/lib/actions/agent.action";
 import { type Agent } from "@/lib/api/agent.client";
 
 import { AgentPageContent } from "./components/agent-page-content";
-import { AgentPageHeader } from "./components/agent-page-header";
 
 interface AgentPageProps {
   params: Promise<{ id: string }>;
@@ -37,10 +36,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
 
   return (
     <div className="w-full space-y-4">
-      <AgentPageContent
-        agent={agent}
-        header={<AgentPageHeader agent={agent} />}
-      />
+      <AgentPageContent agent={agent} />
     </div>
   );
 }
