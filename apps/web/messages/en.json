@@ -304,6 +304,24 @@
         "deleteConfirmTitle": "Delete Agent",
         "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
         "cancel": "Cancel",
+        "Transactions": {
+          "title": "Transactions",
+          "searchLabel": "Search by ID, status, amount",
+          "showing": "Showing:",
+          "filterAll": "All transactions",
+          "filterPayments": "Payments",
+          "filterPurchases": "Purchases",
+          "filterRefundRequests": "Refund Requests",
+          "filterDisputes": "Disputes",
+          "type": "Type",
+          "transactionHash": "Transaction Hash",
+          "amount": "Amount",
+          "network": "Network",
+          "status": "Status",
+          "unlockTime": "Unlock Time",
+          "date": "Date",
+          "noTransactions": "No transactions yet"
+        },
         "Verification": {
           "pending": {
             "title": "No Credential Issued",

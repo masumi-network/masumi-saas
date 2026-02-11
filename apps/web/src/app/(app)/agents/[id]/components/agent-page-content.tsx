@@ -9,15 +9,14 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
-import { AgentCredentials } from "./tabs/agent-credentials";
-import { AgentDetails } from "./tabs/agent-details";
+import { AgentCredentials, AgentDetails, AgentTransactions } from "./tabs";
 
 interface AgentPageContentProps {
   agent: Agent;
   header: React.ReactNode;
 }
 
-const VALID_TAB_KEYS = ["details", "credentials"] as const;
+const VALID_TAB_KEYS = ["details", "credentials", "transactions"] as const;
 
 function isValidTab(
   tab: string | null,
@@ -50,6 +49,7 @@ export function AgentPageContent({
   const tabs = [
     { name: tTabs("detailTabs.details"), key: "details" },
     { name: tTabs("detailTabs.credentials"), key: "credentials" },
+    { name: tTabs("detailTabs.transactions"), key: "transactions" },
   ];
 
   const handleTabChange = (key: string) => {
@@ -99,6 +99,8 @@ export function AgentPageContent({
           onVerificationSuccess={handleVerificationSuccess}
         />
       )}
+
+      {activeTab === "transactions" && <AgentTransactions agent={agent} />}
 
       <ConfirmDialog
         open={isDeleteDialogOpen}
