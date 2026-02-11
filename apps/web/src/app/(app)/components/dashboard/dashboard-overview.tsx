@@ -333,11 +333,7 @@ export default async function DashboardOverview({
             <ul className="space-y-3">
               {agents.map((agent) => (
                 <li key={agent.id}>
-                  <Link
-                    href={`/agents/${agent.id}`}
-                    aria-label={t("agentLinkAria", { name: agent.name })}
-                    className="flex items-center justify-between rounded-md border p-3 transition-colors hover:border-primary/20 hover:bg-muted/30"
-                  >
+                  <div className="flex items-center justify-between rounded-md border p-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                         <Bot className="h-5 w-5 text-muted-foreground" />
@@ -360,7 +356,7 @@ export default async function DashboardOverview({
                             agent.registrationState as Agent["registrationState"],
                           )}
                     </Badge>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>
