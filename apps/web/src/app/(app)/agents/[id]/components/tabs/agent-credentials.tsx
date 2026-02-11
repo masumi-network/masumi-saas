@@ -1,8 +1,7 @@
 "use client";
 
+import { AgentVerificationCard } from "@/app/agents/components/agent-verification-card";
 import { type Agent } from "@/lib/api/agent.client";
-
-import { AgentVerificationCard } from "../../../components/agent-verification-card";
 
 interface AgentCredentialsProps {
   agent: Agent;
