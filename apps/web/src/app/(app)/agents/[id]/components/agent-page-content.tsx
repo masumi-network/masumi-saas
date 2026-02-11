@@ -9,13 +9,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
+import { AgentPageHeader } from "./agent-page-header";
 import {
   AgentCredentials,
   AgentDetails,
   AgentEarnings,
   AgentTransactions,
 } from "./tabs";
-import { AgentPageHeader } from "./agent-page-header";
 
 interface AgentPageContentProps {
   agent: Agent;
