@@ -51,7 +51,7 @@ export function AgentDetails({ agent, onDeleteClick }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
 
   return (
-    <div className="w-full max-w-3xl space-y-8">
+    <div className="mx-auto w-full max-w-3xl space-y-8">
       <div className="flex flex-col gap-2">
         <Card>
           <CardHeader>

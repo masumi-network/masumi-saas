@@ -322,6 +322,17 @@
           "date": "Date",
           "noTransactions": "No transactions yet"
         },
+        "Earnings": {
+          "title": "Overview",
+          "timeFrame": "Time frame:",
+          "period1d": "Last 24 Hours",
+          "period7d": "Last 7 Days",
+          "period30d": "Last 30 Days",
+          "periodAll": "All Time",
+          "loading": "Loading earnings data...",
+          "tryAgain": "Try again",
+          "noEarningsData": "No earnings data available in the selected period. Earnings will appear here once the agent receives payments."
+        },
         "Verification": {
           "pending": {
             "title": "No Credential Issued",

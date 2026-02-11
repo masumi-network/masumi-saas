@@ -9,14 +9,24 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
-import { AgentCredentials, AgentDetails, AgentTransactions } from "./tabs";
+import {
+  AgentCredentials,
+  AgentDetails,
+  AgentEarnings,
+  AgentTransactions,
+} from "./tabs";
 
 interface AgentPageContentProps {
   agent: Agent;
   header: React.ReactNode;
 }
 
-const VALID_TAB_KEYS = ["details", "credentials", "transactions"] as const;
+const VALID_TAB_KEYS = [
+  "details",
+  "earnings",
+  "transactions",
+  "credentials",
+] as const;
 
 function isValidTab(
   tab: string | null,
@@ -48,8 +58,9 @@ export function AgentPageContent({
 
   const tabs = [
     { name: tTabs("detailTabs.details"), key: "details" },
-    { name: tTabs("detailTabs.credentials"), key: "credentials" },
+    { name: tTabs("detailTabs.earnings"), key: "earnings" },
     { name: tTabs("detailTabs.transactions"), key: "transactions" },
+    { name: tTabs("detailTabs.credentials"), key: "credentials" },
   ];
 
   const handleTabChange = (key: string) => {
@@ -99,6 +110,8 @@ export function AgentPageContent({
           onVerificationSuccess={handleVerificationSuccess}
         />
       )}
+
+      {activeTab === "earnings" && <AgentEarnings agent={agent} />}
 
       {activeTab === "transactions" && <AgentTransactions agent={agent} />}
 

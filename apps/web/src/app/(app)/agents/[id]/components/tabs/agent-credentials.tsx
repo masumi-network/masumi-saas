@@ -14,7 +14,7 @@ export function AgentCredentials({
   onVerificationSuccess,
 }: AgentCredentialsProps) {
   return (
-    <div className="w-full max-w-lg lg:min-w-96">
+    <div className="mx-auto w-full max-w-lg lg:min-w-96">
       <AgentVerificationCard
         agent={agent}
         onVerificationSuccess={onVerificationSuccess}
