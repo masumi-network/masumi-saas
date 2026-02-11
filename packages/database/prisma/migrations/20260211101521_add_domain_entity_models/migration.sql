@@ -20,7 +20,7 @@ CREATE TABLE "api_key" (
     "keyHash" TEXT NOT NULL,
     "keyPrefix" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
-    "createdById" TEXT NOT NULL,
+    "createdById" TEXT,
     "scopes" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "lastUsedAt" TIMESTAMP(3),
@@ -212,7 +212,7 @@ CREATE INDEX "veridian_credential_agentId_idx" ON "veridian_credential"("agentId
 ALTER TABLE "api_key" ADD CONSTRAINT "api_key_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "api_key" ADD CONSTRAINT "api_key_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "api_key" ADD CONSTRAINT "api_key_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "kyc_submission" ADD CONSTRAINT "kyc_submission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -245,7 +245,7 @@ ALTER TABLE "veridian_credential" ADD CONSTRAINT "veridian_credential_userId_fke
 ALTER TABLE "veridian_credential" ADD CONSTRAINT "veridian_credential_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddConstraint
--- Ensures every payment method is owned by either a user or an organization (not neither).
+-- Ensures every payment method is owned by exactly one of: a user or an organization (not neither, not both).
 ALTER TABLE "stripe_payment_method"
 ADD CONSTRAINT "stripe_payment_method_owner_check"
-CHECK ("userId" IS NOT NULL OR "organizationId" IS NOT NULL);
+CHECK (num_nonnulls("userId", "organizationId") = 1);

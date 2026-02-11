@@ -271,8 +271,8 @@ model OrgApiKey {
   keyPrefix      String                // First 8 chars shown in UI for identification
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById    String
-  createdBy      User         @relation("OrgApiKeyCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById    String?
+  createdBy      User?        @relation("OrgApiKeyCreator", fields: [createdById], references: [id], onDelete: SetNull)
   scopes         String[]     @default([]) // Valid: "agents:read", "agents:write", "billing:read", "billing:write", "members:read", "members:write"
   enabled        Boolean      @default(true)
   lastUsedAt     DateTime?
