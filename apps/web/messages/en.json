@@ -307,6 +307,7 @@
         "Transactions": {
           "title": "Transactions",
           "searchLabel": "Search by ID, status, amount",
+          "searchShortcut": "F",
           "showing": "Showing:",
           "filterAll": "All transactions",
           "filterPayments": "Payments",

@@ -71,7 +71,7 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
           />
           {!isFocused && (
             <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
-              F
+              {t("searchShortcut")}
             </kbd>
           )}
         </div>
