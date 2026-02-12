@@ -1,10 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
-import { getRequestHeaders, isAdminUser } from "@/lib/auth/utils";
+import { isAdminUser } from "@/lib/auth/utils";
 import { signInSchema } from "@/lib/schemas";
 
 export async function adminSignInAction(formData: FormData) {
@@ -37,8 +36,8 @@ export async function adminSignInAction(formData: FormData) {
     // Sign-in succeeded - now check if user is admin
     if (!isAdminUser(result.user)) {
       // User authenticated but not admin - revoke the session we just created
-      const headersList = await getRequestHeaders();
-      await auth.api.signOut({ headers: headersList });
+      // Don't pass explicit headers so nextCookies() can read the freshly set session cookie
+      await auth.api.signOut();
 
       // Return same generic error to prevent admin enumeration
       return {
@@ -87,10 +86,4 @@ export async function adminSignInAction(formData: FormData) {
       errorKey: "UnexpectedError",
     };
   }
-}
-
-export async function adminSignOutAction() {
-  const headersList = await getRequestHeaders();
-  await auth.api.signOut({ headers: headersList });
-  redirect("/admin/signin");
 }
