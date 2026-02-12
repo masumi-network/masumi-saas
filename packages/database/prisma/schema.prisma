@@ -38,6 +38,12 @@ model User {
   kycVerificationId    String?          @unique
   kycVerification      KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
 
+  // Admin fields (Better Auth admin plugin)
+  role       String    @default("user")
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
+
   @@unique([email])
   @@unique([stripeCustomerId])
   @@map("user")
@@ -56,6 +62,8 @@ model Session {
 
   activeOrganizationId String?
   activeOrganization   Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+
+  impersonatedBy String?
 
   @@unique([token])
   @@map("session")

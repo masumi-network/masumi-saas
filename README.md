@@ -151,6 +151,37 @@ masumi-saas/
    pnpm dev
    ```
 
+## Admin Management
+
+The project includes a CLI tool for managing admin users. No need to manually look up user IDs in the database — just use their email address.
+
+### Setting Up Your First Admin
+
+1. Sign up normally at `/signup`
+2. Run the promote command:
+
+   ```bash
+   pnpm admin:promote your@email.com
+   ```
+
+The script updates the user's role in the database and automatically syncs `ADMIN_USER_IDS` in `apps/web/.env`.
+
+### Available Commands
+
+```bash
+# Promote one or more users to admin
+pnpm admin:promote user@example.com
+pnpm admin:promote user1@example.com user2@example.com
+
+# Demote an admin back to regular user
+pnpm admin:demote user@example.com
+
+# List all current admin users
+pnpm admin:list
+```
+
+After promoting a user, they can sign in at `/admin/signin` to access the admin dashboard.
+
 ## Features
 
 - ✅ User authentication (email/password, forgot password)
@@ -173,6 +204,9 @@ masumi-saas/
 - `pnpm prisma:generate` - Generate Prisma client
 - `pnpm prisma:migrate:dev` - Run database migrations
 - `pnpm prisma:studio` - Open Prisma Studio
+- `pnpm admin:promote <email>` - Promote user(s) to admin
+- `pnpm admin:demote <email>` - Demote admin(s) to regular user
+- `pnpm admin:list` - List all admin users
 
 ## Better Auth Features
 
