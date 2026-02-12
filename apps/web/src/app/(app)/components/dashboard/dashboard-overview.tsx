@@ -26,7 +26,7 @@ import { getGreeting } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
-  parseAgentRegistrationStatus,
+  getRegistrationStatusKey,
 } from "../../agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
@@ -47,6 +47,9 @@ export default async function DashboardOverview({
   data: DashboardOverview;
 }) {
   const t = await getTranslations("App.Home.Dashboard");
+  const tRegistrationStatus = await getTranslations(
+    "App.Agents.registrationStatus",
+  );
 
   const {
     user,
@@ -352,8 +355,10 @@ export default async function DashboardOverview({
                       >
                         {agent.verificationStatus === "VERIFIED"
                           ? "Verified"
-                          : parseAgentRegistrationStatus(
-                              agent.registrationState as Agent["registrationState"],
+                          : tRegistrationStatus(
+                              getRegistrationStatusKey(
+                                agent.registrationState as Agent["registrationState"],
+                              ),
                             )}
                       </Badge>
                     </div>
