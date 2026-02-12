@@ -40,6 +40,13 @@ export async function signInAction(formData: FormData) {
       },
     });
 
+    if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
+      return {
+        twoFactorRedirect: true,
+        resultKey: "TwoFactorRequired",
+      };
+    }
+
     if (!result.user) {
       return {
         error: "Invalid email or password",

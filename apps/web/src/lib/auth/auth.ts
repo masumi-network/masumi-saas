@@ -4,7 +4,7 @@ import prisma from "@masumi/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { apiKey, organization } from "better-auth/plugins";
+import { apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { getTranslations } from "next-intl/server";
 
@@ -14,6 +14,7 @@ import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
 
 export const auth = betterAuth({
+  appName: "Masumi",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -140,6 +141,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    twoFactor({
+      issuer: "Masumi",
+      skipVerificationOnEnable: false,
+    }),
     apiKey({
       rateLimit: authConfig.apiKey.rateLimit,
       enableMetadata: authConfig.apiKey.enableMetadata,

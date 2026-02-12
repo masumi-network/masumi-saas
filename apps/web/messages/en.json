@@ -11,7 +11,9 @@
       "DatabaseError": "Database connection error. Please check your database configuration.",
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
-      "AccountCreationFailed": "Failed to create account"
+      "AccountCreationFailed": "Failed to create account",
+      "TwoFactorRequired": "Two-factor verification required",
+      "InvalidTwoFactorCode": "Invalid verification code. Please try again."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",
@@ -73,6 +75,19 @@
       "error": "Failed to reset password. The link may have expired.",
       "rememberPassword": "Remember your password?",
       "login": "Login"
+    },
+    "TwoFactor": {
+      "title": "Two-Factor Authentication",
+      "description": "Enter the 6-digit code from your authenticator app.",
+      "backupCodeDescription": "Enter one of your backup codes to verify your identity.",
+      "code": "Verification Code",
+      "codePlaceholder": "000000",
+      "backupCodePlaceholder": "Enter backup code",
+      "submit": "Verify",
+      "submitting": "Verifying...",
+      "useBackupCode": "Use a backup code",
+      "useAuthenticator": "Use authenticator app",
+      "backToLogin": "Back to Login"
     }
   },
   "App": {
@@ -427,6 +442,51 @@
         "confirm": "Yes, delete my account",
         "success": "Account deleted successfully",
         "error": "Failed to delete account. Please check your password and try again."
+      },
+      "TwoFactor": {
+        "title": "Two-Factor Authentication",
+        "description": "Add an extra layer of security to your account using an authenticator app.",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "enable": "Enable 2FA",
+        "enableDescription": "Enter your password to start setting up two-factor authentication with an authenticator app like Google Authenticator.",
+        "enableSuccess": "✓ Two-factor authentication has been enabled!",
+        "password": "Current Password",
+        "passwordPlaceholder": "Enter your password",
+        "setup": {
+          "continue": "Continue",
+          "scanQR": "Scan QR Code",
+          "scanDescription": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).",
+          "manualKey": "Can't scan? Click to show manual entry key",
+          "backupCodes": "Backup Codes",
+          "backupDescription": "Save these backup codes in a safe place. Each code can only be used once if you lose access to your authenticator app.",
+          "copyAll": "Copy All",
+          "copied": "Backup codes copied to clipboard",
+          "download": "Download",
+          "verifyCode": "Verify Code",
+          "verifyDescription": "Enter the 6-digit code from your authenticator app to complete the setup.",
+          "complete": "Complete Setup"
+        },
+        "disable": "Disable 2FA",
+        "disableConfirmTitle": "Disable Two-Factor Authentication?",
+        "disableConfirmDescription": "This will remove the extra security layer from your account. You will only need your password to sign in.",
+        "disableSuccess": "Two-factor authentication has been disabled.",
+        "regenerateBackupCodes": "Regenerate Backup Codes",
+        "regenerateConfirmTitle": "Regenerate Backup Codes?",
+        "regenerateConfirmDescription": "This will invalidate all existing backup codes and generate new ones. Make sure to save the new codes.",
+        "confirm": "Done",
+        "cancel": "Cancel",
+        "errors": {
+          "enableFailed": "Failed to enable 2FA",
+          "invalidCode": "Invalid code. Please try again.",
+          "verifyFailed": "Verification failed",
+          "disableFailed": "Failed to disable 2FA",
+          "regenerateFailed": "Failed to regenerate backup codes",
+          "copyFailed": "Failed to copy to clipboard"
+        },
+        "regenerateSuccess": "Backup codes regenerated",
+        "downloadNote1": "Each code can only be used once.",
+        "downloadNote2": "Store these codes in a safe place."
       }
     }
   },
