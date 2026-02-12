@@ -63,7 +63,7 @@ export function CreateApiKeyDialog({
         onSuccess();
         router.refresh();
       } else {
-        handleClose();
+        setError(t("error"));
       }
     } catch {
       setError(t("error"));
