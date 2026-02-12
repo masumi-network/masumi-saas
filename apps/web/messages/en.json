@@ -78,6 +78,7 @@
   "App": {
     "Home": {
       "welcome": "Welcome",
+      "description": "Overview of your profile, organizations, and API keys.",
       "signedInAs": "You are signed in as {email}",
       "KycStatus": {
         "pending": {
@@ -99,7 +100,93 @@
           "description": "Your verification was rejected. Please review the reason and try again.",
           "action": "Retry Verification"
         }
+      },
+      "Dashboard": {
+        "greeting": "Good {time}, {name}",
+        "subtitle": "Manage your agents, organizations, and API keys from one place.",
+        "kycStatus": {
+          "pending": "Pending",
+          "review": "Under Review",
+          "approved": "Approved",
+          "verified": "Verified",
+          "rejected": "Rejected",
+          "revoked": "Revoked",
+          "expired": "Expired"
+        },
+        "identityStatus": "Identity",
+        "identityStatusWithLabel": "Identity: {status}",
+        "emailVerified": "Email verified",
+        "emailNotVerified": "Email not verified",
+        "verifyEmail": "Verify email",
+        "stats": {
+          "organizations": "Organizations",
+          "organizationsDescription": "Workspaces you belong to",
+          "agents": "Agents",
+          "agentsDescription": "AI agents registered",
+          "verified": "verified",
+          "agentsVerifiedCount": "({count} verified)",
+          "balance": "Balance",
+          "balanceDescription": "Available funds",
+          "topUp": "Top up",
+          "withdraw": "Withdraw",
+          "agentsCardAria": "View agents, {count} registered",
+          "organizationsCardAria": "View organizations, {count} workspaces",
+          "apiKeys": "API Keys"
+        },
+        "createOrganization": "Create Organization",
+        "startKyc": "Start KYC",
+        "startKycPrompt": "Complete identity verification to unlock full access.",
+        "kycLoadError": "Unable to load verification status. Please try again later.",
+        "organizations": "Organizations",
+        "organizationsDescription": "Workspaces you belong to",
+        "viewAll": "View all",
+        "agentsSectionDescription": "Your registered AI agents",
+        "noAgentsYet": "No agents yet. Register one to get started.",
+        "agentLinkAria": "View agent {name}",
+        "registerAgent": "Register Agent",
+        "createApiKey": "Create API Key",
+        "apiKeysSectionDescription": "API keys for authenticating your applications",
+        "noApiKeysYet": "No API keys yet. Create one to get started.",
+        "getStarted": {
+          "title": "Get started",
+          "description": "Complete these steps to make the most of Masumi.",
+          "verifyEmail": "Verify your email address",
+          "verifyEmailDone": "Email verified",
+          "completeKyc": "Complete identity verification",
+          "completeKycDone": "Identity verified",
+          "createOrg": "Create your first organization",
+          "registerAgent": "Register your first AI agent",
+          "doIt": "Do it",
+          "step1": "1",
+          "step2": "2",
+          "step3": "3",
+          "step4": "4"
+        },
+        "ApiKey": {
+          "title": "Create API Key",
+          "description": "Create a new API key to authenticate your applications.",
+          "name": "Name",
+          "namePlaceholder": "My API Key",
+          "submit": "Create",
+          "submitting": "Creating...",
+          "cancel": "Cancel",
+          "error": "Failed to create API key. Please try again.",
+          "createdTitle": "API Key Created",
+          "createdDescription": "Copy your API key now. You won't be able to see it again.",
+          "copyWarning": "Store this key securely. It cannot be recovered if lost.",
+          "done": "Done"
+        }
       }
+    },
+    "TopUp": {
+      "title": "Top up",
+      "description": "Add funds to your wallet to pay for agent usage.",
+      "comingSoon": "Top-up is coming soon."
+    },
+    "Withdraw": {
+      "title": "Withdraw",
+      "description": "Withdraw your earnings to your preferred payout method.",
+      "comingSoon": "Withdrawals are coming soon."
     },
     "Sidebar": {
       "MenuItems": {
@@ -110,6 +197,30 @@
         "paymentMethods": "Payment Methods",
         "apiKeys": "API Keys",
         "account": "Account"
+      }
+    },
+    "ApiKeys": {
+      "title": "API Keys",
+      "description": "Manage your API keys for authenticating applications."
+    },
+    "Organizations": {
+      "title": "Organizations",
+      "description": "Manage your organizations and teams.",
+      "empty": "No organizations yet. Create one to get started.",
+      "listTitle": "Your organizations",
+      "listDescription": "Organizations you belong to",
+      "Create": {
+        "trigger": "Create Organization",
+        "title": "Create Organization",
+        "description": "Create a new organization to collaborate with your team.",
+        "name": "Organization name",
+        "namePlaceholder": "My Organization",
+        "slug": "Organization slug",
+        "slugPlaceholder": "my-org",
+        "submit": "Create",
+        "submitting": "Creating...",
+        "cancel": "Cancel",
+        "error": "Failed to create organization. Please try again."
       }
     },
     "Header": {
