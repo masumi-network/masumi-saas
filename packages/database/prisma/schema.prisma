@@ -358,6 +358,7 @@ model KybSubmission {
   @@index([organizationId])
   @@index([kybVerificationId])
   @@index([status])
+  @@index([organizationId, status, createdAt]) // Compound: verification status queries
   @@map("kyb_submission")
 }
 

@@ -148,6 +148,9 @@ CREATE INDEX "kyb_submission_kybVerificationId_idx" ON "kyb_submission"("kybVeri
 -- CreateIndex
 CREATE INDEX "kyb_submission_status_idx" ON "kyb_submission"("status");
 
+-- CreateIndex (Compound: verification status queries)
+CREATE INDEX "kyb_submission_organizationId_status_createdAt_idx" ON "kyb_submission"("organizationId", "status", "createdAt");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "stripe_payment_method_stripePaymentMethodId_key" ON "stripe_payment_method"("stripePaymentMethodId");
 
