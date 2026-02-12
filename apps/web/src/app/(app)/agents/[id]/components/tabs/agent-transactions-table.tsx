@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 
 import {
   Table,
@@ -38,6 +39,39 @@ interface AgentTransactionsTableProps {
   filter?: TransactionFilter;
 }
 
+function filterTransactions(
+  txList: AgentTransaction[],
+  filterType: TransactionFilter,
+  query: string,
+): AgentTransaction[] {
+  let filtered = [...txList];
+
+  if (filterType === "payments") {
+    filtered = filtered.filter((t) => t.type === "payment");
+  } else if (filterType === "purchases") {
+    filtered = filtered.filter((t) => t.type === "purchase");
+  } else if (filterType === "refundRequests") {
+    filtered = filtered.filter((t) => t.status === "RefundRequested");
+  } else if (filterType === "disputes") {
+    filtered = filtered.filter((t) => t.status === "Disputed");
+  }
+
+  if (query) {
+    const q = query.toLowerCase();
+    filtered = filtered.filter(
+      (t) =>
+        t.id?.toLowerCase().includes(q) ||
+        t.txHash?.toLowerCase().includes(q) ||
+        t.status?.toLowerCase().includes(q) ||
+        t.type?.toLowerCase().includes(q) ||
+        t.network?.toLowerCase().includes(q) ||
+        t.amount?.toLowerCase().includes(q),
+    );
+  }
+
+  return filtered;
+}
+
 export function AgentTransactionsTable({
   agentId: _agentId,
   transactions = [],
@@ -45,44 +79,11 @@ export function AgentTransactionsTable({
   searchQuery = "",
   filter = "all",
 }: AgentTransactionsTableProps) {
-  const filteredTransactions = filterTransactions(
-    transactions,
-    filter,
-    searchQuery,
+  const filteredTransactions = useMemo(
+    () => filterTransactions(transactions, filter, searchQuery),
+    [transactions, filter, searchQuery],
   );
 
-  function filterTransactions(
-    txList: AgentTransaction[],
-    filterType: TransactionFilter,
-    query: string,
-  ): AgentTransaction[] {
-    let filtered = [...txList];
-
-    if (filterType === "payments") {
-      filtered = filtered.filter((t) => t.type === "payment");
-    } else if (filterType === "purchases") {
-      filtered = filtered.filter((t) => t.type === "purchase");
-    } else if (filterType === "refundRequests") {
-      filtered = filtered.filter((t) => t.status === "RefundRequested");
-    } else if (filterType === "disputes") {
-      filtered = filtered.filter((t) => t.status === "Disputed");
-    }
-
-    if (query) {
-      const q = query.toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.id?.toLowerCase().includes(q) ||
-          t.txHash?.toLowerCase().includes(q) ||
-          t.status?.toLowerCase().includes(q) ||
-          t.type?.toLowerCase().includes(q) ||
-          t.network?.toLowerCase().includes(q) ||
-          t.amount?.toLowerCase().includes(q),
-      );
-    }
-
-    return filtered;
-  }
   const t = useTranslations("App.Agents.Details.Transactions");
 
   const formatStatus = (status: string) => {

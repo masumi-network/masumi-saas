@@ -236,6 +236,8 @@
         "rejected": "Rejected",
         "underReview": "Under Review",
         "pending": "Pending",
+        "revoked": "Revoked",
+        "expired": "Expired",
         "pendingValue": "PENDING",
         "verifiedValue": "VERIFIED",
         "revokedValue": "REVOKED",

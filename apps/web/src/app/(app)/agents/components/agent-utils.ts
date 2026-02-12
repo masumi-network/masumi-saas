@@ -1,20 +1,21 @@
 import { type Agent } from "@/lib/api/agent.client";
 
-export function parseVerificationStatus(
+/** Returns the translation key for verification status (use with t("Details.status." + key)). */
+export function getVerificationStatusKey(
   status: Agent["verificationStatus"],
-): string {
-  if (status === null || status === undefined) return "Pending";
+): "verified" | "pending" | "revoked" | "expired" {
+  if (status === null || status === undefined) return "pending";
   switch (status) {
     case "VERIFIED":
-      return "Verified";
+      return "verified";
     case "PENDING":
-      return "Pending";
+      return "pending";
     case "REVOKED":
-      return "Revoked";
+      return "revoked";
     case "EXPIRED":
-      return "Expired";
+      return "expired";
     default:
-      return status;
+      return "pending";
   }
 }
 

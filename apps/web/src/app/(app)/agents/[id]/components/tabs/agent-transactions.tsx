@@ -32,10 +32,13 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "f" || e.ctrlKey || e.metaKey || e.altKey) {
-        return;
-      }
+      // Only trigger when "f" is pressed without modifiers (Ctrl/Cmd/Alt).
+      // Modifiers would indicate a browser shortcut (e.g. Cmd+F) which we must not override.
+      if (e.key.toLowerCase() !== "f") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
       const target = e.target as HTMLElement;
+      // Don't steal focus when user is typing in an input or editable field
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||

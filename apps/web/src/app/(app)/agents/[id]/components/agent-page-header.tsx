@@ -4,7 +4,7 @@ import { ChevronLeft, ShieldCheck, ShieldOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { RefreshButton } from "@/components/ui/refresh-button";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { type Agent } from "@/lib/api/agent.client";
 
-import { parseVerificationStatus } from "../../components/agent-utils";
+import { getVerificationStatusKey } from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
   agent: Agent;
@@ -23,14 +23,14 @@ interface AgentPageHeaderProps {
 
 export function AgentPageHeader({ agent }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
+  const tStatus = useTranslations("App.Agents.Details.status");
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    router.refresh();
-    await new Promise((r) => setTimeout(r, 400));
-    setIsRefreshing(false);
+  const handleRefresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   return (
@@ -64,12 +64,12 @@ export function AgentPageHeader({ agent }: AgentPageHeaderProps) {
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          {parseVerificationStatus(agent.verificationStatus)}
+          {tStatus(getVerificationStatusKey(agent.verificationStatus))}
         </TooltipContent>
       </Tooltip>
       <RefreshButton
         onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
+        isRefreshing={isPending}
         size="md"
         className="ml-auto shrink-0"
         aria-label={tDetails("refresh")}
