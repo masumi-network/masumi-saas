@@ -154,9 +154,9 @@ export function TwoFactorSection() {
     setVerifyCode("");
   }
 
-  function copyBackupCodes() {
+  async function copyBackupCodes() {
     try {
-      navigator.clipboard.writeText(backupCodes.join("\n"));
+      await navigator.clipboard.writeText(backupCodes.join("\n"));
       toast.success(t("setup.copied"));
     } catch {
       toast.error(t("errors.copyFailed"));

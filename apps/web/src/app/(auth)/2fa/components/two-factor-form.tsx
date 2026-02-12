@@ -22,7 +22,7 @@ export default function TwoFactorForm() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!code.trim()) return;
+    if (useBackupCode ? !code.trim() : code.length !== 6) return;
 
     setIsLoading(true);
     try {
@@ -93,12 +93,20 @@ export default function TwoFactorForm() {
             autoFocus
             className="flex-1 bg-background text-center text-lg tracking-widest"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) =>
+              setCode(
+                useBackupCode
+                  ? e.target.value
+                  : e.target.value.replace(/\D/g, ""),
+              )
+            }
           />
           <Button
             type="submit"
             variant="primary"
-            disabled={isLoading || !code.trim()}
+            disabled={
+              isLoading || (useBackupCode ? !code.trim() : code.length !== 6)
+            }
             size="lg"
           >
             {isLoading ? (
