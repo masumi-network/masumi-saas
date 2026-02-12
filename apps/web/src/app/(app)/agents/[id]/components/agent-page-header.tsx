@@ -23,7 +23,7 @@ interface AgentPageHeaderProps {
 
 export function AgentPageHeader({ agent }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
-  const tStatus = useTranslations("App.Agents.Details.status");
+  const tStatus = useTranslations("App.Agents.status");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -53,6 +53,7 @@ export function AgentPageHeader({ agent }: AgentPageHeaderProps) {
       <h1 className="text-2xl font-light tracking-tight truncate min-w-0">
         {agent.name}
       </h1>
+      {/* Verification badge: Veridian credential status (distinct from registration status) */}
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="shrink-0 inline-flex text-muted-foreground cursor-default">

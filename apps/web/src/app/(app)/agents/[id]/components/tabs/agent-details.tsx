@@ -19,7 +19,7 @@ import { formatDate, formatRelativeDate } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
-  parseAgentRegistrationStatus,
+  getRegistrationStatusKey,
 } from "../../../components/agent-utils";
 
 interface AgentDetailsProps {
@@ -29,6 +29,7 @@ interface AgentDetailsProps {
 
 export function AgentDetails({ agent, onDeleteClick }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -45,7 +46,9 @@ export function AgentDetails({ agent, onDeleteClick }: AgentDetailsProps) {
                 )}
                 className="w-fit min-w-fit"
               >
-                {parseAgentRegistrationStatus(agent.registrationState)}
+                {tRegistrationStatus(
+                  getRegistrationStatusKey(agent.registrationState),
+                )}
               </Badge>
             </div>
           </CardHeader>

@@ -231,6 +231,15 @@
         "credentials": "Credentials",
         "transactions": "Transactions"
       },
+      "registrationStatus": {
+        "registered": "Registered",
+        "pending": "Pending",
+        "registering": "Registering",
+        "registrationFailed": "Registration Failed",
+        "deregistering": "Deregistering",
+        "deregistered": "Deregistered",
+        "deregistrationFailed": "Deregistration Failed"
+      },
       "status": {
         "verified": "Verified",
         "rejected": "Rejected",

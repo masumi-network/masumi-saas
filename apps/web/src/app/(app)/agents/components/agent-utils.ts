@@ -1,6 +1,18 @@
 import { type Agent } from "@/lib/api/agent.client";
 
-/** Returns the translation key for verification status (use with t("Details.status." + key)). */
+/**
+ * Two distinct concepts for agent status:
+ *
+ * 1. REGISTRATION STATUS (registrationState) - from masumi payment service
+ *    Whether the agent is registered to receive payments. Values: Registered, Pending,
+ *    Registering, Registration Failed, Deregistering, Deregistered, etc.
+ *
+ * 2. VERIFICATION STATUS (verificationStatus) - Veridian credential
+ *    Whether the agent has a valid verifiable credential (KYC-linked). Used for the
+ *    verification badge (shield icon). Values: Verified, Pending, Revoked, Expired.
+ */
+
+/** Returns the translation key for verification status (credential badge). */
 export function getVerificationStatusKey(
   status: Agent["verificationStatus"],
 ): "verified" | "pending" | "revoked" | "expired" {
@@ -27,30 +39,36 @@ export function getVerificationStatusBadgeVariant(
   return "secondary";
 }
 
-export function parseAgentRegistrationStatus(
+type RegistrationStatusKey =
+  | "registered"
+  | "pending"
+  | "registering"
+  | "registrationFailed"
+  | "deregistering"
+  | "deregistered"
+  | "deregistrationFailed";
+
+/** Returns the translation key for registration status (payment service). */
+export function getRegistrationStatusKey(
   status: Agent["registrationState"],
-): string {
-  switch (status) {
-    case "RegistrationRequested":
-      return "Pending";
-    case "RegistrationInitiated":
-      return "Registering";
-    case "RegistrationConfirmed":
-      return "Registered";
-    case "RegistrationFailed":
-      return "Registration Failed";
-    case "DeregistrationRequested":
-      return "Pending";
-    case "DeregistrationInitiated":
-      return "Deregistering";
-    case "DeregistrationConfirmed":
-      return "Deregistered";
-    case "DeregistrationFailed":
-      return "Deregistration Failed";
-    default:
-      return status;
-  }
+): RegistrationStatusKey {
+  const key = REGISTRATION_STATUS_KEYS[status];
+  return key ?? "pending";
 }
+
+const REGISTRATION_STATUS_KEYS: Record<
+  Agent["registrationState"],
+  RegistrationStatusKey
+> = {
+  RegistrationRequested: "pending",
+  RegistrationInitiated: "registering",
+  RegistrationConfirmed: "registered",
+  RegistrationFailed: "registrationFailed",
+  DeregistrationRequested: "pending",
+  DeregistrationInitiated: "deregistering",
+  DeregistrationConfirmed: "deregistered",
+  DeregistrationFailed: "deregistrationFailed",
+};
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
