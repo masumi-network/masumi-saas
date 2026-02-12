@@ -62,7 +62,6 @@ export default function UsersList({
 }: UsersListProps) {
   const t = useTranslations("Admin.Users");
   const router = useRouter();
-  const [users] = useState<User[]>(initialUsers);
   const [loading, setLoading] = useState<string | null>(null);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -173,7 +172,7 @@ export default function UsersList({
         <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {users.length === 0 ? (
+        {initialUsers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             {t("noUsers")}
           </div>
@@ -190,7 +189,7 @@ export default function UsersList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
+              {initialUsers.map((user) => {
                 const isCurrentUser = user.id === currentUserId;
                 return (
                   <TableRow key={user.id}>
