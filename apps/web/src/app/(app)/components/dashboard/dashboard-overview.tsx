@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Agent } from "@/lib/api/agent.client";
 import type { DashboardOverview } from "@/lib/types/dashboard";
+import { getGreeting } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
@@ -29,13 +30,6 @@ import {
 } from "../../agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
-
-function getGreeting(): "morning" | "afternoon" | "evening" {
-  const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 18) return "afternoon";
-  return "evening";
-}
 
 function formatBalance(value: string): string {
   const num = parseFloat(value || "0");

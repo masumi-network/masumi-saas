@@ -76,9 +76,10 @@ export async function getDashboardOverview(
         };
 
   const agentCount = agentCounts.reduce((sum, g) => sum + g._count, 0);
-  const verifiedAgentCount = agentCounts
-    .filter((g) => g.verificationStatus === "VERIFIED")
-    .reduce((sum, g) => sum + g._count, 0);
+  const verifiedGroup = agentCounts.find(
+    (g) => g.verificationStatus === "VERIFIED",
+  );
+  const verifiedAgentCount = verifiedGroup?._count ?? 0;
 
   const organizations = userWithOrgs.members.map((m) => ({
     id: m.organization.id,

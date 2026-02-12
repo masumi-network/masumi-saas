@@ -24,6 +24,14 @@ export async function getDashboardOverviewAction(): Promise<
       return { success: true, data: await getDashboardOverview(user.id) };
     }
 
+    // In production, header-derived host (x-forwarded-host, host) is spoofable.
+    // Only use cookie-based API call when we have a trusted configured URL.
+    const hasConfiguredUrl = !!process.env.NEXT_PUBLIC_APP_URL?.trim();
+    const isDev = process.env.NODE_ENV === "development";
+    if (!isDev && !hasConfiguredUrl) {
+      return { success: true, data: await getDashboardOverview(user.id) };
+    }
+
     const cookie = headersList.get("cookie");
 
     const result: GetDashboardOverviewResult =
@@ -65,7 +73,9 @@ function isAllowedOrigin(url: string): boolean {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.toLowerCase();
-    if (host === "localhost" || host === "127.0.0.1") return true;
+    if (process.env.NODE_ENV === "development") {
+      if (host === "localhost" || host === "127.0.0.1") return true;
+    }
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
     if (appUrl) {
       const appHost = new URL(appUrl).hostname.toLowerCase();
