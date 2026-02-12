@@ -79,7 +79,7 @@ export default function UsersList({
     try {
       const result = await authClient.admin.setRole({
         userId,
-        role: newRole,
+        role: newRole as "admin" | "user",
       });
 
       if (result.error) {
