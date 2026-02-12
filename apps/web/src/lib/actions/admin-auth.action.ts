@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
@@ -37,8 +38,13 @@ export async function adminSignInAction(formData: FormData) {
     if (!isAdminUser(result.user)) {
       // User authenticated but not admin - revoke the session we just created
       // Don't pass explicit headers so nextCookies() can read the freshly set session cookie
-      await auth.api.signOut();
-
+      try {
+        await auth.api.signOut();
+      } catch {
+        // If signOut fails, manually clear the session cookie to prevent session leak
+        const cookieStore = await cookies();
+        cookieStore.delete("better-auth.session_token");
+      }
       // Return same generic error to prevent admin enumeration
       return {
         error: "Invalid email or password",

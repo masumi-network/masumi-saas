@@ -90,7 +90,7 @@ export function syncEnvFile(
   let content = fs.readFileSync(envPath, "utf-8");
   const newValue = adminIds.join(",");
 
-  if (content.includes("ADMIN_USER_IDS=")) {
+  if (/^ADMIN_USER_IDS=/m.test(content)) {
     // Replace existing line
     content = content.replace(
       /^ADMIN_USER_IDS=.*$/m,
