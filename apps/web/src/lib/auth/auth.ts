@@ -4,10 +4,11 @@ import prisma from "@masumi/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { apiKey, organization, twoFactor } from "better-auth/plugins";
+import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { getTranslations } from "next-intl/server";
 
+import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig } from "@/lib/config/auth.config";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
@@ -144,6 +145,10 @@ export const auth = betterAuth({
     twoFactor({
       issuer: "Masumi",
       skipVerificationOnEnable: false,
+    }),
+    admin({
+      defaultRole: "user",
+      adminUserIds: getBootstrapAdminIds(),
     }),
     apiKey({
       rateLimit: authConfig.apiKey.rateLimit,
