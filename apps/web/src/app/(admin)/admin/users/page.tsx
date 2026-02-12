@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/lib/auth/auth";
@@ -16,12 +17,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminUsersPage() {
+  // Defense-in-depth: verify admin even though layout also checks
+  const authContext = await getAdminAuthContext();
+  if (!authContext.isAuthenticated || !authContext.isAdmin) {
+    redirect("/admin/signin");
+  }
+
   const t = await getTranslations("Admin.Users");
   const headersList = await headers();
 
-  // Use cached admin auth context to avoid duplicate DB query
-  const { session } = await getAdminAuthContext();
-  const currentUserId = session?.user?.id;
+  const currentUserId = authContext.session?.user?.id;
 
   // Fetch all users via Better Auth admin API
   const usersResponse = await auth.api.listUsers({
