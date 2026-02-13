@@ -474,8 +474,15 @@
         "success": "Agent registered successfully!",
         "error": "Failed to register agent. Please try again."
       },
+      "Edit": {
+        "title": "Edit Agent",
+        "submit": "Save Changes",
+        "success": "Agent updated successfully!",
+        "error": "Failed to update agent. Please try again."
+      },
       "Details": {
         "overview": "Overview",
+        "edit": "Edit",
         "backToAgents": "Back to agents",
         "backToDashboard": "Back to dashboard",
         "summary": "Summary",

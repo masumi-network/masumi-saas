@@ -1,18 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CircleHelp,
-  Link2,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleHelp, Link2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -44,7 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agentApiClient } from "@/lib/api/agent.client";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import {
   AGENT_ICON_PRESET_KEYS,
   AGENT_ICON_PRESETS,
@@ -53,216 +45,68 @@ import {
 } from "@/lib/constants/agent-icons";
 import { cn } from "@/lib/utils";
 
-const CURRENCY_SYMBOL = "$";
+import {
+  type AgentFormFields,
+  ExampleOutputsFields,
+  PricingFields,
+} from "./register-agent-dialog";
 
-type RegisterAgentFormType = AgentFormFields & { apiUrl: string };
-
-interface RegisterAgentDialogProps {
+interface EditAgentDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  agent: Agent;
 }
 
-export type AgentFormFields = {
-  name: string;
-  summary?: string;
-  description?: string;
-  isFree: boolean;
-  prices: Array<{ amount: string }>;
-  tags?: string;
-  icon?: string;
-  authorName?: string;
-  authorEmail?: string;
-  organization?: string;
-  contactOther?: string;
-  termsOfUseUrl?: string;
-  privacyPolicyUrl?: string;
-  otherUrl?: string;
-  capabilityName?: string;
-  capabilityVersion?: string;
-  exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
-};
-
-export function ExampleOutputsFields({
-  form: outputsForm,
-  t: outputsT,
-}: {
-  form: UseFormReturn<AgentFormFields>;
-  t: (key: string) => string;
-}) {
-  const { fields, append, remove } = useFieldArray({
-    control: outputsForm.control,
-    name: "exampleOutputs",
-  });
-
-  return (
-    <div className="space-y-4 rounded-lg border border-border/80 bg-muted/40 p-4">
-      <div className="flex items-center justify-between">
-        <FormLabel>{outputsT("exampleOutputs")}</FormLabel>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => append({ name: "", url: "", mimeType: "" })}
-        >
-          {outputsT("addExample")}
-        </Button>
-      </div>
-      {fields.map((field, index) => (
-        <div
-          key={field.id}
-          className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FormField
-              control={outputsForm.control}
-              name={`exampleOutputs.${index}.name`}
-              render={({ field: f }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder={outputsT("exampleOutputNamePlaceholder")}
-                      {...f}
-                      className="h-11"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={outputsForm.control}
-              name={`exampleOutputs.${index}.url`}
-              render={({ field: f }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder={outputsT("exampleOutputUrlPlaceholder")}
-                      {...f}
-                      className="h-11 font-mono text-sm"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={outputsForm.control}
-              name={`exampleOutputs.${index}.mimeType`}
-              render={({ field: f }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder={outputsT("exampleOutputMimePlaceholder")}
-                      {...f}
-                      className="h-11"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => remove(index)}
-            className="absolute top-2 right-2"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  );
+function parseAgentMetadata(agent: Agent): Partial<AgentFormFields> {
+  const meta: Partial<AgentFormFields> = {};
+  if (!agent.metadata) return meta;
+  try {
+    const parsed = JSON.parse(agent.metadata) as Record<string, unknown>;
+    if (typeof parsed.authorName === "string")
+      meta.authorName = parsed.authorName;
+    if (typeof parsed.authorEmail === "string")
+      meta.authorEmail = parsed.authorEmail;
+    if (typeof parsed.organization === "string")
+      meta.organization = parsed.organization;
+    if (typeof parsed.contactOther === "string")
+      meta.contactOther = parsed.contactOther;
+    if (typeof parsed.termsOfUseUrl === "string")
+      meta.termsOfUseUrl = parsed.termsOfUseUrl;
+    if (typeof parsed.privacyPolicyUrl === "string")
+      meta.privacyPolicyUrl = parsed.privacyPolicyUrl;
+    if (typeof parsed.otherUrl === "string") meta.otherUrl = parsed.otherUrl;
+    if (typeof parsed.capabilityName === "string")
+      meta.capabilityName = parsed.capabilityName;
+    if (typeof parsed.capabilityVersion === "string")
+      meta.capabilityVersion = parsed.capabilityVersion;
+    if (
+      Array.isArray(parsed.exampleOutputs) &&
+      parsed.exampleOutputs.every(
+        (e): e is { name: string; url: string; mimeType: string } =>
+          e != null &&
+          typeof e === "object" &&
+          typeof (e as { name?: unknown }).name === "string" &&
+          typeof (e as { url?: unknown }).url === "string" &&
+          typeof (e as { mimeType?: unknown }).mimeType === "string",
+      )
+    ) {
+      meta.exampleOutputs = parsed.exampleOutputs;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return meta;
 }
 
-export function PricingFields({
-  form: pricingForm,
-  t: pricingT,
-}: {
-  form: UseFormReturn<AgentFormFields>;
-  t: (key: string) => string;
-}) {
-  const { fields, append, remove } = useFieldArray({
-    control: pricingForm.control,
-    name: "prices",
-  });
-  const isFree = pricingForm.watch("isFree");
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <FormLabel>{pricingT("prices")}</FormLabel>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={isFree}
-          onClick={() => append({ amount: "" })}
-        >
-          {pricingT("addPrice")}
-        </Button>
-      </div>
-      {fields.map((field, index) => (
-        <div key={field.id} className="flex gap-2 items-start">
-          <div className="flex-1 flex items-center gap-2">
-            <span className="text-muted-foreground text-sm shrink-0">
-              {CURRENCY_SYMBOL}
-            </span>
-            <FormField
-              control={pricingForm.control}
-              name={`prices.${index}.amount`}
-              render={({ field: amountField }) => (
-                <FormItem className="flex-1">
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      disabled={isFree}
-                      {...amountField}
-                      className="h-11"
-                      onChange={(e) => amountField.onChange(e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          {fields.length > 1 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={isFree}
-              onClick={() => remove(index)}
-              className="shrink-0 mt-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-      {pricingForm.formState.errors.prices && (
-        <p className="text-sm text-destructive">
-          {pricingForm.formState.errors.prices.message}
-        </p>
-      )}
-    </div>
-  );
-}
-
-export function RegisterAgentDialog({
+export function EditAgentDialog({
   open,
   onClose,
   onSuccess,
-}: RegisterAgentDialogProps) {
-  const t = useTranslations("App.Agents.Register");
+  agent,
+}: EditAgentDialogProps) {
+  const t = useTranslations("App.Agents.Edit");
+  const tRegister = useTranslations("App.Agents.Register");
 
   const [isLoading, setIsLoading] = useState(false);
   const [tagInput, setTagInput] = useState("");
@@ -289,15 +133,14 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (!open) return;
     const el = iconScrollRef.current;
-    if (!el) return;
-    const runUpdate = () => {
-      updateIconScrollGradients();
-    };
-    runUpdate();
-    requestAnimationFrame(runUpdate);
-    const ro = new ResizeObserver(runUpdate);
-    ro.observe(el);
-    return () => ro.disconnect();
+    if (el) {
+      const runUpdate = () => updateIconScrollGradients();
+      runUpdate();
+      requestAnimationFrame(runUpdate);
+      const ro = new ResizeObserver(runUpdate);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
   }, [open, updateIconScrollGradients]);
 
   const scrollIcons = useCallback((direction: "left" | "right") => {
@@ -310,28 +153,22 @@ export function RegisterAgentDialog({
     });
   }, []);
 
-  const registerAgentSchema = z
+  const editAgentSchema = z
     .object({
-      name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
+      name: z
+        .string()
+        .min(1, tRegister("nameRequired"))
+        .max(250, tRegister("nameMaxLength")),
       summary: z
         .string()
-        .max(250, t("summaryMaxLength"))
+        .max(250, tRegister("summaryMaxLength"))
         .optional()
         .or(z.literal("")),
       description: z
         .string()
-        .max(5000, t("descriptionMaxLength"))
+        .max(5000, tRegister("descriptionMaxLength"))
         .optional()
         .or(z.literal("")),
-      apiUrl: z
-        .string()
-        .url(t("apiUrlInvalid"))
-        .refine(
-          (val) => val.startsWith("http://") || val.startsWith("https://"),
-          {
-            message: t("apiUrlProtocol"),
-          },
-        ),
       isFree: z.boolean(),
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
@@ -367,39 +204,85 @@ export function RegisterAgentDialog({
         const filled = (data.prices ?? []).filter((p) => p.amount?.trim());
         return filled.length > 0;
       },
-      { message: t("priceAmountRequired"), path: ["prices"] },
+      { message: tRegister("priceAmountRequired"), path: ["prices"] },
     );
 
-  const form = useForm<RegisterAgentFormType>({
-    resolver: zodResolver(registerAgentSchema),
+  const metadata = parseAgentMetadata(agent);
+  const pricing = agent.pricing as
+    | { pricingType: "Free" }
+    | { pricingType: "Fixed"; prices: Array<{ amount: string }> }
+    | null;
+  const isFree = !pricing || pricing.pricingType === "Free";
+  const prices =
+    pricing?.pricingType === "Fixed" && pricing.prices?.length
+      ? pricing.prices.map((p) => ({ amount: p.amount }))
+      : [{ amount: "" }];
+
+  const form = useForm<AgentFormFields>({
+    resolver: zodResolver(editAgentSchema),
     defaultValues: {
-      name: "",
-      summary: "",
-      description: "",
-      apiUrl: "",
-      isFree: false,
-      prices: [{ amount: "" }],
-      tags: "",
-      icon: "bot",
-      authorName: "",
-      authorEmail: "",
-      organization: "",
-      contactOther: "",
-      termsOfUseUrl: "",
-      privacyPolicyUrl: "",
-      otherUrl: "",
-      capabilityName: "",
-      capabilityVersion: "",
-      exampleOutputs: [],
+      name: agent.name,
+      summary: agent.summary ?? "",
+      description: agent.description ?? "",
+      isFree,
+      prices,
+      tags: agent.tags?.join(", ") ?? "",
+      icon: agent.icon ?? "bot",
+      authorName: metadata.authorName ?? "",
+      authorEmail: metadata.authorEmail ?? "",
+      organization: metadata.organization ?? "",
+      contactOther: metadata.contactOther ?? "",
+      termsOfUseUrl: metadata.termsOfUseUrl ?? "",
+      privacyPolicyUrl: metadata.privacyPolicyUrl ?? "",
+      otherUrl: metadata.otherUrl ?? "",
+      capabilityName: metadata.capabilityName ?? "",
+      capabilityVersion: metadata.capabilityVersion ?? "",
+      exampleOutputs: metadata.exampleOutputs ?? [],
     },
   });
+
+  useEffect(() => {
+    if (open && agent) {
+      const meta = parseAgentMetadata(agent);
+      const p = agent.pricing as
+        | { pricingType: "Free" }
+        | { pricingType: "Fixed"; prices: Array<{ amount: string }> }
+        | null;
+      const free = !p || p.pricingType === "Free";
+      const pr =
+        p?.pricingType === "Fixed" && p.prices?.length
+          ? p.prices.map((x) => ({ amount: x.amount }))
+          : [{ amount: "" }];
+      form.reset({
+        name: agent.name,
+        summary: agent.summary ?? "",
+        description: agent.description ?? "",
+        isFree: free,
+        prices: pr,
+        tags: agent.tags?.join(", ") ?? "",
+        icon: agent.icon ?? "bot",
+        authorName: meta.authorName ?? "",
+        authorEmail: meta.authorEmail ?? "",
+        organization: meta.organization ?? "",
+        contactOther: meta.contactOther ?? "",
+        termsOfUseUrl: meta.termsOfUseUrl ?? "",
+        privacyPolicyUrl: meta.privacyPolicyUrl ?? "",
+        otherUrl: meta.otherUrl ?? "",
+        capabilityName: meta.capabilityName ?? "",
+        capabilityVersion: meta.capabilityVersion ?? "",
+        exampleOutputs: meta.exampleOutputs ?? [],
+      });
+      setTags(agent.tags ?? []);
+    }
+  }, [open, agent, form]);
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
     if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
+      const newTags = [...tags, tag];
+      setTags(newTags);
       setTagInput("");
-      form.setValue("tags", [...tags, tag].join(", "));
+      form.setValue("tags", newTags.join(", "));
     }
   };
 
@@ -409,7 +292,7 @@ export function RegisterAgentDialog({
     form.setValue("tags", newTags.join(", "));
   };
 
-  const onSubmit = async (data: RegisterAgentFormType) => {
+  const onSubmit = async (data: AgentFormFields) => {
     setIsLoading(true);
     try {
       const pricing = data.isFree
@@ -430,18 +313,17 @@ export function RegisterAgentDialog({
             mimeType: e.mimeType.trim(),
           })) ?? [];
 
-      const result = await agentApiClient.registerAgent({
+      const result = await agentApiClient.updateAgent(agent.id, {
         name: data.name,
-        summary: data.summary?.trim() || undefined,
-        description: data.description?.trim() || undefined,
-        apiUrl: data.apiUrl,
+        summary: data.summary?.trim() || null,
+        description: data.description?.trim() || null,
+        tags: tags,
+        icon: data.icon?.trim() || null,
         pricing: data.isFree
           ? pricing
           : (pricing.prices?.length ?? 0) > 0
             ? pricing
-            : undefined,
-        tags: tags.join(", "),
-        icon: data.icon?.trim() || undefined,
+            : null,
         authorName: data.authorName?.trim() || undefined,
         authorEmail: data.authorEmail?.trim() || undefined,
         organization: data.organization?.trim() || undefined,
@@ -456,9 +338,6 @@ export function RegisterAgentDialog({
 
       if (result.success) {
         toast.success(t("success"));
-        form.reset();
-        setTags([]);
-        setTagInput("");
         onSuccess();
         onClose();
       } else {
@@ -466,7 +345,7 @@ export function RegisterAgentDialog({
       }
     } catch (error) {
       toast.error(t("error"));
-      console.error("Failed to register agent:", error);
+      console.error("Failed to update agent:", error);
     } finally {
       setIsLoading(false);
     }
@@ -474,31 +353,7 @@ export function RegisterAgentDialog({
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (isLoading) return;
-    if (!newOpen) {
-      form.reset({
-        name: "",
-        summary: "",
-        description: "",
-        apiUrl: "",
-        isFree: false,
-        prices: [{ amount: "" }],
-        tags: "",
-        icon: "bot",
-        authorName: "",
-        authorEmail: "",
-        organization: "",
-        contactOther: "",
-        termsOfUseUrl: "",
-        privacyPolicyUrl: "",
-        otherUrl: "",
-        capabilityName: "",
-        capabilityVersion: "",
-        exampleOutputs: [],
-      });
-      setTags([]);
-      setTagInput("");
-    }
-    onClose();
+    if (!newOpen) onClose();
   };
 
   const handleClearIcon = () => {
@@ -531,7 +386,7 @@ export function RegisterAgentDialog({
                   <FormItem>
                     <div className="flex items-center gap-2 mb-3">
                       <FormLabel className="text-base font-medium">
-                        {t("icon")}
+                        {tRegister("icon")}
                       </FormLabel>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -539,13 +394,15 @@ export function RegisterAgentDialog({
                             <CircleHelp className="h-4 w-4" />
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>{t("iconTooltip")}</TooltipContent>
+                        <TooltipContent>
+                          {tRegister("iconTooltip")}
+                        </TooltipContent>
                       </Tooltip>
                     </div>
                     <Card className="min-w-0 overflow-hidden border-border/80 bg-muted-surface">
                       <CardContent className="min-w-0 space-y-4">
                         <p className="text-muted-foreground text-sm">
-                          {t("iconDescription")}
+                          {tRegister("iconDescription")}
                         </p>
                         <div className="relative -mx-1">
                           <div
@@ -564,7 +421,7 @@ export function RegisterAgentDialog({
                               size="icon"
                               className="pointer-events-auto relative -ml-2 h-8 w-8 shrink-0 rounded-full bg-transparent hover:bg-transparent"
                               onClick={() => scrollIcons("left")}
-                              aria-label={t("scrollLeft")}
+                              aria-label={tRegister("scrollLeft")}
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </Button>
@@ -585,7 +442,7 @@ export function RegisterAgentDialog({
                               size="icon"
                               className="pointer-events-auto relative -mr-2 h-8 w-8 shrink-0 rounded-full bg-transparent hover:bg-transparent"
                               onClick={() => scrollIcons("right")}
-                              aria-label={t("scrollRight")}
+                              aria-label={tRegister("scrollRight")}
                             >
                               <ChevronRight className="h-4 w-4" />
                             </Button>
@@ -623,7 +480,9 @@ export function RegisterAgentDialog({
                           <div className="relative flex-1 flex items-center">
                             <Link2 className="text-muted-foreground absolute left-3 h-4 w-4" />
                             <Input
-                              placeholder={t("iconCustomUrlPlaceholder")}
+                              placeholder={tRegister(
+                                "iconCustomUrlPlaceholder",
+                              )}
                               value={
                                 field.value && !isPresetIconKey(field.value)
                                   ? field.value
@@ -644,7 +503,7 @@ export function RegisterAgentDialog({
                               size="sm"
                               onClick={handleClearIcon}
                             >
-                              {t("iconClear")}
+                              {tRegister("iconClear")}
                             </Button>
                           )}
                         </div>
@@ -664,10 +523,10 @@ export function RegisterAgentDialog({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("name")}</FormLabel>
+                      <FormLabel>{tRegister("name")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("namePlaceholder")}
+                          placeholder={tRegister("namePlaceholder")}
                           {...field}
                           className="h-11"
                         />
@@ -682,10 +541,10 @@ export function RegisterAgentDialog({
                   name="summary"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("summary")}</FormLabel>
+                      <FormLabel>{tRegister("summary")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("summaryPlaceholder")}
+                          placeholder={tRegister("summaryPlaceholder")}
                           {...field}
                           className="h-11"
                           maxLength={251}
@@ -707,7 +566,7 @@ export function RegisterAgentDialog({
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-2">
-                        <FormLabel>{t("description")}</FormLabel>
+                        <FormLabel>{tRegister("description")}</FormLabel>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
@@ -715,7 +574,7 @@ export function RegisterAgentDialog({
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {t("descriptionRichTextHint")}
+                            {tRegister("descriptionRichTextHint")}
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -723,7 +582,7 @@ export function RegisterAgentDialog({
                         <RichTextEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          placeholder={t("descriptionPlaceholder")}
+                          placeholder={tRegister("descriptionPlaceholder")}
                           minHeight="min-h-28"
                         />
                       </FormControl>
@@ -731,26 +590,12 @@ export function RegisterAgentDialog({
                     </FormItem>
                   )}
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="apiUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("apiUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={t("apiUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Separator />
 
+              {/* Pricing */}
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="isFree"
@@ -765,23 +610,19 @@ export function RegisterAgentDialog({
                         />
                       </FormControl>
                       <FormLabel className="font-normal cursor-pointer">
-                        {t("isFree")}
+                        {tRegister("isFree")}
                       </FormLabel>
                     </FormItem>
                   )}
                 />
-
-                <PricingFields
-                  form={form as unknown as UseFormReturn<AgentFormFields>}
-                  t={t}
-                />
+                <PricingFields form={form} t={tRegister} />
               </div>
 
               <Separator />
 
               {/* Tags */}
               <FormItem>
-                <FormLabel>{t("tags")}</FormLabel>
+                <FormLabel>{tRegister("tags")}</FormLabel>
                 <div className="flex gap-2 items-center">
                   <Input
                     value={tagInput}
@@ -792,7 +633,7 @@ export function RegisterAgentDialog({
                         handleAddTag();
                       }
                     }}
-                    placeholder={t("tagsPlaceholder")}
+                    placeholder={tRegister("tagsPlaceholder")}
                     className="h-11"
                   />
                   <Button
@@ -801,7 +642,7 @@ export function RegisterAgentDialog({
                     variant="secondary"
                     className="shrink-0"
                   >
-                    {t("addTag")}
+                    {tRegister("addTag")}
                   </Button>
                 </div>
                 {tags.length > 0 && (
@@ -829,7 +670,7 @@ export function RegisterAgentDialog({
               <div className="flex items-center gap-4 pt-2">
                 <Separator className="flex-1" />
                 <h3 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  {t("additionalFields")}
+                  {tRegister("additionalFields")}
                 </h3>
                 <Separator className="flex-1" />
               </div>
@@ -840,10 +681,10 @@ export function RegisterAgentDialog({
                   name="authorName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("authorName")}</FormLabel>
+                      <FormLabel>{tRegister("authorName")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("authorNamePlaceholder")}
+                          placeholder={tRegister("authorNamePlaceholder")}
                           {...field}
                           className="h-11"
                         />
@@ -857,11 +698,11 @@ export function RegisterAgentDialog({
                   name="authorEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("authorEmail")}</FormLabel>
+                      <FormLabel>{tRegister("authorEmail")}</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder={t("authorEmailPlaceholder")}
+                          placeholder={tRegister("authorEmailPlaceholder")}
                           {...field}
                           className="h-11"
                         />
@@ -875,10 +716,10 @@ export function RegisterAgentDialog({
                   name="organization"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("organization")}</FormLabel>
+                      <FormLabel>{tRegister("organization")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("organizationPlaceholder")}
+                          placeholder={tRegister("organizationPlaceholder")}
                           {...field}
                           className="h-11"
                         />
@@ -892,10 +733,10 @@ export function RegisterAgentDialog({
                   name="contactOther"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("contactOther")}</FormLabel>
+                      <FormLabel>{tRegister("contactOther")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("contactOtherPlaceholder")}
+                          placeholder={tRegister("contactOtherPlaceholder")}
                           {...field}
                           className="h-11"
                         />
@@ -909,11 +750,11 @@ export function RegisterAgentDialog({
                   name="termsOfUseUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("termsOfUseUrl")}</FormLabel>
+                      <FormLabel>{tRegister("termsOfUseUrl")}</FormLabel>
                       <FormControl>
                         <Input
                           type="url"
-                          placeholder={t("termsOfUseUrlPlaceholder")}
+                          placeholder={tRegister("termsOfUseUrlPlaceholder")}
                           {...field}
                           className="h-11 font-mono text-sm"
                         />
@@ -927,11 +768,11 @@ export function RegisterAgentDialog({
                   name="privacyPolicyUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("privacyPolicyUrl")}</FormLabel>
+                      <FormLabel>{tRegister("privacyPolicyUrl")}</FormLabel>
                       <FormControl>
                         <Input
                           type="url"
-                          placeholder={t("privacyPolicyUrlPlaceholder")}
+                          placeholder={tRegister("privacyPolicyUrlPlaceholder")}
                           {...field}
                           className="h-11 font-mono text-sm"
                         />
@@ -945,11 +786,11 @@ export function RegisterAgentDialog({
                   name="otherUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("otherUrl")}</FormLabel>
+                      <FormLabel>{tRegister("otherUrl")}</FormLabel>
                       <FormControl>
                         <Input
                           type="url"
-                          placeholder={t("otherUrlPlaceholder")}
+                          placeholder={tRegister("otherUrlPlaceholder")}
                           {...field}
                           className="h-11 font-mono text-sm"
                         />
@@ -964,10 +805,10 @@ export function RegisterAgentDialog({
                     name="capabilityName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("capabilityName")}</FormLabel>
+                        <FormLabel>{tRegister("capabilityName")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t("capabilityNamePlaceholder")}
+                            placeholder={tRegister("capabilityNamePlaceholder")}
                             {...field}
                             className="h-11"
                           />
@@ -981,10 +822,12 @@ export function RegisterAgentDialog({
                     name="capabilityVersion"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("capabilityVersion")}</FormLabel>
+                        <FormLabel>{tRegister("capabilityVersion")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t("capabilityVersionPlaceholder")}
+                            placeholder={tRegister(
+                              "capabilityVersionPlaceholder",
+                            )}
                             {...field}
                             className="h-11"
                           />
@@ -994,10 +837,7 @@ export function RegisterAgentDialog({
                     )}
                   />
                 </div>
-                <ExampleOutputsFields
-                  form={form as unknown as UseFormReturn<AgentFormFields>}
-                  t={t}
-                />
+                <ExampleOutputsFields form={form} t={tRegister} />
               </div>
             </div>
 
@@ -1008,7 +848,7 @@ export function RegisterAgentDialog({
                 onClick={() => handleOnOpenChange(false)}
                 disabled={isLoading}
               >
-                {t("cancel")}
+                {tRegister("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={isLoading}>
                 {isLoading && <Spinner size={16} className="mr-2" />}

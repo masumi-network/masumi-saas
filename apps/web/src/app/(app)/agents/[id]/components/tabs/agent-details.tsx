@@ -6,6 +6,7 @@ import {
   FileText,
   Fingerprint,
   Link2,
+  Pencil,
   ShieldCheck,
   Tag,
   Tags,
@@ -36,26 +37,23 @@ import {
   formatRelativeDate,
 } from "@/lib/utils";
 
-import {
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
-} from "../../../components/agent-utils";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
 interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
+  onEditClick?: () => void;
   onVerificationSuccess?: () => void;
 }
 
 export function AgentDetails({
   agent,
   onDeleteClick,
+  onEditClick,
   onVerificationSuccess,
 }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
-  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
@@ -86,16 +84,17 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            <Badge
-              variant={getRegistrationStatusBadgeVariant(
-                agent.registrationState,
-              )}
-              className="w-fit min-w-fit shrink-0 ml-auto"
-            >
-              {tRegistrationStatus(
-                getRegistrationStatusKey(agent.registrationState),
-              )}
-            </Badge>
+            {onEditClick && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditClick}
+                className="gap-2 ml-auto"
+              >
+                <Pencil className="h-4 w-4" />
+                {t("edit")}
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Summary */}

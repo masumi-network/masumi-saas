@@ -10,6 +10,7 @@ type Agent = {
   apiUrl: string;
   tags: string[];
   icon: string | null;
+  metadata?: string | null;
   agentIdentifier: string | null;
   pricing: AgentPricing | null;
   registrationState:
@@ -171,6 +172,33 @@ class AgentApiClient {
   }): Promise<ApiResponse<Agent>> {
     return this.request<Agent>("", {
       method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAgent(
+    agentId: string,
+    data: {
+      name?: string;
+      summary?: string | null;
+      description?: string | null;
+      tags?: string[];
+      icon?: string | null;
+      pricing?: AgentPricing | null;
+      authorName?: string;
+      authorEmail?: string;
+      organization?: string;
+      contactOther?: string;
+      termsOfUseUrl?: string;
+      privacyPolicyUrl?: string;
+      otherUrl?: string;
+      capabilityName?: string;
+      capabilityVersion?: string;
+      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+    },
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }

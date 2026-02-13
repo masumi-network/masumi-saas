@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
+import { EditAgentDialog } from "../../components/edit-agent-dialog";
 import { AgentPageHeader } from "./agent-page-header";
 import { DeleteAgentDialog } from "./delete-agent-dialog";
 import {
@@ -49,6 +50,7 @@ export function AgentPageContent({
   const searchParams = useSearchParams();
   const [agent, setAgent] = useState<Agent>(initialAgent);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -96,6 +98,15 @@ export function AgentPageContent({
     });
   };
 
+  const handleEditSuccess = () => {
+    startTransition(async () => {
+      const result = await agentApiClient.getAgent(agent.id);
+      if (result.success) {
+        setAgent(result.data);
+      }
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col gap-12 pb-3 pt-1">
@@ -111,6 +122,7 @@ export function AgentPageContent({
         <AgentDetails
           agent={agent}
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
+          onEditClick={() => setIsEditDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
         />
       )}
@@ -132,6 +144,13 @@ export function AgentPageContent({
         onConfirm={handleDeleteConfirm}
         agentName={agent.name}
         isLoading={isDeleting}
+      />
+
+      <EditAgentDialog
+        open={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSuccess={handleEditSuccess}
+        agent={agent}
       />
     </>
   );

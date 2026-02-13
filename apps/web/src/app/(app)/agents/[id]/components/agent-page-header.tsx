@@ -4,6 +4,7 @@ import { ChevronLeft, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -13,7 +14,11 @@ import {
 import { type Agent } from "@/lib/api/agent.client";
 
 import { AgentIcon } from "../../components/agent-icon";
-import { getVerificationStatusKey } from "../../components/agent-utils";
+import {
+  getRegistrationStatusBadgeVariant,
+  getRegistrationStatusKey,
+  getVerificationStatusKey,
+} from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
   agent: Agent;
@@ -28,6 +33,7 @@ export function AgentPageHeader({
 }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
   const tStatus = useTranslations("App.Agents.status");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
 
   const label = backLabel ?? tDetails("backToAgents");
@@ -68,6 +74,14 @@ export function AgentPageHeader({
         <h1 className="text-2xl font-light tracking-tight truncate min-w-0">
           {agent.name}
         </h1>
+        <Badge
+          variant={getRegistrationStatusBadgeVariant(agent.registrationState)}
+          className="shrink-0"
+        >
+          {tRegistrationStatus(
+            getRegistrationStatusKey(agent.registrationState),
+          )}
+        </Badge>
         {/* Verification badge: only show when agent has Veridian credential */}
         {agent.verificationStatus === "VERIFIED" && (
           <Tooltip>
