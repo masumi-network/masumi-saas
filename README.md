@@ -1,6 +1,6 @@
 # Masumi SaaS
 
-A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth, next-intl, and Sentry.
+Masumi SaaS is a platform for registering, managing, and verifying your AI agents on the Masumi network. Users can register agents, complete identity verification (KYC), manage organizations, and top up or withdraw funds.
 
 ## Tech Stack
 
@@ -17,11 +17,17 @@ A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth
 
 ## Architecture
 
-This project follows the three-layer architecture pattern:
+This project follows an **API-first** architecture with clear separation of concerns:
 
-1. **Repositories** (`packages/database/src/repositories/`) - Database access layer
-2. **Services** (`apps/web/src/lib/services/`) - Business logic coordination
-3. **Actions** (`apps/web/src/lib/actions/`) - Server mutations
+1. **API Clients** (`apps/web/src/lib/api/`) - Client-side and server-side fetch wrappers for API routes
+2. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints that handle auth and delegate to services
+3. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
+4. **Actions** (`apps/web/src/lib/actions/`) - Server actions that call API clients or services
+5. **Types** (`apps/web/src/lib/types/`) - Shared TypeScript types
+
+**Data flow (Option B):** `Action → API Client → API Route → Service → Prisma`
+
+This keeps a single API boundary for dashboard, agents, and other features—enabling client-side fetching, caching, and consistency across the app.
 
 ## Project Structure
 
@@ -32,22 +38,35 @@ masumi-saas/
 │       ├── src/
 │       │   ├── app/           # App Router routes
 │       │   │   ├── (app)/     # Authenticated routes
+│       │   │   │   ├── agents/        # Agent management
+│       │   │   │   ├── organizations/ # Organization management
+│       │   │   │   ├── account/       # User account
+│       │   │   │   ├── onboarding/    # KYC flow
+│       │   │   │   ├── top-up/        # Add funds
+│       │   │   │   └── withdraw/      # Withdraw earnings
 │       │   │   ├── (auth)/    # Authentication routes
-│       │   │   └── api/        # API routes
+│       │   │   └── api/       # API routes
+│       │   │       ├── agents/        # Agent CRUD
+│       │   │       ├── dashboard/     # Dashboard overview
+│       │   │       ├── credentials/   # Veridian credentials
+│       │   │       └── webhooks/      # External webhooks
 │       │   ├── components/    # UI components
-│       │   ├── lib/            # Domain logic
+│       │   ├── lib/
 │       │   │   ├── actions/   # Server actions
+│       │   │   ├── api/       # API clients (agent, dashboard, credential)
 │       │   │   ├── services/  # Business logic
+│       │   │   ├── types/     # Shared types
 │       │   │   ├── schemas/   # Zod schemas
 │       │   │   └── auth/      # Better Auth setup
-│       └── messages/           # i18n messages
+│       │   └── ...
+│       └── messages/          # i18n messages
 ├── packages/
 │   └── database/              # Shared database layer
-│       ├── src/
-│       │   ├── repositories/  # Prisma access layer
-│       │   └── client.ts      # Prisma client
-│       └── prisma/
-│           └── schema.prisma  # Database schema
+│       ├── prisma/
+│       │   ├── schema.prisma  # Database schema
+│       │   └── migrations/
+│       └── src/
+│           └── client.ts     # Prisma client
 └── package.json               # Root workspace config
 ```
 
@@ -77,6 +96,11 @@ masumi-saas/
    - **BETTER_AUTH_URL**: Your application's base URL
      - For local development: `http://localhost:3000`
      - For production: Your production domain (e.g., `https://yourdomain.com`)
+
+   - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
+     - For local development: `http://localhost:3000`
+     - For production: Your production domain (e.g., `https://yourdomain.com`)
+     - Used when server actions fetch from API routes; falls back to request headers if not set
 
    - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
      - Get one from [Postmark](https://postmarkapp.com/)
@@ -187,12 +211,16 @@ After promoting a user, they can sign in at `/admin/signin` to access the admin 
 - ✅ User authentication (email/password, forgot password)
 - ✅ Organization management (multi-tenant)
 - ✅ API key management
+- ✅ **Dashboard** – Overview with balance, agents, organizations; Top up & Withdraw
+- ✅ **AI Agent management** – Register, verify, and manage agents on the Masumi network
+- ✅ **KYC/KYB** – Identity verification via Sumsub
+- ✅ **Veridian integration** – Cryptographic credentials for agent verification
 - ✅ Cookie consent banner
 - ✅ Error tracking with Sentry
 - ✅ Dark/light theme (auto-detect)
 - ✅ Responsive design
 - ✅ Server-side rendering with Suspense
-- ✅ Three-layer architecture (repositories/services/actions)
+- ✅ API-first architecture (actions → API clients → API routes → services)
 
 ## Scripts
 
