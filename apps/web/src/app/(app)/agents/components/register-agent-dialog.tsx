@@ -70,186 +70,186 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
+function ExampleOutputsFields({
+  form: outputsForm,
+  t: outputsT,
+}: {
+  form: ReturnType<typeof useForm<RegisterAgentFormType>>;
+  t: (key: string) => string;
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: outputsForm.control,
+    name: "exampleOutputs",
+  });
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border/80 bg-muted/40 p-4">
+      <div className="flex items-center justify-between">
+        <FormLabel>{outputsT("exampleOutputs")}</FormLabel>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append({ name: "", url: "", mimeType: "" })}
+        >
+          {outputsT("addExample")}
+        </Button>
+      </div>
+      {fields.map((field, index) => (
+        <div
+          key={field.id}
+          className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.name`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={outputsT("exampleOutputNamePlaceholder")}
+                      {...f}
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.url`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder={outputsT("exampleOutputUrlPlaceholder")}
+                      {...f}
+                      className="h-11 font-mono text-sm"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.mimeType`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={outputsT("exampleOutputMimePlaceholder")}
+                      {...f}
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => remove(index)}
+            className="absolute top-2 right-2"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PricingFields({
+  form: pricingForm,
+  t: pricingT,
+}: {
+  form: ReturnType<typeof useForm<RegisterAgentFormType>>;
+  t: (key: string) => string;
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: pricingForm.control,
+    name: "prices",
+  });
+  const isFree = pricingForm.watch("isFree");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <FormLabel>{pricingT("prices")}</FormLabel>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isFree}
+          onClick={() => append({ amount: "" })}
+        >
+          {pricingT("addPrice")}
+        </Button>
+      </div>
+      {fields.map((field, index) => (
+        <div key={field.id} className="flex gap-2 items-start">
+          <div className="flex-1 flex items-center gap-2">
+            <span className="text-muted-foreground text-sm shrink-0">
+              {CURRENCY_SYMBOL}
+            </span>
+            <FormField
+              control={pricingForm.control}
+              name={`prices.${index}.amount`}
+              render={({ field: amountField }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      disabled={isFree}
+                      {...amountField}
+                      className="h-11"
+                      onChange={(e) => amountField.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          {fields.length > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={isFree}
+              onClick={() => remove(index)}
+              className="shrink-0 mt-2"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ))}
+      {pricingForm.formState.errors.prices && (
+        <p className="text-sm text-destructive">
+          {pricingForm.formState.errors.prices.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function RegisterAgentDialog({
   open,
   onClose,
   onSuccess,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
-
-  function ExampleOutputsFields({
-    form: outputsForm,
-    t: outputsT,
-  }: {
-    form: ReturnType<typeof useForm<RegisterAgentFormType>>;
-    t: (key: string) => string;
-  }) {
-    const { fields, append, remove } = useFieldArray({
-      control: outputsForm.control,
-      name: "exampleOutputs",
-    });
-
-    return (
-      <div className="space-y-4 rounded-lg border border-border/80 bg-muted/40 p-4">
-        <div className="flex items-center justify-between">
-          <FormLabel>{outputsT("exampleOutputs")}</FormLabel>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ name: "", url: "", mimeType: "" })}
-          >
-            {outputsT("addExample")}
-          </Button>
-        </div>
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.name`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={outputsT("exampleOutputNamePlaceholder")}
-                        {...f}
-                        className="h-11"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.url`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="url"
-                        placeholder={outputsT("exampleOutputUrlPlaceholder")}
-                        {...f}
-                        className="h-11 font-mono text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.mimeType`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={outputsT("exampleOutputMimePlaceholder")}
-                        {...f}
-                        className="h-11"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => remove(index)}
-              className="absolute top-2 right-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function PricingFields({
-    form: pricingForm,
-    t: pricingT,
-  }: {
-    form: ReturnType<typeof useForm<RegisterAgentFormType>>;
-    t: (key: string) => string;
-  }) {
-    const { fields, append, remove } = useFieldArray({
-      control: pricingForm.control,
-      name: "prices",
-    });
-    const isFree = pricingForm.watch("isFree");
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <FormLabel>{pricingT("prices")}</FormLabel>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isFree}
-            onClick={() => append({ amount: "" })}
-          >
-            {pricingT("addPrice")}
-          </Button>
-        </div>
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2 items-start">
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm shrink-0">
-                {CURRENCY_SYMBOL}
-              </span>
-              <FormField
-                control={pricingForm.control}
-                name={`prices.${index}.amount`}
-                render={({ field: amountField }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        disabled={isFree}
-                        {...amountField}
-                        className="h-11"
-                        onChange={(e) => amountField.onChange(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            {fields.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={isFree}
-                onClick={() => remove(index)}
-                className="shrink-0 mt-2"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {pricingForm.formState.errors.prices && (
-          <p className="text-sm text-destructive">
-            {pricingForm.formState.errors.prices.message}
-          </p>
-        )}
-      </div>
-    );
-  }
 
   const [isLoading, setIsLoading] = useState(false);
   const [tagInput, setTagInput] = useState("");
