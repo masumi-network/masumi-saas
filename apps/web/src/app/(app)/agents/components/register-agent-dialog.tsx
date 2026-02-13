@@ -1,7 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, ChevronRight, Link2, Trash2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Link2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
@@ -32,6 +39,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { agentApiClient } from "@/lib/api/agent.client";
 import {
   AGENT_ICON_PRESET_KEYS,
@@ -40,8 +52,6 @@ import {
   isPresetIconKey,
 } from "@/lib/constants/agent-icons";
 import { cn } from "@/lib/utils";
-
-import { AgentIcon } from "./agent-icon";
 
 const CURRENCY_SYMBOL = "$";
 
@@ -509,19 +519,17 @@ export function RegisterAgentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center gap-2 mb-3">
-                      <AgentIcon
-                        icon={field.value}
-                        name="Icon"
-                        className="h-4 w-4 shrink-0 text-primary"
-                        onLoadError={() =>
-                          form.setError("icon", {
-                            message: t("iconLoadError"),
-                          })
-                        }
-                      />
                       <FormLabel className="text-base font-medium">
                         {t("icon")}
                       </FormLabel>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                            <CircleHelp className="h-4 w-4" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("iconTooltip")}</TooltipContent>
+                      </Tooltip>
                     </div>
                     <Card className="min-w-0 overflow-hidden border-border/80 bg-muted-surface">
                       <CardContent className="min-w-0 space-y-4">

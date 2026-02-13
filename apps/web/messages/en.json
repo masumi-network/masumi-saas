@@ -418,6 +418,7 @@
         "iconCustomUrlPlaceholder": "https://example.com/icon.svg",
         "iconClear": "Clear selection",
         "iconLoadError": "Failed to load icon. Please check the URL and try again.",
+        "iconTooltip": "The icon represents your agent in the marketplace and across the Masumi network.",
         "scrollLeft": "Scroll left",
         "scrollRight": "Scroll right",
         "name": "Name",
