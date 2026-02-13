@@ -443,7 +443,13 @@ export function TwoFactorSection() {
               {t("setup.manualKey")}
             </summary>
             <code className="mt-2 block rounded bg-muted px-3 py-2 text-xs font-mono break-all">
-              {totpURI.match(/secret=([^&]+)/)?.[1] || ""}
+              {(() => {
+                try {
+                  return new URL(totpURI).searchParams.get("secret") ?? "";
+                } catch {
+                  return "";
+                }
+              })()}
             </code>
           </details>
 
