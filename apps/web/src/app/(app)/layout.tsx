@@ -30,13 +30,15 @@ export default async function AppLayout({
       className="flex max-w-svw overflow-clip"
     >
       <Sidebar session={authContext.session} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-clip">
+      <div className="flex min-w-0 flex-1 flex-col min-h-0">
         <Header />
-        <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-          {children}
-        </main>
-        <div className="max-w-container mx-auto w-full">
-          <FooterSections className="p-4" />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+            {children}
+          </main>
+          <div className="max-w-container mx-auto w-full">
+            <FooterSections className="p-4" />
+          </div>
         </div>
       </div>
     </SidebarProvider>
