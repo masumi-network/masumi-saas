@@ -1,15 +1,9 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +11,6 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
-import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
@@ -25,55 +18,49 @@ import { RegisterAgentDialog } from "./register-agent-dialog";
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchAgents = useCallback(async () => {
-    const result = await agentApiClient.getAgents();
-    if (result.success && result.data) {
-      setAgents(result.data);
-      setFetchError(null);
-      return result.data;
-    } else {
-      setFetchError(
-        result.success === false ? result.error : "Failed to load agents",
-      );
-      return null;
+  const PAGE_SIZE = 10;
+
+  const loadPage = async (cursorId?: string) => {
+    const result = await agentApiClient.getAgents(undefined, {
+      cursorId,
+      take: PAGE_SIZE,
+    });
+    if (result.success) {
+      return { data: result.data, nextCursor: result.nextCursor };
     }
-  }, []);
+    return null;
+  };
 
   useEffect(() => {
     startTransition(async () => {
-      await fetchAgents();
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
+      }
       setIsLoading(false);
     });
-  }, [fetchAgents]);
-
-  const agentIdFromUrl = searchParams.get("agentId");
-  const agentFromUrl = useMemo(() => {
-    if (!agentIdFromUrl) return null;
-    return agents.find((a) => a.id === agentIdFromUrl) || null;
-  }, [agents, agentIdFromUrl]);
-
-  const dialogAgent = selectedAgent ?? agentFromUrl;
+  }, []);
 
   const filteredAgents = useMemo(() => {
     let filtered = [...agents];
 
     if (activeTab === "verified") {
       filtered = filtered.filter(
-        (agent) => agent.verificationStatus === "APPROVED",
+        (agent) => agent.verificationStatus === "VERIFIED",
       );
     } else if (activeTab === "unverified") {
       filtered = filtered.filter(
-        (agent) => agent.verificationStatus !== "APPROVED",
+        (agent) => agent.verificationStatus !== "VERIFIED",
       );
     }
 
@@ -98,26 +85,33 @@ export function AgentsContent() {
 
   const handleRegisterSuccess = () => {
     startTransition(async () => {
-      await fetchAgents();
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
+      }
     });
   };
 
   const handleDeleteSuccess = () => {
     startTransition(async () => {
-      await fetchAgents();
+      const page = await loadPage();
+      if (page) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
+      }
     });
-    setSelectedAgent(null);
   };
 
-  const handleVerificationSuccess = () => {
-    const currentAgentId = dialogAgent?.id;
-    if (!currentAgentId) return;
-    startTransition(async () => {
-      const data = await fetchAgents();
-      if (data) {
-        const updated = data.find((a) => a.id === currentAgentId);
-        if (updated) setSelectedAgent(updated);
+  const handleLoadMore = () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    loadPage(nextCursor).then((page) => {
+      if (page) {
+        setAgents((prev) => [...prev, ...page.data]);
+        setNextCursor(page.nextCursor);
       }
+      setIsLoadingMore(false);
     });
   };
 
@@ -141,13 +135,8 @@ export function AgentsContent() {
       <div className="space-y-6">
         <Tabs
           tabs={tabs}
-          activeTab={
-            tabs.find((tab) => tab.key === activeTab)?.name || tabs[0]!.name
-          }
-          onTabChange={(tabName) => {
-            const tab = tabs.find((t) => t.name === tabName);
-            if (tab) setActiveTab(tab.key);
-          }}
+          activeTab={activeTab}
+          onTabChange={(key) => setActiveTab(key)}
         />
 
         <div className="flex items-center justify-between gap-4">
@@ -165,7 +154,11 @@ export function AgentsContent() {
             <RefreshButton
               onRefresh={() => {
                 startTransition(async () => {
-                  await fetchAgents();
+                  const page = await loadPage();
+                  if (page) {
+                    setAgents(page.data);
+                    setNextCursor(page.nextCursor);
+                  }
                 });
               }}
               size="md"
@@ -192,34 +185,27 @@ export function AgentsContent() {
 
         {isLoading ? (
           <AgentsTableSkeleton />
-        ) : fetchError && agents.length === 0 ? (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center space-y-3">
-            <p className="text-sm text-destructive font-medium">{fetchError}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFetchError(null);
-                setIsLoading(true);
-                startTransition(async () => {
-                  await fetchAgents();
-                  setIsLoading(false);
-                });
-              }}
-            >
-              {t("retry") ?? "Retry"}
-            </Button>
-          </div>
         ) : (
           <>
             <AgentsTable
               agents={filteredAgents}
               onAgentClick={(agent) => {
-                setSelectedAgent(agent);
-                router.push(`/agents?agentId=${agent.id}`);
+                router.push(`/agents/${agent.id}`);
               }}
               onDeleteSuccess={handleDeleteSuccess}
             />
+
+            {nextCursor && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? t("loadingMore") : t("loadMore")}
+                </Button>
+              </div>
+            )}
 
             {filteredAgents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -242,16 +228,6 @@ export function AgentsContent() {
         open={isRegisterDialogOpen}
         onClose={() => setIsRegisterDialogOpen(false)}
         onSuccess={handleRegisterSuccess}
-      />
-
-      <AgentDetailsDialog
-        agent={dialogAgent}
-        onClose={() => {
-          setSelectedAgent(null);
-          router.replace("/agents");
-        }}
-        onDeleteSuccess={handleDeleteSuccess}
-        onVerificationSuccess={handleVerificationSuccess}
       />
     </>
   );

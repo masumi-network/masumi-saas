@@ -18,7 +18,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
+
+import {
+  getRegistrationStatusBadgeVariant,
+  getRegistrationStatusKey,
+} from "./agent-utils";
 
 interface AgentsTableProps {
   agents: Agent[];
@@ -26,31 +30,13 @@ interface AgentsTableProps {
   onDeleteSuccess: () => void;
 }
 
-const getStatusBadgeVariant = (
-  status: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null,
-): "default" | "secondary" | "destructive" | "outline" => {
-  if (status === "APPROVED") return "default";
-  if (status === "REJECTED") return "destructive";
-  if (status === "REVIEW") return "default";
-  return "secondary";
-};
-
-const getStatusLabel = (
-  status: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null,
-  t: (key: string) => string,
-): string => {
-  if (status === "APPROVED") return t("status.verified");
-  if (status === "REJECTED") return t("status.rejected");
-  if (status === "REVIEW") return t("status.underReview");
-  return t("status.pending");
-};
-
 export function AgentsTable({
   agents,
   onAgentClick,
   onDeleteSuccess,
 }: AgentsTableProps) {
   const t = useTranslations("App.Agents");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedAgentToDelete, setSelectedAgentToDelete] =
     useState<Agent | null>(null);
@@ -126,13 +112,13 @@ export function AgentsTable({
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={getStatusBadgeVariant(agent.verificationStatus)}
-                    className={cn(
-                      agent.verificationStatus === "APPROVED" &&
-                        "bg-green-500 text-white hover:bg-green-500/80",
+                    variant={getRegistrationStatusBadgeVariant(
+                      agent.registrationState,
                     )}
                   >
-                    {getStatusLabel(agent.verificationStatus, t)}
+                    {tRegistrationStatus(
+                      getRegistrationStatusKey(agent.registrationState),
+                    )}
                   </Badge>
                 </TableCell>
                 <TableCell>

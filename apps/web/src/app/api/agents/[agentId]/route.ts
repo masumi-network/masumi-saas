@@ -1,14 +1,14 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
@@ -49,7 +49,7 @@ export async function DELETE(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({

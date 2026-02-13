@@ -7,6 +7,7 @@
  */
 export interface Credential {
   sad: {
+    d?: string; // Credential SAID (unique credential ID)
     s: string; // Schema SAID
     i: string; // Issuer AID
     a: {

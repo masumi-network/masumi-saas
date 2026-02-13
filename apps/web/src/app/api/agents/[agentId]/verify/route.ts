@@ -2,7 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
   findCredentialBySchema,
@@ -20,7 +20,7 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
     const { agentId } = await params;
 
     // Parse and validate request body
@@ -44,6 +44,9 @@ export async function POST(
       where: {
         id: agentId,
         userId: user.id,
+      },
+      include: {
+        veridianCredentials: true,
       },
     });
 
@@ -75,11 +78,34 @@ export async function POST(
       );
     }
 
+    // KYC status APPROVED means the user's identity is verified
     if (userWithKyc.kycVerification.status !== "APPROVED") {
       return NextResponse.json(
         {
           success: false,
           error: `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Verify AID ownership by checking if we have a credential record for this agent and AID
+    // This ensures the user actually owns the AID (credential was issued with signature verification)
+    const existingCredential = await prisma.veridianCredential.findFirst({
+      where: {
+        agentId: agentId,
+        userId: user.id,
+        aid: aid,
+        status: "ISSUED",
+      },
+    });
+
+    if (!existingCredential) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "No credential found for this agent and AID. Please issue a credential first using the Request Credential dialog.",
         },
         { status: 400 },
       );
@@ -130,7 +156,7 @@ export async function POST(
         );
       }
 
-      credentialId = validationResult.details?.schemaSaid || null;
+      credentialId = selectedCredential.sad?.d || null;
     } catch (error) {
       console.error("Failed to fetch/validate credentials:", error);
       return NextResponse.json(
@@ -142,12 +168,14 @@ export async function POST(
       );
     }
 
+    // Update agent verification status to VERIFIED when credential validation succeeds
+    // The credential has been validated and is valid, so the agent is verified
     const updatedAgent = await prisma.agent.update({
       where: {
         id: agentId,
       },
       data: {
-        verificationStatus: "REVIEW",
+        verificationStatus: "VERIFIED" as const,
         veridianCredentialId: credentialId,
       },
     });

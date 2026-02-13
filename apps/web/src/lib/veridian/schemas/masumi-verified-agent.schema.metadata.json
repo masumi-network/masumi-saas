@@ -1,0 +1,38 @@
+{
+  "title": "Masumi Verified Agent",
+  "description": "Verifiable credential attesting that an AI agent on the Masumi platform has been verified. Issued after the agent owner completes KYC and proves control of the agent's KERI identifier.",
+  "credentialType": "MasumiVerifiedAgentCredential",
+  "version": "1.0.0",
+  "attributes": [
+    {
+      "name": "kycVerificationId",
+      "type": "string",
+      "description": "ID of the KYC verification record for the user who requested verification",
+      "required": true
+    },
+    {
+      "name": "agentId",
+      "type": "string",
+      "description": "Masumi agent ID (platform identifier)",
+      "required": true
+    },
+    {
+      "name": "agentName",
+      "type": "string",
+      "description": "Display name of the verified agent",
+      "required": true
+    },
+    {
+      "name": "agentDescription",
+      "type": "string",
+      "description": "Optional description of the agent",
+      "required": false
+    },
+    {
+      "name": "agentApiUrl",
+      "type": "string",
+      "description": "API URL of the verified agent",
+      "required": true
+    }
+  ]
+}

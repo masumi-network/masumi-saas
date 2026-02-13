@@ -20,12 +20,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions    Session[]
-  accounts    Account[]
-  members     Member[]
-  invitations Invitation[]
-  apikeys     Apikey[]
-  agents      Agent[]
+  sessions            Session[]
+  accounts            Account[]
+  members             Member[]
+  invitations         Invitation[]
+  apikeys             Apikey[]
+  agents              Agent[]
+  veridianCredentials VeridianCredential[]
 
   // Additional fields
   termsAccepted       Boolean @default(false)
@@ -36,7 +37,6 @@ model User {
   // KYC verification (one-to-one)
   kycVerificationId    String?          @unique
   kycVerification      KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
-  veridianCredentialId String? // Placeholder for MAS-226
 
   @@unique([email])
   @@unique([stripeCustomerId])
@@ -55,6 +55,7 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   activeOrganizationId String?
+  activeOrganization   Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
 
   @@unique([token])
   @@map("session")
@@ -99,8 +100,10 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members     Member[]
-  invitations Invitation[]
+  members             Member[]
+  invitations         Invitation[]
+  sessions            Session[]
+  veridianCredentials VeridianCredential[]
 
   stripeCustomerId String?
   invoiceEmail     String?
@@ -210,28 +213,88 @@ enum VerificationStatus {
   APPROVED
   REJECTED
   REVIEW
+  VERIFIED
+  REVOKED
+  EXPIRED
+}
+
+enum RegistrationState {
+  RegistrationRequested
+  RegistrationInitiated
+  RegistrationConfirmed
+  RegistrationFailed
+  DeregistrationRequested
+  DeregistrationInitiated
+  DeregistrationConfirmed
+  DeregistrationFailed
 }
 
 model Agent {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   name        String
   description String
   apiUrl      String
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Registration
+  registrationState RegistrationState @default(RegistrationConfirmed)
+
   // Verification
-  verificationStatus VerificationStatus? @default(PENDING)
+  verificationStatus   VerificationStatus?  @default(PENDING)
   veridianCredentialId String? // Credential ID from Veridian API
-  
+  veridianCredentials  VeridianCredential[] // Credentials issued for this agent
+
   // Metadata
-  tags        String[] @default([])
-  metadata    String?  // JSON string for additional data
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tags     String[] @default([])
+  metadata String? // JSON string for additional data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([verificationStatus])
+  @@index([registrationState])
   @@map("agent")
+}
+
+model VeridianCredential {
+  id             String           @id @default(uuid())
+  credentialId   String // Credential ID from Veridian API (SAID)
+  schemaSaid     String // Schema SAID used for this credential
+  aid            String // KERI identifier (AID) the credential was issued to
+  status         CredentialStatus @default(ISSUED)
+  credentialData String?          @db.Text // JSON string of full credential data
+  attributes     String?          @db.Text // JSON string of credential attributes
+
+  // Relationships
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  agentId        String?
+  agent          Agent?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  // Timestamps
+  issuedAt  DateTime  @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([organizationId])
+  @@index([aid])
+  @@index([schemaSaid])
+  @@index([status])
+  @@index([credentialId])
+  @@map("veridian_credential")
+}
+
+enum CredentialStatus {
+  PENDING
+  ISSUED
+  REVOKED
+  EXPIRED
 }

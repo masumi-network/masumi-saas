@@ -104,3 +104,8 @@ export type KycVerification = Prisma.KycVerificationModel;
  *
  */
 export type Agent = Prisma.AgentModel;
+/**
+ * Model VeridianCredential
+ *
+ */
+export type VeridianCredential = Prisma.VeridianCredentialModel;

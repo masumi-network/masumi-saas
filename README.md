@@ -1,6 +1,6 @@
 # Masumi SaaS
 
-A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth, next-intl, and Sentry.
+Masumi SaaS is a platform for registering, managing, and verifying your AI agents on the Masumi network. Users can register agents, complete identity verification (KYC), manage organizations, and top up or withdraw funds.
 
 ## Tech Stack
 
@@ -17,11 +17,17 @@ A fullstack SaaS boilerplate built with Next.js, Prisma, PostgreSQL, Better Auth
 
 ## Architecture
 
-This project follows the three-layer architecture pattern:
+This project follows an **API-first** architecture with clear separation of concerns:
 
-1. **Repositories** (`packages/database/src/repositories/`) - Database access layer
-2. **Services** (`apps/web/src/lib/services/`) - Business logic coordination
-3. **Actions** (`apps/web/src/lib/actions/`) - Server mutations
+1. **API Clients** (`apps/web/src/lib/api/`) - Client-side and server-side fetch wrappers for API routes
+2. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints that handle auth and delegate to services
+3. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
+4. **Actions** (`apps/web/src/lib/actions/`) - Server actions that call API clients or services
+5. **Types** (`apps/web/src/lib/types/`) - Shared TypeScript types
+
+**Data flow (Option B):** `Action → API Client → API Route → Service → Prisma`
+
+This keeps a single API boundary for dashboard, agents, and other features—enabling client-side fetching, caching, and consistency across the app.
 
 ## Project Structure
 
@@ -32,22 +38,35 @@ masumi-saas/
 │       ├── src/
 │       │   ├── app/           # App Router routes
 │       │   │   ├── (app)/     # Authenticated routes
+│       │   │   │   ├── agents/        # Agent management
+│       │   │   │   ├── organizations/ # Organization management
+│       │   │   │   ├── account/       # User account
+│       │   │   │   ├── onboarding/    # KYC flow
+│       │   │   │   ├── top-up/        # Add funds
+│       │   │   │   └── withdraw/      # Withdraw earnings
 │       │   │   ├── (auth)/    # Authentication routes
-│       │   │   └── api/        # API routes
+│       │   │   └── api/       # API routes
+│       │   │       ├── agents/        # Agent CRUD
+│       │   │       ├── dashboard/     # Dashboard overview
+│       │   │       ├── credentials/   # Veridian credentials
+│       │   │       └── webhooks/      # External webhooks
 │       │   ├── components/    # UI components
-│       │   ├── lib/            # Domain logic
+│       │   ├── lib/
 │       │   │   ├── actions/   # Server actions
+│       │   │   ├── api/       # API clients (agent, dashboard, credential)
 │       │   │   ├── services/  # Business logic
+│       │   │   ├── types/     # Shared types
 │       │   │   ├── schemas/   # Zod schemas
 │       │   │   └── auth/      # Better Auth setup
-│       └── messages/           # i18n messages
+│       │   └── ...
+│       └── messages/          # i18n messages
 ├── packages/
 │   └── database/              # Shared database layer
-│       ├── src/
-│       │   ├── repositories/  # Prisma access layer
-│       │   └── client.ts      # Prisma client
-│       └── prisma/
-│           └── schema.prisma  # Database schema
+│       ├── prisma/
+│       │   ├── schema.prisma  # Database schema
+│       │   └── migrations/
+│       └── src/
+│           └── client.ts     # Prisma client
 └── package.json               # Root workspace config
 ```
 
@@ -77,6 +96,11 @@ masumi-saas/
    - **BETTER_AUTH_URL**: Your application's base URL
      - For local development: `http://localhost:3000`
      - For production: Your production domain (e.g., `https://yourdomain.com`)
+
+   - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
+     - For local development: `http://localhost:3000`
+     - For production: Your production domain (e.g., `https://yourdomain.com`)
+     - Used when server actions fetch from API routes; falls back to request headers if not set
 
    - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
      - Get one from [Postmark](https://postmarkapp.com/)
@@ -109,12 +133,19 @@ masumi-saas/
 
    - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional, for agent verification)
      - For local development: `http://localhost:3001`
-     - For production: Your deployed credential server URL (e.g., `https://cred-issuance-production.up.railway.app`)
+     - For production: Your deployed credential server URL (e.g., `https://cred-issuance.yourdomain.com` or `https://cred-issuance-production.up.railway.app`)
      - Required for Veridian wallet integration and agent verification features
 
-   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (optional)
-     - Defaults to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema)
-     - Override if using a different credential schema for agent verification
+   - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, for signature verification)
+     - For local development: `http://localhost:3901` (use the connect URL, not the boot URL)
+     - For production: Your deployed KERIA connect URL (e.g., `https://keria.yourdomain.com`)
+     - **Important**: Use the connect URL (port 3901), not the boot URL (port 3903)
+     - Required for cryptographic signature verification when issuing credentials
+
+   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
+     - The credential schema SAID to use for agent verification credentials
+     - Must match a schema registered in your Veridian credential server
+     - Can default to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema) if not set
 
 3. **Configure Sumsub Webhook** (required for automatic status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
@@ -149,12 +180,16 @@ masumi-saas/
 - ✅ User authentication (email/password, forgot password)
 - ✅ Organization management (multi-tenant)
 - ✅ API key management
+- ✅ **Dashboard** – Overview with balance, agents, organizations; Top up & Withdraw
+- ✅ **AI Agent management** – Register, verify, and manage agents on the Masumi network
+- ✅ **KYC/KYB** – Identity verification via Sumsub
+- ✅ **Veridian integration** – Cryptographic credentials for agent verification
 - ✅ Cookie consent banner
 - ✅ Error tracking with Sentry
 - ✅ Dark/light theme (auto-detect)
 - ✅ Responsive design
 - ✅ Server-side rendering with Suspense
-- ✅ Three-layer architecture (repositories/services/actions)
+- ✅ API-first architecture (actions → API clients → API routes → services)
 
 ## Scripts
 

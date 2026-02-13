@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +29,6 @@ export function AgentVerificationCard({
   onVerificationSuccess,
 }: AgentVerificationCardProps) {
   const t = useTranslations("App.Agents.Details.Verification");
-  const tStatus = useTranslations("App.Agents");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
@@ -58,25 +56,25 @@ export function AgentVerificationCard({
       description: t("pending.description"),
       showButton: true,
     },
-    REVIEW: {
-      icon: Clock,
-      iconColor: "text-primary",
-      title: t("review.title"),
-      description: t("review.description"),
-      showButton: false,
-    },
-    APPROVED: {
+    VERIFIED: {
       icon: ShieldCheck,
       iconColor: "text-green-500",
-      title: t("approved.title"),
-      description: t("approved.description"),
+      title: t("verified.title"),
+      description: t("verified.description"),
       showButton: false,
     },
-    REJECTED: {
+    REVOKED: {
       icon: XCircle,
       iconColor: "text-destructive",
-      title: t("rejected.title"),
-      description: t("rejected.description"),
+      title: t("revoked.title"),
+      description: t("revoked.description"),
+      showButton: true,
+    },
+    EXPIRED: {
+      icon: Clock,
+      iconColor: "text-orange-500",
+      title: t("expired.title"),
+      description: t("expired.description"),
       showButton: true,
     },
   };
@@ -88,34 +86,9 @@ export function AgentVerificationCard({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Icon className={cn("h-5 w-5", config.iconColor)} />
-            <CardTitle className="text-sm font-medium">
-              {config.title}
-            </CardTitle>
-          </div>
-          <Badge
-            variant={
-              status === "APPROVED"
-                ? "default"
-                : status === "REJECTED"
-                  ? "destructive"
-                  : "secondary"
-            }
-            className={cn(
-              status === "APPROVED" &&
-                "bg-green-500 text-white hover:bg-green-500/80",
-            )}
-          >
-            {status === "APPROVED"
-              ? tStatus("status.approvedValue")
-              : status === "REJECTED"
-                ? tStatus("status.rejectedValue")
-                : status === "REVIEW"
-                  ? tStatus("status.reviewValue")
-                  : tStatus("status.pendingValue")}
-          </Badge>
+        <div className="flex items-center gap-2">
+          <Icon className={cn("h-5 w-5", config.iconColor)} />
+          <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
         </div>
         <CardDescription className="mt-2">{config.description}</CardDescription>
       </CardHeader>

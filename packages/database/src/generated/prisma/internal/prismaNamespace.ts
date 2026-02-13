@@ -424,6 +424,7 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  VeridianCredential: "VeridianCredential",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -457,7 +458,8 @@ export type TypeMap<
       | "apikey"
       | "rateLimit"
       | "kycVerification"
-      | "agent";
+      | "agent"
+      | "veridianCredential";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -1373,6 +1375,82 @@ export type TypeMap<
         };
       };
     };
+    VeridianCredential: {
+      payload: Prisma.$VeridianCredentialPayload<ExtArgs>;
+      fields: Prisma.VeridianCredentialFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.VeridianCredentialFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.VeridianCredentialFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        findFirst: {
+          args: Prisma.VeridianCredentialFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.VeridianCredentialFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        findMany: {
+          args: Prisma.VeridianCredentialFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>[];
+        };
+        create: {
+          args: Prisma.VeridianCredentialCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        createMany: {
+          args: Prisma.VeridianCredentialCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.VeridianCredentialCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>[];
+        };
+        delete: {
+          args: Prisma.VeridianCredentialDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        update: {
+          args: Prisma.VeridianCredentialUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        deleteMany: {
+          args: Prisma.VeridianCredentialDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.VeridianCredentialUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.VeridianCredentialUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>[];
+        };
+        upsert: {
+          args: Prisma.VeridianCredentialUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VeridianCredentialPayload>;
+        };
+        aggregate: {
+          args: Prisma.VeridianCredentialAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVeridianCredential>;
+        };
+        groupBy: {
+          args: Prisma.VeridianCredentialGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.VeridianCredentialGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.VeridianCredentialCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.VeridianCredentialCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -1426,7 +1504,6 @@ export const UserScalarFieldEnum = {
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
   kycVerificationId: "kycVerificationId",
-  veridianCredentialId: "veridianCredentialId",
 } as const;
 
 export type UserScalarFieldEnum =
@@ -1586,6 +1663,7 @@ export const AgentScalarFieldEnum = {
   description: "description",
   apiUrl: "apiUrl",
   userId: "userId",
+  registrationState: "registrationState",
   verificationStatus: "verificationStatus",
   veridianCredentialId: "veridianCredentialId",
   tags: "tags",
@@ -1596,6 +1674,27 @@ export const AgentScalarFieldEnum = {
 
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const VeridianCredentialScalarFieldEnum = {
+  id: "id",
+  credentialId: "credentialId",
+  schemaSaid: "schemaSaid",
+  aid: "aid",
+  status: "status",
+  credentialData: "credentialData",
+  attributes: "attributes",
+  userId: "userId",
+  agentId: "agentId",
+  organizationId: "organizationId",
+  issuedAt: "issuedAt",
+  expiresAt: "expiresAt",
+  revokedAt: "revokedAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type VeridianCredentialScalarFieldEnum =
+  (typeof VeridianCredentialScalarFieldEnum)[keyof typeof VeridianCredentialScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
@@ -1705,6 +1804,32 @@ export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
   "BigInt[]"
 >;
+
+/**
+ * Reference to a field of type 'RegistrationState'
+ */
+export type EnumRegistrationStateFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "RegistrationState">;
+
+/**
+ * Reference to a field of type 'RegistrationState[]'
+ */
+export type ListEnumRegistrationStateFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "RegistrationState[]">;
+
+/**
+ * Reference to a field of type 'CredentialStatus'
+ */
+export type EnumCredentialStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "CredentialStatus"
+>;
+
+/**
+ * Reference to a field of type 'CredentialStatus[]'
+ */
+export type ListEnumCredentialStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "CredentialStatus[]">;
 
 /**
  * Reference to a field of type 'Float'
@@ -1821,6 +1946,7 @@ export type GlobalOmitConfig = {
   rateLimit?: Prisma.RateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
+  veridianCredential?: Prisma.VeridianCredentialOmit;
 };
 
 /* Types for Logging */

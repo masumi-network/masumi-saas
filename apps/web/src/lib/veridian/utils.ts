@@ -40,7 +40,7 @@ export function formatCredential(credential: Credential): FormattedCredential {
     "Unknown Credential Type";
   const credentialTitle = credential.schema?.title || "";
   const issueeId = credential.sad?.a?.i || "";
-  const issueeAid = credential.sad?.i || "";
+  const issueeAid = credential.sad?.a?.i || "";
   const issuanceDateTime = credential.sad?.a?.dt || "";
   const credentialStatusRegistry = credential.sad?.ri || "";
 

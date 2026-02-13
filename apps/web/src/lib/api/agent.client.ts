@@ -6,13 +6,26 @@ type Agent = {
   description: string;
   apiUrl: string;
   tags: string[];
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
+  registrationState:
+    | "RegistrationRequested"
+    | "RegistrationInitiated"
+    | "RegistrationConfirmed"
+    | "RegistrationFailed"
+    | "DeregistrationRequested"
+    | "DeregistrationInitiated"
+    | "DeregistrationConfirmed"
+    | "DeregistrationFailed";
+  verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
 type ApiResponse<T> =
   | { success: true; data: T }
+  | { success: false; error: string };
+
+export type GetAgentsResult =
+  | { success: true; data: Agent[]; nextCursor: string | null }
   | { success: false; error: string };
 
 class AgentApiClient {
@@ -50,10 +63,18 @@ class AgentApiClient {
     }
   }
 
-  async getAgents(filters?: {
-    verificationStatus?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
-    unverified?: boolean;
-  }): Promise<ApiResponse<Agent[]>> {
+  async getAgents(
+    filters?: {
+      verificationStatus?:
+        | "PENDING"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
+        | null;
+      unverified?: boolean;
+    },
+    options?: { cursorId?: string; take?: number },
+  ): Promise<GetAgentsResult> {
     const params = new URLSearchParams();
     if (filters?.verificationStatus !== undefined) {
       params.set("verificationStatus", filters.verificationStatus || "");
@@ -61,9 +82,43 @@ class AgentApiClient {
     if (filters?.unverified) {
       params.set("unverified", "true");
     }
+    if (options?.cursorId) {
+      params.set("cursor", options.cursorId);
+    }
+    if (options?.take !== undefined) {
+      params.set("take", String(options.take));
+    }
 
     const queryString = params.toString();
-    return this.request<Agent[]>(queryString ? `?${queryString}` : "");
+    const url = queryString ? `?${queryString}` : "";
+    try {
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await response.json()) as
+        | { success: true; data: Agent[]; nextCursor: string | null }
+        | { success: false; error: string };
+      if (!response.ok) {
+        return {
+          success: false,
+          error: json.success === false ? json.error : "Request failed",
+        };
+      }
+      if (json.success) {
+        return {
+          success: true,
+          data: json.data,
+          nextCursor: json.nextCursor ?? null,
+        };
+      }
+      return { success: false, error: "Request failed" };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Network error occurred",
+      };
+    }
   }
 
   async getAgent(agentId: string): Promise<ApiResponse<Agent>> {

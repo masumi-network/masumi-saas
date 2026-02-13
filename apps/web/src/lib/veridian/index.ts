@@ -5,10 +5,15 @@
 
 // Client functions
 export {
+  checkContactExists,
   fetchContactCredentials,
+  fetchKeyState,
   getAgentVerificationSchemaSaid,
   getCredentialServerUrl,
-  requestDisclosure,
+  getIssuerOobi,
+  issueCredential,
+  resolveOobi,
+  verifyKeriSignature,
 } from "./client";
 
 // Utility functions

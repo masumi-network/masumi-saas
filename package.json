@@ -24,6 +24,7 @@
     "prisma:migrate:deploy": "pnpm --filter @masumi/database prisma:migrate:deploy",
     "prisma:migrate:reset": "pnpm --filter @masumi/database prisma:migrate:reset",
     "prisma:studio": "pnpm --filter @masumi/database prisma:studio",
+    "create:agent-verification-schema": "node scripts/create-agent-verification-schema.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

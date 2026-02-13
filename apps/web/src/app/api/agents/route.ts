@@ -1,76 +1,90 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
-import { getAuthenticatedHeaders } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
-
-const querySchema = z.object({
-  verificationStatus: z
-    .enum(["APPROVED", "PENDING", "REJECTED", "REVIEW"])
-    .optional(),
-  unverified: z.enum(["true", "false"]).optional(),
-});
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
-    const rawParams = Object.fromEntries(
-      request.nextUrl.searchParams.entries(),
+    const searchParams = request.nextUrl.searchParams;
+    const verificationStatus = searchParams.get("verificationStatus") as
+      | "PENDING"
+      | "VERIFIED"
+      | "REVOKED"
+      | "EXPIRED"
+      | null;
+    const unverified = searchParams.get("unverified") === "true";
+    const cursorId = searchParams.get("cursor") ?? undefined;
+    const take = Math.min(
+      Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
+      50,
     );
-    const queryValidation = querySchema.safeParse(rawParams);
-    if (!queryValidation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryValidation.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
-    }
-
-    const { verificationStatus, unverified } = queryValidation.data;
 
     const where: {
       userId: string;
       verificationStatus?:
-        | { not?: "APPROVED" }
-        | "APPROVED"
+        | { not: "VERIFIED" }
         | "PENDING"
-        | "REJECTED"
-        | "REVIEW";
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
+        | null;
     } = {
       userId: user.id,
     };
 
-    if (unverified === "true") {
-      where.verificationStatus = { not: "APPROVED" };
-    } else if (verificationStatus) {
-      where.verificationStatus = verificationStatus;
+    if (unverified) {
+      where.verificationStatus = {
+        not: "VERIFIED" as const,
+      };
+    } else if (verificationStatus !== null) {
+      where.verificationStatus = verificationStatus as
+        | "PENDING"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
+        | null;
     }
 
     const agents = await prisma.agent.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: take + 1,
+      ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
     });
+
+    const hasMore = agents.length > take;
+    const page = hasMore ? agents.slice(0, take) : agents;
+    const nextCursor =
+      hasMore && page.length > 0 ? page[page.length - 1]!.id : null;
 
     return NextResponse.json({
       success: true,
-      data: agents,
+      data: page,
+      nextCursor,
     });
   } catch (error) {
     console.error("Failed to get agents:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to get agents" },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get agents",
+      },
       { status: 500 },
     );
   }
 }
 
+// TODO: Replace with on-chain registration + signed data; this flow currently
+// creates the agent in DB and sets registrationState to RegistrationConfirmed
+// without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedHeaders();
+    const { user } = await getAuthenticatedOrThrow();
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -100,7 +114,7 @@ export async function POST(request: NextRequest) {
         apiUrl,
         tags: tagsArray,
         userId: user.id,
-        verificationStatus: "PENDING",
+        registrationState: "RegistrationConfirmed",
       },
     });
 
@@ -111,7 +125,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Failed to register agent:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to register agent" },
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to register agent",
+      },
       { status: 500 },
     );
   }

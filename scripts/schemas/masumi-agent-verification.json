@@ -1,0 +1,74 @@
+{
+  "$id": "ECMnkFkXKKW1EgW44kUXHXSwMY0o5GwdPciHLmHhbZT3",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Masumi Agent Verification",
+  "description": "Verifies that the holder has been verified as the operator of the given AI agent on the Masumi platform.",
+  "type": "object",
+  "credentialType": "MasumiAgentVerificationCredential",
+  "version": "1.0.0",
+  "properties": {
+    "v": {
+      "description": "Version",
+      "type": "string"
+    },
+    "d": {
+      "description": "Credential SAID",
+      "type": "string"
+    },
+    "u": {
+      "description": "One time use nonce",
+      "type": "string"
+    },
+    "i": {
+      "description": "Issuee AID",
+      "type": "string"
+    },
+    "ri": {
+      "description": "Credential status registry",
+      "type": "string"
+    },
+    "s": {
+      "description": "Schema SAID",
+      "type": "string"
+    },
+    "a": {
+      "oneOf": [
+        {
+          "description": "Attributes block SAID",
+          "type": "string"
+        },
+        {
+          "description": "Attributes block",
+          "type": "object",
+          "properties": {
+            "d": {
+              "description": "Attributes block SAID",
+              "type": "string"
+            },
+            "i": {
+              "description": "Issuee AID",
+              "type": "string"
+            },
+            "dt": {
+              "description": "Issuance date time",
+              "type": "string",
+              "format": "date-time"
+            },
+            "agentId": {
+              "description": "The Masumi agent ID that was verified",
+              "type": "string"
+            },
+            "agentName": {
+              "description": "Human-readable name of the agent",
+              "type": "string"
+            }
+          },
+          "additionalProperties": true,
+          "required": ["i", "dt", "agentId"]
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": ["i", "ri", "s", "d"]
+}
