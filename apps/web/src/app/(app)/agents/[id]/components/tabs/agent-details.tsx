@@ -7,6 +7,7 @@ import {
   Fingerprint,
   Link2,
   ShieldCheck,
+  Tag,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -101,7 +102,7 @@ export function AgentDetails({
             {agent.summary && (
               <>
                 <div className="flex gap-3">
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-muted-foreground mb-1">
                       {t("summary")}
