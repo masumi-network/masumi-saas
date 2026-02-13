@@ -33,8 +33,8 @@ export function getVerificationStatusKey(
 
 export function getVerificationStatusBadgeVariant(
   status: Agent["verificationStatus"],
-): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "VERIFIED") return "default";
+): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
+  if (status === "VERIFIED") return "outline-muted";
   if (status === "REVOKED" || status === "EXPIRED") return "destructive";
   return "secondary";
 }
@@ -72,8 +72,8 @@ const REGISTRATION_STATUS_KEYS: Record<
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
-): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "RegistrationConfirmed") return "default";
+): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
+  if (status === "RegistrationConfirmed") return "outline-muted";
   if (status.includes("Failed")) return "destructive";
   if (status.includes("Initiated")) return "secondary";
   if (status.includes("Requested")) return "secondary";

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Steps } from "@/components/ui/steps";
 
-export default function OnboardingLoading() {
+export default function VerificationLoading() {
   const steps = [
     {
       title: "Introduction & Consent",
@@ -28,8 +28,8 @@ export default function OnboardingLoading() {
       <div className="max-w-3xl space-y-8">
         <Steps currentStep={1} steps={steps} />
 
-        <Card>
-          <CardHeader>
+        <Card className="overflow-hidden pt-0">
+          <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-72 mt-2" />
           </CardHeader>

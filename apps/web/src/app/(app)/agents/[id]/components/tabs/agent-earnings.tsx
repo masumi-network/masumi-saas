@@ -59,9 +59,9 @@ export function AgentEarnings({ agent: _agent }: AgentEarningsProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-3xl">
       <Card className="overflow-hidden gap-0 py-0">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-muted/30 p-6">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
           <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <TrendingUp className="h-4 w-4 text-primary" />
@@ -69,7 +69,6 @@ export function AgentEarnings({ agent: _agent }: AgentEarningsProps) {
             {t("title")}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-sm">{t("timeFrame")}</span>
             <Select
               value={selectedPeriod}
               onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}

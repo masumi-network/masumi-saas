@@ -1,12 +1,4 @@
-import {
-  Bot,
-  Building2,
-  CheckCircle2,
-  ChevronRight,
-  Key,
-  ShieldCheck,
-  Wallet,
-} from "lucide-react";
+import { Bot, ChevronRight, Key, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -30,6 +22,7 @@ import {
 } from "../../agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
+import { GetStartedCard } from "./get-started-card";
 
 function formatBalance(value: string): string {
   const num = parseFloat(value || "0");
@@ -79,7 +72,7 @@ export default async function DashboardOverview({
   const showStartKycCta = needsKycAction;
 
   return (
-    <div className="space-y-8">
+    <div className="animate-in fade-in duration-300 space-y-8">
       {/* Greeting & subtitle */}
       <div className="space-y-1">
         <h2 className="text-2xl font-light tracking-tight text-foreground">
@@ -97,7 +90,7 @@ export default async function DashboardOverview({
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
         {/* Balance - primary accent, prominent CTA - full width on mobile */}
         <Card
-          className="group relative col-span-2 overflow-hidden rounded-xl bg-gradient-to-br from-[var(--color-masumi-crimson-purple)]/5 to-transparent transition-all hover:shadow-lg hover:shadow-primary/5 lg:col-span-1"
+          className="group relative col-span-2 overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 lg:col-span-1"
           role="group"
           aria-label={`${t("stats.balance")}: ${formatBalance(balance)}`}
         >
@@ -105,13 +98,10 @@ export default async function DashboardOverview({
             className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-masumi-electric-pink)] transition-colors group-hover:bg-[var(--color-masumi-vivid-sakura)]"
             aria-hidden
           />
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <CardHeader className="space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
+            <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
               {t("stats.balance")}
             </CardTitle>
-            <div className="rounded-lg bg-[var(--color-masumi-electric-pink)]/10 p-2 transition-colors group-hover:bg-[var(--color-masumi-electric-pink)]/20">
-              <Wallet className="h-4 w-4 text-[var(--color-masumi-electric-pink)]" />
-            </div>
           </CardHeader>
           <CardContent>
             <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight">
@@ -121,11 +111,7 @@ export default async function DashboardOverview({
               {t("stats.balanceDescription")}
             </p>
             <div className="flex gap-2">
-              <Button
-                asChild
-                size="sm"
-                className="h-9 bg-[var(--color-masumi-electric-pink)] font-medium text-white hover:bg-[var(--color-masumi-vivid-sakura)]"
-              >
+              <Button asChild size="sm" className="h-9">
                 <Link href="/top-up">{t("stats.topUp")}</Link>
               </Button>
               {parseFloat(balance || "0") <= 0 ? (
@@ -146,14 +132,11 @@ export default async function DashboardOverview({
           href="/agents"
           aria-label={t("stats.agentsCardAria", { count: agentCount })}
         >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <CardHeader className="space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors hover:underline">
                 {t("stats.agents")}
               </CardTitle>
-              <div className="rounded-lg bg-muted p-2 transition-colors group-hover:bg-primary/10">
-                <Bot className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-              </div>
             </CardHeader>
             <CardContent>
               <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
@@ -180,20 +163,17 @@ export default async function DashboardOverview({
             count: organizationCount,
           })}
         >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <CardHeader className="space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors hover:underline">
                 {t("stats.organizations")}
               </CardTitle>
-              <div className="rounded-lg bg-muted p-2 transition-colors group-hover:bg-primary/10">
-                <Building2 className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-              </div>
             </CardHeader>
             <CardContent>
               <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
                 {organizationCount}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-xs">
                 {t("stats.organizationsDescription")}
               </p>
             </CardContent>
@@ -213,7 +193,7 @@ export default async function DashboardOverview({
         <div className="flex items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">{t("startKycPrompt")}</p>
           <Button asChild variant="outline" size="sm">
-            <Link href="/onboarding" className="flex items-center gap-2">
+            <Link href="/verification" className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4" />
               {t("startKyc")}
             </Link>
@@ -223,82 +203,12 @@ export default async function DashboardOverview({
 
       {/* Get started checklist - for new users */}
       {isNewUser && (
-        <Card className="rounded-lg border-amber-500/15 bg-amber-500/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-base">{t("getStarted.title")}</CardTitle>
-            <CardDescription>{t("getStarted.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3">
-                {user.emailVerified ? (
-                  <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
-                ) : (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {t("getStarted.step1")}
-                  </span>
-                )}
-                <span
-                  className={`flex-1 text-sm ${user.emailVerified ? "text-muted-foreground" : ""}`}
-                >
-                  {!user.emailVerified
-                    ? t("getStarted.verifyEmail")
-                    : t("getStarted.verifyEmailDone")}
-                </span>
-                {!user.emailVerified && (
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href="/account">{t("getStarted.doIt")}</Link>
-                  </Button>
-                )}
-              </li>
-              <li className="flex items-center gap-3">
-                {isKycCompleted ? (
-                  <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
-                ) : (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {t("getStarted.step2")}
-                  </span>
-                )}
-                <span
-                  className={`flex-1 text-sm ${isKycCompleted ? "text-muted-foreground" : ""}`}
-                >
-                  {kycError
-                    ? t("kycLoadError")
-                    : needsKycAction
-                      ? t("getStarted.completeKyc")
-                      : t("getStarted.completeKycDone")}
-                </span>
-                {needsKycAction && (
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href="/onboarding">{t("getStarted.doIt")}</Link>
-                  </Button>
-                )}
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                  {t("getStarted.step3")}
-                </span>
-                <span className="flex-1 text-sm">
-                  {t("getStarted.createOrg")}
-                </span>
-                <Button asChild size="sm" variant="ghost">
-                  <Link href="/organizations">{t("getStarted.doIt")}</Link>
-                </Button>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                  {t("getStarted.step4")}
-                </span>
-                <span className="flex-1 text-sm">
-                  {t("getStarted.registerAgent")}
-                </span>
-                <Button asChild size="sm" variant="ghost">
-                  <Link href="/agents">{t("getStarted.doIt")}</Link>
-                </Button>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+        <GetStartedCard
+          user={{ emailVerified: user.emailVerified }}
+          isKycCompleted={isKycCompleted}
+          kycError={kycError}
+          needsKycAction={needsKycAction}
+        />
       )}
 
       {/* Agents and API Keys - same row */}
@@ -308,7 +218,12 @@ export default async function DashboardOverview({
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1.5">
-                <CardTitle>{t("stats.agents")}</CardTitle>
+                <Link
+                  href="/agents"
+                  className="leading-none font-semibold hover:underline"
+                >
+                  {t("stats.agents")}
+                </Link>
                 <CardDescription>
                   {t("agentsSectionDescription")}
                 </CardDescription>
@@ -324,7 +239,6 @@ export default async function DashboardOverview({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* TODO: Make agent rows navigable - wrap each item in Link to /agents/[id] and use agentLinkAria for accessibility */}
             {agents.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
                 <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
@@ -336,17 +250,16 @@ export default async function DashboardOverview({
               <ul className="space-y-3">
                 {agents.map((agent) => (
                   <li key={agent.id}>
-                    <div className="flex items-center justify-between rounded-md border p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                          <Bot className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium">{agent.name}</p>
-                      </div>
+                    <Link
+                      href={`/agents/${agent.id}?from=dashboard`}
+                      aria-label={t("agentLinkAria", { name: agent.name })}
+                      className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <p className="font-medium">{agent.name}</p>
                       <Badge
                         variant={
                           agent.verificationStatus === "VERIFIED"
-                            ? "default"
+                            ? "outline-muted"
                             : getRegistrationStatusBadgeVariant(
                                 agent.registrationState as Agent["registrationState"],
                               )
@@ -361,7 +274,7 @@ export default async function DashboardOverview({
                               ),
                             )}
                       </Badge>
-                    </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -375,7 +288,12 @@ export default async function DashboardOverview({
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1.5">
-                <CardTitle>{t("stats.apiKeys")}</CardTitle>
+                <Link
+                  href="/api-keys"
+                  className="leading-none font-semibold hover:underline"
+                >
+                  {t("stats.apiKeys")}
+                </Link>
                 <CardDescription>
                   {t("apiKeysSectionDescription")}
                 </CardDescription>
@@ -432,26 +350,81 @@ export default async function DashboardOverview({
 export function DashboardOverviewSkeleton() {
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
+      {/* Greeting & subtitle */}
+      <div className="space-y-1">
         <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-96" />
+        <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
+      {/* Stats grid - Balance, Agents, Organizations */}
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
-        <Skeleton className="col-span-2 h-40 rounded-xl lg:col-span-1" />
-        <Skeleton className="h-40 rounded-xl" />
-        <Skeleton className="h-40 rounded-xl" />
+        {/* Balance card */}
+        <Card className="col-span-2 overflow-hidden rounded-xl pt-0 lg:col-span-1">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="mb-1 h-9 w-24" />
+            <Skeleton className="mb-4 h-3 w-32" />
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-20 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+        {/* Agents card */}
+        <Card className="h-full rounded-xl border border-border/80">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <Skeleton className="h-4 w-14" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-9 w-12" />
+            <Skeleton className="mt-1 h-3 w-24" />
+          </CardContent>
+        </Card>
+        {/* Organizations card */}
+        <Card className="h-full rounded-xl border border-border/80">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-9 w-8" />
+            <Skeleton className="mt-1 h-3 w-28" />
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-48" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-32 w-full" />
-        </CardContent>
-      </Card>
+      {/* Agents and API Keys - 2-col grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-24 w-full rounded-md" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

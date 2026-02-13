@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Menu, MessageSquare, Search } from "lucide-react";
+import { BookOpen, MessageSquare, PanelLeftIcon, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -40,9 +40,19 @@ export default function Header({ className }: HeaderProps) {
       >
         <div className="max-w-container mx-auto w-full h-full">
           <div className="h-full px-4 flex items-center justify-between gap-4">
-            <Link href="/" className="md:hidden">
-              <MasumiLogo />
-            </Link>
+            <div className="md:hidden flex items-center gap-2 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 min-w-8"
+              >
+                <PanelLeftIcon className="h-4 w-4" />
+              </Button>
+              <Link href="/" className="flex items-center">
+                <MasumiLogo />
+              </Link>
+            </div>
 
             <div
               className="hidden md:flex w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
@@ -103,14 +113,6 @@ export default function Header({ className }: HeaderProps) {
               <div className="md:hidden">
                 <NotificationsDialog />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-                className="h-8 w-8 min-w-8 md:hidden"
-              >
-                <Menu className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>

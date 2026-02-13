@@ -1,11 +1,16 @@
 "use client";
 
+import type { AgentPricing } from "@/lib/utils";
+
 type Agent = {
   id: string;
   name: string;
   description: string;
   apiUrl: string;
   tags: string[];
+  icon: string | null;
+  agentIdentifier: string | null;
+  pricing: AgentPricing | null;
   registrationState:
     | "RegistrationRequested"
     | "RegistrationInitiated"
@@ -72,6 +77,16 @@ class AgentApiClient {
         | "EXPIRED"
         | null;
       unverified?: boolean;
+      registrationState?:
+        | "RegistrationRequested"
+        | "RegistrationInitiated"
+        | "RegistrationConfirmed"
+        | "RegistrationFailed"
+        | "DeregistrationRequested"
+        | "DeregistrationInitiated"
+        | "DeregistrationConfirmed"
+        | "DeregistrationFailed";
+      registrationStateIn?: string[];
     },
     options?: { cursorId?: string; take?: number },
   ): Promise<GetAgentsResult> {
@@ -81,6 +96,15 @@ class AgentApiClient {
     }
     if (filters?.unverified) {
       params.set("unverified", "true");
+    }
+    if (filters?.registrationState) {
+      params.set("registrationState", filters.registrationState);
+    }
+    if (
+      filters?.registrationStateIn &&
+      filters.registrationStateIn.length > 0
+    ) {
+      params.set("registrationStateIn", filters.registrationStateIn.join(","));
     }
     if (options?.cursorId) {
       params.set("cursor", options.cursorId);
@@ -130,6 +154,18 @@ class AgentApiClient {
     description: string;
     apiUrl: string;
     tags?: string;
+    icon?: string;
+    pricing?: AgentPricing;
+    authorName?: string;
+    authorEmail?: string;
+    organization?: string;
+    contactOther?: string;
+    termsOfUseUrl?: string;
+    privacyPolicyUrl?: string;
+    otherUrl?: string;
+    capabilityName?: string;
+    capabilityVersion?: string;
+    exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
   }): Promise<ApiResponse<Agent>> {
     return this.request<Agent>("", {
       method: "POST",
@@ -141,6 +177,56 @@ class AgentApiClient {
     return this.request<void>(`/${agentId}`, {
       method: "DELETE",
     });
+  }
+
+  async getCounts(): Promise<
+    | {
+        success: true;
+        data: {
+          all: number;
+          registered: number;
+          deregistered: number;
+          pending: number;
+          failed: number;
+          verified: number;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    try {
+      const response = await fetch(`${this.baseUrl}/counts`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await response.json()) as
+        | {
+            success: true;
+            data: {
+              all: number;
+              registered: number;
+              deregistered: number;
+              pending: number;
+              failed: number;
+              verified: number;
+            };
+          }
+        | { success: false; error: string };
+      if (!response.ok) {
+        return {
+          success: false,
+          error: json.success === false ? json.error : "Request failed",
+        };
+      }
+      if (json.success) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: "Request failed" };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Network error occurred",
+      };
+    }
   }
 
   async requestVerification(

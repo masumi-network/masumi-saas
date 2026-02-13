@@ -7,7 +7,6 @@ import {
   Key,
   LayoutDashboard,
   User,
-  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,7 +20,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 interface MenuItemConfig {
   key: string;
@@ -34,6 +35,7 @@ interface MenuItemConfig {
 export default function MenuItems() {
   const t = useTranslations("App.Sidebar.MenuItems");
   const pathname = usePathname();
+  const { isMobile } = useSidebar();
 
   const items: MenuItemConfig[] = [
     {
@@ -54,29 +56,17 @@ export default function MenuItems() {
       label: t("organizations"),
       Icon: Building2,
     },
-    // TODO: Enable when /wallets page is implemented
-    {
-      key: "wallets",
-      href: "/wallets",
-      label: t("wallets"),
-      Icon: Wallet,
-      disabled: true,
-    },
-    // TODO: Enable when /payment-methods page is implemented
     {
       key: "payment-methods",
       href: "/payment-methods",
       label: t("paymentMethods"),
       Icon: CreditCard,
-      disabled: true,
     },
-    // TODO: Enable when API keys page has full list/revoke UI (dashboard already has create)
     {
       key: "api-keys",
       href: "/api-keys",
       label: t("apiKeys"),
       Icon: Key,
-      disabled: true,
     },
     {
       key: "account",
@@ -87,18 +77,23 @@ export default function MenuItems() {
   ];
 
   return (
-    <SidebarGroup className="w-full">
+    <SidebarGroup className={cn("w-full", isMobile && "px-3 py-2")}>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className={cn(isMobile && "flex flex-col gap-1.5")}>
           {items.map(({ key, href, label, Icon, disabled }) => {
-            const isActive = pathname === href;
+            const isActive =
+              pathname === href ||
+              (href !== "/" && pathname.startsWith(href + "/"));
 
             return (
               <SidebarMenuItem key={key}>
                 {disabled ? (
                   <SidebarMenuButton
                     disabled
-                    className="px-4 py-5 opacity-50 cursor-not-allowed"
+                    className={cn(
+                      "opacity-50 cursor-not-allowed",
+                      isMobile ? "px-4 py-3.5 rounded-xl" : "px-4 py-5",
+                    )}
                   >
                     <Icon className="size-4" aria-hidden />
                     <span className="flex-1 truncate">{label}</span>
@@ -113,10 +108,12 @@ export default function MenuItems() {
                       <Link
                         href={href}
                         aria-current={isActive ? "page" : undefined}
-                        className="text-sidebar-text flex w-full items-center gap-2"
+                        className="text-sidebar-text flex w-full items-center gap-3"
                       >
-                        <Icon className="size-4" aria-hidden />
-                        <span className="flex-1 truncate">{label}</span>
+                        <Icon className="size-4 shrink-0" aria-hidden />
+                        <span className="flex-1 truncate font-medium">
+                          {label}
+                        </span>
                       </Link>
                     </SheetClose>
                   </SidebarMenuButton>

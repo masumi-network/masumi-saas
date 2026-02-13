@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Table,
   TableBody,
@@ -18,7 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import {
+  cn,
+  formatPricingDisplay,
+  formatRelativeDate,
+  shortenAddress,
+} from "@/lib/utils";
 
+import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
@@ -78,10 +85,12 @@ export function AgentsTable({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>{t("table.name")}</TableHead>
-              <TableHead>{t("table.description")}</TableHead>
+              <TableHead>{t("table.added")}</TableHead>
+              <TableHead>{t("table.agentId")}</TableHead>
+              <TableHead>{t("table.price")}</TableHead>
               <TableHead>{t("table.apiUrl")}</TableHead>
-              <TableHead>{t("table.status")}</TableHead>
               <TableHead>{t("table.tags")}</TableHead>
+              <TableHead>{t("table.status")}</TableHead>
               <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
                 {t("table.actions")}
               </TableHead>
@@ -94,26 +103,71 @@ export function AgentsTable({
                 className="cursor-pointer hover:bg-muted/50 group"
                 onClick={() => onAgentClick(agent)}
               >
-                <TableCell className="font-medium max-w-48 truncate text-xs sm:text-sm">
-                  {agent.name}
+                <TableCell className="max-w-52">
+                  <div className="text-sm font-medium truncate">
+                    {agent.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {agent.description}
+                  </div>
                 </TableCell>
-                <TableCell className="max-w-48 truncate text-xs sm:text-sm">
-                  {agent.description}
+                <TableCell className="text-xs whitespace-nowrap">
+                  {formatRelativeDate(agent.createdAt)}
                 </TableCell>
-                <TableCell className="font-mono text-xs sm:text-sm max-w-48 truncate">
-                  <Link
-                    href={agent.apiUrl}
-                    target="_blank"
+                <TableCell>
+                  <div
+                    className="text-xs font-mono truncate max-w-44 flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
-                    className="text-xs sm:text-sm hover:underline text-muted-foreground"
                   >
-                    {agent.apiUrl}
-                  </Link>
+                    <span className="truncate">
+                      {shortenAddress(agent.agentIdentifier ?? agent.id, 6)}
+                    </span>
+                    <CopyButton
+                      value={agent.agentIdentifier ?? agent.id}
+                      className="h-7 w-7 shrink-0"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm truncate max-w-32 whitespace-nowrap">
+                  {formatPricingDisplay(agent.pricing)}
+                </TableCell>
+                <TableCell>
+                  <div
+                    className="text-xs font-mono truncate max-w-52 flex items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link
+                      href={agent.apiUrl}
+                      target="_blank"
+                      className="truncate hover:underline text-muted-foreground"
+                    >
+                      {agent.apiUrl}
+                    </Link>
+                    <CopyButton
+                      value={agent.apiUrl}
+                      className="h-7 w-7 shrink-0"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {agent.tags.length > 0 ? (
+                    <Badge variant="secondary" className="truncate">
+                      {t("table.tagCount", { count: agent.tags.length })}
+                    </Badge>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t("table.noTags")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge
                     variant={getRegistrationStatusBadgeVariant(
                       agent.registrationState,
+                    )}
+                    className={cn(
+                      agent.registrationState === "RegistrationConfirmed" &&
+                        "bg-green-50 text-green-700 hover:bg-green-50/80 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
                     )}
                   >
                     {tRegistrationStatus(
@@ -121,29 +175,7 @@ export function AgentsTable({
                     )}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex gap-1 overflow-x-auto">
-                    {agent.tags.slice(0, 3).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="outline"
-                        className="text-xs whitespace-nowrap"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {agent.tags.length > 3 && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs whitespace-nowrap"
-                      >
-                        {"+"}
-                        {agent.tags.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
+                <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -159,18 +191,15 @@ export function AgentsTable({
         </Table>
       </div>
 
-      <ConfirmDialog
+      <DeleteAgentDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setSelectedAgentToDelete(null);
+        }}
         onConfirm={handleDeleteConfirm}
-        title={t("deleteConfirmTitle")}
-        description={t("deleteConfirmDescription", {
-          name: selectedAgentToDelete?.name || "",
-        })}
-        confirmText={t("delete")}
-        cancelText={t("cancel")}
+        agentName={selectedAgentToDelete?.name ?? ""}
         isLoading={isDeleting}
-        variant="destructive"
       />
     </>
   );

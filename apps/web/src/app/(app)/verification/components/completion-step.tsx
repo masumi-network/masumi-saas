@@ -19,7 +19,7 @@ export function CompletionStep({
   rejectionReason,
   kycCompletedAt,
 }: CompletionStepProps) {
-  const t = useTranslations("App.Onboarding.Completion");
+  const t = useTranslations("App.Verification.Completion");
   const tStatus = useTranslations("App.Home.KycStatus");
   const router = useRouter();
 
@@ -94,7 +94,6 @@ export function CompletionStep({
           </div>
           <Button
             onClick={() => {
-              // Refresh to get latest status, then navigate
               router.refresh();
               setTimeout(() => {
                 router.push("/");

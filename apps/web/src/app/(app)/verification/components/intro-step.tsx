@@ -24,7 +24,7 @@ export function IntroStep({
   kycStatus,
   rejectionReason,
 }: IntroStepProps) {
-  const t = useTranslations("App.Onboarding.Intro");
+  const t = useTranslations("App.Verification.Intro");
 
   return (
     <div className="space-y-8">

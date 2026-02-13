@@ -17,7 +17,7 @@ export function SumsubStep({
   onComplete,
   onError,
 }: SumsubStepProps) {
-  const t = useTranslations("App.Onboarding.Verification");
+  const t = useTranslations("App.Verification.Verification");
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

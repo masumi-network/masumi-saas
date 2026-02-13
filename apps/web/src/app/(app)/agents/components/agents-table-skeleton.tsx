@@ -15,48 +15,66 @@ export function AgentsTableSkeleton() {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>
-              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-14" />
             </TableHead>
             <TableHead>
-              <Skeleton className="h-4 w-32" />
-            </TableHead>
-            <TableHead>
-              <Skeleton className="h-4 w-24" />
-            </TableHead>
-            <TableHead>
-              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-12" />
             </TableHead>
             <TableHead>
               <Skeleton className="h-4 w-16" />
             </TableHead>
-            <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
-              <Skeleton className="h-4 w-16 ml-auto" />
+            <TableHead>
+              <Skeleton className="h-4 w-12" />
+            </TableHead>
+            <TableHead>
+              <Skeleton className="h-4 w-14" />
+            </TableHead>
+            <TableHead>
+              <Skeleton className="h-4 w-10" />
+            </TableHead>
+            <TableHead>
+              <Skeleton className="h-4 w-14" />
+            </TableHead>
+            <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
+              <Skeleton className="h-4 w-14 ml-auto" />
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: 5 }).map((_, i) => (
             <TableRow key={i}>
-              <TableCell className="font-medium max-w-48 truncate text-xs sm:text-sm">
-                <Skeleton className="h-4 w-32" />
+              <TableCell className="max-w-52">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
               </TableCell>
-              <TableCell className="max-w-48 truncate text-xs sm:text-sm">
-                <Skeleton className="h-4 w-48" />
+              <TableCell className="text-xs whitespace-nowrap">
+                <Skeleton className="h-4 w-20" />
               </TableCell>
-              <TableCell className="font-mono text-xs sm:text-sm max-w-48 truncate">
-                <Skeleton className="h-4 w-40" />
+              <TableCell>
+                <div className="flex items-center gap-2 max-w-44">
+                  <Skeleton className="h-4 w-24 font-mono shrink-0" />
+                  <Skeleton className="h-7 w-7 shrink-0 rounded" />
+                </div>
+              </TableCell>
+              <TableCell className="max-w-32">
+                <Skeleton className="h-4 w-16" />
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2 max-w-52">
+                  <Skeleton className="h-4 w-36 font-mono shrink-0" />
+                  <Skeleton className="h-7 w-7 shrink-0 rounded" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-14 rounded-full" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-20 rounded-full" />
               </TableCell>
-              <TableCell>
-                <div className="flex gap-1 overflow-x-auto">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </div>
-              </TableCell>
-              <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
-                <Skeleton className="h-8 w-8 ml-auto" />
+              <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
+                <Skeleton className="h-8 w-8 ml-auto rounded" />
               </TableCell>
             </TableRow>
           ))}

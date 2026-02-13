@@ -51,7 +51,7 @@ export async function UserProfileCard() {
       title: t("pending.title"),
       description: t("pending.description"),
       action: t("pending.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
     REVIEW: {
       icon: Clock,
@@ -82,7 +82,7 @@ export async function UserProfileCard() {
       title: t("rejected.title"),
       description: kycRejectionReason || t("rejected.description"),
       action: t("rejected.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
   };
 
@@ -98,8 +98,8 @@ export async function UserProfileCard() {
   const userInitials = getInitials(userName);
 
   return (
-    <Card className="max-w-3xl">
-      <CardHeader>
+    <Card className="max-w-3xl overflow-hidden pt-0">
+      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
             <AvatarImage src={userImage} alt={userName} />
@@ -136,8 +136,8 @@ export async function UserProfileCard() {
 
 export function UserProfileCardSkeleton() {
   return (
-    <Card className="max-w-3xl">
-      <CardHeader>
+    <Card className="max-w-3xl overflow-hidden pt-0">
+      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-12 w-12 rounded-full" />
           <div className="flex w-full gap-4 items-center justify-between">

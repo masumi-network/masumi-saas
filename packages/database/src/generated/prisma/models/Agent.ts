@@ -34,6 +34,8 @@ export type AgentMinAggregateOutputType = {
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   metadata: string | null;
+  icon: string | null;
+  agentIdentifier: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -48,6 +50,8 @@ export type AgentMaxAggregateOutputType = {
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   metadata: string | null;
+  icon: string | null;
+  agentIdentifier: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -63,6 +67,9 @@ export type AgentCountAggregateOutputType = {
   veridianCredentialId: number;
   tags: number;
   metadata: number;
+  icon: number;
+  agentIdentifier: number;
+  pricing: number;
   createdAt: number;
   updatedAt: number;
   _all: number;
@@ -78,6 +85,8 @@ export type AgentMinAggregateInputType = {
   verificationStatus?: true;
   veridianCredentialId?: true;
   metadata?: true;
+  icon?: true;
+  agentIdentifier?: true;
   createdAt?: true;
   updatedAt?: true;
 };
@@ -92,6 +101,8 @@ export type AgentMaxAggregateInputType = {
   verificationStatus?: true;
   veridianCredentialId?: true;
   metadata?: true;
+  icon?: true;
+  agentIdentifier?: true;
   createdAt?: true;
   updatedAt?: true;
 };
@@ -107,6 +118,9 @@ export type AgentCountAggregateInputType = {
   veridianCredentialId?: true;
   tags?: true;
   metadata?: true;
+  icon?: true;
+  agentIdentifier?: true;
+  pricing?: true;
   createdAt?: true;
   updatedAt?: true;
   _all?: true;
@@ -202,6 +216,9 @@ export type AgentGroupByOutputType = {
   veridianCredentialId: string | null;
   tags: string[];
   metadata: string | null;
+  icon: string | null;
+  agentIdentifier: string | null;
+  pricing: runtime.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
   _count: AgentCountAggregateOutputType | null;
@@ -240,6 +257,9 @@ export type AgentWhereInput = {
   veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  pricing?: Prisma.JsonNullableFilter<"Agent">;
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
@@ -257,6 +277,9 @@ export type AgentOrderByWithRelationInput = {
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
+  icon?: Prisma.SortOrderInput | Prisma.SortOrder;
+  agentIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
+  pricing?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
@@ -283,6 +306,9 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
     tags?: Prisma.StringNullableListFilter<"Agent">;
     metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    pricing?: Prisma.JsonNullableFilter<"Agent">;
     createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
@@ -302,6 +328,9 @@ export type AgentOrderByWithAggregationInput = {
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
+  icon?: Prisma.SortOrderInput | Prisma.SortOrder;
+  agentIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
+  pricing?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   _count?: Prisma.AgentCountOrderByAggregateInput;
@@ -335,6 +364,12 @@ export type AgentScalarWhereWithAggregatesInput = {
     | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null;
+  icon?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null;
+  agentIdentifier?:
+    | Prisma.StringNullableWithAggregatesFilter<"Agent">
+    | string
+    | null;
+  pricing?: Prisma.JsonNullableWithAggregatesFilter<"Agent">;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string;
 };
@@ -349,6 +384,9 @@ export type AgentCreateInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
@@ -366,6 +404,9 @@ export type AgentUncheckedCreateInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
@@ -389,6 +430,12 @@ export type AgentUpdateInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
@@ -414,6 +461,12 @@ export type AgentUncheckedUpdateInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
@@ -430,6 +483,9 @@ export type AgentCreateManyInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
@@ -452,6 +508,12 @@ export type AgentUpdateManyMutationInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -475,6 +537,12 @@ export type AgentUncheckedUpdateManyInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -508,6 +576,9 @@ export type AgentCountOrderByAggregateInput = {
   veridianCredentialId?: Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
+  icon?: Prisma.SortOrder;
+  agentIdentifier?: Prisma.SortOrder;
+  pricing?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -522,6 +593,8 @@ export type AgentMaxOrderByAggregateInput = {
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
+  icon?: Prisma.SortOrder;
+  agentIdentifier?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -536,6 +609,8 @@ export type AgentMinOrderByAggregateInput = {
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
+  icon?: Prisma.SortOrder;
+  agentIdentifier?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -686,6 +761,9 @@ export type AgentCreateWithoutUserInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
@@ -701,6 +779,9 @@ export type AgentUncheckedCreateWithoutUserInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
@@ -766,6 +847,9 @@ export type AgentScalarWhereInput = {
   veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  pricing?: Prisma.JsonNullableFilter<"Agent">;
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
 };
@@ -780,6 +864,9 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
@@ -796,6 +883,9 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
@@ -846,6 +936,12 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
@@ -870,6 +966,12 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -884,6 +986,9 @@ export type AgentCreateManyUserInput = {
   veridianCredentialId?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
@@ -906,6 +1011,12 @@ export type AgentUpdateWithoutUserInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
@@ -929,6 +1040,12 @@ export type AgentUncheckedUpdateWithoutUserInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
@@ -952,6 +1069,12 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -1011,6 +1134,9 @@ export type AgentSelect<
     veridianCredentialId?: boolean;
     tags?: boolean;
     metadata?: boolean;
+    icon?: boolean;
+    agentIdentifier?: boolean;
+    pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -1037,6 +1163,9 @@ export type AgentSelectCreateManyAndReturn<
     veridianCredentialId?: boolean;
     tags?: boolean;
     metadata?: boolean;
+    icon?: boolean;
+    agentIdentifier?: boolean;
+    pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -1059,6 +1188,9 @@ export type AgentSelectUpdateManyAndReturn<
     veridianCredentialId?: boolean;
     tags?: boolean;
     metadata?: boolean;
+    icon?: boolean;
+    agentIdentifier?: boolean;
+    pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -1077,6 +1209,9 @@ export type AgentSelectScalar = {
   veridianCredentialId?: boolean;
   tags?: boolean;
   metadata?: boolean;
+  icon?: boolean;
+  agentIdentifier?: boolean;
+  pricing?: boolean;
   createdAt?: boolean;
   updatedAt?: boolean;
 };
@@ -1095,6 +1230,9 @@ export type AgentOmit<
   | "veridianCredentialId"
   | "tags"
   | "metadata"
+  | "icon"
+  | "agentIdentifier"
+  | "pricing"
   | "createdAt"
   | "updatedAt",
   ExtArgs["result"]["agent"]
@@ -1141,6 +1279,9 @@ export type $AgentPayload<
       veridianCredentialId: string | null;
       tags: string[];
       metadata: string | null;
+      icon: string | null;
+      agentIdentifier: string | null;
+      pricing: runtime.JsonValue | null;
       createdAt: Date;
       updatedAt: Date;
     },
@@ -1772,6 +1913,9 @@ export interface AgentFieldRefs {
   readonly veridianCredentialId: Prisma.FieldRef<"Agent", "String">;
   readonly tags: Prisma.FieldRef<"Agent", "String[]">;
   readonly metadata: Prisma.FieldRef<"Agent", "String">;
+  readonly icon: Prisma.FieldRef<"Agent", "String">;
+  readonly agentIdentifier: Prisma.FieldRef<"Agent", "String">;
+  readonly pricing: Prisma.FieldRef<"Agent", "Json">;
   readonly createdAt: Prisma.FieldRef<"Agent", "DateTime">;
   readonly updatedAt: Prisma.FieldRef<"Agent", "DateTime">;
 }

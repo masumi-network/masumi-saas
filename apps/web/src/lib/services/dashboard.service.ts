@@ -53,6 +53,7 @@ export async function getDashboardOverview(
       select: {
         id: true,
         name: true,
+        icon: true,
         registrationState: true,
         verificationStatus: true,
       },
@@ -91,6 +92,7 @@ export async function getDashboardOverview(
   const agentsList = agents.map((a) => ({
     id: a.id,
     name: a.name,
+    icon: a.icon,
     registrationState: a.registrationState,
     verificationStatus: a.verificationStatus,
   }));

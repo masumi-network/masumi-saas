@@ -5,11 +5,11 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs } from "@/components/ui/tabs";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import { AgentPageHeader } from "./agent-page-header";
+import { DeleteAgentDialog } from "./delete-agent-dialog";
 import {
   AgentCredentials,
   AgentDetails,
@@ -53,7 +53,12 @@ export function AgentPageContent({
   const [, startTransition] = useTransition();
 
   const tabParam = searchParams.get("tab");
+  const fromParam = searchParams.get("from");
   const activeTab = isValidTab(tabParam) ? tabParam : DEFAULT_TAB;
+
+  const isFromDashboard = fromParam === "dashboard";
+  const backHref = isFromDashboard ? "/" : "/agents";
+  const backLabel = isFromDashboard ? t("backToDashboard") : undefined;
 
   const tabs = [
     { name: tTabs("detailTabs.details"), key: "details" },
@@ -63,7 +68,9 @@ export function AgentPageContent({
   ];
 
   const handleTabChange = (key: string) => {
-    router.replace(`${pathname}?tab=${key}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", key);
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleDeleteConfirm = () => {
@@ -72,7 +79,7 @@ export function AgentPageContent({
       const result = await agentApiClient.deleteAgent(agent.id);
       if (result.success) {
         toast.success(t("deleteSuccess"));
-        router.push("/agents");
+        router.push(backHref);
       } else {
         toast.error(result.error || t("deleteError"));
         setIsDeleting(false);
@@ -92,7 +99,11 @@ export function AgentPageContent({
   return (
     <>
       <div className="flex flex-col gap-12 pb-3 pt-1">
-        <AgentPageHeader agent={agent} />
+        <AgentPageHeader
+          agent={agent}
+          backHref={backHref}
+          backLabel={backLabel}
+        />
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
@@ -100,6 +111,7 @@ export function AgentPageContent({
         <AgentDetails
           agent={agent}
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
+          onVerificationSuccess={handleVerificationSuccess}
         />
       )}
 
@@ -114,16 +126,12 @@ export function AgentPageContent({
 
       {activeTab === "transactions" && <AgentTransactions agent={agent} />}
 
-      <ConfirmDialog
+      <DeleteAgentDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title={t("deleteConfirmTitle")}
-        description={t("deleteConfirmDescription", { name: agent.name })}
-        confirmText={t("delete")}
-        cancelText={t("cancel")}
+        agentName={agent.name}
         isLoading={isDeleting}
-        variant="destructive"
       />
     </>
   );

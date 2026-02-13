@@ -22,18 +22,18 @@ import { CompletionStep } from "./completion-step";
 import { IntroStep } from "./intro-step";
 import { SumsubStep } from "./sumsub-step";
 
-interface OnboardingWizardProps {
+interface VerificationWizardProps {
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
   rejectionReason?: string | null;
   kycCompletedAt?: Date | null;
 }
 
-export function OnboardingWizard({
+export function VerificationWizard({
   kycStatus,
   rejectionReason,
   kycCompletedAt,
-}: OnboardingWizardProps) {
-  const t = useTranslations("App.Onboarding");
+}: VerificationWizardProps) {
+  const t = useTranslations("App.Verification");
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [consentAccepted, setConsentAccepted] = useState(false);
@@ -79,7 +79,6 @@ export function OnboardingWizard({
   };
 
   const handleVerificationComplete = async () => {
-    // Mark KYC as submitted - webhook will save applicantId and update status
     await markKycAsSubmittedAction();
     setVerificationCompleted(true);
     setCurrentStep(3);
@@ -109,10 +108,10 @@ export function OnboardingWizard({
           <Steps currentStep={currentStep} steps={steps} />
         )}
 
-        <Card>
+        <Card className="overflow-hidden pt-0">
           {isVerificationSubmitted ? (
             <>
-              <CardHeader>
+              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
                 <CardTitle>
                   {kycStatus === "REVIEW"
                     ? t("Completion.processingTitle")
@@ -135,7 +134,7 @@ export function OnboardingWizard({
             </>
           ) : (
             <>
-              <CardHeader>
+              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
                 <CardTitle>{steps[currentStep - 1]?.title}</CardTitle>
                 <CardDescription>
                   {steps[currentStep - 1]?.description}

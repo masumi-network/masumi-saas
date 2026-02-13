@@ -84,8 +84,8 @@ export function AgentVerificationCard({
   const Icon = config.icon;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden pt-0">
+      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
         <div className="flex items-center gap-2">
           <Icon className={cn("h-5 w-5", config.iconColor)} />
           <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
@@ -108,7 +108,7 @@ export function AgentVerificationCard({
             </Button>
           ) : (
             <Button variant="primary" className="w-full" asChild>
-              <Link href="/onboarding">{t("completeKyc")}</Link>
+              <Link href="/verification">{t("completeKyc")}</Link>
             </Button>
           )}
         </CardFooter>

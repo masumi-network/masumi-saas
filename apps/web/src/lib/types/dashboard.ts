@@ -27,6 +27,7 @@ export type DashboardOverview = {
   agents: Array<{
     id: string;
     name: string;
+    icon: string | null;
     registrationState: string;
     verificationStatus: string | null;
   }>;

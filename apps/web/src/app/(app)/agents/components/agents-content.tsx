@@ -1,9 +1,15 @@
 "use client";
 
 import { Plus, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +21,49 @@ import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
+const VALID_TABS = [
+  "all",
+  "verified",
+  "registered",
+  "deregistered",
+  "pending",
+  "failed",
+] as const;
+
+function getFiltersForTab(tab: string) {
+  switch (tab) {
+    case "verified":
+      return { verificationStatus: "VERIFIED" as const };
+    case "registered":
+      return { registrationState: "RegistrationConfirmed" as const };
+    case "deregistered":
+      return { registrationState: "DeregistrationConfirmed" as const };
+    case "pending":
+      return {
+        registrationStateIn: [
+          "RegistrationRequested",
+          "DeregistrationRequested",
+        ],
+      };
+    case "failed":
+      return {
+        registrationStateIn: ["RegistrationFailed", "DeregistrationFailed"],
+      };
+    default:
+      return undefined;
+  }
+}
+
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const tabParam = searchParams.get("tab");
+  const activeTab = VALID_TABS.includes(tabParam as (typeof VALID_TABS)[number])
+    ? (tabParam as (typeof VALID_TABS)[number])
+    : "all";
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -29,18 +72,23 @@ export function AgentsContent() {
 
   const PAGE_SIZE = 10;
 
-  const loadPage = async (cursorId?: string) => {
-    const result = await agentApiClient.getAgents(undefined, {
-      cursorId,
-      take: PAGE_SIZE,
-    });
-    if (result.success) {
-      return { data: result.data, nextCursor: result.nextCursor };
-    }
-    return null;
-  };
+  const loadPage = useCallback(
+    async (cursorId?: string) => {
+      const filters = getFiltersForTab(activeTab);
+      const result = await agentApiClient.getAgents(filters, {
+        cursorId,
+        take: PAGE_SIZE,
+      });
+      if (result.success) {
+        return { data: result.data, nextCursor: result.nextCursor };
+      }
+      return null;
+    },
+    [activeTab],
+  );
 
   useEffect(() => {
+    queueMicrotask(() => setIsLoading(true));
     startTransition(async () => {
       const page = await loadPage();
       if (page) {
@@ -49,39 +97,31 @@ export function AgentsContent() {
       }
       setIsLoading(false);
     });
-  }, []);
+  }, [loadPage]);
 
-  const filteredAgents = useMemo(() => {
-    let filtered = [...agents];
-
-    if (activeTab === "verified") {
-      filtered = filtered.filter(
-        (agent) => agent.verificationStatus === "VERIFIED",
+  const displayedAgents = useMemo(() => {
+    if (!searchQuery) return agents;
+    const query = searchQuery.toLowerCase();
+    return agents.filter((agent) => {
+      const matchName = agent.name.toLowerCase().includes(query);
+      const matchDescription = agent.description.toLowerCase().includes(query);
+      const matchApiUrl = agent.apiUrl.toLowerCase().includes(query);
+      const matchTags = agent.tags.some((tag) =>
+        tag.toLowerCase().includes(query),
       );
-    } else if (activeTab === "unverified") {
-      filtered = filtered.filter(
-        (agent) => agent.verificationStatus !== "VERIFIED",
-      );
+      return matchName || matchDescription || matchApiUrl || matchTags;
+    });
+  }, [agents, searchQuery]);
+
+  const handleTabChange = (key: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (key === "all") {
+      params.delete("tab");
+    } else {
+      params.set("tab", key);
     }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((agent) => {
-        const matchName = agent.name.toLowerCase().includes(query);
-        const matchDescription = agent.description
-          .toLowerCase()
-          .includes(query);
-        const matchApiUrl = agent.apiUrl.toLowerCase().includes(query);
-        const matchTags = agent.tags.some((tag) =>
-          tag.toLowerCase().includes(query),
-        );
-
-        return matchName || matchDescription || matchApiUrl || matchTags;
-      });
-    }
-
-    return filtered;
-  }, [agents, searchQuery, activeTab]);
+    router.push(`/agents?${params.toString()}`);
+  };
 
   const handleRegisterSuccess = () => {
     startTransition(async () => {
@@ -115,13 +155,17 @@ export function AgentsContent() {
     });
   };
 
-  const tabs = useMemo(() => {
-    return [
+  const tabs = useMemo(
+    () => [
       { name: t("tabs.all"), count: null, key: "all" },
       { name: t("tabs.verified"), count: null, key: "verified" },
-      { name: t("tabs.unverified"), count: null, key: "unverified" },
-    ];
-  }, [t]);
+      { name: t("tabs.registered"), count: null, key: "registered" },
+      { name: t("tabs.deregistered"), count: null, key: "deregistered" },
+      { name: t("tabs.pending"), count: null, key: "pending" },
+      { name: t("tabs.failed"), count: null, key: "failed" },
+    ],
+    [t],
+  );
 
   return (
     <>
@@ -132,12 +176,8 @@ export function AgentsContent() {
         </p>
       </div>
 
-      <div className="space-y-6">
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(key) => setActiveTab(key)}
-        />
+      <div className="min-w-0 space-y-6">
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
         <div className="flex items-center justify-between gap-4">
           <div className="relative w-64">
@@ -166,7 +206,6 @@ export function AgentsContent() {
             />
             <Button
               onClick={() => setIsRegisterDialogOpen(true)}
-              variant="primary"
               size="icon"
               className="md:hidden"
             >
@@ -174,7 +213,6 @@ export function AgentsContent() {
             </Button>
             <Button
               onClick={() => setIsRegisterDialogOpen(true)}
-              variant="primary"
               className="hidden md:flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -188,7 +226,7 @@ export function AgentsContent() {
         ) : (
           <>
             <AgentsTable
-              agents={filteredAgents}
+              agents={displayedAgents}
               onAgentClick={(agent) => {
                 router.push(`/agents/${agent.id}`);
               }}
@@ -207,16 +245,22 @@ export function AgentsContent() {
               </div>
             )}
 
-            {filteredAgents.length === 0 && (
+            {displayedAgents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="text-muted-foreground text-sm">
                   {searchQuery
                     ? t("noAgentsMatchingSearch")
-                    : activeTab === "verified"
-                      ? t("noVerifiedAgents")
-                      : activeTab === "unverified"
-                        ? t("noUnverifiedAgents")
-                        : t("noAgents")}
+                    : activeTab === "registered"
+                      ? t("noRegisteredAgents")
+                      : activeTab === "deregistered"
+                        ? t("noDeregisteredAgents")
+                        : activeTab === "pending"
+                          ? t("noPendingAgents")
+                          : activeTab === "failed"
+                            ? t("noFailedAgents")
+                            : activeTab === "verified"
+                              ? t("noVerifiedAgents")
+                              : t("noAgents")}
                 </p>
               </div>
             )}

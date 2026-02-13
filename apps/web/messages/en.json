@@ -21,6 +21,12 @@
     "SignIn": {
       "title": "Login",
       "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
+      "orContinueWith": "Or continue with",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "continueWithMicrosoft": "Continue with Microsoft",
+      "continueWithApple": "Continue with Apple",
+      "orSignInWithEmail": "Or sign in with email",
       "email": "Email",
       "password": "Password",
       "submit": "Login",
@@ -33,6 +39,12 @@
     "SignUp": {
       "title": "Register",
       "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "orContinueWith": "Or continue with",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "continueWithMicrosoft": "Continue with Microsoft",
+      "continueWithApple": "Continue with Apple",
+      "orSignUpWithEmail": "Or register with email",
       "name": "Name",
       "email": "Email",
       "password": "Password",
@@ -150,6 +162,7 @@
         "getStarted": {
           "title": "Get started",
           "description": "Complete these steps to make the most of Masumi.",
+          "dismiss": "Dismiss",
           "verifyEmail": "Verify your email address",
           "verifyEmailDone": "Email verified",
           "completeKyc": "Complete identity verification",
@@ -202,6 +215,10 @@
     "ApiKeys": {
       "title": "API Keys",
       "description": "Manage your API keys for authenticating applications."
+    },
+    "PaymentMethods": {
+      "title": "Payment Methods",
+      "description": "Manage your payment methods for top-ups and withdrawals."
     },
     "Organizations": {
       "title": "Organizations",
@@ -267,7 +284,7 @@
     "UserProfile": {
       "unavailable": "User unavailable"
     },
-    "Onboarding": {
+    "Verification": {
       "title": "Identity Verification",
       "description": "Complete your identity verification to unlock full access to Masumi.",
       "steps": {
@@ -329,12 +346,18 @@
       "noAgentsMatchingSearch": "No agents found matching your search",
       "loadMore": "Load more",
       "loadingMore": "Loading…",
+      "noRegisteredAgents": "No registered agents found",
+      "noDeregisteredAgents": "No deregistered agents found",
+      "noPendingAgents": "No pending agents found",
+      "noFailedAgents": "No failed agents found",
       "noVerifiedAgents": "No verified agents found",
-      "noUnverifiedAgents": "No unverified agents found",
       "tabs": {
         "all": "All",
-        "verified": "Verified",
-        "unverified": "Unverified"
+        "registered": "Registered",
+        "deregistered": "Deregistered",
+        "pending": "Pending",
+        "failed": "Failed",
+        "verified": "Verified"
       },
       "detailTabs": {
         "details": "Details",
@@ -367,9 +390,14 @@
         "reviewValue": "REVIEW"
       },
       "table": {
+        "tagCount": "{count, plural, one {# tag} other {# tags}}",
+        "noTags": "—",
         "name": "Name",
         "description": "Description",
         "apiUrl": "API URL",
+        "added": "Added",
+        "agentId": "Agent ID",
+        "price": "Price",
         "status": "Status",
         "tags": "Tags",
         "actions": "Actions"
@@ -382,7 +410,13 @@
       "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
       "Register": {
         "title": "Register New Agent",
-        "description": "Register a new AI agent to your account.",
+        "icon": "Icon",
+        "iconDescription": "Choose an icon for your agent or upload a custom one.",
+        "iconPreset": "Preset icons",
+        "iconCustomUrl": "Custom icon URL",
+        "iconCustomUrlPlaceholder": "https://example.com/icon.svg",
+        "iconClear": "Clear selection",
+        "iconLoadError": "Failed to load icon. Please check the URL and try again.",
         "name": "Name",
         "namePlaceholder": "My AI Agent",
         "nameRequired": "Name is required",
@@ -395,19 +429,53 @@
         "apiUrlPlaceholder": "https://api.example.com",
         "apiUrlInvalid": "API URL must be a valid URL",
         "apiUrlProtocol": "API URL must start with http:// or https://",
+        "price": "Price",
+        "pricePlaceholder": "e.g. Free, 5 ADA, 10 USDM",
+        "isFree": "This is a free agent (no cost for interactions)",
+        "prices": "Prices",
+        "addPrice": "Add price",
+        "priceAmountRequired": "Amount is required",
         "tags": "Tags",
         "tagsPlaceholder": "Enter a tag",
         "addTag": "Add",
+        "additionalFields": "Additional Fields",
+        "authorName": "Author Name",
+        "authorNamePlaceholder": "Enter the author's name",
+        "authorEmail": "Author Email",
+        "authorEmailPlaceholder": "Enter the author's email address",
+        "organization": "Organization",
+        "organizationPlaceholder": "Enter the organization name",
+        "contactOther": "Contact Other (Website, Phone...)",
+        "contactOtherPlaceholder": "Enter other contact",
+        "termsOfUseUrl": "Terms of Use URL",
+        "termsOfUseUrlPlaceholder": "Enter the terms of use URL",
+        "privacyPolicyUrl": "Privacy Policy URL",
+        "privacyPolicyUrlPlaceholder": "Enter the privacy policy URL",
+        "otherUrl": "Other URL (Support...)",
+        "otherUrlPlaceholder": "Enter the other URL",
+        "capabilityName": "Capability Name",
+        "capabilityNamePlaceholder": "e.g., Text Generation",
+        "capabilityVersion": "Capability Version",
+        "capabilityVersionPlaceholder": "e.g., 1.0.0",
+        "exampleOutputs": "Example Outputs",
+        "addExample": "Add Example",
+        "exampleOutputNamePlaceholder": "Name",
+        "exampleOutputUrlPlaceholder": "URL",
+        "exampleOutputMimePlaceholder": "MIME Type",
         "submit": "Register Agent",
         "cancel": "Cancel",
         "success": "Agent registered successfully!",
         "error": "Failed to register agent. Please try again."
       },
       "Details": {
+        "overview": "Overview",
         "backToAgents": "Back to agents",
+        "backToDashboard": "Back to dashboard",
         "description": "Description",
         "noDescription": "No description provided",
         "apiUrl": "API URL",
+        "agentId": "Agent ID",
+        "price": "Price",
         "verification": "Verification",
         "viewInCredentialsTab": "View in Credentials",
         "refresh": "Refresh",
@@ -425,6 +493,8 @@
         "deleteError": "Failed to delete agent",
         "deleteConfirmTitle": "Delete Agent",
         "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
+        "deleteConfirmTypeToConfirm": "Type <bold>{name}</bold> to confirm",
+        "deleteConfirmPlaceholder": "Agent name",
         "cancel": "Cancel",
         "Transactions": {
           "title": "Transactions",
@@ -446,7 +516,7 @@
           "noTransactions": "No transactions yet"
         },
         "Earnings": {
-          "title": "Overview",
+          "title": "Summary",
           "timeFrame": "Time frame:",
           "period1d": "Last 24 Hours",
           "period7d": "Last 7 Days",
@@ -678,6 +748,7 @@
     "title": "404",
     "description": "This page could not be found.",
     "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
-    "returnHome": "Return to Dashboard"
+    "returnHome": "Return to Dashboard",
+    "signIn": "Sign In"
   }
 }

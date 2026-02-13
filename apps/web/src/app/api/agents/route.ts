@@ -1,8 +1,14 @@
-import prisma from "@masumi/database/client";
+import prisma, { RegistrationState } from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+
+const exampleOutputSchema = z.object({
+  name: z.string().max(60).min(1),
+  url: z.string().url().min(1),
+  mimeType: z.string().max(60).min(1),
+});
 
 const registerAgentSchema = z.object({
   name: z
@@ -20,6 +26,32 @@ const registerAgentSchema = z.object({
       message: "API URL must start with http:// or https://",
     }),
   tags: z.string().optional(),
+  icon: z.string().max(2000).optional(),
+  pricing: z
+    .object({
+      pricingType: z.enum(["Free", "Fixed"]),
+      prices: z
+        .array(
+          z.object({
+            amount: z.string(),
+            currency: z.string().optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+  authorName: z.string().max(250).optional().or(z.literal("")),
+  authorEmail: z.union([z.literal(""), z.string().email().max(250)]).optional(),
+  organization: z.string().max(250).optional().or(z.literal("")),
+  contactOther: z.string().max(250).optional().or(z.literal("")),
+  termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  privacyPolicyUrl: z
+    .union([z.literal(""), z.string().url().max(250)])
+    .optional(),
+  otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  capabilityName: z.string().max(250).optional().or(z.literal("")),
+  capabilityVersion: z.string().max(250).optional().or(z.literal("")),
+  exampleOutputs: z.array(exampleOutputSchema).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -34,6 +66,17 @@ export async function GET(request: NextRequest) {
       | "EXPIRED"
       | null;
     const unverified = searchParams.get("unverified") === "true";
+    const registrationState = searchParams.get("registrationState") as
+      | "RegistrationRequested"
+      | "RegistrationInitiated"
+      | "RegistrationConfirmed"
+      | "RegistrationFailed"
+      | "DeregistrationRequested"
+      | "DeregistrationInitiated"
+      | "DeregistrationConfirmed"
+      | "DeregistrationFailed"
+      | null;
+    const registrationStateIn = searchParams.get("registrationStateIn");
     const cursorId = searchParams.get("cursor") ?? undefined;
     const take = Math.min(
       Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
@@ -49,6 +92,7 @@ export async function GET(request: NextRequest) {
         | "REVOKED"
         | "EXPIRED"
         | null;
+      registrationState?: RegistrationState | { in: RegistrationState[] };
     } = {
       userId: user.id,
     };
@@ -57,13 +101,26 @@ export async function GET(request: NextRequest) {
       where.verificationStatus = {
         not: "VERIFIED" as const,
       };
-    } else if (verificationStatus !== null) {
+    } else if (verificationStatus) {
       where.verificationStatus = verificationStatus as
         | "PENDING"
         | "VERIFIED"
         | "REVOKED"
         | "EXPIRED"
         | null;
+    }
+
+    const validStates = Object.values(RegistrationState) as string[];
+    if (registrationStateIn) {
+      const states = registrationStateIn
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => validStates.includes(s)) as RegistrationState[];
+      if (states.length > 0) {
+        where.registrationState = { in: states };
+      }
+    } else if (registrationState && validStates.includes(registrationState)) {
+      where.registrationState = registrationState;
     }
 
     const agents = await prisma.agent.findMany({
@@ -116,7 +173,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, apiUrl, tags } = validation.data;
+    const {
+      name,
+      description,
+      apiUrl,
+      tags,
+      icon,
+      pricing,
+      authorName,
+      authorEmail,
+      organization,
+      contactOther,
+      termsOfUseUrl,
+      privacyPolicyUrl,
+      otherUrl,
+      capabilityName,
+      capabilityVersion,
+      exampleOutputs,
+    } = validation.data;
 
     const tagsArray = tags
       ? tags
@@ -125,12 +199,30 @@ export async function POST(request: NextRequest) {
           .filter((tag) => tag.length > 0)
       : [];
 
+    const metadata: Record<string, unknown> = {};
+    if (authorName?.trim()) metadata.authorName = authorName.trim();
+    if (authorEmail?.trim()) metadata.authorEmail = authorEmail.trim();
+    if (organization?.trim()) metadata.organization = organization.trim();
+    if (contactOther?.trim()) metadata.contactOther = contactOther.trim();
+    if (termsOfUseUrl?.trim()) metadata.termsOfUseUrl = termsOfUseUrl.trim();
+    if (privacyPolicyUrl?.trim())
+      metadata.privacyPolicyUrl = privacyPolicyUrl.trim();
+    if (otherUrl?.trim()) metadata.otherUrl = otherUrl.trim();
+    if (capabilityName?.trim()) metadata.capabilityName = capabilityName.trim();
+    if (capabilityVersion?.trim())
+      metadata.capabilityVersion = capabilityVersion.trim();
+    if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
+
     const agent = await prisma.agent.create({
       data: {
         name,
         description,
         apiUrl,
         tags: tagsArray,
+        icon: icon?.trim() || null,
+        pricing: pricing ?? null,
+        metadata:
+          Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
         userId: user.id,
         registrationState: "RegistrationConfirmed",
       },
