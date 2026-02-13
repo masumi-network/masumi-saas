@@ -237,7 +237,7 @@ export async function issueCredential(
   const requestBody: {
     schemaSaid: string;
     aid: string;
-    attribute?: Record<string, string>;
+    attribute?: Record<string, unknown>;
   } = {
     schemaSaid,
     aid,
