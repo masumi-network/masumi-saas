@@ -230,9 +230,10 @@ enum RegistrationState {
 }
 
 model Agent {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  description String
+  summary     String? // Short tagline, max 250 chars
+  description String? // Optional detailed overview (Markdown supported)
   apiUrl      String
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)

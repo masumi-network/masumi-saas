@@ -16,6 +16,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +39,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +57,8 @@ const CURRENCY_SYMBOL = "$";
 
 type RegisterAgentFormType = {
   name: string;
-  description: string;
+  summary?: string;
+  description?: string;
   apiUrl: string;
   isFree: boolean;
   prices: Array<{ amount: string }>;
@@ -311,10 +312,16 @@ export function RegisterAgentDialog({
   const registerAgentSchema = z
     .object({
       name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
+      summary: z
+        .string()
+        .max(250, t("summaryMaxLength"))
+        .optional()
+        .or(z.literal("")),
       description: z
         .string()
-        .min(1, t("descriptionRequired"))
-        .max(1000, t("descriptionMaxLength")),
+        .max(5000, t("descriptionMaxLength"))
+        .optional()
+        .or(z.literal("")),
       apiUrl: z
         .string()
         .url(t("apiUrlInvalid"))
@@ -366,6 +373,7 @@ export function RegisterAgentDialog({
     resolver: zodResolver(registerAgentSchema),
     defaultValues: {
       name: "",
+      summary: "",
       description: "",
       apiUrl: "",
       isFree: false,
@@ -423,7 +431,8 @@ export function RegisterAgentDialog({
 
       const result = await agentApiClient.registerAgent({
         name: data.name,
-        description: data.description,
+        summary: data.summary?.trim() || undefined,
+        description: data.description?.trim() || undefined,
         apiUrl: data.apiUrl,
         pricing: data.isFree
           ? pricing
@@ -467,6 +476,7 @@ export function RegisterAgentDialog({
     if (!newOpen) {
       form.reset({
         name: "",
+        summary: "",
         description: "",
         apiUrl: "",
         isFree: false,
@@ -497,7 +507,7 @@ export function RegisterAgentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
         <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-tight">
@@ -668,15 +678,50 @@ export function RegisterAgentDialog({
 
                 <FormField
                   control={form.control}
+                  name="summary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("summary")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("summaryPlaceholder")}
+                          {...field}
+                          className="h-11"
+                          maxLength={251}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        {(field.value ?? "").length}/250
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("description")}</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormLabel>{t("description")}</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                              <CircleHelp className="h-4 w-4" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t("descriptionRichTextHint")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
-                        <Textarea
+                        <RichTextEditor
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
                           placeholder={t("descriptionPlaceholder")}
-                          {...field}
-                          className="min-h-28 resize-none"
+                          minHeight="min-h-28"
                         />
                       </FormControl>
                       <FormMessage />

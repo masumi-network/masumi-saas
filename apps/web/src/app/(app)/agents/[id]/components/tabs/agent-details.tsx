@@ -14,6 +14,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 
+import { HtmlContent } from "@/components/html-content";
+import { Markdown } from "@/components/markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,6 +97,24 @@ export function AgentDetails({
             </Badge>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
+            {/* Summary */}
+            {agent.summary && (
+              <>
+                <div className="flex gap-3">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t("summary")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {agent.summary}
+                    </p>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
             {/* Description */}
             <div className="flex gap-3">
               <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
@@ -102,15 +122,17 @@ export function AgentDetails({
                 <p className="text-xs font-medium text-muted-foreground mb-1">
                   {t("description")}
                 </p>
-                <p
-                  className={
-                    agent.description
-                      ? "text-sm text-muted-foreground"
-                      : "text-sm text-muted-foreground italic"
-                  }
-                >
-                  {agent.description || t("noDescription")}
-                </p>
+                {agent.description ? (
+                  /<[a-z][\s\S]*>/i.test(agent.description) ? (
+                    <HtmlContent html={agent.description} className="text-sm" />
+                  ) : (
+                    <Markdown className="text-sm">{agent.description}</Markdown>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    {t("noDescription")}
+                  </p>
+                )}
               </div>
             </div>
 

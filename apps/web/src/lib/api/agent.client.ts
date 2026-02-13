@@ -5,7 +5,8 @@ import type { AgentPricing } from "@/lib/utils";
 type Agent = {
   id: string;
   name: string;
-  description: string;
+  summary: string | null;
+  description: string | null;
   apiUrl: string;
   tags: string[];
   icon: string | null;
@@ -151,7 +152,8 @@ class AgentApiClient {
 
   async registerAgent(data: {
     name: string;
-    description: string;
+    summary?: string;
+    description?: string;
     apiUrl: string;
     tags?: string;
     icon?: string;

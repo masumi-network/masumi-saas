@@ -24,6 +24,7 @@ import {
 } from "react";
 import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
+import { AgentIcon } from "@/app/agents/components/agent-icon";
 import {
   CommandDialog,
   CommandEmpty,
@@ -159,7 +160,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                   value={`agent-${agent.id}-${agent.name}`}
                   onSelect={() => handleSelect(`/agents/${agent.id}`)}
                 >
-                  <Bot className="mr-2 h-4 w-4" />
+                  <AgentIcon
+                    icon={agent.icon}
+                    name={agent.name}
+                    className="mr-2 h-4 w-4 shrink-0"
+                  />
                   {agent.name}
                 </CommandItem>
               ))}

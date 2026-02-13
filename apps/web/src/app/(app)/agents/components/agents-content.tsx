@@ -126,12 +126,19 @@ export function AgentsContent() {
     const query = searchQuery.toLowerCase();
     return agents.filter((agent) => {
       const matchName = agent.name.toLowerCase().includes(query);
-      const matchDescription = agent.description.toLowerCase().includes(query);
+      const matchSummary = agent.summary?.toLowerCase().includes(query);
+      const matchDescription = agent.description?.toLowerCase().includes(query);
       const matchApiUrl = agent.apiUrl.toLowerCase().includes(query);
       const matchTags = agent.tags.some((tag) =>
         tag.toLowerCase().includes(query),
       );
-      return matchName || matchDescription || matchApiUrl || matchTags;
+      return (
+        matchName ||
+        matchSummary ||
+        matchDescription ||
+        matchApiUrl ||
+        matchTags
+      );
     });
   }, [agents, searchQuery]);
 

@@ -15,10 +15,16 @@ const registerAgentSchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
+  summary: z
+    .string()
+    .max(250, "Summary must be 250 characters or less")
+    .optional()
+    .or(z.literal("")),
   description: z
     .string()
-    .min(1, "Description is required")
-    .max(1000, "Description must be less than 1000 characters"),
+    .max(5000, "Description must be less than 5000 characters")
+    .optional()
+    .or(z.literal("")),
   apiUrl: z
     .string()
     .url("API URL must be a valid URL")
@@ -175,6 +181,7 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
+      summary,
       description,
       apiUrl,
       tags,
@@ -216,7 +223,8 @@ export async function POST(request: NextRequest) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        description,
+        summary: summary?.trim() || null,
+        description: (description?.trim() || null) as string | null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,

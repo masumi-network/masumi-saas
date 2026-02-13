@@ -255,6 +255,7 @@ export type KycVerificationScalarFieldEnum =
 export const AgentScalarFieldEnum = {
   id: "id",
   name: "name",
+  summary: "summary",
   description: "description",
   apiUrl: "apiUrl",
   userId: "userId",

@@ -108,7 +108,7 @@ export function AgentsTable({
                     {agent.name}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {agent.description}
+                    {agent.summary ?? agent.description}
                   </div>
                 </TableCell>
                 <TableCell className="text-xs whitespace-nowrap">
