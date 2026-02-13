@@ -55,13 +55,13 @@ export default function Header({ className }: HeaderProps) {
             </div>
 
             <div
-              className="hidden md:flex w-full max-w-search justify-start gap-2 relative rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/30"
+              className="hidden md:flex w-full max-w-search min-w-0 justify-start gap-2 relative rounded-md border border-input bg-muted-surface px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/50"
               onClick={() => setIsSearchOpen(true)}
             >
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex min-w-0 shrink items-center gap-2 overflow-hidden whitespace-nowrap text-muted-foreground">
                 <span>{t("type")}</span>
-                <kbd className="bg-muted text-foreground pointer-events-none inline-flex h-6 items-center justify-center rounded-md border px-2 font-mono text-xs">
+                <kbd className="bg-muted text-foreground pointer-events-none inline-flex h-6 shrink-0 items-center justify-center rounded-md border px-2 font-mono text-xs">
                   /
                 </kbd>
                 <span>{t("toSearch")}</span>

@@ -99,6 +99,14 @@ export function AgentTransactionsTable({
     return new Date(timestamp).toLocaleString();
   };
 
+  if (!isLoading && filteredTransactions.length === 0) {
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        {t("noTransactions")}
+      </p>
+    );
+  }
+
   return (
     <div className="rounded-md border overflow-x-auto">
       <Table>
@@ -114,64 +122,53 @@ export function AgentTransactionsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-28 bg-muted animate-pulse rounded" />
-                </TableCell>
-              </TableRow>
-            ))
-          ) : filteredTransactions.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center py-8 text-muted-foreground"
-              >
-                {t("noTransactions")}
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredTransactions.map((tx) => (
-              <TableRow key={tx.id}>
-                <TableCell className="capitalize">{tx.type}</TableCell>
-                <TableCell>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {tx.txHash
-                      ? `${tx.txHash.slice(0, 8)}...${tx.txHash.slice(-8)}`
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-28 bg-muted animate-pulse rounded" />
+                  </TableCell>
+                </TableRow>
+              ))
+            : filteredTransactions.map((tx) => (
+                <TableRow key={tx.id}>
+                  <TableCell className="capitalize">{tx.type}</TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {tx.txHash
+                        ? `${tx.txHash.slice(0, 8)}...${tx.txHash.slice(-8)}`
+                        : "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell>{tx.amount}</TableCell>
+                  <TableCell>{tx.network}</TableCell>
+                  <TableCell>{formatStatus(tx.status)}</TableCell>
+                  <TableCell>
+                    {tx.status === "ResultSubmitted"
+                      ? formatTimestamp(tx.unlockTime)
                       : "—"}
-                  </span>
-                </TableCell>
-                <TableCell>{tx.amount}</TableCell>
-                <TableCell>{tx.network}</TableCell>
-                <TableCell>{formatStatus(tx.status)}</TableCell>
-                <TableCell>
-                  {tx.status === "ResultSubmitted"
-                    ? formatTimestamp(tx.unlockTime)
-                    : "—"}
-                </TableCell>
-                <TableCell>{formatTimestamp(tx.createdAt)}</TableCell>
-              </TableRow>
-            ))
-          )}
+                  </TableCell>
+                  <TableCell>{formatTimestamp(tx.createdAt)}</TableCell>
+                </TableRow>
+              ))}
         </TableBody>
       </Table>
     </div>

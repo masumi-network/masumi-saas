@@ -2,6 +2,7 @@
 
 import {
   DollarSign,
+  ExternalLink,
   FileText,
   Fingerprint,
   Link2,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
+import { appConfig } from "@/lib/config/app.config";
 import {
   formatDate,
   formatPricingDisplay,
@@ -70,6 +72,8 @@ export function AgentDetails({
       setIsLoadingKyc(false);
     });
   }, []);
+
+  const sokosumiUrl = `${appConfig.sokosumiMarketplaceUrl}/${agent.agentIdentifier ?? agent.id}`;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -191,6 +195,32 @@ export function AgentDetails({
                       {t("noTags")}
                     </span>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Hire in Sokosumi */}
+            <div className="flex gap-3 min-w-0">
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t("hireInSokosumi")}
+                </p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Link
+                    href={sokosumiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
+                  >
+                    {sokosumiUrl}
+                  </Link>
+                  <CopyButton
+                    value={sokosumiUrl}
+                    className="h-7 w-7 shrink-0"
+                  />
                 </div>
               </div>
             </div>

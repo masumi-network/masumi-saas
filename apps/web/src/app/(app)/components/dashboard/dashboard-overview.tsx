@@ -190,7 +190,7 @@ export default async function DashboardOverview({
 
       {/* Start KYC CTA - compact banner when KYC not submitted */}
       {showStartKycCta && (
-        <div className="flex items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
           <p className="text-sm text-muted-foreground">{t("startKycPrompt")}</p>
           <Button asChild variant="outline" size="sm">
             <Link href="/verification" className="flex items-center gap-2">
@@ -255,7 +255,9 @@ export default async function DashboardOverview({
                       aria-label={t("agentLinkAria", { name: agent.name })}
                       className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50"
                     >
-                      <p className="font-medium">{agent.name}</p>
+                      <p className="min-w-0 truncate text-sm font-medium">
+                        {agent.name}
+                      </p>
                       <Badge
                         variant={
                           agent.verificationStatus === "VERIFIED"
@@ -264,7 +266,7 @@ export default async function DashboardOverview({
                                 agent.registrationState as Agent["registrationState"],
                               )
                         }
-                        className="capitalize"
+                        className="min-w-fit shrink-0 capitalize"
                       >
                         {agent.verificationStatus === "VERIFIED"
                           ? "Verified"

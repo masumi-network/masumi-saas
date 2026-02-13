@@ -2,11 +2,9 @@ import "server-only";
 
 import crypto from "crypto";
 
-const SUMSUB_APP_TOKEN = process.env.SUMSUB_APP_TOKEN;
-const SUMSUB_SECRET_KEY = process.env.SUMSUB_SECRET_KEY;
-const SUMSUB_BASE_URL = process.env.SUMSUB_BASE_URL || "https://api.sumsub.com";
+import { sumsubConfig } from "@/lib/config/sumsub.config";
 
-if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+if (!sumsubConfig.appToken || !sumsubConfig.secretKey) {
   console.warn(
     "Sumsub credentials not configured. KYC/KYB features will not work.",
   );
@@ -23,23 +21,23 @@ export async function generateSumsubAccessToken(
   levelName: string,
   ttlInSecs: number = 600,
 ): Promise<string> {
-  if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+  if (!sumsubConfig.appToken || !sumsubConfig.secretKey) {
     throw new Error("Sumsub credentials not configured");
   }
 
   const path = `/resources/accessTokens?userId=${encodeURIComponent(externalUserId)}&levelName=${encodeURIComponent(levelName)}&ttlInSecs=${ttlInSecs}`;
-  const url = `${SUMSUB_BASE_URL}${path}`;
+  const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = crypto
-    .createHmac("sha256", SUMSUB_SECRET_KEY)
+    .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}POST${path}`)
     .digest("hex");
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "X-App-Token": SUMSUB_APP_TOKEN,
+      "X-App-Token": sumsubConfig.appToken,
       "X-App-Access-Ts": timestamp.toString(),
       "X-App-Access-Sig": signature,
       "Content-Type": "application/json",
@@ -68,12 +66,12 @@ export function verifySumsubWebhookSignature(
   signature: string,
   timestamp: string,
 ): boolean {
-  if (!SUMSUB_SECRET_KEY) {
+  if (!sumsubConfig.secretKey) {
     throw new Error("Sumsub secret key not configured");
   }
 
   const expectedSignature = crypto
-    .createHmac("sha256", SUMSUB_SECRET_KEY)
+    .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}${payload}`)
     .digest("hex");
 
@@ -88,22 +86,23 @@ export function verifySumsubWebhookSignature(
  * @param applicantId - Sumsub applicant ID
  */
 export async function getApplicantData(applicantId: string) {
-  if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+  if (!sumsubConfig.appToken || !sumsubConfig.secretKey) {
     throw new Error("Sumsub credentials not configured");
   }
 
-  const url = `${SUMSUB_BASE_URL}/resources/applicants/${applicantId}/one`;
+  const path = `/resources/applicants/${applicantId}/one`;
+  const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = crypto
-    .createHmac("sha256", SUMSUB_SECRET_KEY)
-    .update(`${timestamp}GET${url.replace(SUMSUB_BASE_URL, "")}`)
+    .createHmac("sha256", sumsubConfig.secretKey)
+    .update(`${timestamp}GET${path}`)
     .digest("hex");
 
   const response = await fetch(url, {
     method: "GET",
     headers: {
-      "X-App-Token": SUMSUB_APP_TOKEN,
+      "X-App-Token": sumsubConfig.appToken,
       "X-App-Access-Ts": timestamp.toString(),
       "X-App-Access-Sig": signature,
     },
@@ -140,23 +139,23 @@ export async function getApplicantData(applicantId: string) {
  * @param externalUserId - Your internal user/org ID
  */
 export async function getApplicantByExternalUserId(externalUserId: string) {
-  if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+  if (!sumsubConfig.appToken || !sumsubConfig.secretKey) {
     throw new Error("Sumsub credentials not configured");
   }
 
   const path = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
-  const url = `${SUMSUB_BASE_URL}${path}`;
+  const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = crypto
-    .createHmac("sha256", SUMSUB_SECRET_KEY)
+    .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}GET${path}`)
     .digest("hex");
 
   const response = await fetch(url, {
     method: "GET",
     headers: {
-      "X-App-Token": SUMSUB_APP_TOKEN,
+      "X-App-Token": sumsubConfig.appToken,
       "X-App-Access-Ts": timestamp.toString(),
       "X-App-Access-Sig": signature,
     },
