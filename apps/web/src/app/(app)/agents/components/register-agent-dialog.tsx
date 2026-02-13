@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link2, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Link2, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -70,186 +71,186 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
+function ExampleOutputsFields({
+  form: outputsForm,
+  t: outputsT,
+}: {
+  form: UseFormReturn<RegisterAgentFormType>;
+  t: (key: string) => string;
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: outputsForm.control,
+    name: "exampleOutputs",
+  });
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border/80 bg-muted/40 p-4">
+      <div className="flex items-center justify-between">
+        <FormLabel>{outputsT("exampleOutputs")}</FormLabel>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append({ name: "", url: "", mimeType: "" })}
+        >
+          {outputsT("addExample")}
+        </Button>
+      </div>
+      {fields.map((field, index) => (
+        <div
+          key={field.id}
+          className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.name`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={outputsT("exampleOutputNamePlaceholder")}
+                      {...f}
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.url`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder={outputsT("exampleOutputUrlPlaceholder")}
+                      {...f}
+                      className="h-11 font-mono text-sm"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={outputsForm.control}
+              name={`exampleOutputs.${index}.mimeType`}
+              render={({ field: f }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder={outputsT("exampleOutputMimePlaceholder")}
+                      {...f}
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => remove(index)}
+            className="absolute top-2 right-2"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PricingFields({
+  form: pricingForm,
+  t: pricingT,
+}: {
+  form: UseFormReturn<RegisterAgentFormType>;
+  t: (key: string) => string;
+}) {
+  const { fields, append, remove } = useFieldArray({
+    control: pricingForm.control,
+    name: "prices",
+  });
+  const isFree = pricingForm.watch("isFree");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <FormLabel>{pricingT("prices")}</FormLabel>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isFree}
+          onClick={() => append({ amount: "" })}
+        >
+          {pricingT("addPrice")}
+        </Button>
+      </div>
+      {fields.map((field, index) => (
+        <div key={field.id} className="flex gap-2 items-start">
+          <div className="flex-1 flex items-center gap-2">
+            <span className="text-muted-foreground text-sm shrink-0">
+              {CURRENCY_SYMBOL}
+            </span>
+            <FormField
+              control={pricingForm.control}
+              name={`prices.${index}.amount`}
+              render={({ field: amountField }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      disabled={isFree}
+                      {...amountField}
+                      className="h-11"
+                      onChange={(e) => amountField.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          {fields.length > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={isFree}
+              onClick={() => remove(index)}
+              className="shrink-0 mt-2"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ))}
+      {pricingForm.formState.errors.prices && (
+        <p className="text-sm text-destructive">
+          {pricingForm.formState.errors.prices.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function RegisterAgentDialog({
   open,
   onClose,
   onSuccess,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
-
-  function ExampleOutputsFields({
-    form: outputsForm,
-    t: outputsT,
-  }: {
-    form: ReturnType<typeof useForm<RegisterAgentFormType>>;
-    t: (key: string) => string;
-  }) {
-    const { fields, append, remove } = useFieldArray({
-      control: outputsForm.control,
-      name: "exampleOutputs",
-    });
-
-    return (
-      <div className="space-y-4 rounded-lg border border-border/80 bg-muted/40 p-4">
-        <div className="flex items-center justify-between">
-          <FormLabel>{outputsT("exampleOutputs")}</FormLabel>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ name: "", url: "", mimeType: "" })}
-          >
-            {outputsT("addExample")}
-          </Button>
-        </div>
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.name`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={outputsT("exampleOutputNamePlaceholder")}
-                        {...f}
-                        className="h-11"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.url`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="url"
-                        placeholder={outputsT("exampleOutputUrlPlaceholder")}
-                        {...f}
-                        className="h-11 font-mono text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={outputsForm.control}
-                name={`exampleOutputs.${index}.mimeType`}
-                render={({ field: f }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={outputsT("exampleOutputMimePlaceholder")}
-                        {...f}
-                        className="h-11"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => remove(index)}
-              className="absolute top-2 right-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function PricingFields({
-    form: pricingForm,
-    t: pricingT,
-  }: {
-    form: ReturnType<typeof useForm<RegisterAgentFormType>>;
-    t: (key: string) => string;
-  }) {
-    const { fields, append, remove } = useFieldArray({
-      control: pricingForm.control,
-      name: "prices",
-    });
-    const isFree = pricingForm.watch("isFree");
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <FormLabel>{pricingT("prices")}</FormLabel>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isFree}
-            onClick={() => append({ amount: "" })}
-          >
-            {pricingT("addPrice")}
-          </Button>
-        </div>
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2 items-start">
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm shrink-0">
-                {CURRENCY_SYMBOL}
-              </span>
-              <FormField
-                control={pricingForm.control}
-                name={`prices.${index}.amount`}
-                render={({ field: amountField }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        disabled={isFree}
-                        {...amountField}
-                        className="h-11"
-                        onChange={(e) => amountField.onChange(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            {fields.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={isFree}
-                onClick={() => remove(index)}
-                className="shrink-0 mt-2"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {pricingForm.formState.errors.prices && (
-          <p className="text-sm text-destructive">
-            {pricingForm.formState.errors.prices.message}
-          </p>
-        )}
-      </div>
-    );
-  }
 
   const [isLoading, setIsLoading] = useState(false);
   const [tagInput, setTagInput] = useState("");
@@ -286,6 +287,16 @@ export function RegisterAgentDialog({
     ro.observe(el);
     return () => ro.disconnect();
   }, [open, updateIconScrollGradients]);
+
+  const scrollIcons = useCallback((direction: "left" | "right") => {
+    const el = iconScrollRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
+  }, []);
 
   const registerAgentSchema = z
     .object({
@@ -520,18 +531,46 @@ export function RegisterAgentDialog({
                         <div className="relative -mx-1">
                           <div
                             className={cn(
-                              "pointer-events-none absolute left-0 top-0 z-10 h-full w-32 shrink-0 bg-gradient-to-r from-muted-surface to-transparent transition-opacity duration-200",
+                              "absolute left-0 top-0 z-10 flex h-11 w-48 shrink-0 items-center transition-opacity duration-200 pointer-events-none",
                               showGradients.left ? "opacity-100" : "opacity-0",
                             )}
-                            aria-hidden
-                          />
+                          >
+                            <div
+                              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-muted-surface to-transparent"
+                              aria-hidden
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="pointer-events-auto relative -ml-2 h-8 w-8 shrink-0 rounded-full bg-transparent hover:bg-transparent"
+                              onClick={() => scrollIcons("left")}
+                              aria-label={t("scrollLeft")}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <div
                             className={cn(
-                              "pointer-events-none absolute right-0 top-0 z-10 h-full w-32 shrink-0 bg-gradient-to-l from-muted-surface to-transparent transition-opacity duration-200",
+                              "absolute right-0 top-0 z-10 flex h-11 w-48 shrink-0 items-center justify-end transition-opacity duration-200 pointer-events-none",
                               showGradients.right ? "opacity-100" : "opacity-0",
                             )}
-                            aria-hidden
-                          />
+                          >
+                            <div
+                              className="pointer-events-none absolute inset-0 bg-gradient-to-l from-muted-surface to-transparent"
+                              aria-hidden
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="pointer-events-auto relative -mr-2 h-8 w-8 shrink-0 rounded-full bg-transparent hover:bg-transparent"
+                              onClick={() => scrollIcons("right")}
+                              aria-label={t("scrollRight")}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <div
                             ref={iconScrollRef}
                             onScroll={updateIconScrollGradients}
@@ -549,10 +588,10 @@ export function RegisterAgentDialog({
                                     field.onChange(isSelected ? "" : key);
                                   }}
                                   className={cn(
-                                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all",
+                                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all",
                                     isSelected
-                                      ? "border-primary bg-primary/10 text-primary shadow-sm"
-                                      : "border-transparent bg-background hover:bg-muted hover:border-muted-foreground/20",
+                                      ? "border-primary bg-primary/10 text-primary shadow-md"
+                                      : "border bg-background hover:bg-muted hover:border-muted-foreground/20",
                                   )}
                                 >
                                   <IconComponent className="h-5 w-5" />
@@ -900,7 +939,7 @@ export function RegisterAgentDialog({
               </div>
             </div>
 
-            <DialogFooter className="shrink-0 border-t bg-muted-surface px-6 py-4">
+            <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"

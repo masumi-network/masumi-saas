@@ -418,6 +418,8 @@
         "iconCustomUrlPlaceholder": "https://example.com/icon.svg",
         "iconClear": "Clear selection",
         "iconLoadError": "Failed to load icon. Please check the URL and try again.",
+        "scrollLeft": "Scroll left",
+        "scrollRight": "Scroll right",
         "name": "Name",
         "namePlaceholder": "My AI Agent",
         "nameRequired": "Name is required",
