@@ -10,8 +10,8 @@ const querySchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED", "REVIEW"]).optional(),
 });
 
-export async function OPTIONS() {
-  return handleCorsPreflightResponse();
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsPreflightResponse(request);
 }
 
 export async function GET(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       request.headers.get("x-real-ip") ??
       "unknown";
-    const rl = checkRateLimit(`public-agents:${ip}`);
+    const rl = await checkRateLimit(`public-agents:${ip}`);
 
     if (!rl.allowed) {
       const res = NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       );
       res.headers.set("X-RateLimit-Limit", String(rl.limit));
       res.headers.set("X-RateLimit-Remaining", "0");
-      return addCorsHeaders(res);
+      return addCorsHeaders(res, request);
     }
 
     // 2. Validate query params
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           },
           { status: 400 },
         ),
+        request,
       );
     }
 
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
     });
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-    return addCorsHeaders(res);
+    return addCorsHeaders(res, request);
   } catch (error) {
     console.error("Failed to list agents:", error);
     return addCorsHeaders(
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
         { success: false, error: "Failed to list agents" },
         { status: 500 },
       ),
+      request,
     );
   }
 }

@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 
+import { extractErrorMessage } from "@/lib/utils/extract-error";
+
 interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
@@ -52,11 +54,7 @@ export function SumsubStep({
           })
           .on("idCheck.onError", (error: unknown) => {
             console.error("Sumsub SDK error:", error);
-            const msg =
-              error instanceof Error
-                ? error.message
-                : (error as Record<string, unknown>)?.message;
-            onError(typeof msg === "string" ? msg : t("error"));
+            onError(extractErrorMessage(error, t("error")));
           })
 
           .on("idCheck.onApplicantSubmitted", () => {
@@ -82,7 +80,7 @@ export function SumsubStep({
         }
       } catch (error) {
         console.error("Failed to initialize Sumsub SDK:", error);
-        onError(error instanceof Error ? error.message : t("error"));
+        onError(extractErrorMessage(error, t("error")));
       }
     };
 

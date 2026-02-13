@@ -5,8 +5,8 @@ import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { publicAgentSelect } from "@/lib/schemas/agent";
 
-export async function OPTIONS() {
-  return handleCorsPreflightResponse();
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsPreflightResponse(request);
 }
 
 export async function GET(
@@ -19,7 +19,7 @@ export async function GET(
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       request.headers.get("x-real-ip") ??
       "unknown";
-    const rl = checkRateLimit(`public-agent:${ip}`);
+    const rl = await checkRateLimit(`public-agent:${ip}`);
 
     if (!rl.allowed) {
       const res = NextResponse.json(
@@ -35,7 +35,7 @@ export async function GET(
       );
       res.headers.set("X-RateLimit-Limit", String(rl.limit));
       res.headers.set("X-RateLimit-Remaining", "0");
-      return addCorsHeaders(res);
+      return addCorsHeaders(res, request);
     }
 
     // 2. Get agentId from params (must await in Next.js 16)
@@ -54,6 +54,7 @@ export async function GET(
           { success: false, error: "Agent not found" },
           { status: 404 },
         ),
+        request,
       );
     }
 
@@ -61,7 +62,7 @@ export async function GET(
     const res = NextResponse.json({ success: true, data: agent });
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-    return addCorsHeaders(res);
+    return addCorsHeaders(res, request);
   } catch (error) {
     console.error("Failed to get agent:", error);
     return addCorsHeaders(
@@ -69,6 +70,7 @@ export async function GET(
         { success: false, error: "Failed to get agent" },
         { status: 500 },
       ),
+      request,
     );
   }
 }

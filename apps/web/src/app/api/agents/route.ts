@@ -1,26 +1,42 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
+
+const getAgentsQuerySchema = z.object({
+  verificationStatus: z
+    .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
+    .optional(),
+  unverified: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  cursor: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).optional().default(10),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow();
 
-    const searchParams = request.nextUrl.searchParams;
-    const verificationStatus = searchParams.get("verificationStatus") as
-      | "PENDING"
-      | "VERIFIED"
-      | "REVOKED"
-      | "EXPIRED"
-      | null;
-    const unverified = searchParams.get("unverified") === "true";
-    const cursorId = searchParams.get("cursor") ?? undefined;
-    const take = Math.min(
-      Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
-      50,
+    const rawParams = Object.fromEntries(
+      request.nextUrl.searchParams.entries(),
     );
+    const queryValidation = getAgentsQuerySchema.safeParse(rawParams);
+    if (!queryValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: queryValidation.error.issues.map((e) => e.message).join(", "),
+        },
+        { status: 400 },
+      );
+    }
+
+    const { verificationStatus, unverified, cursor, take } =
+      queryValidation.data;
 
     const where: {
       userId: string;
@@ -36,16 +52,9 @@ export async function GET(request: NextRequest) {
     };
 
     if (unverified) {
-      where.verificationStatus = {
-        not: "VERIFIED" as const,
-      };
-    } else if (verificationStatus !== null) {
-      where.verificationStatus = verificationStatus as
-        | "PENDING"
-        | "VERIFIED"
-        | "REVOKED"
-        | "EXPIRED"
-        | null;
+      where.verificationStatus = { not: "VERIFIED" as const };
+    } else if (verificationStatus) {
+      where.verificationStatus = verificationStatus;
     }
 
     const agents = await prisma.agent.findMany({
@@ -54,7 +63,7 @@ export async function GET(request: NextRequest) {
         createdAt: "desc",
       },
       take: take + 1,
-      ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = agents.length > take;
