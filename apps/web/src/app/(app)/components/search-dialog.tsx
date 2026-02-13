@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Shield,
+  TrendingUp,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,6 +51,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/agents", icon: Bot },
+  { key: "metrics", href: "/metrics", icon: TrendingUp },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
   { key: "apiKeys", href: "/api-keys", icon: Key },

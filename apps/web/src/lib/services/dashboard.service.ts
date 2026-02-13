@@ -123,5 +123,7 @@ export async function getDashboardOverview(
     verifiedAgentCount,
     // TODO: Integrate real balance from payment/wallet service
     balance: "0",
+    // TODO: Integrate real revenue from payment/earnings service
+    revenue: "0",
   };
 }

@@ -22,17 +22,8 @@ import {
 } from "../../agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
+import { DashboardRevenueCard } from "./dashboard-revenue-card";
 import { GetStartedCard } from "./get-started-card";
-
-function formatBalance(value: string): string {
-  const num = parseFloat(value || "0");
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
 
 export default async function DashboardOverview({
   data,
@@ -54,7 +45,7 @@ export default async function DashboardOverview({
     apiKeyCount,
     agentCount,
     verifiedAgentCount,
-    balance,
+    revenue,
   } = data;
 
   const userName = user.name || user.email || "User";
@@ -86,46 +77,9 @@ export default async function DashboardOverview({
         </p>
       </div>
 
-      {/* Stats grid - Balance, Agents, Organizations */}
+      {/* Stats grid - Revenue, Agents, Organizations */}
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
-        {/* Balance - primary accent, prominent CTA - full width on mobile */}
-        <Card
-          className="group relative col-span-2 overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 lg:col-span-1"
-          role="group"
-          aria-label={`${t("stats.balance")}: ${formatBalance(balance)}`}
-        >
-          <div
-            className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-masumi-electric-pink)] transition-colors group-hover:bg-[var(--color-masumi-vivid-sakura)]"
-            aria-hidden
-          />
-          <CardHeader className="space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
-            <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
-              {t("stats.balance")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight">
-              {formatBalance(balance)}
-            </p>
-            <p className="mb-4 text-xs text-muted-foreground">
-              {t("stats.balanceDescription")}
-            </p>
-            <div className="flex gap-2">
-              <Button asChild size="sm" className="h-9">
-                <Link href="/top-up">{t("stats.topUp")}</Link>
-              </Button>
-              {parseFloat(balance || "0") <= 0 ? (
-                <Button size="sm" variant="outline" className="h-9" disabled>
-                  {t("stats.withdraw")}
-                </Button>
-              ) : (
-                <Button asChild size="sm" variant="outline" className="h-9">
-                  <Link href="/withdraw">{t("stats.withdraw")}</Link>
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <DashboardRevenueCard revenue={revenue} />
 
         {/* Agents */}
         <Link
@@ -173,7 +127,7 @@ export default async function DashboardOverview({
               <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
                 {organizationCount}
               </p>
-              <p className="mt-1 text-muted-foreground text-xs">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {t("stats.organizationsDescription")}
               </p>
             </CardContent>
@@ -358,28 +312,23 @@ export function DashboardOverviewSkeleton() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
-      {/* Stats grid - Balance, Agents, Organizations */}
+      {/* Stats grid - Revenue, Agents, Organizations */}
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
-        {/* Balance card */}
+        {/* Revenue card */}
         <Card className="col-span-2 overflow-hidden rounded-xl pt-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
             <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-8 w-28 rounded-md" />
           </CardHeader>
           <CardContent>
             <Skeleton className="mb-1 h-9 w-24" />
-            <Skeleton className="mb-4 h-3 w-32" />
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-20 rounded-md" />
-              <Skeleton className="h-9 w-20 rounded-md" />
-            </div>
+            <Skeleton className="h-3 w-32" />
           </CardContent>
         </Card>
         {/* Agents card */}
         <Card className="h-full rounded-xl border border-border/80">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+          <CardHeader className="space-y-0 pb-2">
             <Skeleton className="h-4 w-14" />
-            <Skeleton className="h-9 w-9 rounded-lg" />
           </CardHeader>
           <CardContent>
             <Skeleton className="h-9 w-12" />
@@ -388,9 +337,8 @@ export function DashboardOverviewSkeleton() {
         </Card>
         {/* Organizations card */}
         <Card className="h-full rounded-xl border border-border/80">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+          <CardHeader className="space-y-0 pb-2">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-9 w-9 rounded-lg" />
           </CardHeader>
           <CardContent>
             <Skeleton className="h-9 w-8" />

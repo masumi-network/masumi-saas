@@ -6,6 +6,7 @@ import {
   CreditCard,
   Key,
   LayoutDashboard,
+  TrendingUp,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -49,6 +50,12 @@ export default function MenuItems() {
       href: "/agents",
       label: t("agents"),
       Icon: Bot,
+    },
+    {
+      key: "metrics",
+      href: "/metrics",
+      label: t("metrics"),
+      Icon: TrendingUp,
     },
     {
       key: "organizations",

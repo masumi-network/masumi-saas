@@ -40,4 +40,6 @@ export type DashboardOverview = {
   agentCount: number;
   verifiedAgentCount: number;
   balance: string;
+  /** Revenue/earnings in USD (placeholder until payment service integrated) */
+  revenue: string;
 };
