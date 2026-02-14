@@ -381,7 +381,7 @@
         "transactions": "Transactions"
       },
       "registrationStatus": {
-        "registered": "Registered",
+        "running": "Running",
         "pending": "Pending",
         "registering": "Registering",
         "registrationFailed": "Registration Failed",

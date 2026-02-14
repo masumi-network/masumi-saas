@@ -40,7 +40,7 @@ export function getVerificationStatusBadgeVariant(
 }
 
 type RegistrationStatusKey =
-  | "registered"
+  | "running"
   | "pending"
   | "registering"
   | "registrationFailed"
@@ -62,7 +62,7 @@ const REGISTRATION_STATUS_KEYS: Record<
 > = {
   RegistrationRequested: "pending",
   RegistrationInitiated: "registering",
-  RegistrationConfirmed: "registered",
+  RegistrationConfirmed: "running",
   RegistrationFailed: "registrationFailed",
   DeregistrationRequested: "pending",
   DeregistrationInitiated: "deregistering",
@@ -73,7 +73,7 @@ const REGISTRATION_STATUS_KEYS: Record<
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
 ): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
-  if (status === "RegistrationConfirmed") return "outline-muted";
+  if (status === "RegistrationConfirmed") return "default";
   if (status.includes("Failed")) return "destructive";
   if (status.includes("Initiated")) return "secondary";
   if (status.includes("Requested")) return "secondary";

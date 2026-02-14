@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { type Agent } from "@/lib/api/agent.client";
+import { cn } from "@/lib/utils";
 
 import { AgentIcon } from "../../components/agent-icon";
 import {
@@ -76,7 +77,11 @@ export function AgentPageHeader({
         </h1>
         <Badge
           variant={getRegistrationStatusBadgeVariant(agent.registrationState)}
-          className="shrink-0"
+          className={cn(
+            "shrink-0",
+            agent.registrationState === "RegistrationConfirmed" &&
+              "border-green-200 bg-green-50 text-green-700 hover:bg-green-50/80 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
+          )}
         >
           {tRegistrationStatus(
             getRegistrationStatusKey(agent.registrationState),

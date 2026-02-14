@@ -14,7 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Agent } from "@/lib/api/agent.client";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { getGreeting } from "@/lib/utils";
+import { cn , getGreeting } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
@@ -220,7 +220,11 @@ export default async function DashboardOverview({
                                 agent.registrationState as Agent["registrationState"],
                               )
                         }
-                        className="min-w-fit shrink-0 capitalize"
+                        className={cn(
+                          "min-w-fit shrink-0 capitalize",
+                          agent.registrationState === "RegistrationConfirmed" &&
+                            "border border-green-200 bg-green-50 text-green-700 hover:bg-green-50/80 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
+                        )}
                       >
                         {agent.verificationStatus === "VERIFIED"
                           ? "Verified"
