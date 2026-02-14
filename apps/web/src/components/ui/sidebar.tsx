@@ -202,6 +202,13 @@ function Sidebar({
     preventCollapse,
   } = useSidebar();
   const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const touchStartX = React.useRef(0);
+  const touchStartY = React.useRef(0);
+  const isDraggingRef = React.useRef(false);
+  const dragOffsetRef = React.useRef(0);
+  const [dragOffset, setDragOffset] = React.useState(0);
+  const DRAG_CLOSE_THRESHOLD = 60;
+  const DRAG_DIRECTION_THRESHOLD = 10;
   const t = useTranslations("Components.Sidebar");
 
   React.useEffect(() => {
@@ -227,6 +234,49 @@ function Sidebar({
     );
   }
 
+  React.useEffect(() => {
+    if (!openMobile) setDragOffset(0);
+  }, [openMobile]);
+
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDraggingRef.current = false;
+    dragOffsetRef.current = 0;
+  }, []);
+
+  const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+
+    if (!isDraggingRef.current) {
+      if (
+        Math.abs(deltaX) > DRAG_DIRECTION_THRESHOLD &&
+        Math.abs(deltaX) > Math.abs(deltaY) &&
+        deltaX < 0
+      ) {
+        isDraggingRef.current = true;
+      } else {
+        return;
+      }
+    }
+
+    if (deltaX < 0) {
+      dragOffsetRef.current = deltaX;
+      setDragOffset(deltaX);
+    }
+  }, []);
+
+  const handleTouchEnd = React.useCallback(() => {
+    isDraggingRef.current = false;
+    const shouldClose = dragOffsetRef.current < -DRAG_CLOSE_THRESHOLD;
+    dragOffsetRef.current = 0;
+    setDragOffset(0);
+    if (shouldClose) {
+      queueMicrotask(() => setOpenMobile(false));
+    }
+  }, [setOpenMobile]);
+
   if (isMobile) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
@@ -234,13 +284,19 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-muted-surface text-sidebar-foreground w-(--sidebar-width) max-w-[min(18rem,90vw)] p-0 [&>button]:hidden border-r border-sidebar-border shadow-xl"
+          className="bg-muted-surface text-sidebar-foreground w-(--sidebar-width) max-w-[min(18rem,90vw)] p-0 [&>button]:hidden border-r border-sidebar-border shadow-xl touch-pan-y"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              transform:
+                dragOffset !== 0 ? `translateX(${dragOffset}px)` : undefined,
+              transition: dragOffset !== 0 ? "none" : "transform 0.2s ease-out",
             } as React.CSSProperties
           }
           side={side}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{t("title")}</SheetTitle>
