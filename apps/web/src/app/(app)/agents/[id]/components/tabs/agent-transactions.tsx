@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { FilterIcon, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
@@ -56,10 +56,10 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-row flex-wrap gap-4 items-center justify-between">
+      <div className="flex flex-row gap-4 items-center justify-between">
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="flex w-full max-w-48 sm:max-w-80 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          className="flex w-full max-w-64 sm:max-w-80 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -79,13 +79,16 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
           )}
         </div>
         <div className="text-sm flex items-center gap-2 self-end sm:self-auto">
-          <span className="block">{t("showing")}</span>
+          <span className="hidden sm:block">{t("showing")}</span>
           <Select
             value={filter}
             onValueChange={(value) => setFilter(value as TransactionFilter)}
           >
-            <SelectTrigger className="w-42">
-              <SelectValue />
+            <SelectTrigger className="w-fit flex items-center gap-2 [&>*:last-child]:hidden sm:[&>*:last-child]:inline">
+              <FilterIcon className="block sm:hidden size-4 shrink-0" />
+              <div className="hidden sm:block">
+                <SelectValue className="text-sm" />
+              </div>
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="all">{t("filterAll")}</SelectItem>
