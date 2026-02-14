@@ -219,21 +219,6 @@ function Sidebar({
     };
   }, []);
 
-  if (collapsible === "none") {
-    return (
-      <div
-        data-slot="sidebar"
-        className={cn(
-          "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-
   React.useEffect(() => {
     if (!openMobile) setDragOffset(0);
   }, [openMobile]);
@@ -276,6 +261,21 @@ function Sidebar({
       queueMicrotask(() => setOpenMobile(false));
     }
   }, [setOpenMobile]);
+
+  if (collapsible === "none") {
+    return (
+      <div
+        data-slot="sidebar"
+        className={cn(
+          "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (

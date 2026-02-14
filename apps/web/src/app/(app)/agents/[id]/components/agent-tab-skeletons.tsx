@@ -175,11 +175,11 @@ function EarningsTabSkeleton() {
 function TransactionsTabSkeleton() {
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-row flex-wrap items-center justify-between gap-4">
-        <Skeleton className="h-10 w-full max-w-48 sm:max-w-80" />
+      <div className="flex flex-row gap-4 items-center justify-between">
+        <Skeleton className="h-10 w-full max-w-64 sm:max-w-80" />
         <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-14" />
-          <Skeleton className="h-10 w-36" />
+          <Skeleton className="hidden sm:block h-4 w-14" />
+          <Skeleton className="h-10 w-10 sm:w-36 rounded-md" />
         </div>
       </div>
 
