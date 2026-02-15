@@ -12,7 +12,7 @@ import DashboardOverview, {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("App.Home");
   return {
-    title: `Masumi - ${t("welcome")}`,
+    title: `Masumi - ${t("title")}`,
     description: t("description"),
   };
 }

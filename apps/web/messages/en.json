@@ -89,6 +89,7 @@
   },
   "App": {
     "Home": {
+      "title": "Dashboard",
       "welcome": "Welcome",
       "description": "Overview of your profile, organizations, and API keys.",
       "signedInAs": "You are signed in as {email}",
