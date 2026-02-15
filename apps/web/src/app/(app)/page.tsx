@@ -59,7 +59,7 @@ async function HomePageContent() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="min-w-0 space-y-12">
       <DashboardOverview data={result.data} />
     </div>
   );

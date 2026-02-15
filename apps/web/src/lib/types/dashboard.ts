@@ -39,7 +39,8 @@ export type DashboardOverview = {
   apiKeyCount: number;
   agentCount: number;
   verifiedAgentCount: number;
+  runningAgentCount: number;
+  pendingAgentCount: number;
+  failedAgentCount: number;
   balance: string;
-  /** Revenue/earnings in USD (placeholder until payment service integrated) */
-  revenue: string;
 };

@@ -14,7 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Agent } from "@/lib/api/agent.client";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { cn , getGreeting } from "@/lib/utils";
+import { cn, getGreeting } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
@@ -44,8 +44,6 @@ export default async function DashboardOverview({
     organizationCount,
     apiKeyCount,
     agentCount,
-    verifiedAgentCount,
-    revenue,
   } = data;
 
   const userName = user.name || user.email || "User";
@@ -63,7 +61,7 @@ export default async function DashboardOverview({
   const showStartKycCta = needsKycAction;
 
   return (
-    <div className="animate-in fade-in duration-300 space-y-8">
+    <div className="animate-in fade-in duration-300 min-w-0 space-y-8">
       {/* Greeting & subtitle */}
       <div className="space-y-1">
         <h2 className="text-2xl font-light tracking-tight text-foreground">
@@ -78,37 +76,25 @@ export default async function DashboardOverview({
       </div>
 
       {/* Stats grid - Revenue, Agents, Organizations */}
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
-        <DashboardRevenueCard revenue={revenue} />
+      <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
+        <DashboardRevenueCard />
 
         {/* Agents */}
-        <Link
-          href="/agents"
-          aria-label={t("stats.agentsCardAria", { count: agentCount })}
-        >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors hover:underline">
-                {t("stats.agents")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                {agentCount}
-                {verifiedAgentCount > 0 && (
-                  <span className="ml-1.5 font-sans text-sm font-normal text-muted-foreground">
-                    {t("stats.agentsVerifiedCount", {
-                      count: verifiedAgentCount,
-                    })}
-                  </span>
-                )}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("stats.agentsDescription")}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+          <CardHeader className="space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
+              {t("stats.registeredAgents")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+              {agentCount}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("stats.registeredAgentsDescription")}
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Organizations */}
         <Link
@@ -166,33 +152,22 @@ export default async function DashboardOverview({
       )}
 
       {/* Agents and API Keys - same row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         {/* Agents section */}
-        <Card className="rounded-lg shadow-none">
+        <Card className="min-w-0 overflow-hidden rounded-lg shadow-none">
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1.5">
-                <Link
-                  href="/agents"
-                  className="leading-none font-semibold hover:underline"
-                >
-                  {t("stats.agents")}
-                </Link>
-                <CardDescription>
-                  {t("agentsSectionDescription")}
-                </CardDescription>
-              </div>
-              {agentCount > 0 && (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/agents" className="flex items-center gap-1">
-                    {t("viewAll")}
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
+            <div className="min-w-0 space-y-1.5">
+              <Link
+                href="/agents"
+                className="inline-flex items-center gap-1 leading-none font-semibold hover:underline"
+              >
+                {t("agentsSectionTitle")}
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+              <CardDescription>{t("agentsSectionDescription")}</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="min-w-0 space-y-4">
             {agents.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
                 <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
@@ -201,15 +176,18 @@ export default async function DashboardOverview({
                 </p>
               </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="min-w-0 space-y-3">
                 {agents.map((agent) => (
-                  <li key={agent.id}>
+                  <li key={agent.id} className="min-w-0">
                     <Link
                       href={`/agents/${agent.id}?from=dashboard`}
                       aria-label={t("agentLinkAria", { name: agent.name })}
-                      className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50"
+                      className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
                     >
-                      <p className="min-w-0 truncate text-sm font-medium">
+                      <p
+                        className="min-w-0 truncate text-sm font-medium"
+                        title={agent.name}
+                      >
                         {agent.name}
                       </p>
                       <Badge
@@ -244,28 +222,19 @@ export default async function DashboardOverview({
         </Card>
 
         {/* API Keys section */}
-        <Card className="rounded-lg shadow-none">
+        <Card className="min-w-0 overflow-hidden rounded-lg shadow-none">
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1.5">
-                <Link
-                  href="/api-keys"
-                  className="leading-none font-semibold hover:underline"
-                >
-                  {t("stats.apiKeys")}
-                </Link>
-                <CardDescription>
-                  {t("apiKeysSectionDescription")}
-                </CardDescription>
-              </div>
-              {apiKeyCount > 0 && (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/api-keys" className="flex items-center gap-1">
-                    {t("viewAll")}
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
+            <div className="min-w-0 space-y-1.5">
+              <Link
+                href="/api-keys"
+                className="inline-flex items-center gap-1 leading-none font-semibold hover:underline"
+              >
+                {t("stats.apiKeys")}
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+              <CardDescription>
+                {t("apiKeysSectionDescription")}
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -317,7 +286,7 @@ export function DashboardOverviewSkeleton() {
       </div>
 
       {/* Stats grid - Revenue, Agents, Organizations */}
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
         {/* Revenue card */}
         <Card className="col-span-2 overflow-hidden rounded-xl pt-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">

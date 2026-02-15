@@ -22,23 +22,14 @@ import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
-const VALID_TABS = [
-  "all",
-  "verified",
-  "registered",
-  "deregistered",
-  "pending",
-  "failed",
-] as const;
+const VALID_TABS = ["all", "verified", "running", "pending", "failed"] as const;
 
 function getFiltersForTab(tab: string) {
   switch (tab) {
     case "verified":
       return { verificationStatus: "VERIFIED" as const };
-    case "registered":
+    case "running":
       return { registrationState: "RegistrationConfirmed" as const };
-    case "deregistered":
-      return { registrationState: "DeregistrationConfirmed" as const };
     case "pending":
       return {
         registrationStateIn: [
@@ -188,8 +179,7 @@ export function AgentsContent() {
     () => [
       { name: t("tabs.all"), count: null, key: "all" },
       { name: t("tabs.verified"), count: null, key: "verified" },
-      { name: t("tabs.registered"), count: null, key: "registered" },
-      { name: t("tabs.deregistered"), count: null, key: "deregistered" },
+      { name: t("tabs.running"), count: null, key: "running" },
       { name: t("tabs.pending"), count: null, key: "pending" },
       { name: t("tabs.failed"), count: null, key: "failed" },
     ],
@@ -290,17 +280,15 @@ export function AgentsContent() {
                 <p className="text-muted-foreground text-sm">
                   {searchQuery
                     ? t("noAgentsMatchingSearch")
-                    : activeTab === "registered"
-                      ? t("noRegisteredAgents")
-                      : activeTab === "deregistered"
-                        ? t("noDeregisteredAgents")
-                        : activeTab === "pending"
-                          ? t("noPendingAgents")
-                          : activeTab === "failed"
-                            ? t("noFailedAgents")
-                            : activeTab === "verified"
-                              ? t("noVerifiedAgents")
-                              : t("noAgents")}
+                    : activeTab === "running"
+                      ? t("noRunningAgents")
+                      : activeTab === "pending"
+                        ? t("noPendingAgents")
+                        : activeTab === "failed"
+                          ? t("noFailedAgents")
+                          : activeTab === "verified"
+                            ? t("noVerifiedAgents")
+                            : t("noAgents")}
                 </p>
               </div>
             )}

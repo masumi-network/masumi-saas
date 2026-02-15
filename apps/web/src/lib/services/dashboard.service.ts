@@ -12,6 +12,7 @@ export async function getDashboardOverview(
     apiKeysResult,
     apiKeyCount,
     agentCounts,
+    agentRegistrationCounts,
     agents,
   ] = await Promise.all([
     prisma.user.findUnique({
@@ -48,6 +49,11 @@ export async function getDashboardOverview(
       where: { userId },
       _count: true,
     }),
+    prisma.agent.groupBy({
+      by: ["registrationState"],
+      where: { userId },
+      _count: true,
+    }),
     prisma.agent.findMany({
       where: { userId },
       select: {
@@ -58,7 +64,7 @@ export async function getDashboardOverview(
         verificationStatus: true,
       },
       orderBy: { updatedAt: "desc" },
-      take: 5,
+      take: 10,
     }),
   ]);
 
@@ -81,6 +87,25 @@ export async function getDashboardOverview(
     (g) => g.verificationStatus === "VERIFIED",
   );
   const verifiedAgentCount = verifiedGroup?._count ?? 0;
+
+  const runningAgentCount =
+    agentRegistrationCounts.find(
+      (g) => g.registrationState === "RegistrationConfirmed",
+    )?._count ?? 0;
+  const pendingAgentCount = agentRegistrationCounts
+    .filter((g) =>
+      ["RegistrationRequested", "DeregistrationRequested"].includes(
+        g.registrationState,
+      ),
+    )
+    .reduce((sum, g) => sum + g._count, 0);
+  const failedAgentCount = agentRegistrationCounts
+    .filter((g) =>
+      ["RegistrationFailed", "DeregistrationFailed"].includes(
+        g.registrationState,
+      ),
+    )
+    .reduce((sum, g) => sum + g._count, 0);
 
   const organizations = userWithOrgs.members.map((m) => ({
     id: m.organization.id,
@@ -121,9 +146,10 @@ export async function getDashboardOverview(
     apiKeyCount,
     agentCount,
     verifiedAgentCount,
+    runningAgentCount,
+    pendingAgentCount,
+    failedAgentCount,
     // TODO: Integrate real balance from payment/wallet service
     balance: "0",
-    // TODO: Integrate real revenue from payment/earnings service
-    revenue: "0",
   };
 }

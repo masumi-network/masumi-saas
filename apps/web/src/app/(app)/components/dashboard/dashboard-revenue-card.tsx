@@ -3,7 +3,7 @@
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,41 +17,112 @@ import {
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
-const PLACEHOLDER_EARNINGS: Record<TimePeriod, string> = {
-  "24h": "5548",
-  "7d": "42000",
-  "30d": "120670",
-  all: "1821992",
-};
+type EarningsPoint = { date: string; amount: number };
 
-function formatRevenue(value: string): string {
-  const num = parseFloat(value || "0");
+const CHART_WIDTH = 100;
+const CHART_HEIGHT = 40;
+const PADDING = 2;
+
+function buildEarningsChartPaths(earnings: EarningsPoint[]): {
+  areaPath: string;
+  linePath: string;
+} {
+  if (earnings.length === 0) {
+    const flatY = CHART_HEIGHT - PADDING;
+    return {
+      areaPath: `M 0 ${flatY} L ${CHART_WIDTH} ${flatY} L ${CHART_WIDTH} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`,
+      linePath: `M 0 ${flatY} L ${CHART_WIDTH} ${flatY}`,
+    };
+  }
+
+  const amounts = earnings.map((p) => p.amount);
+  const minAmount = Math.min(...amounts);
+  const maxAmount = Math.max(...amounts);
+  const range = maxAmount - minAmount || 1;
+  const n = earnings.length;
+  const stepX =
+    n > 1 ? (CHART_WIDTH - 2 * PADDING) / (n - 1) : CHART_WIDTH - 2 * PADDING;
+
+  const points: { x: number; y: number }[] = earnings.map((p, i) => {
+    const x = PADDING + i * stepX;
+    const y =
+      CHART_HEIGHT -
+      PADDING -
+      ((p.amount - minAmount) / range) * (CHART_HEIGHT - 2 * PADDING);
+    return { x, y };
+  });
+
+  const lineParts: string[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const { x, y } = points[i];
+    lineParts.push(i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`);
+  }
+  let linePath = lineParts.join(" ");
+
+  if (n === 1) {
+    const { y } = points[0];
+    linePath = `M ${PADDING} ${y} L ${CHART_WIDTH - PADDING} ${y}`;
+  }
+
+  const lastX = points[points.length - 1].x;
+  const lastY = points[points.length - 1].y;
+  const areaPath =
+    n === 1
+      ? `M ${PADDING} ${lastY} L ${CHART_WIDTH - PADDING} ${lastY} L ${CHART_WIDTH - PADDING} ${CHART_HEIGHT} L ${PADDING} ${CHART_HEIGHT} Z`
+      : `${linePath} L ${lastX} ${CHART_HEIGHT} L ${PADDING} ${CHART_HEIGHT} Z`;
+
+  return { areaPath, linePath };
+}
+
+function formatRevenue(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(num);
+  }).format(value);
 }
 
-interface DashboardRevenueCardProps {
-  revenue: string;
-}
-
-export function DashboardRevenueCard({
-  revenue: _revenue,
-}: DashboardRevenueCardProps) {
+export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
   const [period, setPeriod] = useState<TimePeriod>("7d");
+  const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // TODO: Fetch revenue by period when payment/earnings API is wired
-  const displayRevenue = PLACEHOLDER_EARNINGS[period];
+  const fetchEarnings = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/earnings?period=${period}`);
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error ?? "Failed to load earnings");
+        setEarnings([]);
+        setTotal(0);
+        return;
+      }
+      setEarnings(json.data.earnings ?? []);
+      setTotal(json.data.total ?? 0);
+    } catch {
+      setError("Failed to load earnings");
+      setEarnings([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [period]);
+
+  useEffect(() => {
+    fetchEarnings();
+  }, [fetchEarnings]);
 
   return (
     <Card
       className="group relative col-span-2 overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 lg:col-span-1"
       role="group"
-      aria-label={`${t("earnings")}: ${formatRevenue(displayRevenue)}`}
+      aria-label={`${t("earnings")}: ${formatRevenue(total)}`}
     >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
         <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
@@ -73,16 +144,15 @@ export function DashboardRevenueCard({
         </Select>
       </CardHeader>
       <CardContent className="relative">
-        {/* TODO: Replace with real earnings data when payment/earnings API is wired */}
-        {/* Mini line chart - bottom right, no axes */}
+        {/* Line chart from earnings array */}
         <div
-          className="absolute right-0 bottom-0 h-30 w-full opacity-40 pointer-events-none"
+          className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
           aria-hidden
         >
           <svg
-            viewBox="0 0 100 40"
+            viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
             preserveAspectRatio="none"
-            className="w-full h-full"
+            className="w-full h-full opacity-60"
           >
             <defs>
               <linearGradient
@@ -95,7 +165,7 @@ export function DashboardRevenueCard({
                 <stop
                   offset="0%"
                   stopColor="hsl(var(--primary))"
-                  stopOpacity="0.2"
+                  stopOpacity="0.4"
                 />
                 <stop
                   offset="100%"
@@ -104,24 +174,36 @@ export function DashboardRevenueCard({
                 />
               </linearGradient>
             </defs>
-            <path
-              d="M 0 32 Q 12 30 25 28 T 50 24 T 75 22 T 100 18 L 100 40 L 0 40 Z"
-              fill="url(#earnings-chart-gradient)"
-            />
-            <path
-              d="M 0 32 Q 12 30 25 28 T 50 24 T 75 22 T 100 18"
-              fill="none"
-              stroke="hsl(var(--primary))"
-              strokeWidth=".5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {(() => {
+              const { areaPath, linePath } = buildEarningsChartPaths(earnings);
+              return (
+                <>
+                  <path d={areaPath} fill="url(#earnings-chart-gradient)" />
+                  <path
+                    d={linePath}
+                    fill="none"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="0.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              );
+            })()}
           </svg>
         </div>
 
-        <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
-          {formatRevenue(displayRevenue)}
-        </p>
+        {error ? (
+          <p className="mb-1 text-sm text-destructive">{error}</p>
+        ) : isLoading ? (
+          <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative animate-pulse">
+            {formatRevenue(0)}
+          </p>
+        ) : (
+          <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
+            {formatRevenue(total)}
+          </p>
+        )}
         <p className="mb-4 text-xs text-muted-foreground">
           {t("earningsDescription")}
         </p>
