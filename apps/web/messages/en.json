@@ -133,7 +133,7 @@
         "verifyEmail": "Verify email",
         "stats": {
           "organizations": "Organizations",
-          "organizationsDescription": "Workspaces you belong to",
+          "organizationsDescription": "Member workspaces",
           "agents": "Agents",
           "totalAgents": "Total agents",
           "registeredAgents": "Total AI agents",
@@ -164,7 +164,7 @@
         "startKycPrompt": "Complete identity verification to unlock full access.",
         "kycLoadError": "Unable to load verification status. Please try again later.",
         "organizations": "Organizations",
-        "organizationsDescription": "Workspaces you belong to",
+        "organizationsDescription": "Member workspaces",
         "viewAll": "View all",
         "agentsSectionTitle": "AI agents",
         "agentsSectionDescription": "Manage your AI agents and their configurations.",
