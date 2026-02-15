@@ -36,7 +36,7 @@ export default function Header({ className }: HeaderProps) {
   return (
     <>
       <header
-        className={`sticky top-0 z-20 h-16 border-b border-border bg-background/95 backdrop-blur-md ${className || ""}`}
+        className={`sticky top-0 z-20 h-16 border-b border-border bg-background/80 backdrop-blur-md ${className || ""}`}
       >
         <div className="max-w-container mx-auto w-full h-full">
           <div className="h-full px-4 flex items-center justify-between gap-4">
