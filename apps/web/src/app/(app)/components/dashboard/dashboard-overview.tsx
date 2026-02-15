@@ -217,7 +217,7 @@ export default async function DashboardOverview({
                 ))}
               </ul>
             )}
-            <DashboardRegisterAgentButton />
+            <DashboardRegisterAgentButton agentCount={agentCount} />
           </CardContent>
         </Card>
 

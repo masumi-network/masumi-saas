@@ -52,9 +52,9 @@ export default function MenuItems() {
       Icon: Bot,
     },
     {
-      key: "metrics",
-      href: "/metrics",
-      label: t("metrics"),
+      key: "analytics",
+      href: "/analytics",
+      label: t("analytics"),
       Icon: TrendingUp,
     },
     {

@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("App.Metrics");
+  const t = await getTranslations("App.Analytics");
   return {
     title: `Masumi - ${t("title")}`,
     description: t("description"),
   };
 }
 
-export default async function MetricsPage() {
-  const t = await getTranslations("App.Metrics");
+export default async function AnalyticsPage() {
+  const t = await getTranslations("App.Analytics");
 
-  // TODO: Implement metrics - revenue charts, usage, agent breakdown
+  // TODO: Implement analytics - revenue charts, usage, agent breakdown
   return (
     <div className="space-y-8">
       <div className="space-y-2">

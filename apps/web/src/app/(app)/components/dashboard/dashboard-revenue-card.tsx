@@ -213,9 +213,9 @@ export function DashboardRevenueCard() {
           variant="outline"
           className="h-9 gap-2 relative backdrop-blur-sm"
         >
-          <Link href="/metrics">
+          <Link href="/analytics">
             <TrendingUp className="h-4 w-4" />
-            {t("viewMetrics")}
+            {t("viewAnalytics")}
           </Link>
         </Button>
       </CardContent>

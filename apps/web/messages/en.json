@@ -145,7 +145,7 @@
           "balanceDescription": "Available funds",
           "earnings": "Earnings",
           "earningsDescription": "Total revenue from your agents",
-          "viewMetrics": "View metrics",
+          "viewAnalytics": "View analytics",
           "period24h": "24 Hours",
           "period7d": "7 Days",
           "period30d": "30 Days",
@@ -216,16 +216,16 @@
       "description": "Withdraw your earnings to your preferred payout method.",
       "comingSoon": "Withdrawals are coming soon."
     },
-    "Metrics": {
-      "title": "Metrics",
+    "Analytics": {
+      "title": "Analytics",
       "description": "Revenue, usage, and performance across your agents.",
-      "comingSoon": "Metrics are coming soon."
+      "comingSoon": "Analytics are coming soon."
     },
     "Sidebar": {
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
-        "metrics": "Metrics",
+        "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
@@ -283,7 +283,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "Agents",
-        "metrics": "Metrics",
+        "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",

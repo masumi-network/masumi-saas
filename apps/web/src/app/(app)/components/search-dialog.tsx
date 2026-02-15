@@ -51,7 +51,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/ai-agents", icon: Bot },
-  { key: "metrics", href: "/metrics", icon: TrendingUp },
+  { key: "analytics", href: "/analytics", icon: TrendingUp },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
   { key: "apiKeys", href: "/api-keys", icon: Key },
