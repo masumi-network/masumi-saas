@@ -130,22 +130,26 @@ export async function GET(request: NextRequest) {
       where.registrationState = registrationState;
     }
 
-    if (search && search.length > 0) {
-      where.AND = [
-        {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { summary: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-            { apiUrl: { contains: search, mode: "insensitive" } },
-            { tags: { hasSome: [search] } },
-          ],
-        },
-      ];
-    }
+    const searchFilter =
+      search && search.length > 0
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" as const } },
+              { summary: { contains: search, mode: "insensitive" as const } },
+              {
+                description: { contains: search, mode: "insensitive" as const },
+              },
+              { apiUrl: { contains: search, mode: "insensitive" as const } },
+              { tags: { hasSome: [search] } },
+            ],
+          }
+        : undefined;
+
+    const finalWhere =
+      searchFilter !== undefined ? { AND: [where, searchFilter] } : where;
 
     const agents = await prisma.agent.findMany({
-      where,
+      where: finalWhere,
       orderBy: {
         createdAt: "desc",
       },
