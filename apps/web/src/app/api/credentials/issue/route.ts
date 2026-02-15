@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
 import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -163,6 +164,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify agent ownership via get-credential endpoint
+    const challenge = foundAgent.verificationChallenge;
+    if (!challenge) {
+      return apiError(
+        "No verification challenge found. Generate a challenge first from the Request Credential dialog.",
+        400,
+      );
+    }
+
+    const agentVerification = await fetchAgentCredentialChallenge(
+      foundAgent.apiUrl,
+      challenge,
+    );
+
+    if (!agentVerification.success) {
+      return apiError(agentVerification.error, 400, [
+        "Ensure your agent exposes GET /get-credential?masumi_challenge=<challenge> and returns the challenge string unchanged.",
+        "If the issue persists, contact support.",
+      ]);
+    }
+
     const agent = {
       id: foundAgent.id,
       name: foundAgent.name,
@@ -177,6 +199,7 @@ export async function POST(request: NextRequest) {
       "agentName",
       "agentDescription",
       "agentApiUrl",
+      "signature",
     ];
 
     // Filter out protected fields from user-provided attributes
@@ -196,6 +219,7 @@ export async function POST(request: NextRequest) {
       agentName: agent.name,
       agentDescription: agent.description,
       agentApiUrl: agent.apiUrl,
+      signature: agentVerification.signature,
     };
 
     if (organizationId) {

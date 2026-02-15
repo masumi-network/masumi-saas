@@ -34,6 +34,8 @@ export type AgentMinAggregateOutputType = {
   registrationState: $Enums.RegistrationState | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
+  verificationChallenge: string | null;
+  verificationChallengeGeneratedAt: Date | null;
   metadata: string | null;
   icon: string | null;
   agentIdentifier: string | null;
@@ -51,6 +53,8 @@ export type AgentMaxAggregateOutputType = {
   registrationState: $Enums.RegistrationState | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
+  verificationChallenge: string | null;
+  verificationChallengeGeneratedAt: Date | null;
   metadata: string | null;
   icon: string | null;
   agentIdentifier: string | null;
@@ -68,6 +72,8 @@ export type AgentCountAggregateOutputType = {
   registrationState: number;
   verificationStatus: number;
   veridianCredentialId: number;
+  verificationChallenge: number;
+  verificationChallengeGeneratedAt: number;
   tags: number;
   metadata: number;
   icon: number;
@@ -88,6 +94,8 @@ export type AgentMinAggregateInputType = {
   registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
+  verificationChallenge?: true;
+  verificationChallengeGeneratedAt?: true;
   metadata?: true;
   icon?: true;
   agentIdentifier?: true;
@@ -105,6 +113,8 @@ export type AgentMaxAggregateInputType = {
   registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
+  verificationChallenge?: true;
+  verificationChallengeGeneratedAt?: true;
   metadata?: true;
   icon?: true;
   agentIdentifier?: true;
@@ -122,6 +132,8 @@ export type AgentCountAggregateInputType = {
   registrationState?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
+  verificationChallenge?: true;
+  verificationChallengeGeneratedAt?: true;
   tags?: true;
   metadata?: true;
   icon?: true;
@@ -221,6 +233,8 @@ export type AgentGroupByOutputType = {
   registrationState: $Enums.RegistrationState;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
+  verificationChallenge: string | null;
+  verificationChallengeGeneratedAt: Date | null;
   tags: string[];
   metadata: string | null;
   icon: string | null;
@@ -263,6 +277,12 @@ export type AgentWhereInput = {
     | $Enums.VerificationStatus
     | null;
   veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  verificationChallenge?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.DateTimeNullableFilter<"Agent">
+    | Date
+    | string
+    | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
   icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -284,6 +304,8 @@ export type AgentOrderByWithRelationInput = {
   registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  verificationChallenge?: Prisma.SortOrderInput | Prisma.SortOrder;
+  verificationChallengeGeneratedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   icon?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -314,6 +336,15 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
       | $Enums.VerificationStatus
       | null;
     veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    verificationChallenge?:
+      | Prisma.StringNullableFilter<"Agent">
+      | string
+      | null;
+    verificationChallengeGeneratedAt?:
+      | Prisma.DateTimeNullableFilter<"Agent">
+      | Date
+      | string
+      | null;
     tags?: Prisma.StringNullableListFilter<"Agent">;
     metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
     icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -337,6 +368,8 @@ export type AgentOrderByWithAggregationInput = {
   registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  verificationChallenge?: Prisma.SortOrderInput | Prisma.SortOrder;
+  verificationChallengeGeneratedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   icon?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -377,6 +410,15 @@ export type AgentScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"Agent">
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.StringNullableWithAggregatesFilter<"Agent">
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.DateTimeNullableWithAggregatesFilter<"Agent">
+    | Date
+    | string
+    | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null;
   icon?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null;
@@ -398,6 +440,8 @@ export type AgentCreateInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -419,6 +463,8 @@ export type AgentUncheckedCreateInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -444,6 +490,15 @@ export type AgentUpdateInput = {
     | null;
   veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
@@ -478,6 +533,15 @@ export type AgentUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -501,6 +565,8 @@ export type AgentCreateManyInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -525,6 +591,15 @@ export type AgentUpdateManyMutationInput = {
     | null;
   veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
@@ -555,6 +630,15 @@ export type AgentUncheckedUpdateManyInput = {
     | null;
   veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
@@ -597,6 +681,8 @@ export type AgentCountOrderByAggregateInput = {
   registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
+  verificationChallenge?: Prisma.SortOrder;
+  verificationChallengeGeneratedAt?: Prisma.SortOrder;
   tags?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
@@ -616,6 +702,8 @@ export type AgentMaxOrderByAggregateInput = {
   registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
+  verificationChallenge?: Prisma.SortOrder;
+  verificationChallengeGeneratedAt?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrder;
@@ -633,6 +721,8 @@ export type AgentMinOrderByAggregateInput = {
   registrationState?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
+  verificationChallenge?: Prisma.SortOrder;
+  verificationChallengeGeneratedAt?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrder;
@@ -785,6 +875,8 @@ export type AgentCreateWithoutUserInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -804,6 +896,8 @@ export type AgentUncheckedCreateWithoutUserInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -873,6 +967,12 @@ export type AgentScalarWhereInput = {
     | $Enums.VerificationStatus
     | null;
   veridianCredentialId?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  verificationChallenge?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.DateTimeNullableFilter<"Agent">
+    | Date
+    | string
+    | null;
   tags?: Prisma.StringNullableListFilter<"Agent">;
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
   icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -891,6 +991,8 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -911,6 +1013,8 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -965,6 +1069,15 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -996,6 +1109,15 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1017,6 +1139,8 @@ export type AgentCreateManyUserInput = {
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
   icon?: string | null;
@@ -1041,6 +1165,15 @@ export type AgentUpdateWithoutUserInput = {
     | null;
   veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
@@ -1073,6 +1206,15 @@ export type AgentUncheckedUpdateWithoutUserInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1101,6 +1243,15 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
     | null;
   veridianCredentialId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
@@ -1169,6 +1320,8 @@ export type AgentSelect<
     registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
+    verificationChallenge?: boolean;
+    verificationChallengeGeneratedAt?: boolean;
     tags?: boolean;
     metadata?: boolean;
     icon?: boolean;
@@ -1199,6 +1352,8 @@ export type AgentSelectCreateManyAndReturn<
     registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
+    verificationChallenge?: boolean;
+    verificationChallengeGeneratedAt?: boolean;
     tags?: boolean;
     metadata?: boolean;
     icon?: boolean;
@@ -1225,6 +1380,8 @@ export type AgentSelectUpdateManyAndReturn<
     registrationState?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
+    verificationChallenge?: boolean;
+    verificationChallengeGeneratedAt?: boolean;
     tags?: boolean;
     metadata?: boolean;
     icon?: boolean;
@@ -1247,6 +1404,8 @@ export type AgentSelectScalar = {
   registrationState?: boolean;
   verificationStatus?: boolean;
   veridianCredentialId?: boolean;
+  verificationChallenge?: boolean;
+  verificationChallengeGeneratedAt?: boolean;
   tags?: boolean;
   metadata?: boolean;
   icon?: boolean;
@@ -1269,6 +1428,8 @@ export type AgentOmit<
   | "registrationState"
   | "verificationStatus"
   | "veridianCredentialId"
+  | "verificationChallenge"
+  | "verificationChallengeGeneratedAt"
   | "tags"
   | "metadata"
   | "icon"
@@ -1319,6 +1480,8 @@ export type $AgentPayload<
       registrationState: $Enums.RegistrationState;
       verificationStatus: $Enums.VerificationStatus | null;
       veridianCredentialId: string | null;
+      verificationChallenge: string | null;
+      verificationChallengeGeneratedAt: Date | null;
       tags: string[];
       metadata: string | null;
       icon: string | null;
@@ -1954,6 +2117,11 @@ export interface AgentFieldRefs {
   readonly registrationState: Prisma.FieldRef<"Agent", "RegistrationState">;
   readonly verificationStatus: Prisma.FieldRef<"Agent", "VerificationStatus">;
   readonly veridianCredentialId: Prisma.FieldRef<"Agent", "String">;
+  readonly verificationChallenge: Prisma.FieldRef<"Agent", "String">;
+  readonly verificationChallengeGeneratedAt: Prisma.FieldRef<
+    "Agent",
+    "DateTime"
+  >;
   readonly tags: Prisma.FieldRef<"Agent", "String[]">;
   readonly metadata: Prisma.FieldRef<"Agent", "String">;
   readonly icon: Prisma.FieldRef<"Agent", "String">;

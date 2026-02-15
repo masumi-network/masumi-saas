@@ -272,6 +272,25 @@ class AgentApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async getVerificationChallenge(
+    agentId: string,
+    regenerate = false,
+  ): Promise<ApiResponse<{ challenge: string; generatedAt: string | null }>> {
+    if (regenerate) {
+      return this.request<{ challenge: string; generatedAt: string | null }>(
+        `/${agentId}/verification-challenge`,
+        {
+          method: "POST",
+          body: JSON.stringify({ regenerate: true }),
+        },
+      );
+    }
+    return this.request<{ challenge: string; generatedAt: string | null }>(
+      `/${agentId}/verification-challenge`,
+      { method: "GET" },
+    );
+  }
 }
 
 export const agentApiClient = new AgentApiClient();

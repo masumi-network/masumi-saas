@@ -18,7 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { VeridianWalletConnect } from "@/components/veridian";
-import { type Agent } from "@/lib/api/agent.client";
+import { type Agent,agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 
 import { EstablishConnectionDialog } from "./establish-connection-dialog";
@@ -50,6 +50,10 @@ export function RequestVerificationDialog({
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [establishConnectionDialogOpen, setEstablishConnectionDialogOpen] =
     useState(false);
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
+  const [isRegeneratingChallenge, setIsRegeneratingChallenge] = useState(false);
+  const [issueError, setIssueError] = useState<string | null>(null);
   const veridianConnectKeyRef = useRef(0);
   const lastCheckedAidRef = useRef<string | null>(null);
 
@@ -60,9 +64,41 @@ export function RequestVerificationDialog({
       setOobi(null);
       setConnectionExists(null);
       setEstablishConnectionDialogOpen(false);
+      setChallenge(null);
+      setIssueError(null);
       lastCheckedAidRef.current = null;
     }
   }, [open]);
+
+  // Fetch or generate verification challenge when dialog opens
+  useEffect(() => {
+    if (!open || !agent.id || kycStatus !== "APPROVED") return;
+
+    let cancelled = false;
+    setIsLoadingChallenge(true);
+    agentApiClient
+      .getVerificationChallenge(agent.id)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.success) {
+          setChallenge(result.data.challenge);
+        } else {
+          toast.error(result.error || "Failed to get verification challenge");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error("Failed to get verification challenge");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingChallenge(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, agent.id, kycStatus]);
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
@@ -200,6 +236,22 @@ export function RequestVerificationDialog({
     }
   };
 
+  const handleRegenerateChallenge = async () => {
+    setIsRegeneratingChallenge(true);
+    setIssueError(null);
+    const result = await agentApiClient.getVerificationChallenge(
+      agent.id,
+      true,
+    );
+    if (result.success) {
+      setChallenge(result.data.challenge);
+      toast.success(t("challengeRegenerated"));
+    } else {
+      toast.error(result.error || "Failed to generate new challenge");
+    }
+    setIsRegeneratingChallenge(false);
+  };
+
   const handleSubmit = async () => {
     if (kycStatus !== "APPROVED") {
       toast.error("Please complete your KYC verification first");
@@ -211,7 +263,15 @@ export function RequestVerificationDialog({
       return;
     }
 
+    if (!challenge) {
+      toast.error(
+        "Verification challenge not ready. Please wait or try again.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
+    setIssueError(null);
     try {
       // Request message signature to prove wallet ownership
       const signatureData = await signMessage();
@@ -234,10 +294,13 @@ export function RequestVerificationDialog({
         onOpenChange(false);
         setAid(null);
       } else {
+        setIssueError(result.error || t("requestError"));
         toast.error(result.error || t("requestError"));
       }
     } catch (error) {
-      toast.error(t("requestError"));
+      const errMsg = error instanceof Error ? error.message : t("requestError");
+      setIssueError(errMsg);
+      toast.error(errMsg);
       console.error("Failed to issue credential:", error);
     } finally {
       setIsSubmitting(false);
@@ -278,6 +341,71 @@ export function RequestVerificationDialog({
               </div>
             </div>
           </div>
+
+          {kycStatus === "APPROVED" && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">{t("agentVerification")}</h3>
+              {isLoadingChallenge ? (
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {t("loadingChallenge")}
+                  </p>
+                </div>
+              ) : challenge ? (
+                <div className="space-y-2">
+                  <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      {t("agentVerificationDescription")}
+                    </p>
+                    <p className="text-xs font-mono break-all bg-background p-2 rounded">
+                      GET {agent.apiUrl.replace(/\/$/, "")}
+                      /get-credential?masumi_challenge={challenge}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("agentVerificationHint")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRegenerateChallenge}
+                    disabled={isRegeneratingChallenge}
+                  >
+                    {isRegeneratingChallenge && (
+                      <Spinner size={14} className="mr-2" />
+                    )}
+                    {t("generateNewSignature")}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {issueError && (
+            <div className="rounded-lg border border-destructive/60 bg-destructive/5 p-4 space-y-2">
+              <p className="text-sm text-destructive">{issueError}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("agentErrorHint")}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIssueError(null)}
+                >
+                  {t("retry")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRegenerateChallenge}
+                  disabled={isRegeneratingChallenge}
+                >
+                  {t("generateNewSignature")}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">{t("kycStatus")}</h3>
@@ -433,7 +561,11 @@ export function RequestVerificationDialog({
             variant="primary"
             onClick={handleSubmit}
             disabled={
-              isSubmitting || isSigning || !aid || kycStatus !== "APPROVED"
+              isSubmitting ||
+              isSigning ||
+              !aid ||
+              !challenge ||
+              kycStatus !== "APPROVED"
             }
           >
             {(isSubmitting || isSigning) && (

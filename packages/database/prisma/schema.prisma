@@ -242,9 +242,11 @@ model Agent {
   registrationState RegistrationState @default(RegistrationConfirmed)
 
   // Verification
-  verificationStatus   VerificationStatus?  @default(PENDING)
-  veridianCredentialId String? // Credential ID from Veridian API
-  veridianCredentials  VeridianCredential[] // Credentials issued for this agent
+  verificationStatus             VerificationStatus?  @default(PENDING)
+  veridianCredentialId           String? // Credential ID from Veridian API
+  veridianCredentials            VeridianCredential[] // Credentials issued for this agent
+  verificationChallenge          String? // Masumi-generated challenge for agent endpoint verification
+  verificationChallengeGeneratedAt DateTime? // When the challenge was generated
 
   // Metadata
   tags     String[] @default([])
