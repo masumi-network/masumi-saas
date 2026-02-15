@@ -28,7 +28,7 @@ export function FooterSections({ className }: FooterSectionsProps) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-4",
+        "flex items-center justify-between gap-4 w-full",
         className,
       )}
     >
@@ -39,7 +39,7 @@ export function FooterSections({ className }: FooterSectionsProps) {
           <span className="text-xs sm:text-sm tracking-tight">{"English"}</span>
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center flex-1 justify-end gap-4">
         <Link
           href="https://www.masumi.network/about"
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
@@ -57,12 +57,6 @@ export function FooterSections({ className }: FooterSectionsProps) {
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
         >
           {t("legal")}
-        </Link>
-        <Link
-          href="https://www.masumi.network/product-releases"
-          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
-        >
-          {t("changelog")}
         </Link>
       </div>
     </div>
