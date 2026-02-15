@@ -687,6 +687,7 @@
         "success": "Password updated successfully!",
         "error": "Failed to update password. Please try again."
       },
+      "dangerZone": "Danger Zone",
       "Delete": {
         "title": "Delete Account",
         "description": "Permanently delete your account and all associated data. This action cannot be undone.",

@@ -4,7 +4,7 @@ import { AgentsTableSkeleton } from "./components/agents-table-skeleton";
 
 export default function AgentsLoading() {
   return (
-    <div className="w-full space-y-12 px-2">
+    <div className="w-full space-y-8 px-2">
       <div className="space-y-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-5 w-96" />

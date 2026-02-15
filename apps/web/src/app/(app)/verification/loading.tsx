@@ -19,7 +19,7 @@ export default function VerificationLoading() {
   ];
 
   return (
-    <div className="w-full space-y-12">
+    <div className="w-full space-y-8">
       <div className="space-y-2">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-5 w-96" />

@@ -14,7 +14,7 @@ export default async function MetricsPage() {
 
   // TODO: Implement metrics - revenue charts, usage, agent breakdown
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       <div className="space-y-2">
         <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm leading-6">

@@ -109,7 +109,7 @@ export function AgentPageContent({
 
   return (
     <>
-      <div className="flex flex-col gap-12 pb-3 pt-1">
+      <div className="flex flex-col gap-8 pb-3 pt-1">
         <AgentPageHeader
           agent={agent}
           backHref={backHref}

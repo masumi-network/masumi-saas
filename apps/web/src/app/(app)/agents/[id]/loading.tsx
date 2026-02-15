@@ -8,7 +8,7 @@ import { TabSkeleton } from "./components/agent-tab-skeletons";
 function LoadingFallback() {
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-col gap-12 pb-3 pt-1">
+      <div className="flex flex-col gap-8 pb-3 pt-1">
         {/* Header skeleton - matches AgentPageHeader structure */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">

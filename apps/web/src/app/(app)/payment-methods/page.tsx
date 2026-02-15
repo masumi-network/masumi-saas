@@ -13,7 +13,7 @@ export default async function PaymentMethodsPage() {
   const t = await getTranslations("App.PaymentMethods");
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       <div className="space-y-2">
         <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm leading-6">
