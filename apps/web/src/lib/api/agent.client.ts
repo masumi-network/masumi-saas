@@ -89,6 +89,7 @@ class AgentApiClient {
         | "DeregistrationConfirmed"
         | "DeregistrationFailed";
       registrationStateIn?: string[];
+      search?: string;
     },
     options?: { cursorId?: string; take?: number },
   ): Promise<GetAgentsResult> {
@@ -107,6 +108,9 @@ class AgentApiClient {
       filters.registrationStateIn.length > 0
     ) {
       params.set("registrationStateIn", filters.registrationStateIn.join(","));
+    }
+    if (filters?.search?.trim()) {
+      params.set("search", filters.search.trim());
     }
     if (options?.cursorId) {
       params.set("cursor", options.cursorId);

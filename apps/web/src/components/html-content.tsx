@@ -1,8 +1,27 @@
 "use client";
 
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 import { cn } from "@/lib/utils";
+
+const ALLOWED_TAGS = [
+  "p",
+  "br",
+  "strong",
+  "em",
+  "u",
+  "s",
+  "ul",
+  "ol",
+  "li",
+  "a",
+  "h1",
+  "h2",
+  "h3",
+  "code",
+  "pre",
+  "blockquote",
+];
 
 interface HtmlContentProps {
   html: string;
@@ -10,26 +29,9 @@ interface HtmlContentProps {
 }
 
 export function HtmlContent({ html, className }: HtmlContentProps) {
-  const sanitized = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      "p",
-      "br",
-      "strong",
-      "em",
-      "u",
-      "s",
-      "ul",
-      "ol",
-      "li",
-      "a",
-      "h1",
-      "h2",
-      "h3",
-      "code",
-      "pre",
-      "blockquote",
-    ],
-    ALLOWED_ATTR: ["href", "target", "rel"],
+  const sanitized = sanitizeHtml(html, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: { a: ["href", "target", "rel"] },
   });
 
   return (

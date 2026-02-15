@@ -34,7 +34,7 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only trigger when "f" is pressed without modifiers (Ctrl/Cmd/Alt).
       // Modifiers would indicate a browser shortcut (e.g. Cmd+F) which we must not override.
-      if (e.key?.toLowerCase() !== "f") return;
+      if (e.key.toLowerCase() !== "f") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const target = e.target as HTMLElement;

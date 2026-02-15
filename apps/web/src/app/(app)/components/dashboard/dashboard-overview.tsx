@@ -19,7 +19,7 @@ import { cn, getGreeting } from "@/lib/utils";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
-} from "../../agents/components/agent-utils";
+} from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 import { DashboardRevenueCard } from "./dashboard-revenue-card";
@@ -158,7 +158,7 @@ export default async function DashboardOverview({
           <CardHeader>
             <div className="min-w-0 space-y-1.5">
               <Link
-                href="/agents"
+                href="/ai-agents"
                 className="inline-flex items-center gap-1 leading-none font-semibold hover:underline"
               >
                 {t("agentsSectionTitle")}
@@ -180,7 +180,7 @@ export default async function DashboardOverview({
                 {agents.map((agent) => (
                   <li key={agent.id} className="min-w-0">
                     <Link
-                      href={`/agents/${agent.id}?from=dashboard`}
+                      href={`/ai-agents/${agent.id}?from=dashboard`}
                       aria-label={t("agentLinkAria", { name: agent.name })}
                       className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
                     >

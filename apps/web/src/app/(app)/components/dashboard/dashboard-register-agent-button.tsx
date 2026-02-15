@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { RegisterAgentDialog } from "../../agents/components/register-agent-dialog";
+import { RegisterAgentDialog } from "../../ai-agents/components/register-agent-dialog";
 
 export function DashboardRegisterAgentButton() {
   const t = useTranslations("App.Home.Dashboard");

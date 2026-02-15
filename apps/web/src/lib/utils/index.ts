@@ -13,3 +13,9 @@ export function shortenAddress(address: string, length = 6): string {
   if (address.length <= length * 2) return address;
   return address.slice(0, length) + "…" + address.slice(-length);
 }
+
+/** Strips HTML tags from a string to produce plain text for display. */
+export function stripHtml(html: string): string {
+  if (!html || typeof html !== "string") return "";
+  return html.replace(/<[^>]*>/g, "").trim();
+}

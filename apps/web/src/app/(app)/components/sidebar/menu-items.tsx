@@ -47,7 +47,7 @@ export default function MenuItems() {
     },
     {
       key: "agents",
-      href: "/agents",
+      href: "/ai-agents",
       label: t("agents"),
       Icon: Bot,
     },

@@ -360,8 +360,8 @@
       }
     },
     "Agents": {
-      "title": "Agents",
-      "description": "Manage your AI agents and their verification status.",
+      "title": "AI agents",
+      "description": "Manage your AI agents and their configurations.",
       "searchPlaceholder": "Search agents...",
       "searchShortcut": "F",
       "registerAgent": "Register Agent",
@@ -369,14 +369,14 @@
       "noAgentsMatchingSearch": "No agents found matching your search",
       "loadMore": "Load more",
       "loadingMore": "Loading…",
-      "noRunningAgents": "No running agents found",
+      "noRegisteredAgents": "No registered agents found",
       "noPendingAgents": "No pending agents found",
       "noFailedAgents": "No failed agents found",
       "noVerifiedAgents": "No verified agents found",
       "tabs": {
         "all": "All",
         "verified": "Verified",
-        "running": "Running",
+        "registered": "Registered",
         "pending": "Pending",
         "failed": "Failed"
       },
@@ -387,7 +387,7 @@
         "transactions": "Transactions"
       },
       "registrationStatus": {
-        "running": "Running",
+        "registered": "Registered",
         "pending": "Pending",
         "registering": "Registering",
         "registrationFailed": "Registration Failed",

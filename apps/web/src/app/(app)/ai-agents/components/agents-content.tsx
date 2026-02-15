@@ -75,7 +75,7 @@ export function AgentsContent() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "f") return;
+      if (e.key?.toLowerCase() !== "f") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement;
       if (
@@ -134,7 +134,7 @@ export function AgentsContent() {
     } else {
       params.set("tab", key);
     }
-    router.push(`/agents?${params.toString()}`);
+    router.push(`/ai-agents?${params.toString()}`);
   };
 
   const handleRegisterSuccess = () => {
@@ -252,13 +252,13 @@ export function AgentsContent() {
             <AgentsTable
               agents={agents}
               onAgentClick={(agent) => {
-                router.push(`/agents/${agent.id}`);
+                router.push(`/ai-agents/${agent.id}`);
               }}
               onDeleteSuccess={handleDeleteSuccess}
             />
 
             {nextCursor && (
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center mb-10">
                 <Button
                   variant="outline"
                   size="sm"

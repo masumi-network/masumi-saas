@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
       | "DeregistrationFailed"
       | null;
     const registrationStateIn = searchParams.get("registrationStateIn");
+    const search = searchParams.get("search")?.trim() ?? undefined;
     const cursorId = searchParams.get("cursor") ?? undefined;
     const take = Math.min(
       Math.max(1, parseInt(searchParams.get("take") ?? "10", 10) || 10),
@@ -127,6 +128,20 @@ export async function GET(request: NextRequest) {
       }
     } else if (registrationState && validStates.includes(registrationState)) {
       where.registrationState = registrationState;
+    }
+
+    if (search && search.length > 0) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { summary: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+            { apiUrl: { contains: search, mode: "insensitive" } },
+            { tags: { hasSome: [search] } },
+          ],
+        },
+      ];
     }
 
     const agents = await prisma.agent.findMany({

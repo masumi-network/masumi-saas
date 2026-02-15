@@ -127,7 +127,7 @@ export function GetStartedCard({
               {t("getStarted.registerAgent")}
             </span>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/agents">{t("getStarted.doIt")}</Link>
+              <Link href="/ai-agents">{t("getStarted.doIt")}</Link>
             </Button>
           </li>
         </ul>

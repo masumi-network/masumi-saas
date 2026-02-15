@@ -25,7 +25,7 @@ import {
 } from "react";
 import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
-import { AgentIcon } from "@/app/agents/components/agent-icon";
+import { AgentIcon } from "@/app/ai-agents/components/agent-icon";
 import {
   CommandDialog,
   CommandEmpty,
@@ -50,7 +50,7 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
-  { key: "agents", href: "/agents", icon: Bot },
+  { key: "agents", href: "/ai-agents", icon: Bot },
   { key: "metrics", href: "/metrics", icon: TrendingUp },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
@@ -160,7 +160,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                 <CommandItem
                   key={agent.id}
                   value={`agent-${agent.id}-${agent.name}`}
-                  onSelect={() => handleSelect(`/agents/${agent.id}`)}
+                  onSelect={() => handleSelect(`/ai-agents/${agent.id}`)}
                 >
                   <AgentIcon
                     icon={agent.icon}
