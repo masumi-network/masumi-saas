@@ -18,7 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { VeridianWalletConnect } from "@/components/veridian";
-import { type Agent,agentApiClient } from "@/lib/api/agent.client";
+import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 
 import { EstablishConnectionDialog } from "./establish-connection-dialog";
@@ -358,8 +358,14 @@ export function RequestVerificationDialog({
                       {t("agentVerificationDescription")}
                     </p>
                     <p className="text-xs font-mono break-all bg-background p-2 rounded">
-                      GET {agent.apiUrl.replace(/\/$/, "")}
-                      /get-credential?masumi_challenge={challenge}
+                      {[
+                        "GET",
+                        [
+                          agent.apiUrl.replace(/\/$/, ""),
+                          "/get-credential?masumi_challenge=",
+                          challenge,
+                        ].join(""),
+                      ].join(" ")}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t("agentVerificationHint")}

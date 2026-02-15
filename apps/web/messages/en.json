@@ -630,7 +630,7 @@
           "agentVerification": "Agent Verification",
           "loadingChallenge": "Loading verification challenge...",
           "agentVerificationDescription": "Add this endpoint to your agent. When Masumi calls it, return the challenge value unchanged as plain text.",
-          "agentVerificationHint": "Your agent must respond to GET /get-credential?masumi_challenge=<challenge> and return the challenge string. This proves you control the agent's backend.",
+          "agentVerificationHint": "Your agent must respond to GET /get-credential?masumi_challenge=[challenge] and return the challenge string. This proves you control the agent's backend.",
           "generateNewSignature": "Generate new challenge",
           "challengeRegenerated": "New challenge generated. Update your agent endpoint with the new value.",
           "agentErrorHint": "If your agent is unreachable or returns the wrong value, fix the endpoint and try again. Or generate a new challenge.",
