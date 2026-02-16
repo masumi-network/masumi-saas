@@ -91,22 +91,24 @@ export default async function AdminUsersPage({
 
   type UserWithKyc = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
-  // Parallel query: users + total count with error handling
+  // Fetch total count first, then clamp page before querying users
   let users: UserWithKyc[] = [];
   let total = 0;
   let hasError = false;
 
   try {
-    [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: userSelect,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip: (page - 1) * limit,
-      }),
-      prisma.user.count({ where }),
-    ]);
+    total = await prisma.user.count({ where });
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const currentPage = Math.min(page, totalPages);
+
+    // Query users with clamped page value
+    users = await prisma.user.findMany({
+      where,
+      select: userSelect,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: (currentPage - 1) * limit,
+    });
   } catch (error) {
     console.error("Failed to fetch users:", error);
     hasError = true;
