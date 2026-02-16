@@ -321,7 +321,7 @@ export function getDefaultValue(
       return schema.data?.default ?? "";
 
     case "number":
-      return 0;
+      return parseFloat(schema.data?.default ?? "") || 0;
 
     case "boolean":
     case "checkbox":
