@@ -1669,6 +1669,7 @@ export const AgentScalarFieldEnum = {
   veridianCredentialId: "veridianCredentialId",
   verificationChallenge: "verificationChallenge",
   verificationChallengeGeneratedAt: "verificationChallengeGeneratedAt",
+  verificationSecret: "verificationSecret",
   tags: "tags",
   metadata: "metadata",
   icon: "icon",

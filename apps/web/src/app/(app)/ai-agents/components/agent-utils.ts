@@ -33,8 +33,14 @@ export function getVerificationStatusKey(
 
 export function getVerificationStatusBadgeVariant(
   status: Agent["verificationStatus"],
-): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
-  if (status === "VERIFIED") return "outline-muted";
+):
+  | "default"
+  | "secondary"
+  | "destructive"
+  | "success"
+  | "outline"
+  | "outline-muted" {
+  if (status === "VERIFIED") return "success";
   if (status === "REVOKED" || status === "EXPIRED") return "destructive";
   return "secondary";
 }

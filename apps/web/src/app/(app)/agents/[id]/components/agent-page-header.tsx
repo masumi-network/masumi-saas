@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ShieldCheck } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -12,12 +12,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { type Agent } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
 
 import { AgentIcon } from "../../components/agent-icon";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
+  getVerificationStatusBadgeVariant,
   getVerificationStatusKey,
 } from "../../components/agent-utils";
 
@@ -76,30 +76,33 @@ export function AgentPageHeader({
           {agent.name}
         </h1>
         <Badge
-          variant={getRegistrationStatusBadgeVariant(agent.registrationState)}
-          className={cn(
-            "shrink-0",
-            agent.registrationState === "RegistrationConfirmed" &&
-              "border-green-200 bg-green-50 text-green-700 hover:bg-green-50/80 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
-          )}
+          variant={
+            agent.registrationState === "RegistrationConfirmed"
+              ? "success"
+              : getRegistrationStatusBadgeVariant(agent.registrationState)
+          }
+          className="shrink-0"
         >
           {tRegistrationStatus(
             getRegistrationStatusKey(agent.registrationState),
           )}
         </Badge>
-        {/* Verification badge: only show when agent has Veridian credential */}
-        {agent.verificationStatus === "VERIFIED" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="shrink-0 inline-flex text-muted-foreground cursor-default">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
+        {/* Verification status badge */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant={getVerificationStatusBadgeVariant(
+                agent.verificationStatus,
+              )}
+              className="shrink-0"
+            >
               {tStatus(getVerificationStatusKey(agent.verificationStatus))}
-            </TooltipContent>
-          </Tooltip>
-        )}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            {tStatus(getVerificationStatusKey(agent.verificationStatus))}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

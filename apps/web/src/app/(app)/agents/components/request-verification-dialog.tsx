@@ -1,12 +1,14 @@
 "use client";
 
-import { AlertCircle, ShieldCheck, XCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, ShieldCheck, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CodeEditor } from "@/components/ui/code-editor";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +17,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { VeridianWalletConnect } from "@/components/veridian";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
+import {
+  getKycStatusBadgeKey,
+  getKycStatusBadgeVariant,
+} from "@/lib/kyc-status";
+import {
+  getVerificationCodeSnippet,
+  VERIFICATION_SNIPPET_LANGUAGES,
+  type VerificationSnippetLang,
+} from "@/lib/verification-code-snippets";
 
 import { EstablishConnectionDialog } from "./establish-connection-dialog";
 
@@ -51,8 +69,13 @@ export function RequestVerificationDialog({
   const [establishConnectionDialogOpen, setEstablishConnectionDialogOpen] =
     useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [snippetLang, setSnippetLang] =
+    useState<VerificationSnippetLang>("node");
+  const [showSecret, setShowSecret] = useState(false);
   const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
   const [isRegeneratingChallenge, setIsRegeneratingChallenge] = useState(false);
+  const [isTestingEndpoint, setIsTestingEndpoint] = useState(false);
   const [issueError, setIssueError] = useState<string | null>(null);
   const veridianConnectKeyRef = useRef(0);
   const lastCheckedAidRef = useRef<string | null>(null);
@@ -65,6 +88,8 @@ export function RequestVerificationDialog({
       setConnectionExists(null);
       setEstablishConnectionDialogOpen(false);
       setChallenge(null);
+      setSecret(null);
+      setShowSecret(false);
       setIssueError(null);
       lastCheckedAidRef.current = null;
     }
@@ -82,6 +107,7 @@ export function RequestVerificationDialog({
         if (cancelled) return;
         if (result.success) {
           setChallenge(result.data.challenge);
+          setSecret(result.data.secret);
         } else {
           toast.error(result.error || "Failed to get verification challenge");
         }
@@ -245,11 +271,24 @@ export function RequestVerificationDialog({
     );
     if (result.success) {
       setChallenge(result.data.challenge);
+      setSecret(result.data.secret);
       toast.success(t("challengeRegenerated"));
     } else {
       toast.error(result.error || "Failed to generate new challenge");
     }
     setIsRegeneratingChallenge(false);
+  };
+
+  const handleTestEndpoint = async () => {
+    setIsTestingEndpoint(true);
+    setIssueError(null);
+    const result = await agentApiClient.testVerificationEndpoint(agent.id);
+    if (result.success) {
+      toast.success(t("testEndpointSuccess"));
+    } else {
+      toast.error(result.error || "Endpoint test failed");
+    }
+    setIsTestingEndpoint(false);
   };
 
   const handleSubmit = async () => {
@@ -346,42 +385,115 @@ export function RequestVerificationDialog({
             <div className="flex flex-col gap-2">
               <h3 className="text-sm font-medium">{t("agentVerification")}</h3>
               {isLoadingChallenge ? (
-                <div className="rounded-lg border bg-muted/40 p-4">
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
+                  <Spinner size={20} />
                   <p className="text-sm text-muted-foreground">
                     {t("loadingChallenge")}
                   </p>
                 </div>
-              ) : challenge ? (
-                <div className="space-y-2">
+              ) : challenge && secret ? (
+                <div className="space-y-4">
                   <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
                     <p className="text-xs text-muted-foreground">
                       {t("agentVerificationDescription")}
                     </p>
-                    <p className="text-xs font-mono break-all bg-background p-2 rounded">
-                      {[
-                        "GET",
-                        [
-                          agent.apiUrl.replace(/\/$/, ""),
-                          "/get-credential?masumi_challenge=",
-                          challenge,
-                        ].join(""),
-                      ].join(" ")}
+                    <p className="text-xs font-medium">
+                      {t("verificationSecret")}
                     </p>
+                    <div className="flex items-center gap-2 overflow-hidden rounded bg-background p-2 font-mono text-xs">
+                      <code className="min-w-0 flex-1 break-all select-all overflow-hidden">
+                        {showSecret ? secret : "•".repeat(64)}
+                      </code>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <CopyButton value={secret} className="h-7 w-7" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setShowSecret((v) => !v)}
+                          aria-label={
+                            showSecret ? "Hide secret" : "Show secret"
+                          }
+                        >
+                          {showSecret ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {t("agentVerificationHint")}
+                      {t("agentVerificationSecretHint")}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRegenerateChallenge}
-                    disabled={isRegeneratingChallenge}
-                  >
-                    {isRegeneratingChallenge && (
-                      <Spinner size={14} className="mr-2" />
-                    )}
-                    {t("generateNewSignature")}
-                  </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">
+                        {t("integrationCode")}
+                      </p>
+                      <Select
+                        value={snippetLang}
+                        onValueChange={(v) =>
+                          setSnippetLang(v as VerificationSnippetLang)
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VERIFICATION_SNIPPET_LANGUAGES.map(({ value }) => (
+                            <SelectItem key={value} value={value}>
+                              {t(`integrationCodeLanguage.${value}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="relative overflow-hidden rounded-lg border">
+                      <CodeEditor
+                        value={getVerificationCodeSnippet(secret, snippetLang)}
+                        language={
+                          VERIFICATION_SNIPPET_LANGUAGES.find(
+                            (l) => l.value === snippetLang,
+                          )?.monacoLang ?? "javascript"
+                        }
+                        height={280}
+                      />
+                      <div className="absolute right-2 top-2 z-[1000] rounded bg-background/80 backdrop-blur-sm">
+                        <CopyButton
+                          value={getVerificationCodeSnippet(
+                            secret,
+                            snippetLang,
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTestEndpoint}
+                      disabled={isTestingEndpoint}
+                    >
+                      {isTestingEndpoint && (
+                        <Spinner size={14} className="mr-2" />
+                      )}
+                      {t("testEndpoint")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRegenerateChallenge}
+                      disabled={isRegeneratingChallenge}
+                    >
+                      {isRegeneratingChallenge && (
+                        <Spinner size={14} className="mr-2" />
+                      )}
+                      {t("generateNewSignature")}
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -426,11 +538,8 @@ export function RequestVerificationDialog({
                     {t("kycStatusDescription")}
                   </p>
                 </div>
-                <Badge
-                  variant="default"
-                  className="bg-green-500 text-white hover:bg-green-500/80"
-                >
-                  {tStatus("status.verifiedValue")}
+                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
+                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
                 </Badge>
               </div>
             ) : kycStatus === "PENDING" ? (
@@ -444,8 +553,8 @@ export function RequestVerificationDialog({
                     {t("kycStatusPendingDescription")}
                   </p>
                 </div>
-                <Badge variant="secondary">
-                  {tStatus("status.pendingValue")}
+                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
+                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
                 </Badge>
               </div>
             ) : kycStatus === "REJECTED" ? (
@@ -459,8 +568,8 @@ export function RequestVerificationDialog({
                     {t("kycStatusRejectedDescription")}
                   </p>
                 </div>
-                <Badge variant="destructive">
-                  {tStatus("status.revokedValue")}
+                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
+                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
                 </Badge>
               </div>
             ) : (
@@ -474,8 +583,8 @@ export function RequestVerificationDialog({
                     {t("kycStatusPendingDescription")}
                   </p>
                 </div>
-                <Badge variant="secondary">
-                  {tStatus("status.pendingValue")}
+                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
+                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
                 </Badge>
               </div>
             )}
@@ -502,7 +611,8 @@ export function RequestVerificationDialog({
                   <p className="text-xs font-mono truncate">{aid}</p>
                 </div>
                 {isCheckingConnection ? (
-                  <div className="rounded-lg border bg-muted/40 p-3">
+                  <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                    <Spinner size={16} />
                     <p className="text-xs text-muted-foreground">
                       {t("checkingConnection")}
                     </p>
@@ -571,6 +681,7 @@ export function RequestVerificationDialog({
               isSigning ||
               !aid ||
               !challenge ||
+              !secret ||
               kycStatus !== "APPROVED"
             }
           >

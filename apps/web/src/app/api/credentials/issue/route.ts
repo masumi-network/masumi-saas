@@ -164,11 +164,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify agent ownership via get-credential endpoint
+    // Verify agent ownership via get-credential endpoint (HMAC-based)
     const challenge = foundAgent.verificationChallenge;
-    if (!challenge) {
+    const secret = foundAgent.verificationSecret;
+    if (!challenge || !secret) {
       return apiError(
-        "No verification challenge found. Generate a challenge first from the Request Credential dialog.",
+        "No verification challenge or secret found. Generate from the Request Credential dialog and add the secret to your agent.",
         400,
       );
     }
@@ -176,11 +177,12 @@ export async function POST(request: NextRequest) {
     const agentVerification = await fetchAgentCredentialChallenge(
       foundAgent.apiUrl,
       challenge,
+      secret,
     );
 
     if (!agentVerification.success) {
       return apiError(agentVerification.error, 400, [
-        "Ensure your agent exposes GET /get-credential?masumi_challenge=<challenge> and returns the challenge string unchanged.",
+        "Ensure your agent has MASUMI_VERIFICATION_SECRET in env and returns HMAC-SHA256(challenge, secret).",
         "If the issue persists, contact support.",
       ]);
     }

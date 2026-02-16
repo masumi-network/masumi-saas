@@ -1,22 +1,31 @@
-/**
- * Agent verification helpers - calling the agent's get-credential endpoint
- * to verify the developer controls the agent backend.
- */
+import crypto from "crypto";
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
- * Fetches the agent's credential challenge response.
+ * Computes HMAC-SHA256(challenge, secret) as hex string.
+ * Used for agent verification - the agent must return this value.
+ */
+export function computeVerificationHmac(
+  challenge: string,
+  secret: string,
+): string {
+  return crypto.createHmac("sha256", secret).update(challenge).digest("hex");
+}
+
+/**
+ * Fetches the agent's credential challenge response and verifies it using HMAC.
  * Calls GET {apiUrl}/get-credential?masumi_challenge={challenge}
- * and returns the response body as a plain string.
+ * Agent must return HMAC-SHA256(challenge, secret) as plain text.
  *
- * @param apiUrl - The agent's API base URL (e.g. https://api.example.com)
+ * @param apiUrl - The agent's API base URL
  * @param challenge - The Masumi-generated challenge string
- * @returns The agent's response (plain signature string) or null on error
+ * @param secret - The agent's verification secret (stored in env as MASUMI_VERIFICATION_SECRET)
  */
 export async function fetchAgentCredentialChallenge(
   apiUrl: string,
   challenge: string,
+  secret: string,
 ): Promise<
   { success: true; signature: string } | { success: false; error: string }
 > {
@@ -39,28 +48,27 @@ export async function fetchAgentCredentialChallenge(
     if (!response.ok) {
       return {
         success: false,
-        error: `Agent returned ${response.status}. Ensure your agent exposes GET /get-credential?masumi_challenge=...`,
+        error: `Agent returned ${response.status}. Ensure your agent exposes GET /get-credential?masumi_challenge=... and returns HMAC-SHA256(challenge, secret).`,
       };
     }
 
     const text = await response.text();
-
-    // Agent should return the challenge string as plain text
     const signature = text.trim();
 
     if (!signature) {
       return {
         success: false,
         error:
-          "Agent returned an empty response. Return the challenge string as plain text.",
+          "Agent returned an empty response. Return HMAC-SHA256(challenge, MASUMI_VERIFICATION_SECRET) as plain text.",
       };
     }
 
-    if (signature !== challenge) {
+    const expected = computeVerificationHmac(challenge, secret);
+    if (signature !== expected) {
       return {
         success: false,
         error:
-          "Agent returned a different value than the challenge. Ensure your endpoint returns the masumi_challenge value unchanged.",
+          "Agent returned an invalid signature. Ensure MASUMI_VERIFICATION_SECRET in your agent matches the secret shown here.",
       };
     }
 

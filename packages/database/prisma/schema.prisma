@@ -247,6 +247,7 @@ model Agent {
   veridianCredentials            VeridianCredential[] // Credentials issued for this agent
   verificationChallenge          String? // Masumi-generated challenge for agent endpoint verification
   verificationChallengeGeneratedAt DateTime? // When the challenge was generated
+  verificationSecret             String? // Secret for HMAC - agent must prove it has this (stored in env)
 
   // Metadata
   tags     String[] @default([])

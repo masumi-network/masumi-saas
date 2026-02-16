@@ -14,11 +14,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Agent } from "@/lib/api/agent.client";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { cn, getGreeting } from "@/lib/utils";
+import { getGreeting } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
+  getVerificationStatusBadgeVariant,
+  getVerificationStatusKey,
 } from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
@@ -34,6 +36,7 @@ export default async function DashboardOverview({
   const tRegistrationStatus = await getTranslations(
     "App.Agents.registrationStatus",
   );
+  const tStatus = await getTranslations("App.Agents.status");
 
   const {
     user,
@@ -193,19 +196,24 @@ export default async function DashboardOverview({
                       <Badge
                         variant={
                           agent.verificationStatus === "VERIFIED"
-                            ? "outline-muted"
-                            : getRegistrationStatusBadgeVariant(
-                                agent.registrationState as Agent["registrationState"],
+                            ? getVerificationStatusBadgeVariant(
+                                agent.verificationStatus,
                               )
+                            : agent.registrationState ===
+                                "RegistrationConfirmed"
+                              ? "success"
+                              : getRegistrationStatusBadgeVariant(
+                                  agent.registrationState as Agent["registrationState"],
+                                )
                         }
-                        className={cn(
-                          "min-w-fit shrink-0 capitalize",
-                          agent.registrationState === "RegistrationConfirmed" &&
-                            "border border-green-200 bg-green-50 text-green-700 hover:bg-green-50/80 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
-                        )}
+                        className="min-w-fit shrink-0 capitalize"
                       >
                         {agent.verificationStatus === "VERIFIED"
-                          ? "Verified"
+                          ? tStatus(
+                              getVerificationStatusKey(
+                                agent.verificationStatus,
+                              ),
+                            )
                           : tRegistrationStatus(
                               getRegistrationStatusKey(
                                 agent.registrationState as Agent["registrationState"],

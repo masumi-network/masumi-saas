@@ -1,5 +1,5 @@
 import prisma from "@masumi/database/client";
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -59,14 +59,17 @@ async function handleChallengeRequest(
     }
 
     let challenge = agent.verificationChallenge;
+    let secret = agent.verificationSecret;
     let generatedAt = agent.verificationChallengeGeneratedAt;
 
-    if (regenerate || !challenge) {
+    if (regenerate || !challenge || !secret) {
       challenge = randomUUID();
+      secret = randomBytes(32).toString("hex");
       const updated = await prisma.agent.update({
         where: { id: agentId },
         data: {
           verificationChallenge: challenge,
+          verificationSecret: secret,
           verificationChallengeGeneratedAt: new Date(),
         },
       });
@@ -77,6 +80,7 @@ async function handleChallengeRequest(
       success: true,
       data: {
         challenge,
+        secret,
         generatedAt: generatedAt?.toISOString() ?? null,
       },
     });

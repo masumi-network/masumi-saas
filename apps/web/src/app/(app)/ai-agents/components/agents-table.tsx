@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import {
-  cn,
   formatPricingDisplay,
   formatRelativeDate,
   shortenAddress,
@@ -166,13 +165,13 @@ export function AgentsTable({
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={getRegistrationStatusBadgeVariant(
-                      agent.registrationState,
-                    )}
-                    className={cn(
-                      agent.registrationState === "RegistrationConfirmed" &&
-                        "border-green-200 bg-green-50 text-green-700 hover:bg-green-50/80 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400 dark:hover:bg-green-950/50",
-                    )}
+                    variant={
+                      agent.registrationState === "RegistrationConfirmed"
+                        ? "success"
+                        : getRegistrationStatusBadgeVariant(
+                            agent.registrationState,
+                          )
+                    }
                   >
                     {tRegistrationStatus(
                       getRegistrationStatusKey(agent.registrationState),

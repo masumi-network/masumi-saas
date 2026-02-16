@@ -276,19 +276,36 @@ class AgentApiClient {
   async getVerificationChallenge(
     agentId: string,
     regenerate = false,
-  ): Promise<ApiResponse<{ challenge: string; generatedAt: string | null }>> {
+  ): Promise<
+    ApiResponse<{
+      challenge: string;
+      secret: string;
+      generatedAt: string | null;
+    }>
+  > {
     if (regenerate) {
-      return this.request<{ challenge: string; generatedAt: string | null }>(
-        `/${agentId}/verification-challenge`,
-        {
-          method: "POST",
-          body: JSON.stringify({ regenerate: true }),
-        },
-      );
+      return this.request<{
+        challenge: string;
+        secret: string;
+        generatedAt: string | null;
+      }>(`/${agentId}/verification-challenge`, {
+        method: "POST",
+        body: JSON.stringify({ regenerate: true }),
+      });
     }
-    return this.request<{ challenge: string; generatedAt: string | null }>(
-      `/${agentId}/verification-challenge`,
-      { method: "GET" },
+    return this.request<{
+      challenge: string;
+      secret: string;
+      generatedAt: string | null;
+    }>(`/${agentId}/verification-challenge`, { method: "GET" });
+  }
+
+  async testVerificationEndpoint(
+    agentId: string,
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/${agentId}/test-verification-endpoint`,
+      { method: "POST" },
     );
   }
 }

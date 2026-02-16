@@ -629,12 +629,32 @@
           "failedToCheckConnection": "Failed to check connection. Please try again.",
           "agentVerification": "Agent Verification",
           "loadingChallenge": "Loading verification challenge...",
-          "agentVerificationDescription": "Add this endpoint to your agent. When Masumi calls it, return the challenge value unchanged as plain text.",
-          "agentVerificationHint": "Your agent must respond to GET /get-credential?masumi_challenge=[challenge] and return the challenge string. This proves you control the agent's backend.",
-          "generateNewSignature": "Generate new challenge",
-          "challengeRegenerated": "New challenge generated. Update your agent endpoint with the new value.",
-          "agentErrorHint": "If your agent is unreachable or returns the wrong value, fix the endpoint and try again. Or generate a new challenge.",
-          "retry": "Retry"
+          "agentVerificationDescription": "Add the secret to your agent's environment and implement the endpoint below. This proves you control the agent's backend.",
+          "verificationSecret": "Verification secret",
+          "agentVerificationSecretHint": "Add this to your agent's .env as MASUMI_VERIFICATION_SECRET. Keep it private.",
+          "integrationCode": "Integration code",
+          "integrationCodeLanguage": {
+            "node": "Node.js (Express)",
+            "python-flask": "Python (Flask)",
+            "python-fastapi": "Python (FastAPI)",
+            "go": "Go"
+          },
+          "agentVerificationHint": "Your agent must respond to GET /get-credential?masumi_challenge=[challenge] and return HMAC-SHA256(challenge, secret).",
+          "generateNewSignature": "Generate new secret",
+          "testEndpoint": "Test endpoint",
+          "testEndpointSuccess": "Endpoint is working correctly.",
+          "challengeRegenerated": "New secret generated. Update MASUMI_VERIFICATION_SECRET in your agent.",
+          "agentErrorHint": "If your agent is unreachable or returns the wrong signature, ensure MASUMI_VERIFICATION_SECRET matches. Or generate a new secret.",
+          "retry": "Retry",
+          "tooltipAgentVerification": "Proves you control this agent's backend. Your agent must return HMAC-SHA256(challenge, secret) to pass verification.",
+          "tooltipVerificationSecret": "A shared secret used to prove your agent knows it. Only your agent can produce the correct HMAC response. Never expose it publicly.",
+          "tooltipIntegrationCode": "Add this endpoint to your agent. It receives a challenge and returns HMAC-SHA256(challenge, secret) to prove you control the backend.",
+          "tooltipGenerateNewSecret": "Use if the secret was exposed or you need to rotate it. Update your agent's environment with the new secret.",
+          "tooltipKycStatus": "Your identity must be verified before we can issue a credential linking you to this agent.",
+          "tooltipVeridianWalletConnection": "Connect the wallet that will receive the verification credential. The credential proves you control both the agent and this wallet.",
+          "tooltipIdentifierAid": "Your unique identifier (AID) in the Veridian system. Used to issue and verify credentials.",
+          "tooltipEstablishConnection": "The credential server needs to know your AID before it can issue credentials. Scan the QR code with your Veridian wallet.",
+          "tooltipWhatWillBeIssued": "A Veridian credential that links your verified identity to this agent. Others can verify the agent is authentic."
         }
       }
     },
