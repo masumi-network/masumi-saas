@@ -102,7 +102,7 @@ export function AgentDetails({
       {showVerificationCta &&
         onVerificationSuccess &&
         !isVerificationBannerDismissed && (
-          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 p-6 pr-10">
             <p className="text-sm text-muted-foreground">
               {t("verificationPromptDescription")}
             </p>
@@ -112,28 +112,28 @@ export function AgentDetails({
               ) : kycStatus === "APPROVED" ? (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="sm2"
                   onClick={() => setVerificationDialogOpen(true)}
                 >
                   {tVerification("requestVerification")}
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm2" asChild>
                   <Link href="/verification">
                     {tVerification("completeKyc")}
                   </Link>
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                onClick={handleDismissVerificationBanner}
-                aria-label="Dismiss"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-5 w-5 shrink-0"
+              onClick={handleDismissVerificationBanner}
+              aria-label="Dismiss"
+            >
+              <X className="h-2.5 w-2.5" />
+            </Button>
           </div>
         )}
 
