@@ -7,20 +7,48 @@
   "credentialType": "MasumiVerifiedAgentCredential",
   "version": "1.0.0",
   "properties": {
-    "v": { "description": "Version", "type": "string" },
-    "d": { "description": "Credential SAID", "type": "string" },
-    "u": { "description": "One time use nonce", "type": "string" },
-    "i": { "description": "Issuee AID", "type": "string" },
-    "ri": { "description": "Credential status registry", "type": "string" },
-    "s": { "description": "Schema SAID", "type": "string" },
+    "v": {
+      "description": "Version",
+      "type": "string"
+    },
+    "d": {
+      "description": "Credential SAID",
+      "type": "string"
+    },
+    "u": {
+      "description": "One time use nonce",
+      "type": "string"
+    },
+    "i": {
+      "description": "Issuee AID",
+      "type": "string"
+    },
+    "ri": {
+      "description": "Credential status registry",
+      "type": "string"
+    },
+    "s": {
+      "description": "Schema SAID",
+      "type": "string"
+    },
     "a": {
       "oneOf": [
-        { "description": "Attributes block SAID", "type": "string" },
+        {
+          "description": "Attributes block SAID",
+          "type": "string"
+        },
         {
           "description": "Attributes block",
           "type": "object",
           "properties": {
-            "i": { "description": "Issuee AID", "type": "string" },
+            "d": {
+              "description": "Attributes block SAID",
+              "type": "string"
+            },
+            "i": {
+              "description": "Issuee AID",
+              "type": "string"
+            },
             "dt": {
               "description": "Issuance date time",
               "type": "string",
@@ -47,7 +75,7 @@
               "type": "string"
             }
           },
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [
             "i",
             "dt",
