@@ -1,70 +1,62 @@
 {
-  "$id": "ECMnkFkXKKW1EgW44kUXHXSwMY0o5GwdPciHLmHhbZT3",
+  "$id": "EEKdCwRe_Fc14df4fKcD3baBejyrXKBrRnvCOPxrXMYz",
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Masumi Agent Verification",
-  "description": "Verifies that the holder has been verified as the operator of the given AI agent on the Masumi platform.",
+  "title": "Masumi Verified Agent",
+  "description": "Verifiable credential attesting that an AI agent on the Masumi platform has been verified. Issued after the agent owner completes KYC and proves control of the agent's KERI identifier.",
   "type": "object",
-  "credentialType": "MasumiAgentVerificationCredential",
+  "credentialType": "MasumiVerifiedAgentCredential",
   "version": "1.0.0",
   "properties": {
-    "v": {
-      "description": "Version",
-      "type": "string"
-    },
-    "d": {
-      "description": "Credential SAID",
-      "type": "string"
-    },
-    "u": {
-      "description": "One time use nonce",
-      "type": "string"
-    },
-    "i": {
-      "description": "Issuee AID",
-      "type": "string"
-    },
-    "ri": {
-      "description": "Credential status registry",
-      "type": "string"
-    },
-    "s": {
-      "description": "Schema SAID",
-      "type": "string"
-    },
+    "v": { "description": "Version", "type": "string" },
+    "d": { "description": "Credential SAID", "type": "string" },
+    "u": { "description": "One time use nonce", "type": "string" },
+    "i": { "description": "Issuee AID", "type": "string" },
+    "ri": { "description": "Credential status registry", "type": "string" },
+    "s": { "description": "Schema SAID", "type": "string" },
     "a": {
       "oneOf": [
-        {
-          "description": "Attributes block SAID",
-          "type": "string"
-        },
+        { "description": "Attributes block SAID", "type": "string" },
         {
           "description": "Attributes block",
           "type": "object",
           "properties": {
-            "d": {
-              "description": "Attributes block SAID",
-              "type": "string"
-            },
-            "i": {
-              "description": "Issuee AID",
-              "type": "string"
-            },
+            "i": { "description": "Issuee AID", "type": "string" },
             "dt": {
               "description": "Issuance date time",
               "type": "string",
               "format": "date-time"
             },
+            "kycVerificationId": {
+              "description": "ID of the KYC verification record for the user who requested verification",
+              "type": "string"
+            },
             "agentId": {
-              "description": "The Masumi agent ID that was verified",
+              "description": "The identifier of the agent in the masumi registry",
               "type": "string"
             },
             "agentName": {
-              "description": "Human-readable name of the agent",
+              "description": "The name of the agent",
+              "type": "string"
+            },
+            "agentApiUrl": {
+              "description": "Base Api Url of the agent",
+              "type": "string"
+            },
+            "signature": {
+              "description": "HMAC-SHA256(challenge, secret) proving agent ownership",
               "type": "string"
             }
           },
-          "additionalProperties": true,
-          "required": ["i", "dt", "agentId"]
+          "additionalProperties": false,
+          "required": [
+            "i",
+            "dt",
+            "kycVerificationId",
+            "agentId",
+            "agentName",
+            "agentApiUrl",
+            "signature"
+          ]
         }
       ]
     }

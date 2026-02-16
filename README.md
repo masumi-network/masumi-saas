@@ -151,7 +151,7 @@ masumi-saas/
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
      - The credential schema SAID to use for agent verification credentials
      - Must match a schema registered in your Veridian credential server
-     - Can default to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema) if not set
+     - Create the schema via the [Credential Schema Builder](https://credential-schema-builder.vercel.app/) (UI) or run `pnpm create:agent-verification-schema` (requires credential-schema-builder backend)
 
 3. **Configure Sumsub Webhook** (required for automatic status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
