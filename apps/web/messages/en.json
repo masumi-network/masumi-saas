@@ -196,12 +196,17 @@
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
         "apiKeys": "API Keys",
+        "developers": "Developers",
         "account": "Account"
       }
     },
     "ApiKeys": {
       "title": "API Keys",
       "description": "Manage your API keys for authenticating applications."
+    },
+    "Developers": {
+      "title": "Developers",
+      "description": "API documentation and testing tools."
     },
     "Organizations": {
       "title": "Organizations",
