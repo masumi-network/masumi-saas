@@ -95,7 +95,7 @@ export function VerificationWizard({
     kycStatus === "REVIEW" || kycStatus === "REJECTED";
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full max-w-3xl mx-auto space-y-8">
       <div className="space-y-2">
         <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm leading-6">
@@ -103,7 +103,7 @@ export function VerificationWizard({
         </p>
       </div>
 
-      <div className="max-w-3xl space-y-8">
+      <div className="w-full space-y-8">
         {!isVerificationSubmitted && (
           <Steps currentStep={currentStep} steps={steps} />
         )}
@@ -111,7 +111,7 @@ export function VerificationWizard({
         <Card className="overflow-hidden pt-0">
           {isVerificationSubmitted ? (
             <>
-              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
+              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6 items-center">
                 <CardTitle>
                   {kycStatus === "REVIEW"
                     ? t("Completion.processingTitle")
@@ -134,7 +134,7 @@ export function VerificationWizard({
             </>
           ) : (
             <>
-              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
+              <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6 items-center">
                 <CardTitle>{steps[currentStep - 1]?.title}</CardTitle>
                 <CardDescription>
                   {steps[currentStep - 1]?.description}

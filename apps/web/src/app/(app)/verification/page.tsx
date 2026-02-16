@@ -37,7 +37,7 @@ export default async function VerificationPage() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col items-center justify-center w-full">
       <VerificationWizard
         kycStatus={kycStatus as "PENDING" | "APPROVED" | "REJECTED" | "REVIEW"}
         rejectionReason={kycRejectionReason}
