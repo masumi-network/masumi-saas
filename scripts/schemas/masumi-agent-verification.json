@@ -1,5 +1,5 @@
 {
-  "$id": "EEKdCwRe_Fc14df4fKcD3baBejyrXKBrRnvCOPxrXMYz",
+  "$id": "EBV88FehFeDa1tiFUQxuuVi1QXKOXVpwOc1cdFMCzBlI",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Masumi Verified Agent",
   "description": "Verifiable credential attesting that an AI agent on the Masumi platform has been verified. Issued after the agent owner completes KYC and proves control of the agent's KERI identifier.",
@@ -67,7 +67,7 @@
               "type": "string"
             },
             "agentApiUrl": {
-              "description": "Base Api Url of the agent",
+              "description": "Base API URL of the agent",
               "type": "string"
             },
             "signature": {
@@ -75,7 +75,7 @@
               "type": "string"
             }
           },
-          "additionalProperties": true,
+          "additionalProperties": false,
           "required": [
             "i",
             "dt",
