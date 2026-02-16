@@ -144,54 +144,57 @@ export function DashboardRevenueCard() {
         </Select>
       </CardHeader>
       <CardContent className="relative">
-        {/* Line chart from earnings array */}
-        <div
-          className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
-          aria-hidden
-        >
-          <svg
-            viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-            preserveAspectRatio="none"
-            className="w-full h-full opacity-60"
+        {/* Line chart from earnings array - hide when no data */}
+        {!isLoading && earnings.length > 0 && (
+          <div
+            className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
+            aria-hidden
           >
-            <defs>
-              <linearGradient
-                id="earnings-chart-gradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="hsl(var(--primary))"
-                  stopOpacity="0.4"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="hsl(var(--primary))"
-                  stopOpacity="0"
-                />
-              </linearGradient>
-            </defs>
-            {(() => {
-              const { areaPath, linePath } = buildEarningsChartPaths(earnings);
-              return (
-                <>
-                  <path d={areaPath} fill="url(#earnings-chart-gradient)" />
-                  <path
-                    d={linePath}
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="0.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+            <svg
+              viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+              preserveAspectRatio="none"
+              className="w-full h-full opacity-60"
+            >
+              <defs>
+                <linearGradient
+                  id="earnings-chart-gradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity="0.4"
                   />
-                </>
-              );
-            })()}
-          </svg>
-        </div>
+                  <stop
+                    offset="100%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity="0"
+                  />
+                </linearGradient>
+              </defs>
+              {(() => {
+                const { areaPath, linePath } =
+                  buildEarningsChartPaths(earnings);
+                return (
+                  <>
+                    <path d={areaPath} fill="url(#earnings-chart-gradient)" />
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="0.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </>
+                );
+              })()}
+            </svg>
+          </div>
+        )}
 
         {error ? (
           <p className="mb-1 text-sm text-destructive">{error}</p>
