@@ -377,7 +377,9 @@ export default function JobInputRenderer({
           data && "value" in data ? (data.value as string) : "";
         return (
           <div className="flex items-center gap-2 rounded-md border border-dashed border-muted-foreground/30 px-3 py-2">
-            <span className="text-xs text-muted-foreground">Hidden value:</span>
+            <span className="text-xs text-muted-foreground">
+              {"Hidden value:"}
+            </span>
             <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
               {hiddenValue || "(empty)"}
             </code>
@@ -405,7 +407,7 @@ export default function JobInputRenderer({
         <Label htmlFor={id}>
           {name}
           {!isFieldOptional && (
-            <span className="text-destructive ml-0.5">*</span>
+            <span className="text-destructive ml-0.5">{"*"}</span>
           )}
         </Label>
       )}
@@ -415,7 +417,7 @@ export default function JobInputRenderer({
       {type === "hidden" && (
         <Label className="text-muted-foreground">
           {name}
-          <span className="text-xs ml-1">(hidden)</span>
+          <span className="text-xs ml-1">{"(hidden)"}</span>
         </Label>
       )}
 

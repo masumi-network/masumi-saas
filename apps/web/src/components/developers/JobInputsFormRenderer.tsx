@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,19 +17,15 @@ interface JobInputsFormRendererProps {
 export default function JobInputsFormRenderer({
   jobInputSchemas,
 }: JobInputsFormRendererProps) {
-  const [formData, setFormData] = useState<
-    Record<string, string | number | boolean | string[]>
-  >({});
-
-  // Initialize defaults when schemas change
-  useEffect(() => {
-    const initialData: Record<string, string | number | boolean | string[]> =
-      {};
+  const initialFormData = useMemo(() => {
+    const data: Record<string, string | number | boolean | string[]> = {};
     for (const schema of jobInputSchemas) {
-      initialData[schema.id] = getDefaultValue(schema);
+      data[schema.id] = getDefaultValue(schema);
     }
-    setFormData(initialData);
+    return data;
   }, [jobInputSchemas]);
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleFieldChange = useCallback(
     (id: string, value: string | number | boolean | string[]) => {
@@ -39,20 +35,15 @@ export default function JobInputsFormRenderer({
   );
 
   const handleClear = useCallback(() => {
-    const clearedData: Record<string, string | number | boolean | string[]> =
-      {};
-    for (const schema of jobInputSchemas) {
-      clearedData[schema.id] = getDefaultValue(schema);
-    }
-    setFormData(clearedData);
-  }, [jobInputSchemas]);
+    setFormData(initialFormData);
+  }, [initialFormData]);
 
   return (
     <Card className="bg-muted/20">
       <CardHeader>
-        <CardTitle className="text-base">Rendered Form</CardTitle>
+        <CardTitle className="text-base">{"Rendered Form"}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          This is how the form will appear in Sokosumi
+          {"This is how the form will appear in Sokosumi"}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -72,10 +63,10 @@ export default function JobInputsFormRenderer({
         </form>
         <div className="flex items-center justify-between pt-2 border-t">
           <Button variant="outline" size="sm" onClick={handleClear}>
-            Clear Form
+            {"Clear Form"}
           </Button>
           <span className="text-xs text-muted-foreground">
-            {jobInputSchemas.length} fields
+            {jobInputSchemas.length} {"fields"}
           </span>
         </div>
       </CardContent>

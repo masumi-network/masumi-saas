@@ -14,7 +14,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-[600px] border rounded-lg bg-muted/20">
-      <p className="text-sm text-muted-foreground">Loading editor…</p>
+      <p className="text-sm text-muted-foreground">{"Loading editor…"}</p>
     </div>
   ),
 });
@@ -627,8 +627,9 @@ export function InputSchemaValidator() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Validate your Masumi input schemas against the <strong>MIP-003</strong>{" "}
-        specification and see how they will render in Sokosumi.
+        {"Validate your Masumi input schemas against the "}
+        <strong>{"MIP-003"}</strong>
+        {" specification and see how they will render in Sokosumi."}
       </p>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -636,7 +637,7 @@ export function InputSchemaValidator() {
         <div className="flex-1 border rounded-lg p-4 bg-background overflow-hidden flex flex-col gap-2 min-w-0">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Input Schema</span>
+            <span className="text-sm font-medium">{"Input Schema"}</span>
             <select
               value={selectedExample}
               onChange={handleSelectExample}
@@ -680,7 +681,7 @@ export function InputSchemaValidator() {
           {validation.valid ? (
             <>
               <div className="text-green-600 dark:text-green-400 font-semibold text-sm">
-                Schema is valid!
+                {"Schema is valid!"}
               </div>
               <JobInputsFormRenderer
                 jobInputSchemas={validation.parsedSchemas ?? []}
@@ -689,14 +690,16 @@ export function InputSchemaValidator() {
           ) : (
             <>
               <div className="text-destructive font-semibold text-sm">
-                Schema is invalid:
+                {"Schema is invalid:"}
               </div>
               <ul className="list-disc pl-5 space-y-1">
                 {validation.errors.map((err, i) => (
                   <li key={i} className="text-sm">
                     {err.line !== undefined && (
                       <span className="text-xs text-muted-foreground mr-1">
-                        (line {err.line})
+                        {"(line "}
+                        {err.line}
+                        {")"}
                       </span>
                     )}
                     {err.message}
