@@ -39,17 +39,20 @@ export default function LogoutModal({
     const signInPath = pathname.startsWith("/admin")
       ? "/admin/signin"
       : "/signin";
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push(signInPath);
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push(signInPath);
+          },
+          onError: () => {
+            toast.error(t("error"));
+          },
         },
-        onError: () => {
-          toast.error(t("error"));
-          setLoading(false);
-        },
-      },
-    });
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {

@@ -40,7 +40,7 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
                   <MasumiLogo />
                 </span>
                 <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium group-data-[collapsible=icon]:hidden">
+                <span className="whitespace-nowrap text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium group-data-[collapsible=icon]:hidden">
                   {t("badge")}
                 </span>
               </Link>

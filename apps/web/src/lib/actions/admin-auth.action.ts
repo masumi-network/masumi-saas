@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@masumi/database/client";
+import { cookies } from "next/headers";
 import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
@@ -36,29 +37,35 @@ export async function adminSignInAction(formData: FormData) {
 
     // Sign-in succeeded - now check if user is admin
     if (!isAdminUser(result.user)) {
-      // User authenticated but not admin - revoke the session we just created
-      // Don't pass explicit headers so nextCookies() can read the freshly set session cookie
       try {
-        await auth.api.signOut();
-      } catch {
-        // If signOut fails, manually clear the session cookie to prevent session leak
-        // If signOut fails, delete the session directly from the database
-        // This is more robust than just clearing the cookie, as it ensures
-        // the session record is also removed from the database
-        if (result.token) {
-          try {
-            await prisma.session.deleteMany({
-              where: { token: result.token },
-            });
-          } catch {
-            // Session cleanup failed - log but don't expose to client
-            console.error(
-              "Failed to clean up session for non-admin user during admin sign-in",
-            );
-          }
+        if (result.token && typeof result.token === "string") {
+          await prisma.session.deleteMany({
+            where: { token: result.token },
+          });
+        } else {
+          console.error(
+            "Admin sign-in cleanup: signInEmail result missing session token, cannot revoke session from database",
+          );
         }
+      } catch {
+        console.error(
+          "Failed to clean up session for non-admin user during admin sign-in",
+        );
       }
-      // Return same generic error to prevent admin enumeration
+
+      try {
+        const cookieStore = await cookies();
+        cookieStore.delete("better-auth.session_token");
+        cookieStore.delete("__Secure-better-auth.session_token");
+        cookieStore.delete("better-auth.session_data");
+        cookieStore.delete("__Secure-better-auth.session_data");
+      } catch (error) {
+        console.debug(
+          "Cookie cleanup failed during admin auth rejection:",
+          error,
+        );
+      }
+
       return {
         error: "Invalid email or password",
         errorKey: "InvalidCredentials",

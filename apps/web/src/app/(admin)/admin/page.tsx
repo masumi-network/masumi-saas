@@ -25,13 +25,15 @@ export default async function AdminDashboardPage() {
 
   // Fetch stats with error handling
   let totalUsers = 0;
+  let verifiedUsers = 0;
   let totalAgents = 0;
   let pendingKyc = 0;
   let hasError = false;
 
   try {
-    [totalUsers, totalAgents, pendingKyc] = await Promise.all([
+    [totalUsers, verifiedUsers, totalAgents, pendingKyc] = await Promise.all([
       prisma.user.count(),
+      prisma.user.count({ where: { emailVerified: true } }),
       prisma.agent.count(),
       prisma.kycVerification.count({
         where: { status: "PENDING" },
@@ -58,7 +60,7 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -67,6 +69,17 @@ export default async function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalUsers}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("verifiedUsers")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{verifiedUsers}</div>
             </CardContent>
           </Card>
 

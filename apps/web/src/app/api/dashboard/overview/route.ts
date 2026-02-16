@@ -23,10 +23,9 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load dashboard overview",
+        error: isUnauthorized
+          ? "Unauthorized"
+          : "Failed to load dashboard overview",
       },
       { status },
     );
