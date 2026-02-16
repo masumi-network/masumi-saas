@@ -190,7 +190,6 @@ export async function POST(request: NextRequest) {
     const agent = {
       id: foundAgent.id,
       name: foundAgent.name,
-      description: foundAgent.description,
       apiUrl: foundAgent.apiUrl,
     };
 
@@ -199,7 +198,6 @@ export async function POST(request: NextRequest) {
       "kycVerificationId",
       "agentId",
       "agentName",
-      "agentDescription",
       "agentApiUrl",
       "signature",
     ];
@@ -219,7 +217,6 @@ export async function POST(request: NextRequest) {
       kycVerificationId: userWithKyc.kycVerification.id,
       agentId: agent.id,
       agentName: agent.name,
-      agentDescription: agent.description,
       agentApiUrl: agent.apiUrl,
       signature: agentVerification.signature,
     };
