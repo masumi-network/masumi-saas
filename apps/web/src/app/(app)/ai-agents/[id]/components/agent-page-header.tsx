@@ -17,8 +17,6 @@ import { AgentIcon } from "../../components/agent-icon";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
-  getVerificationStatusBadgeVariant,
-  getVerificationStatusKey,
 } from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
@@ -33,7 +31,6 @@ export function AgentPageHeader({
   backLabel,
 }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
-  const tStatus = useTranslations("App.Agents.status");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
 
@@ -87,22 +84,6 @@ export function AgentPageHeader({
             getRegistrationStatusKey(agent.registrationState),
           )}
         </Badge>
-        {/* Verification status badge */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge
-              variant={getVerificationStatusBadgeVariant(
-                agent.verificationStatus,
-              )}
-              className="shrink-0"
-            >
-              {tStatus(getVerificationStatusKey(agent.verificationStatus))}
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {tStatus(getVerificationStatusKey(agent.verificationStatus))}
-          </TooltipContent>
-        </Tooltip>
       </div>
     </div>
   );

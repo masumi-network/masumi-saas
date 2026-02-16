@@ -1,9 +1,8 @@
-import { Bot, ChevronRight, Key, ShieldCheck } from "lucide-react";
+import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,6 +22,7 @@ import {
   getVerificationStatusKey,
 } from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
+import { DashboardKycBanner } from "./dashboard-kyc-banner";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 import { DashboardRevenueCard } from "./dashboard-revenue-card";
 import { GetStartedCard } from "./get-started-card";
@@ -133,15 +133,10 @@ export default async function DashboardOverview({
 
       {/* Start KYC CTA - compact banner when KYC not submitted */}
       {showStartKycCta && (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-          <p className="text-sm text-muted-foreground">{t("startKycPrompt")}</p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/verification" className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              {t("startKyc")}
-            </Link>
-          </Button>
-        </div>
+        <DashboardKycBanner
+          startKycPrompt={t("startKycPrompt")}
+          startKyc={t("startKyc")}
+        />
       )}
 
       {/* Get started checklist - for new users */}

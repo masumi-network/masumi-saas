@@ -1,6 +1,13 @@
 "use client";
 
-import { AlertCircle, Eye, EyeOff, ShieldCheck, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  CircleHelp,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  XCircle,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -12,7 +19,6 @@ import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,6 +32,12 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { Steps } from "@/components/ui/steps";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VeridianWalletConnect } from "@/components/veridian";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
@@ -40,6 +52,8 @@ import {
 } from "@/lib/verification-code-snippets";
 
 import { EstablishConnectionDialog } from "./establish-connection-dialog";
+
+const STEP_COUNT = 3;
 
 interface RequestVerificationDialogProps {
   open: boolean;
@@ -58,6 +72,7 @@ export function RequestVerificationDialog({
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
   const tStatus = useTranslations("App.Agents");
+  const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [aid, setAid] = useState<string | null>(null);
@@ -82,6 +97,7 @@ export function RequestVerificationDialog({
 
   useEffect(() => {
     if (!open) {
+      setStep(0);
       veridianConnectKeyRef.current += 1;
       setAid(null);
       setOobi(null);
@@ -128,14 +144,13 @@ export function RequestVerificationDialog({
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
-      // Prevent duplicate checks for the same AID unless forced
       if (!force && lastCheckedAidRef.current === aidToCheck) {
         return;
       }
 
       setIsCheckingConnection(true);
       if (force) {
-        lastCheckedAidRef.current = null; // Reset to allow re-check
+        lastCheckedAidRef.current = null;
       } else {
         lastCheckedAidRef.current = aidToCheck;
       }
@@ -164,7 +179,6 @@ export function RequestVerificationDialog({
     (address: string | null) => {
       if (address) {
         setAid(address);
-        // Only check if it's a different AID
         if (lastCheckedAidRef.current !== address) {
           checkConnection(address);
         }
@@ -227,7 +241,6 @@ export function RequestVerificationDialog({
         return null;
       }
 
-      // Create message to sign - this proves wallet ownership
       const message = `Issue credential for agent verification\n\nAgent: ${agent.name}\nAgent ID: ${agent.id}\nAID: ${aid}\nTimestamp: ${new Date().toISOString()}\n\nBy signing this message, you confirm that you want to issue a verification credential for this agent.`;
 
       const signature = await enabledApi.experimental.signKeri(aid, message);
@@ -244,9 +257,6 @@ export function RequestVerificationDialog({
         return null;
       }
 
-      // Return signature and message for verification
-      // The signature proves wallet ownership - cryptographic proof that the user
-      // controls the private key for the AID
       return { signature: signature as string, message };
     } catch (error) {
       const err = error as { code?: number; info?: string };
@@ -279,16 +289,30 @@ export function RequestVerificationDialog({
     setIsRegeneratingChallenge(false);
   };
 
-  const handleTestEndpoint = async () => {
+  const handleTestEndpoint = async (): Promise<boolean> => {
     setIsTestingEndpoint(true);
     setIssueError(null);
     const result = await agentApiClient.testVerificationEndpoint(agent.id);
+    setIsTestingEndpoint(false);
     if (result.success) {
       toast.success(t("testEndpointSuccess"));
-    } else {
-      toast.error(result.error || "Endpoint test failed");
+      return true;
     }
-    setIsTestingEndpoint(false);
+    toast.error(result.error || "Endpoint test failed");
+    return false;
+  };
+
+  const handleNext = async () => {
+    if (step === 0) {
+      const success = await handleTestEndpoint();
+      if (success) setStep(1);
+    } else if (step < STEP_COUNT - 1) {
+      setStep((s) => s + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (step > 0) setStep((s) => s - 1);
   };
 
   const handleSubmit = async () => {
@@ -312,7 +336,6 @@ export function RequestVerificationDialog({
     setIsSubmitting(true);
     setIssueError(null);
     try {
-      // Request message signature to prove wallet ownership
       const signatureData = await signMessage();
       if (!signatureData) {
         setIsSubmitting(false);
@@ -351,306 +374,369 @@ export function RequestVerificationDialog({
     onOpenChange(newOpen);
   };
 
+  const steps = [
+    {
+      title: t("stepEndpoint"),
+      description: t("stepEndpointDescription"),
+    },
+    {
+      title: t("stepWallet"),
+      description: t("stepWalletDescription"),
+    },
+    {
+      title: t("stepSubmit"),
+      description: t("stepSubmitDescription"),
+    },
+  ];
+
+  const isLastStep = step === STEP_COUNT - 1;
+
+  const isNextDisabled =
+    isTestingEndpoint ||
+    !challenge ||
+    !secret ||
+    kycStatus !== "APPROVED" ||
+    (step === 1 && (!aid || connectionExists !== true || isCheckingConnection));
+
+  const getNextDisabledReason = (): string => {
+    if (isTestingEndpoint) return t("nextDisabledReasonTestingEndpoint");
+    if (!challenge || !secret) return t("nextDisabledReasonLoadingSetup");
+    if (kycStatus !== "APPROVED") return t("nextDisabledReasonKycRequired");
+    if (step === 1) {
+      if (!aid) return t("nextDisabledReasonConnectWallet");
+      if (isCheckingConnection)
+        return t("nextDisabledReasonCheckingConnection");
+      if (connectionExists !== true)
+        return t("nextDisabledReasonEstablishConnection");
+    }
+    return t("nextDisabledReasonLoadingSetup");
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{t("requestVerification")}</DialogTitle>
-          <DialogDescription>{t("requestDescription")}</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">{t("agentInformation")}</h3>
-            <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
-              <div>
-                <span className="text-xs text-muted-foreground">
-                  {t("agentName")}
-                </span>
-                <p className="text-sm font-medium">{agent.name}</p>
-              </div>
-              <Separator />
-              <div>
-                <span className="text-xs text-muted-foreground">
-                  {t("apiUrl")}
-                </span>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {agent.apiUrl}
-                </p>
-              </div>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+        <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <DialogTitle className="text-xl font-semibold tracking-tight">
+                {t("requestVerification")}
+              </DialogTitle>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                    <CircleHelp className="h-4 w-4" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t("requestDescription")}</TooltipContent>
+              </Tooltip>
             </div>
-          </div>
+          </DialogHeader>
+        </div>
 
-          {kycStatus === "APPROVED" && (
-            <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">{t("agentVerification")}</h3>
-              {isLoadingChallenge ? (
-                <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
-                  <Spinner size={20} />
-                  <p className="text-sm text-muted-foreground">
-                    {t("loadingChallenge")}
-                  </p>
-                </div>
-              ) : challenge && secret ? (
-                <div className="space-y-4">
-                  <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-6">
+          <Steps currentStep={step + 1} steps={steps} className="mb-4" />
+          <p className="text-sm text-muted-foreground mb-6">
+            {steps[step]?.description}
+          </p>
+
+          {step !== 1 && kycStatus !== "APPROVED" && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-2">{t("kycStatus")}</h3>
+              {kycStatus === "PENDING" ? (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                  <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      {tStatus("status.pending")}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {t("agentVerificationDescription")}
+                      {t("kycStatusPendingDescription")}
                     </p>
-                    <p className="text-xs font-medium">
-                      {t("verificationSecret")}
+                  </div>
+                  <Badge
+                    variant={getKycStatusBadgeVariant(kycStatus)}
+                    className="shrink-0"
+                  >
+                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                  </Badge>
+                </div>
+              ) : kycStatus === "REJECTED" ? (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                  <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      {tStatus("status.rejected")}
                     </p>
-                    <div className="flex items-center gap-2 overflow-hidden rounded bg-background p-2 font-mono text-xs">
-                      <code className="min-w-0 flex-1 break-all select-all overflow-hidden">
-                        {showSecret ? secret : "•".repeat(64)}
-                      </code>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <CopyButton value={secret} className="h-7 w-7" />
+                    <p className="text-xs text-muted-foreground">
+                      {t("kycStatusRejectedDescription")}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={getKycStatusBadgeVariant(kycStatus)}
+                    className="shrink-0"
+                  >
+                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                  </Badge>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                  <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      {tStatus("status.pending")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("kycStatusPendingDescription")}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={getKycStatusBadgeVariant(kycStatus)}
+                    className="shrink-0"
+                  >
+                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {/* Step 0: Endpoint setup */}
+            {step === 0 && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-sm font-medium">
+                    {t("agentInformation")}
+                  </h3>
+                  <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        {t("agentName")}
+                      </span>
+                      <p className="text-sm font-medium">{agent.name}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        {t("apiUrl")}
+                      </span>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        {agent.apiUrl}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {kycStatus === "APPROVED" && (
+                  <div className="flex flex-col gap-2">
+                    <h3 className="text-sm font-medium">
+                      {t("agentVerification")}
+                    </h3>
+                    {isLoadingChallenge ? (
+                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
+                        <Spinner size={20} />
+                        <p className="text-sm text-muted-foreground">
+                          {t("loadingChallenge")}
+                        </p>
+                      </div>
+                    ) : challenge && secret ? (
+                      <div className="space-y-4">
+                        <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            {t("agentVerificationDescription")}
+                          </p>
+                          <p className="text-xs font-medium">
+                            {t("verificationSecret")}
+                          </p>
+                          <div className="flex items-center gap-2 overflow-hidden rounded bg-background p-2 font-mono text-xs">
+                            <code className="min-w-0 flex-1 break-all select-all overflow-hidden">
+                              {showSecret ? secret : "•".repeat(64)}
+                            </code>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <CopyButton value={secret} className="h-7 w-7" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setShowSecret((v) => !v)}
+                                aria-label={
+                                  showSecret ? "Hide secret" : "Show secret"
+                                }
+                              >
+                                {showSecret ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {t("agentVerificationSecretHint")}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium">
+                              {t("integrationCode")}
+                            </p>
+                            <Select
+                              value={snippetLang}
+                              onValueChange={(v) =>
+                                setSnippetLang(v as VerificationSnippetLang)
+                              }
+                            >
+                              <SelectTrigger className="h-8 w-[180px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {VERIFICATION_SNIPPET_LANGUAGES.map(
+                                  ({ value }) => (
+                                    <SelectItem key={value} value={value}>
+                                      {t(`integrationCodeLanguage.${value}`)}
+                                    </SelectItem>
+                                  ),
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="relative overflow-hidden rounded-lg border">
+                            <CodeEditor
+                              value={getVerificationCodeSnippet(
+                                secret,
+                                snippetLang,
+                              )}
+                              language={
+                                VERIFICATION_SNIPPET_LANGUAGES.find(
+                                  (l) => l.value === snippetLang,
+                                )?.monacoLang ?? "javascript"
+                              }
+                              height={280}
+                            />
+                            <div className="absolute right-2 top-2 z-[1000] rounded bg-background/80 backdrop-blur-sm">
+                              <CopyButton
+                                value={getVerificationCodeSnippet(
+                                  secret,
+                                  snippetLang,
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRegenerateChallenge}
+                            disabled={isRegeneratingChallenge}
+                          >
+                            {isRegeneratingChallenge && (
+                              <Spinner size={14} className="mr-2" />
+                            )}
+                            {t("generateNewSignature")}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {issueError && (
+                  <div className="rounded-lg border border-destructive/60 bg-destructive/5 p-4 space-y-2">
+                    <p className="text-sm text-destructive">{issueError}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("agentErrorHint")}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIssueError(null)}
+                      >
+                        {t("retry")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRegenerateChallenge}
+                        disabled={isRegeneratingChallenge}
+                      >
+                        {t("generateNewSignature")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Step 1: Wallet connection */}
+            {step === 1 && (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium">
+                  {t("veridianWalletConnection")}
+                </h3>
+                <VeridianWalletConnect
+                  key={veridianConnectKeyRef.current}
+                  onConnect={handleWalletConnect}
+                  onAddressChange={handleAddressChange}
+                  onError={(error) => {
+                    toast.error(`Connection error: ${error}`);
+                  }}
+                />
+                {aid && (
+                  <div className="space-y-2">
+                    <div className="rounded-lg border bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {t("identifierAid")}
+                      </p>
+                      <p className="text-xs font-mono truncate">{aid}</p>
+                    </div>
+                    {isCheckingConnection ? (
+                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                        <Spinner size={16} />
+                        <p className="text-xs text-muted-foreground">
+                          {t("checkingConnection")}
+                        </p>
+                      </div>
+                    ) : connectionExists === false ? (
+                      <div className="space-y-2">
+                        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            {t("connectionNotEstablished")}
+                          </p>
+                        </div>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => setShowSecret((v) => !v)}
-                          aria-label={
-                            showSecret ? "Hide secret" : "Show secret"
-                          }
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEstablishConnectionDialogOpen(true)}
+                          className="w-full"
                         >
-                          {showSecret ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                          {t("establishConnection")}
                         </Button>
                       </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t("agentVerificationSecretHint")}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium">
-                        {t("integrationCode")}
-                      </p>
-                      <Select
-                        value={snippetLang}
-                        onValueChange={(v) =>
-                          setSnippetLang(v as VerificationSnippetLang)
-                        }
-                      >
-                        <SelectTrigger className="h-8 w-[180px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VERIFICATION_SNIPPET_LANGUAGES.map(({ value }) => (
-                            <SelectItem key={value} value={value}>
-                              {t(`integrationCodeLanguage.${value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="relative overflow-hidden rounded-lg border">
-                      <CodeEditor
-                        value={getVerificationCodeSnippet(secret, snippetLang)}
-                        language={
-                          VERIFICATION_SNIPPET_LANGUAGES.find(
-                            (l) => l.value === snippetLang,
-                          )?.monacoLang ?? "javascript"
-                        }
-                        height={280}
-                      />
-                      <div className="absolute right-2 top-2 z-[1000] rounded bg-background/80 backdrop-blur-sm">
-                        <CopyButton
-                          value={getVerificationCodeSnippet(
-                            secret,
-                            snippetLang,
-                          )}
-                        />
+                    ) : connectionExists === true ? (
+                      <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          {t("connectionEstablished")}
+                        </p>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleTestEndpoint}
-                      disabled={isTestingEndpoint}
-                    >
-                      {isTestingEndpoint && (
-                        <Spinner size={14} className="mr-2" />
-                      )}
-                      {t("testEndpoint")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRegenerateChallenge}
-                      disabled={isRegeneratingChallenge}
-                    >
-                      {isRegeneratingChallenge && (
-                        <Spinner size={14} className="mr-2" />
-                      )}
-                      {t("generateNewSignature")}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
-
-          {issueError && (
-            <div className="rounded-lg border border-destructive/60 bg-destructive/5 p-4 space-y-2">
-              <p className="text-sm text-destructive">{issueError}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("agentErrorHint")}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIssueError(null)}
-                >
-                  {t("retry")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRegenerateChallenge}
-                  disabled={isRegeneratingChallenge}
-                >
-                  {t("generateNewSignature")}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">{t("kycStatus")}</h3>
-            {kycStatus === "APPROVED" ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-                <ShieldCheck className="h-5 w-5 text-green-500" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {tStatus("status.verified")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("kycStatusDescription")}
-                  </p>
-                </div>
-                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
-                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                </Badge>
-              </div>
-            ) : kycStatus === "PENDING" ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-                <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {tStatus("status.pending")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("kycStatusPendingDescription")}
-                  </p>
-                </div>
-                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
-                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                </Badge>
-              </div>
-            ) : kycStatus === "REJECTED" ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-                <XCircle className="h-5 w-5 text-destructive" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {tStatus("status.rejected")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("kycStatusRejectedDescription")}
-                  </p>
-                </div>
-                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
-                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                </Badge>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-4">
-                <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {tStatus("status.pending")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("kycStatusPendingDescription")}
-                  </p>
-                </div>
-                <Badge variant={getKycStatusBadgeVariant(kycStatus)}>
-                  {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                </Badge>
+                )}
               </div>
             )}
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">
-              {t("veridianWalletConnection")}
-            </h3>
-            <VeridianWalletConnect
-              key={veridianConnectKeyRef.current}
-              onConnect={handleWalletConnect}
-              onAddressChange={handleAddressChange}
-              onError={(error) => {
-                toast.error(`Connection error: ${error}`);
-              }}
-            />
-            {aid && (
-              <div className="space-y-2">
-                <div className="rounded-lg border bg-muted/40 p-3">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {t("identifierAid")}
+            {/* Step 2: Credential info + ready to submit */}
+            {step === 2 && (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium">{t("whatWillBeIssued")}</h3>
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {t("credentialDescription")}
                   </p>
-                  <p className="text-xs font-mono truncate">{aid}</p>
                 </div>
-                {isCheckingConnection ? (
-                  <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
-                    <Spinner size={16} />
-                    <p className="text-xs text-muted-foreground">
-                      {t("checkingConnection")}
-                    </p>
-                  </div>
-                ) : connectionExists === false ? (
-                  <div className="space-y-2">
-                    <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                      <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                        {t("connectionNotEstablished")}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEstablishConnectionDialogOpen(true)}
-                      className="w-full"
-                    >
-                      {t("establishConnection")}
-                    </Button>
-                  </div>
-                ) : connectionExists === true ? (
-                  <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      {t("connectionEstablished")}
-                    </p>
-                  </div>
-                ) : null}
               </div>
             )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">{t("whatWillBeIssued")}</h3>
-            <div className="rounded-lg border bg-muted/40 p-4">
-              <p className="text-sm text-muted-foreground">
-                {t("credentialDescription")}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -665,31 +751,67 @@ export function RequestVerificationDialog({
           }}
         />
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOnOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            {t("cancel")}
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
+          <Button variant="ghost" size="sm" asChild>
+            <a
+              href="https://www.masumi.network/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("help")}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              isSigning ||
-              !aid ||
-              !challenge ||
-              !secret ||
-              kycStatus !== "APPROVED"
-            }
-          >
-            {(isSubmitting || isSigning) && (
-              <Spinner size={16} className="mr-2" />
+          <div className="flex gap-2">
+            {step > 0 && (
+              <Button
+                variant="outline"
+                onClick={handlePrev}
+                disabled={isSubmitting}
+              >
+                {t("prev")}
+              </Button>
             )}
-            {isSigning ? "Signing..." : t("submitRequest")}
-          </Button>
+            {!isLastStep ? (
+              isNextDisabled ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button variant="primary" onClick={handleNext} disabled>
+                        {isTestingEndpoint && (
+                          <Spinner size={16} className="mr-2" />
+                        )}
+                        {t("next")}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{getNextDisabledReason()}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button variant="primary" onClick={handleNext}>
+                  {t("next")}
+                </Button>
+              )
+            ) : (
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                disabled={
+                  isSubmitting ||
+                  isSigning ||
+                  !aid ||
+                  !challenge ||
+                  !secret ||
+                  kycStatus !== "APPROVED"
+                }
+              >
+                {(isSubmitting || isSigning) && (
+                  <Spinner size={16} className="mr-2" />
+                )}
+                {isSigning ? "Signing..." : t("submitRequest")}
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

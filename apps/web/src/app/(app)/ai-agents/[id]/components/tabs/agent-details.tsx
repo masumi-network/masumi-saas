@@ -11,10 +11,11 @@ import {
   Tag,
   Tags,
   Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { HtmlContent } from "@/components/html-content";
 import { Markdown } from "@/components/markdown";
@@ -23,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -64,6 +66,25 @@ export function AgentDetails({
   const isVerified = agent.verificationStatus === "VERIFIED";
   const showVerificationCta = !isVerified;
 
+  const [isVerificationBannerDismissed, setIsVerificationBannerDismissed] =
+    useState(true);
+
+  useEffect(() => {
+    const key = `dismissedAgentVerification_${agent.id}`;
+    const dismissed =
+      typeof window !== "undefined" && localStorage.getItem(key) === "1";
+    const id = requestAnimationFrame(() =>
+      setIsVerificationBannerDismissed(dismissed),
+    );
+    return () => cancelAnimationFrame(id);
+  }, [agent.id]);
+
+  const handleDismissVerificationBanner = useCallback(() => {
+    const key = `dismissedAgentVerification_${agent.id}`;
+    localStorage.setItem(key, "1");
+    setIsVerificationBannerDismissed(true);
+  }, [agent.id]);
+
   useEffect(() => {
     startTransition(async () => {
       const result = await getKycStatusAction();
@@ -78,6 +99,44 @@ export function AgentDetails({
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
+      {showVerificationCta &&
+        onVerificationSuccess &&
+        !isVerificationBannerDismissed && (
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <p className="text-sm text-muted-foreground">
+              {t("verificationPromptDescription")}
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              {isLoadingKyc ? (
+                <Spinner size={16} className="shrink-0" />
+              ) : kycStatus === "APPROVED" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setVerificationDialogOpen(true)}
+                >
+                  {tVerification("requestVerification")}
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/verification">
+                    {tVerification("completeKyc")}
+                  </Link>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={handleDismissVerificationBanner}
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
       <div className="flex flex-col gap-2">
         <Card className="overflow-hidden gap-0 py-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
