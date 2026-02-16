@@ -421,10 +421,12 @@ export default function JobInputRenderer({
 
       {renderField()}
 
-      {/* Description below the field (skipped for boolean/checkbox which show it inline) */}
-      {!inlineLabelTypes.has(type) && description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
+      {/* Description below the field (skipped for boolean/checkbox which show it inline, and none/hidden types) */}
+      {!inlineLabelTypes.has(type) &&
+        !noLabelTypes.has(type) &&
+        description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
     </div>
   );
 }
