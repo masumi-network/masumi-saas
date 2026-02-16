@@ -318,9 +318,7 @@ export function getDefaultValue(
     case "url":
     case "search":
     case "textarea":
-      return (
-        (schema.data && "default" in schema.data && schema.data.default) ?? ""
-      );
+      return schema.data?.default ?? "";
 
     case "number":
       return 0;
@@ -334,15 +332,10 @@ export function getDefaultValue(
     case "time":
     case "month":
     case "week":
-      return (
-        (schema.data && "default" in schema.data && schema.data.default) ?? ""
-      );
+      return schema.data?.default ?? "";
 
     case "color":
-      return (
-        (schema.data && "default" in schema.data && schema.data.default) ??
-        "#000000"
-      );
+      return schema.data?.default ?? "#000000";
 
     case "range": {
       const defaultVal =
