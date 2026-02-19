@@ -2475,6 +2475,10 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2503,6 +2507,10 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -2560,6 +2568,14 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2594,6 +2610,14 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -2620,6 +2644,10 @@ export type UserCreateWithoutKycSubmissionsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2648,6 +2676,10 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -2705,6 +2737,14 @@ export type UserUpdateWithoutKycSubmissionsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2739,6 +2779,14 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -2765,6 +2813,10 @@ export type UserCreateWithoutWalletCachesInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2793,6 +2845,10 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -2850,6 +2906,14 @@ export type UserUpdateWithoutWalletCachesInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2882,6 +2946,14 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
     | string
     | null;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;

@@ -1071,13 +1071,20 @@ export type AgentScalarWhereInput = {
 export type AgentCreateWithoutAgentReferenceInput = {
   id?: string;
   name: string;
-  description: string;
+  summary?: string | null;
+  description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
@@ -1087,14 +1094,21 @@ export type AgentCreateWithoutAgentReferenceInput = {
 export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   id?: string;
   name: string;
-  description: string;
+  summary?: string | null;
+  description?: string | null;
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
   tags?: Prisma.AgentCreatetagsInput | string[];
   metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
@@ -1131,7 +1145,8 @@ export type AgentUpdateToOneWithWhereWithoutAgentReferenceInput = {
 export type AgentUpdateWithoutAgentReferenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  description?: Prisma.StringFieldUpdateOperationsInput | string;
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -1144,8 +1159,27 @@ export type AgentUpdateWithoutAgentReferenceInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
@@ -1155,7 +1189,8 @@ export type AgentUpdateWithoutAgentReferenceInput = {
 export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  description?: Prisma.StringFieldUpdateOperationsInput | string;
+  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
@@ -1169,8 +1204,27 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   tags?: Prisma.AgentUpdatetagsInput | string[];
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
