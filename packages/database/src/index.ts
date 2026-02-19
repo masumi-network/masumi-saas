@@ -38,7 +38,6 @@ export type {
   Organization,
   OrgApiKey,
   Prisma,
-  StripePaymentMethod,
   User,
   VeridianCredential,
   WalletCache,
