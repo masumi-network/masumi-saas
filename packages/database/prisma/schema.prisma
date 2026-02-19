@@ -45,7 +45,7 @@ model User {
   walletCaches      WalletCache[]
 
   // Two-factor authentication
-  twoFactor           TwoFactor?
+  twoFactor TwoFactor?
 
   // Admin fields (Better Auth admin plugin)
   role       String    @default("user")
@@ -270,18 +270,18 @@ model Agent {
   description String? // Optional detailed overview (Markdown supported)
   apiUrl      String
   userId      String
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Registration
   registrationState RegistrationState @default(RegistrationConfirmed)
 
   // Verification
-  verificationStatus             VerificationStatus?  @default(PENDING)
-  veridianCredentialId           String? // Credential ID from Veridian API
-  veridianCredentials            VeridianCredential[] // Credentials issued for this agent
-  verificationChallenge          String? // Masumi-generated challenge for agent endpoint verification
+  verificationStatus               VerificationStatus?  @default(PENDING)
+  veridianCredentialId             String? // Credential ID from Veridian API
+  veridianCredentials              VeridianCredential[] // Credentials issued for this agent
+  verificationChallenge            String? // Masumi-generated challenge for agent endpoint verification
   verificationChallengeGeneratedAt DateTime? // When the challenge was generated
-  verificationSecret             String? // Secret for HMAC - agent must prove it has this (stored in env)
+  verificationSecret               String? // Secret for HMAC - agent must prove it has this (stored in env)
 
   // Metadata
   tags     String[] @default([])
@@ -290,7 +290,7 @@ model Agent {
 
   // Registry / pricing
   agentIdentifier String? // On-chain or registry identifier
-  pricing         Json?   // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
+  pricing         Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

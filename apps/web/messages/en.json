@@ -171,6 +171,110 @@
       "confirmBan": "Ban User"
     }
   },
+  "Admin": {
+    "portalTitle": "Admin Portal",
+    "badge": "Admin",
+    "Auth": {
+      "SignIn": {
+        "title": "Admin Portal",
+        "description": "Sign in with your admin credentials to manage the platform.",
+        "email": "Email",
+        "password": "Password",
+        "submit": "Sign In",
+        "submitting": "Signing in...",
+        "success": "Signed in successfully!"
+      }
+    },
+    "Errors": {
+      "InvalidCredentials": "Invalid email or password",
+      "InvalidInput": "Invalid input",
+      "DatabaseError": "Database connection error",
+      "UnexpectedError": "An unexpected error occurred"
+    },
+    "Results": {
+      "AdminSignInSuccess": "Signed in successfully!"
+    },
+    "Sidebar": {
+      "MenuItems": {
+        "dashboard": "Dashboard",
+        "users": "Users"
+      }
+    },
+    "Dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Platform overview and management.",
+      "totalUsers": "Total Users",
+      "verifiedUsers": "Verified Users",
+      "totalAgents": "Total Agents",
+      "pendingKyc": "Pending KYC",
+      "errorLoadingStats": "Failed to load dashboard statistics. Please try refreshing the page."
+    },
+    "Users": {
+      "title": "User Management",
+      "description": "Manage platform users, roles, and access.",
+      "name": "Name",
+      "email": "Email",
+      "emailVerified": "Email Verified",
+      "kycStatus": "KYC Status",
+      "role": "Role",
+      "banned": "Status",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "setRole": "Set Role",
+      "ban": "Ban User",
+      "unban": "Unban User",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "noUsers": "No users found.",
+      "searchPlaceholder": "Search users...",
+      "noSearchResults": "No users match your search",
+      "noSearchResultsDescription": "Try adjusting your search or filters",
+      "clearSearch": "Clear search",
+      "banSuccess": "User banned successfully",
+      "unbanSuccess": "User unbanned successfully",
+      "roleUpdateSuccess": "User role updated successfully",
+      "error": "An error occurred. Please try again.",
+      "cannotModifySelf": "You cannot modify your own account",
+      "defaultBanReason": "Banned by admin",
+      "bannedStatus": "Banned",
+      "activeStatus": "Active",
+      "banDialogTitle": "Ban User",
+      "banDialogDescription": "Are you sure you want to ban {name}? This will immediately revoke all their sessions and prevent them from accessing the platform.",
+      "banReasonLabel": "Reason for ban",
+      "banReasonPlaceholder": "Enter reason for banning this user...",
+      "cancel": "Cancel",
+      "confirmBan": "Ban User",
+      "unbanDialogTitle": "Unban User",
+      "unbanDialogDescription": "Are you sure you want to unban {name}? They will regain access to the platform.",
+      "confirmUnban": "Unban User",
+      "filterAll": "All",
+      "filterVerified": "Email Verified",
+      "filterUnverified": "Unverified",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "kycPending": "Pending",
+      "kycApproved": "Approved",
+      "kycRejected": "Rejected",
+      "kycReview": "Under Review",
+      "kycVerified": "Verified",
+      "kycRevoked": "Revoked",
+      "kycExpired": "Expired",
+      "kycNone": "Not Started",
+      "showingRange": "Showing {start}–{end} of {total} accounts",
+      "totalAccounts": "Total accounts",
+      "previous": "Previous",
+      "next": "Next",
+      "paginationPrevious": "Go to previous page",
+      "paginationNext": "Go to next page",
+      "paginationMore": "More pages",
+      "page": "Page",
+      "perPage": "per page",
+      "loading": "Loading...",
+      "errorLoadingUsers": "Failed to load users. Please try refreshing the page.",
+      "errorDescription": "Something went wrong while loading the user data. This may be a temporary issue.",
+      "tryAgain": "Try again"
+    }
+  },
   "App": {
     "Home": {
       "title": "Dashboard",

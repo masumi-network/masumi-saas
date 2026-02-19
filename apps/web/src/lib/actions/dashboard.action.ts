@@ -50,10 +50,7 @@ export async function getDashboardOverviewAction(): Promise<
     console.error("Failed to get dashboard overview:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to load dashboard overview",
+      error: "Failed to load dashboard overview",
     };
   }
 }

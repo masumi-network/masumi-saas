@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { signOut } from "@/lib/auth/auth.client";
+
+import { Spinner } from "../ui/spinner";
 
 interface LogoutModalProps {
   open: boolean;
@@ -30,22 +33,27 @@ export default function LogoutModal({
   const t = useTranslations("Components.LogoutModal");
   const router = useRouter();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
-    onOpenChange(false); // Close modal immediately so user isn't stuck waiting
+    setLoading(true);
     const signInPath = pathname.startsWith("/admin")
       ? "/admin/signin"
       : "/signin";
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push(signInPath);
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push(signInPath);
+          },
+          onError: () => {
+            toast.error(t("error"));
+          },
         },
-        onError: () => {
-          toast.error(t("error"));
-        },
-      },
-    });
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,11 +68,17 @@ export default function LogoutModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="block space-y-1.5">
-          <Button variant="primary" className="w-full" onClick={handleLogout}>
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={handleLogout}
+            disabled={loading}
+          >
+            {loading && <Spinner size={16} className="mr-2" />}
             {t("logout")}
           </Button>
           <DialogClose asChild>
-            <Button variant="secondary" className="w-full">
+            <Button variant="secondary" className="w-full" disabled={loading}>
               {t("cancel")}
             </Button>
           </DialogClose>
