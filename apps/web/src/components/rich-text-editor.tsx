@@ -1,7 +1,7 @@
 "use client";
 
 import Placeholder from "@tiptap/extension-placeholder";
-import { EditorContent,useEditor } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
 import { useEffect } from "react";

@@ -425,6 +425,11 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  OrgApiKey: "OrgApiKey",
+  KycSubmission: "KycSubmission",
+  KybSubmission: "KybSubmission",
+  WalletCache: "WalletCache",
+  AgentReference: "AgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -461,6 +466,11 @@ export type TypeMap<
       | "rateLimit"
       | "kycVerification"
       | "agent"
+      | "orgApiKey"
+      | "kycSubmission"
+      | "kybSubmission"
+      | "walletCache"
+      | "agentReference"
       | "veridianCredential";
     txIsolationLevel: TransactionIsolationLevel;
   };
@@ -1453,6 +1463,386 @@ export type TypeMap<
         };
       };
     };
+    OrgApiKey: {
+      payload: Prisma.$OrgApiKeyPayload<ExtArgs>;
+      fields: Prisma.OrgApiKeyFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.OrgApiKeyFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.OrgApiKeyFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        findFirst: {
+          args: Prisma.OrgApiKeyFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.OrgApiKeyFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        findMany: {
+          args: Prisma.OrgApiKeyFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
+        };
+        create: {
+          args: Prisma.OrgApiKeyCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        createMany: {
+          args: Prisma.OrgApiKeyCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.OrgApiKeyCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
+        };
+        delete: {
+          args: Prisma.OrgApiKeyDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        update: {
+          args: Prisma.OrgApiKeyUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        deleteMany: {
+          args: Prisma.OrgApiKeyDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.OrgApiKeyUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.OrgApiKeyUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
+        };
+        upsert: {
+          args: Prisma.OrgApiKeyUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
+        };
+        aggregate: {
+          args: Prisma.OrgApiKeyAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOrgApiKey>;
+        };
+        groupBy: {
+          args: Prisma.OrgApiKeyGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.OrgApiKeyGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.OrgApiKeyCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.OrgApiKeyCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    KycSubmission: {
+      payload: Prisma.$KycSubmissionPayload<ExtArgs>;
+      fields: Prisma.KycSubmissionFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.KycSubmissionFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.KycSubmissionFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        findFirst: {
+          args: Prisma.KycSubmissionFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.KycSubmissionFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        findMany: {
+          args: Prisma.KycSubmissionFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>[];
+        };
+        create: {
+          args: Prisma.KycSubmissionCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        createMany: {
+          args: Prisma.KycSubmissionCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.KycSubmissionCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>[];
+        };
+        delete: {
+          args: Prisma.KycSubmissionDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        update: {
+          args: Prisma.KycSubmissionUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        deleteMany: {
+          args: Prisma.KycSubmissionDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.KycSubmissionUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.KycSubmissionUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>[];
+        };
+        upsert: {
+          args: Prisma.KycSubmissionUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KycSubmissionPayload>;
+        };
+        aggregate: {
+          args: Prisma.KycSubmissionAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKycSubmission>;
+        };
+        groupBy: {
+          args: Prisma.KycSubmissionGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.KycSubmissionGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.KycSubmissionCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.KycSubmissionCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    KybSubmission: {
+      payload: Prisma.$KybSubmissionPayload<ExtArgs>;
+      fields: Prisma.KybSubmissionFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.KybSubmissionFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.KybSubmissionFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        findFirst: {
+          args: Prisma.KybSubmissionFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.KybSubmissionFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        findMany: {
+          args: Prisma.KybSubmissionFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>[];
+        };
+        create: {
+          args: Prisma.KybSubmissionCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        createMany: {
+          args: Prisma.KybSubmissionCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.KybSubmissionCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>[];
+        };
+        delete: {
+          args: Prisma.KybSubmissionDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        update: {
+          args: Prisma.KybSubmissionUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        deleteMany: {
+          args: Prisma.KybSubmissionDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.KybSubmissionUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.KybSubmissionUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>[];
+        };
+        upsert: {
+          args: Prisma.KybSubmissionUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$KybSubmissionPayload>;
+        };
+        aggregate: {
+          args: Prisma.KybSubmissionAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateKybSubmission>;
+        };
+        groupBy: {
+          args: Prisma.KybSubmissionGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.KybSubmissionGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.KybSubmissionCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.KybSubmissionCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    WalletCache: {
+      payload: Prisma.$WalletCachePayload<ExtArgs>;
+      fields: Prisma.WalletCacheFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.WalletCacheFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.WalletCacheFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        findFirst: {
+          args: Prisma.WalletCacheFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.WalletCacheFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        findMany: {
+          args: Prisma.WalletCacheFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>[];
+        };
+        create: {
+          args: Prisma.WalletCacheCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        createMany: {
+          args: Prisma.WalletCacheCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.WalletCacheCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>[];
+        };
+        delete: {
+          args: Prisma.WalletCacheDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        update: {
+          args: Prisma.WalletCacheUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        deleteMany: {
+          args: Prisma.WalletCacheDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.WalletCacheUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.WalletCacheUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>[];
+        };
+        upsert: {
+          args: Prisma.WalletCacheUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WalletCachePayload>;
+        };
+        aggregate: {
+          args: Prisma.WalletCacheAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWalletCache>;
+        };
+        groupBy: {
+          args: Prisma.WalletCacheGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.WalletCacheGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.WalletCacheCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.WalletCacheCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    AgentReference: {
+      payload: Prisma.$AgentReferencePayload<ExtArgs>;
+      fields: Prisma.AgentReferenceFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.AgentReferenceFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.AgentReferenceFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        findFirst: {
+          args: Prisma.AgentReferenceFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.AgentReferenceFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        findMany: {
+          args: Prisma.AgentReferenceFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>[];
+        };
+        create: {
+          args: Prisma.AgentReferenceCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        createMany: {
+          args: Prisma.AgentReferenceCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.AgentReferenceCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>[];
+        };
+        delete: {
+          args: Prisma.AgentReferenceDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        update: {
+          args: Prisma.AgentReferenceUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        deleteMany: {
+          args: Prisma.AgentReferenceDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.AgentReferenceUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.AgentReferenceUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>[];
+        };
+        upsert: {
+          args: Prisma.AgentReferenceUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentReferencePayload>;
+        };
+        aggregate: {
+          args: Prisma.AgentReferenceAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAgentReference>;
+        };
+        groupBy: {
+          args: Prisma.AgentReferenceGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AgentReferenceGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.AgentReferenceCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.AgentReferenceCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     VeridianCredential: {
       payload: Prisma.$VeridianCredentialPayload<ExtArgs>;
       fields: Prisma.VeridianCredentialFieldRefs;
@@ -1776,6 +2166,92 @@ export const AgentScalarFieldEnum = {
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
 
+export const OrgApiKeyScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  keyHash: "keyHash",
+  keyPrefix: "keyPrefix",
+  organizationId: "organizationId",
+  createdById: "createdById",
+  scopes: "scopes",
+  enabled: "enabled",
+  lastUsedAt: "lastUsedAt",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OrgApiKeyScalarFieldEnum =
+  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
+
+export const KycSubmissionScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  kycVerificationId: "kycVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycSubmissionScalarFieldEnum =
+  (typeof KycSubmissionScalarFieldEnum)[keyof typeof KycSubmissionScalarFieldEnum];
+
+export const KybSubmissionScalarFieldEnum = {
+  id: "id",
+  organizationId: "organizationId",
+  kybVerificationId: "kybVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybSubmissionScalarFieldEnum =
+  (typeof KybSubmissionScalarFieldEnum)[keyof typeof KybSubmissionScalarFieldEnum];
+
+export const WalletCacheScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  walletType: "walletType",
+  identifier: "identifier",
+  label: "label",
+  networkId: "networkId",
+  connectionState: "connectionState",
+  metadata: "metadata",
+  lastSyncedAt: "lastSyncedAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type WalletCacheScalarFieldEnum =
+  (typeof WalletCacheScalarFieldEnum)[keyof typeof WalletCacheScalarFieldEnum];
+
+export const AgentReferenceScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  registryUrl: "registryUrl",
+  externalId: "externalId",
+  networkIdentifier: "networkIdentifier",
+  registeredAt: "registeredAt",
+  lastVerifiedAt: "lastVerifiedAt",
+  status: "status",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentReferenceScalarFieldEnum =
+  (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
+
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",
   credentialId: "credentialId",
@@ -1952,6 +2428,46 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'WalletType'
+ */
+export type EnumWalletTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "WalletType"
+>;
+
+/**
+ * Reference to a field of type 'WalletType[]'
+ */
+export type ListEnumWalletTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "WalletType[]"
+>;
+
+/**
+ * Reference to a field of type 'WalletConnectionState'
+ */
+export type EnumWalletConnectionStateFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "WalletConnectionState">;
+
+/**
+ * Reference to a field of type 'WalletConnectionState[]'
+ */
+export type ListEnumWalletConnectionStateFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "WalletConnectionState[]">;
+
+/**
+ * Reference to a field of type 'AgentReferenceStatus'
+ */
+export type EnumAgentReferenceStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentReferenceStatus">;
+
+/**
+ * Reference to a field of type 'AgentReferenceStatus[]'
+ */
+export type ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentReferenceStatus[]">;
+
+/**
  * Reference to a field of type 'CredentialStatus'
  */
 export type EnumCredentialStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -2081,6 +2597,11 @@ export type GlobalOmitConfig = {
   rateLimit?: Prisma.RateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
+  orgApiKey?: Prisma.OrgApiKeyOmit;
+  kycSubmission?: Prisma.KycSubmissionOmit;
+  kybSubmission?: Prisma.KybSubmissionOmit;
+  walletCache?: Prisma.WalletCacheOmit;
+  agentReference?: Prisma.AgentReferenceOmit;
   veridianCredential?: Prisma.VeridianCredentialOmit;
 };
 
