@@ -55,6 +55,7 @@ export const AnyNull = runtime.AnyNull;
 
 export const ModelName = {
   User: "User",
+  TwoFactor: "TwoFactor",
   Session: "Session",
   Account: "Account",
   Verification: "Verification",
@@ -98,11 +99,22 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
+  twoFactorEnabled: "twoFactorEnabled",
   kycVerificationId: "kycVerificationId",
 } as const;
 
 export type UserScalarFieldEnum =
   (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+
+export const TwoFactorScalarFieldEnum = {
+  id: "id",
+  secret: "secret",
+  backupCodes: "backupCodes",
+  userId: "userId",
+} as const;
+
+export type TwoFactorScalarFieldEnum =
+  (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum];
 
 export const SessionScalarFieldEnum = {
   id: "id",

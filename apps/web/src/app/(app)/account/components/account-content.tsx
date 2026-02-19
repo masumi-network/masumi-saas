@@ -9,6 +9,7 @@ import { DeleteAccountForm } from "./delete-account-form";
 import { EmailForm } from "./email-form";
 import { NameForm } from "./name-form";
 import { PasswordForm } from "./password-form";
+import { TwoFactorSection } from "./two-factor-section";
 
 type Account = Awaited<ReturnType<typeof auth.api.listUserAccounts>>[number];
 
@@ -50,6 +51,9 @@ export function AccountContent({
           <EmailForm currentEmail={_user.email} />
           <div className="md:col-span-2">
             {hasCredentialAccount ? <PasswordForm /> : null}
+          </div>
+          <div className="md:col-span-2">
+            {hasCredentialAccount ? <TwoFactorSection /> : null}
           </div>
         </div>
 

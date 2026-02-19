@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 
+import { extractErrorMessage } from "@/lib/utils/extract-error";
+
 interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
@@ -40,20 +42,19 @@ export function SumsubStep({
             addViewportTag: false,
             adaptIframeHeight: true,
           })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .on("idCheck.onStepCompleted", (payload: any) => {
+          .on("idCheck.onStepCompleted", (payload: unknown) => {
+            const p = payload as Record<string, unknown> | null;
             if (
-              payload?.reviewStatus === "completed" ||
-              payload?.actionId === "verificationCompleted" ||
-              payload?.type === "verificationCompleted"
+              p?.reviewStatus === "completed" ||
+              p?.actionId === "verificationCompleted" ||
+              p?.type === "verificationCompleted"
             ) {
               onComplete();
             }
           })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .on("idCheck.onError", (error: any) => {
+          .on("idCheck.onError", (error: unknown) => {
             console.error("Sumsub SDK error:", error);
-            onError(error?.message || t("error"));
+            onError(extractErrorMessage(error, t("error")));
           })
 
           .on("idCheck.onApplicantSubmitted", () => {
@@ -63,13 +64,14 @@ export function SumsubStep({
 
         sdkRef.current = sdk;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sdkInstance = sdk as any;
+        const sdkInstance = sdk as unknown as Record<string, unknown>;
 
         if (sdkInstance && typeof sdkInstance.launch === "function") {
-          sdkInstance.launch("#sumsub-websdk-container");
+          (sdkInstance.launch as (id: string) => void)(
+            "#sumsub-websdk-container",
+          );
         } else if (sdkInstance?.iframe && containerRef.current) {
-          containerRef.current.appendChild(sdkInstance.iframe);
+          containerRef.current.appendChild(sdkInstance.iframe as Node);
         } else {
           console.error(
             "Failed to initialize Sumsub SDK: launch method not available",
@@ -78,7 +80,7 @@ export function SumsubStep({
         }
       } catch (error) {
         console.error("Failed to initialize Sumsub SDK:", error);
-        onError(error instanceof Error ? error.message : t("error"));
+        onError(extractErrorMessage(error, t("error")));
       }
     };
 
@@ -87,14 +89,17 @@ export function SumsubStep({
     return () => {
       if (sdkRef.current) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const sdkInstance = sdkRef.current as any;
+          const sdkInstance = sdkRef.current as unknown as Record<
+            string,
+            unknown
+          >;
           if (typeof sdkInstance.unmount === "function") {
             sdkInstance.unmount();
           } else if (typeof sdkInstance.destroy === "function") {
             sdkInstance.destroy();
-          } else if (sdkInstance.iframe && sdkInstance.iframe.parentNode) {
-            sdkInstance.iframe.parentNode.removeChild(sdkInstance.iframe);
+          } else if (sdkInstance.iframe) {
+            const iframe = sdkInstance.iframe as HTMLElement;
+            iframe.parentNode?.removeChild(iframe);
           }
         } catch (error) {
           console.error("Error unmounting Sumsub SDK:", error);

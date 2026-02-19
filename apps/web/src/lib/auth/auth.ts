@@ -4,7 +4,7 @@ import prisma from "@masumi/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { apiKey, organization } from "better-auth/plugins";
+import { apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { getTranslations } from "next-intl/server";
 
@@ -15,6 +15,7 @@ import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
 
 export const auth = betterAuth({
+  appName: "Masumi",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -142,15 +143,18 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    twoFactor({
+      issuer: "Masumi",
+      skipVerificationOnEnable: false,
+    }),
     apiKey({
       rateLimit: authConfig.apiKey.rateLimit,
       enableMetadata: authConfig.apiKey.enableMetadata,
     }),
     organization({
       organizationCreation: {
-        afterCreate: async ({ organization }) => {
-          // post-creation logic here
-          console.log("Organization created:", organization.id);
+        afterCreate: async ({ organization: _organization }) => {
+          // Organization post-creation logic (e.g., Stripe customer setup)
         },
       },
       schema: {
@@ -173,12 +177,15 @@ export const auth = betterAuth({
       },
       async sendInvitationEmail(data) {
         const inviteLink = `${authEnvConfig.baseUrl}/accept-invitation/${data.id}`;
-        // TODO: Implement email sending
-        console.log("Invitation email:", {
-          to: data.email,
-          organization: data.organization.name,
-          link: inviteLink,
-        });
+        // TODO(MAS-XXX): Implement invitation email sending via Postmark
+        // Users will not receive invite emails until this is implemented.
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DEV] Invitation email:", {
+            to: data.email,
+            organization: data.organization.name,
+            link: inviteLink,
+          });
+        }
       },
       invitationLimit: authConfig.organization.invitationLimit,
       cancelPendingInvitationsOnReInvite:

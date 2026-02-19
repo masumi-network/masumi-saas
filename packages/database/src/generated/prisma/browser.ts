@@ -22,6 +22,11 @@ export * from "./enums.js";
  */
 export type User = Prisma.UserModel;
 /**
+ * Model TwoFactor
+ *
+ */
+export type TwoFactor = Prisma.TwoFactorModel;
+/**
  * Model Session
  *
  */

@@ -90,7 +90,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to get agent",
+        error: "Failed to get agent",
       },
       { status: 500 },
     );
@@ -257,8 +257,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to delete agent",
+        error: "Failed to delete agent",
       },
       { status: 500 },
     );

@@ -57,6 +57,8 @@ export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
           : result.error;
         toast.error(errorMessage);
         setIsLoading(false);
+      } else if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
+        router.push("/2fa");
       } else if (result?.success) {
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
