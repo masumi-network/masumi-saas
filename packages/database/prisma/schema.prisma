@@ -35,14 +35,13 @@ model User {
   stripeCustomerId    String?
 
   // KYC verification (one-to-one)
-  kycVerificationId    String?          @unique
-  kycVerification      KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
+  kycVerificationId String?          @unique
+  kycVerification   KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
 
   // New domain relations
-  createdOrgApiKeys    OrgApiKey[]
-  kycSubmissions       KycSubmission[]
-  stripePaymentMethods StripePaymentMethod[]
-  walletCaches         WalletCache[]
+  createdOrgApiKeys OrgApiKey[]
+  kycSubmissions    KycSubmission[]
+  walletCaches      WalletCache[]
 
   @@unique([email])
   @@unique([stripeCustomerId])
@@ -119,9 +118,8 @@ model Organization {
   kybVerification   KybVerification? @relation(fields: [kybVerificationId], references: [id], onDelete: SetNull)
 
   // Domain relations
-  orgApiKeys           OrgApiKey[]
-  kybSubmissions       KybSubmission[]
-  stripePaymentMethods StripePaymentMethod[]  
+  orgApiKeys     OrgApiKey[]
+  kybSubmissions KybSubmission[]
 
   @@unique([slug])
   @@unique([stripeCustomerId])
@@ -288,7 +286,7 @@ model OrgApiKey {
   id             String       @id @default(cuid())
   name           String
   keyHash        String       @unique // Hashed full key — never store plaintext
-  keyPrefix      String                // First 8 chars shown in UI for identification
+  keyPrefix      String // First 8 chars shown in UI for identification
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String?
@@ -318,12 +316,12 @@ model KycSubmission {
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   kycVerificationId String
   kycVerification   KycVerification    @relation(fields: [kycVerificationId], references: [id], onDelete: Cascade)
-  sumsubApplicantId String?            // Sumsub applicant ID for this submission
+  sumsubApplicantId String? // Sumsub applicant ID for this submission
   status            VerificationStatus @default(PENDING)
-  submittedAt       DateTime?          // Set explicitly when the user submits to Sumsub
+  submittedAt       DateTime? // Set explicitly when the user submits to Sumsub
   reviewedAt        DateTime?
   rejectionReason   String?
-  metadata          Json?              // Additional Sumsub response data
+  metadata          Json? // Additional Sumsub response data
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -346,12 +344,12 @@ model KybSubmission {
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   kybVerificationId String
   kybVerification   KybVerification    @relation(fields: [kybVerificationId], references: [id], onDelete: Cascade)
-  sumsubApplicantId String?            // Sumsub applicant ID for this submission
+  sumsubApplicantId String? // Sumsub applicant ID for this submission
   status            VerificationStatus @default(PENDING)
-  submittedAt       DateTime?          // Set explicitly when the org submits to Sumsub
+  submittedAt       DateTime? // Set explicitly when the org submits to Sumsub
   reviewedAt        DateTime?
   rejectionReason   String?
-  metadata          Json?              // Additional Sumsub response data
+  metadata          Json? // Additional Sumsub response data
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -362,33 +360,6 @@ model KybSubmission {
   @@map("kyb_submission")
 }
 
-/// Stores Stripe payment methods (cards, bank accounts, etc.) belonging to
-/// a user or an organization. Mirrors Stripe's PaymentMethod object locally
-/// so the UI can display saved methods without extra Stripe API calls.
-///
-/// Either userId or organizationId should be set — not both at the same time.
-/// isDefault flags the preferred payment method for that owner.
-model StripePaymentMethod {
-  id                    String        @id @default(cuid())
-  stripePaymentMethodId String        @unique // Stripe pm_xxx identifier
-  type                  String                // "card", "us_bank_account", "sepa_debit", etc.
-  last4                 String?               // Last 4 digits of card/account
-  brand                 String?               // "visa", "mastercard", "amex", etc.
-  expiryMonth           Int?
-  expiryYear            Int?
-  isDefault             Boolean       @default(false)
-  userId                String?
-  user                  User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organizationId        String?
-  organization          Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-
-  @@index([userId])
-  @@index([organizationId])
-  @@map("stripe_payment_method")
-}
-
 /// Caches wallet connection state and identifiers for a user.
 /// Supports both Cardano wallets (identifier = wallet address) and
 /// Veridian wallets (identifier = KERI AID).
@@ -397,18 +368,18 @@ model StripePaymentMethod {
 /// each user can only have one cache entry per wallet address/AID,
 /// while still supporting multiple wallets of different types.
 model WalletCache {
-  id              String                @id @default(cuid())
+  id              String                 @id @default(cuid())
   userId          String
-  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  walletType      WalletType            // CARDANO or VERIDIAN
-  identifier      String                // Cardano: wallet address | Veridian: KERI AID
-  label           String?               // User-friendly wallet name/alias
-  networkId       String?               // e.g. "mainnet", "preprod", "preview"
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletType      WalletType // CARDANO or VERIDIAN
+  identifier      String // Cardano: wallet address | Veridian: KERI AID
+  label           String? // User-friendly wallet name/alias
+  networkId       String? // e.g. "mainnet", "preprod", "preview"
   connectionState WalletConnectionState? // Current wallet connection status
-  metadata        Json?                 // Balance, staking info, or other wallet data
+  metadata        Json? // Balance, staking info, or other wallet data
   lastSyncedAt    DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@unique([userId, walletType, identifier])
   @@index([userId])
@@ -425,13 +396,13 @@ model AgentReference {
   id                String               @id @default(cuid())
   agentId           String               @unique
   agent             Agent                @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  registryUrl       String?              // URL of the agent's entry in the Masumi registry
-  externalId        String?              // Agent's ID within the external registry
-  networkIdentifier String?              // Masumi network identifier (e.g. mainnet, testnet)
+  registryUrl       String? // URL of the agent's entry in the Masumi registry
+  externalId        String? // Agent's ID within the external registry
+  networkIdentifier String? // Masumi network identifier (e.g. mainnet, testnet)
   registeredAt      DateTime?
   lastVerifiedAt    DateTime?
   status            AgentReferenceStatus @default(PENDING)
-  metadata          Json?                // Additional registry data
+  metadata          Json? // Additional registry data
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
@@ -490,14 +461,14 @@ enum WalletType {
 
 /// Connection status of a cached wallet.
 enum WalletConnectionState {
-  CONNECTED     // Wallet is actively connected
-  DISCONNECTED  // Wallet was previously connected but is now disconnected
+  CONNECTED // Wallet is actively connected
+  DISCONNECTED // Wallet was previously connected but is now disconnected
 }
 
 /// Status of an agent's registration in the Masumi decentralized registry.
 enum AgentReferenceStatus {
-  PENDING       // Registered locally, not yet submitted to the network registry
-  ACTIVE        // Live and discoverable in the registry
-  INACTIVE      // Temporarily disabled in the registry
-  DEREGISTERED  // Permanently removed from the registry
+  PENDING // Registered locally, not yet submitted to the network registry
+  ACTIVE // Live and discoverable in the registry
+  INACTIVE // Temporarily disabled in the registry
+  DEREGISTERED // Permanently removed from the registry
 }

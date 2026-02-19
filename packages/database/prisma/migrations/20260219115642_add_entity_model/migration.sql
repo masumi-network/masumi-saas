@@ -1,7 +1,3 @@
--- Migration: add_domain_entity_models
--- Adds 6 new domain tables + 3 enums for org API keys, KYC/KYB submissions,
--- Stripe payment methods, wallet caching, and agent registry references.
-
 -- CreateEnum
 CREATE TYPE "WalletType" AS ENUM ('CARDANO', 'VERIDIAN');
 
@@ -64,24 +60,6 @@ CREATE TABLE "kyb_submission" (
 );
 
 -- CreateTable
-CREATE TABLE "stripe_payment_method" (
-    "id" TEXT NOT NULL,
-    "stripePaymentMethodId" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "last4" TEXT,
-    "brand" TEXT,
-    "expiryMonth" INTEGER,
-    "expiryYear" INTEGER,
-    "isDefault" BOOLEAN NOT NULL DEFAULT false,
-    "userId" TEXT,
-    "organizationId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "stripe_payment_method_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "wallet_cache" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -124,7 +102,7 @@ CREATE INDEX "api_key_organizationId_idx" ON "api_key"("organizationId");
 -- CreateIndex
 CREATE INDEX "api_key_createdById_idx" ON "api_key"("createdById");
 
--- CreateIndex (Compound: API key usage tracking)
+-- CreateIndex
 CREATE INDEX "api_key_organizationId_enabled_lastUsedAt_idx" ON "api_key"("organizationId", "enabled", "lastUsedAt");
 
 -- CreateIndex
@@ -136,7 +114,7 @@ CREATE INDEX "kyc_submission_kycVerificationId_idx" ON "kyc_submission"("kycVeri
 -- CreateIndex
 CREATE INDEX "kyc_submission_status_idx" ON "kyc_submission"("status");
 
--- CreateIndex (Compound: verification status queries)
+-- CreateIndex
 CREATE INDEX "kyc_submission_userId_status_createdAt_idx" ON "kyc_submission"("userId", "status", "createdAt");
 
 -- CreateIndex
@@ -148,23 +126,14 @@ CREATE INDEX "kyb_submission_kybVerificationId_idx" ON "kyb_submission"("kybVeri
 -- CreateIndex
 CREATE INDEX "kyb_submission_status_idx" ON "kyb_submission"("status");
 
--- CreateIndex (Compound: verification status queries)
+-- CreateIndex
 CREATE INDEX "kyb_submission_organizationId_status_createdAt_idx" ON "kyb_submission"("organizationId", "status", "createdAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "stripe_payment_method_stripePaymentMethodId_key" ON "stripe_payment_method"("stripePaymentMethodId");
-
--- CreateIndex
-CREATE INDEX "stripe_payment_method_userId_idx" ON "stripe_payment_method"("userId");
-
--- CreateIndex
-CREATE INDEX "stripe_payment_method_organizationId_idx" ON "stripe_payment_method"("organizationId");
+CREATE INDEX "wallet_cache_userId_idx" ON "wallet_cache"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "wallet_cache_userId_walletType_identifier_key" ON "wallet_cache"("userId", "walletType", "identifier");
-
--- CreateIndex
-CREATE INDEX "wallet_cache_userId_idx" ON "wallet_cache"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "agent_reference_agentId_key" ON "agent_reference"("agentId");
@@ -194,19 +163,7 @@ ALTER TABLE "kyb_submission" ADD CONSTRAINT "kyb_submission_organizationId_fkey"
 ALTER TABLE "kyb_submission" ADD CONSTRAINT "kyb_submission_kybVerificationId_fkey" FOREIGN KEY ("kybVerificationId") REFERENCES "kyb_verification"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "stripe_payment_method" ADD CONSTRAINT "stripe_payment_method_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "stripe_payment_method" ADD CONSTRAINT "stripe_payment_method_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "wallet_cache" ADD CONSTRAINT "wallet_cache_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "agent_reference" ADD CONSTRAINT "agent_reference_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "agent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddConstraint
--- Ensures every payment method is owned by exactly one of: a user or an organization (not neither, not both).
-ALTER TABLE "stripe_payment_method"
-ADD CONSTRAINT "stripe_payment_method_owner_check"
-CHECK (num_nonnulls("userId", "organizationId") = 1);
