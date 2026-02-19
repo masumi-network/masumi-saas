@@ -12,6 +12,7 @@ export async function getDashboardOverview(
     apiKeysResult,
     apiKeyCount,
     agentCounts,
+    agentRegistrationCounts,
     agents,
   ] = await Promise.all([
     prisma.user.findUnique({
@@ -48,16 +49,22 @@ export async function getDashboardOverview(
       where: { userId },
       _count: true,
     }),
+    prisma.agent.groupBy({
+      by: ["registrationState"],
+      where: { userId },
+      _count: true,
+    }),
     prisma.agent.findMany({
       where: { userId },
       select: {
         id: true,
         name: true,
+        icon: true,
         registrationState: true,
         verificationStatus: true,
       },
       orderBy: { updatedAt: "desc" },
-      take: 5,
+      take: 10,
     }),
   ]);
 
@@ -81,6 +88,25 @@ export async function getDashboardOverview(
   );
   const verifiedAgentCount = verifiedGroup?._count ?? 0;
 
+  const runningAgentCount =
+    agentRegistrationCounts.find(
+      (g) => g.registrationState === "RegistrationConfirmed",
+    )?._count ?? 0;
+  const pendingAgentCount = agentRegistrationCounts
+    .filter((g) =>
+      ["RegistrationRequested", "DeregistrationRequested"].includes(
+        g.registrationState,
+      ),
+    )
+    .reduce((sum, g) => sum + g._count, 0);
+  const failedAgentCount = agentRegistrationCounts
+    .filter((g) =>
+      ["RegistrationFailed", "DeregistrationFailed"].includes(
+        g.registrationState,
+      ),
+    )
+    .reduce((sum, g) => sum + g._count, 0);
+
   const organizations = userWithOrgs.members.map((m) => ({
     id: m.organization.id,
     name: m.organization.name,
@@ -91,6 +117,7 @@ export async function getDashboardOverview(
   const agentsList = agents.map((a) => ({
     id: a.id,
     name: a.name,
+    icon: a.icon,
     registrationState: a.registrationState,
     verificationStatus: a.verificationStatus,
   }));
@@ -119,6 +146,9 @@ export async function getDashboardOverview(
     apiKeyCount,
     agentCount,
     verifiedAgentCount,
+    runningAgentCount,
+    pendingAgentCount,
+    failedAgentCount,
     // TODO: Integrate real balance from payment/wallet service
     balance: "0",
   };

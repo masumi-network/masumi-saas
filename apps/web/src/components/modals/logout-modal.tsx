@@ -15,8 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
 import { signOut } from "@/lib/auth/auth.client";
+
+import { Spinner } from "../ui/spinner";
 
 interface LogoutModalProps {
   open: boolean;
@@ -30,9 +31,9 @@ export default function LogoutModal({
   email,
 }: LogoutModalProps) {
   const t = useTranslations("Components.LogoutModal");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
     setLoading(true);
@@ -55,13 +56,8 @@ export default function LogoutModal({
     }
   };
 
-  const handleOnOpenChange = (newOpen: boolean) => {
-    if (loading) return;
-    onOpenChange(newOpen);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOnOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-sm">
         <DialogHeader>
           <DialogTitle className="text-center text-lg font-medium">
@@ -72,17 +68,12 @@ export default function LogoutModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="block space-y-1.5">
-          <Button
-            variant="primary"
-            className="w-full"
-            onClick={handleLogout}
-            disabled={loading}
-          >
-            {loading && <Spinner size={16} className="mr-2" />}
+          <Button variant="primary" className="w-full" onClick={handleLogout}>
             {t("logout")}
           </Button>
           <DialogClose asChild>
-            <Button variant="secondary" className="w-full" disabled={loading}>
+            <Button variant="secondary" className="w-full">
+              {loading && <Spinner size={16} className="mr-2" />}
               {t("cancel")}
             </Button>
           </DialogClose>

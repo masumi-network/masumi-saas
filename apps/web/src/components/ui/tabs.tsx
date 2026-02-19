@@ -24,6 +24,7 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
     left: 0,
     width: 0,
   });
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const getTabValue = (tab: Tab) => tab.key ?? tab.name;
 
@@ -39,6 +40,9 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
           left: activeTabElement.offsetLeft,
           width: activeTabElement.offsetWidth,
         });
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setShouldAnimate(true));
+        });
       }
     };
 
@@ -48,41 +52,46 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
   }, [activeTab, tabs]);
 
   return (
-    <div className={cn("flex gap-6 border-b relative", className)}>
-      <div
-        className="absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-out"
-        style={{
-          left: indicatorStyle.left,
-          width: indicatorStyle.width,
-        }}
-      />
-      {tabs.map((tab, index) => (
-        <button
-          key={getTabValue(tab)}
-          ref={(el) => {
-            if (el) tabsRef.current[index] = el;
-          }}
-          type="button"
-          onClick={() => !tab.disabled && onTabChange(getTabValue(tab))}
-          disabled={tab.disabled}
+    <div className={cn("w-full min-w-0 -mx-px", className)}>
+      <div className="overflow-x-auto overflow-y-hidden flex gap-6 border-b relative flex-nowrap">
+        <div
           className={cn(
-            "pb-4 relative text-sm transition-colors duration-200",
-            getTabValue(tab) === activeTab
-              ? "text-primary"
-              : "text-muted-foreground",
-            tab.disabled && "cursor-not-allowed opacity-50",
+            "absolute bottom-0 h-0.5 bg-primary ease-out",
+            shouldAnimate && "transition-all duration-300",
           )}
-        >
-          <div className="flex items-center gap-2">
-            {tab.name}
-            {tab.count !== null && tab.count !== undefined && (
-              <span className="bg-destructive text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">
-                {tab.count}
-              </span>
+          style={{
+            left: indicatorStyle.left,
+            width: indicatorStyle.width,
+          }}
+        />
+        {tabs.map((tab, index) => (
+          <button
+            key={getTabValue(tab)}
+            ref={(el) => {
+              if (el) tabsRef.current[index] = el;
+            }}
+            type="button"
+            onClick={() => !tab.disabled && onTabChange(getTabValue(tab))}
+            disabled={tab.disabled}
+            className={cn(
+              "pb-4 relative text-sm transition-colors duration-200 whitespace-nowrap shrink-0",
+              getTabValue(tab) === activeTab
+                ? "text-primary"
+                : "text-muted-foreground",
+              tab.disabled && "cursor-not-allowed opacity-50",
             )}
-          </div>
-        </button>
-      ))}
+          >
+            <div className="flex items-center gap-2">
+              {tab.name}
+              {tab.count !== null && tab.count !== undefined && (
+                <span className="bg-destructive text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">
+                  {tab.count}
+                </span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -11,7 +11,9 @@
       "DatabaseError": "Database connection error. Please check your database configuration.",
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
-      "AccountCreationFailed": "Failed to create account"
+      "AccountCreationFailed": "Failed to create account",
+      "TwoFactorRequired": "Two-factor verification required",
+      "InvalidTwoFactorCode": "Invalid verification code. Please try again."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",
@@ -21,6 +23,12 @@
     "SignIn": {
       "title": "Login",
       "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
+      "orContinueWith": "Or continue with",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "continueWithMicrosoft": "Continue with Microsoft",
+      "continueWithApple": "Continue with Apple",
+      "orSignInWithEmail": "Or sign in with email",
       "email": "Email",
       "password": "Password",
       "submit": "Login",
@@ -33,6 +41,12 @@
     "SignUp": {
       "title": "Register",
       "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "orContinueWith": "Or continue with",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGithub": "Continue with GitHub",
+      "continueWithMicrosoft": "Continue with Microsoft",
+      "continueWithApple": "Continue with Apple",
+      "orSignUpWithEmail": "Or register with email",
       "name": "Name",
       "email": "Email",
       "password": "Password",
@@ -73,6 +87,88 @@
       "error": "Failed to reset password. The link may have expired.",
       "rememberPassword": "Remember your password?",
       "login": "Login"
+    },
+    "TwoFactor": {
+      "title": "Two-Factor Authentication",
+      "description": "Enter the 6-digit code from your authenticator app.",
+      "backupCodeDescription": "Enter one of your backup codes to verify your identity.",
+      "code": "Verification Code",
+      "codePlaceholder": "000000",
+      "backupCodePlaceholder": "Enter backup code",
+      "submit": "Verify",
+      "submitting": "Verifying...",
+      "useBackupCode": "Use a backup code",
+      "useAuthenticator": "Use authenticator app",
+      "backToLogin": "Back to Login"
+    }
+  },
+  "Admin": {
+    "portalTitle": "Admin Portal",
+    "badge": "Admin",
+    "Auth": {
+      "SignIn": {
+        "title": "Admin Portal",
+        "description": "Sign in with your admin credentials to manage the platform.",
+        "email": "Email",
+        "password": "Password",
+        "submit": "Sign In",
+        "submitting": "Signing in...",
+        "success": "Signed in successfully!"
+      }
+    },
+    "Errors": {
+      "InvalidCredentials": "Invalid email or password",
+      "InvalidInput": "Invalid input",
+      "DatabaseError": "Database connection error",
+      "UnexpectedError": "An unexpected error occurred"
+    },
+    "Results": {
+      "AdminSignInSuccess": "Signed in successfully!"
+    },
+    "Sidebar": {
+      "MenuItems": {
+        "dashboard": "Dashboard",
+        "users": "Users"
+      }
+    },
+    "Dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Platform overview and management.",
+      "totalUsers": "Total Users",
+      "totalAgents": "Total Agents",
+      "pendingKyc": "Pending KYC",
+      "errorLoadingStats": "Failed to load dashboard statistics. Please try refreshing the page."
+    },
+    "Users": {
+      "title": "User Management",
+      "description": "Manage platform users, roles, and access.",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "banned": "Status",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "setRole": "Set Role",
+      "ban": "Ban User",
+      "unban": "Unban User",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "noUsers": "No users found.",
+      "searchPlaceholder": "Search users...",
+      "banSuccess": "User banned successfully",
+      "unbanSuccess": "User unbanned successfully",
+      "roleUpdateSuccess": "User role updated successfully",
+      "error": "An error occurred. Please try again.",
+      "cannotModifySelf": "You cannot modify your own account",
+      "defaultBanReason": "Banned by admin",
+      "bannedStatus": "Banned",
+      "activeStatus": "Active",
+      "banDialogTitle": "Ban User",
+      "banDialogDescription": "Are you sure you want to ban {name}? This will immediately revoke all their sessions and prevent them from accessing the platform.",
+      "banReasonLabel": "Reason for ban",
+      "banReasonPlaceholder": "Enter reason for banning this user...",
+      "cancel": "Cancel",
+      "confirmBan": "Ban User"
     }
   },
   "Admin": {
@@ -181,6 +277,7 @@
   },
   "App": {
     "Home": {
+      "title": "Dashboard",
       "welcome": "Welcome",
       "description": "Overview of your profile, organizations, and API keys.",
       "signedInAs": "You are signed in as {email}",
@@ -224,16 +321,29 @@
         "verifyEmail": "Verify email",
         "stats": {
           "organizations": "Organizations",
-          "organizationsDescription": "Workspaces you belong to",
+          "organizationsDescription": "Member workspaces",
           "agents": "Agents",
+          "totalAgents": "Total agents",
+          "registeredAgents": "Total AI agents",
+          "registeredAgentsDescription": "Registered agents",
           "agentsDescription": "AI agents registered",
           "verified": "verified",
           "agentsVerifiedCount": "({count} verified)",
           "balance": "Balance",
           "balanceDescription": "Available funds",
+          "earnings": "Earnings",
+          "earningsDescription": "Total revenue from your agents",
+          "viewAnalytics": "View analytics",
+          "period24h": "24 Hours",
+          "period7d": "7 Days",
+          "period30d": "30 Days",
+          "periodAll": "All Time",
           "topUp": "Top up",
           "withdraw": "Withdraw",
           "agentsCardAria": "View agents, {count} registered",
+          "runningAgents": "{count} running",
+          "pendingAgents": "{count} pending",
+          "failedAgents": "{count} failed",
           "organizationsCardAria": "View organizations, {count} workspaces",
           "apiKeys": "API Keys"
         },
@@ -242,9 +352,10 @@
         "startKycPrompt": "Complete identity verification to unlock full access.",
         "kycLoadError": "Unable to load verification status. Please try again later.",
         "organizations": "Organizations",
-        "organizationsDescription": "Workspaces you belong to",
+        "organizationsDescription": "Member workspaces",
         "viewAll": "View all",
-        "agentsSectionDescription": "Your registered AI agents",
+        "agentsSectionTitle": "AI agents",
+        "agentsSectionDescription": "Manage your AI agents and their configurations.",
         "noAgentsYet": "No agents yet. Register one to get started.",
         "agentLinkAria": "View agent {name}",
         "registerAgent": "Register Agent",
@@ -254,6 +365,7 @@
         "getStarted": {
           "title": "Get started",
           "description": "Complete these steps to make the most of Masumi.",
+          "dismiss": "Dismiss",
           "verifyEmail": "Verify your email address",
           "verifyEmailDone": "Email verified",
           "completeKyc": "Complete identity verification",
@@ -292,10 +404,16 @@
       "description": "Withdraw your earnings to your preferred payout method.",
       "comingSoon": "Withdrawals are coming soon."
     },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Revenue, usage, and performance across your agents.",
+      "comingSoon": "Analytics are coming soon."
+    },
     "Sidebar": {
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
@@ -306,6 +424,10 @@
     "ApiKeys": {
       "title": "API Keys",
       "description": "Manage your API keys for authenticating applications."
+    },
+    "PaymentMethods": {
+      "title": "Payment Methods",
+      "description": "Manage your payment methods for top-ups and withdrawals."
     },
     "Organizations": {
       "title": "Organizations",
@@ -349,6 +471,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
@@ -371,7 +494,7 @@
     "UserProfile": {
       "unavailable": "User unavailable"
     },
-    "Onboarding": {
+    "Verification": {
       "title": "Identity Verification",
       "description": "Complete your identity verification to unlock full access to Masumi.",
       "steps": {
@@ -425,20 +548,25 @@
       }
     },
     "Agents": {
-      "title": "Agents",
-      "description": "Manage your AI agents and their verification status.",
+      "title": "AI agents",
+      "description": "Manage your AI agents and their configurations.",
       "searchPlaceholder": "Search agents...",
+      "searchShortcut": "F",
       "registerAgent": "Register Agent",
       "noAgents": "No agents found. Register your first agent to get started.",
       "noAgentsMatchingSearch": "No agents found matching your search",
       "loadMore": "Load more",
       "loadingMore": "Loading…",
+      "noRegisteredAgents": "No registered agents found",
+      "noPendingAgents": "No pending agents found",
+      "noFailedAgents": "No failed agents found",
       "noVerifiedAgents": "No verified agents found",
-      "noUnverifiedAgents": "No unverified agents found",
       "tabs": {
         "all": "All",
         "verified": "Verified",
-        "unverified": "Unverified"
+        "registered": "Registered",
+        "pending": "Pending",
+        "failed": "Failed"
       },
       "detailTabs": {
         "details": "Details",
@@ -471,9 +599,14 @@
         "reviewValue": "REVIEW"
       },
       "table": {
+        "tagCount": "{count, plural, one {# tag} other {# tags}}",
+        "noTags": "—",
         "name": "Name",
         "description": "Description",
         "apiUrl": "API URL",
+        "added": "Added",
+        "agentId": "Agent ID",
+        "price": "Price",
         "status": "Status",
         "tags": "Tags",
         "actions": "Actions"
@@ -486,33 +619,90 @@
       "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
       "Register": {
         "title": "Register New Agent",
-        "description": "Register a new AI agent to your account.",
+        "icon": "Icon",
+        "iconDescription": "Choose an icon for your agent or upload a custom one.",
+        "iconPreset": "Preset icons",
+        "iconCustomUrl": "Custom icon URL",
+        "iconCustomUrlPlaceholder": "https://example.com/icon.svg",
+        "iconClear": "Clear selection",
+        "iconLoadError": "Failed to load icon. Please check the URL and try again.",
+        "iconTooltip": "The icon represents your agent in the marketplace and across the Masumi network.",
+        "scrollLeft": "Scroll left",
+        "scrollRight": "Scroll right",
         "name": "Name",
         "namePlaceholder": "My AI Agent",
         "nameRequired": "Name is required",
         "nameMaxLength": "Name must be less than 250 characters",
+        "summary": "Summary",
+        "summaryPlaceholder": "Short tagline (max 250 characters)",
+        "summaryMaxLength": "Summary must be 250 characters or less",
         "description": "Description",
-        "descriptionPlaceholder": "Describe what your agent does...",
-        "descriptionRequired": "Description is required",
-        "descriptionMaxLength": "Description must be less than 1000 characters",
+        "descriptionPlaceholder": "A detailed overview of what your agent does, research examples, system limitations, etc.",
+        "descriptionMaxLength": "Description must be less than 5000 characters",
+        "descriptionRichTextHint": "Format text with bold, italic, lists, and more",
         "apiUrl": "API URL",
         "apiUrlPlaceholder": "https://api.example.com",
         "apiUrlInvalid": "API URL must be a valid URL",
         "apiUrlProtocol": "API URL must start with http:// or https://",
+        "price": "Price",
+        "pricePlaceholder": "e.g. Free, 5 ADA, 10 USDM",
+        "isFree": "This is a free agent (no cost for interactions)",
+        "prices": "Prices",
+        "addPrice": "Add price",
+        "priceAmountRequired": "Amount is required",
         "tags": "Tags",
         "tagsPlaceholder": "Enter a tag",
         "addTag": "Add",
+        "additionalFields": "Additional Fields",
+        "authorName": "Author Name",
+        "authorNamePlaceholder": "Enter the author's name",
+        "authorEmail": "Author Email",
+        "authorEmailPlaceholder": "Enter the author's email address",
+        "organization": "Organization",
+        "organizationPlaceholder": "Enter the organization name",
+        "contactOther": "Contact Other (Website, Phone...)",
+        "contactOtherPlaceholder": "Enter other contact",
+        "termsOfUseUrl": "Terms of Use URL",
+        "termsOfUseUrlPlaceholder": "Enter the terms of use URL",
+        "privacyPolicyUrl": "Privacy Policy URL",
+        "privacyPolicyUrlPlaceholder": "Enter the privacy policy URL",
+        "otherUrl": "Other URL (Support...)",
+        "otherUrlPlaceholder": "Enter the other URL",
+        "capabilityName": "Capability Name",
+        "capabilityNamePlaceholder": "e.g., Text Generation",
+        "capabilityVersion": "Capability Version",
+        "capabilityVersionPlaceholder": "e.g., 1.0.0",
+        "exampleOutputs": "Example Outputs",
+        "addExample": "Add Example",
+        "exampleOutputNamePlaceholder": "Name",
+        "exampleOutputUrlPlaceholder": "URL",
+        "exampleOutputMimePlaceholder": "MIME Type",
         "submit": "Register Agent",
         "cancel": "Cancel",
         "success": "Agent registered successfully!",
         "error": "Failed to register agent. Please try again."
       },
+      "Edit": {
+        "title": "Edit Agent",
+        "submit": "Save Changes",
+        "success": "Agent updated successfully!",
+        "error": "Failed to update agent. Please try again."
+      },
       "Details": {
+        "overview": "Overview",
+        "edit": "Edit",
         "backToAgents": "Back to agents",
+        "backToDashboard": "Back to dashboard",
+        "summary": "Summary",
         "description": "Description",
         "noDescription": "No description provided",
         "apiUrl": "API URL",
+        "agentId": "Agent ID",
+        "price": "Price",
         "verification": "Verification",
+        "verificationPromptTitle": "Verify your agent",
+        "verificationPromptDescription": "This agent is not verified yet. Request a credential to link your verified KYC status and establish trust.",
+        "hireInSokosumi": "Hire in Sokosumi",
         "viewInCredentialsTab": "View in Credentials",
         "refresh": "Refresh",
         "endpoint": "Endpoint",
@@ -529,6 +719,8 @@
         "deleteError": "Failed to delete agent",
         "deleteConfirmTitle": "Delete Agent",
         "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
+        "deleteConfirmTypeToConfirm": "Type <bold>{name}</bold> to confirm",
+        "deleteConfirmPlaceholder": "Agent name",
         "cancel": "Cancel",
         "Transactions": {
           "title": "Transactions",
@@ -550,7 +742,7 @@
           "noTransactions": "No transactions yet"
         },
         "Earnings": {
-          "title": "Overview",
+          "title": "Summary",
           "timeFrame": "Time frame:",
           "period1d": "Last 24 Hours",
           "period7d": "Last 7 Days",
@@ -591,7 +783,7 @@
           },
           "loading": "Loading...",
           "requestVerification": "Request Credential",
-          "requestDescription": "Review the information below and confirm to issue a Veridian credential for this agent.",
+          "requestDescription": "Review the information below and confirm to issue a Verifiable Credential for this agent.",
           "agentInformation": "Agent Information",
           "agentName": "Agent Name",
           "apiUrl": "API URL",
@@ -601,7 +793,7 @@
           "kycStatusReviewDescription": "Your KYC verification is being processed.",
           "kycStatusRejectedDescription": "Your KYC verification was rejected. Please complete it again.",
           "whatWillBeIssued": "What Will Be Issued",
-          "credentialDescription": "A Veridian credential will be issued linking your verified KYC status to this agent. This credential can be used to verify the agent's authenticity.",
+          "credentialDescription": "A Verifiable Credential will be issued linking your verified KYC status to this agent. This credential can be used to verify the agent's authenticity.",
           "submitRequest": "Submit Request",
           "cancel": "Cancel",
           "requestSuccess": "Credential issued successfully!",
@@ -624,7 +816,50 @@
           "checkConnectionAgain": "Check Connection Again",
           "failedToLoadIssuerOobi": "Failed to load issuer connection QR code. Please try again.",
           "connectionStillNotEstablished": "Connection still not established. Please scan the QR code and try again.",
-          "failedToCheckConnection": "Failed to check connection. Please try again."
+          "failedToCheckConnection": "Failed to check connection. Please try again.",
+          "agentVerification": "Agent Verification",
+          "loadingChallenge": "Loading verification challenge...",
+          "agentVerificationDescription": "Add the secret to your agent's environment and implement the endpoint below. This proves you control the agent's backend.",
+          "verificationSecret": "Verification secret",
+          "agentVerificationSecretHint": "Add this to your agent's .env as MASUMI_VERIFICATION_SECRET. Keep it private.",
+          "integrationCode": "Integration code",
+          "integrationCodeLanguage": {
+            "node": "Node.js (Express)",
+            "python-flask": "Python (Flask)",
+            "python-fastapi": "Python (FastAPI)",
+            "go": "Go"
+          },
+          "agentVerificationHint": "Your agent must respond to GET /get-credential?masumi_challenge=[challenge] and return HMAC-SHA256(challenge, secret).",
+          "generateNewSignature": "Generate new secret",
+          "testEndpoint": "Test endpoint",
+          "testEndpointSuccess": "Endpoint is working correctly.",
+          "challengeRegenerated": "New secret generated. Update MASUMI_VERIFICATION_SECRET in your agent.",
+          "agentErrorHint": "If your agent is unreachable or returns the wrong signature, ensure MASUMI_VERIFICATION_SECRET matches. Or generate a new secret.",
+          "retry": "Retry",
+          "tooltipAgentVerification": "Proves you control this agent's backend. Your agent must return HMAC-SHA256(challenge, secret) to pass verification.",
+          "tooltipVerificationSecret": "A shared secret used to prove your agent knows it. Only your agent can produce the correct HMAC response. Never expose it publicly.",
+          "tooltipIntegrationCode": "Add this endpoint to your agent. It receives a challenge and returns HMAC-SHA256(challenge, secret) to prove you control the backend.",
+          "tooltipGenerateNewSecret": "Use if the secret was exposed or you need to rotate it. Update your agent's environment with the new secret.",
+          "tooltipKycStatus": "Your identity must be verified before we can issue a credential linking you to this agent.",
+          "tooltipVeridianWalletConnection": "Connect the wallet that will receive the verification credential. The credential proves you control both the agent and this wallet.",
+          "tooltipIdentifierAid": "Your unique identifier (AID) in the Veridian system. Used to issue and verify credentials.",
+          "tooltipEstablishConnection": "The credential server needs to know your AID before it can issue credentials. Scan the QR code with your Veridian wallet.",
+          "tooltipWhatWillBeIssued": "A Veridian credential that links your verified identity to this agent. Others can verify the agent is authentic.",
+          "stepEndpoint": "Endpoint",
+          "stepEndpointDescription": "Add the verification secret to your agent and implement the endpoint.",
+          "stepWallet": "Wallet",
+          "stepWalletDescription": "Connect your Veridian wallet via CIP-45 P2P, then establish connection with the credential server.",
+          "stepSubmit": "Submit",
+          "stepSubmitDescription": "Review and submit your credential request. You'll sign a message to confirm.",
+          "next": "Next",
+          "prev": "Previous",
+          "nextDisabledReasonConnectWallet": "Connect your Veridian wallet by scanning the QR code to proceed.",
+          "nextDisabledReasonEstablishConnection": "Establish connection with the credential server. Scan the issuer QR code with your wallet.",
+          "nextDisabledReasonCheckingConnection": "Checking connection... Please wait.",
+          "nextDisabledReasonTestingEndpoint": "Verifying endpoint... Please wait.",
+          "nextDisabledReasonLoadingSetup": "Loading verification setup. Please wait.",
+          "nextDisabledReasonKycRequired": "Complete KYC verification first to proceed.",
+          "help": "Help"
         }
       }
     },
@@ -633,9 +868,9 @@
         "connectButton": "Connect Veridian Wallet",
         "connected": "Connected to Veridian",
         "disconnect": "Disconnect",
-        "scanQRCode": "Scan QR code with Veridian Wallet",
-        "scanDescription": "Open Veridian wallet on your mobile device and scan this QR code to connect",
-        "cantScan": "Can't scan? Copy the connection ID:",
+        "scanQRCode": "CIP-45 P2P: Scan QR code with Veridian Wallet",
+        "scanDescription": "In Veridian: Menu (bottom right) > Cardano Connect > Connect with Cardano.",
+        "cantScan": "Scan this QR code or paste the Peer ID below:",
         "cancel": "Cancel",
         "error": "Error",
         "tryAgain": "Try Again",
@@ -685,6 +920,7 @@
         "success": "Password updated successfully!",
         "error": "Failed to update password. Please try again."
       },
+      "dangerZone": "Danger Zone",
       "Delete": {
         "title": "Delete Account",
         "description": "Permanently delete your account and all associated data. This action cannot be undone.",
@@ -695,6 +931,51 @@
         "confirm": "Yes, delete my account",
         "success": "Account deleted successfully",
         "error": "Failed to delete account. Please check your password and try again."
+      },
+      "TwoFactor": {
+        "title": "Two-Factor Authentication",
+        "description": "Add an extra layer of security to your account using an authenticator app.",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "enable": "Enable 2FA",
+        "enableDescription": "Enter your password to start setting up two-factor authentication with an authenticator app like Google Authenticator.",
+        "enableSuccess": "✓ Two-factor authentication has been enabled!",
+        "password": "Current Password",
+        "passwordPlaceholder": "Enter your password",
+        "setup": {
+          "continue": "Continue",
+          "scanQR": "Scan QR Code",
+          "scanDescription": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).",
+          "manualKey": "Can't scan? Click to show manual entry key",
+          "backupCodes": "Backup Codes",
+          "backupDescription": "Save these backup codes in a safe place. Each code can only be used once if you lose access to your authenticator app.",
+          "copyAll": "Copy All",
+          "copied": "Backup codes copied to clipboard",
+          "download": "Download",
+          "verifyCode": "Verify Code",
+          "verifyDescription": "Enter the 6-digit code from your authenticator app to complete the setup.",
+          "complete": "Complete Setup"
+        },
+        "disable": "Disable 2FA",
+        "disableConfirmTitle": "Disable Two-Factor Authentication?",
+        "disableConfirmDescription": "This will remove the extra security layer from your account. You will only need your password to sign in.",
+        "disableSuccess": "Two-factor authentication has been disabled.",
+        "regenerateBackupCodes": "Regenerate Backup Codes",
+        "regenerateConfirmTitle": "Regenerate Backup Codes?",
+        "regenerateConfirmDescription": "This will invalidate all existing backup codes and generate new ones. Make sure to save the new codes.",
+        "confirm": "Done",
+        "cancel": "Cancel",
+        "errors": {
+          "enableFailed": "Failed to enable 2FA",
+          "invalidCode": "Invalid code. Please try again.",
+          "verifyFailed": "Verification failed",
+          "disableFailed": "Failed to disable 2FA",
+          "regenerateFailed": "Failed to regenerate backup codes",
+          "copyFailed": "Failed to copy to clipboard"
+        },
+        "regenerateSuccess": "Backup codes regenerated",
+        "downloadNote1": "Each code can only be used once.",
+        "downloadNote2": "Store these codes in a safe place."
       }
     }
   },
@@ -782,6 +1063,12 @@
     "title": "404",
     "description": "This page could not be found.",
     "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
-    "returnHome": "Return to Dashboard"
+    "returnHome": "Return to Dashboard",
+    "signIn": "Sign In"
+  },
+  "Developers": {
+    "title": "Developers",
+    "description": "Developer tools and API documentation",
+    "comingSoon": "Developer tools and documentation coming soon."
   }
 }
