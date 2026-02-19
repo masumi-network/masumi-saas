@@ -21,7 +21,7 @@ import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import {
   getRegistrationStatusBadgeVariant,
-  parseAgentRegistrationStatus,
+  getRegistrationStatusKey,
 } from "./agent-utils";
 
 interface AgentsTableProps {
@@ -36,6 +36,7 @@ export function AgentsTable({
   onDeleteSuccess,
 }: AgentsTableProps) {
   const t = useTranslations("App.Agents");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedAgentToDelete, setSelectedAgentToDelete] =
     useState<Agent | null>(null);
@@ -115,7 +116,9 @@ export function AgentsTable({
                       agent.registrationState,
                     )}
                   >
-                    {parseAgentRegistrationStatus(agent.registrationState)}
+                    {tRegistrationStatus(
+                      getRegistrationStatusKey(agent.registrationState),
+                    )}
                   </Badge>
                 </TableCell>
                 <TableCell>

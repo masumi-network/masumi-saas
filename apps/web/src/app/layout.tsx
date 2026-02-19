@@ -7,6 +7,7 @@ import { getLocale, getMessages } from "next-intl/server";
 
 import CookieConsent from "@/components/cookie-consent";
 import { GlobalModalsContextProvider } from "@/components/modals/global-modals-context";
+import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -58,9 +59,11 @@ export default async function RootLayout({
       <body className={inter.variable}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
-            <GlobalModalsContextProvider>
-              {children}
-            </GlobalModalsContextProvider>
+            <QueryProvider>
+              <GlobalModalsContextProvider>
+                {children}
+              </GlobalModalsContextProvider>
+            </QueryProvider>
             <Toaster />
             <CookieConsent />
           </NextIntlClientProvider>

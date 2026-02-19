@@ -1,0 +1,508 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Masumi Agent Verification API",
+    "description": "Public API for looking up agent verification status on the Masumi network.",
+    "contact": {
+      "name": "Masumi Network",
+      "url": "https://masumi.network"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Current environment"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Agent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "cmlf6gswz0000x1uctad958tq"
+          },
+          "name": {
+            "type": "string",
+            "example": "My AI Agent"
+          },
+          "description": {
+            "type": "string",
+            "example": "A payment processing agent on the Masumi network"
+          },
+          "apiUrl": {
+            "type": "string",
+            "example": "https://my-agent.example.com"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": ["PENDING", "APPROVED", "REJECTED", "REVIEW"],
+            "example": "APPROVED",
+            "description": "Current verification status of the agent on the Masumi network"
+          },
+          "veridianCredentialId": {
+            "type": "string",
+            "nullable": true,
+            "example": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+            "description": "Veridian KERI credential ID, present when APPROVED"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["payments", "ai"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-26T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-26T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "apiUrl",
+          "verificationStatus",
+          "veridianCredentialId",
+          "tags",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 42
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          }
+        },
+        "required": ["page", "limit", "total", "totalPages"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [false]
+          },
+          "error": {
+            "type": "string",
+            "example": "Agent not found"
+          }
+        },
+        "required": ["success", "error"]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/agents": {
+      "get": {
+        "tags": ["Agents"],
+        "summary": "List agents",
+        "description": "Returns a paginated list of agents. Defaults to APPROVED agents only. Supports filtering by status, name, and tag. No authentication required.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "APPROVED", "REJECTED", "REVIEW"],
+              "description": "Filter by verification status. Defaults to APPROVED if not specified.",
+              "example": "APPROVED"
+            },
+            "required": false,
+            "description": "Filter by verification status. Defaults to APPROVED if not specified.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 250,
+              "description": "Case-insensitive partial name search",
+              "example": "payment"
+            },
+            "required": false,
+            "description": "Case-insensitive partial name search",
+            "name": "name",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Exact tag match",
+              "example": "ai"
+            },
+            "required": false,
+            "description": "Exact tag match",
+            "name": "tag",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "description": "Page number (1-based)",
+              "example": 1
+            },
+            "required": false,
+            "description": "Page number (1-based)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Items per page (max 100)",
+              "example": 20
+            },
+            "required": false,
+            "description": "Items per page (max 100)",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of agents",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Max requests per window"
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Requests remaining in current window"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [true]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agent"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": ["success", "data", "pagination"],
+                  "example": {
+                    "success": true,
+                    "data": [
+                      {
+                        "id": "cmlf6gswz0000x1uctad958tq",
+                        "name": "My AI Agent",
+                        "description": "A payment processing agent on the Masumi network",
+                        "apiUrl": "https://my-agent.example.com",
+                        "verificationStatus": "APPROVED",
+                        "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+                        "tags": ["payments", "ai"],
+                        "createdAt": "2026-01-26T10:00:00.000Z",
+                        "updatedAt": "2026-01-26T12:00:00.000Z"
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "limit": 20,
+                      "total": 1,
+                      "totalPages": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Invalid input: expected number, received NaN"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds until the rate limit window resets"
+              },
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Max requests per window"
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Requests remaining in current window"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Rate limit exceeded. Please try again later."
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Failed to list agents"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agents/{agentId}": {
+      "get": {
+        "tags": ["Agents"],
+        "summary": "Get agent by ID",
+        "description": "Returns a single agent by its ID. Returns all verification statuses (not filtered to APPROVED). No authentication required.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The unique agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "The unique agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent found",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Max requests per window"
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Requests remaining in current window"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [true]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Agent"
+                    }
+                  },
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "name": "My AI Agent",
+                      "description": "A payment processing agent on the Masumi network",
+                      "apiUrl": "https://my-agent.example.com",
+                      "verificationStatus": "APPROVED",
+                      "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+                      "tags": ["payments", "ai"],
+                      "createdAt": "2026-01-26T10:00:00.000Z",
+                      "updatedAt": "2026-01-26T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Invalid input: expected number, received NaN"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Agent not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Agent not found"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds until the rate limit window resets"
+              },
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Max requests per window"
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Requests remaining in current window"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Rate limit exceeded. Please try again later."
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "example": {
+                        "success": false,
+                        "error": "Failed to list agents"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

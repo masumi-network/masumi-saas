@@ -37,6 +37,7 @@ export type UserMinAggregateOutputType = {
   marketingOptIn: boolean | null;
   onboardingCompleted: boolean | null;
   stripeCustomerId: string | null;
+  twoFactorEnabled: boolean | null;
   kycVerificationId: string | null;
 };
 
@@ -53,6 +54,7 @@ export type UserMaxAggregateOutputType = {
   marketingOptIn: boolean | null;
   onboardingCompleted: boolean | null;
   stripeCustomerId: string | null;
+  twoFactorEnabled: boolean | null;
   kycVerificationId: string | null;
 };
 
@@ -69,6 +71,7 @@ export type UserCountAggregateOutputType = {
   marketingOptIn: number;
   onboardingCompleted: number;
   stripeCustomerId: number;
+  twoFactorEnabled: number;
   kycVerificationId: number;
   _all: number;
 };
@@ -86,6 +89,7 @@ export type UserMinAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  twoFactorEnabled?: true;
   kycVerificationId?: true;
 };
 
@@ -102,6 +106,7 @@ export type UserMaxAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  twoFactorEnabled?: true;
   kycVerificationId?: true;
 };
 
@@ -118,6 +123,7 @@ export type UserCountAggregateInputType = {
   marketingOptIn?: true;
   onboardingCompleted?: true;
   stripeCustomerId?: true;
+  twoFactorEnabled?: true;
   kycVerificationId?: true;
   _all?: true;
 };
@@ -214,6 +220,7 @@ export type UserGroupByOutputType = {
   marketingOptIn: boolean;
   onboardingCompleted: boolean;
   stripeCustomerId: string | null;
+  twoFactorEnabled: boolean;
   kycVerificationId: string | null;
   _count: UserCountAggregateOutputType | null;
   _min: UserMinAggregateOutputType | null;
@@ -248,6 +255,7 @@ export type UserWhereInput = {
   marketingOptIn?: Prisma.BoolFilter<"User"> | boolean;
   onboardingCompleted?: Prisma.BoolFilter<"User"> | boolean;
   stripeCustomerId?: Prisma.StringNullableFilter<"User"> | string | null;
+  twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
   kycVerificationId?: Prisma.StringNullableFilter<"User"> | string | null;
   sessions?: Prisma.SessionListRelationFilter;
   accounts?: Prisma.AccountListRelationFilter;
@@ -262,8 +270,11 @@ export type UserWhereInput = {
   > | null;
   createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
   kycSubmissions?: Prisma.KycSubmissionListRelationFilter;
-  stripePaymentMethods?: Prisma.StripePaymentMethodListRelationFilter;
   walletCaches?: Prisma.WalletCacheListRelationFilter;
+  twoFactor?: Prisma.XOR<
+    Prisma.TwoFactorNullableScalarRelationFilter,
+    Prisma.TwoFactorWhereInput
+  > | null;
 };
 
 export type UserOrderByWithRelationInput = {
@@ -279,6 +290,7 @@ export type UserOrderByWithRelationInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   sessions?: Prisma.SessionOrderByRelationAggregateInput;
   accounts?: Prisma.AccountOrderByRelationAggregateInput;
@@ -290,8 +302,8 @@ export type UserOrderByWithRelationInput = {
   kycVerification?: Prisma.KycVerificationOrderByWithRelationInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyOrderByRelationAggregateInput;
   kycSubmissions?: Prisma.KycSubmissionOrderByRelationAggregateInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodOrderByRelationAggregateInput;
   walletCaches?: Prisma.WalletCacheOrderByRelationAggregateInput;
+  twoFactor?: Prisma.TwoFactorOrderByWithRelationInput;
 };
 
 export type UserWhereUniqueInput = Prisma.AtLeast<
@@ -312,6 +324,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     termsAccepted?: Prisma.BoolFilter<"User"> | boolean;
     marketingOptIn?: Prisma.BoolFilter<"User"> | boolean;
     onboardingCompleted?: Prisma.BoolFilter<"User"> | boolean;
+    twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
     sessions?: Prisma.SessionListRelationFilter;
     accounts?: Prisma.AccountListRelationFilter;
     members?: Prisma.MemberListRelationFilter;
@@ -325,8 +338,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     > | null;
     createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
     kycSubmissions?: Prisma.KycSubmissionListRelationFilter;
-    stripePaymentMethods?: Prisma.StripePaymentMethodListRelationFilter;
     walletCaches?: Prisma.WalletCacheListRelationFilter;
+    twoFactor?: Prisma.XOR<
+      Prisma.TwoFactorNullableScalarRelationFilter,
+      Prisma.TwoFactorWhereInput
+    > | null;
   },
   "id" | "kycVerificationId" | "email" | "stripeCustomerId"
 >;
@@ -344,6 +360,7 @@ export type UserOrderByWithAggregationInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.UserCountOrderByAggregateInput;
   _max?: Prisma.UserMaxOrderByAggregateInput;
@@ -373,6 +390,7 @@ export type UserScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"User">
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean;
   kycVerificationId?:
     | Prisma.StringNullableWithAggregatesFilter<"User">
     | string
@@ -392,6 +410,7 @@ export type UserCreateInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -402,8 +421,8 @@ export type UserCreateInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateInput = {
@@ -419,6 +438,7 @@ export type UserUncheckedCreateInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -429,8 +449,8 @@ export type UserUncheckedCreateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserUpdateInput = {
@@ -449,6 +469,7 @@ export type UserUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -459,8 +480,8 @@ export type UserUpdateInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateInput = {
@@ -479,6 +500,7 @@ export type UserUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -492,8 +514,8 @@ export type UserUncheckedUpdateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateManyInput = {
@@ -509,6 +531,7 @@ export type UserCreateManyInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
 };
 
@@ -528,6 +551,7 @@ export type UserUpdateManyMutationInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
 };
 
 export type UserUncheckedUpdateManyInput = {
@@ -546,6 +570,7 @@ export type UserUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -565,6 +590,7 @@ export type UserCountOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
 };
 
@@ -581,6 +607,7 @@ export type UserMaxOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
 };
 
@@ -597,6 +624,7 @@ export type UserMinOrderByAggregateInput = {
   marketingOptIn?: Prisma.SortOrder;
   onboardingCompleted?: Prisma.SortOrder;
   stripeCustomerId?: Prisma.SortOrder;
+  twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
 };
 
@@ -624,6 +652,32 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string;
+};
+
+export type UserCreateNestedOneWithoutTwoFactorInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutTwoFactorInput,
+    Prisma.UserUncheckedCreateWithoutTwoFactorInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTwoFactorInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutTwoFactorNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutTwoFactorInput,
+    Prisma.UserUncheckedCreateWithoutTwoFactorInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTwoFactorInput;
+  upsert?: Prisma.UserUpsertWithoutTwoFactorInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutTwoFactorInput,
+      Prisma.UserUpdateWithoutTwoFactorInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutTwoFactorInput
+  >;
 };
 
 export type UserCreateNestedOneWithoutSessionsInput = {
@@ -892,34 +946,6 @@ export type UserUpdateOneRequiredWithoutKycSubmissionsNestedInput = {
   >;
 };
 
-export type UserCreateNestedOneWithoutStripePaymentMethodsInput = {
-  create?: Prisma.XOR<
-    Prisma.UserCreateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutStripePaymentMethodsInput;
-  connect?: Prisma.UserWhereUniqueInput;
-};
-
-export type UserUpdateOneWithoutStripePaymentMethodsNestedInput = {
-  create?: Prisma.XOR<
-    Prisma.UserCreateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutStripePaymentMethodsInput;
-  upsert?: Prisma.UserUpsertWithoutStripePaymentMethodsInput;
-  disconnect?: Prisma.UserWhereInput | boolean;
-  delete?: Prisma.UserWhereInput | boolean;
-  connect?: Prisma.UserWhereUniqueInput;
-  update?: Prisma.XOR<
-    Prisma.XOR<
-      Prisma.UserUpdateToOneWithWhereWithoutStripePaymentMethodsInput,
-      Prisma.UserUpdateWithoutStripePaymentMethodsInput
-    >,
-    Prisma.UserUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-};
-
 export type UserCreateNestedOneWithoutWalletCachesInput = {
   create?: Prisma.XOR<
     Prisma.UserCreateWithoutWalletCachesInput,
@@ -974,6 +1000,151 @@ export type UserUpdateOneWithoutVeridianCredentialsNestedInput = {
   >;
 };
 
+export type UserCreateWithoutTwoFactorInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
+  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutTwoFactorInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  kycVerificationId?: string | null;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutTwoFactorInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutTwoFactorInput,
+    Prisma.UserUncheckedCreateWithoutTwoFactorInput
+  >;
+};
+
+export type UserUpsertWithoutTwoFactorInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutTwoFactorInput,
+    Prisma.UserUncheckedUpdateWithoutTwoFactorInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutTwoFactorInput,
+    Prisma.UserUncheckedCreateWithoutTwoFactorInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutTwoFactorInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutTwoFactorInput,
+    Prisma.UserUncheckedUpdateWithoutTwoFactorInput
+  >;
+};
+
+export type UserUpdateWithoutTwoFactorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
+  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutTwoFactorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+};
+
 export type UserCreateWithoutSessionsInput = {
   id?: string;
   name: string;
@@ -987,6 +1158,7 @@ export type UserCreateWithoutSessionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -996,8 +1168,8 @@ export type UserCreateWithoutSessionsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1013,6 +1185,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -1022,8 +1195,8 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1070,6 +1243,7 @@ export type UserUpdateWithoutSessionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -1079,8 +1253,8 @@ export type UserUpdateWithoutSessionsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1099,6 +1273,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1111,8 +1286,8 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutAccountsInput = {
@@ -1128,6 +1303,7 @@ export type UserCreateWithoutAccountsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -1137,8 +1313,8 @@ export type UserCreateWithoutAccountsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -1154,6 +1330,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -1163,8 +1340,8 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -1211,6 +1388,7 @@ export type UserUpdateWithoutAccountsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -1220,8 +1398,8 @@ export type UserUpdateWithoutAccountsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -1240,6 +1418,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1252,8 +1431,8 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutMembersInput = {
@@ -1269,6 +1448,7 @@ export type UserCreateWithoutMembersInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
@@ -1278,8 +1458,8 @@ export type UserCreateWithoutMembersInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutMembersInput = {
@@ -1295,6 +1475,7 @@ export type UserUncheckedCreateWithoutMembersInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -1304,8 +1485,8 @@ export type UserUncheckedCreateWithoutMembersInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutMembersInput = {
@@ -1352,6 +1533,7 @@ export type UserUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
@@ -1361,8 +1543,8 @@ export type UserUpdateWithoutMembersInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutMembersInput = {
@@ -1381,6 +1563,7 @@ export type UserUncheckedUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1393,8 +1576,8 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutInvitationsInput = {
@@ -1410,6 +1593,7 @@ export type UserCreateWithoutInvitationsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1419,8 +1603,8 @@ export type UserCreateWithoutInvitationsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutInvitationsInput = {
@@ -1436,6 +1620,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -1445,8 +1630,8 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutInvitationsInput = {
@@ -1493,6 +1678,7 @@ export type UserUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1502,8 +1688,8 @@ export type UserUpdateWithoutInvitationsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutInvitationsInput = {
@@ -1522,6 +1708,7 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1534,8 +1721,8 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutApikeysInput = {
@@ -1551,6 +1738,7 @@ export type UserCreateWithoutApikeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1560,8 +1748,8 @@ export type UserCreateWithoutApikeysInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutApikeysInput = {
@@ -1577,6 +1765,7 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -1586,8 +1775,8 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutApikeysInput = {
@@ -1634,6 +1823,7 @@ export type UserUpdateWithoutApikeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1643,8 +1833,8 @@ export type UserUpdateWithoutApikeysInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutApikeysInput = {
@@ -1663,6 +1853,7 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1675,8 +1866,8 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutKycVerificationInput = {
@@ -1692,6 +1883,7 @@ export type UserCreateWithoutKycVerificationInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1701,8 +1893,8 @@ export type UserCreateWithoutKycVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutKycVerificationInput = {
@@ -1718,6 +1910,7 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
@@ -1727,8 +1920,8 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutKycVerificationInput = {
@@ -1775,6 +1968,7 @@ export type UserUpdateWithoutKycVerificationInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1784,8 +1978,8 @@ export type UserUpdateWithoutKycVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutKycVerificationInput = {
@@ -1804,6 +1998,7 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -1813,8 +2008,8 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutAgentsInput = {
@@ -1830,6 +2025,7 @@ export type UserCreateWithoutAgentsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1839,8 +2035,8 @@ export type UserCreateWithoutAgentsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutAgentsInput = {
@@ -1856,6 +2052,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -1865,8 +2062,8 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutAgentsInput = {
@@ -1913,6 +2110,7 @@ export type UserUpdateWithoutAgentsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -1922,8 +2120,8 @@ export type UserUpdateWithoutAgentsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutAgentsInput = {
@@ -1942,6 +2140,7 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1954,8 +2153,8 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutCreatedOrgApiKeysInput = {
@@ -1971,6 +2170,7 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -1980,8 +2180,8 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
@@ -1997,6 +2197,7 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -2006,8 +2207,8 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutCreatedOrgApiKeysInput = {
@@ -2054,6 +2255,7 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2063,8 +2265,8 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
@@ -2083,6 +2285,7 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -2095,8 +2298,8 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutKycSubmissionsInput = {
@@ -2112,6 +2315,7 @@ export type UserCreateWithoutKycSubmissionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2121,8 +2325,8 @@ export type UserCreateWithoutKycSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutKycSubmissionsInput = {
@@ -2138,6 +2342,7 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -2147,8 +2352,8 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutKycSubmissionsInput = {
@@ -2195,6 +2400,7 @@ export type UserUpdateWithoutKycSubmissionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2204,8 +2410,8 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
@@ -2224,6 +2430,7 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -2236,149 +2443,8 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-};
-
-export type UserCreateWithoutStripePaymentMethodsInput = {
-  id?: string;
-  name: string;
-  email: string;
-  emailVerified?: boolean;
-  image?: string | null;
-  imageHash?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  termsAccepted?: boolean;
-  marketingOptIn?: boolean;
-  onboardingCompleted?: boolean;
-  stripeCustomerId?: string | null;
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
-  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
-  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
-  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
-  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
-  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
-  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-};
-
-export type UserUncheckedCreateWithoutStripePaymentMethodsInput = {
-  id?: string;
-  name: string;
-  email: string;
-  emailVerified?: boolean;
-  image?: string | null;
-  imageHash?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  termsAccepted?: boolean;
-  marketingOptIn?: boolean;
-  onboardingCompleted?: boolean;
-  stripeCustomerId?: string | null;
-  kycVerificationId?: string | null;
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
-  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
-  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
-  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-};
-
-export type UserCreateOrConnectWithoutStripePaymentMethodsInput = {
-  where: Prisma.UserWhereUniqueInput;
-  create: Prisma.XOR<
-    Prisma.UserCreateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-};
-
-export type UserUpsertWithoutStripePaymentMethodsInput = {
-  update: Prisma.XOR<
-    Prisma.UserUpdateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-  create: Prisma.XOR<
-    Prisma.UserCreateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  where?: Prisma.UserWhereInput;
-};
-
-export type UserUpdateToOneWithWhereWithoutStripePaymentMethodsInput = {
-  where?: Prisma.UserWhereInput;
-  data: Prisma.XOR<
-    Prisma.UserUpdateWithoutStripePaymentMethodsInput,
-    Prisma.UserUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-};
-
-export type UserUpdateWithoutStripePaymentMethodsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  email?: Prisma.StringFieldUpdateOperationsInput | string;
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
-  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
-  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
-  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
-  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
-  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-};
-
-export type UserUncheckedUpdateWithoutStripePaymentMethodsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  email?: Prisma.StringFieldUpdateOperationsInput | string;
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  kycVerificationId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
-  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
-  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
-  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutWalletCachesInput = {
@@ -2394,6 +2460,7 @@ export type UserCreateWithoutWalletCachesInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2404,7 +2471,7 @@ export type UserCreateWithoutWalletCachesInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutWalletCachesInput = {
@@ -2420,6 +2487,7 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -2430,7 +2498,7 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutWalletCachesInput = {
@@ -2477,6 +2545,7 @@ export type UserUpdateWithoutWalletCachesInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2487,7 +2556,7 @@ export type UserUpdateWithoutWalletCachesInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutWalletCachesInput = {
@@ -2506,6 +2575,7 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -2519,7 +2589,7 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutVeridianCredentialsInput = {
@@ -2535,6 +2605,7 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
@@ -2544,8 +2615,8 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
@@ -2561,6 +2632,7 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
@@ -2570,8 +2642,8 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutVeridianCredentialsInput = {
@@ -2618,6 +2690,7 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
@@ -2627,8 +2700,8 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
@@ -2647,6 +2720,7 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -2659,8 +2733,8 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
 /**
@@ -2677,7 +2751,6 @@ export type UserCountOutputType = {
   veridianCredentials: number;
   createdOrgApiKeys: number;
   kycSubmissions: number;
-  stripePaymentMethods: number;
   walletCaches: number;
 };
 
@@ -2696,9 +2769,6 @@ export type UserCountOutputTypeSelect<
     | UserCountOutputTypeCountVeridianCredentialsArgs;
   createdOrgApiKeys?: boolean | UserCountOutputTypeCountCreatedOrgApiKeysArgs;
   kycSubmissions?: boolean | UserCountOutputTypeCountKycSubmissionsArgs;
-  stripePaymentMethods?:
-    | boolean
-    | UserCountOutputTypeCountStripePaymentMethodsArgs;
   walletCaches?: boolean | UserCountOutputTypeCountWalletCachesArgs;
 };
 
@@ -2808,16 +2878,6 @@ export type UserCountOutputTypeCountKycSubmissionsArgs<
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountStripePaymentMethodsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  where?: Prisma.StripePaymentMethodWhereInput;
-};
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountWalletCachesArgs<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -2842,6 +2902,7 @@ export type UserSelect<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
     sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>;
     accounts?: boolean | Prisma.User$accountsArgs<ExtArgs>;
@@ -2855,10 +2916,8 @@ export type UserSelect<
     kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>;
     createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>;
     kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>;
-    stripePaymentMethods?:
-      | boolean
-      | Prisma.User$stripePaymentMethodsArgs<ExtArgs>;
     walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>;
+    twoFactor?: boolean | Prisma.User$twoFactorArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["user"]
@@ -2881,6 +2940,7 @@ export type UserSelectCreateManyAndReturn<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
     kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>;
   },
@@ -2904,6 +2964,7 @@ export type UserSelectUpdateManyAndReturn<
     marketingOptIn?: boolean;
     onboardingCompleted?: boolean;
     stripeCustomerId?: boolean;
+    twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
     kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>;
   },
@@ -2923,6 +2984,7 @@ export type UserSelectScalar = {
   marketingOptIn?: boolean;
   onboardingCompleted?: boolean;
   stripeCustomerId?: boolean;
+  twoFactorEnabled?: boolean;
   kycVerificationId?: boolean;
 };
 
@@ -2942,6 +3004,7 @@ export type UserOmit<
   | "marketingOptIn"
   | "onboardingCompleted"
   | "stripeCustomerId"
+  | "twoFactorEnabled"
   | "kycVerificationId",
   ExtArgs["result"]["user"]
 >;
@@ -2959,10 +3022,8 @@ export type UserInclude<
   kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>;
   createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>;
   kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>;
-  stripePaymentMethods?:
-    | boolean
-    | Prisma.User$stripePaymentMethodsArgs<ExtArgs>;
   walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>;
+  twoFactor?: boolean | Prisma.User$twoFactorArgs<ExtArgs>;
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type UserIncludeCreateManyAndReturn<
@@ -2994,8 +3055,8 @@ export type $UserPayload<
     kycVerification: Prisma.$KycVerificationPayload<ExtArgs> | null;
     createdOrgApiKeys: Prisma.$OrgApiKeyPayload<ExtArgs>[];
     kycSubmissions: Prisma.$KycSubmissionPayload<ExtArgs>[];
-    stripePaymentMethods: Prisma.$StripePaymentMethodPayload<ExtArgs>[];
     walletCaches: Prisma.$WalletCachePayload<ExtArgs>[];
+    twoFactor: Prisma.$TwoFactorPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -3011,6 +3072,7 @@ export type $UserPayload<
       marketingOptIn: boolean;
       onboardingCompleted: boolean;
       stripeCustomerId: string | null;
+      twoFactorEnabled: boolean;
       kycVerificationId: string | null;
     },
     ExtArgs["result"]["user"]
@@ -3676,19 +3738,6 @@ export interface Prisma__UserClient<
       >
     | Null
   >;
-  stripePaymentMethods<
-    T extends Prisma.User$stripePaymentMethodsArgs<ExtArgs> = {},
-  >(
-    args?: Prisma.Subset<T, Prisma.User$stripePaymentMethodsArgs<ExtArgs>>,
-  ): Prisma.PrismaPromise<
-    | runtime.Types.Result.GetResult<
-        Prisma.$StripePaymentMethodPayload<ExtArgs>,
-        T,
-        "findMany",
-        GlobalOmitOptions
-      >
-    | Null
-  >;
   walletCaches<T extends Prisma.User$walletCachesArgs<ExtArgs> = {}>(
     args?: Prisma.Subset<T, Prisma.User$walletCachesArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
@@ -3699,6 +3748,19 @@ export interface Prisma__UserClient<
         GlobalOmitOptions
       >
     | Null
+  >;
+  twoFactor<T extends Prisma.User$twoFactorArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$twoFactorArgs<ExtArgs>>,
+  ): Prisma.Prisma__TwoFactorClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$TwoFactorPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
   >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -3754,6 +3816,7 @@ export interface UserFieldRefs {
   readonly marketingOptIn: Prisma.FieldRef<"User", "Boolean">;
   readonly onboardingCompleted: Prisma.FieldRef<"User", "Boolean">;
   readonly stripeCustomerId: Prisma.FieldRef<"User", "String">;
+  readonly twoFactorEnabled: Prisma.FieldRef<"User", "Boolean">;
   readonly kycVerificationId: Prisma.FieldRef<"User", "String">;
 }
 
@@ -4495,37 +4558,6 @@ export type User$kycSubmissionsArgs<
 };
 
 /**
- * User.stripePaymentMethods
- */
-export type User$stripePaymentMethodsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  /**
-   * Select specific fields to fetch from the StripePaymentMethod
-   */
-  select?: Prisma.StripePaymentMethodSelect<ExtArgs> | null;
-  /**
-   * Omit specific fields from the StripePaymentMethod
-   */
-  omit?: Prisma.StripePaymentMethodOmit<ExtArgs> | null;
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.StripePaymentMethodInclude<ExtArgs> | null;
-  where?: Prisma.StripePaymentMethodWhereInput;
-  orderBy?:
-    | Prisma.StripePaymentMethodOrderByWithRelationInput
-    | Prisma.StripePaymentMethodOrderByWithRelationInput[];
-  cursor?: Prisma.StripePaymentMethodWhereUniqueInput;
-  take?: number;
-  skip?: number;
-  distinct?:
-    | Prisma.StripePaymentMethodScalarFieldEnum
-    | Prisma.StripePaymentMethodScalarFieldEnum[];
-};
-
-/**
  * User.walletCaches
  */
 export type User$walletCachesArgs<
@@ -4554,6 +4586,28 @@ export type User$walletCachesArgs<
   distinct?:
     | Prisma.WalletCacheScalarFieldEnum
     | Prisma.WalletCacheScalarFieldEnum[];
+};
+
+/**
+ * User.twoFactor
+ */
+export type User$twoFactorArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the TwoFactor
+   */
+  select?: Prisma.TwoFactorSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the TwoFactor
+   */
+  omit?: Prisma.TwoFactorOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TwoFactorInclude<ExtArgs> | null;
+  where?: Prisma.TwoFactorWhereInput;
 };
 
 /**

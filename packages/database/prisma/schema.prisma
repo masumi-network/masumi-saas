@@ -33,6 +33,7 @@ model User {
   marketingOptIn      Boolean @default(false)
   onboardingCompleted Boolean @default(false)
   stripeCustomerId    String?
+  twoFactorEnabled    Boolean @default(false)
 
   // KYC verification (one-to-one)
   kycVerificationId String?          @unique
@@ -43,9 +44,22 @@ model User {
   kycSubmissions    KycSubmission[]
   walletCaches      WalletCache[]
 
+  twoFactor           TwoFactor?
+
   @@unique([email])
   @@unique([stripeCustomerId])
   @@map("user")
+}
+
+model TwoFactor {
+  id          String @id @default(cuid())
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("twoFactor")
 }
 
 model Session {

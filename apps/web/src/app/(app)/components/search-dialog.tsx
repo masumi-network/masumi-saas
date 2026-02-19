@@ -151,7 +151,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                 <CommandItem
                   key={agent.id}
                   value={`agent-${agent.id}-${agent.name}`}
-                  onSelect={() => handleSelect(`/agents?agentId=${agent.id}`)}
+                  onSelect={() => handleSelect(`/agents/${agent.id}`)}
                 >
                   <Bot className="mr-2 h-4 w-4" />
                   {agent.name}

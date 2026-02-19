@@ -413,6 +413,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never
 
 export const ModelName = {
   User: "User",
+  TwoFactor: "TwoFactor",
   Session: "Session",
   Account: "Account",
   Verification: "Verification",
@@ -454,6 +455,7 @@ export type TypeMap<
   meta: {
     modelProps:
       | "user"
+      | "twoFactor"
       | "session"
       | "account"
       | "verification"
@@ -547,6 +549,82 @@ export type TypeMap<
           args: Prisma.UserCountArgs<ExtArgs>;
           result:
             | runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    TwoFactor: {
+      payload: Prisma.$TwoFactorPayload<ExtArgs>;
+      fields: Prisma.TwoFactorFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.TwoFactorFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.TwoFactorFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        findFirst: {
+          args: Prisma.TwoFactorFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.TwoFactorFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        findMany: {
+          args: Prisma.TwoFactorFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>[];
+        };
+        create: {
+          args: Prisma.TwoFactorCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        createMany: {
+          args: Prisma.TwoFactorCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.TwoFactorCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>[];
+        };
+        delete: {
+          args: Prisma.TwoFactorDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        update: {
+          args: Prisma.TwoFactorUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        deleteMany: {
+          args: Prisma.TwoFactorDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.TwoFactorUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.TwoFactorUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>[];
+        };
+        upsert: {
+          args: Prisma.TwoFactorUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TwoFactorPayload>;
+        };
+        aggregate: {
+          args: Prisma.TwoFactorAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTwoFactor>;
+        };
+        groupBy: {
+          args: Prisma.TwoFactorGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.TwoFactorGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.TwoFactorCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.TwoFactorCountAggregateOutputType>
             | number;
         };
       };
@@ -1971,11 +2049,22 @@ export const UserScalarFieldEnum = {
   marketingOptIn: "marketingOptIn",
   onboardingCompleted: "onboardingCompleted",
   stripeCustomerId: "stripeCustomerId",
+  twoFactorEnabled: "twoFactorEnabled",
   kycVerificationId: "kycVerificationId",
 } as const;
 
 export type UserScalarFieldEnum =
   (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum];
+
+export const TwoFactorScalarFieldEnum = {
+  id: "id",
+  secret: "secret",
+  backupCodes: "backupCodes",
+  userId: "userId",
+} as const;
+
+export type TwoFactorScalarFieldEnum =
+  (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum];
 
 export const SessionScalarFieldEnum = {
   id: "id",
@@ -2580,6 +2669,7 @@ export type PrismaClientOptions = (
 };
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit;
+  twoFactor?: Prisma.TwoFactorOmit;
   session?: Prisma.SessionOmit;
   account?: Prisma.AccountOmit;
   verification?: Prisma.VerificationOmit;

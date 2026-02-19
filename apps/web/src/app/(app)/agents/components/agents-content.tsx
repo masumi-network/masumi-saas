@@ -1,66 +1,63 @@
 "use client";
 
-import { Plus, Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, Plus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
-import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { agentApiClient } from "@/lib/api/agent.client";
 
-import { AgentDetailsDialog } from "./agent-details-dialog";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
+const PAGE_SIZE = 10;
+const AGENTS_QUERY_KEY = ["agents"] as const;
+
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [isPending, startTransition] = useTransition();
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const PAGE_SIZE = 10;
-
-  const loadPage = async (cursorId?: string) => {
-    const result = await agentApiClient.getAgents(undefined, {
-      cursorId,
-      take: PAGE_SIZE,
-    });
-    if (result.success) {
-      return { data: result.data, nextCursor: result.nextCursor };
-    }
-    return null;
-  };
-
-  useEffect(() => {
-    startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteQuery({
+    queryKey: AGENTS_QUERY_KEY,
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
+      const result = await agentApiClient.getAgents(undefined, {
+        cursorId: pageParam,
+        take: PAGE_SIZE,
+      });
+      if (!result.success) {
+        throw new Error(result.error);
       }
-      setIsLoading(false);
-    });
-  }, []);
+      return { data: result.data, nextCursor: result.nextCursor };
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
 
-  const agentIdFromUrl = searchParams.get("agentId");
-  const agentFromUrl = useMemo(() => {
-    if (!agentIdFromUrl) return null;
-    return agents.find((a) => a.id === agentIdFromUrl) || null;
-  }, [agents, agentIdFromUrl]);
-
-  const dialogAgent = selectedAgent ?? agentFromUrl;
+  // Flatten all pages into a single agents array
+  const agents = useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data],
+  );
 
   const filteredAgents = useMemo(() => {
     let filtered = [...agents];
@@ -95,50 +92,17 @@ export function AgentsContent() {
   }, [agents, searchQuery, activeTab]);
 
   const handleRegisterSuccess = () => {
-    startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
-      }
-    });
+    queryClient.invalidateQueries({ queryKey: AGENTS_QUERY_KEY });
   };
 
   const handleDeleteSuccess = () => {
-    startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
-      }
-    });
-    setSelectedAgent(null);
-  };
-
-  const handleVerificationSuccess = () => {
-    const currentAgentId = dialogAgent?.id;
-    if (!currentAgentId) return;
-    startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
-        const updated = page.data.find((a) => a.id === currentAgentId);
-        if (updated) setSelectedAgent(updated);
-      }
-    });
+    queryClient.invalidateQueries({ queryKey: AGENTS_QUERY_KEY });
   };
 
   const handleLoadMore = () => {
-    if (!nextCursor || isLoadingMore) return;
-    setIsLoadingMore(true);
-    loadPage(nextCursor).then((page) => {
-      if (page) {
-        setAgents((prev) => [...prev, ...page.data]);
-        setNextCursor(page.nextCursor);
-      }
-      setIsLoadingMore(false);
-    });
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   };
 
   const tabs = useMemo(() => {
@@ -161,13 +125,8 @@ export function AgentsContent() {
       <div className="space-y-6">
         <Tabs
           tabs={tabs}
-          activeTab={
-            tabs.find((tab) => tab.key === activeTab)?.name || tabs[0]!.name
-          }
-          onTabChange={(tabName) => {
-            const tab = tabs.find((t) => t.name === tabName);
-            if (tab) setActiveTab(tab.key);
-          }}
+          activeTab={activeTab}
+          onTabChange={(key) => setActiveTab(key)}
         />
 
         <div className="flex items-center justify-between gap-4">
@@ -184,16 +143,10 @@ export function AgentsContent() {
           <div className="flex items-center gap-2">
             <RefreshButton
               onRefresh={() => {
-                startTransition(async () => {
-                  const page = await loadPage();
-                  if (page) {
-                    setAgents(page.data);
-                    setNextCursor(page.nextCursor);
-                  }
-                });
+                void refetch();
               }}
               size="md"
-              isRefreshing={isPending}
+              isRefreshing={isRefetching}
             />
             <Button
               onClick={() => setIsRegisterDialogOpen(true)}
@@ -216,25 +169,40 @@ export function AgentsContent() {
 
         {isLoading ? (
           <AgentsTableSkeleton />
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+            <p className="text-destructive text-sm">
+              {error?.message || t("loadError")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void refetch();
+              }}
+            >
+              {t("retry")}
+            </Button>
+          </div>
         ) : (
           <>
             <AgentsTable
               agents={filteredAgents}
               onAgentClick={(agent) => {
-                setSelectedAgent(agent);
-                router.push(`/agents?agentId=${agent.id}`);
+                router.push(`/agents/${agent.id}`);
               }}
               onDeleteSuccess={handleDeleteSuccess}
             />
 
-            {nextCursor && (
+            {hasNextPage && (
               <div className="flex justify-center pt-4">
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
-                  disabled={isLoadingMore}
+                  disabled={isFetchingNextPage}
                 >
-                  {isLoadingMore ? t("loadingMore") : t("loadMore")}
+                  {isFetchingNextPage ? t("loadingMore") : t("loadMore")}
                 </Button>
               </div>
             )}
@@ -260,16 +228,6 @@ export function AgentsContent() {
         open={isRegisterDialogOpen}
         onClose={() => setIsRegisterDialogOpen(false)}
         onSuccess={handleRegisterSuccess}
-      />
-
-      <AgentDetailsDialog
-        agent={dialogAgent}
-        onClose={() => {
-          setSelectedAgent(null);
-          router.replace("/agents");
-        }}
-        onDeleteSuccess={handleDeleteSuccess}
-        onVerificationSuccess={handleVerificationSuccess}
       />
     </>
   );
