@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  adminClient,
   apiKeyClient,
   organizationClient,
   twoFactorClient,
@@ -11,6 +12,7 @@ export const authClient = createAuthClient({
   plugins: [
     organizationClient(),
     apiKeyClient(),
+    adminClient(),
     twoFactorClient({
       onTwoFactorRedirect() {
         window.location.href = "/2fa";
