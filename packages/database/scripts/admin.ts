@@ -19,7 +19,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { config as loadEnv } from "dotenv";
 
 import { PrismaClient } from "../src/generated/prisma/client.js";
-import { createConsoleLogger,demote, list, promote } from "./admin-lib.js";
+import { createConsoleLogger, demote, list, promote } from "./admin-lib.js";
 
 // Load .env from apps/web (where DATABASE_URL lives) and fall back to package root
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

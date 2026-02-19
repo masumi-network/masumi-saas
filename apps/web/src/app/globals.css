@@ -6,6 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -22,6 +25,7 @@
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-surface: hsl(var(--muted-surface));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));
@@ -56,6 +60,13 @@
   --color-masumi-persimmon: #ff6400;
   --color-masumi-scarlet: #fa140a;
   --color-masumi-golden-yellow: #ffd300;
+
+  /* Masumi header gradient - crimson-purple fade to transparent */
+  --gradient-masumi-header: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-masumi-crimson-purple) 5%, transparent),
+    transparent
+  );
 
   @keyframes rotate-once {
     from {
@@ -101,6 +112,18 @@
   .max-h-dialog {
     max-height: 90vh;
   }
+
+  .bg-masumi-gradient {
+    background-image: var(--gradient-masumi-header);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
@@ -117,9 +140,10 @@
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
+    --muted-surface: 240 4.8% 97.2%;
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 349 100% 58%; /* #c70000 */
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
@@ -142,9 +166,10 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
+    --muted-surface: 0 0% 7%; /* #121212 */
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 349 100% 58%; /* #c70000 */
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
@@ -262,6 +287,19 @@ input[type="number"] {
   animation: spin 1s linear infinite;
 }
 
+@keyframes grid-glide {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -1388px 821px;
+  }
+}
+
+.animate-grid-glide {
+  animation: grid-glide 12s linear infinite;
+}
+
 @keyframes scaleIn {
   0% {
     transform: scale(0.8);
@@ -282,6 +320,21 @@ input[type="number"] {
     transform: rotate(0deg);
     opacity: 1;
   }
+}
+
+@keyframes checkIn {
+  0% {
+    transform: scale(0.4) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-check-in {
+  animation: checkIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Highlight animation for searched elements */

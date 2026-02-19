@@ -23,15 +23,15 @@
       "required": true
     },
     {
-      "name": "agentDescription",
-      "type": "string",
-      "description": "Optional description of the agent",
-      "required": false
-    },
-    {
       "name": "agentApiUrl",
       "type": "string",
       "description": "API URL of the verified agent",
+      "required": true
+    },
+    {
+      "name": "signature",
+      "type": "string",
+      "description": "Masumi verification challenge returned by the agent's get-credential endpoint",
       "required": true
     }
   ]

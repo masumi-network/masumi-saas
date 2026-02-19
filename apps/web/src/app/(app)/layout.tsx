@@ -36,7 +36,7 @@ export default async function AppLayout({
           <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
             {children}
           </main>
-          <div className="max-w-container mx-auto w-full">
+          <div className="max-w-container mx-auto w-full border-t border-border mt-4">
             <FooterSections className="p-4" />
           </div>
         </div>

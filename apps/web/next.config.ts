@@ -1,10 +1,19 @@
- 
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  async redirects() {
+    return [
+      { source: "/agents", destination: "/ai-agents", permanent: true },
+      {
+        source: "/agents/:path*",
+        destination: "/ai-agents/:path*",
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",
@@ -35,4 +44,3 @@ export default shouldUseSentry
       },
     })
   : configWithIntl;
-

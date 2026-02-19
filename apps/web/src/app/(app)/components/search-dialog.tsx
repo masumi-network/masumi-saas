@@ -3,11 +3,15 @@
 import {
   BookOpen,
   Bot,
+  Building2,
+  CreditCard,
   ExternalLink,
   History,
+  Key,
   LayoutDashboard,
   MessageSquare,
   Shield,
+  TrendingUp,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -21,6 +25,7 @@ import {
 } from "react";
 import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
+import { AgentIcon } from "@/app/ai-agents/components/agent-icon";
 import {
   CommandDialog,
   CommandEmpty,
@@ -45,7 +50,11 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
-  { key: "agents", href: "/agents", icon: Bot },
+  { key: "agents", href: "/ai-agents", icon: Bot },
+  { key: "analytics", href: "/analytics", icon: TrendingUp },
+  { key: "organizations", href: "/organizations", icon: Building2 },
+  { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
+  { key: "apiKeys", href: "/api-keys", icon: Key },
   { key: "account", href: "/account", icon: User },
 ];
 
@@ -151,9 +160,13 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                 <CommandItem
                   key={agent.id}
                   value={`agent-${agent.id}-${agent.name}`}
-                  onSelect={() => handleSelect(`/agents/${agent.id}`)}
+                  onSelect={() => handleSelect(`/ai-agents/${agent.id}`)}
                 >
-                  <Bot className="mr-2 h-4 w-4" />
+                  <AgentIcon
+                    icon={agent.icon}
+                    name={agent.name}
+                    className="mr-2 h-4 w-4 shrink-0"
+                  />
                   {agent.name}
                 </CommandItem>
               ))}

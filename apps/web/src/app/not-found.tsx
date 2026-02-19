@@ -1,10 +1,10 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
 import gridSvg from "@/assets/grid.svg";
 import { Button } from "@/components/ui/button";
+import { getAuthContext } from "@/lib/auth/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("NotFound");
@@ -14,17 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function NotFound() {
-  const t = useTranslations("NotFound");
+export default async function NotFound() {
+  const t = await getTranslations("NotFound");
+  const { isAuthenticated } = await getAuthContext();
 
   return (
     <div className="relative min-h-screen w-full">
       <div
-        className="absolute inset-0 opacity-50"
+        className="absolute inset-0 opacity-40 animate-grid-glide"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
+          backgroundPosition: "center",
         }}
       />
       <div className="relative z-10 max-w-container mx-auto flex min-h-screen w-full flex-col justify-center gap-16 p-8 md:p-16">
@@ -37,7 +39,9 @@ export default function NotFound() {
         <div className="space-y-6">
           <p className="text-lg">{t("message")}</p>
           <Button asChild size="lg" className="w-fit">
-            <Link href="/">{t("returnHome")}</Link>
+            <Link href={isAuthenticated ? "/" : "/signin"}>
+              {isAuthenticated ? t("returnHome") : t("signIn")}
+            </Link>
           </Button>
         </div>
       </div>

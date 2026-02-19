@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import { GeistMono } from "geist/font/mono";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
@@ -56,7 +57,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={inter.variable}>
+      <body className={`${inter.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>

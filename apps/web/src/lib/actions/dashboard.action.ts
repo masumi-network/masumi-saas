@@ -7,6 +7,7 @@ import {
   type GetDashboardOverviewResult,
 } from "@/lib/api/dashboard.client";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { appConfig } from "@/lib/config/app.config";
 import { getDashboardOverview } from "@/lib/services/dashboard.service";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
@@ -26,7 +27,7 @@ export async function getDashboardOverviewAction(): Promise<
 
     // In production, header-derived host (x-forwarded-host, host) is spoofable.
     // Only use cookie-based API call when we have a trusted configured URL.
-    const hasConfiguredUrl = !!process.env.NEXT_PUBLIC_APP_URL?.trim();
+    const hasConfiguredUrl = appConfig.appUrl !== "http://localhost:3000";
     const isDev = process.env.NODE_ENV === "development";
     if (!isDev && !hasConfiguredUrl) {
       return { success: true, data: await getDashboardOverview(user.id) };
@@ -58,8 +59,7 @@ export async function getDashboardOverviewAction(): Promise<
 }
 
 function resolveBaseUrl(headersList: Headers): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configured) return configured;
+  if (appConfig.appUrl !== "http://localhost:3000") return appConfig.appUrl;
 
   const host =
     headersList.get("x-forwarded-host") ??
@@ -76,9 +76,8 @@ function isAllowedOrigin(url: string): boolean {
     if (process.env.NODE_ENV === "development") {
       if (host === "localhost" || host === "127.0.0.1") return true;
     }
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-    if (appUrl) {
-      const appHost = new URL(appUrl).hostname.toLowerCase();
+    if (appConfig.appUrl !== "http://localhost:3000") {
+      const appHost = new URL(appConfig.appUrl).hostname.toLowerCase();
       return host === appHost;
     }
     return false;

@@ -30,10 +30,12 @@ export async function registerAgentAction(formData: FormData) {
     const agent = await prisma.agent.create({
       data: {
         name,
+        summary: null,
         description,
         apiUrl,
         tags: tagsArray,
         userId: user.id,
+        registrationState: "RegistrationConfirmed",
         verificationStatus: "PENDING",
       },
     });
@@ -52,7 +54,7 @@ export async function registerAgentAction(formData: FormData) {
 }
 
 export async function getAgentsAction(filters?: {
-  verificationStatus?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
+  verificationStatus?: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   unverified?: boolean;
 }) {
   try {
@@ -61,23 +63,18 @@ export async function getAgentsAction(filters?: {
     const where: {
       userId: string;
       verificationStatus?:
-        | {
-            not?: "APPROVED";
-            equals?: "APPROVED" | "PENDING" | "REJECTED" | "REVIEW" | null;
-          }
-        | "APPROVED"
+        | { not: "VERIFIED" }
         | "PENDING"
-        | "REJECTED"
-        | "REVIEW"
+        | "VERIFIED"
+        | "REVOKED"
+        | "EXPIRED"
         | null;
     } = {
       userId: user.id,
     };
 
     if (filters?.unverified) {
-      where.verificationStatus = {
-        not: "APPROVED",
-      };
+      where.verificationStatus = { not: "VERIFIED" };
     } else if (filters?.verificationStatus !== undefined) {
       where.verificationStatus = filters.verificationStatus;
     }
