@@ -1,0 +1,531 @@
+/* Masumi Network — Swagger UI custom theme */
+/* Matches masumi-payment-service swagger style */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Global dark background + no horizontal scroll ─────────────────────────── */
+html,
+body {
+  background: #1b1b1b !important;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+.swagger-ui {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  background: #1b1b1b !important;
+  color: #e0e0e0 !important;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.swagger-ui .wrapper {
+  background: #1b1b1b !important;
+  padding: 0 40px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent code blocks from stretching the page — scroll horizontally instead */
+.swagger-ui pre,
+.swagger-ui .microlight,
+.swagger-ui .highlight-code pre,
+.swagger-ui .response-col_description__inner pre {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+/* Prevent tables from overflowing — auto layout keeps columns correctly sized */
+.swagger-ui table {
+  table-layout: auto !important;
+  max-width: 100% !important;
+}
+
+/* Prevent the info card from overflowing on narrow screens */
+.swagger-ui .information-container .main {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ── Topbar — Masumi gradient ──────────────────────────────────────────────── */
+.swagger-ui .topbar {
+  background: linear-gradient(90deg, #ff6400 0%, #fa008c 55%, #ff51ff 100%) !important;
+  padding: 10px 20px !important;
+  border-bottom: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* Hide the default swagger logo */
+.swagger-ui .topbar-wrapper img,
+.swagger-ui .topbar .link svg {
+  display: none !important;
+}
+
+/* Left side — Swagger logo text replaced */
+.swagger-ui .topbar .link::before {
+  content: 'Swagger';
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
+}
+
+/* Right side — MASUMI brand text */
+.swagger-ui .topbar-wrapper::after {
+  content: 'masumi';
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+  margin-left: auto;
+  padding-right: 8px;
+}
+
+/* ── Info / header card ────────────────────────────────────────────────────── */
+.swagger-ui .information-container {
+  background: #1e2035 !important;
+  border-radius: 16px !important;
+  padding: 40px 48px !important;
+  margin: 24px 0 !important;
+  border: 1px solid #2b2f52 !important;
+  text-align: center !important;
+}
+
+/* Center everything inside the info block */
+.swagger-ui .info,
+.swagger-ui .info hgroup,
+.swagger-ui .info .main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.swagger-ui .info .title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  text-align: center !important;
+}
+
+.swagger-ui .info .description,
+.swagger-ui .info .description p,
+.swagger-ui .info p {
+  font-size: 14px !important;
+  color: #9ca3af !important;
+  line-height: 1.6 !important;
+  text-align: center !important;
+  max-width: 680px !important;
+  margin: 0 auto !important;
+}
+
+/* Hide the spec URL shown below the title */
+.swagger-ui .info > .base-url {
+  display: none !important;
+}
+
+/* Version badge */
+.swagger-ui .info .version-stamp {
+  background: #3a3a3a !important;
+  color: #e0e0e0 !important;
+  border-radius: 4px !important;
+}
+
+/* Links inside info — center the contact/license links row */
+.swagger-ui .info a {
+  color: #ff51ff !important;
+}
+
+.swagger-ui .info a:hover {
+  color: #fa008c !important;
+}
+
+.swagger-ui .info .link {
+  display: inline-flex !important;
+  justify-content: center !important;
+}
+
+/* ── Scheme container (Servers + Authorize row) ─────────────────────────────── */
+.swagger-ui .scheme-container {
+  background: #1b1b1b !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  box-shadow: none !important;
+  padding: 12px 0 !important;
+  margin-bottom: 16px !important;
+}
+
+.swagger-ui .servers > label,
+.swagger-ui .schemes > label {
+  color: #9ca3af !important;
+  font-size: 13px !important;
+}
+
+.swagger-ui .servers select {
+  background: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+  color: #e0e0e0 !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Authorize button */
+.swagger-ui .auth-wrapper .authorize {
+  background: transparent !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 6px 16px !important;
+  font-family: 'Inter', sans-serif !important;
+  transition: background 0.15s ease !important;
+}
+
+.swagger-ui .auth-wrapper .authorize:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.swagger-ui .auth-wrapper .authorize svg {
+  fill: #ffffff !important;
+}
+
+/* ── Section / tag headers ─────────────────────────────────────────────────── */
+.swagger-ui .opblock-tag {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  padding: 12px 0 12px 4px !important;
+  margin: 0 !important;
+}
+
+.swagger-ui .opblock-tag:hover {
+  background: transparent !important;
+}
+
+.swagger-ui .expand-operation svg,
+.swagger-ui .opblock-tag-section svg {
+  fill: #9ca3af !important;
+}
+
+/* ── Operation blocks ──────────────────────────────────────────────────────── */
+.swagger-ui .opblock {
+  border-radius: 6px !important;
+  margin-bottom: 6px !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Keep natural HTTP method colors for GET */
+.swagger-ui .opblock.opblock-get {
+  background: rgba(97, 175, 254, 0.07) !important;
+  border-color: rgba(97, 175, 254, 0.5) !important;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background: #61affe !important;
+}
+
+/* POST */
+.swagger-ui .opblock.opblock-post {
+  background: rgba(73, 204, 144, 0.07) !important;
+  border-color: rgba(73, 204, 144, 0.5) !important;
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background: #49cc90 !important;
+}
+
+/* PUT */
+.swagger-ui .opblock.opblock-put {
+  background: rgba(252, 161, 48, 0.07) !important;
+  border-color: rgba(252, 161, 48, 0.5) !important;
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+  background: #fca130 !important;
+}
+
+/* PATCH */
+.swagger-ui .opblock.opblock-patch {
+  background: rgba(80, 227, 194, 0.07) !important;
+  border-color: rgba(80, 227, 194, 0.5) !important;
+}
+
+.swagger-ui .opblock.opblock-patch .opblock-summary-method {
+  background: #50e3c2 !important;
+}
+
+/* DELETE */
+.swagger-ui .opblock.opblock-delete {
+  background: rgba(249, 62, 62, 0.07) !important;
+  border-color: rgba(249, 62, 62, 0.5) !important;
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  background: #f93e3e !important;
+}
+
+/* Method badge shared */
+.swagger-ui .opblock .opblock-summary-method {
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  min-width: 72px !important;
+  text-align: center !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Summary path */
+.swagger-ui .opblock .opblock-summary-path,
+.swagger-ui .opblock .opblock-summary-path__deprecated {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 14px !important;
+  color: #e0e0e0 !important;
+}
+
+/* Summary description */
+.swagger-ui .opblock .opblock-summary-description {
+  color: #9ca3af !important;
+  font-size: 13px !important;
+}
+
+/* Operation body (expanded) */
+.swagger-ui .opblock .opblock-body,
+.swagger-ui .opblock-body pre.microlight {
+  background: #232323 !important;
+  color: #e0e0e0 !important;
+}
+
+.swagger-ui .opblock .opblock-section-header {
+  background: #2a2a2a !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+.swagger-ui .opblock .opblock-section-header h4 {
+  color: #e0e0e0 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.swagger-ui .btn.execute {
+  background: linear-gradient(135deg, #fa008c, #ff51ff) !important;
+  border-color: #fa008c !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  font-family: 'Inter', sans-serif !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.swagger-ui .btn.execute:hover {
+  opacity: 0.88 !important;
+}
+
+.swagger-ui .btn.try-out__btn {
+  border: 1px solid #fa008c !important;
+  color: #fa008c !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.swagger-ui .btn.try-out__btn:hover {
+  background: rgba(250, 0, 140, 0.08) !important;
+}
+
+.swagger-ui .btn.cancel {
+  border-color: #555 !important;
+  color: #aaa !important;
+  border-radius: 6px !important;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────────────── */
+.swagger-ui input[type='text'],
+.swagger-ui input[type='password'],
+.swagger-ui textarea,
+.swagger-ui select {
+  background: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+  color: #e0e0e0 !important;
+  border-radius: 6px !important;
+  font-family: 'Inter', sans-serif !important;
+  transition: border-color 0.15s ease !important;
+}
+
+.swagger-ui input:focus,
+.swagger-ui textarea:focus {
+  border-color: #fa008c !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(250, 0, 140, 0.18) !important;
+}
+
+/* ── Parameters table ──────────────────────────────────────────────────────── */
+.swagger-ui .parameters-col_description,
+.swagger-ui table.parameters {
+  background: transparent !important;
+}
+
+.swagger-ui table thead tr th {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid #333 !important;
+  background: transparent !important;
+}
+
+.swagger-ui table tbody tr td {
+  background: transparent !important;
+  color: #e0e0e0 !important;
+  border-bottom: 1px solid #2a2a2a !important;
+}
+
+.swagger-ui .parameter__name {
+  color: #e0e0e0 !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px !important;
+}
+
+.swagger-ui .parameter__type,
+.swagger-ui .prop-type {
+  color: #ff51ff !important;
+  margin-top: 6px !important;
+  display: block !important;
+}
+
+.swagger-ui .parameter__in {
+  color: #9ca3af !important;
+  font-size: 11px !important;
+}
+
+/* Smaller description text in parameter table */
+.swagger-ui .parameters-col_description p,
+.swagger-ui .parameter__description,
+.swagger-ui td.parameters-col_description p {
+  font-size: 12px !important;
+  color: #9ca3af !important;
+  line-height: 1.5 !important;
+  margin: 0 0 12px 0 !important;
+}
+
+/* Gap between description text and input field */
+.swagger-ui .parameters-col_description input,
+.swagger-ui .parameters-col_description select,
+.swagger-ui .parameters-col_description textarea {
+  margin-top: 10px !important;
+}
+
+.swagger-ui .parameter__name.required span {
+  color: #f93e3e !important;
+}
+
+/* ── Response section ──────────────────────────────────────────────────────── */
+.swagger-ui .responses-inner {
+  background: transparent !important;
+}
+
+.swagger-ui .responses-table .response-col_status {
+  font-weight: 700 !important;
+  color: #61affe !important;
+}
+
+.swagger-ui .response-col_description,
+.swagger-ui .response-col_links {
+  color: #9ca3af !important;
+}
+
+/* ── Code / JSON ───────────────────────────────────────────────────────────── */
+.swagger-ui .microlight,
+.swagger-ui .highlight-code pre,
+.swagger-ui pre.microlight,
+.swagger-ui .response-col_description__inner pre {
+  background: #111111 !important;
+  color: #e0e0e0 !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+/* ── Models section ────────────────────────────────────────────────────────── */
+.swagger-ui section.models {
+  background: #1b1b1b !important;
+  border: 1px solid #2a2a2a !important;
+  border-radius: 8px !important;
+}
+
+.swagger-ui section.models .models-control {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+}
+
+.swagger-ui .model-box,
+.swagger-ui .model-container {
+  background: #232323 !important;
+  color: #e0e0e0 !important;
+}
+
+.swagger-ui .model-title {
+  color: #ff51ff !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.swagger-ui .prop-name {
+  color: #e0e0e0 !important;
+}
+
+/* ── Auth modal ────────────────────────────────────────────────────────────── */
+.swagger-ui .dialog-ux .modal-ux {
+  background: #232323 !important;
+  border: 1px solid #3a3a3a !important;
+  color: #e0e0e0 !important;
+  border-radius: 10px !important;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header {
+  border-bottom: 1px solid #333 !important;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header h3 {
+  color: #ffffff !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* ── Misc ──────────────────────────────────────────────────────────────────── */
+.swagger-ui .arrow {
+  fill: #9ca3af !important;
+}
+
+.swagger-ui .model-toggle::after {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E") no-repeat center !important;
+}
+
+/* Scrollbar */
+.swagger-ui ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.swagger-ui ::-webkit-scrollbar-track {
+  background: #1b1b1b;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 3px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb:hover {
+  background: #fa008c;
+}

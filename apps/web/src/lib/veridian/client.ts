@@ -234,8 +234,11 @@ export async function issueCredential(
   const credentialServerUrl = getCredentialServerUrl();
   const url = `${credentialServerUrl}/issueAcdcCredential`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Request body structure from credential server
-  const requestBody: any = {
+  const requestBody: {
+    schemaSaid: string;
+    aid: string;
+    attribute?: Record<string, unknown>;
+  } = {
     schemaSaid,
     aid,
   };

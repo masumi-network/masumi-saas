@@ -1,40 +1,16 @@
 "use server";
 
 import prisma from "@masumi/database/client";
-import { z } from "zod";
-import { zfd } from "zod-form-data";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { registerAgentFormDataSchema } from "@/lib/schemas/agent";
 import { convertZodError } from "@/lib/utils/convert-zod-error";
-
-const registerAgentSchema = zfd.formData(
-  z.object({
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(250, "Name must be less than 250 characters"),
-    description: z
-      .string()
-      .min(1, "Description is required")
-      .max(1000, "Description must be less than 1000 characters"),
-    apiUrl: z
-      .string()
-      .url("API URL must be a valid URL")
-      .refine(
-        (val) => val.startsWith("http://") || val.startsWith("https://"),
-        {
-          message: "API URL must start with http:// or https://",
-        },
-      ),
-    tags: z.string().optional(),
-  }),
-);
 
 export async function registerAgentAction(formData: FormData) {
   try {
     const { user } = await getAuthenticatedOrThrow();
 
-    const validation = registerAgentSchema.safeParse(formData);
+    const validation = registerAgentFormDataSchema.safeParse(formData);
     if (!validation.success) {
       return {
         success: false as const,
@@ -70,8 +46,7 @@ export async function registerAgentAction(formData: FormData) {
     console.error("Failed to register agent:", error);
     return {
       success: false as const,
-      error:
-        error instanceof Error ? error.message : "Failed to register agent",
+      error: "Failed to register agent",
     };
   }
 }
@@ -122,7 +97,7 @@ export async function getAgentsAction(filters?: {
     console.error("Failed to get agents:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Failed to get agents",
+      error: "Failed to get agents",
     };
   }
 }
@@ -153,7 +128,7 @@ export async function getAgentAction(agentId: string) {
     console.error("Failed to get agent:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Failed to get agent",
+      error: "Failed to get agent",
     };
   }
 }
@@ -189,7 +164,7 @@ export async function deleteAgentAction(agentId: string) {
     console.error("Failed to delete agent:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Failed to delete agent",
+      error: "Failed to delete agent",
     };
   }
 }
@@ -252,10 +227,7 @@ export async function requestAgentVerificationAction(agentId: string) {
     console.error("Failed to request agent verification:", error);
     return {
       success: false as const,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to request agent verification",
+      error: "Failed to request agent verification",
     };
   }
 }

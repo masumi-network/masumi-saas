@@ -156,9 +156,8 @@ export const auth = betterAuth({
     }),
     organization({
       organizationCreation: {
-        afterCreate: async ({ organization }) => {
-          // post-creation logic here
-          console.log("Organization created:", organization.id);
+        afterCreate: async ({ organization: _organization }) => {
+          // Organization post-creation logic (e.g., Stripe customer setup)
         },
       },
       schema: {
@@ -181,12 +180,15 @@ export const auth = betterAuth({
       },
       async sendInvitationEmail(data) {
         const inviteLink = `${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/accept-invitation/${data.id}`;
-        // TODO: Implement email sending
-        console.log("Invitation email:", {
-          to: data.email,
-          organization: data.organization.name,
-          link: inviteLink,
-        });
+        // TODO(MAS-XXX): Implement invitation email sending via Postmark
+        // Users will not receive invite emails until this is implemented.
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DEV] Invitation email:", {
+            to: data.email,
+            organization: data.organization.name,
+            link: inviteLink,
+          });
+        }
       },
       invitationLimit: authConfig.organization.invitationLimit,
       cancelPendingInvitationsOnReInvite:
