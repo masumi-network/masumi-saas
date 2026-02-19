@@ -23,7 +23,6 @@ export type * from "./models/Agent.js";
 export type * from "./models/OrgApiKey.js";
 export type * from "./models/KycSubmission.js";
 export type * from "./models/KybSubmission.js";
-export type * from "./models/StripePaymentMethod.js";
 export type * from "./models/WalletCache.js";
 export type * from "./models/AgentReference.js";
 export type * from "./models/VeridianCredential.js";

@@ -428,7 +428,6 @@ export const ModelName = {
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
-  StripePaymentMethod: "StripePaymentMethod",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
   VeridianCredential: "VeridianCredential",
@@ -470,7 +469,6 @@ export type TypeMap<
       | "orgApiKey"
       | "kycSubmission"
       | "kybSubmission"
-      | "stripePaymentMethod"
       | "walletCache"
       | "agentReference"
       | "veridianCredential";
@@ -1693,82 +1691,6 @@ export type TypeMap<
         };
       };
     };
-    StripePaymentMethod: {
-      payload: Prisma.$StripePaymentMethodPayload<ExtArgs>;
-      fields: Prisma.StripePaymentMethodFieldRefs;
-      operations: {
-        findUnique: {
-          args: Prisma.StripePaymentMethodFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload> | null;
-        };
-        findUniqueOrThrow: {
-          args: Prisma.StripePaymentMethodFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        findFirst: {
-          args: Prisma.StripePaymentMethodFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload> | null;
-        };
-        findFirstOrThrow: {
-          args: Prisma.StripePaymentMethodFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        findMany: {
-          args: Prisma.StripePaymentMethodFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>[];
-        };
-        create: {
-          args: Prisma.StripePaymentMethodCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        createMany: {
-          args: Prisma.StripePaymentMethodCreateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        createManyAndReturn: {
-          args: Prisma.StripePaymentMethodCreateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>[];
-        };
-        delete: {
-          args: Prisma.StripePaymentMethodDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        update: {
-          args: Prisma.StripePaymentMethodUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        deleteMany: {
-          args: Prisma.StripePaymentMethodDeleteManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateMany: {
-          args: Prisma.StripePaymentMethodUpdateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateManyAndReturn: {
-          args: Prisma.StripePaymentMethodUpdateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>[];
-        };
-        upsert: {
-          args: Prisma.StripePaymentMethodUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripePaymentMethodPayload>;
-        };
-        aggregate: {
-          args: Prisma.StripePaymentMethodAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateStripePaymentMethod>;
-        };
-        groupBy: {
-          args: Prisma.StripePaymentMethodGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.StripePaymentMethodGroupByOutputType>[];
-        };
-        count: {
-          args: Prisma.StripePaymentMethodCountArgs<ExtArgs>;
-          result:
-            | runtime.Types.Utils.Optional<Prisma.StripePaymentMethodCountAggregateOutputType>
-            | number;
-        };
-      };
-    };
     WalletCache: {
       payload: Prisma.$WalletCachePayload<ExtArgs>;
       fields: Prisma.WalletCacheFieldRefs;
@@ -2284,24 +2206,6 @@ export const KybSubmissionScalarFieldEnum = {
 export type KybSubmissionScalarFieldEnum =
   (typeof KybSubmissionScalarFieldEnum)[keyof typeof KybSubmissionScalarFieldEnum];
 
-export const StripePaymentMethodScalarFieldEnum = {
-  id: "id",
-  stripePaymentMethodId: "stripePaymentMethodId",
-  type: "type",
-  last4: "last4",
-  brand: "brand",
-  expiryMonth: "expiryMonth",
-  expiryYear: "expiryYear",
-  isDefault: "isDefault",
-  userId: "userId",
-  organizationId: "organizationId",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type StripePaymentMethodScalarFieldEnum =
-  (typeof StripePaymentMethodScalarFieldEnum)[keyof typeof StripePaymentMethodScalarFieldEnum];
-
 export const WalletCacheScalarFieldEnum = {
   id: "id",
   userId: "userId",
@@ -2684,7 +2588,6 @@ export type GlobalOmitConfig = {
   orgApiKey?: Prisma.OrgApiKeyOmit;
   kycSubmission?: Prisma.KycSubmissionOmit;
   kybSubmission?: Prisma.KybSubmissionOmit;
-  stripePaymentMethod?: Prisma.StripePaymentMethodOmit;
   walletCache?: Prisma.WalletCacheOmit;
   agentReference?: Prisma.AgentReferenceOmit;
   veridianCredential?: Prisma.VeridianCredentialOmit;

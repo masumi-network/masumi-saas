@@ -243,7 +243,6 @@ export type OrganizationWhereInput = {
   > | null;
   orgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
   kybSubmissions?: Prisma.KybSubmissionListRelationFilter;
-  stripePaymentMethods?: Prisma.StripePaymentMethodListRelationFilter;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -264,7 +263,6 @@ export type OrganizationOrderByWithRelationInput = {
   kybVerification?: Prisma.KybVerificationOrderByWithRelationInput;
   orgApiKeys?: Prisma.OrgApiKeyOrderByRelationAggregateInput;
   kybSubmissions?: Prisma.KybSubmissionOrderByRelationAggregateInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodOrderByRelationAggregateInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -292,7 +290,6 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     > | null;
     orgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
     kybSubmissions?: Prisma.KybSubmissionListRelationFilter;
-    stripePaymentMethods?: Prisma.StripePaymentMethodListRelationFilter;
   },
   "id" | "kybVerificationId" | "slug" | "stripeCustomerId"
 >;
@@ -371,7 +368,6 @@ export type OrganizationCreateInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -391,7 +387,6 @@ export type OrganizationUncheckedCreateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -417,7 +412,6 @@ export type OrganizationUpdateInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -446,7 +440,6 @@ export type OrganizationUncheckedUpdateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -739,34 +732,6 @@ export type OrganizationUpdateOneRequiredWithoutKybSubmissionsNestedInput = {
   >;
 };
 
-export type OrganizationCreateNestedOneWithoutStripePaymentMethodsInput = {
-  create?: Prisma.XOR<
-    Prisma.OrganizationCreateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutStripePaymentMethodsInput;
-  connect?: Prisma.OrganizationWhereUniqueInput;
-};
-
-export type OrganizationUpdateOneWithoutStripePaymentMethodsNestedInput = {
-  create?: Prisma.XOR<
-    Prisma.OrganizationCreateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutStripePaymentMethodsInput;
-  upsert?: Prisma.OrganizationUpsertWithoutStripePaymentMethodsInput;
-  disconnect?: Prisma.OrganizationWhereInput | boolean;
-  delete?: Prisma.OrganizationWhereInput | boolean;
-  connect?: Prisma.OrganizationWhereUniqueInput;
-  update?: Prisma.XOR<
-    Prisma.XOR<
-      Prisma.OrganizationUpdateToOneWithWhereWithoutStripePaymentMethodsInput,
-      Prisma.OrganizationUpdateWithoutStripePaymentMethodsInput
-    >,
-    Prisma.OrganizationUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-};
-
 export type OrganizationCreateNestedOneWithoutVeridianCredentialsInput = {
   create?: Prisma.XOR<
     Prisma.OrganizationCreateWithoutVeridianCredentialsInput,
@@ -811,7 +776,6 @@ export type OrganizationCreateWithoutSessionsInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSessionsInput = {
@@ -830,7 +794,6 @@ export type OrganizationUncheckedCreateWithoutSessionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSessionsInput = {
@@ -883,7 +846,6 @@ export type OrganizationUpdateWithoutSessionsInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSessionsInput = {
@@ -911,7 +873,6 @@ export type OrganizationUncheckedUpdateWithoutSessionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutKybVerificationInput = {
@@ -930,7 +891,6 @@ export type OrganizationCreateWithoutKybVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
@@ -949,7 +909,6 @@ export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutKybVerificationInput = {
@@ -1002,7 +961,6 @@ export type OrganizationUpdateWithoutKybVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
@@ -1027,7 +985,6 @@ export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutMembersInput = {
@@ -1046,7 +1003,6 @@ export type OrganizationCreateWithoutMembersInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutMembersInput = {
@@ -1065,7 +1021,6 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutMembersInput = {
@@ -1118,7 +1073,6 @@ export type OrganizationUpdateWithoutMembersInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutMembersInput = {
@@ -1146,7 +1100,6 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -1165,7 +1118,6 @@ export type OrganizationCreateWithoutInvitationsInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -1184,7 +1136,6 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -1237,7 +1188,6 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -1265,7 +1215,6 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutOrgApiKeysInput = {
@@ -1284,7 +1233,6 @@ export type OrganizationCreateWithoutOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutOrgApiKeysInput = {
@@ -1303,7 +1251,6 @@ export type OrganizationUncheckedCreateWithoutOrgApiKeysInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutOrgApiKeysInput = {
@@ -1356,7 +1303,6 @@ export type OrganizationUpdateWithoutOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutOrgApiKeysInput = {
@@ -1384,7 +1330,6 @@ export type OrganizationUncheckedUpdateWithoutOrgApiKeysInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutKybSubmissionsInput = {
@@ -1403,7 +1348,6 @@ export type OrganizationCreateWithoutKybSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutKybSubmissionsInput = {
@@ -1422,7 +1366,6 @@ export type OrganizationUncheckedCreateWithoutKybSubmissionsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutKybSubmissionsInput = {
@@ -1475,7 +1418,6 @@ export type OrganizationUpdateWithoutKybSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutKybSubmissionsInput = {
@@ -1503,126 +1445,6 @@ export type OrganizationUncheckedUpdateWithoutKybSubmissionsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
-};
-
-export type OrganizationCreateWithoutStripePaymentMethodsInput = {
-  id?: string;
-  name: string;
-  slug: string;
-  logo?: string | null;
-  metadata?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  stripeCustomerId?: string | null;
-  invoiceEmail?: string | null;
-  members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
-  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
-  sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput;
-  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
-  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
-  orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
-  kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-};
-
-export type OrganizationUncheckedCreateWithoutStripePaymentMethodsInput = {
-  id?: string;
-  name: string;
-  slug: string;
-  logo?: string | null;
-  metadata?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  stripeCustomerId?: string | null;
-  invoiceEmail?: string | null;
-  kybVerificationId?: string | null;
-  members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
-  orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
-  kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-};
-
-export type OrganizationCreateOrConnectWithoutStripePaymentMethodsInput = {
-  where: Prisma.OrganizationWhereUniqueInput;
-  create: Prisma.XOR<
-    Prisma.OrganizationCreateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-};
-
-export type OrganizationUpsertWithoutStripePaymentMethodsInput = {
-  update: Prisma.XOR<
-    Prisma.OrganizationUpdateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-  create: Prisma.XOR<
-    Prisma.OrganizationCreateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedCreateWithoutStripePaymentMethodsInput
-  >;
-  where?: Prisma.OrganizationWhereInput;
-};
-
-export type OrganizationUpdateToOneWithWhereWithoutStripePaymentMethodsInput = {
-  where?: Prisma.OrganizationWhereInput;
-  data: Prisma.XOR<
-    Prisma.OrganizationUpdateWithoutStripePaymentMethodsInput,
-    Prisma.OrganizationUncheckedUpdateWithoutStripePaymentMethodsInput
-  >;
-};
-
-export type OrganizationUpdateWithoutStripePaymentMethodsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  slug?: Prisma.StringFieldUpdateOperationsInput | string;
-  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  invoiceEmail?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
-  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
-  sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
-  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
-  orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
-  kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-};
-
-export type OrganizationUncheckedUpdateWithoutStripePaymentMethodsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  slug?: Prisma.StringFieldUpdateOperationsInput | string;
-  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  invoiceEmail?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  kybVerificationId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
-  orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
-  kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutVeridianCredentialsInput = {
@@ -1641,7 +1463,6 @@ export type OrganizationCreateWithoutVeridianCredentialsInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutVeridianCredentialsInput = {
@@ -1660,7 +1481,6 @@ export type OrganizationUncheckedCreateWithoutVeridianCredentialsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutVeridianCredentialsInput = {
@@ -1713,7 +1533,6 @@ export type OrganizationUpdateWithoutVeridianCredentialsInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutVeridianCredentialsInput = {
@@ -1741,7 +1560,6 @@ export type OrganizationUncheckedUpdateWithoutVeridianCredentialsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
-  stripePaymentMethods?: Prisma.StripePaymentMethodUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 /**
@@ -1755,7 +1573,6 @@ export type OrganizationCountOutputType = {
   veridianCredentials: number;
   orgApiKeys: number;
   kybSubmissions: number;
-  stripePaymentMethods: number;
 };
 
 export type OrganizationCountOutputTypeSelect<
@@ -1770,9 +1587,6 @@ export type OrganizationCountOutputTypeSelect<
     | OrganizationCountOutputTypeCountVeridianCredentialsArgs;
   orgApiKeys?: boolean | OrganizationCountOutputTypeCountOrgApiKeysArgs;
   kybSubmissions?: boolean | OrganizationCountOutputTypeCountKybSubmissionsArgs;
-  stripePaymentMethods?:
-    | boolean
-    | OrganizationCountOutputTypeCountStripePaymentMethodsArgs;
 };
 
 /**
@@ -1848,16 +1662,6 @@ export type OrganizationCountOutputTypeCountKybSubmissionsArgs<
   where?: Prisma.KybSubmissionWhereInput;
 };
 
-/**
- * OrganizationCountOutputType without action
- */
-export type OrganizationCountOutputTypeCountStripePaymentMethodsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  where?: Prisma.StripePaymentMethodWhereInput;
-};
-
 export type OrganizationSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -1884,9 +1688,6 @@ export type OrganizationSelect<
       | Prisma.Organization$kybVerificationArgs<ExtArgs>;
     orgApiKeys?: boolean | Prisma.Organization$orgApiKeysArgs<ExtArgs>;
     kybSubmissions?: boolean | Prisma.Organization$kybSubmissionsArgs<ExtArgs>;
-    stripePaymentMethods?:
-      | boolean
-      | Prisma.Organization$stripePaymentMethodsArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["organization"]
@@ -1978,9 +1779,6 @@ export type OrganizationInclude<
   kybVerification?: boolean | Prisma.Organization$kybVerificationArgs<ExtArgs>;
   orgApiKeys?: boolean | Prisma.Organization$orgApiKeysArgs<ExtArgs>;
   kybSubmissions?: boolean | Prisma.Organization$kybSubmissionsArgs<ExtArgs>;
-  stripePaymentMethods?:
-    | boolean
-    | Prisma.Organization$stripePaymentMethodsArgs<ExtArgs>;
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrganizationIncludeCreateManyAndReturn<
@@ -2009,7 +1807,6 @@ export type $OrganizationPayload<
     kybVerification: Prisma.$KybVerificationPayload<ExtArgs> | null;
     orgApiKeys: Prisma.$OrgApiKeyPayload<ExtArgs>[];
     kybSubmissions: Prisma.$KybSubmissionPayload<ExtArgs>[];
-    stripePaymentMethods: Prisma.$StripePaymentMethodPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -2661,22 +2458,6 @@ export interface Prisma__OrganizationClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$KybSubmissionPayload<ExtArgs>,
-        T,
-        "findMany",
-        GlobalOmitOptions
-      >
-    | Null
-  >;
-  stripePaymentMethods<
-    T extends Prisma.Organization$stripePaymentMethodsArgs<ExtArgs> = {},
-  >(
-    args?: Prisma.Subset<
-      T,
-      Prisma.Organization$stripePaymentMethodsArgs<ExtArgs>
-    >,
-  ): Prisma.PrismaPromise<
-    | runtime.Types.Result.GetResult<
-        Prisma.$StripePaymentMethodPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -3407,37 +3188,6 @@ export type Organization$kybSubmissionsArgs<
   distinct?:
     | Prisma.KybSubmissionScalarFieldEnum
     | Prisma.KybSubmissionScalarFieldEnum[];
-};
-
-/**
- * Organization.stripePaymentMethods
- */
-export type Organization$stripePaymentMethodsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  /**
-   * Select specific fields to fetch from the StripePaymentMethod
-   */
-  select?: Prisma.StripePaymentMethodSelect<ExtArgs> | null;
-  /**
-   * Omit specific fields from the StripePaymentMethod
-   */
-  omit?: Prisma.StripePaymentMethodOmit<ExtArgs> | null;
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.StripePaymentMethodInclude<ExtArgs> | null;
-  where?: Prisma.StripePaymentMethodWhereInput;
-  orderBy?:
-    | Prisma.StripePaymentMethodOrderByWithRelationInput
-    | Prisma.StripePaymentMethodOrderByWithRelationInput[];
-  cursor?: Prisma.StripePaymentMethodWhereUniqueInput;
-  take?: number;
-  skip?: number;
-  distinct?:
-    | Prisma.StripePaymentMethodScalarFieldEnum
-    | Prisma.StripePaymentMethodScalarFieldEnum[];
 };
 
 /**

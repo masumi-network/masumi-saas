@@ -142,16 +142,6 @@ export type KycSubmission = Prisma.KycSubmissionModel;
  */
 export type KybSubmission = Prisma.KybSubmissionModel;
 /**
- * Model StripePaymentMethod
- * Stores Stripe payment methods (cards, bank accounts, etc.) belonging to
- * a user or an organization. Mirrors Stripe's PaymentMethod object locally
- * so the UI can display saved methods without extra Stripe API calls.
- *
- * Either userId or organizationId should be set — not both at the same time.
- * isDefault flags the preferred payment method for that owner.
- */
-export type StripePaymentMethod = Prisma.StripePaymentMethodModel;
-/**
  * Model WalletCache
  * Caches wallet connection state and identifiers for a user.
  * Supports both Cardano wallets (identifier = wallet address) and

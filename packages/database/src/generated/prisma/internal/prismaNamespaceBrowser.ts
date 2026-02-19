@@ -70,7 +70,6 @@ export const ModelName = {
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
-  StripePaymentMethod: "StripePaymentMethod",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
   VeridianCredential: "VeridianCredential",
@@ -339,24 +338,6 @@ export const KybSubmissionScalarFieldEnum = {
 
 export type KybSubmissionScalarFieldEnum =
   (typeof KybSubmissionScalarFieldEnum)[keyof typeof KybSubmissionScalarFieldEnum];
-
-export const StripePaymentMethodScalarFieldEnum = {
-  id: "id",
-  stripePaymentMethodId: "stripePaymentMethodId",
-  type: "type",
-  last4: "last4",
-  brand: "brand",
-  expiryMonth: "expiryMonth",
-  expiryYear: "expiryYear",
-  isDefault: "isDefault",
-  userId: "userId",
-  organizationId: "organizationId",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type StripePaymentMethodScalarFieldEnum =
-  (typeof StripePaymentMethodScalarFieldEnum)[keyof typeof StripePaymentMethodScalarFieldEnum];
 
 export const WalletCacheScalarFieldEnum = {
   id: "id",
