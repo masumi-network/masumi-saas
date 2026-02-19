@@ -7,7 +7,9 @@ import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
 const getAgentsQuerySchema = z.object({
   verificationStatus: z
-    .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
+    .string()
+    .transform((v) => v.toUpperCase())
+    .pipe(z.enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"]))
     .optional(),
   unverified: z
     .enum(["true", "false"])
