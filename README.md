@@ -19,11 +19,12 @@ Masumi SaaS is a platform for registering, managing, and verifying your AI agent
 
 This project follows an **API-first** architecture with clear separation of concerns:
 
-1. **API Clients** (`apps/web/src/lib/api/`) - Client-side and server-side fetch wrappers for API routes
-2. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints that handle auth and delegate to services
-3. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
-4. **Actions** (`apps/web/src/lib/actions/`) - Server actions that call API clients or services
-5. **Types** (`apps/web/src/lib/types/`) - Shared TypeScript types
+1. **Config** (`apps/web/src/lib/config/`) - Centralized environment configuration (app, auth, email, sumsub, veridian)
+2. **API Clients** (`apps/web/src/lib/api/`) - Client-side and server-side fetch wrappers for API routes
+3. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints that handle auth and delegate to services
+4. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
+5. **Actions** (`apps/web/src/lib/actions/`) - Server actions that call API clients or services
+6. **Types** (`apps/web/src/lib/types/`) - Shared TypeScript types
 
 **Data flow (Option B):** `Action → API Client → API Route → Service → Prisma`
 
@@ -52,6 +53,7 @@ masumi-saas/
 │       │   │       └── webhooks/      # External webhooks
 │       │   ├── components/    # UI components
 │       │   ├── lib/
+│       │   │   ├── config/    # Env config (app, auth, email, sumsub, veridian)
 │       │   │   ├── actions/   # Server actions
 │       │   │   ├── api/       # API clients (agent, dashboard, credential)
 │       │   │   ├── services/  # Business logic
@@ -84,7 +86,7 @@ masumi-saas/
    cp apps/web/.env.example apps/web/.env
    ```
 
-   Edit `apps/web/.env` with the following values:
+   Edit `apps/web/.env` with the following values. These are centralized in `apps/web/src/lib/config/` (app.config, auth.config, email.config, sumsub.config, veridian.config).
    - **DATABASE_URL**: Your PostgreSQL connection string
      - Format: `postgresql://username:password@host:port/database?schema=public`
      - Example: `postgresql://postgres:mypassword@localhost:5432/masumi_saas?schema=public`
@@ -102,6 +104,10 @@ masumi-saas/
      - For production: Your production domain (e.g., `https://yourdomain.com`)
      - Used when server actions fetch from API routes; falls back to request headers if not set
 
+   - **NEXT_PUBLIC_SOKOSUMI_MARKETPLACE_URL**: Sokosumi marketplace base URL (optional)
+     - Defaults to `https://app.sokosumi.com` if not set
+     - Used for the "Hire in Sokosumi" link in agent details (URL format: `{base}/{agentIdentifier}`)
+
    - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
      - Get one from [Postmark](https://postmarkapp.com/)
      - If not set, password reset emails will be logged to console in development
@@ -110,7 +116,7 @@ masumi-saas/
      - Defaults to `noreply@masumi.network` if not set
      - Must be a verified sender in your Postmark account
 
-   - **SENTRY_DSN**: Your Sentry DSN (optional, for error tracking)
+   - **NEXT_PUBLIC_SENTRY_DSN**: Your Sentry DSN (optional, for error tracking)
    - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
    - **SENTRY_PROJECT**: Your Sentry project name (defaults to "masumi-saas")
 
@@ -145,7 +151,9 @@ masumi-saas/
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
      - The credential schema SAID to use for agent verification credentials
      - Must match a schema registered in your Veridian credential server
-     - Can default to `"EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO"` (Foundation Employee schema) if not set
+     - Default: `EBV88FehFeDa1tiFUQxuuVi1QXKOXVpwOc1cdFMCzBlI` (KERIA-compatible, `additionalProperties: false`)
+     - Schema file: `scripts/schemas/masumi-agent-verification.json`
+     - To regenerate: run `pnpm create:agent-verification-schema` (requires credential-schema-builder backend)
 
 3. **Configure Sumsub Webhook** (required for automatic status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
@@ -175,6 +183,37 @@ masumi-saas/
    pnpm dev
    ```
 
+## Admin Management
+
+The project includes a CLI tool for managing admin users. No need to manually look up user IDs in the database — just use their email address.
+
+### Setting Up Your First Admin
+
+1. Sign up normally at `/signup`
+2. Run the promote command:
+
+   ```bash
+   pnpm admin:promote your@email.com
+   ```
+
+The script updates the user's role in the database and automatically syncs `ADMIN_USER_IDS` in `apps/web/.env`.
+
+### Available Commands
+
+```bash
+# Promote one or more users to admin
+pnpm admin:promote user@example.com
+pnpm admin:promote user1@example.com user2@example.com
+
+# Demote an admin back to regular user
+pnpm admin:demote user@example.com
+
+# List all current admin users
+pnpm admin:list
+```
+
+After promoting a user, they can sign in at `/admin/signin` to access the admin dashboard.
+
 ## Features
 
 - ✅ User authentication (email/password, forgot password)
@@ -201,6 +240,9 @@ masumi-saas/
 - `pnpm prisma:generate` - Generate Prisma client
 - `pnpm prisma:migrate:dev` - Run database migrations
 - `pnpm prisma:studio` - Open Prisma Studio
+- `pnpm admin:promote <email>` - Promote user(s) to admin
+- `pnpm admin:demote <email>` - Demote admin(s) to regular user
+- `pnpm admin:list` - List all admin users
 
 ## Better Auth Features
 

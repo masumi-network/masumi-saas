@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
 import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -163,10 +164,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify agent ownership via get-credential endpoint (HMAC-based)
+    const challenge = foundAgent.verificationChallenge;
+    const secret = foundAgent.verificationSecret;
+    if (!challenge || !secret) {
+      return apiError(
+        "No verification challenge or secret found. Generate from the Request Credential dialog and add the secret to your agent.",
+        400,
+      );
+    }
+
+    const agentVerification = await fetchAgentCredentialChallenge(
+      foundAgent.apiUrl,
+      challenge,
+      secret,
+    );
+
+    if (!agentVerification.success) {
+      return apiError(agentVerification.error, 400, [
+        "Ensure your agent has MASUMI_VERIFICATION_SECRET in env and returns HMAC-SHA256(challenge, secret).",
+        "If the issue persists, contact support.",
+      ]);
+    }
+
     const agent = {
       id: foundAgent.id,
       name: foundAgent.name,
-      description: foundAgent.description,
       apiUrl: foundAgent.apiUrl,
     };
 
@@ -175,8 +198,8 @@ export async function POST(request: NextRequest) {
       "kycVerificationId",
       "agentId",
       "agentName",
-      "agentDescription",
       "agentApiUrl",
+      "signature",
     ];
 
     // Filter out protected fields from user-provided attributes
@@ -194,8 +217,8 @@ export async function POST(request: NextRequest) {
       kycVerificationId: userWithKyc.kycVerification.id,
       agentId: agent.id,
       agentName: agent.name,
-      agentDescription: agent.description,
       agentApiUrl: agent.apiUrl,
+      signature: agentVerification.signature,
     };
 
     if (organizationId) {

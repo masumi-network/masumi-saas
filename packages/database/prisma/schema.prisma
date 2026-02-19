@@ -44,7 +44,14 @@ model User {
   kycSubmissions    KycSubmission[]
   walletCaches      WalletCache[]
 
+  // Two-factor authentication
   twoFactor           TwoFactor?
+
+  // Admin fields (Better Auth admin plugin)
+  role       String    @default("user")
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
 
   @@unique([email])
   @@unique([stripeCustomerId])
@@ -75,6 +82,8 @@ model Session {
 
   activeOrganizationId String?
   activeOrganization   Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+
+  impersonatedBy String?
 
   @@unique([token])
   @@map("session")
@@ -255,9 +264,10 @@ enum RegistrationState {
 }
 
 model Agent {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  description String
+  summary     String? // Short tagline, max 250 chars
+  description String? // Optional detailed overview (Markdown supported)
   apiUrl      String
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -266,13 +276,21 @@ model Agent {
   registrationState RegistrationState @default(RegistrationConfirmed)
 
   // Verification
-  verificationStatus   VerificationStatus?  @default(PENDING)
-  veridianCredentialId String? // Credential ID from Veridian API
-  veridianCredentials  VeridianCredential[] // Credentials issued for this agent
+  verificationStatus             VerificationStatus?  @default(PENDING)
+  veridianCredentialId           String? // Credential ID from Veridian API
+  veridianCredentials            VeridianCredential[] // Credentials issued for this agent
+  verificationChallenge          String? // Masumi-generated challenge for agent endpoint verification
+  verificationChallengeGeneratedAt DateTime? // When the challenge was generated
+  verificationSecret             String? // Secret for HMAC - agent must prove it has this (stored in env)
 
   // Metadata
   tags     String[] @default([])
   metadata String? // JSON string for additional data
+  icon     String? // Preset key (e.g. "bot", "sparkles") or URL for custom icon
+
+  // Registry / pricing
+  agentIdentifier String? // On-chain or registry identifier
+  pricing         Json?   // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

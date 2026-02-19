@@ -21,11 +21,12 @@ export default async function AuthLayout({
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 opacity-40 animate-grid-glide"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
+          backgroundPosition: "center",
         }}
       />
       <div className="relative z-10">

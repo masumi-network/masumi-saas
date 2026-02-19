@@ -106,6 +106,10 @@ export const UserScalarFieldEnum = {
   stripeCustomerId: "stripeCustomerId",
   twoFactorEnabled: "twoFactorEnabled",
   kycVerificationId: "kycVerificationId",
+  role: "role",
+  banned: "banned",
+  banReason: "banReason",
+  banExpires: "banExpires",
 } as const;
 
 export type UserScalarFieldEnum =
@@ -131,6 +135,7 @@ export const SessionScalarFieldEnum = {
   userAgent: "userAgent",
   userId: "userId",
   activeOrganizationId: "activeOrganizationId",
+  impersonatedBy: "impersonatedBy",
 } as const;
 
 export type SessionScalarFieldEnum =
@@ -272,14 +277,21 @@ export type KycVerificationScalarFieldEnum =
 export const AgentScalarFieldEnum = {
   id: "id",
   name: "name",
+  summary: "summary",
   description: "description",
   apiUrl: "apiUrl",
   userId: "userId",
   registrationState: "registrationState",
   verificationStatus: "verificationStatus",
   veridianCredentialId: "veridianCredentialId",
+  verificationChallenge: "verificationChallenge",
+  verificationChallengeGeneratedAt: "verificationChallengeGeneratedAt",
+  verificationSecret: "verificationSecret",
   tags: "tags",
   metadata: "metadata",
+  icon: "icon",
+  agentIdentifier: "agentIdentifier",
+  pricing: "pricing",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
 } as const;

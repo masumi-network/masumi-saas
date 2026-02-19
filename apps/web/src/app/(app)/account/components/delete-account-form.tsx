@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -8,13 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -70,52 +65,62 @@ export function DeleteAccountForm() {
   const { isSubmitting } = form.formState;
 
   return (
-    <Card className="border-destructive">
-      <CardHeader>
-        <CardTitle className="text-destructive">{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
+    <Card className="border-destructive/60 bg-destructive/5">
       <CardContent>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="destructive">{t("button")}</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("confirmTitle")}</DialogTitle>
-              <DialogDescription>{t("confirmDescription")}</DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)}>
-                <fieldset className="space-y-4" disabled={isSubmitting}>
-                  <FormField
-                    control={form.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("currentPassword")}</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      variant="destructive"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting && <Spinner size={16} className="mr-2" />}
-                      {t("confirm")}
-                    </Button>
-                  </DialogFooter>
-                </fieldset>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex flex-col gap-4 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{t("title")}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("description")}
+            </p>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="w-full shrink-0 gap-2 sm:w-auto"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("button")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("confirmTitle")}</DialogTitle>
+                <DialogDescription>{t("confirmDescription")}</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)}>
+                  <fieldset className="space-y-4" disabled={isSubmitting}>
+                    <FormField
+                      control={form.control}
+                      name="currentPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("currentPassword")}</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button
+                        type="submit"
+                        variant="destructive"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting && <Spinner size={16} className="mr-2" />}
+                        {t("confirm")}
+                      </Button>
+                    </DialogFooter>
+                  </fieldset>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardContent>
     </Card>
   );

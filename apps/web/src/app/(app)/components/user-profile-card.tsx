@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,10 +17,15 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  getKycStatusBadgeKey,
+  getKycStatusBadgeVariant,
+} from "@/lib/kyc-status";
 import { getInitials } from "@/lib/utils/format-name";
 
 export async function UserProfileCard() {
   const t = await getTranslations("App.Home.KycStatus");
+  const tStatus = await getTranslations("App.Agents");
 
   const { user } = await getAuthenticatedOrThrow();
   const result = await getKycStatusAction();
@@ -36,8 +42,6 @@ export async function UserProfileCard() {
     KycStatus,
     {
       icon: typeof AlertCircle;
-      badgeVariant: "default" | "secondary" | "destructive" | "outline";
-      badgeClassName: string;
       title: string;
       description: string;
       action: string | null;
@@ -46,17 +50,13 @@ export async function UserProfileCard() {
   > = {
     PENDING: {
       icon: AlertCircle,
-      badgeVariant: "secondary",
-      badgeClassName: "bg-muted text-muted-foreground",
       title: t("pending.title"),
       description: t("pending.description"),
       action: t("pending.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
     REVIEW: {
       icon: Clock,
-      badgeVariant: "default",
-      badgeClassName: "bg-primary text-primary-foreground",
       title: t("review.title"),
       description: t("review.description"),
       action: null,
@@ -64,8 +64,6 @@ export async function UserProfileCard() {
     },
     APPROVED: {
       icon: ShieldCheck,
-      badgeVariant: "default",
-      badgeClassName: "bg-green-500 text-white",
       title: t("approved.title"),
       description: kycCompletedAt
         ? t("approved.descriptionWithDate", {
@@ -77,12 +75,10 @@ export async function UserProfileCard() {
     },
     REJECTED: {
       icon: XCircle,
-      badgeVariant: "destructive",
-      badgeClassName: "bg-destructive text-destructive-foreground",
       title: t("rejected.title"),
       description: kycRejectionReason || t("rejected.description"),
       action: t("rejected.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
   };
 
@@ -98,8 +94,8 @@ export async function UserProfileCard() {
   const userInitials = getInitials(userName);
 
   return (
-    <Card className="max-w-3xl">
-      <CardHeader>
+    <Card className="max-w-3xl overflow-hidden pt-0">
+      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
             <AvatarImage src={userImage} alt={userName} />
@@ -112,12 +108,15 @@ export async function UserProfileCard() {
                 {user.email}
               </CardDescription>
             </div>
-            <div
-              className={`inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium sm:px-2.5 sm:py-1 h-6 w-6 sm:w-auto sm:h-auto ${kycStatusInfo.badgeClassName}`}
+            <Badge
+              variant={getKycStatusBadgeVariant(kycStatus)}
+              className="inline-flex items-center gap-1.5 h-6 w-6 sm:w-auto sm:h-auto sm:px-2.5 sm:py-1"
             >
               <kycStatusInfo.icon className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="hidden sm:inline">{kycStatusInfo.title}</span>
-            </div>
+              <span className="hidden sm:inline">
+                {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+              </span>
+            </Badge>
           </div>
         </div>
       </CardHeader>
@@ -136,8 +135,8 @@ export async function UserProfileCard() {
 
 export function UserProfileCardSkeleton() {
   return (
-    <Card className="max-w-3xl">
-      <CardHeader>
+    <Card className="max-w-3xl overflow-hidden pt-0">
+      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-12 w-12 rounded-full" />
           <div className="flex w-full gap-4 items-center justify-between">

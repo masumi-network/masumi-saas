@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
 import { signOut } from "@/lib/auth/auth.client";
 
 interface LogoutModalProps {
@@ -30,31 +28,28 @@ export default function LogoutModal({
   email,
 }: LogoutModalProps) {
   const t = useTranslations("Components.LogoutModal");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
-    setLoading(true);
+    onOpenChange(false); // Close modal immediately so user isn't stuck waiting
+    const signInPath = pathname.startsWith("/admin")
+      ? "/admin/signin"
+      : "/signin";
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/signin");
+          router.push(signInPath);
         },
         onError: () => {
           toast.error(t("error"));
-          setLoading(false);
         },
       },
     });
   };
 
-  const handleOnOpenChange = (newOpen: boolean) => {
-    if (loading) return;
-    onOpenChange(newOpen);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOnOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-sm">
         <DialogHeader>
           <DialogTitle className="text-center text-lg font-medium">
@@ -65,17 +60,11 @@ export default function LogoutModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="block space-y-1.5">
-          <Button
-            variant="primary"
-            className="w-full"
-            onClick={handleLogout}
-            disabled={loading}
-          >
-            {loading && <Spinner size={16} className="mr-2" />}
+          <Button variant="primary" className="w-full" onClick={handleLogout}>
             {t("logout")}
           </Button>
           <DialogClose asChild>
-            <Button variant="secondary" className="w-full" disabled={loading}>
+            <Button variant="secondary" className="w-full">
               {t("cancel")}
             </Button>
           </DialogClose>

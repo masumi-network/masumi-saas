@@ -48,7 +48,7 @@ export async function UserProfileCard() {
       title: t("pending.title"),
       description: t("pending.description"),
       action: t("pending.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
     REVIEW: {
       icon: Clock,
@@ -76,7 +76,7 @@ export async function UserProfileCard() {
       title: t("rejected.title"),
       description: kycRejectionReason || t("rejected.description"),
       action: t("rejected.action"),
-      actionHref: "/onboarding",
+      actionHref: "/verification",
     },
   };
 
