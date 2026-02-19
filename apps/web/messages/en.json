@@ -808,5 +808,10 @@
     "description": "This page could not be found.",
     "message": "The page you're trying to access might have been removed, had its name changed, or is temporarily unavailable.",
     "returnHome": "Return to Dashboard"
+  },
+  "Developers": {
+    "title": "Developers",
+    "description": "Developer tools and API documentation",
+    "comingSoon": "Developer tools and documentation coming soon."
   }
 }
