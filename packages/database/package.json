@@ -38,7 +38,10 @@
     "lint": "eslint --max-warnings 0 .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "admin:promote": "tsx scripts/admin.ts promote",
+    "admin:demote": "tsx scripts/admin.ts demote",
+    "admin:list": "tsx scripts/admin.ts list"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.0.1",
@@ -56,4 +59,3 @@
     "typescript": "5.9.3"
   }
 }
-

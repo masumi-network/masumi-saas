@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -29,13 +29,17 @@ export default function LogoutModal({
 }: LogoutModalProps) {
   const t = useTranslations("Components.LogoutModal");
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     onOpenChange(false); // Close modal immediately so user isn't stuck waiting
+    const signInPath = pathname.startsWith("/admin")
+      ? "/admin/signin"
+      : "/signin";
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/signin");
+          router.push(signInPath);
         },
         onError: () => {
           toast.error(t("error"));
