@@ -235,6 +235,7 @@ export type KycVerificationWhereInput = {
     Prisma.UserNullableScalarRelationFilter,
     Prisma.UserWhereInput
   > | null;
+  submissions?: Prisma.KycSubmissionListRelationFilter;
 };
 
 export type KycVerificationOrderByWithRelationInput = {
@@ -247,6 +248,7 @@ export type KycVerificationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
+  submissions?: Prisma.KycSubmissionOrderByRelationAggregateInput;
 };
 
 export type KycVerificationWhereUniqueInput = Prisma.AtLeast<
@@ -282,6 +284,7 @@ export type KycVerificationWhereUniqueInput = Prisma.AtLeast<
       Prisma.UserNullableScalarRelationFilter,
       Prisma.UserWhereInput
     > | null;
+    submissions?: Prisma.KycSubmissionListRelationFilter;
   },
   "id"
 >;
@@ -350,6 +353,7 @@ export type KycVerificationCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user?: Prisma.UserCreateNestedOneWithoutKycVerificationInput;
+  submissions?: Prisma.KycSubmissionCreateNestedManyWithoutKycVerificationInput;
 };
 
 export type KycVerificationUncheckedCreateInput = {
@@ -362,6 +366,7 @@ export type KycVerificationUncheckedCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user?: Prisma.UserUncheckedCreateNestedOneWithoutKycVerificationInput;
+  submissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutKycVerificationInput;
 };
 
 export type KycVerificationUpdateInput = {
@@ -390,6 +395,7 @@ export type KycVerificationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneWithoutKycVerificationNestedInput;
+  submissions?: Prisma.KycSubmissionUpdateManyWithoutKycVerificationNestedInput;
 };
 
 export type KycVerificationUncheckedUpdateInput = {
@@ -418,6 +424,7 @@ export type KycVerificationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUncheckedUpdateOneWithoutKycVerificationNestedInput;
+  submissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutKycVerificationNestedInput;
 };
 
 export type KycVerificationCreateManyInput = {
@@ -523,6 +530,11 @@ export type KycVerificationMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
+export type KycVerificationScalarRelationFilter = {
+  is?: Prisma.KycVerificationWhereInput;
+  isNot?: Prisma.KycVerificationWhereInput;
+};
+
 export type KycVerificationCreateNestedOneWithoutUserInput = {
   create?: Prisma.XOR<
     Prisma.KycVerificationCreateWithoutUserInput,
@@ -551,6 +563,32 @@ export type KycVerificationUpdateOneWithoutUserNestedInput = {
   >;
 };
 
+export type KycVerificationCreateNestedOneWithoutSubmissionsInput = {
+  create?: Prisma.XOR<
+    Prisma.KycVerificationCreateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  connectOrCreate?: Prisma.KycVerificationCreateOrConnectWithoutSubmissionsInput;
+  connect?: Prisma.KycVerificationWhereUniqueInput;
+};
+
+export type KycVerificationUpdateOneRequiredWithoutSubmissionsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.KycVerificationCreateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  connectOrCreate?: Prisma.KycVerificationCreateOrConnectWithoutSubmissionsInput;
+  upsert?: Prisma.KycVerificationUpsertWithoutSubmissionsInput;
+  connect?: Prisma.KycVerificationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.KycVerificationUpdateToOneWithWhereWithoutSubmissionsInput,
+      Prisma.KycVerificationUpdateWithoutSubmissionsInput
+    >,
+    Prisma.KycVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+};
+
 export type KycVerificationCreateWithoutUserInput = {
   id?: string;
   status?: $Enums.VerificationStatus;
@@ -560,6 +598,7 @@ export type KycVerificationCreateWithoutUserInput = {
   expiresAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  submissions?: Prisma.KycSubmissionCreateNestedManyWithoutKycVerificationInput;
 };
 
 export type KycVerificationUncheckedCreateWithoutUserInput = {
@@ -571,6 +610,7 @@ export type KycVerificationUncheckedCreateWithoutUserInput = {
   expiresAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  submissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutKycVerificationInput;
 };
 
 export type KycVerificationCreateOrConnectWithoutUserInput = {
@@ -626,6 +666,7 @@ export type KycVerificationUpdateWithoutUserInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  submissions?: Prisma.KycSubmissionUpdateManyWithoutKycVerificationNestedInput;
 };
 
 export type KycVerificationUncheckedUpdateWithoutUserInput = {
@@ -653,6 +694,153 @@ export type KycVerificationUncheckedUpdateWithoutUserInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  submissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutKycVerificationNestedInput;
+};
+
+export type KycVerificationCreateWithoutSubmissionsInput = {
+  id?: string;
+  status?: $Enums.VerificationStatus;
+  sumsubApplicantId?: string | null;
+  completedAt?: Date | string | null;
+  rejectionReason?: string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user?: Prisma.UserCreateNestedOneWithoutKycVerificationInput;
+};
+
+export type KycVerificationUncheckedCreateWithoutSubmissionsInput = {
+  id?: string;
+  status?: $Enums.VerificationStatus;
+  sumsubApplicantId?: string | null;
+  completedAt?: Date | string | null;
+  rejectionReason?: string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user?: Prisma.UserUncheckedCreateNestedOneWithoutKycVerificationInput;
+};
+
+export type KycVerificationCreateOrConnectWithoutSubmissionsInput = {
+  where: Prisma.KycVerificationWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.KycVerificationCreateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+};
+
+export type KycVerificationUpsertWithoutSubmissionsInput = {
+  update: Prisma.XOR<
+    Prisma.KycVerificationUpdateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.KycVerificationCreateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  where?: Prisma.KycVerificationWhereInput;
+};
+
+export type KycVerificationUpdateToOneWithWhereWithoutSubmissionsInput = {
+  where?: Prisma.KycVerificationWhereInput;
+  data: Prisma.XOR<
+    Prisma.KycVerificationUpdateWithoutSubmissionsInput,
+    Prisma.KycVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+};
+
+export type KycVerificationUpdateWithoutSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  completedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  rejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneWithoutKycVerificationNestedInput;
+};
+
+export type KycVerificationUncheckedUpdateWithoutSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  completedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  rejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUncheckedUpdateOneWithoutKycVerificationNestedInput;
+};
+
+/**
+ * Count Type KycVerificationCountOutputType
+ */
+
+export type KycVerificationCountOutputType = {
+  submissions: number;
+};
+
+export type KycVerificationCountOutputTypeSelect<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  submissions?: boolean | KycVerificationCountOutputTypeCountSubmissionsArgs;
+};
+
+/**
+ * KycVerificationCountOutputType without action
+ */
+export type KycVerificationCountOutputTypeDefaultArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the KycVerificationCountOutputType
+   */
+  select?: Prisma.KycVerificationCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * KycVerificationCountOutputType without action
+ */
+export type KycVerificationCountOutputTypeCountSubmissionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.KycSubmissionWhereInput;
 };
 
 export type KycVerificationSelect<
@@ -669,6 +857,10 @@ export type KycVerificationSelect<
     createdAt?: boolean;
     updatedAt?: boolean;
     user?: boolean | Prisma.KycVerification$userArgs<ExtArgs>;
+    submissions?: boolean | Prisma.KycVerification$submissionsArgs<ExtArgs>;
+    _count?:
+      | boolean
+      | Prisma.KycVerificationCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["kycVerification"]
 >;
@@ -737,6 +929,8 @@ export type KycVerificationInclude<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   user?: boolean | Prisma.KycVerification$userArgs<ExtArgs>;
+  submissions?: boolean | Prisma.KycVerification$submissionsArgs<ExtArgs>;
+  _count?: boolean | Prisma.KycVerificationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type KycVerificationIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -754,6 +948,7 @@ export type $KycVerificationPayload<
   name: "KycVerification";
   objects: {
     user: Prisma.$UserPayload<ExtArgs> | null;
+    submissions: Prisma.$KycSubmissionPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -1340,6 +1535,17 @@ export interface Prisma__KycVerificationClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  submissions<T extends Prisma.KycVerification$submissionsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.KycVerification$submissionsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$KycSubmissionPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1872,6 +2078,37 @@ export type KycVerification$userArgs<
    */
   include?: Prisma.UserInclude<ExtArgs> | null;
   where?: Prisma.UserWhereInput;
+};
+
+/**
+ * KycVerification.submissions
+ */
+export type KycVerification$submissionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the KycSubmission
+   */
+  select?: Prisma.KycSubmissionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the KycSubmission
+   */
+  omit?: Prisma.KycSubmissionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KycSubmissionInclude<ExtArgs> | null;
+  where?: Prisma.KycSubmissionWhereInput;
+  orderBy?:
+    | Prisma.KycSubmissionOrderByWithRelationInput
+    | Prisma.KycSubmissionOrderByWithRelationInput[];
+  cursor?: Prisma.KycSubmissionWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.KycSubmissionScalarFieldEnum
+    | Prisma.KycSubmissionScalarFieldEnum[];
 };
 
 /**

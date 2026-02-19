@@ -67,6 +67,11 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  OrgApiKey: "OrgApiKey",
+  KycSubmission: "KycSubmission",
+  KybSubmission: "KybSubmission",
+  WalletCache: "WalletCache",
+  AgentReference: "AgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -293,6 +298,92 @@ export const AgentScalarFieldEnum = {
 
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const OrgApiKeyScalarFieldEnum = {
+  id: "id",
+  name: "name",
+  keyHash: "keyHash",
+  keyPrefix: "keyPrefix",
+  organizationId: "organizationId",
+  createdById: "createdById",
+  scopes: "scopes",
+  enabled: "enabled",
+  lastUsedAt: "lastUsedAt",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OrgApiKeyScalarFieldEnum =
+  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
+
+export const KycSubmissionScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  kycVerificationId: "kycVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KycSubmissionScalarFieldEnum =
+  (typeof KycSubmissionScalarFieldEnum)[keyof typeof KycSubmissionScalarFieldEnum];
+
+export const KybSubmissionScalarFieldEnum = {
+  id: "id",
+  organizationId: "organizationId",
+  kybVerificationId: "kybVerificationId",
+  sumsubApplicantId: "sumsubApplicantId",
+  status: "status",
+  submittedAt: "submittedAt",
+  reviewedAt: "reviewedAt",
+  rejectionReason: "rejectionReason",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type KybSubmissionScalarFieldEnum =
+  (typeof KybSubmissionScalarFieldEnum)[keyof typeof KybSubmissionScalarFieldEnum];
+
+export const WalletCacheScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  walletType: "walletType",
+  identifier: "identifier",
+  label: "label",
+  networkId: "networkId",
+  connectionState: "connectionState",
+  metadata: "metadata",
+  lastSyncedAt: "lastSyncedAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type WalletCacheScalarFieldEnum =
+  (typeof WalletCacheScalarFieldEnum)[keyof typeof WalletCacheScalarFieldEnum];
+
+export const AgentReferenceScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  registryUrl: "registryUrl",
+  externalId: "externalId",
+  networkIdentifier: "networkIdentifier",
+  registeredAt: "registeredAt",
+  lastVerifiedAt: "lastVerifiedAt",
+  status: "status",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AgentReferenceScalarFieldEnum =
+  (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
 
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",

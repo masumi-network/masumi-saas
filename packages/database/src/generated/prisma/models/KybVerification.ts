@@ -223,6 +223,7 @@ export type KybVerificationWhereInput = {
     Prisma.OrganizationNullableScalarRelationFilter,
     Prisma.OrganizationWhereInput
   > | null;
+  submissions?: Prisma.KybSubmissionListRelationFilter;
 };
 
 export type KybVerificationOrderByWithRelationInput = {
@@ -234,6 +235,7 @@ export type KybVerificationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
   organization?: Prisma.OrganizationOrderByWithRelationInput;
+  submissions?: Prisma.KybSubmissionOrderByRelationAggregateInput;
 };
 
 export type KybVerificationWhereUniqueInput = Prisma.AtLeast<
@@ -264,6 +266,7 @@ export type KybVerificationWhereUniqueInput = Prisma.AtLeast<
       Prisma.OrganizationNullableScalarRelationFilter,
       Prisma.OrganizationWhereInput
     > | null;
+    submissions?: Prisma.KybSubmissionListRelationFilter;
   },
   "id"
 >;
@@ -325,6 +328,7 @@ export type KybVerificationCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   organization?: Prisma.OrganizationCreateNestedOneWithoutKybVerificationInput;
+  submissions?: Prisma.KybSubmissionCreateNestedManyWithoutKybVerificationInput;
 };
 
 export type KybVerificationUncheckedCreateInput = {
@@ -336,6 +340,7 @@ export type KybVerificationUncheckedCreateInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   organization?: Prisma.OrganizationUncheckedCreateNestedOneWithoutKybVerificationInput;
+  submissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutKybVerificationInput;
 };
 
 export type KybVerificationUpdateInput = {
@@ -359,6 +364,7 @@ export type KybVerificationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   organization?: Prisma.OrganizationUpdateOneWithoutKybVerificationNestedInput;
+  submissions?: Prisma.KybSubmissionUpdateManyWithoutKybVerificationNestedInput;
 };
 
 export type KybVerificationUncheckedUpdateInput = {
@@ -382,6 +388,7 @@ export type KybVerificationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   organization?: Prisma.OrganizationUncheckedUpdateOneWithoutKybVerificationNestedInput;
+  submissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutKybVerificationNestedInput;
 };
 
 export type KybVerificationCreateManyInput = {
@@ -473,6 +480,11 @@ export type KybVerificationMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
+export type KybVerificationScalarRelationFilter = {
+  is?: Prisma.KybVerificationWhereInput;
+  isNot?: Prisma.KybVerificationWhereInput;
+};
+
 export type KybVerificationCreateNestedOneWithoutOrganizationInput = {
   create?: Prisma.XOR<
     Prisma.KybVerificationCreateWithoutOrganizationInput,
@@ -505,6 +517,32 @@ export type EnumVerificationStatusFieldUpdateOperationsInput = {
   set?: $Enums.VerificationStatus;
 };
 
+export type KybVerificationCreateNestedOneWithoutSubmissionsInput = {
+  create?: Prisma.XOR<
+    Prisma.KybVerificationCreateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  connectOrCreate?: Prisma.KybVerificationCreateOrConnectWithoutSubmissionsInput;
+  connect?: Prisma.KybVerificationWhereUniqueInput;
+};
+
+export type KybVerificationUpdateOneRequiredWithoutSubmissionsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.KybVerificationCreateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  connectOrCreate?: Prisma.KybVerificationCreateOrConnectWithoutSubmissionsInput;
+  upsert?: Prisma.KybVerificationUpsertWithoutSubmissionsInput;
+  connect?: Prisma.KybVerificationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.KybVerificationUpdateToOneWithWhereWithoutSubmissionsInput,
+      Prisma.KybVerificationUpdateWithoutSubmissionsInput
+    >,
+    Prisma.KybVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+};
+
 export type KybVerificationCreateWithoutOrganizationInput = {
   id?: string;
   status?: $Enums.VerificationStatus;
@@ -513,6 +551,7 @@ export type KybVerificationCreateWithoutOrganizationInput = {
   rejectionReason?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  submissions?: Prisma.KybSubmissionCreateNestedManyWithoutKybVerificationInput;
 };
 
 export type KybVerificationUncheckedCreateWithoutOrganizationInput = {
@@ -523,6 +562,7 @@ export type KybVerificationUncheckedCreateWithoutOrganizationInput = {
   rejectionReason?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  submissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutKybVerificationInput;
 };
 
 export type KybVerificationCreateOrConnectWithoutOrganizationInput = {
@@ -573,6 +613,7 @@ export type KybVerificationUpdateWithoutOrganizationInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  submissions?: Prisma.KybSubmissionUpdateManyWithoutKybVerificationNestedInput;
 };
 
 export type KybVerificationUncheckedUpdateWithoutOrganizationInput = {
@@ -595,6 +636,141 @@ export type KybVerificationUncheckedUpdateWithoutOrganizationInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  submissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutKybVerificationNestedInput;
+};
+
+export type KybVerificationCreateWithoutSubmissionsInput = {
+  id?: string;
+  status?: $Enums.VerificationStatus;
+  sumsubApplicantId?: string | null;
+  completedAt?: Date | string | null;
+  rejectionReason?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  organization?: Prisma.OrganizationCreateNestedOneWithoutKybVerificationInput;
+};
+
+export type KybVerificationUncheckedCreateWithoutSubmissionsInput = {
+  id?: string;
+  status?: $Enums.VerificationStatus;
+  sumsubApplicantId?: string | null;
+  completedAt?: Date | string | null;
+  rejectionReason?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  organization?: Prisma.OrganizationUncheckedCreateNestedOneWithoutKybVerificationInput;
+};
+
+export type KybVerificationCreateOrConnectWithoutSubmissionsInput = {
+  where: Prisma.KybVerificationWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.KybVerificationCreateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+};
+
+export type KybVerificationUpsertWithoutSubmissionsInput = {
+  update: Prisma.XOR<
+    Prisma.KybVerificationUpdateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.KybVerificationCreateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedCreateWithoutSubmissionsInput
+  >;
+  where?: Prisma.KybVerificationWhereInput;
+};
+
+export type KybVerificationUpdateToOneWithWhereWithoutSubmissionsInput = {
+  where?: Prisma.KybVerificationWhereInput;
+  data: Prisma.XOR<
+    Prisma.KybVerificationUpdateWithoutSubmissionsInput,
+    Prisma.KybVerificationUncheckedUpdateWithoutSubmissionsInput
+  >;
+};
+
+export type KybVerificationUpdateWithoutSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  completedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  rejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  organization?: Prisma.OrganizationUpdateOneWithoutKybVerificationNestedInput;
+};
+
+export type KybVerificationUncheckedUpdateWithoutSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus;
+  sumsubApplicantId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  completedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  rejectionReason?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  organization?: Prisma.OrganizationUncheckedUpdateOneWithoutKybVerificationNestedInput;
+};
+
+/**
+ * Count Type KybVerificationCountOutputType
+ */
+
+export type KybVerificationCountOutputType = {
+  submissions: number;
+};
+
+export type KybVerificationCountOutputTypeSelect<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  submissions?: boolean | KybVerificationCountOutputTypeCountSubmissionsArgs;
+};
+
+/**
+ * KybVerificationCountOutputType without action
+ */
+export type KybVerificationCountOutputTypeDefaultArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the KybVerificationCountOutputType
+   */
+  select?: Prisma.KybVerificationCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * KybVerificationCountOutputType without action
+ */
+export type KybVerificationCountOutputTypeCountSubmissionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.KybSubmissionWhereInput;
 };
 
 export type KybVerificationSelect<
@@ -610,6 +786,10 @@ export type KybVerificationSelect<
     createdAt?: boolean;
     updatedAt?: boolean;
     organization?: boolean | Prisma.KybVerification$organizationArgs<ExtArgs>;
+    submissions?: boolean | Prisma.KybVerification$submissionsArgs<ExtArgs>;
+    _count?:
+      | boolean
+      | Prisma.KybVerificationCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["kybVerification"]
 >;
@@ -674,6 +854,8 @@ export type KybVerificationInclude<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   organization?: boolean | Prisma.KybVerification$organizationArgs<ExtArgs>;
+  submissions?: boolean | Prisma.KybVerification$submissionsArgs<ExtArgs>;
+  _count?: boolean | Prisma.KybVerificationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type KybVerificationIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -691,6 +873,7 @@ export type $KybVerificationPayload<
   name: "KybVerification";
   objects: {
     organization: Prisma.$OrganizationPayload<ExtArgs> | null;
+    submissions: Prisma.$KybSubmissionPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -1276,6 +1459,17 @@ export interface Prisma__KybVerificationClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  submissions<T extends Prisma.KybVerification$submissionsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.KybVerification$submissionsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$KybSubmissionPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1807,6 +2001,37 @@ export type KybVerification$organizationArgs<
    */
   include?: Prisma.OrganizationInclude<ExtArgs> | null;
   where?: Prisma.OrganizationWhereInput;
+};
+
+/**
+ * KybVerification.submissions
+ */
+export type KybVerification$submissionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the KybSubmission
+   */
+  select?: Prisma.KybSubmissionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the KybSubmission
+   */
+  omit?: Prisma.KybSubmissionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KybSubmissionInclude<ExtArgs> | null;
+  where?: Prisma.KybSubmissionWhereInput;
+  orderBy?:
+    | Prisma.KybSubmissionOrderByWithRelationInput
+    | Prisma.KybSubmissionOrderByWithRelationInput[];
+  cursor?: Prisma.KybSubmissionWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.KybSubmissionScalarFieldEnum
+    | Prisma.KybSubmissionScalarFieldEnum[];
 };
 
 /**

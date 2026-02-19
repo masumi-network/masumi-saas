@@ -473,6 +473,110 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>;
 };
 
+export type EnumWalletTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.WalletType | Prisma.EnumWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel> | $Enums.WalletType;
+};
+
+export type EnumWalletConnectionStateNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.WalletConnectionState
+    | Prisma.EnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>
+    | $Enums.WalletConnectionState
+    | null;
+};
+
+export type EnumWalletTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.WalletType | Prisma.EnumWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumWalletTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.WalletType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel>;
+};
+
+export type EnumWalletConnectionStateNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.WalletConnectionState
+    | Prisma.EnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumWalletConnectionStateNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.WalletConnectionState
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>;
+};
+
+export type EnumAgentReferenceStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentReferenceStatus
+    | Prisma.EnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>
+    | $Enums.AgentReferenceStatus;
+};
+
+export type EnumAgentReferenceStatusWithAggregatesFilter<$PrismaModel = never> =
+  {
+    equals?:
+      | $Enums.AgentReferenceStatus
+      | Prisma.EnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.AgentReferenceStatus[]
+      | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.AgentReferenceStatus[]
+      | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+    not?:
+      | Prisma.NestedEnumAgentReferenceStatusWithAggregatesFilter<$PrismaModel>
+      | $Enums.AgentReferenceStatus;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>;
+  };
+
 export type EnumCredentialStatusFilter<$PrismaModel = never> = {
   equals?:
     | $Enums.CredentialStatus
@@ -935,6 +1039,113 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
     | runtime.InputJsonValue
     | Prisma.JsonFieldRefInput<$PrismaModel>
     | Prisma.JsonNullValueFilter;
+};
+
+export type NestedEnumWalletTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.WalletType | Prisma.EnumWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel> | $Enums.WalletType;
+};
+
+export type NestedEnumWalletConnectionStateNullableFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.WalletConnectionState
+    | Prisma.EnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>
+    | $Enums.WalletConnectionState
+    | null;
+};
+
+export type NestedEnumWalletTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.WalletType | Prisma.EnumWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.WalletType[]
+    | Prisma.ListEnumWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumWalletTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.WalletType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumWalletTypeFilter<$PrismaModel>;
+};
+
+export type NestedEnumWalletConnectionStateNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.WalletConnectionState
+    | Prisma.EnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.WalletConnectionState[]
+    | Prisma.ListEnumWalletConnectionStateFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumWalletConnectionStateNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.WalletConnectionState
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumWalletConnectionStateNullableFilter<$PrismaModel>;
+};
+
+export type NestedEnumAgentReferenceStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentReferenceStatus
+    | Prisma.EnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>
+    | $Enums.AgentReferenceStatus;
+};
+
+export type NestedEnumAgentReferenceStatusWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.AgentReferenceStatus
+    | Prisma.EnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentReferenceStatus[]
+    | Prisma.ListEnumAgentReferenceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentReferenceStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.AgentReferenceStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumAgentReferenceStatusFilter<$PrismaModel>;
 };
 
 export type NestedEnumCredentialStatusFilter<$PrismaModel = never> = {
