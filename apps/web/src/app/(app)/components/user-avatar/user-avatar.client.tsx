@@ -91,6 +91,7 @@ export default function UserAvatarClient({
 
   const handleDropdownOpenChange = (open: boolean) => {
     setDropdownOpen(open);
+    if (!open) setWorkspacePopoverOpen(false);
     if (!isMobile) {
       if (open) {
         setIsHovered(true);
@@ -278,7 +279,7 @@ export default function UserAvatarClient({
                     type="button"
                     onClick={() => {
                       setWorkspacePopoverOpen(false);
-                      setDropdownOpen(false);
+                      handleDropdownOpenChange(false);
                       setCreateDialogOpen(true);
                     }}
                     className="flex w-full cursor-pointer items-center gap-3 rounded-sm py-2.5 px-2 text-left outline-none hover:bg-muted-surface focus:bg-muted-surface"
