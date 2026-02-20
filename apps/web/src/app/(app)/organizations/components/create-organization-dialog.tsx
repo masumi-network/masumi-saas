@@ -71,7 +71,8 @@ export function CreateOrganizationDialog({
   const orgContext = useOrganizationContextOptional();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [internalOpen, setInternalOpen] = useState(false);
-  const isControlled = controlledOpen !== undefined && controlledOnOpenChange;
+  const isControlled =
+    controlledOpen !== undefined && controlledOnOpenChange !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
   const [name, setName] = useState("");
