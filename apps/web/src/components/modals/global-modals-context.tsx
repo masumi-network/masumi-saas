@@ -26,7 +26,7 @@ export function GlobalModalsContextProvider({
 
   useEffect(() => {
     if (pathname === "/signin" || pathname === "/admin/signin") {
-      setLogoutModalOpen(false);
+      queueMicrotask(() => setLogoutModalOpen(false));
     }
   }, [pathname]);
 
