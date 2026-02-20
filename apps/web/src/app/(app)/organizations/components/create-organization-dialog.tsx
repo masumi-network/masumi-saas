@@ -190,6 +190,8 @@ export function CreateOrganizationDialog({
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <p className="text-muted-foreground text-sm">{t("description")}</p>
 
+            {error && <p className="text-destructive text-sm">{error}</p>}
+
             <div className="grid gap-2">
               <Label htmlFor="name">{t("name")}</Label>
               <Input
@@ -223,8 +225,8 @@ export function CreateOrganizationDialog({
                 disabled={isSubmitting}
                 className="h-11"
               />
-              {(slugError || error) && (
-                <p className="text-destructive text-sm">{slugError ?? error}</p>
+              {slugError && (
+                <p className="text-destructive text-sm">{slugError}</p>
               )}
             </div>
           </div>

@@ -28,7 +28,7 @@ export default async function OrganizationsPage() {
             {t("description")}
           </p>
         </div>
-        <CreateOrganizationDialog />
+        {organizations.length > 0 && <CreateOrganizationDialog />}
       </div>
       <OrganizationsContent organizations={organizations} />
     </div>
