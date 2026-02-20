@@ -30,7 +30,7 @@ export type OrganizationContextValue = {
   /** Switch to a different organization */
   setActiveOrganization: (organizationId: string | null) => Promise<void>;
   /** Refetch organizations and active org */
-  refetch: () => void;
+  refetch: (opts?: { skipRefresh?: boolean }) => void;
 };
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(
@@ -93,7 +93,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (session === null || (session !== undefined && !session?.user)) {
+    if (!session?.user?.id) {
       queueMicrotask(() => {
         setOrganizations([]);
         setOrgsLoading(false);
@@ -103,7 +103,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     queueMicrotask(() => setOrgsLoading(true));
     const id = setTimeout(() => void fetchOrganizations(), 0);
     return () => clearTimeout(id);
-  }, [session?.user?.id, session?.user, session, fetchOrganizations]);
+  }, [session?.user?.id, fetchOrganizations]);
 
   const setActiveOrganization = useCallback(
     async (organizationId: string | null) => {
@@ -120,10 +120,13 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     [router, refetchSession],
   );
 
-  const refetch = useCallback(() => {
-    void fetchOrganizations();
-    router.refresh();
-  }, [fetchOrganizations, router]);
+  const refetch = useCallback(
+    (opts?: { skipRefresh?: boolean }) => {
+      void fetchOrganizations();
+      if (!opts?.skipRefresh) router.refresh();
+    },
+    [fetchOrganizations, router],
+  );
 
   const value = useMemo<OrganizationContextValue>(
     () => ({

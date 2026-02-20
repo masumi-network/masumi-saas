@@ -1,7 +1,6 @@
 "use client";
 
 import { CircleHelp, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -69,7 +68,6 @@ export function CreateOrganizationDialog({
   onOpenChange: controlledOnOpenChange,
 }: CreateOrganizationDialogProps) {
   const t = useTranslations("App.Organizations.Create");
-  const router = useRouter();
   const orgContext = useOrganizationContextOptional();
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -150,8 +148,7 @@ export function CreateOrganizationDialog({
 
       if (data) {
         await orgContext?.setActiveOrganization(data.id);
-        orgContext?.refetch();
-        router.refresh();
+        orgContext?.refetch({ skipRefresh: true });
         handleOpenChange(false);
         toast.success(t("success"));
       }
