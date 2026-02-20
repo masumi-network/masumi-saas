@@ -276,7 +276,11 @@ export default function UserAvatarClient({
                 <div className="border-t border-border mt-1 pt-1">
                   <button
                     type="button"
-                    onClick={() => setCreateDialogOpen(true)}
+                    onClick={() => {
+                      setWorkspacePopoverOpen(false);
+                      setDropdownOpen(false);
+                      setCreateDialogOpen(true);
+                    }}
                     className="flex w-full cursor-pointer items-center gap-3 rounded-sm py-2.5 px-2 text-left outline-none hover:bg-muted-surface focus:bg-muted-surface"
                   >
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">

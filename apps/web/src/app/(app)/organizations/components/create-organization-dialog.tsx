@@ -33,6 +33,18 @@ function isValidSlug(slug: string): boolean {
   return SLUG_REGEX.test(slug);
 }
 
+/** Derive a slug from a name: lowercase, strip accents, remove special chars, collapse spaces to hyphens */
+function deriveSlugFromName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 interface CreateOrganizationDialogProps {
   /** Variant for the trigger button. Use "default" for primary (e.g. in empty state). */
   triggerVariant?:
@@ -95,8 +107,9 @@ export function CreateOrganizationDialog({
 
   const handleNameChange = (value: string) => {
     setName(value);
-    const derivedSlug = value.toLowerCase().replace(/\s+/g, "-");
-    if (!slug || slug === name.toLowerCase().replace(/\s+/g, "-")) {
+    const derivedSlug = deriveSlugFromName(value);
+    const wasAutoDerived = !slug || slug === deriveSlugFromName(name);
+    if (wasAutoDerived) {
       setSlug(derivedSlug);
       setSlugError(
         derivedSlug && !isValidSlug(derivedSlug) ? t("slugInvalid") : null,
@@ -114,7 +127,7 @@ export function CreateOrganizationDialog({
     setError(null);
     setSlugError(null);
 
-    const finalSlug = slug.trim() || name.toLowerCase().replace(/\s+/g, "-");
+    const finalSlug = slug.trim() || deriveSlugFromName(name);
     if (!isValidSlug(finalSlug)) {
       setSlugError(t("slugInvalid"));
       return;
@@ -161,7 +174,10 @@ export function CreateOrganizationDialog({
       {!isControlled && (
         <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+      <DialogContent
+        className="sm:max-w-lg max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+        closeButtonClassName="top-8 right-4 -translate-y-1/2"
+      >
         <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-tight">
