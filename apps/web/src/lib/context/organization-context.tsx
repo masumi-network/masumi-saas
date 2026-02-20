@@ -93,7 +93,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (!session?.user) {
+    if (session === null || (session !== undefined && !session?.user)) {
       queueMicrotask(() => {
         setOrganizations([]);
         setOrgsLoading(false);
@@ -103,7 +103,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     queueMicrotask(() => setOrgsLoading(true));
     const id = setTimeout(() => void fetchOrganizations(), 0);
     return () => clearTimeout(id);
-  }, [session?.user?.id, session?.user, fetchOrganizations]);
+  }, [session?.user?.id, session?.user, session, fetchOrganizations]);
 
   const setActiveOrganization = useCallback(
     async (organizationId: string | null) => {
