@@ -86,6 +86,7 @@ export function CreateOrganizationDialog({
     setSlug("");
     setSlugError(null);
     setError(null);
+    setIsSubmitting(false);
   }, []);
 
   const handleOpenChange = useCallback(
