@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { useOrganizationContext } from "@/lib/context/organization-context";
 
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
@@ -57,6 +58,7 @@ function getFiltersForTab(tab: string) {
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
+  const { activeOrganizationId } = useOrganizationContext();
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,7 +127,7 @@ export function AgentsContent() {
       }
       setIsLoading(false);
     });
-  }, [loadPage]);
+  }, [loadPage, activeOrganizationId]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());

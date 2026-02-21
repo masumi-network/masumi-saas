@@ -433,8 +433,21 @@
       "title": "Organizations",
       "description": "Manage your organizations and teams.",
       "empty": "No organizations yet. Create one to get started.",
+      "current": "Current",
       "listTitle": "Your organizations",
       "listDescription": "Organizations you belong to",
+      "Role": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "Detail": {
+        "title": "Organization",
+        "description": "Manage {name}",
+        "back": "Back to organizations",
+        "current": "Current",
+        "switchTo": "Switch to this organization"
+      },
       "Create": {
         "trigger": "Create Organization",
         "title": "Create Organization",
@@ -442,10 +455,13 @@
         "name": "Organization name",
         "namePlaceholder": "My Organization",
         "slug": "Organization slug",
+        "slugHint": "Used in URLs, e.g. @my-org",
         "slugPlaceholder": "my-org",
+        "slugInvalid": "Slug must be lowercase letters, numbers, and hyphens only",
         "submit": "Create",
         "submitting": "Creating...",
         "cancel": "Cancel",
+        "success": "Organization created successfully",
         "error": "Failed to create organization. Please try again."
       }
     },
@@ -453,6 +469,8 @@
       "search": "Search...",
       "account": "Account",
       "organizations": "Organizations",
+      "personalAccount": "Personal account",
+      "clearOrganization": "Clear organization",
       "credits": "Credits",
       "mcp": "MCP",
       "documentation": "Documentation",
@@ -886,6 +904,7 @@
     "Account": {
       "title": "Account Settings",
       "description": "Manage your account settings and preferences.",
+      "activeWorkspace": "Active workspace:",
       "Name": {
         "title": "Change Name",
         "description": "Update your display name.",

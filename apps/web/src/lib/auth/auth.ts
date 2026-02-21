@@ -30,7 +30,8 @@ export const auth = betterAuth({
   ],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification:
+      authConfig.emailAndPassword.requireEmailVerification,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       if (!postmarkClient) {
@@ -196,7 +197,10 @@ export const auth = betterAuth({
       cancelPendingInvitationsOnReInvite:
         authConfig.organization.cancelPendingInvitationsOnReInvite,
       allowUserToCreateOrganization(user) {
-        return user.emailVerified;
+        return (
+          !authConfig.emailAndPassword.requireEmailVerification ||
+          !!user.emailVerified
+        );
       },
       organizationLimit: authConfig.organization.organizationLimit,
       invitationExpiresIn: authConfig.organization.invitationExpiresIn,

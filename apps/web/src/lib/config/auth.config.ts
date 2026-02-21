@@ -36,6 +36,9 @@ export const authEnvConfig = {
 } as const;
 
 export const authConfig = {
+  emailAndPassword: {
+    requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === "true",
+  },
   apiKey: {
     rateLimit: {
       enabled: true,

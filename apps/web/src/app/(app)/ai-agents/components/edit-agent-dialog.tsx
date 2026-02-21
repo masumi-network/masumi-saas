@@ -310,7 +310,10 @@ export function EditAgentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0">
+      <DialogContent
+        className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+        closeButtonClassName="top-8 right-4 -translate-y-1/2"
+      >
         <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-tight">

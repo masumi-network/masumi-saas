@@ -2,8 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
+import { OrganizationSelect } from "@/components/organization-select";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth/auth";
+import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
 import { DeleteAccountForm } from "./delete-account-form";
 import { EmailForm } from "./email-form";
@@ -12,6 +14,16 @@ import { PasswordForm } from "./password-form";
 import { TwoFactorSection } from "./two-factor-section";
 
 type Account = Awaited<ReturnType<typeof auth.api.listUserAccounts>>[number];
+
+function OrganizationSelectorSection() {
+  const orgContext = useOrganizationContextOptional();
+  if (!orgContext) return null;
+  return (
+    <div className="shrink-0">
+      <OrganizationSelect />
+    </div>
+  );
+}
 
 interface AccountContentProps {
   accounts: Account[];
@@ -36,11 +48,14 @@ export function AccountContent({
 
   return (
     <div className="w-full space-y-8">
-      <div className="mx-auto max-w-3xl space-y-2">
-        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
+      <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
+        <div className="space-y-2 min-w-0">
+          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground text-sm leading-6">
+            {t("description")}
+          </p>
+        </div>
+        <OrganizationSelectorSection />
       </div>
 
       <div className="mx-auto max-w-3xl space-y-8">

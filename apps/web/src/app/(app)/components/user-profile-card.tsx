@@ -110,7 +110,7 @@ export async function UserProfileCard() {
             </div>
             <Badge
               variant={getKycStatusBadgeVariant(kycStatus)}
-              className="inline-flex items-center gap-1.5 h-6 w-6 sm:w-auto sm:h-auto sm:px-2.5 sm:py-1"
+              className="inline-flex items-center justify-center gap-1.5 h-6 w-6 shrink-0 p-0 sm:w-auto sm:h-auto sm:justify-start sm:px-2.5 sm:py-1"
             >
               <kycStatusInfo.icon className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="hidden sm:inline">

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthContext } from "@/lib/auth/utils";
+import { OrganizationProvider } from "@/lib/context/organization-context";
 
 import Header from "./components/header";
 import Sidebar from "./components/sidebar";
@@ -25,22 +26,24 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
   return (
-    <SidebarProvider
-      defaultOpen={defaultOpen}
-      className="flex max-w-svw overflow-clip"
-    >
-      <Sidebar session={authContext.session} />
-      <div className="flex min-w-0 flex-1 flex-col min-h-0">
-        <Header />
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-            {children}
-          </main>
-          <div className="max-w-container mx-auto w-full border-t border-border mt-4">
-            <FooterSections className="p-4" />
+    <OrganizationProvider>
+      <SidebarProvider
+        defaultOpen={defaultOpen}
+        className="flex max-w-svw overflow-clip"
+      >
+        <Sidebar session={authContext.session} />
+        <div className="flex min-w-0 flex-1 flex-col min-h-0">
+          <Header />
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+              {children}
+            </main>
+            <div className="max-w-container mx-auto w-full border-t border-border mt-4">
+              <FooterSections className="p-4" />
+            </div>
           </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </OrganizationProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { usePathname } from "next/navigation";
+import { createContext, useContext, useEffect, useState } from "react";
 
 import LogoutModal from "./logout-modal";
 
@@ -19,8 +20,15 @@ export function GlobalModalsContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [email, setEmail] = useState<string>("");
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (pathname === "/signin" || pathname === "/admin/signin") {
+      queueMicrotask(() => setLogoutModalOpen(false));
+    }
+  }, [pathname]);
 
   const showLogoutModal = (email: string) => {
     setEmail(email);
