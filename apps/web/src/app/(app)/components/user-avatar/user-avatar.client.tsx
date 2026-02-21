@@ -128,20 +128,20 @@ export default function UserAvatarClient({
     })),
   ];
 
+  const activeId = orgContext?.activeOrganizationId ?? null;
+
   const orderedWorkspaces =
     workspaces.length > 1
-      ? getOrderedWorkspaces(
-          workspaces,
-          orgContext?.activeOrganization?.id ?? null,
-        )
+      ? getOrderedWorkspaces(workspaces, activeId)
       : workspaces;
 
   const activeWorkspace =
     workspaces.find((w) =>
-      w.id === null
-        ? !orgContext?.activeOrganization
-        : orgContext?.activeOrganization?.id === w.id,
-    ) ?? workspaces[0];
+      w.id === null ? activeId === null : activeId === w.id,
+    ) ??
+    (activeId && orgContext?.isLoading
+      ? { id: activeId, name: t("loadingWorkspace"), isOrganization: true }
+      : workspaces[0]);
 
   return (
     <>
@@ -227,8 +227,8 @@ export default function UserAvatarClient({
                   {orderedWorkspaces.map((workspace) => {
                     const isActive =
                       workspace.id === null
-                        ? !orgContext?.activeOrganization
-                        : orgContext?.activeOrganization?.id === workspace.id;
+                        ? activeId === null
+                        : activeId === workspace.id;
 
                     return (
                       <button

@@ -23,6 +23,8 @@ export type OrganizationInfo = {
 export type OrganizationContextValue = {
   /** Currently active organization (from session) */
   activeOrganization: OrganizationInfo | null;
+  /** Active organization ID from session (available before orgs load) */
+  activeOrganizationId: string | null;
   /** All organizations the user is a member of */
   organizations: OrganizationInfo[];
   /** Whether org data is loading */
@@ -131,6 +133,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const value = useMemo<OrganizationContextValue>(
     () => ({
       activeOrganization,
+      activeOrganizationId,
       organizations,
       isLoading: sessionPending || orgsLoading,
       setActiveOrganization,
@@ -138,6 +141,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     }),
     [
       activeOrganization,
+      activeOrganizationId,
       organizations,
       sessionPending,
       orgsLoading,
