@@ -10,15 +10,13 @@ import {
   useState,
 } from "react";
 
-import { getOrganizationsAction } from "@/lib/actions/organization.action";
+import {
+  getOrganizationsAction,
+  type OrganizationInfo,
+} from "@/lib/actions/organization.action";
 import { authClient } from "@/lib/auth/auth.client";
 
-export type OrganizationInfo = {
-  id: string;
-  name: string;
-  slug: string;
-  role?: string;
-};
+export type { OrganizationInfo };
 
 export type OrganizationContextValue = {
   /** Currently active organization (from session) */

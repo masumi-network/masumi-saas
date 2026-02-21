@@ -58,7 +58,7 @@ function getFiltersForTab(tab: string) {
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const { activeOrganization } = useOrganizationContext();
+  const { activeOrganizationId } = useOrganizationContext();
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,8 +116,6 @@ export function AgentsContent() {
     },
     [activeTab, debouncedSearch],
   );
-
-  const activeOrganizationId = activeOrganization?.id ?? null;
 
   useEffect(() => {
     queueMicrotask(() => setIsLoading(true));
