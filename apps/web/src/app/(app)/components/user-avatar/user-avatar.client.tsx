@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -51,6 +52,7 @@ interface WorkspaceItem {
   id: string | null;
   name: string;
   isOrganization: boolean;
+  isLoadingPlaceholder?: boolean;
 }
 
 function getOrderedWorkspaces(
@@ -140,7 +142,12 @@ export default function UserAvatarClient({
       w.id === null ? activeId === null : activeId === w.id,
     ) ??
     (activeId && orgContext?.isLoading
-      ? { id: activeId, name: t("loadingWorkspace"), isOrganization: true }
+      ? {
+          id: activeId,
+          name: "",
+          isOrganization: true,
+          isLoadingPlaceholder: true,
+        }
       : workspaces[0]);
 
   return (
@@ -208,9 +215,13 @@ export default function UserAvatarClient({
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">
-                      {activeWorkspace?.name}
-                    </div>
+                    {activeWorkspace?.isLoadingPlaceholder ? (
+                      <Spinner size={14} className="shrink-0" />
+                    ) : (
+                      <div className="truncate text-sm font-semibold">
+                        {activeWorkspace?.name}
+                      </div>
+                    )}
                   </div>
                   <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
                 </button>
