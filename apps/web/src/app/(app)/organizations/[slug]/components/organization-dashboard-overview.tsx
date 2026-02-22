@@ -273,10 +273,7 @@ export function OrganizationDashboardOverview({
               <ul className="min-w-0 space-y-3">
                 {agents.map((agent) => (
                   <li key={agent.id} className="min-w-0">
-                    <Link
-                      href={`/ai-agents/${agent.id}`}
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
-                    >
+                    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3">
                       <p
                         className="min-w-0 truncate text-sm font-medium"
                         title={agent.name}
@@ -310,7 +307,7 @@ export function OrganizationDashboardOverview({
                               ),
                             )}
                       </Badge>
-                    </Link>
+                    </div>
                   </li>
                 ))}
               </ul>
