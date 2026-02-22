@@ -23,6 +23,7 @@ import {
 } from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardKycBanner } from "./dashboard-kyc-banner";
+import { DashboardOrgContextBanner } from "./dashboard-org-context-banner";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 import { DashboardRevenueCard } from "./dashboard-revenue-card";
 import { GetStartedCard } from "./get-started-card";
@@ -77,6 +78,9 @@ export default async function DashboardOverview({
           {t("subtitle")}
         </p>
       </div>
+
+      {/* Org context banner - shown when viewing as an org member */}
+      <DashboardOrgContextBanner />
 
       {/* Stats grid - Revenue, Agents, Organizations */}
       <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">

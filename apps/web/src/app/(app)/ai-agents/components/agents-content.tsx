@@ -140,6 +140,9 @@ export function AgentsContent() {
   };
 
   const handleRegisterSuccess = () => {
+    // Invalidate the server component cache so the org dashboard
+    // reflects the new agent count without requiring a manual reload.
+    router.refresh();
     startTransition(async () => {
       const page = await loadPage();
       if (page) {
@@ -150,6 +153,7 @@ export function AgentsContent() {
   };
 
   const handleDeleteSuccess = () => {
+    router.refresh();
     startTransition(async () => {
       const page = await loadPage();
       if (page) {

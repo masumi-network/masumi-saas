@@ -2148,6 +2148,7 @@ export const AgentScalarFieldEnum = {
   description: "description",
   apiUrl: "apiUrl",
   userId: "userId",
+  organizationId: "organizationId",
   registrationState: "registrationState",
   verificationStatus: "verificationStatus",
   veridianCredentialId: "veridianCredentialId",

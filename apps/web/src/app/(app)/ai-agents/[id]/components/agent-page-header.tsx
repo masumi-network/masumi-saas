@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { AgentIcon } from "@/components/agent-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
 } from "@/components/ui/tooltip";
 import { type Agent } from "@/lib/api/agent.client";
 
-import { AgentIcon } from "../../components/agent-icon";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,

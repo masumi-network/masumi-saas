@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 
-import { getOrganizationBySlugAction } from "@/lib/actions/organization.action";
+import { getOrganizationDashboardAction } from "@/lib/actions/organization.action";
 
-import { OrganizationDetailContent } from "./components/organization-detail-content";
+import { OrganizationDashboardOverview } from "./components/organization-dashboard-overview";
 
-const getCachedOrganization = cache(getOrganizationBySlugAction);
+const getCachedOrganizationDashboard = cache(getOrganizationDashboardAction);
 
 interface OrganizationPageProps {
   params: Promise<{ slug: string }>;
@@ -18,15 +18,15 @@ export async function generateMetadata({
 }: OrganizationPageProps): Promise<Metadata> {
   const t = await getTranslations("App.Organizations.Detail");
   const { slug } = await params;
-  const result = await getCachedOrganization(slug);
+  const result = await getCachedOrganizationDashboard(slug);
 
   if (!result.success) {
     return { title: `Masumi - ${t("title")}` };
   }
 
   return {
-    title: `Masumi - ${result.data.name}`,
-    description: t("description", { name: result.data.name }),
+    title: `Masumi - ${result.data.organization.name}`,
+    description: t("description", { name: result.data.organization.name }),
   };
 }
 
@@ -34,11 +34,11 @@ export default async function OrganizationPage({
   params,
 }: OrganizationPageProps) {
   const { slug } = await params;
-  const result = await getCachedOrganization(slug);
+  const result = await getCachedOrganizationDashboard(slug);
 
   if (!result.success) {
     notFound();
   }
 
-  return <OrganizationDetailContent organization={result.data} />;
+  return <OrganizationDashboardOverview data={result.data} />;
 }

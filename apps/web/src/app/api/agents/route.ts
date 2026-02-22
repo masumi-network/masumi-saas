@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 // without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user, session } = await getAuthenticatedOrThrow();
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -208,6 +208,13 @@ export async function POST(request: NextRequest) {
       metadata.capabilityVersion = capabilityVersion.trim();
     if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
 
+    const activeOrganizationId =
+      (
+        session as {
+          session?: { activeOrganizationId?: string | null };
+        }
+      )?.session?.activeOrganizationId ?? null;
+
     const agent = await prisma.agent.create({
       data: {
         name,
@@ -220,6 +227,7 @@ export async function POST(request: NextRequest) {
         metadata:
           Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
         userId: user.id,
+        organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
       },
     });
