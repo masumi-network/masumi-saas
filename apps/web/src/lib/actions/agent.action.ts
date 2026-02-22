@@ -114,7 +114,18 @@ export async function getAgentAction(agentId: string) {
     const agent = await prisma.agent.findFirst({
       where: {
         id: agentId,
-        userId: user.id,
+        OR: [
+          { userId: user.id },
+          {
+            organization: {
+              members: {
+                some: {
+                  userId: user.id,
+                },
+              },
+            },
+          },
+        ],
       },
     });
 

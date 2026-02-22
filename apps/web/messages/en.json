@@ -350,6 +350,7 @@
         "orgContext": {
           "workingAs": "Working as",
           "viewDashboard": "View dashboard",
+          "viewDashboardAriaLabel": "View organization dashboard",
           "clearTooltip": "Switch to personal account",
           "clearAriaLabel": "Switch to personal account"
         },
