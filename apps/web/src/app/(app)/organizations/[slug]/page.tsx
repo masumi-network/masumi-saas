@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 
 import { getOrganizationDashboardAction } from "@/lib/actions/organization.action";
 
-import { OrganizationDashboardOverview } from "./components/organization-dashboard-overview";
+import {
+  OrganizationDashboardOverview,
+  OrganizationDashboardSkeleton,
+} from "./components/organization-dashboard-overview";
 
 const getCachedOrganizationDashboard = cache(getOrganizationDashboardAction);
 
@@ -30,10 +33,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function OrganizationPage({
-  params,
-}: OrganizationPageProps) {
-  const { slug } = await params;
+async function OrganizationPageContent({ slug }: { slug: string }) {
   const result = await getCachedOrganizationDashboard(slug);
 
   if (!result.success) {
@@ -41,4 +41,16 @@ export default async function OrganizationPage({
   }
 
   return <OrganizationDashboardOverview data={result.data} />;
+}
+
+export default async function OrganizationPage({
+  params,
+}: OrganizationPageProps) {
+  const { slug } = await params;
+
+  return (
+    <Suspense fallback={<OrganizationDashboardSkeleton />}>
+      <OrganizationPageContent slug={slug} />
+    </Suspense>
+  );
 }

@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -70,11 +71,9 @@ export function OrganizationDashboardOverview({
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tStatus = useTranslations("App.Agents.status");
 
-  const { activeOrganization, setActiveOrganization } =
-    useOrganizationContext();
+  const { activeOrganization } = useOrganizationContext();
   const {
     organization,
-    memberCount,
     kybStatus,
     agentCount,
     agents,
@@ -121,50 +120,112 @@ export function OrganizationDashboardOverview({
         </Link>
       </div>
 
+      {/* organization header */}
+
       {/* Organization info card */}
-      <Card className="pt-0">
-        <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6">
-          <div className="flex items-start justify-between gap-4">
+      <Card className="bg-muted-surface/30 py-4 sm:py-6">
+        <CardHeader className="rounded-t-xl px-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                <Building2 className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg">
+                <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
               <div>
                 <CardTitle className="text-xl">{organization.name}</CardTitle>
                 <CardDescription>{slugDisplay}</CardDescription>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <OrganizationRoleBadge role={organization.role} />
-              {isActive && (
-                <Badge variant="default">{tDetail("current")}</Badge>
-              )}
-              {kybStatus && (
-                <Badge variant={getKybStatusVariant(kybStatus)}>
-                  {t(`kybStatus.${kybStatus}`)}
-                </Badge>
-              )}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4"></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <OrganizationRoleBadge role={organization.role} />
+                {isActive && (
+                  <Badge variant="default">{tDetail("current")}</Badge>
+                )}
+                {kybStatus && (
+                  <Badge variant={getKybStatusVariant(kybStatus)}>
+                    {t(`kybStatus.${kybStatus}`)}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {t("memberCount", { count: memberCount })}
-          </p>
-          {!isActive && (
-            <Button
-              variant="default"
-              onClick={() => setActiveOrganization(organization.id)}
+        <CardContent className="space-y-3 px-4 sm:px-6">
+          {/* Stats grid */}
+          <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
+            {/* Wallet balance */}
+            <Card className="group col-span-2 lg:col-span-1 h-full rounded-xl bg-muted-surface pt-0">
+              <CardHeader className="space-y-0 pb-2 bg-masumi-gradient pt-6">
+                <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
+                  <Wallet className="h-3.5 w-3.5" />
+                  {t("stats.walletBalance")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                  {t("stats.walletBalanceValue")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("stats.walletBalanceDescription")}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Linked agents */}
+            <Link
+              href="/ai-agents"
+              aria-label={t("stats.linkedAgentsAria", { count: agentCount })}
             >
-              {tDetail("switchTo")}
-            </Button>
-          )}
+              <Card className="group h-full rounded-xl bg-muted-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+                <CardHeader className="space-y-0 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline">
+                    <Bot className="h-3.5 w-3.5" />
+                    {t("stats.linkedAgents")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                    {agentCount}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("stats.linkedAgentsDescription")}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* API keys */}
+            <Link
+              href="/api-keys"
+              aria-label={t("stats.apiKeysAria", { count: apiKeyCount })}
+            >
+              <Card className="group h-full rounded-xl bg-muted-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+                <CardHeader className="space-y-0 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline">
+                    <Key className="h-3.5 w-3.5" />
+                    {t("stats.apiKeys")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                    {apiKeyCount}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("stats.apiKeysDescription", {
+                      active: activeApiKeyCount,
+                    })}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 
       {/* Quick actions */}
-      <div>
-        <h3 className="mb-3 text-xs font-medium uppercase tracking-tight text-muted-foreground">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
           {t("quickActions.title")}
         </h3>
         <div className="flex flex-wrap gap-3">
@@ -182,74 +243,6 @@ export function OrganizationDashboardOverview({
           </Button>
         </div>
       </div>
-
-      {/* Stats grid */}
-      <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
-        {/* Linked agents */}
-        <Link
-          href="/ai-agents"
-          aria-label={t("stats.linkedAgentsAria", { count: agentCount })}
-        >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="space-y-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline">
-                <Bot className="h-3.5 w-3.5" />
-                {t("stats.linkedAgents")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                {agentCount}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("stats.linkedAgentsDescription")}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* API keys */}
-        <Link
-          href="/api-keys"
-          aria-label={t("stats.apiKeysAria", { count: apiKeyCount })}
-        >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="space-y-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline">
-                <Key className="h-3.5 w-3.5" />
-                {t("stats.apiKeys")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                {apiKeyCount}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("stats.apiKeysDescription", { active: activeApiKeyCount })}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Wallet balance */}
-        <Card className="h-full rounded-xl border border-border/80">
-          <CardHeader className="space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
-              <Wallet className="h-3.5 w-3.5" />
-              {t("stats.walletBalance")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-              {t("stats.walletBalanceValue")}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("stats.walletBalanceDescription")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Linked agents & API Keys — same row */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         {/* Linked agents section */}
@@ -389,6 +382,108 @@ export function OrganizationDashboardOverview({
                 </Link>
               </Button>
             )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export function OrganizationDashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+
+      {/* Organization info card */}
+      <Card className="bg-muted-surface/30 py-4 sm:py-6">
+        <CardHeader className="px-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-lg" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6">
+          {/* Stats grid */}
+          <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
+            {/* Wallet balance */}
+            <Card className="col-span-2 lg:col-span-1 overflow-hidden rounded-xl pt-0">
+              <CardHeader className="bg-masumi-gradient pb-2 pt-6">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="mb-1 h-9 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+            {/* Linked agents */}
+            <Card className="h-full rounded-xl">
+              <CardHeader className="space-y-0 pb-2">
+                <Skeleton className="h-4 w-20" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-9 w-12" />
+                <Skeleton className="mt-1 h-3 w-28" />
+              </CardContent>
+            </Card>
+            {/* API keys */}
+            <Card className="h-full rounded-xl">
+              <CardHeader className="space-y-0 pb-2">
+                <Skeleton className="h-4 w-16" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-9 w-12" />
+                <Skeleton className="mt-1 h-3 w-20" />
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick actions */}
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-24" />
+        <div className="flex flex-wrap gap-3">
+          <Skeleton className="h-9 w-44 rounded-md" />
+          <Skeleton className="h-9 w-36 rounded-md" />
+        </div>
+      </div>
+
+      {/* Agents & API Keys grid */}
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-4 w-52" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-14 w-full rounded-md" />
+            <Skeleton className="h-14 w-full rounded-md" />
+            <Skeleton className="h-14 w-full rounded-md" />
+          </CardContent>
+        </Card>
+        <Card className="rounded-lg shadow-none">
+          <CardHeader>
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-14 w-full rounded-md" />
+            <Skeleton className="h-14 w-full rounded-md" />
+            <Skeleton className="h-14 w-full rounded-md" />
           </CardContent>
         </Card>
       </div>

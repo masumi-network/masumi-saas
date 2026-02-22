@@ -479,7 +479,7 @@
           "apiKeysDescription": "{active} active",
           "apiKeysAria": "{count} API keys",
           "walletBalance": "Wallet balance",
-          "walletBalanceValue": "—",
+          "walletBalanceValue": "$0.00",
           "walletBalanceDescription": "Balance not yet available"
         },
         "linkedAgentsSection": {
