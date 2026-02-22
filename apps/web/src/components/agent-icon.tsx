@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, HelpCircle } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 import {
@@ -46,9 +47,12 @@ function AgentIconImage({
     );
   }
   return (
-    <img
+    <Image
       src={icon}
       alt={`${name} icon`}
+      width={32}
+      height={32}
+      unoptimized
       className={cn(
         "shrink-0 size-8 rounded-lg object-contain",
         className,
