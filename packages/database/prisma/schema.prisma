@@ -141,6 +141,7 @@ model Organization {
   kybVerification   KybVerification? @relation(fields: [kybVerificationId], references: [id], onDelete: SetNull)
 
   // Domain relations
+  agents         Agent[]
   orgApiKeys     OrgApiKey[]
   kybSubmissions KybSubmission[]
 
@@ -272,6 +273,10 @@ model Agent {
   userId      String
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Organization ownership (optional; set when agent is created under an active org)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
   // Registration
   registrationState RegistrationState @default(RegistrationConfirmed)
 
@@ -299,6 +304,7 @@ model Agent {
   agentReference AgentReference?
 
   @@index([userId])
+  @@index([organizationId])
   @@index([verificationStatus])
   @@index([registrationState])
   @@map("agent")

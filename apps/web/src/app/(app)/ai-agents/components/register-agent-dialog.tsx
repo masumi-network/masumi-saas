@@ -193,53 +193,59 @@ export function PricingFields({
           {pricingT("addPrice")}
         </Button>
       </div>
-      {fields.map((field, index) => (
-        <div key={field.id} className="flex gap-2 items-start">
-          <div className="flex-1 flex items-center gap-2">
-            <span className="text-muted-foreground text-sm shrink-0">
-              {CURRENCY_SYMBOL}
-            </span>
-            <FormField
-              control={pricingForm.control}
-              name={`prices.${index}.amount`}
-              render={({ field: amountField }) => (
-                <FormItem className="flex-1">
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      disabled={isFree}
-                      {...amountField}
-                      className="h-11"
-                      onChange={(e) => amountField.onChange(e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div
+        className={
+          isFree ? "pointer-events-none select-none opacity-40" : undefined
+        }
+      >
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex gap-2 items-start">
+            <div className="flex-1 flex items-center gap-2">
+              <span className="text-muted-foreground text-sm shrink-0">
+                {CURRENCY_SYMBOL}
+              </span>
+              <FormField
+                control={pricingForm.control}
+                name={`prices.${index}.amount`}
+                render={({ field: amountField }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        disabled={isFree}
+                        {...amountField}
+                        className="h-11"
+                        onChange={(e) => amountField.onChange(e.target.value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            {fields.length > 1 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={isFree}
+                onClick={() => remove(index)}
+                className="shrink-0 mt-2"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-          {fields.length > 1 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={isFree}
-              onClick={() => remove(index)}
-              className="shrink-0 mt-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-      {pricingForm.formState.errors.prices && (
-        <p className="text-sm text-destructive">
-          {pricingForm.formState.errors.prices.message}
-        </p>
-      )}
+        ))}
+        {pricingForm.formState.errors.prices && (
+          <p className="text-sm text-destructive">
+            {pricingForm.formState.errors.prices.message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

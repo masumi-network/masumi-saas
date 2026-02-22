@@ -347,6 +347,13 @@
           "organizationsCardAria": "View organizations, {count} workspaces",
           "apiKeys": "API Keys"
         },
+        "orgContext": {
+          "workingAs": "Working as",
+          "viewDashboard": "View dashboard",
+          "viewDashboardAriaLabel": "View organization dashboard",
+          "clearTooltip": "Switch to personal account",
+          "clearAriaLabel": "Switch to personal account"
+        },
         "createOrganization": "Create Organization",
         "startKyc": "Start KYC",
         "startKycPrompt": "Complete identity verification to unlock full access.",
@@ -445,8 +452,54 @@
         "title": "Organization",
         "description": "Manage {name}",
         "back": "Back to organizations",
+        "backToDashboard": "Back to dashboard",
         "current": "Current",
         "switchTo": "Switch to this organization"
+      },
+      "Dashboard": {
+        "memberCount": "{count, plural, one {# member} other {# members}}",
+        "kybStatus": {
+          "PENDING": "KYB Pending",
+          "REVIEW": "KYB In Review",
+          "APPROVED": "KYB Approved",
+          "REJECTED": "KYB Rejected",
+          "VERIFIED": "KYB Verified",
+          "REVOKED": "KYB Revoked",
+          "EXPIRED": "KYB Expired"
+        },
+        "quickActions": {
+          "title": "Quick actions",
+          "addPaymentMethod": "Add Payment Method",
+          "createApiKey": "Create API Key"
+        },
+        "stats": {
+          "linkedAgents": "Linked agents",
+          "linkedAgentsDescription": "Agents registered to this organization",
+          "linkedAgentsAria": "{count} linked agents",
+          "apiKeys": "API keys",
+          "apiKeysDescription": "{active} active",
+          "apiKeysAria": "{count} API keys",
+          "walletBalance": "Wallet balance",
+          "walletBalanceValue": "$0.00",
+          "walletBalanceDescription": "Balance not yet available"
+        },
+        "linkedAgentsSection": {
+          "title": "Linked agents",
+          "description": "Agents registered under this organization",
+          "empty": "No agents linked to this organization yet",
+          "viewAll": "View all"
+        },
+        "apiKeysSection": {
+          "title": "API keys",
+          "description": "API keys for programmatic access to this organization",
+          "empty": "No API keys yet. Create one to get started.",
+          "viewAll": "View all"
+        },
+        "recentActivity": {
+          "title": "Recent activity",
+          "description": "Latest transactions and events for this organization",
+          "empty": "No recent activity"
+        }
       },
       "Create": {
         "trigger": "Create Organization",

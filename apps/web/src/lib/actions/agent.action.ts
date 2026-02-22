@@ -8,7 +8,7 @@ import { convertZodError } from "@/lib/utils/convert-zod-error";
 
 export async function registerAgentAction(formData: FormData) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user, session } = await getAuthenticatedOrThrow();
 
     const validation = registerAgentFormDataSchema.safeParse(formData);
     if (!validation.success) {
@@ -27,6 +27,13 @@ export async function registerAgentAction(formData: FormData) {
           .filter((tag) => tag.length > 0)
       : [];
 
+    const activeOrganizationId =
+      (
+        session as {
+          session?: { activeOrganizationId?: string | null };
+        }
+      )?.session?.activeOrganizationId ?? null;
+
     const agent = await prisma.agent.create({
       data: {
         name,
@@ -35,6 +42,7 @@ export async function registerAgentAction(formData: FormData) {
         apiUrl,
         tags: tagsArray,
         userId: user.id,
+        organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
         verificationStatus: "PENDING",
       },
