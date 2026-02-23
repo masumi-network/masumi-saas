@@ -479,6 +479,8 @@
           "apiKeys": "API keys",
           "apiKeysDescription": "{active} active",
           "apiKeysAria": "{count} API keys",
+          "members": "Members",
+          "membersDescription": "People in this organization",
           "walletBalance": "Wallet balance",
           "walletBalanceValue": "$0.00",
           "walletBalanceDescription": "Balance not yet available"

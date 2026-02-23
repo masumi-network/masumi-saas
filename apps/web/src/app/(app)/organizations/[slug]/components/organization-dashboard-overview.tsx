@@ -6,7 +6,6 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Key,
   Plus,
   Users,
   Wallet,
@@ -74,14 +73,7 @@ export function OrganizationDashboardOverview({
 
   const { activeOrganization, setActiveOrganization } =
     useOrganizationContext();
-  const {
-    organization,
-    kybStatus,
-    agentCount,
-    agents,
-    apiKeyCount,
-    activeApiKeyCount,
-  } = data;
+  const { organization, kybStatus, agentCount, agents } = data;
 
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from");
@@ -196,30 +188,23 @@ export function OrganizationDashboardOverview({
               </Card>
             </Link>
 
-            {/* API keys */}
-            <Link
-              href="/api-keys"
-              aria-label={t("stats.apiKeysAria", { count: apiKeyCount })}
-            >
-              <Card className="group h-full rounded-xl bg-muted-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-                <CardHeader className="space-y-0 pb-2">
-                  <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline">
-                    <Key className="h-3.5 w-3.5" />
-                    {t("stats.apiKeys")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                    {apiKeyCount}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {t("stats.apiKeysDescription", {
-                      active: activeApiKeyCount,
-                    })}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+            {/* Members — TODO: replace static memberCount with live data once member management is implemented */}
+            <Card className="h-full rounded-xl bg-muted-surface">
+              <CardHeader className="space-y-0 pb-2">
+                <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
+                  <Users className="h-3.5 w-3.5" />
+                  {t("stats.members")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                  {data.memberCount}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("stats.membersDescription")}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
