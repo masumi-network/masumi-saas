@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../../node_modules/masumi-schema-validator-component/dist/index.mjs";
+@source "../../node_modules/masumi-schema-validator-component/dist/index.js";
 @plugin "@tailwindcss/typography";
 
 @import "tw-animate-css";
@@ -61,6 +63,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(180deg);
     }
@@ -70,6 +73,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -83,21 +87,27 @@
   .max-w-container {
     max-width: var(--max-width-container);
   }
+
   .max-w-form {
     max-width: var(--max-width-form);
   }
+
   .min-h-spinner {
     min-height: 400px;
   }
+
   .min-h-sdk-container {
     min-height: 600px;
   }
+
   .min-h-main-content {
     min-height: calc(100svh - 64px);
   }
+
   .max-w-search {
     max-width: 200px;
   }
+
   .max-h-dialog {
     max-height: 90vh;
   }
@@ -111,7 +121,8 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 300 50% 100%;
     --popover-foreground: 300 0% 4%;
-    --primary: 300 100% 66%; /* masumi-iris-flower */
+    --primary: 300 100% 66%;
+    /* masumi-iris-flower */
     --primary-foreground: 0 0% 0%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -123,8 +134,10 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
-    --tooltip: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --ring: hsla(300, 100%, 66%, 1);
+    /* masumi-iris-flower */
+    --tooltip: hsla(300, 100%, 66%, 1);
+    /* masumi-iris-flower */
     --tooltip-foreground: hsla(0, 0%, 0%, 1);
     --radius: 0.5rem;
   }
@@ -136,7 +149,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 330 0% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 300 100% 66%; /* masumi-iris-flower */
+    --primary: 300 100% 66%;
+    /* masumi-iris-flower */
     --primary-foreground: 0 0% 0%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -148,8 +162,10 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
-    --tooltip: hsla(300, 100%, 66%, 1); /* masumi-iris-flower */
+    --ring: hsla(300, 100%, 66%, 1);
+    /* masumi-iris-flower */
+    --tooltip: hsla(300, 100%, 66%, 1);
+    /* masumi-iris-flower */
     --tooltip-foreground: hsla(0, 0%, 0%, 1);
   }
 }
@@ -160,6 +176,7 @@
     overflow-wrap: break-word;
     word-break: break-word;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-inter), system-ui, sans-serif;
@@ -235,6 +252,7 @@ input[type="number"] {
     transform: translateY(100px);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;
@@ -253,6 +271,7 @@ input[type="number"] {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -267,6 +286,7 @@ input[type="number"] {
     transform: scale(0.8);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -278,6 +298,7 @@ input[type="number"] {
     transform: rotate(-360deg);
     opacity: 0;
   }
+
   100% {
     transform: rotate(0deg);
     opacity: 1;
@@ -289,6 +310,7 @@ input[type="number"] {
   0% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
   }
@@ -343,6 +365,7 @@ input[type="number"] {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
