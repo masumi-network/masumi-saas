@@ -71,7 +71,8 @@ export function OrganizationDashboardOverview({
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tStatus = useTranslations("App.Agents.status");
 
-  const { activeOrganization } = useOrganizationContext();
+  const { activeOrganization, setActiveOrganization } =
+    useOrganizationContext();
   const {
     organization,
     kybStatus,
@@ -229,6 +230,14 @@ export function OrganizationDashboardOverview({
           {t("quickActions.title")}
         </h3>
         <div className="flex flex-wrap gap-3">
+          {!isActive && (
+            <Button
+              variant="default"
+              onClick={() => setActiveOrganization(organization.id)}
+            >
+              {tDetail("switchTo")}
+            </Button>
+          )}
           <Button variant="outline" asChild>
             <Link href="/payment-methods">
               <Plus className="h-4 w-4" />
