@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Key,
   Plus,
+  Users,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -80,7 +81,6 @@ export function OrganizationDashboardOverview({
     agents,
     apiKeyCount,
     activeApiKeyCount,
-    apiKeys,
   } = data;
 
   const searchParams = useSearchParams();
@@ -238,17 +238,10 @@ export function OrganizationDashboardOverview({
               {tDetail("switchTo")}
             </Button>
           )}
-          <Button variant="outline" asChild>
-            <Link href="/payment-methods">
-              <Plus className="h-4 w-4" />
-              {t("quickActions.addPaymentMethod")}
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/api-keys">
-              <Key className="h-4 w-4" />
-              {t("quickActions.createApiKey")}
-            </Link>
+          {/* TODO: implement member invite flow */}
+          <Button variant="outline" disabled>
+            <Plus className="h-4 w-4" />
+            {t("quickActions.inviteMember")}
           </Button>
         </div>
       </div>
@@ -332,62 +325,26 @@ export function OrganizationDashboardOverview({
           </CardContent>
         </Card>
 
-        {/* API Keys section */}
+        {/* Members section */}
+        {/* TODO: fetch and display org members once member management is implemented */}
         <Card className="min-w-0 overflow-hidden rounded-lg shadow-none">
           <CardHeader>
             <div className="min-w-0 space-y-1.5">
-              <Link
-                href="/api-keys"
-                className="inline-flex items-center gap-1 leading-none font-semibold hover:underline"
-              >
-                {t("apiKeysSection.title")}
-                <ChevronRight className="h-4 w-4" />
-              </Link>
+              <CardTitle className="inline-flex items-center gap-1 leading-none font-semibold">
+                {t("membersSection.title")}
+              </CardTitle>
               <CardDescription>
-                {t("apiKeysSection.description")}
+                {t("membersSection.description")}
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="min-w-0 space-y-4">
-            {apiKeys.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-                <Key className="mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="text-center text-sm text-muted-foreground">
-                  {t("apiKeysSection.empty")}
-                </p>
-              </div>
-            ) : (
-              <ul className="min-w-0 space-y-3">
-                {apiKeys.map((key) => (
-                  <li key={key.id} className="min-w-0">
-                    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                          <Key className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <p
-                          className="min-w-0 truncate text-sm font-medium"
-                          title={key.name}
-                        >
-                          {key.name}
-                        </p>
-                      </div>
-                      <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                        {key.keyPrefix}…
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {apiKeyCount > 5 && (
-              <Button variant="ghost" size="sm" asChild className="w-full">
-                <Link href="/api-keys">
-                  {t("apiKeysSection.viewAll")}
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            )}
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+              <Users className="mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="text-center text-sm text-muted-foreground">
+                {t("membersSection.empty")}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

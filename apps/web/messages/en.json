@@ -469,7 +469,7 @@
         },
         "quickActions": {
           "title": "Quick actions",
-          "addPaymentMethod": "Add Payment Method",
+          "inviteMember": "Invite Member",
           "createApiKey": "Create API Key"
         },
         "stats": {
@@ -494,6 +494,11 @@
           "description": "API keys for programmatic access to this organization",
           "empty": "No API keys yet. Create one to get started.",
           "viewAll": "View all"
+        },
+        "membersSection": {
+          "title": "Members",
+          "description": "People who are part of this organization",
+          "empty": "No members yet"
         },
         "recentActivity": {
           "title": "Recent activity",
