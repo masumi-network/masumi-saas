@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/format-name";
 
 interface UserAvatarContentProps {
@@ -18,7 +19,7 @@ export default function UserAvatarContent({
 
   return (
     <>
-      <Avatar className="h-8 w-8 md:h-10 md:w-10">
+      <Avatar className={cn("h-8 w-8 md:h-10 md:w-10", className)}>
         {imageUrl && (
           <AvatarImage
             src={imageUrl}
@@ -28,7 +29,7 @@ export default function UserAvatarContent({
             }}
           />
         )}
-        <AvatarFallback className={className}>{initials}</AvatarFallback>
+        <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
     </>
   );

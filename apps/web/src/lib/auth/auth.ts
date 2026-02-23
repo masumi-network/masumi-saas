@@ -4,24 +4,34 @@ import prisma from "@masumi/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { apiKey, organization } from "better-auth/plugins";
+import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { getTranslations } from "next-intl/server";
 
-import { authConfig } from "@/lib/config/auth.config";
+import { getBootstrapAdminIds } from "@/lib/auth/config";
+import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
+import { emailConfig } from "@/lib/config/email.config";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
 
 export const auth = betterAuth({
+  appName: "Masumi",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  secret: authEnvConfig.secret,
+  baseURL: authEnvConfig.baseUrl,
+  trustedOrigins: [
+    authEnvConfig.baseUrl,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://appleid.apple.com",
+  ],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification:
+      authConfig.emailAndPassword.requireEmailVerification,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       if (!postmarkClient) {
@@ -51,11 +61,8 @@ export const auth = betterAuth({
         namespace: "Email.ResetPassword",
       });
 
-      const fromEmail =
-        process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
-
       await postmarkClient.sendEmail({
-        From: fromEmail,
+        From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "reset-password",
         Subject: t("preview"),
@@ -76,6 +83,7 @@ export const auth = betterAuth({
       });
     },
   },
+  socialProviders: authEnvConfig.socialProviders,
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
       if (!postmarkClient) {
@@ -102,11 +110,8 @@ export const auth = betterAuth({
         namespace: "Email.Verification",
       });
 
-      const fromEmail =
-        process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network";
-
       await postmarkClient.sendEmail({
-        From: fromEmail,
+        From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "verification-email",
         Subject: t("preview"),
@@ -140,15 +145,22 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    twoFactor({
+      issuer: "Masumi",
+      skipVerificationOnEnable: false,
+    }),
+    admin({
+      defaultRole: "user",
+      adminUserIds: getBootstrapAdminIds(),
+    }),
     apiKey({
       rateLimit: authConfig.apiKey.rateLimit,
       enableMetadata: authConfig.apiKey.enableMetadata,
     }),
     organization({
       organizationCreation: {
-        afterCreate: async ({ organization }) => {
-          // post-creation logic here
-          console.log("Organization created:", organization.id);
+        afterCreate: async ({ organization: _organization }) => {
+          // Organization post-creation logic (e.g., Stripe customer setup)
         },
       },
       schema: {
@@ -170,19 +182,25 @@ export const auth = betterAuth({
         },
       },
       async sendInvitationEmail(data) {
-        const inviteLink = `${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/accept-invitation/${data.id}`;
-        // TODO: Implement email sending
-        console.log("Invitation email:", {
-          to: data.email,
-          organization: data.organization.name,
-          link: inviteLink,
-        });
+        const inviteLink = `${authEnvConfig.baseUrl}/accept-invitation/${data.id}`;
+        // TODO(MAS-XXX): Implement invitation email sending via Postmark
+        // Users will not receive invite emails until this is implemented.
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DEV] Invitation email:", {
+            to: data.email,
+            organization: data.organization.name,
+            link: inviteLink,
+          });
+        }
       },
       invitationLimit: authConfig.organization.invitationLimit,
       cancelPendingInvitationsOnReInvite:
         authConfig.organization.cancelPendingInvitationsOnReInvite,
       allowUserToCreateOrganization(user) {
-        return user.emailVerified;
+        return (
+          !authConfig.emailAndPassword.requireEmailVerification ||
+          !!user.emailVerified
+        );
       },
       organizationLimit: authConfig.organization.organizationLimit,
       invitationExpiresIn: authConfig.organization.invitationExpiresIn,

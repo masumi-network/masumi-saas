@@ -1,26 +1,37 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
 import { getDashboardOverviewAction } from "@/lib/actions/dashboard.action";
 import { getAuthContext } from "@/lib/auth/utils";
 
-import DashboardOverview from "./components/dashboard/dashboard-overview";
+import DashboardOverview, {
+  DashboardOverviewSkeleton,
+} from "./components/dashboard/dashboard-overview";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("App.Home");
   return {
-    title: `Masumi - ${t("welcome")}`,
+    title: `Masumi - ${t("title")}`,
     description: t("description"),
   };
 }
 
-export default async function HomePage() {
+export default function HomePage() {
+  return (
+    <Suspense fallback={<DashboardOverviewSkeleton />}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+async function HomePageContent() {
   const authContext = await getAuthContext();
   const t = await getTranslations("App.Home");
 
   if (!authContext.isAuthenticated || !authContext.session?.user) {
     return (
-      <div className="space-y-12">
+      <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
           <p className="text-muted-foreground text-sm leading-6">
@@ -35,7 +46,7 @@ export default async function HomePage() {
 
   if (!result.success) {
     return (
-      <div className="space-y-12">
+      <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
           <p className="text-muted-foreground text-sm leading-6">
@@ -48,7 +59,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="min-w-0 space-y-8">
       <DashboardOverview data={result.data} />
     </div>
   );

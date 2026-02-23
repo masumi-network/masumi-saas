@@ -1,9 +1,11 @@
 import * as Postmark from "postmark";
 
+import { emailConfig } from "@/lib/config/email.config";
+
 let postmarkClient: Postmark.ServerClient | null = null;
 
-if (process.env.POSTMARK_SERVER_ID) {
-  postmarkClient = new Postmark.ServerClient(process.env.POSTMARK_SERVER_ID);
+if (emailConfig.postmarkServerId) {
+  postmarkClient = new Postmark.ServerClient(emailConfig.postmarkServerId);
 }
 
 export { postmarkClient };

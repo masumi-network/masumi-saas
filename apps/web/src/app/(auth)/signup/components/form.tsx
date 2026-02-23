@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -23,7 +24,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { signUpAction } from "@/lib/actions/auth.action";
 import { type SignUpInput, signUpSchema } from "@/lib/schemas";
 
-export default function SignUpForm() {
+interface SignUpFormProps {
+  oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+}
+
+export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
   const t = useTranslations("Auth.SignUp");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
@@ -92,6 +97,10 @@ export default function SignUpForm() {
           {t("description")}
         </p>
       </div>
+
+      {oauthProviders.length > 0 && (
+        <SocialAuthButtons providers={oauthProviders} variant="signup" />
+      )}
 
       <Form {...form}>
         <form

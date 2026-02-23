@@ -3,6 +3,7 @@
 import prisma from "@masumi/database/client";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { sumsubConfig } from "@/lib/config/sumsub.config";
 import {
   generateSumsubAccessToken,
   getApplicantByExternalUserId,
@@ -12,15 +13,12 @@ import {
   parseReviewResult,
 } from "@/lib/sumsub";
 
-const DEFAULT_KYC_LEVEL = process.env.SUMSUB_KYC_LEVEL || "id-only";
-const DEFAULT_KYB_LEVEL = process.env.SUMSUB_KYB_LEVEL || "id-only";
-
 /**
  * Generate Sumsub access token for KYC verification
  * @param levelName - Verification level name (defaults to SUMSUB_KYC_LEVEL env var or "id-only")
  */
 export async function generateKycAccessTokenAction(
-  levelName: string = DEFAULT_KYC_LEVEL,
+  levelName: string = sumsubConfig.kycLevel,
 ) {
   try {
     const { user } = await getAuthenticatedOrThrow();
@@ -50,7 +48,7 @@ export async function generateKycAccessTokenAction(
  */
 export async function generateKybAccessTokenAction(
   organizationId: string,
-  levelName: string = DEFAULT_KYB_LEVEL,
+  levelName: string = sumsubConfig.kybLevel,
 ) {
   try {
     const { user } = await getAuthenticatedOrThrow();

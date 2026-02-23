@@ -22,29 +22,48 @@ const SCHEMAS_DIR = path.join(__dirname, "schemas");
 const OUTPUT_FILE = path.join(SCHEMAS_DIR, "masumi-agent-verification.json");
 
 const MASUMI_AGENT_VERIFICATION_SCHEMA = {
-  title: "Masumi Agent Verification",
+  title: "Masumi Verified Agent",
   description:
-    "Verifies that the holder has been verified as the operator of the given AI agent on the Masumi platform. Used for agent verification and credential issuance.",
-  credentialType: "MasumiAgentVerificationCredential",
+    "Verifiable credential attesting that an AI agent on the Masumi platform has been verified. Issued after the agent owner completes KYC and proves control of the agent's KERI identifier.",
+  credentialType: "MasumiVerifiedAgentCredential",
   version: "1.0.0",
   attributes: [
     {
+      name: "kycVerificationId",
+      type: "string",
+      description:
+        "ID of the KYC verification record for the user who requested verification",
+      required: true,
+    },
+    {
       name: "agentId",
       type: "string",
-      description: "The Masumi agent ID that was verified",
+      description: "The identifier of the agent in the masumi registry",
       required: true,
     },
     {
       name: "agentName",
       type: "string",
-      description: "Human-readable name of the agent",
-      required: false,
+      description: "The name of the agent",
+      required: true,
+    },
+    {
+      name: "agentApiUrl",
+      type: "string",
+      description: "Base API URL of the agent",
+      required: true,
+    },
+    {
+      name: "signature",
+      type: "string",
+      description: "HMAC-SHA256(challenge, secret) proving agent ownership",
+      required: true,
     },
   ],
 };
 
 async function main() {
-  console.log("Creating Masumi Agent Verification schema via API...");
+  console.log("Creating Masumi Verified Agent schema via API...");
   console.log("API base:", API_BASE);
 
   const res = await fetch(`${API_BASE}/api/schemas`, {

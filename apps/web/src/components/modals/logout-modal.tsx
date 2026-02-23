@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,8 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
 import { signOut } from "@/lib/auth/auth.client";
+
+import { Spinner } from "../ui/spinner";
 
 interface LogoutModalProps {
   open: boolean;
@@ -30,31 +31,33 @@ export default function LogoutModal({
   email,
 }: LogoutModalProps) {
   const t = useTranslations("Components.LogoutModal");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
     setLoading(true);
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/signin");
+    const signInPath = pathname.startsWith("/admin")
+      ? "/admin/signin"
+      : "/signin";
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push(signInPath);
+          },
+          onError: () => {
+            toast.error(t("error"));
+          },
         },
-        onError: () => {
-          toast.error(t("error"));
-          setLoading(false);
-        },
-      },
-    });
-  };
-
-  const handleOnOpenChange = (newOpen: boolean) => {
-    if (loading) return;
-    onOpenChange(newOpen);
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOnOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-sm">
         <DialogHeader>
           <DialogTitle className="text-center text-lg font-medium">

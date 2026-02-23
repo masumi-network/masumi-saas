@@ -39,16 +39,26 @@ export function Steps({ currentStep, steps, className }: StepsProps) {
                       "bg-background text-muted-foreground border-muted",
                   )}
                 >
-                  {isCompleted ? <Check className="w-5 h-5" /> : stepNumber}
+                  {isCompleted ? (
+                    <Check className="w-5 h-5 animate-check-in" />
+                  ) : (
+                    stepNumber
+                  )}
                 </div>
               </div>
               {index < steps.length - 1 && (
                 <div
                   className={cn(
-                    "flex-1 h-0.5 mx-4 transition-colors",
-                    isCompleted ? "bg-primary" : "bg-muted",
+                    "flex-1 h-0.5 mx-4 overflow-hidden rounded-full bg-muted",
                   )}
-                />
+                >
+                  <div
+                    className={cn(
+                      "h-full rounded-full bg-primary transition-all duration-500 ease-out",
+                      isCompleted ? "w-full" : "w-0",
+                    )}
+                  />
+                </div>
               )}
             </li>
           );

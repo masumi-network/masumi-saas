@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,7 +23,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
-export default function SignInForm() {
+interface SignInFormProps {
+  oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+}
+
+export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
   const t = useTranslations("Auth.SignIn");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
@@ -52,6 +57,8 @@ export default function SignInForm() {
           : result.error;
         toast.error(errorMessage);
         setIsLoading(false);
+      } else if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
+        router.push("/2fa");
       } else if (result?.success) {
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
@@ -80,6 +87,10 @@ export default function SignInForm() {
           {t("description")}
         </p>
       </div>
+
+      {oauthProviders.length > 0 && (
+        <SocialAuthButtons providers={oauthProviders} />
+      )}
 
       <Form {...form}>
         <form

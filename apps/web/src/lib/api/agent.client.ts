@@ -1,11 +1,18 @@
 "use client";
 
+import type { AgentPricing } from "@/lib/utils";
+
 type Agent = {
   id: string;
   name: string;
-  description: string;
+  summary: string | null;
+  description: string | null;
   apiUrl: string;
   tags: string[];
+  icon: string | null;
+  metadata?: string | null;
+  agentIdentifier: string | null;
+  pricing: AgentPricing | null;
   registrationState:
     | "RegistrationRequested"
     | "RegistrationInitiated"
@@ -72,6 +79,17 @@ class AgentApiClient {
         | "EXPIRED"
         | null;
       unverified?: boolean;
+      registrationState?:
+        | "RegistrationRequested"
+        | "RegistrationInitiated"
+        | "RegistrationConfirmed"
+        | "RegistrationFailed"
+        | "DeregistrationRequested"
+        | "DeregistrationInitiated"
+        | "DeregistrationConfirmed"
+        | "DeregistrationFailed";
+      registrationStateIn?: string[];
+      search?: string;
     },
     options?: { cursorId?: string; take?: number },
   ): Promise<GetAgentsResult> {
@@ -81,6 +99,18 @@ class AgentApiClient {
     }
     if (filters?.unverified) {
       params.set("unverified", "true");
+    }
+    if (filters?.registrationState) {
+      params.set("registrationState", filters.registrationState);
+    }
+    if (
+      filters?.registrationStateIn &&
+      filters.registrationStateIn.length > 0
+    ) {
+      params.set("registrationStateIn", filters.registrationStateIn.join(","));
+    }
+    if (filters?.search?.trim()) {
+      params.set("search", filters.search.trim());
     }
     if (options?.cursorId) {
       params.set("cursor", options.cursorId);
@@ -127,12 +157,52 @@ class AgentApiClient {
 
   async registerAgent(data: {
     name: string;
-    description: string;
+    summary?: string;
+    description?: string;
     apiUrl: string;
     tags?: string;
+    icon?: string;
+    pricing?: AgentPricing;
+    authorName?: string;
+    authorEmail?: string;
+    organization?: string;
+    contactOther?: string;
+    termsOfUseUrl?: string;
+    privacyPolicyUrl?: string;
+    otherUrl?: string;
+    capabilityName?: string;
+    capabilityVersion?: string;
+    exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
   }): Promise<ApiResponse<Agent>> {
     return this.request<Agent>("", {
       method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAgent(
+    agentId: string,
+    data: {
+      name?: string;
+      summary?: string | null;
+      description?: string | null;
+      tags?: string[];
+      icon?: string | null;
+      pricing?: AgentPricing | null;
+      authorName?: string;
+      authorEmail?: string;
+      organization?: string;
+      contactOther?: string;
+      termsOfUseUrl?: string;
+      privacyPolicyUrl?: string;
+      otherUrl?: string;
+      capabilityName?: string;
+      capabilityVersion?: string;
+      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+    },
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
@@ -143,6 +213,56 @@ class AgentApiClient {
     });
   }
 
+  async getCounts(): Promise<
+    | {
+        success: true;
+        data: {
+          all: number;
+          registered: number;
+          deregistered: number;
+          pending: number;
+          failed: number;
+          verified: number;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    try {
+      const response = await fetch(`${this.baseUrl}/counts`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = (await response.json()) as
+        | {
+            success: true;
+            data: {
+              all: number;
+              registered: number;
+              deregistered: number;
+              pending: number;
+              failed: number;
+              verified: number;
+            };
+          }
+        | { success: false; error: string };
+      if (!response.ok) {
+        return {
+          success: false,
+          error: json.success === false ? json.error : "Request failed",
+        };
+      }
+      if (json.success) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: "Request failed" };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Network error occurred",
+      };
+    }
+  }
+
   async requestVerification(
     agentId: string,
     data: { aid: string; schemaSaid?: string },
@@ -151,6 +271,42 @@ class AgentApiClient {
       method: "POST",
       body: JSON.stringify(data),
     });
+  }
+
+  async getVerificationChallenge(
+    agentId: string,
+    regenerate = false,
+  ): Promise<
+    ApiResponse<{
+      challenge: string;
+      secret: string;
+      generatedAt: string | null;
+    }>
+  > {
+    if (regenerate) {
+      return this.request<{
+        challenge: string;
+        secret: string;
+        generatedAt: string | null;
+      }>(`/${agentId}/verification-challenge`, {
+        method: "POST",
+        body: JSON.stringify({ regenerate: true }),
+      });
+    }
+    return this.request<{
+      challenge: string;
+      secret: string;
+      generatedAt: string | null;
+    }>(`/${agentId}/verification-challenge`, { method: "GET" });
+  }
+
+  async testVerificationEndpoint(
+    agentId: string,
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/${agentId}/test-verification-endpoint`,
+      { method: "POST" },
+    );
   }
 }
 
