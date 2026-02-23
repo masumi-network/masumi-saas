@@ -11,7 +11,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { OrganizationRoleBadge } from "@/components/organizations";
@@ -71,7 +71,7 @@ export function OrganizationDashboardOverview({
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tStatus = useTranslations("App.Agents.status");
 
-  const { activeOrganization, setActiveOrganization } =
+  const { activeOrganization, setActiveOrganization, isLoading } =
     useOrganizationContext();
   const { organization, kybStatus, agentCount, agents } = data;
 
@@ -82,7 +82,7 @@ export function OrganizationDashboardOverview({
   const backLabel = isFromDashboard ? tDetail("backToDashboard") : undefined;
   const breadcrumbLabel =
     backHref === "/" ? tSidebar("dashboard") : tSidebar("organizations");
-
+  const router = useRouter();
   const isActive = activeOrganization?.id === organization.id;
   const slugDisplay = `@${organization.slug}`;
 
@@ -215,7 +215,7 @@ export function OrganizationDashboardOverview({
           {t("quickActions.title")}
         </h3>
         <div className="flex flex-wrap gap-3">
-          {!isActive && (
+          {!isLoading && !isActive && (
             <Button
               variant="default"
               onClick={() => setActiveOrganization(organization.id)}
@@ -260,7 +260,16 @@ export function OrganizationDashboardOverview({
               <ul className="min-w-0 space-y-3">
                 {agents.map((agent) => (
                   <li key={agent.id} className="min-w-0">
-                    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3">
+                    <div
+                      className="flex cursor-pointer hover:bg-muted/50 min-w-0 items-center justify-between gap-3 rounded-md border p-3"
+                      onClick={() =>
+                        router.push(
+                          `/ai-agents/${agent.id}?from=${organization.slug}-dashboard`,
+                        )
+                      }
+                      role="button"
+                      tabIndex={0}
+                    >
                       <p
                         className="min-w-0 truncate text-sm font-medium"
                         title={agent.name}
