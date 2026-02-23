@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+
 import { InputSchemaValidator } from "@/components/developers/InputSchemaValidator";
 
 export async function generateMetadata(): Promise<Metadata> {
