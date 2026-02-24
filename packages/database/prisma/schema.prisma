@@ -274,6 +274,7 @@ model Agent {
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Organization ownership (optional; set when agent is created under an active org)
+  // TODO: Link to payment node id; handle agent registration/deregistration via payment node API
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
