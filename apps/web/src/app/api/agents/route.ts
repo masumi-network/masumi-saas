@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 // without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user, activeOrganizationId } = await getAuthenticatedOrThrow();
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
         metadata:
           Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
         userId: user.id,
+        organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
       },
     });

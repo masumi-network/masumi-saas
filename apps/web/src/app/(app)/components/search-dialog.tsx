@@ -25,7 +25,7 @@ import {
 } from "react";
 import { FaDiscord, FaXTwitter } from "react-icons/fa6";
 
-import { AgentIcon } from "@/app/ai-agents/components/agent-icon";
+import { AgentIcon } from "@/components/agent-icon";
 import {
   CommandDialog,
   CommandEmpty,

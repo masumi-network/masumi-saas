@@ -8,7 +8,7 @@ import { convertZodError } from "@/lib/utils/convert-zod-error";
 
 export async function registerAgentAction(formData: FormData) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user, activeOrganizationId } = await getAuthenticatedOrThrow();
 
     const validation = registerAgentFormDataSchema.safeParse(formData);
     if (!validation.success) {
@@ -35,6 +35,7 @@ export async function registerAgentAction(formData: FormData) {
         apiUrl,
         tags: tagsArray,
         userId: user.id,
+        organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
         verificationStatus: "PENDING",
       },

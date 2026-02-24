@@ -15,6 +15,7 @@ import {
   type OrganizationInfo,
 } from "@/lib/actions/organization.action";
 import { authClient } from "@/lib/auth/auth.client";
+import type { SessionWithOrganization } from "@/lib/auth/session-types";
 
 export type { OrganizationInfo };
 
@@ -71,11 +72,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const [orgsLoading, setOrgsLoading] = useState(true);
 
   const activeOrganizationId =
-    (
-      session as {
-        session?: { activeOrganizationId?: string | null };
-      }
-    )?.session?.activeOrganizationId ?? null;
+    (session as SessionWithOrganization)?.session?.activeOrganizationId ?? null;
 
   const activeOrganization = useMemo(() => {
     if (!activeOrganizationId) return null;

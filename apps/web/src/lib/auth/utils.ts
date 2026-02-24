@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
+import type { SessionWithOrganization } from "./session-types";
 
 export interface AuthContext {
   isAuthenticated: boolean;
@@ -64,6 +65,14 @@ export async function getAuthContextWithHeaders(): Promise<
   };
 }
 
+function getActiveOrganizationId(
+  session: Awaited<ReturnType<typeof auth.api.getSession>> | null,
+): string | null {
+  return (
+    (session as SessionWithOrganization)?.session?.activeOrganizationId ?? null
+  );
+}
+
 export async function getAuthenticatedOrThrow() {
   const headersList = await getRequestHeaders();
   const session = await auth.api.getSession({
@@ -78,6 +87,7 @@ export async function getAuthenticatedOrThrow() {
     headers: headersList,
     user: session.user,
     session,
+    activeOrganizationId: getActiveOrganizationId(session),
   };
 }
 
