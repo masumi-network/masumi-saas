@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
 // without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user, session } = await getAuthenticatedOrThrow();
+    const { user, activeOrganizationId } = await getAuthenticatedOrThrow();
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -207,13 +207,6 @@ export async function POST(request: NextRequest) {
     if (capabilityVersion?.trim())
       metadata.capabilityVersion = capabilityVersion.trim();
     if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
-
-    const activeOrganizationId =
-      (
-        session as {
-          session?: { activeOrganizationId?: string | null };
-        }
-      )?.session?.activeOrganizationId ?? null;
 
     const agent = await prisma.agent.create({
       data: {
