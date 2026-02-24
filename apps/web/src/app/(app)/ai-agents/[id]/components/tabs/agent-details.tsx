@@ -6,6 +6,7 @@ import {
   FileText,
   Fingerprint,
   Link2,
+  Loader2,
   Pencil,
   ShieldCheck,
   Tag,
@@ -46,6 +47,8 @@ interface AgentDetailsProps {
   onDeleteClick: () => void;
   onEditClick?: () => void;
   onVerificationSuccess?: () => void;
+  onDeregisterClick?: () => void;
+  isDeregistering?: boolean;
 }
 
 export function AgentDetails({
@@ -53,6 +56,8 @@ export function AgentDetails({
   onDeleteClick,
   onEditClick,
   onVerificationSuccess,
+  onDeregisterClick,
+  isDeregistering = false,
 }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
@@ -397,6 +402,45 @@ export function AgentDetails({
           </CardContent>
         </Card>
       </div>
+
+      {onDeregisterClick && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4">
+            <Separator className="flex-1" />
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {t("network")}
+            </span>
+            <Separator className="flex-1" />
+          </div>
+          <Card className="border-amber-500/40 bg-amber-500/5">
+            <CardContent>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{t("deregister")}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t("deregisterDescription")}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={onDeregisterClick}
+                  disabled={isDeregistering}
+                  className="gap-2 shrink-0 w-full sm:w-auto border-amber-500/50 hover:bg-amber-500/10"
+                >
+                  {isDeregistering ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("deregistering")}
+                    </>
+                  ) : (
+                    t("deregister")
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-4">

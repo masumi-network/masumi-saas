@@ -348,6 +348,7 @@
       "comingSoon": "Analytics are coming soon."
     },
     "Sidebar": {
+      "network": "Network",
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
@@ -727,6 +728,12 @@
         "deleteDescription": "Once you delete an agent there is no going back.",
         "deleteSuccess": "Agent deleted successfully",
         "deleteError": "Failed to delete agent",
+        "network": "Network",
+        "deregister": "Deregister from network",
+        "deregisterDescription": "Remove this agent from the Masumi network. It will no longer be discoverable or accept payments.",
+        "deregistering": "Deregistering…",
+        "deregisterSuccess": "Agent deregistered from the network.",
+        "deregisterError": "Failed to deregister agent.",
         "deleteConfirmTitle": "Delete Agent",
         "deleteConfirmDescription": "Are you sure you want to delete {name}? This action cannot be undone.",
         "deleteConfirmTypeToConfirm": "Type <bold>{name}</bold> to confirm",

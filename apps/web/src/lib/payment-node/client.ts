@@ -1,0 +1,277 @@
+/**
+ * Payment node API client (server-side only).
+ * All requests use header "token" for API key auth.
+ * Response shape: { status: "success", data: T } or error.
+ */
+
+const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
+
+export type PaymentNodeNetwork = "Preprod" | "Mainnet";
+
+type PaymentNodeResponse<T> =
+  | { status: "success"; data: T }
+  | { status: string; error?: string; message?: string };
+
+async function request<T>(
+  baseUrl: string,
+  apiKey: string,
+  path: string,
+  options: {
+    method: "GET" | "POST" | "PATCH" | "DELETE";
+    body?: unknown;
+    query?: Record<string, string>;
+  },
+): Promise<T> {
+  const url = new URL(path.startsWith("/") ? path.slice(1) : path, baseUrl);
+  if (options.query) {
+    Object.entries(options.query).forEach(([k, v]) =>
+      url.searchParams.set(k, v),
+    );
+  }
+  const res = await fetch(url.toString(), {
+    method: options.method,
+    headers: {
+      [PAYMENT_NODE_HEADER_TOKEN]: apiKey,
+      "Content-Type": "application/json",
+    },
+    body: options.body != null ? JSON.stringify(options.body) : undefined,
+  });
+  const json = (await res.json()) as PaymentNodeResponse<T>;
+  if (!res.ok) {
+    const msg =
+      (json && "error" in json && json.error) ||
+      (json && "message" in json && json.message) ||
+      res.statusText ||
+      "Payment node request failed";
+    throw new Error(`${res.status}: ${msg}`);
+  }
+  if (json.status !== "success" || !("data" in json)) {
+    throw new Error("Invalid payment node response");
+  }
+  return json.data as T;
+}
+
+// ─── Types (align with payment node API) ─────────────────────────────────────
+
+export type RegistryRequestState =
+  | "RegistrationRequested"
+  | "RegistrationInitiated"
+  | "RegistrationConfirmed"
+  | "RegistrationFailed"
+  | "DeregistrationRequested"
+  | "DeregistrationInitiated"
+  | "DeregistrationConfirmed"
+  | "DeregistrationFailed";
+
+export interface RegistryEntry {
+  id: string;
+  name: string;
+  description: string | null;
+  apiBaseUrl: string;
+  state: RegistryRequestState;
+  agentIdentifier: string | null;
+  createdAt: string;
+  updatedAt: string;
+  Capability: { name: string | null; version: string | null };
+  Author: {
+    name: string;
+    contactEmail: string | null;
+    contactOther: string | null;
+    organization: string | null;
+  };
+  Tags: string[];
+  AgentPricing:
+    | { pricingType: "Fixed"; Pricing: Array<{ unit: string; amount: string }> }
+    | { pricingType: "Free" };
+  SmartContractWallet?: { walletVkey: string; walletAddress: string };
+}
+
+export interface RegisterAgentInput {
+  network: PaymentNodeNetwork;
+  sellingWalletVkey: string;
+  name: string;
+  apiBaseUrl: string;
+  description: string;
+  Tags: string[];
+  ExampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
+  Capability: { name: string; version: string };
+  Author: {
+    name: string;
+    contactEmail?: string;
+    contactOther?: string;
+    organization?: string;
+  };
+  Legal?: { privacyPolicy?: string; terms?: string; other?: string };
+  AgentPricing:
+    | { pricingType: "Free" }
+    | {
+        pricingType: "Fixed";
+        Pricing: Array<{ unit: string; amount: string }>;
+      };
+}
+
+export interface DeregisterAgentInput {
+  network: PaymentNodeNetwork;
+  agentIdentifier: string;
+  smartContractAddress?: string;
+}
+
+export interface CreateApiKeyInput {
+  permission: "Read" | "ReadAndPay" | "Admin";
+  networkLimit: PaymentNodeNetwork[];
+  usageLimited: boolean;
+  UsageCredits: Array<{ unit: string; amount: string }>;
+}
+
+export interface CreateApiKeyOutput {
+  id: string;
+  token: string;
+  permission: string;
+  usageLimited: boolean;
+  networkLimit: PaymentNodeNetwork[];
+  RemainingUsageCredits: Array<{ unit: string; amount: string }>;
+  status: string;
+}
+
+export interface AddWalletToSourceInput {
+  paymentSourceId: string;
+  AddSellingWallets?: Array<{
+    walletMnemonic: string;
+    note: string;
+    collectionAddress: string | null;
+  }>;
+  AddPurchasingWallets?: Array<{
+    walletMnemonic: string;
+    note: string;
+    collectionAddress: string | null;
+  }>;
+}
+
+export interface GeneratedWallet {
+  walletMnemonic: string;
+  walletAddress: string;
+  walletVkey: string;
+}
+
+// ─── Client factory ─────────────────────────────────────────────────────────
+
+export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
+  const base = baseUrl.replace(/\/$/, "");
+  const prefix = "/api/v1";
+
+  return {
+    /** Register an agent (pay-authenticated). Use user's API key. */
+    async registerAgent(body: RegisterAgentInput): Promise<RegistryEntry> {
+      return request<RegistryEntry>(base, apiKey, `${prefix}/registry`, {
+        method: "POST",
+        body,
+      });
+    },
+
+    /** Deregister an agent (pay-authenticated). Use user's API key. */
+    async deregisterAgent(body: DeregisterAgentInput): Promise<RegistryEntry> {
+      return request<RegistryEntry>(
+        base,
+        apiKey,
+        `${prefix}/registry/deregister`,
+        {
+          method: "POST",
+          body,
+        },
+      );
+    },
+
+    /** List registry requests (pay-authenticated). Use user's API key. */
+    async getRegistry(params: {
+      network: PaymentNodeNetwork;
+      cursorId?: string;
+    }): Promise<{ Assets: RegistryEntry[] }> {
+      return request<{ Assets: RegistryEntry[] }>(
+        base,
+        apiKey,
+        `${prefix}/registry`,
+        {
+          method: "GET",
+          query: {
+            network: params.network,
+            ...(params.cursorId && { cursorId: params.cursorId }),
+          },
+        },
+      );
+    },
+
+    /** Get single registry entry by id (pay-authenticated). Use user's API key. */
+    async getRegistryById(params: {
+      id: string;
+      network: PaymentNodeNetwork;
+    }): Promise<RegistryEntry | null> {
+      const { Assets } = await this.getRegistry({
+        network: params.network,
+        cursorId: params.id,
+      });
+      return Assets.find((a) => a.id === params.id) ?? null;
+    },
+
+    /** Get registry by agent identifier (pay-authenticated). */
+    async getRegistryByAgentIdentifier(params: {
+      agentIdentifier: string;
+      network: PaymentNodeNetwork;
+    }): Promise<RegistryEntry | null> {
+      const res = await fetch(
+        `${base}${prefix}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
+        {
+          headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+        },
+      );
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error((json as { error?: string }).error ?? res.statusText);
+      }
+      const json = (await res.json()) as PaymentNodeResponse<RegistryEntry>;
+      return json.status === "success" ? (json.data as RegistryEntry) : null;
+    },
+
+    /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */
+    async createApiKey(body: CreateApiKeyInput): Promise<CreateApiKeyOutput> {
+      return request<CreateApiKeyOutput>(base, apiKey, `${prefix}/api-key`, {
+        method: "POST",
+        body: {
+          ...body,
+          UsageCredits: body.UsageCredits,
+        },
+      });
+    },
+
+    /** Add selling/purchasing wallets to an existing payment source (admin only). */
+    async addWalletsToPaymentSource(
+      body: AddWalletToSourceInput,
+    ): Promise<unknown> {
+      return request<unknown>(
+        base,
+        apiKey,
+        `${prefix}/payment-source-extended`,
+        {
+          method: "PATCH",
+          body: {
+            id: body.paymentSourceId,
+            AddSellingWallets: body.AddSellingWallets,
+            AddPurchasingWallets: body.AddPurchasingWallets,
+          },
+        },
+      );
+    },
+
+    /** Generate a new wallet (admin only). Does NOT persist on payment node; use addWalletsToPaymentSource to persist. */
+    async generateWallet(
+      network: PaymentNodeNetwork,
+    ): Promise<GeneratedWallet> {
+      return request<GeneratedWallet>(base, apiKey, `${prefix}/wallet`, {
+        method: "POST",
+        body: { network },
+      });
+    },
+  };
+}
+
+export type PaymentNodeClient = ReturnType<typeof createPaymentNodeClient>;

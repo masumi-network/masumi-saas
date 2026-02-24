@@ -130,8 +130,9 @@ export type WalletCache = Prisma.WalletCacheModel;
  * registry. One-to-one with Agent — an agent may or may not have a
  * registry entry yet (status: "pending" until registered).
  *
- * Stores the external registry URL, network identifier, and any metadata
- * needed to look up or verify the agent in the Masumi network.
+ * Stores the external registry URL, network identifier, payment node wallet
+ * vkeys (we do not store mnemonic or address), and any metadata needed to
+ * look up or verify the agent in the Masumi network.
  */
 export type AgentReference = Prisma.AgentReferenceModel;
 /**

@@ -1,10 +1,25 @@
 "use server";
 
 import prisma from "@masumi/database/client";
+import { cookies } from "next/headers";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  createPaymentNodeClient,
+  paymentNodeConfig,
+  type PaymentNodeNetwork,
+} from "@/lib/payment-node";
+import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { registerAgentFormDataSchema } from "@/lib/schemas/agent";
 import { convertZodError } from "@/lib/utils/convert-zod-error";
+
+const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
+
+async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
+  const store = await cookies();
+  const value = store.get("payment_network")?.value;
+  return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
+}
 
 export async function registerAgentAction(formData: FormData) {
   try {
@@ -27,6 +42,62 @@ export async function registerAgentAction(formData: FormData) {
           .filter((tag) => tag.length > 0)
       : [];
 
+    if (tagsArray.length === 0) {
+      return {
+        success: false as const,
+        error: "At least one tag is required for payment node registration",
+      };
+    }
+
+    const userClient = await getPaymentNodeClientForUser(user.id);
+    if (!userClient) {
+      return {
+        success: false as const,
+        error: "Payment setup is not ready. Please try again in a moment.",
+      };
+    }
+
+    let baseUrl: string;
+    let adminKey: string;
+    let paymentSourceId: string;
+    try {
+      baseUrl = paymentNodeConfig.getBaseUrl();
+      adminKey = paymentNodeConfig.getAdminApiKey();
+      paymentSourceId = paymentNodeConfig.getPaymentSourceId();
+    } catch (e) {
+      console.error("Payment node config missing:", e);
+      return {
+        success: false as const,
+        error: "Payment node is not configured. Please try again later.",
+      };
+    }
+
+    const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+    const network = await getNetworkFromCookie();
+
+    const [sellingWallet, buyingWallet] = await Promise.all([
+      adminClient.generateWallet(network),
+      adminClient.generateWallet(network),
+    ]);
+
+    await adminClient.addWalletsToPaymentSource({
+      paymentSourceId,
+      AddSellingWallets: [
+        {
+          walletMnemonic: sellingWallet.walletMnemonic,
+          note: `Agent: ${name} (selling)`,
+          collectionAddress: null,
+        },
+      ],
+      AddPurchasingWallets: [
+        {
+          walletMnemonic: buyingWallet.walletMnemonic,
+          note: `Agent: ${name} (buying)`,
+          collectionAddress: null,
+        },
+      ],
+    });
+
     const agent = await prisma.agent.create({
       data: {
         name,
@@ -36,20 +107,68 @@ export async function registerAgentAction(formData: FormData) {
         tags: tagsArray,
         userId: user.id,
         organizationId: activeOrganizationId,
-        registrationState: "RegistrationConfirmed",
+        registrationState: "RegistrationRequested",
         verificationStatus: "PENDING",
       },
     });
 
+    await prisma.agentReference.create({
+      data: {
+        agentId: agent.id,
+        sellingWalletVkey: sellingWallet.walletVkey,
+        buyingWalletVkey: buyingWallet.walletVkey,
+        networkIdentifier: network,
+        status: "PENDING",
+      },
+    });
+
+    const registryEntry = await userClient.registerAgent({
+      network,
+      sellingWalletVkey: sellingWallet.walletVkey,
+      name,
+      apiBaseUrl: apiUrl,
+      description: description ?? "",
+      Tags: tagsArray,
+      ExampleOutputs: [],
+      Capability: { name: "Masumi", version: "1.0" },
+      Author: {
+        name: user.name ?? "Unknown",
+        contactEmail: user.email ?? undefined,
+      },
+      AgentPricing: { pricingType: "Free" },
+    });
+
+    await prisma.agentReference.update({
+      where: { agentId: agent.id },
+      data: {
+        externalId: registryEntry.id,
+        ...(registryEntry.agentIdentifier && {
+          metadata: { agentIdentifier: registryEntry.agentIdentifier },
+        }),
+      },
+    });
+
+    if (registryEntry.agentIdentifier) {
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { agentIdentifier: registryEntry.agentIdentifier },
+      });
+    }
+
+    const updatedAgent = await prisma.agent.findUniqueOrThrow({
+      where: { id: agent.id },
+    });
+
     return {
       success: true as const,
-      data: agent,
+      data: updatedAgent,
     };
   } catch (error) {
     console.error("Failed to register agent:", error);
     return {
       success: false as const,
-      error: "Failed to register agent",
+      error:
+        error instanceof Error ? error.message : "Failed to register agent",
     };
   }
 }
@@ -96,6 +215,121 @@ export async function getAgentsAction(filters?: {
     return {
       success: false as const,
       error: "Failed to get agents",
+    };
+  }
+}
+
+/** Sync this agent's registration status from the payment node (polling). */
+export async function syncAgentRegistrationStatusAction(agentId: string) {
+  try {
+    const { user } = await getAuthenticatedOrThrow();
+    const agent = await prisma.agent.findFirst({
+      where: { id: agentId, userId: user.id },
+      include: { agentReference: true },
+    });
+    if (!agent || !agent.agentReference?.externalId)
+      return { success: true as const };
+
+    const userClient = await getPaymentNodeClientForUser(user.id);
+    if (!userClient) return { success: true as const };
+
+    const network = (agent.agentReference.networkIdentifier ??
+      DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const { Assets } = await userClient.getRegistry({ network });
+    const entry = Assets.find((a) => a.id === agent.agentReference!.externalId);
+    if (!entry) return { success: true as const };
+
+    const registrationState =
+      entry.state as keyof typeof import("@masumi/database/client").RegistrationState;
+    const status =
+      entry.state === "RegistrationConfirmed"
+        ? "ACTIVE"
+        : entry.state === "DeregistrationConfirmed" ||
+            entry.state === "DeregistrationFailed"
+          ? "DEREGISTERED"
+          : agent.agentReference.status;
+
+    const existingMeta =
+      (agent.agentReference.metadata as Record<string, unknown> | null) ?? {};
+    const metadata = entry.agentIdentifier
+      ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
+      : existingMeta;
+
+    await prisma.$transaction([
+      prisma.agent.update({
+        where: { id: agentId },
+        data: {
+          registrationState,
+          ...(entry.agentIdentifier && {
+            agentIdentifier: entry.agentIdentifier,
+          }),
+        },
+      }),
+      prisma.agentReference.update({
+        where: { agentId },
+        data: {
+          status,
+          metadata,
+          ...(entry.state === "RegistrationConfirmed" && {
+            registeredAt: new Date(),
+          }),
+        },
+      }),
+    ]);
+    return { success: true as const };
+  } catch (error) {
+    console.error("Failed to sync agent registration status:", error);
+    return { success: false as const, error: "Failed to sync status" };
+  }
+}
+
+/** Deregister agent on the payment node and update local status. */
+export async function deregisterAgentAction(agentId: string) {
+  try {
+    const { user } = await getAuthenticatedOrThrow();
+    const agent = await prisma.agent.findFirst({
+      where: { id: agentId, userId: user.id },
+      include: { agentReference: true },
+    });
+    if (!agent) {
+      return { success: false as const, error: "Agent not found" };
+    }
+    const agentIdentifier =
+      agent.agentIdentifier ??
+      (agent.agentReference?.metadata as { agentIdentifier?: string } | null)
+        ?.agentIdentifier;
+    if (!agentIdentifier) {
+      return {
+        success: false as const,
+        error: "Agent is not registered on the network",
+      };
+    }
+
+    const userClient = await getPaymentNodeClientForUser(user.id);
+    if (!userClient) {
+      return { success: false as const, error: "Payment setup is not ready." };
+    }
+
+    const network = (agent.agentReference?.networkIdentifier ??
+      (await getNetworkFromCookie())) as PaymentNodeNetwork;
+    await userClient.deregisterAgent({ network, agentIdentifier });
+
+    await prisma.agentReference.updateMany({
+      where: { agentId },
+      data: { status: "DEREGISTERED" },
+    });
+    await prisma.agent.update({
+      where: { id: agentId },
+      data: { registrationState: "DeregistrationRequested" },
+    });
+
+    return { success: true as const };
+  } catch (error) {
+    console.error("Failed to deregister agent:", error);
+    return {
+      success: false as const,
+      error:
+        error instanceof Error ? error.message : "Failed to deregister agent",
     };
   }
 }

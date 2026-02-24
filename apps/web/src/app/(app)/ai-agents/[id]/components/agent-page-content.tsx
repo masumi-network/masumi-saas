@@ -2,10 +2,14 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
+import {
+  deregisterAgentAction,
+  syncAgentRegistrationStatusAction,
+} from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 
 import { EditAgentDialog } from "../../components/edit-agent-dialog";
@@ -52,7 +56,44 @@ export function AgentPageContent({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeregistering, setIsDeregistering] = useState(false);
   const [, startTransition] = useTransition();
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pendingRegistration =
+    agent.registrationState === "RegistrationRequested" ||
+    agent.registrationState === "RegistrationInitiated";
+
+  const syncAndRefetch = useCallback(async () => {
+    await syncAgentRegistrationStatusAction(agent.id);
+    const result = await agentApiClient.getAgent(agent.id);
+    if (result.success && result.data) setAgent(result.data);
+  }, [agent.id]);
+
+  useEffect(() => {
+    if (!pendingRegistration) return;
+    const id = setTimeout(() => syncAndRefetch(), 0);
+    pollIntervalRef.current = setInterval(syncAndRefetch, 12_000);
+    return () => {
+      clearTimeout(id);
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [pendingRegistration, syncAndRefetch]);
+
+  const handleDeregister = () => {
+    setIsDeregistering(true);
+    startTransition(async () => {
+      const result = await deregisterAgentAction(agent.id);
+      if (result.success) {
+        toast.success(t("deregisterSuccess"));
+        const next = await agentApiClient.getAgent(agent.id);
+        if (next.success && next.data) setAgent(next.data);
+      } else {
+        toast.error(result.error ?? t("deregisterError"));
+      }
+      setIsDeregistering(false);
+    });
+  };
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");
@@ -124,6 +165,13 @@ export function AgentPageContent({
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onEditClick={() => setIsEditDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
+          onDeregisterClick={
+            agent.registrationState === "RegistrationConfirmed" &&
+            agent.agentIdentifier
+              ? handleDeregister
+              : undefined
+          }
+          isDeregistering={isDeregistering}
         />
       )}
 
