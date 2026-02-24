@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { InputSchemaValidator } from "@/components/developers/InputSchemaValidator";
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Developers");
   return {
@@ -19,9 +21,7 @@ export default async function DevelopersPage() {
         <p className="text-muted-foreground mt-2">{t("description")}</p>
       </div>
 
-      <div className="rounded-lg border p-8 text-center">
-        <p className="text-muted-foreground">{t("comingSoon")}</p>
-      </div>
+      <InputSchemaValidator />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import {
   Bot,
   Building2,
+  Code,
   CreditCard,
   Key,
   LayoutDashboard,
@@ -74,6 +75,12 @@ export default function MenuItems() {
       href: "/api-keys",
       label: t("apiKeys"),
       Icon: Key,
+    },
+    {
+      key: "developers",
+      href: "/developers",
+      label: t("developers"),
+      Icon: Code,
     },
     {
       key: "account",
