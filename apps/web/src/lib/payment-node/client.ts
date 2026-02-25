@@ -22,7 +22,8 @@ async function request<T>(
     query?: Record<string, string>;
   },
 ): Promise<T> {
-  const url = new URL(path.startsWith("/") ? path.slice(1) : path, baseUrl);
+  const base = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+  const url = new URL(path.startsWith("/") ? path.slice(1) : path, base);
   if (options.query) {
     Object.entries(options.query).forEach(([k, v]) =>
       url.searchParams.set(k, v),
