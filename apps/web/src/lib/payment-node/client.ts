@@ -200,7 +200,6 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       // Each user key only sees their own agents so the result set is small.
       const MAX_PAGES = 20;
       let cursorId: string | undefined;
-      let prevCursorId: string | undefined;
       for (let page = 0; page < MAX_PAGES; page++) {
         const { Assets } = await this.getRegistry({
           network: params.network,
@@ -211,8 +210,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         if (Assets.length === 0) return null;
         const nextCursor = Assets[Assets.length - 1]!.id;
         // Stale cursor — API didn't advance, bail to avoid an infinite loop.
-        if (nextCursor === prevCursorId) return null;
-        prevCursorId = cursorId;
+        if (nextCursor === cursorId) return null;
         cursorId = nextCursor;
       }
       return null;
