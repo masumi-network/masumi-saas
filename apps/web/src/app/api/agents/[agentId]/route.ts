@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { type PaymentNodeNetwork } from "@/lib/payment-node";
+import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 
 const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
@@ -231,6 +233,7 @@ export async function DELETE(
         id: agentId,
         userId: user.id,
       },
+      include: { agentReference: true },
     });
 
     if (!agent) {
@@ -241,6 +244,24 @@ export async function DELETE(
         },
         { status: 404 },
       );
+    }
+
+    const agentIdentifier =
+      agent.agentIdentifier ??
+      (agent.agentReference?.metadata as { agentIdentifier?: string } | null)
+        ?.agentIdentifier;
+
+    if (agentIdentifier) {
+      const userClient = await getPaymentNodeClientForUser(user.id);
+      if (userClient) {
+        try {
+          const network = (agent.agentReference?.networkIdentifier ??
+            "Preprod") as PaymentNodeNetwork;
+          await userClient.deregisterAgent({ network, agentIdentifier });
+        } catch (error) {
+          console.error("Failed to deregister agent from payment node:", error);
+        }
+      }
     }
 
     await prisma.agent.delete({

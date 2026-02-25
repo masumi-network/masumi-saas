@@ -444,6 +444,7 @@ export async function deleteAgentAction(agentId: string) {
         id: agentId,
         userId: user.id,
       },
+      include: { agentReference: true },
     });
 
     if (!agent) {
@@ -451,6 +452,24 @@ export async function deleteAgentAction(agentId: string) {
         success: false as const,
         error: "Agent not found",
       };
+    }
+
+    const agentIdentifier =
+      agent.agentIdentifier ??
+      (agent.agentReference?.metadata as { agentIdentifier?: string } | null)
+        ?.agentIdentifier;
+
+    if (agentIdentifier) {
+      const userClient = await getPaymentNodeClientForUser(user.id);
+      if (userClient) {
+        try {
+          const network = (agent.agentReference?.networkIdentifier ??
+            DEFAULT_NETWORK) as PaymentNodeNetwork;
+          await userClient.deregisterAgent({ network, agentIdentifier });
+        } catch (error) {
+          console.error("Failed to deregister agent from payment node:", error);
+        }
+      }
     }
 
     await prisma.agent.delete({
