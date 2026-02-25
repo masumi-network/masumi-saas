@@ -5,7 +5,6 @@ import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
-import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 import {
   changePasswordFormDataSchema,
   deleteAccountFormDataSchema,
@@ -121,8 +120,6 @@ export async function signUpAction(formData: FormData) {
         errorKey: "AccountCreationFailed",
       };
     }
-
-    await createPaymentNodeKeyForUser(result.user.id);
 
     return {
       success: true,

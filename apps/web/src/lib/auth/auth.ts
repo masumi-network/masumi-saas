@@ -14,6 +14,7 @@ import { emailConfig } from "@/lib/config/email.config";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
+import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 export const auth = betterAuth({
   appName: "Masumi",
@@ -135,6 +136,22 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     expiresIn: authConfig.emailVerification.expiresIn,
     autoSignInAfterVerification: true,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Runs for all signup paths (email/password + OAuth).
+          // Fire-and-forget — failure must not break signup.
+          createPaymentNodeKeyForUser(user.id).catch((err) => {
+            console.error(
+              "[Payment Node] databaseHooks user.create.after error",
+              err,
+            );
+          });
+        },
+      },
+    },
   },
   user: {
     changeEmail: {
