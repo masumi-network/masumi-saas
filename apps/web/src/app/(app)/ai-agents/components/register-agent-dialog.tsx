@@ -36,7 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agentApiClient } from "@/lib/api/agent.client";
+import { registerAgentAction } from "@/lib/actions/agent.action";
 
 import { AgentIconPicker } from "./agent-icon-picker";
 
@@ -363,47 +363,59 @@ export function RegisterAgentDialog({
   const onSubmit = async (data: RegisterAgentFormType) => {
     setIsLoading(true);
     try {
-      const pricing = data.isFree
-        ? { pricingType: "Free" as const }
-        : {
-            pricingType: "Fixed" as const,
-            prices: (data.prices ?? [])
-              .filter((p) => p.amount?.trim())
-              .map((p) => ({ amount: p.amount.trim(), currency: "USD" })),
-          };
+      const formData = new FormData();
+      formData.set("name", data.name);
+      if (data.summary?.trim()) formData.set("summary", data.summary.trim());
+      if (data.description?.trim())
+        formData.set("description", data.description.trim());
+      formData.set("apiUrl", data.apiUrl);
+      formData.set("tags", tags.join(", "));
+      if (data.icon?.trim()) formData.set("icon", data.icon.trim());
 
-      const exampleOutputs =
-        data.exampleOutputs
-          ?.filter((e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim())
-          .map((e) => ({
-            name: e.name.trim(),
-            url: e.url.trim(),
-            mimeType: e.mimeType.trim(),
-          })) ?? [];
+      // Pricing
+      const pricingType = data.isFree ? "Free" : "Fixed";
+      formData.set("pricingType", pricingType);
+      if (!data.isFree) {
+        const prices = (data.prices ?? [])
+          .filter((p) => p.amount?.trim())
+          .map((p) => ({ amount: p.amount.trim(), currency: "USD" }));
+        if (prices.length > 0) {
+          formData.set("prices", JSON.stringify(prices));
+        }
+      }
 
-      const result = await agentApiClient.registerAgent({
-        name: data.name,
-        summary: data.summary?.trim() || undefined,
-        description: data.description?.trim() || undefined,
-        apiUrl: data.apiUrl,
-        pricing: data.isFree
-          ? pricing
-          : (pricing.prices?.length ?? 0) > 0
-            ? pricing
-            : undefined,
-        tags: tags.join(", "),
-        icon: data.icon?.trim() || undefined,
-        authorName: data.authorName?.trim() || undefined,
-        authorEmail: data.authorEmail?.trim() || undefined,
-        organization: data.organization?.trim() || undefined,
-        contactOther: data.contactOther?.trim() || undefined,
-        termsOfUseUrl: data.termsOfUseUrl?.trim() || undefined,
-        privacyPolicyUrl: data.privacyPolicyUrl?.trim() || undefined,
-        otherUrl: data.otherUrl?.trim() || undefined,
-        capabilityName: data.capabilityName?.trim() || undefined,
-        capabilityVersion: data.capabilityVersion?.trim() || undefined,
-        exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
-      });
+      // Author
+      if (data.authorName?.trim())
+        formData.set("authorName", data.authorName.trim());
+      if (data.authorEmail?.trim())
+        formData.set("authorEmail", data.authorEmail.trim());
+      if (data.organization?.trim())
+        formData.set("organization", data.organization.trim());
+      if (data.contactOther?.trim())
+        formData.set("contactOther", data.contactOther.trim());
+
+      // Legal
+      if (data.termsOfUseUrl?.trim())
+        formData.set("termsOfUseUrl", data.termsOfUseUrl.trim());
+      if (data.privacyPolicyUrl?.trim())
+        formData.set("privacyPolicyUrl", data.privacyPolicyUrl.trim());
+      if (data.otherUrl?.trim()) formData.set("otherUrl", data.otherUrl.trim());
+
+      // Capability
+      if (data.capabilityName?.trim())
+        formData.set("capabilityName", data.capabilityName.trim());
+      if (data.capabilityVersion?.trim())
+        formData.set("capabilityVersion", data.capabilityVersion.trim());
+
+      // Example outputs (JSON-encoded)
+      const exampleOutputs = (data.exampleOutputs ?? []).filter(
+        (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
+      );
+      if (exampleOutputs.length > 0) {
+        formData.set("exampleOutputs", JSON.stringify(exampleOutputs));
+      }
+
+      const result = await registerAgentAction(formData);
 
       if (result.success) {
         toast.success(t("success"));

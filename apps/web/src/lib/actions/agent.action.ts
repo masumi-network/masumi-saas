@@ -8,6 +8,7 @@ import {
   createPaymentNodeClient,
   paymentNodeConfig,
   type PaymentNodeNetwork,
+  type RegisterAgentInput,
 } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { registerAgentFormDataSchema } from "@/lib/schemas/agent";
@@ -33,7 +34,26 @@ export async function registerAgentAction(formData: FormData) {
       };
     }
 
-    const { name, description, apiUrl, tags } = validation.data;
+    const {
+      name,
+      summary,
+      description,
+      apiUrl,
+      tags,
+      icon,
+      pricingType,
+      prices: pricesJson,
+      authorName,
+      authorEmail,
+      organization,
+      contactOther,
+      termsOfUseUrl,
+      privacyPolicyUrl,
+      otherUrl,
+      capabilityName,
+      capabilityVersion,
+      exampleOutputs: exampleOutputsJson,
+    } = validation.data;
 
     const tagsArray = tags
       ? tags
@@ -48,6 +68,41 @@ export async function registerAgentAction(formData: FormData) {
         error: "At least one tag is required for payment node registration",
       };
     }
+
+    // Parse JSON-encoded nested fields
+    type PriceEntry = { amount: string; currency: string };
+    type ExampleOutput = { name: string; url: string; mimeType: string };
+
+    let parsedPrices: PriceEntry[] = [];
+    if (pricesJson) {
+      try {
+        parsedPrices = JSON.parse(pricesJson) as PriceEntry[];
+      } catch {
+        // ignore malformed JSON — fall back to free
+      }
+    }
+
+    let parsedExampleOutputs: ExampleOutput[] = [];
+    if (exampleOutputsJson) {
+      try {
+        parsedExampleOutputs = JSON.parse(
+          exampleOutputsJson,
+        ) as ExampleOutput[];
+      } catch {
+        // ignore
+      }
+    }
+
+    const agentPricing: RegisterAgentInput["AgentPricing"] =
+      pricingType === "Fixed" && parsedPrices.length > 0
+        ? {
+            pricingType: "Fixed",
+            Pricing: parsedPrices.map((p) => ({
+              unit: p.currency ?? "USD",
+              amount: p.amount,
+            })),
+          }
+        : { pricingType: "Free" };
 
     const userClient = await getPaymentNodeClientForUser(user.id);
     if (!userClient) {
@@ -101,10 +156,11 @@ export async function registerAgentAction(formData: FormData) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: null,
-        description,
+        summary: summary?.trim() || null,
+        description: description?.trim() || null,
         apiUrl,
         tags: tagsArray,
+        icon: icon?.trim() || null,
         userId: user.id,
         organizationId: activeOrganizationId,
         registrationState: "RegistrationRequested",
@@ -127,15 +183,29 @@ export async function registerAgentAction(formData: FormData) {
       sellingWalletVkey: sellingWallet.walletVkey,
       name,
       apiBaseUrl: apiUrl,
-      description: description ?? "",
+      description: description?.trim() ?? "",
       Tags: tagsArray,
-      ExampleOutputs: [],
-      Capability: { name: "Masumi", version: "1.0" },
-      Author: {
-        name: user.name ?? "Unknown",
-        contactEmail: user.email ?? undefined,
+      ExampleOutputs: parsedExampleOutputs,
+      Capability: {
+        name: capabilityName?.trim() || "Masumi",
+        version: capabilityVersion?.trim() || "1.0",
       },
-      AgentPricing: { pricingType: "Free" },
+      Author: {
+        name: authorName?.trim() || user.name || "Unknown",
+        contactEmail: authorEmail?.trim() || user.email || undefined,
+        contactOther: contactOther?.trim() || undefined,
+        organization: organization?.trim() || undefined,
+      },
+      ...(termsOfUseUrl?.trim() || privacyPolicyUrl?.trim() || otherUrl?.trim()
+        ? {
+            Legal: {
+              terms: termsOfUseUrl?.trim() || undefined,
+              privacyPolicy: privacyPolicyUrl?.trim() || undefined,
+              other: otherUrl?.trim() || undefined,
+            },
+          }
+        : {}),
+      AgentPricing: agentPricing,
     });
 
     await prisma.agentReference.update({
