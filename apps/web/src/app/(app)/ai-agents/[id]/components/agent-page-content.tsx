@@ -62,7 +62,9 @@ export function AgentPageContent({
 
   const pendingRegistration =
     agent.registrationState === "RegistrationRequested" ||
-    agent.registrationState === "RegistrationInitiated";
+    agent.registrationState === "RegistrationInitiated" ||
+    agent.registrationState === "DeregistrationRequested" ||
+    agent.registrationState === "DeregistrationInitiated";
 
   const syncAndRefetch = useCallback(async () => {
     await syncAgentRegistrationStatusAction(agent.id);

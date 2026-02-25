@@ -210,7 +210,9 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       // cursor-based pagination ("entries after this cursor").
       // Each user key only sees their own agents so the result set is small.
       let cursorId: string | undefined;
-      while (true) {
+      let iterations = 0;
+      const maxIterations = 50;
+      while (iterations < maxIterations) {
         const { Assets } = await this.getRegistry({
           network: params.network,
           cursorId,
@@ -219,7 +221,9 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         if (match) return match;
         if (Assets.length === 0) return null;
         cursorId = Assets[Assets.length - 1]!.id;
+        iterations++;
       }
+      return null;
     },
 
     /** Get registry by agent identifier (pay-authenticated). */
