@@ -175,8 +175,8 @@ export async function registerAgentAction(formData: FormData) {
         body: JSON.stringify({
           network: "testnet",
           receiverAddress: sellingWallet.walletAddress,
-          lovelaceAmount: 10_000_000, // 10 ADA
-          assetAmount: 0,
+          lovelaceAmount: 1_000_000_000, // ~1000 ADA (dispenser default)
+          assetAmount: 1_000_000_000, // tUSDM (dispenser sends both together)
           testnet_collateral: false,
         }),
       }).catch((err) => {
