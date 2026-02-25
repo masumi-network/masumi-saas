@@ -119,7 +119,8 @@ export interface DeregisterAgentInput {
 export interface CreateApiKeyInput {
   permission: "Read" | "ReadAndPay" | "Admin";
   networkLimit: PaymentNodeNetwork[];
-  usageLimited: boolean;
+  /** Payment node API expects the string "true"/"false", not a boolean. */
+  usageLimited: "true" | "false";
   UsageCredits: Array<{ unit: string; amount: string }>;
 }
 
