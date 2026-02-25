@@ -178,35 +178,41 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
-    const registryEntry = await userClient.registerAgent({
-      network,
-      sellingWalletVkey: sellingWallet.walletVkey,
-      name,
-      apiBaseUrl: apiUrl,
-      description: description?.trim() ?? "",
-      Tags: tagsArray,
-      ExampleOutputs: parsedExampleOutputs,
-      Capability: {
-        name: capabilityName?.trim() || "Masumi",
-        version: capabilityVersion?.trim() || "1.0",
-      },
-      Author: {
-        name: authorName?.trim() || user.name || "Unknown",
-        contactEmail: authorEmail?.trim() || user.email || undefined,
-        contactOther: contactOther?.trim() || undefined,
-        organization: organization?.trim() || undefined,
-      },
-      ...(termsOfUseUrl?.trim() || privacyPolicyUrl?.trim() || otherUrl?.trim()
-        ? {
-            Legal: {
-              terms: termsOfUseUrl?.trim() || undefined,
-              privacyPolicy: privacyPolicyUrl?.trim() || undefined,
-              other: otherUrl?.trim() || undefined,
-            },
-          }
-        : {}),
-      AgentPricing: agentPricing,
-    });
+    let registryEntry;
+    try {
+      registryEntry = await userClient.registerAgent({
+        network,
+        sellingWalletVkey: sellingWallet.walletVkey,
+        name,
+        apiBaseUrl: apiUrl,
+        description: description?.trim() ?? "",
+        Tags: tagsArray,
+        ExampleOutputs: parsedExampleOutputs,
+        Capability: {
+          name: capabilityName?.trim() || "Masumi",
+          version: capabilityVersion?.trim() || "1.0",
+        },
+        Author: {
+          name: authorName?.trim() || user.name || "Unknown",
+          contactEmail: authorEmail?.trim() || user.email || undefined,
+          contactOther: contactOther?.trim() || undefined,
+          organization: organization?.trim() || undefined,
+        },
+        ...(termsOfUseUrl?.trim() || privacyPolicyUrl?.trim() || otherUrl?.trim()
+          ? {
+              Legal: {
+                terms: termsOfUseUrl?.trim() || undefined,
+                privacyPolicy: privacyPolicyUrl?.trim() || undefined,
+                other: otherUrl?.trim() || undefined,
+              },
+            }
+          : {}),
+        AgentPricing: agentPricing,
+      });
+    } catch (registrationError) {
+      await prisma.agent.delete({ where: { id: agent.id } }).catch(() => {});
+      throw registrationError;
+    }
 
     await prisma.agentReference.update({
       where: { agentId: agent.id },
@@ -305,8 +311,10 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
 
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const { Assets } = await userClient.getRegistry({ network });
-    const entry = Assets.find((a) => a.id === agent.agentReference!.externalId);
+    const entry = await userClient.getRegistryById({
+      id: agent.agentReference.externalId,
+      network,
+    });
     if (!entry) return { success: true as const };
 
     const registrationState =
@@ -314,8 +322,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
-        : entry.state === "DeregistrationConfirmed" ||
-            entry.state === "DeregistrationFailed"
+        : entry.state === "DeregistrationConfirmed"
           ? "DEREGISTERED"
           : agent.agentReference.status;
 

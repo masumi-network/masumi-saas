@@ -1,5 +1,3 @@
-"use server";
-
 import prisma from "@masumi/database/client";
 
 import {
