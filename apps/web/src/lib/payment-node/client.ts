@@ -207,7 +207,6 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     }): Promise<RegistryEntry | null> {
       const { Assets } = await this.getRegistry({
         network: params.network,
-        cursorId: params.id,
       });
       return Assets.find((a) => a.id === params.id) ?? null;
     },
