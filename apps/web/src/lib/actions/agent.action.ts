@@ -175,8 +175,8 @@ export async function registerAgentAction(formData: FormData) {
         body: JSON.stringify({
           network: "testnet",
           receiverAddress: sellingWallet.walletAddress,
-          lovelaceAmount: 1_000_000_000, // ~1000 ADA (dispenser default)
-          assetAmount: 1_000_000_000, // tUSDM (dispenser sends both together)
+          lovelaceAmount: 10_000_000, // 10 ADA
+          assetAmount: 1_000_000, // 1 tUSDM (required — dispenser errors with assetAmount 0)
           testnet_collateral: false,
         }),
       }).catch((err) => {
@@ -511,6 +511,26 @@ export async function deleteAgentAction(agentId: string) {
         error:
           "This agent is still registered on the Masumi network. Please deregister it before deleting.",
       };
+    }
+
+    // If the agent has an identifier on the payment node (e.g. RegistrationFailed
+    // after the payment node already created the entry), attempt to deregister
+    // before deleting locally so it doesn't stay orphaned on-chain.
+    const agentIdentifier = agent.agentReference?.agentIdentifier;
+    if (agentIdentifier) {
+      const userClient = await getPaymentNodeClientForUser(user.id);
+      if (userClient) {
+        const network = (agent.agentReference?.networkIdentifier ??
+          (await getNetworkFromCookie())) as PaymentNodeNetwork;
+        await userClient
+          .deregisterAgent({ network, agentIdentifier })
+          .catch((err) => {
+            console.warn(
+              "[Payment Node] Deregister on delete failed (continuing with local delete):",
+              err,
+            );
+          });
+      }
     }
 
     await prisma.agent.delete({
