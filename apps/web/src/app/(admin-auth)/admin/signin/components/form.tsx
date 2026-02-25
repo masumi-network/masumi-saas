@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -19,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { adminSignInAction } from "@/lib/actions/admin-auth.action";
+import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 export default function AdminSignInForm() {

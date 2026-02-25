@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -21,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
+import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 interface SignInFormProps {

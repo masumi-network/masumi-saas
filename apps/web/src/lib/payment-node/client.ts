@@ -229,7 +229,9 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         throw new Error((json as { error?: string }).error ?? res.statusText);
       }
       const json = (await res.json()) as PaymentNodeResponse<RegistryEntry>;
-      return json.status === "success" ? (json.data as RegistryEntry) : null;
+      return json.status === "success" && "data" in json
+        ? (json.data as RegistryEntry)
+        : null;
     },
 
     /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */
