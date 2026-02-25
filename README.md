@@ -118,8 +118,8 @@ masumi-saas/
    - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, use port 3901 not 3903)
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification credentials
 
-   - **PAYMENT_NODE_BASE_URL**: Base URL of the Masumi payment node API
-     - e.g. `https://payment.masumi.network` or `http://localhost:3001`
+   - **PAYMENT_NODE_BASE_URL**: Base URL of the Masumi payment node API, including the version path
+     - e.g. `https://payment.masumi.network/api/v1` or `http://localhost:3001/api/v1`
    - **PAYMENT_NODE_ADMIN_API_KEY**: Admin API key for the payment node (server-side only, never exposed to client)
      - Used to generate wallets and create per-user API keys
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
