@@ -159,6 +159,24 @@ export async function registerAgentAction(formData: FormData) {
       ],
     });
 
+    // TODO(mainnet): On mainnet, show the user the selling wallet address and
+    // prompt them to fund it manually instead of using the dispenser.
+    if (network === "Preprod") {
+      fetch("https://dispenser.masumi.network/submit_transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          network: "testnet",
+          receiverAddress: sellingWallet.walletAddress,
+          lovelaceAmount: 10_000_000, // 10 ADA
+          assetAmount: 0,
+          testnet_collateral: false,
+        }),
+      }).catch((err) => {
+        console.warn("[Dispenser] Failed to fund selling wallet:", err);
+      });
+    }
+
     const agent = await prisma.agent.create({
       data: {
         name,
