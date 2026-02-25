@@ -99,13 +99,20 @@ export async function registerAgentAction(formData: FormData) {
       }
     }
 
+    // USDM is the 1:1 USD stablecoin on Cardano (policyId + hex assetName).
+    // 1 USDM = 1,000,000 units (6 decimals). Users enter amounts in USD.
+    // TODO(mainnet): tUSDM and USDM share the same policy ID — no change needed for mainnet.
+    const USDM_UNIT =
+      "c48cbb3d5e57ed56e276bc45f99ab39abe94e6cd7ac39fb402da47ad0014df105553444d";
+    const USDM_DECIMALS = 1_000_000;
+
     const agentPricing: RegisterAgentInput["AgentPricing"] =
       pricingType === "Fixed" && parsedPrices.length > 0
         ? {
             pricingType: "Fixed",
             Pricing: parsedPrices.map((p) => ({
-              unit: p.currency ?? "USD",
-              amount: p.amount,
+              unit: USDM_UNIT,
+              amount: String(Math.round(Number(p.amount) * USDM_DECIMALS)),
             })),
           }
         : { pricingType: "Free" };

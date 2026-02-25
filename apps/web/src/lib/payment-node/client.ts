@@ -39,11 +39,21 @@ async function request<T>(
   });
   const json = (await res.json()) as PaymentNodeResponse<T>;
   if (!res.ok) {
+    const errObj = json && "error" in json ? json.error : null;
     const msg =
-      (json && "error" in json && json.error) ||
+      (errObj && typeof errObj === "object" && "message" in errObj
+        ? (errObj as { message: string }).message
+        : null) ||
+      (typeof errObj === "string" ? errObj : null) ||
       (json && "message" in json && json.message) ||
       res.statusText ||
       "Payment node request failed";
+    console.error(
+      "[Payment Node] Request failed:",
+      res.status,
+      url.toString(),
+      JSON.stringify(json),
+    );
     throw new Error(`${res.status}: ${msg}`);
   }
   if (json.status !== "success" || !("data" in json)) {
