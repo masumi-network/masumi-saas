@@ -78,7 +78,10 @@ export async function registerAgentAction(formData: FormData) {
       try {
         parsedPrices = JSON.parse(pricesJson) as PriceEntry[];
       } catch {
-        // ignore malformed JSON — fall back to free
+        return {
+          success: false as const,
+          error: "Invalid pricing data. Please re-enter your prices.",
+        };
       }
     }
 
@@ -89,7 +92,10 @@ export async function registerAgentAction(formData: FormData) {
           exampleOutputsJson,
         ) as ExampleOutput[];
       } catch {
-        // ignore
+        return {
+          success: false as const,
+          error: "Invalid example outputs data. Please re-enter your examples.",
+        };
       }
     }
 
@@ -178,35 +184,45 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
-    const registryEntry = await userClient.registerAgent({
-      network,
-      sellingWalletVkey: sellingWallet.walletVkey,
-      name,
-      apiBaseUrl: apiUrl,
-      description: description?.trim() ?? "",
-      Tags: tagsArray,
-      ExampleOutputs: parsedExampleOutputs,
-      Capability: {
-        name: capabilityName?.trim() || "Masumi",
-        version: capabilityVersion?.trim() || "1.0",
-      },
-      Author: {
-        name: authorName?.trim() || user.name || "Unknown",
-        contactEmail: authorEmail?.trim() || user.email || undefined,
-        contactOther: contactOther?.trim() || undefined,
-        organization: organization?.trim() || undefined,
-      },
-      ...(termsOfUseUrl?.trim() || privacyPolicyUrl?.trim() || otherUrl?.trim()
-        ? {
-            Legal: {
-              terms: termsOfUseUrl?.trim() || undefined,
-              privacyPolicy: privacyPolicyUrl?.trim() || undefined,
-              other: otherUrl?.trim() || undefined,
-            },
-          }
-        : {}),
-      AgentPricing: agentPricing,
-    });
+    let registryEntry;
+    try {
+      registryEntry = await userClient.registerAgent({
+        network,
+        sellingWalletVkey: sellingWallet.walletVkey,
+        name,
+        apiBaseUrl: apiUrl,
+        description: description?.trim() ?? "",
+        Tags: tagsArray,
+        ExampleOutputs: parsedExampleOutputs,
+        Capability: {
+          name: capabilityName?.trim() || "Masumi",
+          version: capabilityVersion?.trim() || "1.0",
+        },
+        Author: {
+          name: authorName?.trim() || user.name || "Unknown",
+          contactEmail: authorEmail?.trim() || user.email || undefined,
+          contactOther: contactOther?.trim() || undefined,
+          organization: organization?.trim() || undefined,
+        },
+        ...(termsOfUseUrl?.trim() ||
+        privacyPolicyUrl?.trim() ||
+        otherUrl?.trim()
+          ? {
+              Legal: {
+                terms: termsOfUseUrl?.trim() || undefined,
+                privacyPolicy: privacyPolicyUrl?.trim() || undefined,
+                other: otherUrl?.trim() || undefined,
+              },
+            }
+          : {}),
+        AgentPricing: agentPricing,
+      });
+    } catch (paymentNodeError) {
+      // Payment node call failed — delete the orphaned DB records so the agent
+      // doesn't appear in the user's list stuck in a permanent pending state.
+      await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
+      throw paymentNodeError;
+    }
 
     await prisma.agentReference.update({
       where: { agentId: agent.id },
@@ -305,8 +321,10 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
 
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const { Assets } = await userClient.getRegistry({ network });
-    const entry = Assets.find((a) => a.id === agent.agentReference!.externalId);
+    const entry = await userClient.getRegistryById({
+      id: agent.agentReference.externalId,
+      network,
+    });
     if (!entry) return { success: true as const };
 
     const registrationState =
@@ -314,8 +332,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
-        : entry.state === "DeregistrationConfirmed" ||
-            entry.state === "DeregistrationFailed"
+        : entry.state === "DeregistrationConfirmed"
           ? "DEREGISTERED"
           : agent.agentReference.status;
 
@@ -384,10 +401,10 @@ export async function deregisterAgentAction(agentId: string) {
       (await getNetworkFromCookie())) as PaymentNodeNetwork;
     await userClient.deregisterAgent({ network, agentIdentifier });
 
-    await prisma.agentReference.updateMany({
-      where: { agentId },
-      data: { status: "DEREGISTERED" },
-    });
+    // Deregistration on the payment node is async — the network state is now
+    // "DeregistrationRequested". Keep the local AgentReference status as ACTIVE
+    // (or whatever it currently is) and let syncAgentRegistrationStatusAction
+    // poll until DeregistrationConfirmed before marking it DEREGISTERED.
     await prisma.agent.update({
       where: { id: agentId },
       data: { registrationState: "DeregistrationRequested" },

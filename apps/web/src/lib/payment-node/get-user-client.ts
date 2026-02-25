@@ -26,7 +26,12 @@ export async function getPaymentNodeClientForUser(
     );
     const baseUrl = paymentNodeConfig.getBaseUrl();
     return createPaymentNodeClient(baseUrl, token);
-  } catch {
+  } catch (err) {
+    console.error(
+      "[Payment Node] Failed to decrypt API key for user",
+      userId,
+      err,
+    );
     return null;
   }
 }
