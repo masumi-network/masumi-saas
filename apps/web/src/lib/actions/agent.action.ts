@@ -458,10 +458,8 @@ export async function deleteAgentAction(agentId: string) {
     const { user } = await getAuthenticatedOrThrow();
 
     const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
+      where: { id: agentId, userId: user.id },
+      include: { agentReference: true },
     });
 
     if (!agent) {
@@ -471,10 +469,26 @@ export async function deleteAgentAction(agentId: string) {
       };
     }
 
+    // Block deletion if the agent is live on the Masumi network — deleting
+    // locally would orphan it on-chain (still discoverable, still accepting
+    // payments with no backend to handle them). The user must deregister first.
+    const liveStates: (typeof agent.registrationState)[] = [
+      "RegistrationConfirmed",
+      "RegistrationRequested",
+      "RegistrationInitiated",
+      "DeregistrationRequested",
+      "DeregistrationInitiated",
+    ];
+    if (liveStates.includes(agent.registrationState)) {
+      return {
+        success: false as const,
+        error:
+          "This agent is still registered on the Masumi network. Please deregister it before deleting.",
+      };
+    }
+
     await prisma.agent.delete({
-      where: {
-        id: agentId,
-      },
+      where: { id: agentId },
     });
 
     return {
