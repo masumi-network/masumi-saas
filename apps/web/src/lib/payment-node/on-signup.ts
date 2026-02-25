@@ -35,8 +35,8 @@ export async function createPaymentNodeKeyForUser(
     const result = await adminClient.createApiKey({
       permission: "ReadAndPay",
       networkLimit: ["Preprod", "Mainnet"],
-      usageLimited: true,
-      UsageCredits: [], // Limits can be added later
+      usageLimited: false,
+      UsageCredits: [],
     });
 
     const encrypted = await encryptPaymentNodeSecret(result.token);
