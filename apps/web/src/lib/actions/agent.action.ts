@@ -165,6 +165,7 @@ export async function registerAgentAction(formData: FormData) {
         organizationId: activeOrganizationId,
         registrationState: "RegistrationRequested",
         verificationStatus: "PENDING",
+        pricing: agentPricing,
       },
     });
 
