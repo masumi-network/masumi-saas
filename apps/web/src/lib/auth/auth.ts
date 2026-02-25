@@ -3,6 +3,7 @@ import "server-only";
 import prisma from "@masumi/database/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
@@ -14,6 +15,7 @@ import { emailConfig } from "@/lib/config/email.config";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
+import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 export const auth = betterAuth({
   appName: "Masumi",
@@ -28,6 +30,25 @@ export const auth = betterAuth({
     "http://127.0.0.1:3000",
     "https://appleid.apple.com",
   ],
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      if (
+        ctx.path?.startsWith("/sign-in/social") ||
+        ctx.path?.startsWith("/callback")
+      ) {
+        const session = ctx.context.newSession;
+        if (session?.user) {
+          const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { paymentNodeApiKeyEncrypted: true },
+          });
+          if (user && user.paymentNodeApiKeyEncrypted === null) {
+            await createPaymentNodeKeyForUser(session.user.id);
+          }
+        }
+      }
+    }),
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification:
