@@ -157,12 +157,11 @@ export interface GeneratedWallet {
 
 export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
   const base = baseUrl.replace(/\/$/, "");
-  const prefix = "/api/v1";
 
   return {
     /** Register an agent (pay-authenticated). Use user's API key. */
     async registerAgent(body: RegisterAgentInput): Promise<RegistryEntry> {
-      return request<RegistryEntry>(base, apiKey, `${prefix}/registry`, {
+      return request<RegistryEntry>(base, apiKey, `/registry`, {
         method: "POST",
         body,
       });
@@ -170,15 +169,10 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
 
     /** Deregister an agent (pay-authenticated). Use user's API key. */
     async deregisterAgent(body: DeregisterAgentInput): Promise<RegistryEntry> {
-      return request<RegistryEntry>(
-        base,
-        apiKey,
-        `${prefix}/registry/deregister`,
-        {
-          method: "POST",
-          body,
-        },
-      );
+      return request<RegistryEntry>(base, apiKey, `/registry/deregister`, {
+        method: "POST",
+        body,
+      });
     },
 
     /** List registry requests (pay-authenticated). Use user's API key. */
@@ -186,18 +180,13 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       network: PaymentNodeNetwork;
       cursorId?: string;
     }): Promise<{ Assets: RegistryEntry[] }> {
-      return request<{ Assets: RegistryEntry[] }>(
-        base,
-        apiKey,
-        `${prefix}/registry`,
-        {
-          method: "GET",
-          query: {
-            network: params.network,
-            ...(params.cursorId && { cursorId: params.cursorId }),
-          },
+      return request<{ Assets: RegistryEntry[] }>(base, apiKey, `/registry`, {
+        method: "GET",
+        query: {
+          network: params.network,
+          ...(params.cursorId && { cursorId: params.cursorId }),
         },
-      );
+      });
     },
 
     /** Get single registry entry by id (pay-authenticated). Use user's API key. */
@@ -235,7 +224,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       network: PaymentNodeNetwork;
     }): Promise<RegistryEntry | null> {
       const res = await fetch(
-        `${base}${prefix}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
+        `${base}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
           headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
         },
@@ -253,7 +242,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
 
     /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */
     async createApiKey(body: CreateApiKeyInput): Promise<CreateApiKeyOutput> {
-      return request<CreateApiKeyOutput>(base, apiKey, `${prefix}/api-key`, {
+      return request<CreateApiKeyOutput>(base, apiKey, `/api-key`, {
         method: "POST",
         body: {
           ...body,
@@ -266,26 +255,21 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async addWalletsToPaymentSource(
       body: AddWalletToSourceInput,
     ): Promise<unknown> {
-      return request<unknown>(
-        base,
-        apiKey,
-        `${prefix}/payment-source-extended`,
-        {
-          method: "PATCH",
-          body: {
-            id: body.paymentSourceId,
-            AddSellingWallets: body.AddSellingWallets,
-            AddPurchasingWallets: body.AddPurchasingWallets,
-          },
+      return request<unknown>(base, apiKey, `/payment-source-extended`, {
+        method: "PATCH",
+        body: {
+          id: body.paymentSourceId,
+          AddSellingWallets: body.AddSellingWallets,
+          AddPurchasingWallets: body.AddPurchasingWallets,
         },
-      );
+      });
     },
 
     /** Generate a new wallet (admin only). Does NOT persist on payment node; use addWalletsToPaymentSource to persist. */
     async generateWallet(
       network: PaymentNodeNetwork,
     ): Promise<GeneratedWallet> {
-      return request<GeneratedWallet>(base, apiKey, `${prefix}/wallet`, {
+      return request<GeneratedWallet>(base, apiKey, `/wallet`, {
         method: "POST",
         body: { network },
       });
