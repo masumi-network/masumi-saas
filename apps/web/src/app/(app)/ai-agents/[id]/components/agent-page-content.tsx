@@ -168,7 +168,8 @@ export function AgentPageContent({
           onEditClick={() => setIsEditDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
           onDeregisterClick={
-            agent.registrationState === "RegistrationConfirmed" &&
+            (agent.registrationState === "RegistrationConfirmed" ||
+              agent.registrationState === "DeregistrationFailed") &&
             agent.agentIdentifier
               ? handleDeregister
               : undefined
