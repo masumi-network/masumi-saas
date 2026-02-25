@@ -478,6 +478,7 @@ export async function deleteAgentAction(agentId: string) {
       "RegistrationInitiated",
       "DeregistrationRequested",
       "DeregistrationInitiated",
+      "DeregistrationFailed",
     ];
     if (liveStates.includes(agent.registrationState)) {
       return {
