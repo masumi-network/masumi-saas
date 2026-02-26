@@ -144,7 +144,7 @@ export async function registerAgentAction(formData: FormData) {
       adminClient.generateWallet(network),
     ]);
 
-    await adminClient.addWalletsToPaymentSource({
+    const paymentSource = await adminClient.addWalletsToPaymentSource({
       paymentSourceId,
       AddSellingWallets: [
         {
@@ -161,6 +161,10 @@ export async function registerAgentAction(formData: FormData) {
         },
       ],
     });
+
+    const sellingWalletId = paymentSource.SellingWallets.find(
+      (w) => w.walletVkey === sellingWallet.walletVkey,
+    )?.id;
 
     // TODO(mainnet): On mainnet, show the user the selling wallet address and
     // prompt them to fund it manually instead of using the dispenser.
@@ -183,8 +187,8 @@ export async function registerAgentAction(formData: FormData) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: description?.trim() || null,
-        description: extendedDescription?.trim() || null,
+        description: description?.trim() || null,
+        extendedDescription: extendedDescription?.trim() || null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,
@@ -201,6 +205,7 @@ export async function registerAgentAction(formData: FormData) {
       data: {
         agentId: agent.id,
         sellingWalletVkey: sellingWallet.walletVkey,
+        sellingWalletId: sellingWalletId ?? null,
         buyingWalletVkey: buyingWallet.walletVkey,
         networkIdentifier: network,
         status: "PENDING",

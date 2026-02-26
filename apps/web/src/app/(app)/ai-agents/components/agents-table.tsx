@@ -152,9 +152,9 @@ export function AgentsTable({
                       {agent.name}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {agent.summary ??
-                        (agent.description
-                          ? stripHtml(agent.description)
+                      {agent.description ??
+                        (agent.extendedDescription
+                          ? stripHtml(agent.extendedDescription)
                           : undefined)}
                     </div>
                   </TableCell>

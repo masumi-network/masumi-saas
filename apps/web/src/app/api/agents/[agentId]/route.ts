@@ -17,14 +17,14 @@ const updateAgentSchema = z.object({
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters")
     .optional(),
-  summary: z
-    .string()
-    .max(250, "Summary must be 250 characters or less")
-    .optional()
-    .nullable(),
   description: z
     .string()
-    .max(5000, "Description must be less than 5000 characters")
+    .max(250, "Description must be 250 characters or less")
+    .optional()
+    .nullable(),
+  extendedDescription: z
+    .string()
+    .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .nullable(),
   tags: z.array(z.string()).optional(),
@@ -179,8 +179,8 @@ export async function PATCH(
 
     const updateData: {
       name?: string;
-      summary?: string | null;
       description?: string | null;
+      extendedDescription?: string | null;
       tags?: string[];
       icon?: string | null;
       pricing?: unknown;
@@ -188,10 +188,10 @@ export async function PATCH(
     } = {};
 
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.summary !== undefined)
-      updateData.summary = data.summary?.trim() || null;
     if (data.description !== undefined)
       updateData.description = data.description?.trim() || null;
+    if (data.extendedDescription !== undefined)
+      updateData.extendedDescription = data.extendedDescription?.trim() || null;
     if (data.tags !== undefined) updateData.tags = data.tags;
     if (data.icon !== undefined) updateData.icon = data.icon?.trim() || null;
     if (data.pricing !== undefined) updateData.pricing = data.pricing;

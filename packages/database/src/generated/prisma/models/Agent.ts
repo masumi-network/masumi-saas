@@ -27,8 +27,8 @@ export type AggregateAgent = {
 export type AgentMinAggregateOutputType = {
   id: string | null;
   name: string | null;
-  summary: string | null;
   description: string | null;
+  extendedDescription: string | null;
   apiUrl: string | null;
   userId: string | null;
   organizationId: string | null;
@@ -49,8 +49,8 @@ export type AgentMinAggregateOutputType = {
 export type AgentMaxAggregateOutputType = {
   id: string | null;
   name: string | null;
-  summary: string | null;
   description: string | null;
+  extendedDescription: string | null;
   apiUrl: string | null;
   userId: string | null;
   organizationId: string | null;
@@ -71,8 +71,8 @@ export type AgentMaxAggregateOutputType = {
 export type AgentCountAggregateOutputType = {
   id: number;
   name: number;
-  summary: number;
   description: number;
+  extendedDescription: number;
   apiUrl: number;
   userId: number;
   organizationId: number;
@@ -96,8 +96,8 @@ export type AgentCountAggregateOutputType = {
 export type AgentMinAggregateInputType = {
   id?: true;
   name?: true;
-  summary?: true;
   description?: true;
+  extendedDescription?: true;
   apiUrl?: true;
   userId?: true;
   organizationId?: true;
@@ -118,8 +118,8 @@ export type AgentMinAggregateInputType = {
 export type AgentMaxAggregateInputType = {
   id?: true;
   name?: true;
-  summary?: true;
   description?: true;
+  extendedDescription?: true;
   apiUrl?: true;
   userId?: true;
   organizationId?: true;
@@ -140,8 +140,8 @@ export type AgentMaxAggregateInputType = {
 export type AgentCountAggregateInputType = {
   id?: true;
   name?: true;
-  summary?: true;
   description?: true;
+  extendedDescription?: true;
   apiUrl?: true;
   userId?: true;
   organizationId?: true;
@@ -244,8 +244,8 @@ export type AgentGroupByArgs<
 export type AgentGroupByOutputType = {
   id: string;
   name: string;
-  summary: string | null;
   description: string | null;
+  extendedDescription: string | null;
   apiUrl: string;
   userId: string;
   organizationId: string | null;
@@ -286,8 +286,8 @@ export type AgentWhereInput = {
   NOT?: Prisma.AgentWhereInput | Prisma.AgentWhereInput[];
   id?: Prisma.StringFilter<"Agent"> | string;
   name?: Prisma.StringFilter<"Agent"> | string;
-  summary?: Prisma.StringNullableFilter<"Agent"> | string | null;
   description?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  extendedDescription?: Prisma.StringNullableFilter<"Agent"> | string | null;
   apiUrl?: Prisma.StringFilter<"Agent"> | string;
   userId?: Prisma.StringFilter<"Agent"> | string;
   organizationId?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -329,8 +329,8 @@ export type AgentWhereInput = {
 export type AgentOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
-  summary?: Prisma.SortOrderInput | Prisma.SortOrder;
   description?: Prisma.SortOrderInput | Prisma.SortOrder;
+  extendedDescription?: Prisma.SortOrderInput | Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -361,8 +361,8 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     OR?: Prisma.AgentWhereInput[];
     NOT?: Prisma.AgentWhereInput | Prisma.AgentWhereInput[];
     name?: Prisma.StringFilter<"Agent"> | string;
-    summary?: Prisma.StringNullableFilter<"Agent"> | string | null;
     description?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    extendedDescription?: Prisma.StringNullableFilter<"Agent"> | string | null;
     apiUrl?: Prisma.StringFilter<"Agent"> | string;
     userId?: Prisma.StringFilter<"Agent"> | string;
     organizationId?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -409,8 +409,8 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
 export type AgentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
-  summary?: Prisma.SortOrderInput | Prisma.SortOrder;
   description?: Prisma.SortOrderInput | Prisma.SortOrder;
+  extendedDescription?: Prisma.SortOrderInput | Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -443,8 +443,11 @@ export type AgentScalarWhereWithAggregatesInput = {
     | Prisma.AgentScalarWhereWithAggregatesInput[];
   id?: Prisma.StringWithAggregatesFilter<"Agent"> | string;
   name?: Prisma.StringWithAggregatesFilter<"Agent"> | string;
-  summary?: Prisma.StringNullableWithAggregatesFilter<"Agent"> | string | null;
   description?:
+    | Prisma.StringNullableWithAggregatesFilter<"Agent">
+    | string
+    | null;
+  extendedDescription?:
     | Prisma.StringNullableWithAggregatesFilter<"Agent">
     | string
     | null;
@@ -497,8 +500,8 @@ export type AgentScalarWhereWithAggregatesInput = {
 export type AgentCreateInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -523,8 +526,8 @@ export type AgentCreateInput = {
 export type AgentUncheckedCreateInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   organizationId?: string | null;
@@ -549,8 +552,11 @@ export type AgentUncheckedCreateInput = {
 export type AgentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -599,8 +605,11 @@ export type AgentUpdateInput = {
 export type AgentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
@@ -652,8 +661,8 @@ export type AgentUncheckedUpdateInput = {
 export type AgentCreateManyInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   organizationId?: string | null;
@@ -676,8 +685,11 @@ export type AgentCreateManyInput = {
 export type AgentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -722,8 +734,11 @@ export type AgentUpdateManyMutationInput = {
 export type AgentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
@@ -791,8 +806,8 @@ export type StringNullableListFilter<$PrismaModel = never> = {
 export type AgentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
-  summary?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
+  extendedDescription?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
@@ -815,8 +830,8 @@ export type AgentCountOrderByAggregateInput = {
 export type AgentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
-  summary?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
+  extendedDescription?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
@@ -837,8 +852,8 @@ export type AgentMaxOrderByAggregateInput = {
 export type AgentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
-  summary?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
+  extendedDescription?: Prisma.SortOrder;
   apiUrl?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
@@ -1112,8 +1127,8 @@ export type AgentUpdateOneWithoutVeridianCredentialsNestedInput = {
 export type AgentCreateWithoutUserInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1137,8 +1152,8 @@ export type AgentCreateWithoutUserInput = {
 export type AgentUncheckedCreateWithoutUserInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
@@ -1206,8 +1221,8 @@ export type AgentScalarWhereInput = {
   NOT?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[];
   id?: Prisma.StringFilter<"Agent"> | string;
   name?: Prisma.StringFilter<"Agent"> | string;
-  summary?: Prisma.StringNullableFilter<"Agent"> | string | null;
   description?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  extendedDescription?: Prisma.StringNullableFilter<"Agent"> | string | null;
   apiUrl?: Prisma.StringFilter<"Agent"> | string;
   userId?: Prisma.StringFilter<"Agent"> | string;
   organizationId?: Prisma.StringNullableFilter<"Agent"> | string | null;
@@ -1239,8 +1254,8 @@ export type AgentScalarWhereInput = {
 export type AgentCreateWithoutOrganizationInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1264,8 +1279,8 @@ export type AgentCreateWithoutOrganizationInput = {
 export type AgentUncheckedCreateWithoutOrganizationInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
@@ -1332,8 +1347,8 @@ export type AgentUpdateManyWithWhereWithoutOrganizationInput = {
 export type AgentCreateWithoutAgentReferenceInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1357,8 +1372,8 @@ export type AgentCreateWithoutAgentReferenceInput = {
 export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   organizationId?: string | null;
@@ -1410,8 +1425,11 @@ export type AgentUpdateToOneWithWhereWithoutAgentReferenceInput = {
 export type AgentUpdateWithoutAgentReferenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -1459,8 +1477,11 @@ export type AgentUpdateWithoutAgentReferenceInput = {
 export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
@@ -1511,8 +1532,8 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
 export type AgentCreateWithoutVeridianCredentialsInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1536,8 +1557,8 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
 export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   organizationId?: string | null;
@@ -1589,8 +1610,11 @@ export type AgentUpdateToOneWithWhereWithoutVeridianCredentialsInput = {
 export type AgentUpdateWithoutVeridianCredentialsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -1638,8 +1662,11 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
 export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
@@ -1690,8 +1717,8 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
 export type AgentCreateManyUserInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
@@ -1713,8 +1740,11 @@ export type AgentCreateManyUserInput = {
 export type AgentUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -1762,8 +1792,11 @@ export type AgentUpdateWithoutUserInput = {
 export type AgentUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
@@ -1814,8 +1847,11 @@ export type AgentUncheckedUpdateWithoutUserInput = {
 export type AgentUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   organizationId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
@@ -1864,8 +1900,8 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
 export type AgentCreateManyOrganizationInput = {
   id?: string;
   name: string;
-  summary?: string | null;
   description?: string | null;
+  extendedDescription?: string | null;
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
@@ -1887,8 +1923,11 @@ export type AgentCreateManyOrganizationInput = {
 export type AgentUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
@@ -1936,8 +1975,11 @@ export type AgentUpdateWithoutOrganizationInput = {
 export type AgentUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
@@ -1985,8 +2027,11 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
 export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
-  summary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   registrationState?:
@@ -2076,8 +2121,8 @@ export type AgentSelect<
   {
     id?: boolean;
     name?: boolean;
-    summary?: boolean;
     description?: boolean;
+    extendedDescription?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
     organizationId?: boolean;
@@ -2113,8 +2158,8 @@ export type AgentSelectCreateManyAndReturn<
   {
     id?: boolean;
     name?: boolean;
-    summary?: boolean;
     description?: boolean;
+    extendedDescription?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
     organizationId?: boolean;
@@ -2145,8 +2190,8 @@ export type AgentSelectUpdateManyAndReturn<
   {
     id?: boolean;
     name?: boolean;
-    summary?: boolean;
     description?: boolean;
+    extendedDescription?: boolean;
     apiUrl?: boolean;
     userId?: boolean;
     organizationId?: boolean;
@@ -2173,8 +2218,8 @@ export type AgentSelectUpdateManyAndReturn<
 export type AgentSelectScalar = {
   id?: boolean;
   name?: boolean;
-  summary?: boolean;
   description?: boolean;
+  extendedDescription?: boolean;
   apiUrl?: boolean;
   userId?: boolean;
   organizationId?: boolean;
@@ -2200,8 +2245,8 @@ export type AgentOmit<
 > = runtime.Types.Extensions.GetOmit<
   | "id"
   | "name"
-  | "summary"
   | "description"
+  | "extendedDescription"
   | "apiUrl"
   | "userId"
   | "organizationId"
@@ -2261,8 +2306,8 @@ export type $AgentPayload<
     {
       id: string;
       name: string;
-      summary: string | null;
       description: string | null;
+      extendedDescription: string | null;
       apiUrl: string;
       userId: string;
       organizationId: string | null;
@@ -2927,8 +2972,8 @@ export interface Prisma__AgentClient<
 export interface AgentFieldRefs {
   readonly id: Prisma.FieldRef<"Agent", "String">;
   readonly name: Prisma.FieldRef<"Agent", "String">;
-  readonly summary: Prisma.FieldRef<"Agent", "String">;
   readonly description: Prisma.FieldRef<"Agent", "String">;
+  readonly extendedDescription: Prisma.FieldRef<"Agent", "String">;
   readonly apiUrl: Prisma.FieldRef<"Agent", "String">;
   readonly userId: Prisma.FieldRef<"Agent", "String">;
   readonly organizationId: Prisma.FieldRef<"Agent", "String">;

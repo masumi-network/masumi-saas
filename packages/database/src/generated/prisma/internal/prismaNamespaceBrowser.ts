@@ -278,8 +278,8 @@ export type KycVerificationScalarFieldEnum =
 export const AgentScalarFieldEnum = {
   id: "id",
   name: "name",
-  summary: "summary",
   description: "description",
+  extendedDescription: "extendedDescription",
   apiUrl: "apiUrl",
   userId: "userId",
   organizationId: "organizationId",
@@ -378,6 +378,7 @@ export const AgentReferenceScalarFieldEnum = {
   externalId: "externalId",
   networkIdentifier: "networkIdentifier",
   sellingWalletVkey: "sellingWalletVkey",
+  sellingWalletId: "sellingWalletId",
   buyingWalletVkey: "buyingWalletVkey",
   registeredAt: "registeredAt",
   lastVerifiedAt: "lastVerifiedAt",

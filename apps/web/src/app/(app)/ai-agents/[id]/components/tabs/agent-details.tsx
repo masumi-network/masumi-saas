@@ -162,7 +162,7 @@ export function AgentDetails({
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Description (short) */}
-            {agent.summary && (
+            {agent.description && (
               <>
                 <div className="flex gap-3">
                   <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
@@ -171,7 +171,7 @@ export function AgentDetails({
                       {t("description")}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {agent.summary}
+                      {agent.description}
                     </p>
                   </div>
                 </div>
@@ -180,17 +180,22 @@ export function AgentDetails({
             )}
 
             {/* Extended Description */}
-            {agent.description && (
+            {agent.extendedDescription && (
               <div className="flex gap-3">
                 <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     {t("extendedDescription")}
                   </p>
-                  {/<[a-z][\s\S]*>/i.test(agent.description) ? (
-                    <HtmlContent html={agent.description} className="text-sm" />
+                  {/<[a-z][\s\S]*>/i.test(agent.extendedDescription) ? (
+                    <HtmlContent
+                      html={agent.extendedDescription}
+                      className="text-sm"
+                    />
                   ) : (
-                    <Markdown className="text-sm">{agent.description}</Markdown>
+                    <Markdown className="text-sm">
+                      {agent.extendedDescription}
+                    </Markdown>
                   )}
                 </div>
               </div>

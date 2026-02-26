@@ -83,7 +83,7 @@ export default function Sidebar({ session }: SidebarProps) {
       >
         <div
           className={cn(
-            "flex flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-6.5 ease-in-out transition-all duration-300",
+            "flex flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-5 ease-in-out transition-all duration-300",
             isMobile && "px-4 py-0",
           )}
         >

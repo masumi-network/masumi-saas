@@ -30,7 +30,7 @@ const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem"; // w-64
 const SIDEBAR_WIDTH_MOBILE = "18rem"; // w-72
-const SIDEBAR_WIDTH_ICON = "6rem";
+const SIDEBAR_WIDTH_ICON = "5rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
@@ -534,7 +534,7 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="sidebar-group"
       data-sidebar="group"
       className={cn(
-        "relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:px-7 group-data-[collapsible=icon]:py-2 transition-[padding] duration-200 ease-linear",
+        "relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:px-5 group-data-[collapsible=icon]:py-2 transition-[padding] duration-200 ease-linear",
         className,
       )}
       {...props}

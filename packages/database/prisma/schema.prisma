@@ -270,8 +270,8 @@ enum RegistrationState {
 model Agent {
   id          String  @id @default(cuid())
   name        String
-  summary     String? // Short tagline, max 250 chars
-  description String? // Optional detailed overview (Markdown supported)
+  description         String? // Short tagline, max 250 chars
+  extendedDescription String? // Optional detailed overview (Markdown supported)
   apiUrl      String
   userId      String
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -444,6 +444,7 @@ model AgentReference {
   externalId        String? // Payment node registry request id (cuid)
   networkIdentifier String? // Masumi network identifier (e.g. Preprod, Mainnet)
   sellingWalletVkey String? // Payment node selling wallet vkey (store only vkey, not mnemonic/address)
+  sellingWalletId   String? // Payment node internal wallet ID (for GET /wallet/ status checks)
   buyingWalletVkey  String? // Payment node buying wallet vkey (store only vkey)
   registeredAt      DateTime?
   lastVerifiedAt    DateTime?

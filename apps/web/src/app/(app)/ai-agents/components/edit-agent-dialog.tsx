@@ -160,8 +160,8 @@ export function EditAgentDialog({
     resolver: zodResolver(editAgentSchema),
     defaultValues: {
       name: agent.name,
-      description: agent.summary ?? "",
-      extendedDescription: agent.description ?? "",
+      description: agent.description ?? "",
+      extendedDescription: agent.extendedDescription ?? "",
       isFree: initialIsFree,
       prices,
       tags: agent.tags?.join(", ") ?? "",
@@ -189,8 +189,8 @@ export function EditAgentDialog({
           : [{ amount: "" }];
       form.reset({
         name: agent.name,
-        description: agent.summary ?? "",
-        extendedDescription: agent.description ?? "",
+        description: agent.description ?? "",
+        extendedDescription: agent.extendedDescription ?? "",
         isFree: free,
         prices: pr,
         tags: agent.tags?.join(", ") ?? "",
@@ -246,8 +246,8 @@ export function EditAgentDialog({
 
       const result = await agentApiClient.updateAgent(agent.id, {
         name: data.name,
-        summary: data.description?.trim() || null,
-        description: data.extendedDescription?.trim() || null,
+        description: data.description?.trim() || null,
+        extendedDescription: data.extendedDescription?.trim() || null,
         tags: tags,
         icon: data.icon?.trim() || null,
         pricing: data.isFree

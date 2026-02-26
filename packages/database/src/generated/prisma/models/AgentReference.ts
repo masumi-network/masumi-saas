@@ -37,6 +37,7 @@ export type AgentReferenceMinAggregateOutputType = {
   externalId: string | null;
   networkIdentifier: string | null;
   sellingWalletVkey: string | null;
+  sellingWalletId: string | null;
   buyingWalletVkey: string | null;
   registeredAt: Date | null;
   lastVerifiedAt: Date | null;
@@ -52,6 +53,7 @@ export type AgentReferenceMaxAggregateOutputType = {
   externalId: string | null;
   networkIdentifier: string | null;
   sellingWalletVkey: string | null;
+  sellingWalletId: string | null;
   buyingWalletVkey: string | null;
   registeredAt: Date | null;
   lastVerifiedAt: Date | null;
@@ -67,6 +69,7 @@ export type AgentReferenceCountAggregateOutputType = {
   externalId: number;
   networkIdentifier: number;
   sellingWalletVkey: number;
+  sellingWalletId: number;
   buyingWalletVkey: number;
   registeredAt: number;
   lastVerifiedAt: number;
@@ -84,6 +87,7 @@ export type AgentReferenceMinAggregateInputType = {
   externalId?: true;
   networkIdentifier?: true;
   sellingWalletVkey?: true;
+  sellingWalletId?: true;
   buyingWalletVkey?: true;
   registeredAt?: true;
   lastVerifiedAt?: true;
@@ -99,6 +103,7 @@ export type AgentReferenceMaxAggregateInputType = {
   externalId?: true;
   networkIdentifier?: true;
   sellingWalletVkey?: true;
+  sellingWalletId?: true;
   buyingWalletVkey?: true;
   registeredAt?: true;
   lastVerifiedAt?: true;
@@ -114,6 +119,7 @@ export type AgentReferenceCountAggregateInputType = {
   externalId?: true;
   networkIdentifier?: true;
   sellingWalletVkey?: true;
+  sellingWalletId?: true;
   buyingWalletVkey?: true;
   registeredAt?: true;
   lastVerifiedAt?: true;
@@ -214,6 +220,7 @@ export type AgentReferenceGroupByOutputType = {
   externalId: string | null;
   networkIdentifier: string | null;
   sellingWalletVkey: string | null;
+  sellingWalletId: string | null;
   buyingWalletVkey: string | null;
   registeredAt: Date | null;
   lastVerifiedAt: Date | null;
@@ -256,6 +263,10 @@ export type AgentReferenceWhereInput = {
     | Prisma.StringNullableFilter<"AgentReference">
     | string
     | null;
+  sellingWalletId?:
+    | Prisma.StringNullableFilter<"AgentReference">
+    | string
+    | null;
   buyingWalletVkey?:
     | Prisma.StringNullableFilter<"AgentReference">
     | string
@@ -286,6 +297,7 @@ export type AgentReferenceOrderByWithRelationInput = {
   externalId?: Prisma.SortOrderInput | Prisma.SortOrder;
   networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   sellingWalletVkey?: Prisma.SortOrderInput | Prisma.SortOrder;
+  sellingWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   buyingWalletVkey?: Prisma.SortOrderInput | Prisma.SortOrder;
   registeredAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -310,6 +322,10 @@ export type AgentReferenceWhereUniqueInput = Prisma.AtLeast<
       | string
       | null;
     sellingWalletVkey?:
+      | Prisma.StringNullableFilter<"AgentReference">
+      | string
+      | null;
+    sellingWalletId?:
       | Prisma.StringNullableFilter<"AgentReference">
       | string
       | null;
@@ -348,6 +364,7 @@ export type AgentReferenceOrderByWithAggregationInput = {
   externalId?: Prisma.SortOrderInput | Prisma.SortOrder;
   networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   sellingWalletVkey?: Prisma.SortOrderInput | Prisma.SortOrder;
+  sellingWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   buyingWalletVkey?: Prisma.SortOrderInput | Prisma.SortOrder;
   registeredAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -386,6 +403,10 @@ export type AgentReferenceScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"AgentReference">
     | string
     | null;
+  sellingWalletId?:
+    | Prisma.StringNullableWithAggregatesFilter<"AgentReference">
+    | string
+    | null;
   buyingWalletVkey?:
     | Prisma.StringNullableWithAggregatesFilter<"AgentReference">
     | string
@@ -420,6 +441,7 @@ export type AgentReferenceCreateInput = {
   externalId?: string | null;
   networkIdentifier?: string | null;
   sellingWalletVkey?: string | null;
+  sellingWalletId?: string | null;
   buyingWalletVkey?: string | null;
   registeredAt?: Date | string | null;
   lastVerifiedAt?: Date | string | null;
@@ -437,6 +459,7 @@ export type AgentReferenceUncheckedCreateInput = {
   externalId?: string | null;
   networkIdentifier?: string | null;
   sellingWalletVkey?: string | null;
+  sellingWalletId?: string | null;
   buyingWalletVkey?: string | null;
   registeredAt?: Date | string | null;
   lastVerifiedAt?: Date | string | null;
@@ -455,6 +478,10 @@ export type AgentReferenceUpdateInput = {
     | string
     | null;
   sellingWalletVkey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sellingWalletId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -494,6 +521,10 @@ export type AgentReferenceUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  sellingWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   buyingWalletVkey?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -523,6 +554,7 @@ export type AgentReferenceCreateManyInput = {
   externalId?: string | null;
   networkIdentifier?: string | null;
   sellingWalletVkey?: string | null;
+  sellingWalletId?: string | null;
   buyingWalletVkey?: string | null;
   registeredAt?: Date | string | null;
   lastVerifiedAt?: Date | string | null;
@@ -541,6 +573,10 @@ export type AgentReferenceUpdateManyMutationInput = {
     | string
     | null;
   sellingWalletVkey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sellingWalletId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -579,6 +615,10 @@ export type AgentReferenceUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  sellingWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   buyingWalletVkey?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -613,6 +653,7 @@ export type AgentReferenceCountOrderByAggregateInput = {
   externalId?: Prisma.SortOrder;
   networkIdentifier?: Prisma.SortOrder;
   sellingWalletVkey?: Prisma.SortOrder;
+  sellingWalletId?: Prisma.SortOrder;
   buyingWalletVkey?: Prisma.SortOrder;
   registeredAt?: Prisma.SortOrder;
   lastVerifiedAt?: Prisma.SortOrder;
@@ -629,6 +670,7 @@ export type AgentReferenceMaxOrderByAggregateInput = {
   externalId?: Prisma.SortOrder;
   networkIdentifier?: Prisma.SortOrder;
   sellingWalletVkey?: Prisma.SortOrder;
+  sellingWalletId?: Prisma.SortOrder;
   buyingWalletVkey?: Prisma.SortOrder;
   registeredAt?: Prisma.SortOrder;
   lastVerifiedAt?: Prisma.SortOrder;
@@ -644,6 +686,7 @@ export type AgentReferenceMinOrderByAggregateInput = {
   externalId?: Prisma.SortOrder;
   networkIdentifier?: Prisma.SortOrder;
   sellingWalletVkey?: Prisma.SortOrder;
+  sellingWalletId?: Prisma.SortOrder;
   buyingWalletVkey?: Prisma.SortOrder;
   registeredAt?: Prisma.SortOrder;
   lastVerifiedAt?: Prisma.SortOrder;
@@ -718,6 +761,7 @@ export type AgentReferenceCreateWithoutAgentInput = {
   externalId?: string | null;
   networkIdentifier?: string | null;
   sellingWalletVkey?: string | null;
+  sellingWalletId?: string | null;
   buyingWalletVkey?: string | null;
   registeredAt?: Date | string | null;
   lastVerifiedAt?: Date | string | null;
@@ -733,6 +777,7 @@ export type AgentReferenceUncheckedCreateWithoutAgentInput = {
   externalId?: string | null;
   networkIdentifier?: string | null;
   sellingWalletVkey?: string | null;
+  sellingWalletId?: string | null;
   buyingWalletVkey?: string | null;
   registeredAt?: Date | string | null;
   lastVerifiedAt?: Date | string | null;
@@ -782,6 +827,10 @@ export type AgentReferenceUpdateWithoutAgentInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  sellingWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   buyingWalletVkey?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -813,6 +862,10 @@ export type AgentReferenceUncheckedUpdateWithoutAgentInput = {
     | string
     | null;
   sellingWalletVkey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sellingWalletId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -849,6 +902,7 @@ export type AgentReferenceSelect<
     externalId?: boolean;
     networkIdentifier?: boolean;
     sellingWalletVkey?: boolean;
+    sellingWalletId?: boolean;
     buyingWalletVkey?: boolean;
     registeredAt?: boolean;
     lastVerifiedAt?: boolean;
@@ -872,6 +926,7 @@ export type AgentReferenceSelectCreateManyAndReturn<
     externalId?: boolean;
     networkIdentifier?: boolean;
     sellingWalletVkey?: boolean;
+    sellingWalletId?: boolean;
     buyingWalletVkey?: boolean;
     registeredAt?: boolean;
     lastVerifiedAt?: boolean;
@@ -895,6 +950,7 @@ export type AgentReferenceSelectUpdateManyAndReturn<
     externalId?: boolean;
     networkIdentifier?: boolean;
     sellingWalletVkey?: boolean;
+    sellingWalletId?: boolean;
     buyingWalletVkey?: boolean;
     registeredAt?: boolean;
     lastVerifiedAt?: boolean;
@@ -914,6 +970,7 @@ export type AgentReferenceSelectScalar = {
   externalId?: boolean;
   networkIdentifier?: boolean;
   sellingWalletVkey?: boolean;
+  sellingWalletId?: boolean;
   buyingWalletVkey?: boolean;
   registeredAt?: boolean;
   lastVerifiedAt?: boolean;
@@ -933,6 +990,7 @@ export type AgentReferenceOmit<
   | "externalId"
   | "networkIdentifier"
   | "sellingWalletVkey"
+  | "sellingWalletId"
   | "buyingWalletVkey"
   | "registeredAt"
   | "lastVerifiedAt"
@@ -977,6 +1035,7 @@ export type $AgentReferencePayload<
       externalId: string | null;
       networkIdentifier: string | null;
       sellingWalletVkey: string | null;
+      sellingWalletId: string | null;
       buyingWalletVkey: string | null;
       registeredAt: Date | null;
       lastVerifiedAt: Date | null;
@@ -1608,6 +1667,7 @@ export interface AgentReferenceFieldRefs {
   readonly externalId: Prisma.FieldRef<"AgentReference", "String">;
   readonly networkIdentifier: Prisma.FieldRef<"AgentReference", "String">;
   readonly sellingWalletVkey: Prisma.FieldRef<"AgentReference", "String">;
+  readonly sellingWalletId: Prisma.FieldRef<"AgentReference", "String">;
   readonly buyingWalletVkey: Prisma.FieldRef<"AgentReference", "String">;
   readonly registeredAt: Prisma.FieldRef<"AgentReference", "DateTime">;
   readonly lastVerifiedAt: Prisma.FieldRef<"AgentReference", "DateTime">;

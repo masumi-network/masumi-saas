@@ -159,6 +159,33 @@ export interface AddWalletToSourceInput {
   }>;
 }
 
+export interface PaymentSourceWallet {
+  id: string;
+  walletVkey: string;
+  walletAddress: string;
+  collectionAddress: string | null;
+  note: string | null;
+}
+
+export interface AddWalletToSourceOutput {
+  id: string;
+  SellingWallets: PaymentSourceWallet[];
+  PurchasingWallets: PaymentSourceWallet[];
+}
+
+export interface WalletStatus {
+  note: string | null;
+  walletVkey: string;
+  walletAddress: string;
+  collectionAddress: string | null;
+  PendingTransaction: {
+    createdAt: string;
+    updatedAt: string;
+    hash: string | null;
+    lastCheckedAt: string | null;
+  } | null;
+}
+
 export interface GeneratedWallet {
   walletMnemonic: string;
   walletAddress: string;
@@ -273,14 +300,30 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     /** Add selling/purchasing wallets to an existing payment source (admin only). */
     async addWalletsToPaymentSource(
       body: AddWalletToSourceInput,
-    ): Promise<unknown> {
-      return request<unknown>(base, apiKey, `/payment-source-extended`, {
-        method: "PATCH",
-        body: {
-          id: body.paymentSourceId,
-          AddSellingWallets: body.AddSellingWallets,
-          AddPurchasingWallets: body.AddPurchasingWallets,
+    ): Promise<AddWalletToSourceOutput> {
+      return request<AddWalletToSourceOutput>(
+        base,
+        apiKey,
+        `/payment-source-extended`,
+        {
+          method: "PATCH",
+          body: {
+            id: body.paymentSourceId,
+            AddSellingWallets: body.AddSellingWallets,
+            AddPurchasingWallets: body.AddPurchasingWallets,
+          },
         },
+      );
+    },
+
+    /** Get wallet status by ID (admin only). */
+    async getWalletStatus(params: {
+      walletType: "Selling" | "Buying";
+      id: string;
+    }): Promise<WalletStatus> {
+      return request<WalletStatus>(base, apiKey, `/wallet`, {
+        method: "GET",
+        query: { walletType: params.walletType, id: params.id },
       });
     },
 

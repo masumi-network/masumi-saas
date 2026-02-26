@@ -87,13 +87,13 @@ export async function GET(request: NextRequest) {
                 name: { contains: searchTrimmed, mode: "insensitive" as const },
               },
               {
-                summary: {
+                description: {
                   contains: searchTrimmed,
                   mode: "insensitive" as const,
                 },
               },
               {
-                description: {
+                extendedDescription: {
                   contains: searchTrimmed,
                   mode: "insensitive" as const,
                 },
@@ -215,8 +215,10 @@ export async function POST(request: NextRequest) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: description?.trim() || null,
-        description: (extendedDescription?.trim() || null) as string | null,
+        description: description?.trim() || null,
+        extendedDescription: (extendedDescription?.trim() || null) as
+          | string
+          | null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,
