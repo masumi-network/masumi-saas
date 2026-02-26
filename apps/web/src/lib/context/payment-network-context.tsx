@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -54,6 +55,7 @@ export function PaymentNetworkProvider({
   children: React.ReactNode;
   initialNetwork?: PaymentNodeNetwork;
 }) {
+  const router = useRouter();
   const [network, setNetworkState] = useState<PaymentNodeNetwork>(
     () => initialNetwork ?? readNetworkFromCookie(),
   );
@@ -63,10 +65,14 @@ export function PaymentNetworkProvider({
     return () => clearTimeout(id);
   }, []);
 
-  const setNetwork = useCallback((next: PaymentNodeNetwork) => {
-    setNetworkState(next);
-    writeNetworkCookie(next);
-  }, []);
+  const setNetwork = useCallback(
+    (next: PaymentNodeNetwork) => {
+      setNetworkState(next);
+      writeNetworkCookie(next);
+      router.refresh();
+    },
+    [router],
+  );
 
   const value: PaymentNetworkContextValue = { network, setNetwork };
 

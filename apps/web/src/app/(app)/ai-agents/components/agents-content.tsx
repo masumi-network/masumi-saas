@@ -21,6 +21,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
@@ -67,6 +68,7 @@ export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
   const { activeOrganizationId } = useOrganizationContext();
+  const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -155,7 +157,7 @@ export function AgentsContent() {
       }
       setIsLoading(false);
     });
-  }, [loadPage, activeOrganizationId]);
+  }, [loadPage, activeOrganizationId, network]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());

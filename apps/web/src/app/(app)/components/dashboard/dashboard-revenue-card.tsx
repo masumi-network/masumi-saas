@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
@@ -85,6 +86,7 @@ function formatRevenue(value: number): string {
 
 export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
+  const { network } = usePaymentNetwork();
   const [period, setPeriod] = useState<TimePeriod>("7d");
   const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
   const [total, setTotal] = useState(0);
@@ -112,7 +114,7 @@ export function DashboardRevenueCard() {
     } finally {
       setIsLoading(false);
     }
-  }, [period]);
+  }, [period, network]);
 
   useEffect(() => {
     fetchEarnings();
