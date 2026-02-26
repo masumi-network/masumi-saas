@@ -212,6 +212,51 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
+    // Wait for the dispenser funding transaction to confirm on-chain before
+    // calling registerAgent.  The payment node needs at least one UTXO in the
+    // selling wallet to build the registration transaction; submitting before
+    // the funds arrive produces a RegistrationFailed entry on the payment node.
+    const POLL_INTERVAL_MS = 5_000;
+    const POLL_TIMEOUT_MS = 120_000; // 2 minutes
+    const pollStart = Date.now();
+    let walletFunded = false;
+
+    while (Date.now() - pollStart < POLL_TIMEOUT_MS) {
+      try {
+        const { Utxos } = await userClient.getUtxos({
+          address: sellingWallet.walletAddress,
+          network,
+        });
+        if (Utxos.length > 0) {
+          walletFunded = true;
+          break;
+        }
+      } catch (utxoError) {
+        // 404 means the address has no UTXOs yet (Blockfrost doesn't know it) —
+        // keep polling.  Any other error is unexpected and should abort.
+        const msg =
+          utxoError instanceof Error ? utxoError.message : String(utxoError);
+        if (!msg.startsWith("404")) {
+          await prisma.agent
+            .delete({ where: { id: agent.id } })
+            .catch(() => null);
+          throw utxoError;
+        }
+      }
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, POLL_INTERVAL_MS),
+      );
+    }
+
+    if (!walletFunded) {
+      await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
+      return {
+        success: false as const,
+        error:
+          "Wallet funding timed out. The dispenser may be slow — please try again.",
+      };
+    }
+
     let registryEntry;
     try {
       registryEntry = await userClient.registerAgent({

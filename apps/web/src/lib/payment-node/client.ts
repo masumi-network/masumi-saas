@@ -192,6 +192,26 @@ export interface GeneratedWallet {
   walletVkey: string;
 }
 
+export interface UtxoAmount {
+  unit: string;
+  quantity: number;
+}
+
+export interface Utxo {
+  txHash: string;
+  address: string;
+  Amounts: UtxoAmount[];
+  dataHash: string | null;
+  inlineDatum: string | null;
+  referenceScriptHash: string | null;
+  outputIndex: number;
+  block: string;
+}
+
+export interface GetUtxosOutput {
+  Utxos: Utxo[];
+}
+
 // ─── Client factory ─────────────────────────────────────────────────────────
 
 export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
@@ -334,6 +354,27 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       return request<GeneratedWallet>(base, apiKey, `/wallet`, {
         method: "POST",
         body: { network },
+      });
+    },
+
+    /** Get UTXOs at a Cardano address (READ access required).
+     *  Throws a 404 error if the address has no UTXOs yet. */
+    async getUtxos(params: {
+      address: string;
+      network: PaymentNodeNetwork;
+      count?: number;
+      page?: number;
+      order?: "asc" | "desc";
+    }): Promise<GetUtxosOutput> {
+      return request<GetUtxosOutput>(base, apiKey, `/utxos`, {
+        method: "GET",
+        query: {
+          address: params.address,
+          network: params.network,
+          ...(params.count != null && { count: String(params.count) }),
+          ...(params.page != null && { page: String(params.page) }),
+          ...(params.order != null && { order: params.order }),
+        },
       });
     },
   };
