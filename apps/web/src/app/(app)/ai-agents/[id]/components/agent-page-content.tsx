@@ -69,8 +69,6 @@ export function AgentPageContent({
   // RegistrationFailed may eventually have an agentIdentifier populated on the
   // payment node (the tx can land on-chain after the initial failure response).
   // Run one sync on mount so we pick it up without continuous polling.
-  const registrationFailed = agent.registrationState === "RegistrationFailed";
-
   const syncAndRefetch = useCallback(async () => {
     await syncAgentRegistrationStatusAction(agent.id);
     const result = await agentApiClient.getAgent(agent.id);
@@ -87,12 +85,6 @@ export function AgentPageContent({
       clearInterval(interval);
     };
   }, [pendingRegistration, syncAndRefetch]);
-
-  // One-shot sync for RegistrationFailed — no repeat polling.
-  useEffect(() => {
-    if (!registrationFailed) return;
-    void syncAndRefetch();
-  }, [registrationFailed, syncAndRefetch]);
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");
