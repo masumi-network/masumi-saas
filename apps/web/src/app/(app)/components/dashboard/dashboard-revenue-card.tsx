@@ -97,7 +97,9 @@ export function DashboardRevenueCard() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/earnings?period=${period}`);
+      const res = await fetch(
+        `/api/earnings?period=${period}&network=${network}`,
+      );
       const json = await res.json();
       if (!json.success) {
         setError(json.error ?? "Failed to load earnings");
