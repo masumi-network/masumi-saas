@@ -35,11 +35,11 @@ export default function Sidebar({ session }: SidebarProps) {
         <PaymentNetworkToggle />
         <SidebarHeader
           className={cn(
-            "h-16 md:border-b",
+            "h-16 md:border-b flex flex-col items-center justify-center w-full",
             isMobile && "border-b border-sidebar-border",
           )}
         >
-          <div className="flex items-center justify-between gap-2 p-2 group-data-[collapsible=icon]:pt-3! group-data-[collapsible=icon]:px-2! group-data-[collapsible=icon]:justify-center transition-[padding] duration-200 ease-linear">
+          <div className="flex w-full items-center justify-between gap-2 p-2 group-data-[collapsible=icon]:px-2! group-data-[collapsible=icon]:justify-center transition-[padding] duration-200 ease-linear">
             {isMobile ? (
               <>
                 <SheetClose asChild>
