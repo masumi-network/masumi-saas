@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 
-interface DeleteAgentDialogProps {
+interface DeregisterAgentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
@@ -24,22 +21,17 @@ interface DeleteAgentDialogProps {
   isLoading?: boolean;
 }
 
-export function DeleteAgentDialog({
+export function DeregisterAgentDialog({
   open,
   onOpenChange,
   onConfirm,
   agentName,
   isLoading = false,
-}: DeleteAgentDialogProps) {
-  const [confirmValue, setConfirmValue] = useState("");
+}: DeregisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Details");
-
-  const isMatch = confirmValue.trim() === agentName;
-  const canConfirm = isMatch && !isLoading;
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (isLoading) return;
-    if (!newOpen) setConfirmValue("");
     onOpenChange(newOpen);
   };
 
@@ -47,27 +39,11 @@ export function DeleteAgentDialog({
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
       <DialogContent className="w-sm gap-6">
         <DialogHeader>
-          <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
+          <DialogTitle>{t("deregisterConfirmTitle")}</DialogTitle>
           <DialogDescription>
-            {t("deleteConfirmDescription", { name: agentName })}
+            {t("deregisterConfirmDescription", { name: agentName })}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 py-2">
-          <Label htmlFor="delete-confirm-input">
-            {t.rich("deleteConfirmTypeToConfirm", {
-              name: agentName,
-              bold: (chunks) => <span className="font-semibold">{chunks}</span>,
-            })}
-          </Label>
-          <Input
-            id="delete-confirm-input"
-            value={confirmValue}
-            onChange={(e) => setConfirmValue(e.target.value)}
-            placeholder={t("deleteConfirmPlaceholder")}
-            disabled={isLoading}
-            autoComplete="off"
-          />
-        </div>
         <DialogFooter className="flex justify-end gap-2">
           <Button
             variant="outline"
@@ -81,10 +57,10 @@ export function DeleteAgentDialog({
             variant="destructive"
             className="w-fit"
             onClick={onConfirm}
-            disabled={!canConfirm}
+            disabled={isLoading}
           >
             {isLoading && <Spinner size={16} className="mr-2" />}
-            {t("delete")}
+            {t("deregister")}
           </Button>
         </DialogFooter>
       </DialogContent>

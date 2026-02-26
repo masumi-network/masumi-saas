@@ -187,6 +187,15 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       });
     },
 
+    /** Permanently delete a registry entry from the payment node DB (admin only).
+     *  Only valid for RegistrationFailed or DeregistrationConfirmed entries. */
+    async deleteRegistryEntry(id: string): Promise<RegistryEntry> {
+      return request<RegistryEntry>(base, apiKey, `/registry`, {
+        method: "DELETE",
+        body: { id },
+      });
+    },
+
     /** List registry requests (pay-authenticated). Use user's API key. */
     async getRegistry(params: {
       network: PaymentNodeNetwork;

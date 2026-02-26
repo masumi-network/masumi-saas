@@ -16,14 +16,14 @@ export const registerAgentBodySchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
-  summary: z
-    .string()
-    .max(250, "Summary must be 250 characters or less")
-    .optional()
-    .or(z.literal("")),
   description: z
     .string()
-    .max(5000, "Description must be less than 5000 characters")
+    .max(250, "Description must be 250 characters or less")
+    .optional()
+    .or(z.literal("")),
+  extendedDescription: z
+    .string()
+    .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
   apiUrl: z
@@ -70,10 +70,10 @@ const registerAgentFormBaseSchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
-  summary: z.string().max(250).optional().or(z.literal("")),
-  description: z
+  description: z.string().max(250).optional().or(z.literal("")),
+  extendedDescription: z
     .string()
-    .max(5000, "Description must be less than 5000 characters")
+    .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
   apiUrl: z

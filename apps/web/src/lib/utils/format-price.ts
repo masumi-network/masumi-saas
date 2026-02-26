@@ -15,7 +15,7 @@ export type AgentPricing =
   | { pricingType: "Free" }
   | {
       pricingType: "Fixed";
-      prices: Array<{ amount: string; currency?: string }>;
+      Pricing: Array<{ amount: string; unit?: string }>;
     };
 
 /**
@@ -29,16 +29,17 @@ export function formatPricingDisplay(
   if ((pricing as AgentPricing).pricingType === "Free") return "Free";
   const fixed = pricing as {
     pricingType?: string;
-    prices?: Array<{ amount: string }>;
+    Pricing?: Array<{ amount: string }>;
   };
-  if (fixed.pricingType === "Fixed" && fixed.prices?.length) {
+  if (fixed.pricingType === "Fixed" && fixed.Pricing?.length) {
     return (
-      fixed.prices
-        .map((p) => {
-          const amt = parseFloat(p.amount);
-          if (Number.isNaN(amt)) return null;
-          return `$${formatBalance(amt.toFixed(2))}`;
-        })
+      fixed.Pricing.map((p) => {
+        const raw = parseFloat(p.amount);
+        if (Number.isNaN(raw)) return null;
+        // Amounts are stored in on-chain units (6 decimals, like USDM/tUSDM)
+        const dollars = raw / 1_000_000;
+        return `$${formatBalance(dollars.toFixed(2))}`;
+      })
         .filter(Boolean)
         .join(", ") || "—"
     );
