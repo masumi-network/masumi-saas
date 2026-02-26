@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
@@ -11,7 +12,9 @@ export type DashboardOverviewApiResponse =
 export async function GET() {
   try {
     const { user } = await getAuthenticatedOrThrow();
-    const data = await getDashboardOverview(user.id);
+    const cookieStore = await cookies();
+    const network = cookieStore.get("payment_network")?.value;
+    const data = await getDashboardOverview(user.id, network);
     return NextResponse.json({ success: true, data });
   } catch (error) {
     const isUnauthorized =

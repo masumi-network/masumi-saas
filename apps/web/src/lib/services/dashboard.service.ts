@@ -5,7 +5,11 @@ import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
   userId: string,
+  network?: string,
 ): Promise<DashboardOverview> {
+  const networkFilter = network
+    ? { OR: [{ networkIdentifier: network }, { networkIdentifier: null }] }
+    : {};
   const [
     userWithOrgs,
     kycResult,
@@ -46,16 +50,16 @@ export async function getDashboardOverview(
     prisma.apikey.count({ where: { userId } }),
     prisma.agent.groupBy({
       by: ["verificationStatus"],
-      where: { userId },
+      where: { userId, ...networkFilter },
       _count: true,
     }),
     prisma.agent.groupBy({
       by: ["registrationState"],
-      where: { userId },
+      where: { userId, ...networkFilter },
       _count: true,
     }),
     prisma.agent.findMany({
-      where: { userId },
+      where: { userId, ...networkFilter },
       select: {
         id: true,
         name: true,
