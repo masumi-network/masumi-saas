@@ -2160,6 +2160,7 @@ export const AgentScalarFieldEnum = {
   metadata: "metadata",
   icon: "icon",
   agentIdentifier: "agentIdentifier",
+  networkIdentifier: "networkIdentifier",
   pricing: "pricing",
   createdAt: "createdAt",
   updatedAt: "updatedAt",

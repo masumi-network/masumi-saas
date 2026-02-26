@@ -12,6 +12,7 @@ type Agent = {
   icon: string | null;
   metadata?: string | null;
   agentIdentifier: string | null;
+  networkIdentifier: string | null;
   pricing: AgentPricing | null;
   registrationState:
     | "RegistrationRequested"

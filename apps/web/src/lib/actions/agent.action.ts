@@ -193,6 +193,7 @@ export async function registerAgentAction(formData: FormData) {
         registrationState: "RegistrationRequested",
         verificationStatus: "PENDING",
         pricing: agentPricing,
+        networkIdentifier: network,
       },
     });
 
@@ -285,28 +286,20 @@ export async function getAgentsAction(filters?: {
 }) {
   try {
     const { user } = await getAuthenticatedOrThrow();
+    const network = await getNetworkFromCookie();
 
-    const where: {
-      userId: string;
-      verificationStatus?:
-        | { not: "VERIFIED" }
-        | "PENDING"
-        | "VERIFIED"
-        | "REVOKED"
-        | "EXPIRED"
-        | null;
-    } = {
-      userId: user.id,
-    };
-
-    if (filters?.unverified) {
-      where.verificationStatus = { not: "VERIFIED" };
-    } else if (filters?.verificationStatus !== undefined) {
-      where.verificationStatus = filters.verificationStatus;
-    }
+    const verificationFilter = filters?.unverified
+      ? { verificationStatus: { not: "VERIFIED" as const } }
+      : filters?.verificationStatus !== undefined
+        ? { verificationStatus: filters.verificationStatus ?? undefined }
+        : {};
 
     const agents = await prisma.agent.findMany({
-      where,
+      where: {
+        userId: user.id,
+        ...verificationFilter,
+        OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+      },
       orderBy: {
         createdAt: "desc",
       },

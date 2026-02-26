@@ -297,8 +297,9 @@ model Agent {
   icon     String? // Preset key (e.g. "bot", "sparkles") or URL for custom icon
 
   // Registry / pricing
-  agentIdentifier String? // On-chain or registry identifier
-  pricing         Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
+  agentIdentifier  String? // On-chain or registry identifier
+  networkIdentifier String? // Network this agent is registered on (e.g. Preprod, Mainnet)
+  pricing          Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -310,6 +311,7 @@ model Agent {
   @@index([organizationId])
   @@index([verificationStatus])
   @@index([registrationState])
+  @@index([networkIdentifier])
   @@map("agent")
 }
 

@@ -41,6 +41,7 @@ export type AgentMinAggregateOutputType = {
   metadata: string | null;
   icon: string | null;
   agentIdentifier: string | null;
+  networkIdentifier: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -62,6 +63,7 @@ export type AgentMaxAggregateOutputType = {
   metadata: string | null;
   icon: string | null;
   agentIdentifier: string | null;
+  networkIdentifier: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -84,6 +86,7 @@ export type AgentCountAggregateOutputType = {
   metadata: number;
   icon: number;
   agentIdentifier: number;
+  networkIdentifier: number;
   pricing: number;
   createdAt: number;
   updatedAt: number;
@@ -107,6 +110,7 @@ export type AgentMinAggregateInputType = {
   metadata?: true;
   icon?: true;
   agentIdentifier?: true;
+  networkIdentifier?: true;
   createdAt?: true;
   updatedAt?: true;
 };
@@ -128,6 +132,7 @@ export type AgentMaxAggregateInputType = {
   metadata?: true;
   icon?: true;
   agentIdentifier?: true;
+  networkIdentifier?: true;
   createdAt?: true;
   updatedAt?: true;
 };
@@ -150,6 +155,7 @@ export type AgentCountAggregateInputType = {
   metadata?: true;
   icon?: true;
   agentIdentifier?: true;
+  networkIdentifier?: true;
   pricing?: true;
   createdAt?: true;
   updatedAt?: true;
@@ -253,6 +259,7 @@ export type AgentGroupByOutputType = {
   metadata: string | null;
   icon: string | null;
   agentIdentifier: string | null;
+  networkIdentifier: string | null;
   pricing: runtime.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
@@ -303,6 +310,7 @@ export type AgentWhereInput = {
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
   icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
   agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  networkIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
   pricing?: Prisma.JsonNullableFilter<"Agent">;
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
@@ -336,6 +344,7 @@ export type AgentOrderByWithRelationInput = {
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   icon?: Prisma.SortOrderInput | Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   pricing?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -379,6 +388,7 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
     icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
     agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+    networkIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
     pricing?: Prisma.JsonNullableFilter<"Agent">;
     createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
@@ -414,6 +424,7 @@ export type AgentOrderByWithAggregationInput = {
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   icon?: Prisma.SortOrderInput | Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   pricing?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -474,6 +485,10 @@ export type AgentScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"Agent">
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.StringNullableWithAggregatesFilter<"Agent">
+    | string
+    | null;
   pricing?: Prisma.JsonNullableWithAggregatesFilter<"Agent">;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agent"> | Date | string;
@@ -495,6 +510,7 @@ export type AgentCreateInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -522,6 +538,7 @@ export type AgentUncheckedCreateInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -563,6 +580,10 @@ export type AgentUpdateInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -617,6 +638,10 @@ export type AgentUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -642,6 +667,7 @@ export type AgentCreateManyInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -681,6 +707,10 @@ export type AgentUpdateManyMutationInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -731,6 +761,10 @@ export type AgentUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -772,6 +806,7 @@ export type AgentCountOrderByAggregateInput = {
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   pricing?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -794,6 +829,7 @@ export type AgentMaxOrderByAggregateInput = {
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -815,6 +851,7 @@ export type AgentMinOrderByAggregateInput = {
   metadata?: Prisma.SortOrder;
   icon?: Prisma.SortOrder;
   agentIdentifier?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
 };
@@ -1088,6 +1125,7 @@ export type AgentCreateWithoutUserInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1113,6 +1151,7 @@ export type AgentUncheckedCreateWithoutUserInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1191,6 +1230,7 @@ export type AgentScalarWhereInput = {
   metadata?: Prisma.StringNullableFilter<"Agent"> | string | null;
   icon?: Prisma.StringNullableFilter<"Agent"> | string | null;
   agentIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
+  networkIdentifier?: Prisma.StringNullableFilter<"Agent"> | string | null;
   pricing?: Prisma.JsonNullableFilter<"Agent">;
   createdAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Agent"> | Date | string;
@@ -1212,6 +1252,7 @@ export type AgentCreateWithoutOrganizationInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1237,6 +1278,7 @@ export type AgentUncheckedCreateWithoutOrganizationInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1303,6 +1345,7 @@ export type AgentCreateWithoutAgentReferenceInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1329,6 +1372,7 @@ export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1400,6 +1444,10 @@ export type AgentUpdateWithoutAgentReferenceInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1450,6 +1498,10 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1472,6 +1524,7 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1498,6 +1551,7 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1569,6 +1623,10 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1619,6 +1677,10 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1642,6 +1704,7 @@ export type AgentCreateManyUserInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1681,6 +1744,10 @@ export type AgentUpdateWithoutUserInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -1733,6 +1800,10 @@ export type AgentUncheckedUpdateWithoutUserInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1781,6 +1852,10 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1803,6 +1878,7 @@ export type AgentCreateManyOrganizationInput = {
   metadata?: string | null;
   icon?: string | null;
   agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1842,6 +1918,10 @@ export type AgentUpdateWithoutOrganizationInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -1891,6 +1971,10 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1933,6 +2017,10 @@ export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -2003,6 +2091,7 @@ export type AgentSelect<
     metadata?: boolean;
     icon?: boolean;
     agentIdentifier?: boolean;
+    networkIdentifier?: boolean;
     pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -2039,6 +2128,7 @@ export type AgentSelectCreateManyAndReturn<
     metadata?: boolean;
     icon?: boolean;
     agentIdentifier?: boolean;
+    networkIdentifier?: boolean;
     pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -2070,6 +2160,7 @@ export type AgentSelectUpdateManyAndReturn<
     metadata?: boolean;
     icon?: boolean;
     agentIdentifier?: boolean;
+    networkIdentifier?: boolean;
     pricing?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -2097,6 +2188,7 @@ export type AgentSelectScalar = {
   metadata?: boolean;
   icon?: boolean;
   agentIdentifier?: boolean;
+  networkIdentifier?: boolean;
   pricing?: boolean;
   createdAt?: boolean;
   updatedAt?: boolean;
@@ -2123,6 +2215,7 @@ export type AgentOmit<
   | "metadata"
   | "icon"
   | "agentIdentifier"
+  | "networkIdentifier"
   | "pricing"
   | "createdAt"
   | "updatedAt",
@@ -2183,6 +2276,7 @@ export type $AgentPayload<
       metadata: string | null;
       icon: string | null;
       agentIdentifier: string | null;
+      networkIdentifier: string | null;
       pricing: runtime.JsonValue | null;
       createdAt: Date;
       updatedAt: Date;
@@ -2851,6 +2945,7 @@ export interface AgentFieldRefs {
   readonly metadata: Prisma.FieldRef<"Agent", "String">;
   readonly icon: Prisma.FieldRef<"Agent", "String">;
   readonly agentIdentifier: Prisma.FieldRef<"Agent", "String">;
+  readonly networkIdentifier: Prisma.FieldRef<"Agent", "String">;
   readonly pricing: Prisma.FieldRef<"Agent", "Json">;
   readonly createdAt: Prisma.FieldRef<"Agent", "DateTime">;
   readonly updatedAt: Prisma.FieldRef<"Agent", "DateTime">;

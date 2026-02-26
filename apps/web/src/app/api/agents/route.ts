@@ -50,39 +50,34 @@ export async function GET(request: NextRequest) {
       search,
     } = queryValidation.data;
 
-    const searchTrimmed = search?.trim();
-    const where: {
-      userId: string;
-      verificationStatus?:
-        | { not: "VERIFIED" }
-        | "PENDING"
-        | "VERIFIED"
-        | "REVOKED"
-        | "EXPIRED"
-        | null;
-      registrationState?: RegistrationState | { in: RegistrationState[] };
-    } = {
-      userId: user.id,
-    };
+    const networkCookie = request.cookies.get("payment_network")?.value;
+    const network =
+      networkCookie === "Mainnet" || networkCookie === "Preprod"
+        ? networkCookie
+        : "Preprod";
 
-    if (unverified) {
-      where.verificationStatus = { not: "VERIFIED" as const };
-    } else if (verificationStatus) {
-      where.verificationStatus = verificationStatus;
-    }
+    const searchTrimmed = search?.trim();
+
+    const verificationFilter = unverified
+      ? { verificationStatus: { not: "VERIFIED" as const } }
+      : verificationStatus
+        ? { verificationStatus }
+        : {};
 
     const validStates = Object.values(RegistrationState) as string[];
-    if (registrationStateIn) {
-      const states = registrationStateIn
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => validStates.includes(s)) as RegistrationState[];
-      if (states.length > 0) {
-        where.registrationState = { in: states };
+    const registrationFilter = (() => {
+      if (registrationStateIn) {
+        const states = registrationStateIn
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => validStates.includes(s)) as RegistrationState[];
+        if (states.length > 0) return { registrationState: { in: states } };
       }
-    } else if (registrationState && validStates.includes(registrationState)) {
-      where.registrationState = registrationState as RegistrationState;
-    }
+      if (registrationState && validStates.includes(registrationState)) {
+        return { registrationState: registrationState as RegistrationState };
+      }
+      return {};
+    })();
 
     const searchFilter =
       searchTrimmed && searchTrimmed.length > 0
@@ -114,8 +109,17 @@ export async function GET(request: NextRequest) {
           }
         : undefined;
 
+    const baseWhere = {
+      userId: user.id,
+      ...verificationFilter,
+      ...registrationFilter,
+      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+    };
+
     const finalWhere =
-      searchFilter !== undefined ? { AND: [where, searchFilter] } : where;
+      searchFilter !== undefined
+        ? { AND: [baseWhere, searchFilter] }
+        : baseWhere;
 
     const agents = await prisma.agent.findMany({
       where: finalWhere,
