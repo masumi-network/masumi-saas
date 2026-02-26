@@ -74,25 +74,19 @@ export function AgentPageContent({
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
     : null;
-  const networkMismatch = agentNetwork !== null && agentNetwork !== network;
-  const [isNetworkDialogOpen, setIsNetworkDialogOpen] =
-    useState(networkMismatch);
-
-  // Keep dialog in sync if network changes externally
-  useEffect(() => {
-    if (agentNetwork && agentNetwork !== network) {
-      setIsNetworkDialogOpen(true);
-    } else {
-      setIsNetworkDialogOpen(false);
-    }
-  }, [network, agentNetwork]);
+  // Track if user explicitly dismissed the dialog (e.g. clicked "Go back")
+  const [networkDialogDismissed, setNetworkDialogDismissed] = useState(false);
+  const isNetworkDialogOpen =
+    agentNetwork !== null &&
+    agentNetwork !== network &&
+    !networkDialogDismissed;
 
   const handleSwitchNetwork = () => {
     if (agentNetwork) setNetwork(agentNetwork);
   };
 
   const handleNetworkDialogBack = () => {
-    setIsNetworkDialogOpen(false);
+    setNetworkDialogDismissed(true);
     router.back();
   };
 

@@ -746,6 +746,12 @@
         "deleteConfirmTypeToConfirm": "Type <bold>{name}</bold> to confirm",
         "deleteConfirmPlaceholder": "Agent name",
         "cancel": "Cancel",
+        "networkMismatch": {
+          "title": "Switch Network",
+          "description": "This agent is on <strong>{agentNetwork}</strong>, but you\u2019re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
+          "confirm": "Switch to {network}",
+          "back": "Go back"
+        },
         "Transactions": {
           "title": "Transactions",
           "searchLabel": "Search by ID, status, amount",

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeftRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,26 +28,30 @@ export function NetworkMismatchDialog({
   onSwitch,
   onBack,
 }: NetworkMismatchDialogProps) {
+  const t = useTranslations("App.Agents.Details.networkMismatch");
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onBack()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Switch Network</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This agent is on{" "}
-          <span className="font-medium text-foreground">{agentNetwork}</span>,
-          but you&apos;re currently on{" "}
-          <span className="font-medium text-foreground">{currentNetwork}</span>.
-          Switch networks to view this agent.
+          {t.rich("description", {
+            agentNetwork,
+            currentNetwork,
+            strong: (chunks) => (
+              <span className="font-medium text-foreground">{chunks}</span>
+            ),
+          })}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={onBack}>
-            Go back
+            {t("back")}
           </Button>
           <Button variant="primary" onClick={onSwitch}>
             <ArrowLeftRight className="h-4 w-4" />
-            Switch to {agentNetwork}
+            {t("confirm", { network: agentNetwork })}
           </Button>
         </DialogFooter>
       </DialogContent>
