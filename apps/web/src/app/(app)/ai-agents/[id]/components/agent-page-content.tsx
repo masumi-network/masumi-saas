@@ -11,11 +11,14 @@ import {
   syncAgentRegistrationStatusAction,
 } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { EditAgentDialog } from "../../components/edit-agent-dialog";
 import { AgentPageHeader } from "./agent-page-header";
 import { DeleteAgentDialog } from "./delete-agent-dialog";
 import { DeregisterAgentDialog } from "./deregister-agent-dialog";
+import { NetworkMismatchDialog } from "./network-mismatch-dialog";
 import {
   AgentCredentials,
   AgentDetails,
@@ -45,6 +48,12 @@ function isValidTab(
 
 const DEFAULT_TAB = "details";
 
+function isValidNetwork(
+  value: string | null | undefined,
+): value is PaymentNodeNetwork {
+  return value === "Preprod" || value === "Mainnet";
+}
+
 export function AgentPageContent({
   agent: initialAgent,
 }: AgentPageContentProps) {
@@ -53,6 +62,7 @@ export function AgentPageContent({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { network, setNetwork } = usePaymentNetwork();
   const [agent, setAgent] = useState<Agent>(initialAgent);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
@@ -60,6 +70,32 @@ export function AgentPageContent({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
   const [, startTransition] = useTransition();
+
+  const agentNetwork = isValidNetwork(agent.networkIdentifier)
+    ? agent.networkIdentifier
+    : null;
+  const networkMismatch = agentNetwork !== null && agentNetwork !== network;
+  const [isNetworkDialogOpen, setIsNetworkDialogOpen] =
+    useState(networkMismatch);
+
+  // Keep dialog in sync if network changes externally
+  useEffect(() => {
+    if (agentNetwork && agentNetwork !== network) {
+      setIsNetworkDialogOpen(true);
+    } else {
+      setIsNetworkDialogOpen(false);
+    }
+  }, [network, agentNetwork]);
+
+  const handleSwitchNetwork = () => {
+    if (agentNetwork) setNetwork(agentNetwork);
+  };
+
+  const handleNetworkDialogBack = () => {
+    setIsNetworkDialogOpen(false);
+    router.back();
+  };
+
   const pendingRegistration =
     agent.registrationState === "RegistrationRequested" ||
     agent.registrationState === "RegistrationInitiated" ||
@@ -186,6 +222,16 @@ export function AgentPageContent({
       {activeTab === "earnings" && <AgentEarnings agent={agent} />}
 
       {activeTab === "transactions" && <AgentTransactions agent={agent} />}
+
+      {agentNetwork && (
+        <NetworkMismatchDialog
+          open={isNetworkDialogOpen}
+          agentNetwork={agentNetwork}
+          currentNetwork={network}
+          onSwitch={handleSwitchNetwork}
+          onBack={handleNetworkDialogBack}
+        />
+      )}
 
       <DeregisterAgentDialog
         open={isDeregisterDialogOpen}
