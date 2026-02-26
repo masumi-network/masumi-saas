@@ -11,6 +11,7 @@ import {
   type RegisterAgentInput,
 } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { USDM } from "@/lib/payment-node/tokens";
 import { registerAgentFormDataSchema } from "@/lib/schemas/agent";
 import { convertZodError } from "@/lib/utils/convert-zod-error";
 
@@ -36,8 +37,8 @@ export async function registerAgentAction(formData: FormData) {
 
     const {
       name,
-      summary,
       description,
+      extendedDescription,
       apiUrl,
       tags,
       icon,
@@ -65,11 +66,10 @@ export async function registerAgentAction(formData: FormData) {
     if (tagsArray.length === 0) {
       return {
         success: false as const,
-        error: "At least one tag is required for payment node registration",
+        error: "At least one tag is required.",
       };
     }
 
-    // Parse JSON-encoded nested fields
     type PriceEntry = { amount: string; currency: string };
     type ExampleOutput = { name: string; url: string; mimeType: string };
 
@@ -99,29 +99,11 @@ export async function registerAgentAction(formData: FormData) {
       }
     }
 
-    // USDM is the 1:1 USD stablecoin on Cardano (policyId + hex assetName).
-    // 1 USDM = 1,000,000 units (6 decimals). Users enter amounts in USD.
-    // TODO(mainnet): tUSDM and USDM share the same policy ID — no change needed for mainnet.
-    const USDM_UNIT =
-      "c48cbb3d5e57ed56e276bc45f99ab39abe94e6cd7ac39fb402da47ad0014df105553444d";
-    const USDM_DECIMALS = 1_000_000;
-
-    const agentPricing: RegisterAgentInput["AgentPricing"] =
-      pricingType === "Fixed" && parsedPrices.length > 0
-        ? {
-            pricingType: "Fixed",
-            Pricing: parsedPrices.map((p) => ({
-              unit: USDM_UNIT,
-              amount: String(Math.round(Number(p.amount) * USDM_DECIMALS)),
-            })),
-          }
-        : { pricingType: "Free" };
-
     const userClient = await getPaymentNodeClientForUser(user.id);
     if (!userClient) {
       return {
         success: false as const,
-        error: "Payment setup is not ready. Please try again in a moment.",
+        error: "Something went wrong. Please try again in a moment.",
       };
     }
 
@@ -136,12 +118,26 @@ export async function registerAgentAction(formData: FormData) {
       console.error("Payment node config missing:", e);
       return {
         success: false as const,
-        error: "Payment node is not configured. Please try again later.",
+        error: "Something went wrong. Please try again later.",
       };
     }
 
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
     const network = await getNetworkFromCookie();
+    const token = USDM[network];
+
+    const agentPricing: RegisterAgentInput["AgentPricing"] =
+      pricingType === "Fixed" && parsedPrices.length > 0
+        ? {
+            pricingType: "Fixed",
+            Pricing: parsedPrices.map((p) => ({
+              unit: token.unit,
+              amount: String(
+                Math.round(Number(p.amount) * 10 ** token.decimals),
+              ),
+            })),
+          }
+        : { pricingType: "Free" };
 
     const [sellingWallet, buyingWallet] = await Promise.all([
       adminClient.generateWallet(network),
@@ -187,8 +183,8 @@ export async function registerAgentAction(formData: FormData) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: summary?.trim() || null,
-        description: description?.trim() || null,
+        summary: description?.trim() || null,
+        description: extendedDescription?.trim() || null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,
@@ -244,8 +240,6 @@ export async function registerAgentAction(formData: FormData) {
         AgentPricing: agentPricing,
       });
     } catch (paymentNodeError) {
-      // Payment node call failed — delete the orphaned DB records so the agent
-      // doesn't appear in the user's list stuck in a permanent pending state.
       await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
       throw paymentNodeError;
     }
@@ -331,7 +325,6 @@ export async function getAgentsAction(filters?: {
   }
 }
 
-/** Sync this agent's registration status from the payment node (polling). */
 export async function syncAgentRegistrationStatusAction(agentId: string) {
   try {
     const { user } = await getAuthenticatedOrThrow();
@@ -396,7 +389,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
   }
 }
 
-/** Deregister agent on the payment node and update local status. */
 export async function deregisterAgentAction(agentId: string) {
   try {
     const { user } = await getAuthenticatedOrThrow();
@@ -420,17 +412,16 @@ export async function deregisterAgentAction(agentId: string) {
 
     const userClient = await getPaymentNodeClientForUser(user.id);
     if (!userClient) {
-      return { success: false as const, error: "Payment setup is not ready." };
+      return {
+        success: false as const,
+        error: "Something went wrong. Please try again.",
+      };
     }
 
     const network = (agent.agentReference?.networkIdentifier ??
       (await getNetworkFromCookie())) as PaymentNodeNetwork;
     await userClient.deregisterAgent({ network, agentIdentifier });
 
-    // Deregistration on the payment node is async — the network state is now
-    // "DeregistrationRequested". Keep the local AgentReference status as ACTIVE
-    // (or whatever it currently is) and let syncAgentRegistrationStatusAction
-    // poll until DeregistrationConfirmed before marking it DEREGISTERED.
     await prisma.agent.update({
       where: { id: agentId },
       data: { registrationState: "DeregistrationRequested" },
@@ -494,9 +485,6 @@ export async function deleteAgentAction(agentId: string) {
       };
     }
 
-    // Block deletion if the agent is live on the Masumi network — deleting
-    // locally would orphan it on-chain (still discoverable, still accepting
-    // payments with no backend to handle them). The user must deregister first.
     const liveStates: (typeof agent.registrationState)[] = [
       "RegistrationConfirmed",
       "RegistrationRequested",
@@ -509,29 +497,21 @@ export async function deleteAgentAction(agentId: string) {
       return {
         success: false as const,
         error:
-          "This agent is still registered on the Masumi network. Please deregister it before deleting.",
+          "This agent is still active. Please deregister it before deleting.",
       };
     }
 
-    // If the agent has an identifier on the payment node (e.g. RegistrationFailed
-    // after the payment node already created the entry), attempt to deregister
-    // before deleting locally so it doesn't stay orphaned on-chain.
-    const agentIdentifier = agent.agentReference?.agentIdentifier;
-    if (agentIdentifier) {
-      const userClient = await getPaymentNodeClientForUser(user.id);
-      if (userClient) {
-        const network = (agent.agentReference?.networkIdentifier ??
-          (await getNetworkFromCookie())) as PaymentNodeNetwork;
-        await userClient
-          .deregisterAgent({ network, agentIdentifier })
-          .catch((err) => {
-            console.warn(
-              "[Payment Node] Deregister on delete failed (continuing with local delete):",
-              err,
-            );
-          });
-      }
+    if (!agent.agentReference?.externalId) {
+      return {
+        success: false as const,
+        error: "No externalId found for this agent.",
+      };
     }
+
+    const baseUrl = paymentNodeConfig.getBaseUrl();
+    const adminKey = paymentNodeConfig.getAdminApiKey();
+    const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+    await adminClient.deleteRegistryEntry(agent.agentReference.externalId);
 
     await prisma.agent.delete({
       where: { id: agentId },
@@ -544,7 +524,7 @@ export async function deleteAgentAction(agentId: string) {
     console.error("Failed to delete agent:", error);
     return {
       success: false as const,
-      error: "Failed to delete agent",
+      error: error instanceof Error ? error.message : "Failed to delete agent",
     };
   }
 }

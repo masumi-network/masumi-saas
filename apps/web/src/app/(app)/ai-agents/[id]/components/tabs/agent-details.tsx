@@ -6,8 +6,6 @@ import {
   FileText,
   Fingerprint,
   Link2,
-  Loader2,
-  Pencil,
   ShieldCheck,
   Tag,
   Tags,
@@ -45,19 +43,17 @@ import { RequestVerificationDialog } from "../../../components/request-verificat
 interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
+  onDeregisterClick: () => void;
   onEditClick?: () => void;
   onVerificationSuccess?: () => void;
-  onDeregisterClick?: () => void;
-  isDeregistering?: boolean;
 }
 
 export function AgentDetails({
   agent,
   onDeleteClick,
-  onEditClick,
-  onVerificationSuccess,
   onDeregisterClick,
-  isDeregistering = false,
+  onEditClick: _onEditClick,
+  onVerificationSuccess,
 }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
@@ -69,7 +65,9 @@ export function AgentDetails({
   const [, startTransition] = useTransition();
 
   const isVerified = agent.verificationStatus === "VERIFIED";
-  const showVerificationCta = !isVerified;
+  const isRegistrationConfirmed =
+    agent.registrationState === "RegistrationConfirmed";
+  const showVerificationCta = !isVerified && isRegistrationConfirmed;
 
   const [isVerificationBannerDismissed, setIsVerificationBannerDismissed] =
     useState(true);
@@ -148,6 +146,7 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
+            {/* Edit disabled until payment node supports agent updates
             {onEditClick && (
               <Button
                 variant="outline"
@@ -159,16 +158,17 @@ export function AgentDetails({
                 {t("edit")}
               </Button>
             )}
+            */}
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            {/* Summary */}
+            {/* Description (short) */}
             {agent.summary && (
               <>
                 <div className="flex gap-3">
                   <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-muted-foreground mb-1">
-                      {t("summary")}
+                      {t("description")}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {agent.summary}
@@ -179,26 +179,22 @@ export function AgentDetails({
               </>
             )}
 
-            {/* Description */}
-            <div className="flex gap-3">
-              <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  {t("description")}
-                </p>
-                {agent.description ? (
-                  /<[a-z][\s\S]*>/i.test(agent.description) ? (
+            {/* Extended Description */}
+            {agent.description && (
+              <div className="flex gap-3">
+                <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    {t("extendedDescription")}
+                  </p>
+                  {/<[a-z][\s\S]*>/i.test(agent.description) ? (
                     <HtmlContent html={agent.description} className="text-sm" />
                   ) : (
                     <Markdown className="text-sm">{agent.description}</Markdown>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    {t("noDescription")}
-                  </p>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 
@@ -236,13 +232,21 @@ export function AgentDetails({
                   {t("agentId")}
                 </p>
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-xs sm:text-sm truncate min-w-0">
-                    {agent.agentIdentifier ?? agent.id}
-                  </span>
-                  <CopyButton
-                    value={agent.agentIdentifier ?? agent.id}
-                    className="h-7 w-7 shrink-0"
-                  />
+                  {agent.agentIdentifier ? (
+                    <>
+                      <span className="font-mono text-xs sm:text-sm truncate min-w-0">
+                        {agent.agentIdentifier}
+                      </span>
+                      <CopyButton
+                        value={agent.agentIdentifier}
+                        className="h-7 w-7 shrink-0"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-xs sm:text-sm text-muted-foreground">
+                      {t("noAgentId")}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -285,31 +289,34 @@ export function AgentDetails({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Hire in Sokosumi */}
-            <div className="flex gap-3 min-w-0">
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {t("hireInSokosumi")}
-                </p>
-                <div className="flex items-center gap-2 min-w-0">
-                  <Link
-                    href={sokosumiUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
-                  >
-                    {sokosumiUrl}
-                  </Link>
-                  <CopyButton
-                    value={sokosumiUrl}
-                    className="h-7 w-7 shrink-0"
-                  />
+            {isRegistrationConfirmed && (
+              <>
+                <Separator />
+                {/* Hire in Sokosumi */}
+                <div className="flex gap-3 min-w-0">
+                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("hireInSokosumi")}
+                    </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Link
+                        href={sokosumiUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
+                      >
+                        {sokosumiUrl}
+                      </Link>
+                      <CopyButton
+                        value={sokosumiUrl}
+                        className="h-7 w-7 shrink-0"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
             {/* Request verification CTA */}
             {showVerificationCta && onVerificationSuccess && (
@@ -403,74 +410,61 @@ export function AgentDetails({
         </Card>
       </div>
 
-      {onDeregisterClick && (
+      {(agent.registrationState === "RegistrationConfirmed" ||
+        agent.registrationState === "DeregistrationConfirmed" ||
+        agent.registrationState === "RegistrationFailed") && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <Separator className="flex-1" />
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-              {t("network")}
+              {t("dangerZone")}
             </span>
             <Separator className="flex-1" />
           </div>
-          <Card className="border-amber-500/40 bg-amber-500/5">
-            <CardContent>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm">{t("deregister")}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t("deregisterDescription")}
-                  </p>
+          {agent.registrationState === "RegistrationConfirmed" ? (
+            <Card className="border-destructive/60 bg-destructive/5">
+              <CardContent>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{t("deregister")}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t("deregisterDescription")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={onDeregisterClick}
+                    className="gap-2 shrink-0 w-full sm:w-auto"
+                  >
+                    {t("deregister")}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={onDeregisterClick}
-                  disabled={isDeregistering}
-                  className="gap-2 shrink-0 w-full sm:w-auto border-amber-500/50 hover:bg-amber-500/10"
-                >
-                  {isDeregistering ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("deregistering")}
-                    </>
-                  ) : (
-                    t("deregister")
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-destructive/60 bg-destructive/5">
+              <CardContent>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{t("delete")}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t("deleteDescription")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={onDeleteClick}
+                    className="gap-2 shrink-0 w-full sm:w-auto"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {t("delete")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
-
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4">
-          <Separator className="flex-1" />
-          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-            {t("dangerZone")}
-          </span>
-          <Separator className="flex-1" />
-        </div>
-        <Card className="border-destructive/60 bg-destructive/5">
-          <CardContent>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
-              <div className="min-w-0">
-                <p className="font-medium text-sm">{t("delete")}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {t("deleteDescription")}
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={onDeleteClick}
-                className="gap-2 shrink-0 w-full sm:w-auto"
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("delete")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

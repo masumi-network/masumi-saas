@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { deleteAgentAction } from "@/lib/actions/agent.action";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
 const exampleOutputSchema = z.object({
@@ -223,35 +224,15 @@ export async function DELETE(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
     const { agentId } = await params;
-
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
-    });
-
-    if (!agent) {
+    const result = await deleteAgentAction(agentId);
+    if (!result.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Agent not found",
-        },
-        { status: 404 },
+        { success: false, error: result.error },
+        { status: 400 },
       );
     }
-
-    await prisma.agent.delete({
-      where: {
-        id: agentId,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete agent:", error);
     return NextResponse.json(

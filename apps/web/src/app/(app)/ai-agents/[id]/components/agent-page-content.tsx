@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { EditAgentDialog } from "../../components/edit-agent-dialog";
 import { AgentPageHeader } from "./agent-page-header";
 import { DeleteAgentDialog } from "./delete-agent-dialog";
+import { DeregisterAgentDialog } from "./deregister-agent-dialog";
 import {
   AgentCredentials,
   AgentDetails,
@@ -54,17 +55,21 @@ export function AgentPageContent({
   const searchParams = useSearchParams();
   const [agent, setAgent] = useState<Agent>(initialAgent);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
   const [, startTransition] = useTransition();
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const pendingRegistration =
     agent.registrationState === "RegistrationRequested" ||
     agent.registrationState === "RegistrationInitiated" ||
     agent.registrationState === "DeregistrationRequested" ||
     agent.registrationState === "DeregistrationInitiated";
+
+  // RegistrationFailed may eventually have an agentIdentifier populated on the
+  // payment node (the tx can land on-chain after the initial failure response).
+  // Run one sync on mount so we pick it up without continuous polling.
+  const registrationFailed = agent.registrationState === "RegistrationFailed";
 
   const syncAndRefetch = useCallback(async () => {
     await syncAgentRegistrationStatusAction(agent.id);
@@ -72,30 +77,22 @@ export function AgentPageContent({
     if (result.success && result.data) setAgent(result.data);
   }, [agent.id]);
 
+  // Poll while pending.
   useEffect(() => {
     if (!pendingRegistration) return;
     const id = setTimeout(() => syncAndRefetch(), 0);
-    pollIntervalRef.current = setInterval(syncAndRefetch, 12_000);
+    const interval = setInterval(syncAndRefetch, 12_000);
     return () => {
       clearTimeout(id);
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      clearInterval(interval);
     };
   }, [pendingRegistration, syncAndRefetch]);
 
-  const handleDeregister = () => {
-    setIsDeregistering(true);
-    startTransition(async () => {
-      const result = await deregisterAgentAction(agent.id);
-      if (result.success) {
-        toast.success(t("deregisterSuccess"));
-        const next = await agentApiClient.getAgent(agent.id);
-        if (next.success && next.data) setAgent(next.data);
-      } else {
-        toast.error(result.error ?? t("deregisterError"));
-      }
-      setIsDeregistering(false);
-    });
-  };
+  // One-shot sync for RegistrationFailed — no repeat polling.
+  useEffect(() => {
+    if (!registrationFailed) return;
+    void syncAndRefetch();
+  }, [registrationFailed, syncAndRefetch]);
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");
@@ -116,6 +113,22 @@ export function AgentPageContent({
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", key);
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleDeregisterConfirm = () => {
+    setIsDeregistering(true);
+    startTransition(async () => {
+      const result = await deregisterAgentAction(agent.id);
+      if (result.success) {
+        toast.success(t("deregisterSuccess"));
+        const next = await agentApiClient.getAgent(agent.id);
+        if (next.success && next.data) setAgent(next.data);
+        setIsDeregisterDialogOpen(false);
+      } else {
+        toast.error(result.error ?? t("deregisterError"));
+      }
+      setIsDeregistering(false);
+    });
   };
 
   const handleDeleteConfirm = () => {
@@ -165,16 +178,9 @@ export function AgentPageContent({
         <AgentDetails
           agent={agent}
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
+          onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
           onEditClick={() => setIsEditDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
-          onDeregisterClick={
-            (agent.registrationState === "RegistrationConfirmed" ||
-              agent.registrationState === "DeregistrationFailed") &&
-            agent.agentIdentifier
-              ? handleDeregister
-              : undefined
-          }
-          isDeregistering={isDeregistering}
         />
       )}
 
@@ -188,6 +194,14 @@ export function AgentPageContent({
       {activeTab === "earnings" && <AgentEarnings agent={agent} />}
 
       {activeTab === "transactions" && <AgentTransactions agent={agent} />}
+
+      <DeregisterAgentDialog
+        open={isDeregisterDialogOpen}
+        onOpenChange={setIsDeregisterDialogOpen}
+        onConfirm={handleDeregisterConfirm}
+        agentName={agent.name}
+        isLoading={isDeregistering}
+      />
 
       <DeleteAgentDialog
         open={isDeleteDialogOpen}

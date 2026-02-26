@@ -18,12 +18,20 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
+
+const PENDING_STATES = [
+  "RegistrationRequested",
+  "RegistrationInitiated",
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+];
 
 const VALID_TABS = [
   "all",
@@ -96,7 +104,7 @@ export function AgentsContent() {
 
   const PAGE_SIZE = 10;
 
-  const loadPage = useCallback(
+  const fetchAgents = useCallback(
     async (cursorId?: string) => {
       const filters = getFiltersForTab(activeTab);
       const result = await agentApiClient.getAgents(
@@ -115,6 +123,26 @@ export function AgentsContent() {
       return null;
     },
     [activeTab, debouncedSearch],
+  );
+
+  const loadPage = useCallback(
+    async (cursorId?: string) => {
+      const initial = await fetchAgents(cursorId);
+      if (!initial) return null;
+
+      const pendingAgents = initial.data.filter((a) =>
+        PENDING_STATES.includes(a.registrationState),
+      );
+
+      if (pendingAgents.length === 0) return initial;
+
+      await Promise.allSettled(
+        pendingAgents.map((a) => syncAgentRegistrationStatusAction(a.id)),
+      );
+
+      return fetchAgents(cursorId);
+    },
+    [fetchAgents],
   );
 
   useEffect(() => {

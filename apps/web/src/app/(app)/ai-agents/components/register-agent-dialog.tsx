@@ -52,16 +52,12 @@ interface RegisterAgentDialogProps {
 
 export type AgentFormFields = {
   name: string;
-  summary?: string;
   description?: string;
+  extendedDescription?: string;
   isFree: boolean;
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
-  authorName?: string;
-  authorEmail?: string;
-  organization?: string;
-  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;
@@ -98,9 +94,9 @@ export function ExampleOutputsFields({
       {fields.map((field, index) => (
         <div
           key={field.id}
-          className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
+          className="relative flex items-center rounded-md border border-border/60 bg-background p-4 gap-2"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 mb-0">
             <FormField
               control={outputsForm.control}
               name={`exampleOutputs.${index}.name`}
@@ -156,7 +152,7 @@ export function ExampleOutputsFields({
             variant="ghost"
             size="icon"
             onClick={() => remove(index)}
-            className="absolute top-2 right-2"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -169,18 +165,25 @@ export function ExampleOutputsFields({
 export function PricingFields({
   form: pricingForm,
   t: pricingT,
+  isFree,
 }: {
   form: UseFormReturn<AgentFormFields>;
   t: (key: string) => string;
+  isFree: boolean;
 }) {
   const { fields, append, remove } = useFieldArray({
     control: pricingForm.control,
     name: "prices",
   });
-  const isFree = pricingForm.watch("isFree");
 
   return (
-    <div className="space-y-3">
+    <div
+      className="space-y-3 transition-opacity duration-200"
+      style={{
+        opacity: isFree ? 0.4 : 1,
+        pointerEvents: isFree ? "none" : undefined,
+      }}
+    >
       <div className="flex items-center justify-between">
         <FormLabel>{pricingT("prices")}</FormLabel>
         <Button
@@ -193,39 +196,33 @@ export function PricingFields({
           {pricingT("addPrice")}
         </Button>
       </div>
-      <div
-        className={
-          isFree ? "pointer-events-none select-none opacity-40" : undefined
-        }
-      >
+      <div className="space-y-2">
         {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2 items-start">
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm shrink-0">
-                {CURRENCY_SYMBOL}
-              </span>
-              <FormField
-                control={pricingForm.control}
-                name={`prices.${index}.amount`}
-                render={({ field: amountField }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        disabled={isFree}
-                        {...amountField}
-                        className="h-11"
-                        onChange={(e) => amountField.onChange(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div key={field.id} className="flex gap-2 items-center">
+            <span className="text-muted-foreground text-sm shrink-0">
+              {CURRENCY_SYMBOL}
+            </span>
+            <FormField
+              control={pricingForm.control}
+              name={`prices.${index}.amount`}
+              render={({ field: amountField }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      {...amountField}
+                      disabled={isFree}
+                      className="h-11"
+                      onChange={(e) => amountField.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {fields.length > 1 && (
               <Button
                 type="button"
@@ -233,7 +230,7 @@ export function PricingFields({
                 size="icon"
                 disabled={isFree}
                 onClick={() => remove(index)}
-                className="shrink-0 mt-2"
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -264,14 +261,14 @@ export function RegisterAgentDialog({
   const registerAgentSchema = z
     .object({
       name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
-      summary: z
-        .string()
-        .max(250, t("summaryMaxLength"))
-        .optional()
-        .or(z.literal("")),
       description: z
         .string()
-        .max(5000, t("descriptionMaxLength"))
+        .max(250, t("descriptionMaxLength"))
+        .optional()
+        .or(z.literal("")),
+      extendedDescription: z
+        .string()
+        .max(5000, t("extendedDescriptionMaxLength"))
         .optional()
         .or(z.literal("")),
       apiUrl: z
@@ -287,12 +284,6 @@ export function RegisterAgentDialog({
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
-      authorName: z.string().max(250).optional(),
-      authorEmail: z
-        .union([z.literal(""), z.string().email().max(250)])
-        .optional(),
-      organization: z.string().max(250).optional(),
-      contactOther: z.string().max(250).optional(),
       termsOfUseUrl: z
         .union([z.literal(""), z.string().url().max(250)])
         .optional(),
@@ -325,17 +316,13 @@ export function RegisterAgentDialog({
     resolver: zodResolver(registerAgentSchema),
     defaultValues: {
       name: "",
-      summary: "",
       description: "",
+      extendedDescription: "",
       apiUrl: "",
       isFree: false,
       prices: [{ amount: "" }],
       tags: "",
       icon: "bot",
-      authorName: "",
-      authorEmail: "",
-      organization: "",
-      contactOther: "",
       termsOfUseUrl: "",
       privacyPolicyUrl: "",
       otherUrl: "",
@@ -345,12 +332,15 @@ export function RegisterAgentDialog({
     },
   });
 
+  const isFree = form.watch("isFree") === true;
+
   const handleAddTag = () => {
     const tag = tagInput.trim();
     if (tag && !tags.includes(tag)) {
       setTags([...tags, tag]);
       setTagInput("");
       form.setValue("tags", [...tags, tag].join(", "));
+      form.clearErrors("tags");
     }
   };
 
@@ -361,13 +351,18 @@ export function RegisterAgentDialog({
   };
 
   const onSubmit = async (data: RegisterAgentFormType) => {
+    if (tags.length === 0) {
+      form.setError("tags", { message: t("tagsRequired") });
+      return;
+    }
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.set("name", data.name);
-      if (data.summary?.trim()) formData.set("summary", data.summary.trim());
       if (data.description?.trim())
         formData.set("description", data.description.trim());
+      if (data.extendedDescription?.trim())
+        formData.set("extendedDescription", data.extendedDescription.trim());
       formData.set("apiUrl", data.apiUrl);
       formData.set("tags", tags.join(", "));
       if (data.icon?.trim()) formData.set("icon", data.icon.trim());
@@ -383,16 +378,6 @@ export function RegisterAgentDialog({
           formData.set("prices", JSON.stringify(prices));
         }
       }
-
-      // Author
-      if (data.authorName?.trim())
-        formData.set("authorName", data.authorName.trim());
-      if (data.authorEmail?.trim())
-        formData.set("authorEmail", data.authorEmail.trim());
-      if (data.organization?.trim())
-        formData.set("organization", data.organization.trim());
-      if (data.contactOther?.trim())
-        formData.set("contactOther", data.contactOther.trim());
 
       // Legal
       if (data.termsOfUseUrl?.trim())
@@ -440,17 +425,13 @@ export function RegisterAgentDialog({
     if (!newOpen) {
       form.reset({
         name: "",
-        summary: "",
         description: "",
+        extendedDescription: "",
         apiUrl: "",
         isFree: false,
         prices: [{ amount: "" }],
         tags: "",
         icon: "bot",
-        authorName: "",
-        authorEmail: "",
-        organization: "",
-        contactOther: "",
         termsOfUseUrl: "",
         privacyPolicyUrl: "",
         otherUrl: "",
@@ -531,13 +512,13 @@ export function RegisterAgentDialog({
 
                 <FormField
                   control={form.control}
-                  name="summary"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("summary")}</FormLabel>
+                      <FormLabel>{t("description")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("summaryPlaceholder")}
+                          placeholder={t("descriptionPlaceholder")}
                           {...field}
                           className="h-11"
                           maxLength={251}
@@ -555,11 +536,11 @@ export function RegisterAgentDialog({
 
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="extendedDescription"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-2">
-                        <FormLabel>{t("description")}</FormLabel>
+                        <FormLabel>{t("extendedDescription")}</FormLabel>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
@@ -575,7 +556,7 @@ export function RegisterAgentDialog({
                         <RichTextEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          placeholder={t("descriptionPlaceholder")}
+                          placeholder={t("extendedDescriptionPlaceholder")}
                           minHeight="min-h-28"
                         />
                       </FormControl>
@@ -626,57 +607,65 @@ export function RegisterAgentDialog({
                 <PricingFields
                   form={form as unknown as UseFormReturn<AgentFormFields>}
                   t={t}
+                  isFree={isFree}
                 />
               </div>
 
               <Separator />
 
               {/* Tags */}
-              <FormItem>
-                <FormLabel>{t("tags")}</FormLabel>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    placeholder={t("tagsPlaceholder")}
-                    className="h-11"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleAddTag}
-                    variant="secondary"
-                    className="shrink-0"
-                  >
-                    {t("addTag")}
-                  </Button>
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {tags.map((tag, index) => (
-                      <Badge
-                        key={index}
+              <FormField
+                control={form.control}
+                name="tags"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>{t("tags")}</FormLabel>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddTag();
+                          }
+                        }}
+                        placeholder={t("tagsPlaceholder")}
+                        className="h-11"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddTag}
                         variant="secondary"
-                        className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                        className="shrink-0"
                       >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+                        {t("addTag")}
+                      </Button>
+                    </div>
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {tags.map((tag, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTag(tag)}
+                              className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </FormItem>
+              />
 
               <div className="flex items-center gap-4 pt-2">
                 <Separator className="flex-1" />
@@ -687,75 +676,6 @@ export function RegisterAgentDialog({
               </div>
 
               <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="authorName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("authorName")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("authorNamePlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="authorEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("authorEmail")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={t("authorEmailPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="organization"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("organization")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("organizationPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contactOther"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("contactOther")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("contactOtherPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="termsOfUseUrl"

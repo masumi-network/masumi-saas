@@ -56,14 +56,6 @@ function parseAgentMetadata(agent: Agent): Partial<AgentFormFields> {
   if (!agent.metadata) return meta;
   try {
     const parsed = JSON.parse(agent.metadata) as Record<string, unknown>;
-    if (typeof parsed.authorName === "string")
-      meta.authorName = parsed.authorName;
-    if (typeof parsed.authorEmail === "string")
-      meta.authorEmail = parsed.authorEmail;
-    if (typeof parsed.organization === "string")
-      meta.organization = parsed.organization;
-    if (typeof parsed.contactOther === "string")
-      meta.contactOther = parsed.contactOther;
     if (typeof parsed.termsOfUseUrl === "string")
       meta.termsOfUseUrl = parsed.termsOfUseUrl;
     if (typeof parsed.privacyPolicyUrl === "string")
@@ -111,26 +103,20 @@ export function EditAgentDialog({
         .string()
         .min(1, tRegister("nameRequired"))
         .max(250, tRegister("nameMaxLength")),
-      summary: z
-        .string()
-        .max(250, tRegister("summaryMaxLength"))
-        .optional()
-        .or(z.literal("")),
       description: z
         .string()
-        .max(5000, tRegister("descriptionMaxLength"))
+        .max(250, tRegister("descriptionMaxLength"))
+        .optional()
+        .or(z.literal("")),
+      extendedDescription: z
+        .string()
+        .max(5000, tRegister("extendedDescriptionMaxLength"))
         .optional()
         .or(z.literal("")),
       isFree: z.boolean(),
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
-      authorName: z.string().max(250).optional(),
-      authorEmail: z
-        .union([z.literal(""), z.string().email().max(250)])
-        .optional(),
-      organization: z.string().max(250).optional(),
-      contactOther: z.string().max(250).optional(),
       termsOfUseUrl: z
         .union([z.literal(""), z.string().url().max(250)])
         .optional(),
@@ -164,7 +150,7 @@ export function EditAgentDialog({
     | { pricingType: "Free" }
     | { pricingType: "Fixed"; prices: Array<{ amount: string }> }
     | null;
-  const isFree = !pricing || pricing.pricingType === "Free";
+  const initialIsFree = !pricing || pricing.pricingType === "Free";
   const prices =
     pricing?.pricingType === "Fixed" && pricing.prices?.length
       ? pricing.prices.map((p) => ({ amount: p.amount }))
@@ -174,16 +160,12 @@ export function EditAgentDialog({
     resolver: zodResolver(editAgentSchema),
     defaultValues: {
       name: agent.name,
-      summary: agent.summary ?? "",
-      description: agent.description ?? "",
-      isFree,
+      description: agent.summary ?? "",
+      extendedDescription: agent.description ?? "",
+      isFree: initialIsFree,
       prices,
       tags: agent.tags?.join(", ") ?? "",
       icon: agent.icon ?? "bot",
-      authorName: metadata.authorName ?? "",
-      authorEmail: metadata.authorEmail ?? "",
-      organization: metadata.organization ?? "",
-      contactOther: metadata.contactOther ?? "",
       termsOfUseUrl: metadata.termsOfUseUrl ?? "",
       privacyPolicyUrl: metadata.privacyPolicyUrl ?? "",
       otherUrl: metadata.otherUrl ?? "",
@@ -207,16 +189,12 @@ export function EditAgentDialog({
           : [{ amount: "" }];
       form.reset({
         name: agent.name,
-        summary: agent.summary ?? "",
-        description: agent.description ?? "",
+        description: agent.summary ?? "",
+        extendedDescription: agent.description ?? "",
         isFree: free,
         prices: pr,
         tags: agent.tags?.join(", ") ?? "",
         icon: agent.icon ?? "bot",
-        authorName: meta.authorName ?? "",
-        authorEmail: meta.authorEmail ?? "",
-        organization: meta.organization ?? "",
-        contactOther: meta.contactOther ?? "",
         termsOfUseUrl: meta.termsOfUseUrl ?? "",
         privacyPolicyUrl: meta.privacyPolicyUrl ?? "",
         otherUrl: meta.otherUrl ?? "",
@@ -227,6 +205,8 @@ export function EditAgentDialog({
       setTags(agent.tags ?? []);
     }
   }, [open, agent, form]);
+
+  const isFree = form.watch("isFree") === true;
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
@@ -247,14 +227,13 @@ export function EditAgentDialog({
   const onSubmit = async (data: AgentFormFields) => {
     setIsLoading(true);
     try {
+      const fixedPrices = (data.prices ?? [])
+        .filter((p) => p.amount?.trim())
+        .map((p) => ({ amount: p.amount.trim() }));
+
       const pricing = data.isFree
         ? { pricingType: "Free" as const }
-        : {
-            pricingType: "Fixed" as const,
-            prices: (data.prices ?? [])
-              .filter((p) => p.amount?.trim())
-              .map((p) => ({ amount: p.amount.trim(), currency: "USD" })),
-          };
+        : { pricingType: "Fixed" as const, Pricing: fixedPrices };
 
       const exampleOutputs =
         data.exampleOutputs
@@ -267,19 +246,15 @@ export function EditAgentDialog({
 
       const result = await agentApiClient.updateAgent(agent.id, {
         name: data.name,
-        summary: data.summary?.trim() || null,
-        description: data.description?.trim() || null,
+        summary: data.description?.trim() || null,
+        description: data.extendedDescription?.trim() || null,
         tags: tags,
         icon: data.icon?.trim() || null,
         pricing: data.isFree
           ? pricing
-          : (pricing.prices?.length ?? 0) > 0
+          : fixedPrices.length > 0
             ? pricing
             : null,
-        authorName: data.authorName?.trim() || undefined,
-        authorEmail: data.authorEmail?.trim() || undefined,
-        organization: data.organization?.trim() || undefined,
-        contactOther: data.contactOther?.trim() || undefined,
         termsOfUseUrl: data.termsOfUseUrl?.trim() || undefined,
         privacyPolicyUrl: data.privacyPolicyUrl?.trim() || undefined,
         otherUrl: data.otherUrl?.trim() || undefined,
@@ -377,13 +352,13 @@ export function EditAgentDialog({
 
                 <FormField
                   control={form.control}
-                  name="summary"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tRegister("summary")}</FormLabel>
+                      <FormLabel>{tRegister("description")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={tRegister("summaryPlaceholder")}
+                          placeholder={tRegister("descriptionPlaceholder")}
                           {...field}
                           className="h-11"
                           maxLength={251}
@@ -401,11 +376,13 @@ export function EditAgentDialog({
 
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="extendedDescription"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-2">
-                        <FormLabel>{tRegister("description")}</FormLabel>
+                        <FormLabel>
+                          {tRegister("extendedDescription")}
+                        </FormLabel>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
@@ -421,7 +398,9 @@ export function EditAgentDialog({
                         <RichTextEditor
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          placeholder={tRegister("descriptionPlaceholder")}
+                          placeholder={tRegister(
+                            "extendedDescriptionPlaceholder",
+                          )}
                           minHeight="min-h-28"
                         />
                       </FormControl>
@@ -454,7 +433,7 @@ export function EditAgentDialog({
                     </FormItem>
                   )}
                 />
-                <PricingFields form={form} t={tRegister} />
+                <PricingFields form={form} t={tRegister} isFree={isFree} />
               </div>
 
               <Separator />
@@ -515,75 +494,6 @@ export function EditAgentDialog({
               </div>
 
               <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="authorName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("authorName")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tRegister("authorNamePlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="authorEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("authorEmail")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={tRegister("authorEmailPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="organization"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("organization")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tRegister("organizationPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contactOther"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("contactOther")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tRegister("contactOtherPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="termsOfUseUrl"

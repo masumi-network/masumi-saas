@@ -169,8 +169,8 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
-      summary,
       description,
+      extendedDescription,
       apiUrl,
       tags,
       icon,
@@ -211,8 +211,8 @@ export async function POST(request: NextRequest) {
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: summary?.trim() || null,
-        description: (description?.trim() || null) as string | null,
+        summary: description?.trim() || null,
+        description: (extendedDescription?.trim() || null) as string | null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,
