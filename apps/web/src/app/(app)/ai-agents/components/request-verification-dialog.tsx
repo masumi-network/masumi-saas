@@ -774,11 +774,12 @@ export function RequestVerificationDialog({
                   <Spinner size={32} />
                   <div className="text-center space-y-2">
                     <p className="text-sm font-medium">
-                      Waiting for wallet acceptance
+                      {"Waiting for wallet acceptance"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Please open your Veridian wallet and accept the incoming
-                      credential offer.
+                      {
+                        "Please open your Veridian wallet and accept the incoming credential offer."
+                      }
                     </p>
                   </div>
                 </div>

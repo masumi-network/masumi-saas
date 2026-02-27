@@ -131,7 +131,7 @@ export function AgentPageContent({
         if (next.success && next.data) setAgent(next.data);
       }
     })();
-  }, []);
+  }, [agent.id, agent.verificationStatus]);
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");

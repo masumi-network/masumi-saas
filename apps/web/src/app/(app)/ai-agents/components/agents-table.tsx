@@ -157,7 +157,7 @@ export function AgentsTable({
                           <TooltipTrigger asChild>
                             <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
                           </TooltipTrigger>
-                          <TooltipContent>Verified agent</TooltipContent>
+                          <TooltipContent>{"Verified agent"}</TooltipContent>
                         </Tooltip>
                       )}
                     </div>

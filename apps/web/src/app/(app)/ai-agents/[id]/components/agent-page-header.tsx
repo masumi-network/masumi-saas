@@ -78,7 +78,7 @@ export function AgentPageHeader({
               <TooltipTrigger asChild>
                 <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
               </TooltipTrigger>
-              <TooltipContent>Verified agent</TooltipContent>
+              <TooltipContent>{"Verified agent"}</TooltipContent>
             </Tooltip>
           )}
         </div>
