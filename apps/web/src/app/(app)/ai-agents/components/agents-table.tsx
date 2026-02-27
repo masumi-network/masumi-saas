@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, Unplug } from "lucide-react";
+import { ShieldCheck, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
@@ -148,8 +148,18 @@ export function AgentsTable({
                   onClick={() => onAgentClick(agent)}
                 >
                   <TableCell className="max-w-52">
-                    <div className="text-sm font-medium truncate">
-                      {agent.name}
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-medium truncate">
+                        {agent.name}
+                      </span>
+                      {agent.verificationStatus === "VERIFIED" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>Verified agent</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {agent.description ??

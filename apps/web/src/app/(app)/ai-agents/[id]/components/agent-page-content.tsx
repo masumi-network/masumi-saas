@@ -11,6 +11,7 @@ import {
   syncAgentRegistrationStatusAction,
 } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { credentialApiClient } from "@/lib/api/credential.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
@@ -115,6 +116,22 @@ export function AgentPageContent({
       clearInterval(interval);
     };
   }, [pendingRegistration, syncAndRefetch]);
+
+  // Silently reconcile any PENDING credentials on mount.
+  // Handles the case where the user accepted the credential in Veridian
+  // after the dialog was closed or the page was reloaded.
+  useEffect(() => {
+    if (agent.verificationStatus === "VERIFIED") return;
+    void (async () => {
+      const result = await credentialApiClient.reconcilePendingCredentials(
+        agent.id,
+      );
+      if (result.success && result.data.resolved) {
+        const next = await agentApiClient.getAgent(agent.id);
+        if (next.success && next.data) setAgent(next.data);
+      }
+    })();
+  }, []);
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");
