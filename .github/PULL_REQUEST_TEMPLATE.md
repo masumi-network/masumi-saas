@@ -6,10 +6,10 @@
 
 <!-- (Select the applicable option by placing an "X" in the box.)  -->
 
-[] Documentation update  
-[] Bug fix  
-[] New feature  
-[] Other: <!-- (please explain) -->
+- [ ] Documentation update
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Other: <!-- (please explain) -->
 
 ## **Overview of Changes**
 
@@ -23,9 +23,9 @@
 
 <!-- (Ensure all tasks are completed before submitting your PR.) Only submit a PR to the `main` branch. -->
 
-- I have used `lint` and `format` to follow the code formatting
-- I have tested my changes locally and all of them pass
-- I have updated documentation (if applicable).
+- [ ] I have used `lint` and `format` to follow the code formatting
+- [ ] I have tested my changes locally and all of them pass
+- [ ] I have updated documentation (if applicable).
 
 ## **Focus for Reviewers**
 
