@@ -10,13 +10,18 @@ export async function getDashboardOverview(
   const networkFilter = network
     ? { OR: [{ networkIdentifier: network }, { networkIdentifier: null }] }
     : {};
+  const baseAgentWhere = { userId, ...networkFilter } as const;
+
   const [
     userWithOrgs,
     kycResult,
     apiKeysResult,
     apiKeyCount,
-    agentCounts,
-    agentRegistrationCounts,
+    agentCount,
+    verifiedAgentCount,
+    runningAgentCount,
+    pendingAgentCount,
+    failedAgentCount,
     agents,
   ] = await Promise.all([
     prisma.user.findUnique({
@@ -48,18 +53,34 @@ export async function getDashboardOverview(
       take: 5,
     }),
     prisma.apikey.count({ where: { userId } }),
-    prisma.agent.groupBy({
-      by: ["verificationStatus"],
-      where: { userId, ...networkFilter },
-      _count: true,
+    prisma.agent.count({ where: baseAgentWhere }),
+    prisma.agent.count({
+      where: { ...baseAgentWhere, verificationStatus: "VERIFIED" },
     }),
-    prisma.agent.groupBy({
-      by: ["registrationState"],
-      where: { userId, ...networkFilter },
-      _count: true,
+    prisma.agent.count({
+      where: {
+        ...baseAgentWhere,
+        registrationState: "RegistrationConfirmed",
+      },
+    }),
+    prisma.agent.count({
+      where: {
+        ...baseAgentWhere,
+        registrationState: {
+          in: ["RegistrationRequested", "DeregistrationRequested"],
+        },
+      },
+    }),
+    prisma.agent.count({
+      where: {
+        ...baseAgentWhere,
+        registrationState: {
+          in: ["RegistrationFailed", "DeregistrationFailed"],
+        },
+      },
     }),
     prisma.agent.findMany({
-      where: { userId, ...networkFilter },
+      where: baseAgentWhere,
       select: {
         id: true,
         name: true,
@@ -85,31 +106,6 @@ export async function getDashboardOverview(
           kycRejectionReason: null,
           kycError: kycResult.error ?? "Failed to load verification status",
         };
-
-  const agentCount = agentCounts.reduce((sum, g) => sum + g._count, 0);
-  const verifiedGroup = agentCounts.find(
-    (g) => g.verificationStatus === "VERIFIED",
-  );
-  const verifiedAgentCount = verifiedGroup?._count ?? 0;
-
-  const runningAgentCount =
-    agentRegistrationCounts.find(
-      (g) => g.registrationState === "RegistrationConfirmed",
-    )?._count ?? 0;
-  const pendingAgentCount = agentRegistrationCounts
-    .filter((g) =>
-      ["RegistrationRequested", "DeregistrationRequested"].includes(
-        g.registrationState,
-      ),
-    )
-    .reduce((sum, g) => sum + g._count, 0);
-  const failedAgentCount = agentRegistrationCounts
-    .filter((g) =>
-      ["RegistrationFailed", "DeregistrationFailed"].includes(
-        g.registrationState,
-      ),
-    )
-    .reduce((sum, g) => sum + g._count, 0);
 
   const organizations = userWithOrgs.members.map((m) => ({
     id: m.organization.id,
