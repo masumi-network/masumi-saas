@@ -56,33 +56,36 @@ export function AgentsTable({
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedAgentToDelete, setSelectedAgentToDelete] =
+    useState<Agent | null>(null);
+  const [selectedAgentToDeregister, setSelectedAgentToDeregister] =
+    useState<Agent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
   const [, startTransition] = useTransition();
 
   const handleDeleteClick = (e: React.MouseEvent, agent: Agent) => {
     e.stopPropagation();
-    setSelectedAgent(agent);
+    setSelectedAgentToDelete(agent);
     setIsDeleteDialogOpen(true);
   };
 
   const handleDeregisterClick = (e: React.MouseEvent, agent: Agent) => {
     e.stopPropagation();
-    setSelectedAgent(agent);
+    setSelectedAgentToDeregister(agent);
     setIsDeregisterDialogOpen(true);
   };
 
   const handleDeleteConfirm = () => {
-    if (!selectedAgent) return;
+    if (!selectedAgentToDelete) return;
     setIsDeleting(true);
     startTransition(async () => {
-      const result = await agentApiClient.deleteAgent(selectedAgent.id);
+      const result = await agentApiClient.deleteAgent(selectedAgentToDelete.id);
       if (result.success) {
         toast.success(t("deleteSuccess"));
         onDeleteSuccess();
         setIsDeleteDialogOpen(false);
-        setSelectedAgent(null);
+        setSelectedAgentToDelete(null);
       } else {
         toast.error(result.error || t("deleteError"));
       }
@@ -91,15 +94,15 @@ export function AgentsTable({
   };
 
   const handleDeregisterConfirm = () => {
-    if (!selectedAgent) return;
+    if (!selectedAgentToDeregister) return;
     setIsDeregistering(true);
     startTransition(async () => {
-      const result = await deregisterAgentAction(selectedAgent.id);
+      const result = await deregisterAgentAction(selectedAgentToDeregister.id);
       if (result.success) {
         toast.success(tDetails("deregisterSuccess"));
         onDeleteSuccess(); // refetch list
         setIsDeregisterDialogOpen(false);
-        setSelectedAgent(null);
+        setSelectedAgentToDeregister(null);
       } else {
         toast.error(result.error ?? tDetails("deregisterError"));
       }
@@ -292,10 +295,10 @@ export function AgentsTable({
         open={isDeregisterDialogOpen}
         onOpenChange={(open) => {
           setIsDeregisterDialogOpen(open);
-          if (!open) setSelectedAgent(null);
+          if (!open) setSelectedAgentToDeregister(null);
         }}
         onConfirm={handleDeregisterConfirm}
-        agentName={selectedAgent?.name ?? ""}
+        agentName={selectedAgentToDeregister?.name ?? ""}
         isLoading={isDeregistering}
       />
 
@@ -303,10 +306,10 @@ export function AgentsTable({
         open={isDeleteDialogOpen}
         onOpenChange={(open) => {
           setIsDeleteDialogOpen(open);
-          if (!open) setSelectedAgent(null);
+          if (!open) setSelectedAgentToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        agentName={selectedAgent?.name ?? ""}
+        agentName={selectedAgentToDelete?.name ?? ""}
         isLoading={isDeleting}
       />
     </>

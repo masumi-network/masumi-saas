@@ -7,7 +7,8 @@ import {
 
 const ALG = "aes-256-gcm";
 const KEY_LEN = 32;
-const IV_LEN = 16;
+/** 12 bytes (96 bits) per NIST SP 800-38D for AES-GCM; decrypt supports legacy 16-byte IVs from stored ciphertext. */
+const IV_LEN = 12;
 const TAG_LEN = 16;
 
 function getEncryptionKey(): Buffer {
@@ -59,5 +60,6 @@ export async function decryptPaymentNodeSecret(
   const encrypted = Buffer.from(encryptedHex, "hex");
   const decipher = createDecipheriv(ALG, key, iv, { authTagLength: TAG_LEN });
   decipher.setAuthTag(tag);
-  return decipher.update(encrypted) + decipher.final("utf8");
+  const chunks = [decipher.update(encrypted), decipher.final()];
+  return Buffer.concat(chunks).toString("utf8");
 }
