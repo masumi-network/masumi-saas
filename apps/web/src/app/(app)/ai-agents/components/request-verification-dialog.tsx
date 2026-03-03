@@ -148,14 +148,37 @@ export function RequestVerificationDialog({
     };
   }, [open, agent.id, kycStatus]);
 
-  // Poll for credential acceptance after issue
+  // Poll for credential acceptance after issue (timeout so user is not trapped)
+  const pollAttemptsRef = useRef(0);
+  const pollIntervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const POLL_INTERVAL_MS = 3000;
+  const MAX_POLL_ATTEMPTS = 100; // ~5 minutes
+
   useEffect(() => {
     if (!pendingCredentialId || !isWaitingForAcceptance) return;
+    pollAttemptsRef.current = 0;
+
+    const stopPolling = () => {
+      if (pollIntervalIdRef.current !== null) {
+        clearInterval(pollIntervalIdRef.current);
+        pollIntervalIdRef.current = null;
+      }
+    };
 
     const poll = async () => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current > MAX_POLL_ATTEMPTS) {
+        stopPolling();
+        setIsWaitingForAcceptance(false);
+        setPendingCredentialId(null);
+        toast.error(t("acceptanceTimeout"));
+        return;
+      }
+
       const result =
         await credentialApiClient.checkCredentialStatus(pendingCredentialId);
       if (!result.success) {
+        stopPolling();
         setIsWaitingForAcceptance(false);
         setPendingCredentialId(null);
         setIssueError(result.error);
@@ -163,6 +186,7 @@ export function RequestVerificationDialog({
         return;
       }
       if (result.data.status === "ISSUED") {
+        stopPolling();
         setIsWaitingForAcceptance(false);
         setPendingCredentialId(null);
         toast.success(t("requestSuccess"));
@@ -171,8 +195,13 @@ export function RequestVerificationDialog({
       }
     };
 
-    const interval = setInterval(() => void poll(), 3000);
-    return () => clearInterval(interval);
+    pollIntervalIdRef.current = setInterval(
+      () => void poll(),
+      POLL_INTERVAL_MS,
+    );
+    return () => {
+      stopPolling();
+    };
   }, [pendingCredentialId, isWaitingForAcceptance, t, onSuccess, onOpenChange]);
 
   const checkConnection = useCallback(

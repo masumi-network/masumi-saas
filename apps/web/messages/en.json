@@ -828,6 +828,7 @@
           "cancel": "Cancel",
           "requestSuccess": "Credential issued successfully!",
           "requestError": "Failed to issue credential. Please try again.",
+          "acceptanceTimeout": "Timed out waiting for acceptance in wallet. You can close and try again.",
           "completeKyc": "Complete KYC Verification",
           "veridianWalletConnection": "Veridian Wallet Connection",
           "fetchingCredentials": "Fetching credentials...",
