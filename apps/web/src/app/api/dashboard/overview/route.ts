@@ -13,7 +13,11 @@ export async function GET() {
   try {
     const { user } = await getAuthenticatedOrThrow();
     const cookieStore = await cookies();
-    const network = cookieStore.get("payment_network")?.value;
+    const networkCookie = cookieStore.get("payment_network")?.value;
+    const network =
+      networkCookie === "Mainnet" || networkCookie === "Preprod"
+        ? networkCookie
+        : "Preprod";
     const data = await getDashboardOverview(user.id, network);
     return NextResponse.json({ success: true, data });
   } catch (error) {
