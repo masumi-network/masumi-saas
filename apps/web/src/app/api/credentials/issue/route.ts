@@ -189,8 +189,7 @@ export async function POST(request: NextRequest) {
     // Resolve OOBI so the credential server knows the recipient AID
     if (oobi) {
       try {
-        const resolveResult = await resolveOobi(oobi);
-        console.log("resolveOobi result:", resolveResult, "aid:", aid);
+        await resolveOobi(oobi);
       } catch (error) {
         console.error("Failed to resolve OOBI:", error);
         return apiError(

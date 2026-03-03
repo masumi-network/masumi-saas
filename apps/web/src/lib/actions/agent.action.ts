@@ -124,6 +124,18 @@ export async function registerAgentAction(formData: FormData) {
 
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
     const network = await getNetworkFromCookie();
+
+    // TODO: Define mainnet agent registration logic (e.g. manual wallet funding
+    // flow, dispenser, or other funding strategy). Mainnet registration is
+    // disabled until then to avoid timeouts and wasted wallets/slots.
+    if (network === "Mainnet") {
+      return {
+        success: false as const,
+        error:
+          "Agent registration on Mainnet is not available yet. Please use Preprod for now.",
+      };
+    }
+
     const token = USDM[network];
 
     const agentPricing: RegisterAgentInput["AgentPricing"] =
@@ -528,6 +540,19 @@ export async function deleteAgentAction(agentId: string) {
       };
     }
 
+    const hasExternalRegistration = Boolean(agent.agentReference?.externalId);
+
+    if (!hasExternalRegistration) {
+      // Legacy agent (created via old POST /api/agents): no payment-node entry;
+      // allow direct delete so the user can remove it.
+      await prisma.agent.delete({
+        where: { id: agentId },
+      });
+      return {
+        success: true as const,
+      };
+    }
+
     const liveStates: (typeof agent.registrationState)[] = [
       "RegistrationConfirmed",
       "RegistrationRequested",
@@ -544,17 +569,17 @@ export async function deleteAgentAction(agentId: string) {
       };
     }
 
-    if (!agent.agentReference?.externalId) {
+    const externalId = agent.agentReference!.externalId;
+    if (!externalId) {
       return {
         success: false as const,
         error: "No externalId found for this agent.",
       };
     }
-
     const baseUrl = paymentNodeConfig.getBaseUrl();
     const adminKey = paymentNodeConfig.getAdminApiKey();
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
-    await adminClient.deleteRegistryEntry(agent.agentReference.externalId);
+    await adminClient.deleteRegistryEntry(externalId);
 
     await prisma.agent.delete({
       where: { id: agentId },

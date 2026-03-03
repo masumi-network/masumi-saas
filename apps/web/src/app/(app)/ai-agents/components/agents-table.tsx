@@ -133,9 +133,11 @@ export function AgentsTable({
             {agents.map((agent) => {
               const isConfirmed =
                 agent.registrationState === "RegistrationConfirmed";
+              const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
-                agent.registrationState === "RegistrationFailed";
+                agent.registrationState === "RegistrationFailed" ||
+                isLegacyConfirmed;
               const isPending =
                 agent.registrationState === "RegistrationRequested" ||
                 agent.registrationState === "RegistrationInitiated" ||
@@ -246,7 +248,7 @@ export function AgentsTable({
                         <Spinner size={16} />
                       </span>
                     )}
-                    {isConfirmed && (
+                    {isConfirmed && agent.agentIdentifier && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

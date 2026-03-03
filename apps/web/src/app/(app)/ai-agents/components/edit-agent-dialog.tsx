@@ -233,7 +233,7 @@ export function EditAgentDialog({
 
       const pricing = data.isFree
         ? { pricingType: "Free" as const }
-        : { pricingType: "Fixed" as const, Pricing: fixedPrices };
+        : { pricingType: "Fixed" as const, prices: fixedPrices };
 
       const exampleOutputs =
         data.exampleOutputs

@@ -427,7 +427,8 @@ export function AgentDetails({
             </span>
             <Separator className="flex-1" />
           </div>
-          {agent.registrationState === "RegistrationConfirmed" ? (
+          {agent.registrationState === "RegistrationConfirmed" &&
+          agent.agentIdentifier ? (
             <Card className="border-destructive/60 bg-destructive/5">
               <CardContent>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
@@ -447,7 +448,11 @@ export function AgentDetails({
                 </div>
               </CardContent>
             </Card>
-          ) : (
+          ) : null}
+          {agent.registrationState === "DeregistrationConfirmed" ||
+          agent.registrationState === "RegistrationFailed" ||
+          (agent.registrationState === "RegistrationConfirmed" &&
+            !agent.agentIdentifier) ? (
             <Card className="border-destructive/60 bg-destructive/5">
               <CardContent>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
@@ -468,7 +473,7 @@ export function AgentDetails({
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </div>
       )}
     </div>
