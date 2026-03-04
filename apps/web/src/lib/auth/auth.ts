@@ -11,6 +11,7 @@ import { getTranslations } from "next-intl/server";
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import { reactInvitationEmail } from "@/lib/email/invitation";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
@@ -183,15 +184,70 @@ export const auth = betterAuth({
       },
       async sendInvitationEmail(data) {
         const inviteLink = `${authEnvConfig.baseUrl}/accept-invitation/${data.id}`;
-        // TODO(MAS-XXX): Implement invitation email sending via Postmark
-        // Users will not receive invite emails until this is implemented.
-        if (process.env.NODE_ENV === "development") {
-          console.log("[DEV] Invitation email:", {
-            to: data.email,
-            organization: data.organization.name,
-            link: inviteLink,
-          });
+
+        if (!postmarkClient) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("\n[DEV] Invitation email (Postmark not configured)");
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(`To: ${data.email}`);
+            console.log(`Organization: ${data.organization.name}`);
+            console.log(`Invite Link: ${inviteLink}`);
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(
+              "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+            );
+          } else {
+            console.error("Postmark not configured. Invitation email failed.", {
+              to: data.email,
+              inviteLink,
+            });
+          }
+          return;
         }
+
+        const t = await getTranslations({
+          locale: "en",
+          namespace: "Email.Invitation",
+        });
+
+        const roleName =
+          data.role === "admin"
+            ? "Admin"
+            : data.role === "owner"
+              ? "Owner"
+              : "Member";
+
+        await postmarkClient.sendEmail({
+          From: emailConfig.postmarkFromEmail,
+          To: data.email,
+          Tag: "organization-invitation",
+          Subject: t("preview").replace(
+            "{organization}",
+            data.organization.name,
+          ),
+          HtmlBody: await reactInvitationEmail({
+            inviteLink,
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name || data.inviter.user.email,
+            role: roleName,
+            translations: {
+              preview: t("preview").replace(
+                "{organization}",
+                data.organization.name,
+              ),
+              title: t("title").replace(
+                "{organization}",
+                data.organization.name,
+              ),
+              greeting: t("greeting"),
+              message: t("message"),
+              button: t("button"),
+              linkText: t("linkText"),
+              footer: t("footer"),
+            },
+          }),
+          MessageStream: "outbound",
+        });
       },
       invitationLimit: authConfig.organization.invitationLimit,
       cancelPendingInvitationsOnReInvite:

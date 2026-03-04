@@ -219,6 +219,7 @@ export const InvitationScalarFieldEnum = {
   role: "role",
   status: "status",
   expiresAt: "expiresAt",
+  createdAt: "createdAt",
   inviterId: "inviterId",
 } as const;
 

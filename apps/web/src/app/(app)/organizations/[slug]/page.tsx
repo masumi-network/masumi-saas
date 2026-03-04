@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { cache, Suspense } from "react";
 
-import { getOrganizationDashboardAction } from "@/lib/actions/organization.action";
+import {
+  getOrganizationDashboardAction,
+  getOrganizationMembersAction,
+  getOrganizationPendingInvitationsAction,
+} from "@/lib/actions/organization.action";
 
 import {
   OrganizationDashboardOverview,
@@ -34,13 +38,27 @@ export async function generateMetadata({
 }
 
 async function OrganizationPageContent({ slug }: { slug: string }) {
-  const result = await getCachedOrganizationDashboard(slug);
+  const [dashboardResult, membersResult, invitationsResult] = await Promise.all(
+    [
+      getCachedOrganizationDashboard(slug),
+      getOrganizationMembersAction(slug),
+      getOrganizationPendingInvitationsAction(slug),
+    ],
+  );
 
-  if (!result.success) {
+  if (!dashboardResult.success) {
     notFound();
   }
 
-  return <OrganizationDashboardOverview data={result.data} />;
+  return (
+    <OrganizationDashboardOverview
+      data={dashboardResult.data}
+      members={membersResult.success ? membersResult.data : []}
+      pendingInvitations={
+        invitationsResult.success ? invitationsResult.data : []
+      }
+    />
+  );
 }
 
 export default async function OrganizationPage({
