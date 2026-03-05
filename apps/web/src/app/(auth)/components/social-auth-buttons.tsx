@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { authClient } from "@/lib/auth/auth.client";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 
 type OAuthProvider = "google" | "github" | "microsoft" | "apple";
 
@@ -26,12 +27,7 @@ export function SocialAuthButtons({
   const handleSocialSignIn = (provider: OAuthProvider) => {
     authClient.signIn.social({
       provider,
-      callbackURL:
-        callbackURL &&
-        callbackURL.startsWith("/") &&
-        !callbackURL.startsWith("//")
-          ? callbackURL
-          : "/",
+      callbackURL: sanitizeCallbackUrl(callbackURL) ?? "/",
     });
   };
 

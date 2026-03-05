@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
@@ -69,13 +70,7 @@ export default function SignInForm({
           ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        const target =
-          callbackUrl &&
-          callbackUrl.startsWith("/") &&
-          !callbackUrl.startsWith("//")
-            ? callbackUrl
-            : "/";
-        router.push(target);
+        router.push(sanitizeCallbackUrl(callbackUrl) ?? "/");
       }
     } catch (error) {
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
@@ -102,13 +97,7 @@ export default function SignInForm({
       {oauthProviders.length > 0 && (
         <SocialAuthButtons
           providers={oauthProviders}
-          callbackURL={
-            callbackUrl &&
-            callbackUrl.startsWith("/") &&
-            !callbackUrl.startsWith("//")
-              ? callbackUrl
-              : undefined
-          }
+          callbackURL={sanitizeCallbackUrl(callbackUrl)}
         />
       )}
 

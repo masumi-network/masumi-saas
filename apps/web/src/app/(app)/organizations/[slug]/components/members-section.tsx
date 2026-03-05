@@ -128,9 +128,10 @@ function MemberRow({
 }: MemberRowProps) {
   const t = useTranslations("App.Organizations.Dashboard.membersSection");
   const tRole = useTranslations("App.Organizations.Role");
-  const isOwnerOrAdmin =
-    currentUserRole === "owner" || currentUserRole === "admin";
-  const isOwnerMember = member.role === "owner";
+  // Owner can modify admins and members; admin can modify only members (owner > admin > member)
+  const canModifyMember =
+    (currentUserRole === "owner" && member.role !== "owner") ||
+    (currentUserRole === "admin" && member.role === "member");
 
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -210,7 +211,7 @@ function MemberRow({
 
         {/* Role */}
         <TableCell>
-          {isOwnerOrAdmin && !isOwnerMember ? (
+          {canModifyMember ? (
             <Select
               value={member.role}
               onValueChange={handleRoleChange}
@@ -235,9 +236,9 @@ function MemberRow({
         </TableCell>
 
         {/* Actions */}
-        {isOwnerOrAdmin && (
+        {(currentUserRole === "owner" || currentUserRole === "admin") && (
           <TableCell className="text-right">
-            {!isOwnerMember && (
+            {canModifyMember && (
               <Button
                 variant="ghost"
                 size="icon"
