@@ -64,7 +64,9 @@ export default async function AcceptInvitationPage({
   // Only the invited email can accept — prevent wrong-account acceptance
   const currentEmail = authContext.session?.user?.email?.toLowerCase();
   const invitationEmail = result.data.email?.toLowerCase();
-  if (currentEmail && invitationEmail && currentEmail !== invitationEmail) {
+  const isWrongAccount =
+    invitationEmail && (currentEmail !== invitationEmail || !currentEmail);
+  if (isWrongAccount) {
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
