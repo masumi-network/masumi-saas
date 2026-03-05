@@ -34,7 +34,8 @@ export default async function AcceptInvitationPage({
   // Must be authenticated — invite links are sent to registered email addresses
   const authContext = await getAuthContext();
   if (!authContext.isAuthenticated) {
-    redirect("/signin");
+    const callbackUrl = `/accept-invitation/${invitationId}`;
+    redirect(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
   const result = await getInvitationAction(invitationId);

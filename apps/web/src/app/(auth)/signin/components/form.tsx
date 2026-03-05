@@ -25,9 +25,14 @@ import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 interface SignInFormProps {
   oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+  /** After sign-in, redirect here (e.g. from accept-invitation link). Must be a path on our origin. */
+  callbackUrl?: string;
 }
 
-export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
+export default function SignInForm({
+  oauthProviders = [],
+  callbackUrl,
+}: SignInFormProps) {
   const t = useTranslations("Auth.SignIn");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
@@ -64,7 +69,9 @@ export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
           ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        router.push("/");
+        const target =
+          callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/";
+        router.push(target);
       }
     } catch (error) {
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
@@ -89,7 +96,12 @@ export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} />
+        <SocialAuthButtons
+          providers={oauthProviders}
+          callbackURL={
+            callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : undefined
+          }
+        />
       )}
 
       <Form {...form}>

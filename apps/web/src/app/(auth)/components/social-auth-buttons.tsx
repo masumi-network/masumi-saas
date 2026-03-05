@@ -11,11 +11,14 @@ interface SocialAuthButtonsProps {
   providers?: OAuthProvider[];
   /** Context for divider text: "Or sign in with email" vs "Or register with email" */
   variant?: "signin" | "signup";
+  /** After OAuth, redirect here (e.g. from accept-invitation). Must be a path on our origin. */
+  callbackURL?: string;
 }
 
 export function SocialAuthButtons({
   providers = [],
   variant = "signin",
+  callbackURL,
 }: SocialAuthButtonsProps) {
   const t = useTranslations("Auth.SignIn");
   const tSignUp = useTranslations("Auth.SignUp");
@@ -23,7 +26,8 @@ export function SocialAuthButtons({
   const handleSocialSignIn = (provider: OAuthProvider) => {
     authClient.signIn.social({
       provider,
-      callbackURL: "/",
+      callbackURL:
+        callbackURL && callbackURL.startsWith("/") ? callbackURL : "/",
     });
   };
 
