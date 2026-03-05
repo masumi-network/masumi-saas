@@ -27,7 +27,11 @@ export function SocialAuthButtons({
     authClient.signIn.social({
       provider,
       callbackURL:
-        callbackURL && callbackURL.startsWith("/") ? callbackURL : "/",
+        callbackURL &&
+        callbackURL.startsWith("/") &&
+        !callbackURL.startsWith("//")
+          ? callbackURL
+          : "/",
     });
   };
 

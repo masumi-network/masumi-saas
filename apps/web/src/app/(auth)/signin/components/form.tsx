@@ -70,7 +70,11 @@ export default function SignInForm({
           : t("success");
         toast.success(successMessage);
         const target =
-          callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/";
+          callbackUrl &&
+          callbackUrl.startsWith("/") &&
+          !callbackUrl.startsWith("//")
+            ? callbackUrl
+            : "/";
         router.push(target);
       }
     } catch (error) {
@@ -99,7 +103,11 @@ export default function SignInForm({
         <SocialAuthButtons
           providers={oauthProviders}
           callbackURL={
-            callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : undefined
+            callbackUrl &&
+            callbackUrl.startsWith("/") &&
+            !callbackUrl.startsWith("//")
+              ? callbackUrl
+              : undefined
           }
         />
       )}

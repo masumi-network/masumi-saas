@@ -495,6 +495,10 @@ export async function getInvitationAction(
       return { success: false, error: "Invitation not found" };
     }
 
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      return { success: false, error: "Invitation not found" };
+    }
+
     return {
       success: true,
       data: {
