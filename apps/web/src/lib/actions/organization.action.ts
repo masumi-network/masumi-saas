@@ -310,6 +310,7 @@ export async function getOrganizationPendingInvitationsAction(
       where: {
         organizationId: currentMember.organizationId,
         status: "pending",
+        expiresAt: { gt: new Date() },
       },
       include: { inviter: { select: { name: true } } },
       orderBy: { expiresAt: "asc" },

@@ -40,22 +40,32 @@ export function AcceptInvitationContent({
 
   const handleAccept = async () => {
     setIsAccepting(true);
-    const result = await acceptInvitationAction(invitationId);
-    if (result.success) {
-      router.push("/organizations");
-    } else {
-      toast.error(result.error ?? t("acceptError"));
+    try {
+      const result = await acceptInvitationAction(invitationId);
+      if (result.success) {
+        router.push("/organizations");
+      } else {
+        toast.error(result.error ?? t("acceptError"));
+      }
+    } catch {
+      toast.error(t("acceptError"));
+    } finally {
       setIsAccepting(false);
     }
   };
 
   const handleDecline = async () => {
     setIsDeclining(true);
-    const result = await rejectInvitationAction(invitationId);
-    if (result.success) {
-      router.push("/");
-    } else {
-      toast.error(result.error ?? t("declineError"));
+    try {
+      const result = await rejectInvitationAction(invitationId);
+      if (result.success) {
+        router.push("/");
+      } else {
+        toast.error(result.error ?? t("declineError"));
+      }
+    } catch {
+      toast.error(t("declineError"));
+    } finally {
       setIsDeclining(false);
     }
   };
