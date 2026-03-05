@@ -12,6 +12,7 @@ import { EmailForm } from "./email-form";
 import { NameForm } from "./name-form";
 import { PasswordForm } from "./password-form";
 import { TwoFactorSection } from "./two-factor-section";
+import { VerifyEmailBanner } from "./verify-email-banner";
 
 type Account = Awaited<ReturnType<typeof auth.api.listUserAccounts>>[number];
 
@@ -31,6 +32,7 @@ interface AccountContentProps {
     id: string;
     name: string | null;
     email: string | null;
+    emailVerified?: boolean;
   };
   userProfileCard: React.ReactNode;
 }
@@ -45,9 +47,15 @@ export function AccountContent({
   const hasCredentialAccount = accounts.some(
     (account) => account.providerId === "credential",
   );
+  const showVerifyEmailBanner = _user.email && _user.emailVerified === false;
 
   return (
     <div className="w-full space-y-8">
+      {showVerifyEmailBanner && (
+        <div className="mx-auto max-w-3xl">
+          <VerifyEmailBanner email={_user.email} />
+        </div>
+      )}
       <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
         <div className="space-y-2 min-w-0">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>

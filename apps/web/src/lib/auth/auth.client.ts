@@ -28,6 +28,7 @@ export const {
   requestPasswordReset,
   resetPassword,
   verifyEmail,
+  sendVerificationEmail,
   useSession,
   changeEmail,
   twoFactor,

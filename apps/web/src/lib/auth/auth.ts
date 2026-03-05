@@ -6,12 +6,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
-import { getTranslations } from "next-intl/server";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
 import { reactInvitationEmail } from "@/lib/email/invitation";
+import { emailMessagesEn } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
@@ -57,27 +57,24 @@ export const auth = betterAuth({
         return;
       }
 
-      const t = await getTranslations({
-        locale: "en",
-        namespace: "Email.ResetPassword",
-      });
+      const msg = emailMessagesEn.ResetPassword;
 
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "reset-password",
-        Subject: t("preview"),
+        Subject: msg.preview,
         HtmlBody: await reactResetPasswordEmail({
           name: user.name || "User",
           resetLink: url,
           translations: {
-            preview: t("preview"),
-            title: t("title"),
-            greeting: t("greeting"),
-            message: t("message"),
-            button: t("button"),
-            linkText: t("linkText"),
-            footer: t("footer"),
+            preview: msg.preview,
+            title: msg.title,
+            greeting: msg.greeting,
+            message: msg.message,
+            button: msg.button,
+            linkText: msg.linkText,
+            footer: msg.footer,
           },
         }),
         MessageStream: "outbound",
@@ -106,27 +103,27 @@ export const auth = betterAuth({
         return;
       }
 
-      const t = await getTranslations({
-        locale: "en",
-        namespace: "Email.Verification",
-      });
+      const msg = emailMessagesEn.Verification;
 
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "verification-email",
-        Subject: t("preview"),
+        Subject: msg.preview,
         HtmlBody: await reactVerificationEmail({
           name: user.name || "User",
           verificationLink: url,
+          // TODO: use base path or prod URL: `${authEnvConfig.baseUrl}/assets/logo.png`; gstatic fallback for now
+          logoUrl:
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIHllGpdTbbAPSKNCE8dXY3xfS54MLmKYKGA&s",
           translations: {
-            preview: t("preview"),
-            title: t("title"),
-            greeting: t("greeting"),
-            message: t("message"),
-            button: t("button"),
-            linkText: t("linkText"),
-            footer: t("footer"),
+            preview: msg.preview,
+            title: msg.title,
+            greeting: msg.greeting,
+            message: msg.message,
+            button: msg.button,
+            linkText: msg.linkText,
+            footer: msg.footer,
           },
         }),
         MessageStream: "outbound",
@@ -205,10 +202,8 @@ export const auth = betterAuth({
           return;
         }
 
-        const t = await getTranslations({
-          locale: "en",
-          namespace: "Email.Invitation",
-        });
+        const msg = emailMessagesEn.Invitation;
+        const orgName = data.organization.name;
 
         const roleName =
           data.role === "admin"
@@ -221,29 +216,22 @@ export const auth = betterAuth({
           From: emailConfig.postmarkFromEmail,
           To: data.email,
           Tag: "organization-invitation",
-          Subject: t("preview").replace(
-            "{organization}",
-            data.organization.name,
-          ),
+          Subject: msg.preview.replace("{organization}", orgName),
           HtmlBody: await reactInvitationEmail({
             inviteLink,
-            organizationName: data.organization.name,
+            organizationName: orgName,
             inviterName: data.inviter.user.name || data.inviter.user.email,
             role: roleName,
+            logoUrl:
+              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIHllGpdTbbAPSKNCE8dXY3xfS54MLmKYKGA&s",
             translations: {
-              preview: t("preview").replace(
-                "{organization}",
-                data.organization.name,
-              ),
-              title: t("title").replace(
-                "{organization}",
-                data.organization.name,
-              ),
-              greeting: t("greeting"),
-              message: t("message"),
-              button: t("button"),
-              linkText: t("linkText"),
-              footer: t("footer"),
+              preview: msg.preview.replace("{organization}", orgName),
+              title: msg.title.replace("{organization}", orgName),
+              greeting: msg.greeting,
+              message: msg.message,
+              button: msg.button,
+              linkText: msg.linkText,
+              footer: msg.footer,
             },
           }),
           MessageStream: "outbound",

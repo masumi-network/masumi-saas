@@ -942,6 +942,14 @@
     "Account": {
       "title": "Account Settings",
       "description": "Manage your account settings and preferences.",
+      "verifyEmailBanner": {
+        "title": "Verify your email address",
+        "description": "We sent a verification link to your email. Click the link to verify, or resend it if you didn't receive it.",
+        "resendButton": "Resend verification link",
+        "resendIn": "Resend in {seconds}s",
+        "resendSuccess": "Verification email sent. Check your inbox.",
+        "resendError": "Failed to send verification email. Please try again."
+      },
       "activeWorkspace": "Active workspace:",
       "Name": {
         "title": "Change Name",
