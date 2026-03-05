@@ -78,7 +78,7 @@ function InvitationRow({ invitation, onMutationSuccess }: InvitationRowProps) {
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{invitation.email}</p>
             <p className="text-xs text-muted-foreground">
-              Expires {expiryDate}
+              {t("expiresDate", { date: expiryDate })}
             </p>
           </div>
           {invitation.role && <OrganizationRoleBadge role={invitation.role} />}

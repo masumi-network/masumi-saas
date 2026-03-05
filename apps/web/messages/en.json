@@ -414,7 +414,8 @@
           "inviteSubmitting": "Sending...",
           "inviteCancel": "Cancel",
           "inviteSuccess": "Invitation sent",
-          "inviteError": "Failed to send invitation"
+          "inviteError": "Failed to send invitation",
+          "inviteEmailInvalid": "Please enter a valid email address."
         },
         "stats": {
           "linkedAgents": "Linked agents",
@@ -449,6 +450,7 @@
           "columnRole": "Role",
           "columnJoined": "Joined",
           "pendingInvitations": "Pending invitations",
+          "expiresDate": "Expires {date}",
           "cancelInvitation": "Cancel",
           "cancelInvitationConfirmTitle": "Cancel invitation",
           "cancelInvitationConfirmDescription": "Cancel the invitation to {email}? They will no longer be able to join.",
@@ -494,6 +496,8 @@
         "decline": "Decline",
         "invalidTitle": "Invalid invitation",
         "invalidDescription": "This invitation link is no longer valid or has already been used.",
+        "wrongAccountTitle": "Wrong account",
+        "wrongAccountDescription": "This invitation was sent to {email}. Sign in with that account to accept.",
         "backToHome": "Go to home",
         "acceptError": "Failed to accept invitation",
         "declineError": "Failed to decline invitation"

@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -20,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { resetPassword } from "@/lib/auth/auth.client";
+import { zodResolver } from "@/lib/form-zod-resolver";
 import { type ResetPasswordInput, resetPasswordSchema } from "@/lib/schemas";
 
 interface ResetPasswordFormProps {

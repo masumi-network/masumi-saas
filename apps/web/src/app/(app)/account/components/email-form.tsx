@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -36,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { changeEmail } from "@/lib/auth/auth.client";
+import { zodResolver } from "@/lib/form-zod-resolver";
 
 const emailFormSchema = z.object({
   email: z.string().email("Please enter a valid email address"),

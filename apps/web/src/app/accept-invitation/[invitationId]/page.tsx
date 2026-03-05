@@ -61,6 +61,32 @@ export default async function AcceptInvitationPage({
     );
   }
 
+  // Only the invited email can accept — prevent wrong-account acceptance
+  const currentEmail = authContext.session?.user?.email?.toLowerCase();
+  const invitationEmail = result.data.email?.toLowerCase();
+  if (currentEmail && invitationEmail && currentEmail !== invitationEmail) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <Building2 className="h-7 w-7 text-muted-foreground" />
+            </div>
+          </div>
+          <CardTitle>{t("wrongAccountTitle")}</CardTitle>
+          <CardDescription>
+            {t("wrongAccountDescription", { email: result.data.email })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Button variant="outline" asChild>
+            <Link href="/">{t("backToHome")}</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <AcceptInvitationContent
       invitationId={invitationId}

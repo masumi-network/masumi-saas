@@ -70,7 +70,7 @@ export function InviteMemberDialog({
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("inviteEmailInvalid"));
       return;
     }
 
