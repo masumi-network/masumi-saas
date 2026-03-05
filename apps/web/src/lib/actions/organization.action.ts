@@ -5,6 +5,18 @@ import prisma from "@masumi/database/client";
 import { auth } from "@/lib/auth/auth";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
+/** Roles that can be set via invite or role update (never "owner"). */
+const ALLOWED_MEMBER_ROLES = ["member", "admin"] as const;
+
+function parseMemberRole(role: string): "member" | "admin" | null {
+  if (
+    ALLOWED_MEMBER_ROLES.includes(role as (typeof ALLOWED_MEMBER_ROLES)[number])
+  ) {
+    return role as "member" | "admin";
+  }
+  return null;
+}
+
 export type OrganizationInfo = {
   id: string;
   name: string;
@@ -338,13 +350,17 @@ export async function inviteMemberAction(input: {
   email: string;
   role: string;
 }): Promise<{ success: true } | { success: false; error: string }> {
+  const role = parseMemberRole(input.role);
+  if (!role) {
+    return { success: false, error: "Invalid role" };
+  }
   try {
     const { headers: headersList } = await getAuthenticatedOrThrow();
     await auth.api.createInvitation({
       headers: headersList,
       body: {
         email: input.email,
-        role: input.role as "admin" | "member" | "owner",
+        role,
         organizationId: input.organizationId,
       },
     });
@@ -362,13 +378,17 @@ export async function updateMemberRoleAction(input: {
   role: string;
   organizationId: string;
 }): Promise<{ success: true } | { success: false; error: string }> {
+  const role = parseMemberRole(input.role);
+  if (!role) {
+    return { success: false, error: "Invalid role" };
+  }
   try {
     const { headers: headersList } = await getAuthenticatedOrThrow();
     await auth.api.updateMemberRole({
       headers: headersList,
       body: {
         memberId: input.memberId,
-        role: input.role as "admin" | "member" | "owner",
+        role,
         organizationId: input.organizationId,
       },
     });
