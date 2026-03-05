@@ -63,10 +63,15 @@ export const InvitationEmail = ({
               {translations.title}
             </Heading>
             <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting
-                .replace("{inviter}", inviterName)
-                .replace("{organization}", organizationName)
-                .replace("{role}", role)}
+              {translations.greeting.replace(
+                /\{(inviter|organization|role)\}/g,
+                (_match, key: "inviter" | "organization" | "role") =>
+                  ({
+                    inviter: inviterName,
+                    organization: organizationName,
+                    role,
+                  })[key],
+              )}
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}
