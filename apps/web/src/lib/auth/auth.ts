@@ -113,9 +113,8 @@ export const auth = betterAuth({
         HtmlBody: await reactVerificationEmail({
           name: user.name || "User",
           verificationLink: url,
-          // TODO: use base path or prod URL: `${authEnvConfig.baseUrl}/assets/logo.png`; gstatic fallback for now
           logoUrl:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIHllGpdTbbAPSKNCE8dXY3xfS54MLmKYKGA&s",
+            "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
           translations: {
             preview: msg.preview,
             title: msg.title,
@@ -223,7 +222,7 @@ export const auth = betterAuth({
             inviterName: data.inviter.user.name || data.inviter.user.email,
             role: roleName,
             logoUrl:
-              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIHllGpdTbbAPSKNCE8dXY3xfS54MLmKYKGA&s",
+              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
             translations: {
               preview: msg.preview.replace("{organization}", orgName),
               title: msg.title.replace("{organization}", orgName),

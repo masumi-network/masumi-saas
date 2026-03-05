@@ -463,7 +463,7 @@ export async function getInvitationAction(
   { success: true; data: InvitationDetails } | { success: false; error: string }
 > {
   try {
-    await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow();
 
     // Fetch directly from DB — Better Auth's getInvitation API only allows
     // the recipient to call it, which breaks the flow for inviters or any
@@ -477,6 +477,21 @@ export async function getInvitationAction(
     });
 
     if (!invitation) {
+      return { success: false, error: "Invitation not found" };
+    }
+
+    // Only the invitee or an org member may view invitation details
+    const isRecipient =
+      user.email?.toLowerCase() === invitation.email.toLowerCase();
+    const isOrgMember = await prisma.member.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: user.id,
+          organizationId: invitation.organizationId,
+        },
+      },
+    });
+    if (!isRecipient && !isOrgMember) {
       return { success: false, error: "Invitation not found" };
     }
 

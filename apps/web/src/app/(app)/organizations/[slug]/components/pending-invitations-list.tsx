@@ -53,15 +53,20 @@ function InvitationRow({ invitation, onMutationSuccess }: InvitationRowProps) {
 
   const handleCancelConfirm = async () => {
     setIsCancelling(true);
-    const result = await cancelInvitationAction({
-      invitationId: invitation.id,
-    });
-    if (result.success) {
-      toast.success(t("cancelInvitationSuccess"));
-      setConfirmOpen(false);
-      onMutationSuccess();
-    } else {
-      toast.error(result.error ?? t("cancelInvitationError"));
+    try {
+      const result = await cancelInvitationAction({
+        invitationId: invitation.id,
+      });
+      if (result.success) {
+        toast.success(t("cancelInvitationSuccess"));
+        setConfirmOpen(false);
+        onMutationSuccess();
+      } else {
+        toast.error(result.error ?? t("cancelInvitationError"));
+      }
+    } catch {
+      toast.error(t("cancelInvitationError"));
+    } finally {
       setIsCancelling(false);
     }
   };

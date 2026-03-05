@@ -41,7 +41,9 @@ export default async function AcceptInvitationPage({
   const result = await getInvitationAction(invitationId);
 
   // Invitation not found, expired, or already used
-  if (!result.success || result.data.status !== "pending") {
+  const isExpired =
+    result.success && new Date(result.data.expiresAt).getTime() <= Date.now();
+  if (!result.success || result.data.status !== "pending" || isExpired) {
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">

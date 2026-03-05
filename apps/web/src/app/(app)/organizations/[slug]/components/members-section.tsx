@@ -138,32 +138,42 @@ function MemberRow({
 
   const handleRoleChange = async (newRole: string) => {
     setIsUpdatingRole(true);
-    const result = await updateMemberRoleAction({
-      memberId: member.id,
-      role: newRole,
-      organizationId,
-    });
-    if (result.success) {
-      toast.success(t("roleUpdated"));
-      onMutationSuccess();
-    } else {
-      toast.error(result.error ?? t("roleUpdateError"));
+    try {
+      const result = await updateMemberRoleAction({
+        memberId: member.id,
+        role: newRole,
+        organizationId,
+      });
+      if (result.success) {
+        toast.success(t("roleUpdated"));
+        onMutationSuccess();
+      } else {
+        toast.error(result.error ?? t("roleUpdateError"));
+      }
+    } catch {
+      toast.error(t("roleUpdateError"));
+    } finally {
+      setIsUpdatingRole(false);
     }
-    setIsUpdatingRole(false);
   };
 
   const handleRemoveConfirm = async () => {
     setIsRemoving(true);
-    const result = await removeMemberAction({
-      memberId: member.id,
-      organizationId,
-    });
-    if (result.success) {
-      toast.success(t("removeSuccess"));
-      setConfirmOpen(false);
-      onMutationSuccess();
-    } else {
-      toast.error(result.error ?? t("removeError"));
+    try {
+      const result = await removeMemberAction({
+        memberId: member.id,
+        organizationId,
+      });
+      if (result.success) {
+        toast.success(t("removeSuccess"));
+        setConfirmOpen(false);
+        onMutationSuccess();
+      } else {
+        toast.error(result.error ?? t("removeError"));
+      }
+    } catch {
+      toast.error(t("removeError"));
+    } finally {
       setIsRemoving(false);
     }
   };
