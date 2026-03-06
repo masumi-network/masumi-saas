@@ -7,10 +7,10 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow();
 
-    const networkCookie = request.cookies.get("payment_network")?.value;
+    const networkParam = request.nextUrl.searchParams.get("network");
     const network =
-      networkCookie === "Mainnet" || networkCookie === "Preprod"
-        ? networkCookie
+      networkParam === "Mainnet" || networkParam === "Preprod"
+        ? networkParam
         : "Preprod";
 
     const networkFilter = {

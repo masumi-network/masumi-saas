@@ -214,7 +214,7 @@ class AgentApiClient {
     });
   }
 
-  async getCounts(): Promise<
+  async getCounts(network?: "Mainnet" | "Preprod"): Promise<
     | {
         success: true;
         data: {
@@ -229,7 +229,13 @@ class AgentApiClient {
     | { success: false; error: string }
   > {
     try {
-      const response = await fetch(`${this.baseUrl}/counts`, {
+      const params = new URLSearchParams();
+      if (network) params.set("network", network);
+      const query = params.toString();
+      const url = query
+        ? `${this.baseUrl}/counts?${query}`
+        : `${this.baseUrl}/counts`;
+      const response = await fetch(url, {
         headers: { "Content-Type": "application/json" },
       });
       const json = (await response.json()) as
