@@ -15,7 +15,6 @@ import { credentialApiClient } from "@/lib/api/credential.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
-import { EditAgentDialog } from "../../components/edit-agent-dialog";
 import { AgentPageHeader } from "./agent-page-header";
 import { DeleteAgentDialog } from "./delete-agent-dialog";
 import { DeregisterAgentDialog } from "./deregister-agent-dialog";
@@ -67,7 +66,6 @@ export function AgentPageContent({
   const [agent, setAgent] = useState<Agent>(initialAgent);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
   const [, startTransition] = useTransition();
@@ -193,15 +191,6 @@ export function AgentPageContent({
     });
   };
 
-  const handleEditSuccess = () => {
-    startTransition(async () => {
-      const result = await agentApiClient.getAgent(agent.id);
-      if (result.success) {
-        setAgent(result.data);
-      }
-    });
-  };
-
   return (
     <>
       <div className="flex flex-col gap-8 pb-3 pt-1">
@@ -218,7 +207,6 @@ export function AgentPageContent({
           agent={agent}
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
-          onEditClick={() => setIsEditDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
         />
       )}
@@ -258,13 +246,6 @@ export function AgentPageContent({
         onConfirm={handleDeleteConfirm}
         agentName={agent.name}
         isLoading={isDeleting}
-      />
-
-      <EditAgentDialog
-        open={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        onSuccess={handleEditSuccess}
-        agent={agent}
       />
     </>
   );

@@ -44,7 +44,6 @@ interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
   onDeregisterClick: () => void;
-  onEditClick?: () => void;
   onVerificationSuccess?: () => void;
 }
 
@@ -52,7 +51,6 @@ export function AgentDetails({
   agent,
   onDeleteClick,
   onDeregisterClick,
-  onEditClick: _onEditClick,
   onVerificationSuccess,
 }: AgentDetailsProps) {
   const t = useTranslations("App.Agents.Details");
@@ -146,19 +144,6 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            {/* Edit disabled until payment node supports agent updates
-            {onEditClick && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEditClick}
-                className="gap-2 ml-auto"
-              >
-                <Pencil className="h-4 w-4" />
-                {t("edit")}
-              </Button>
-            )}
-            */}
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Description (short) */}

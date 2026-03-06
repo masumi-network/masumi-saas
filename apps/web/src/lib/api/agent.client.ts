@@ -188,33 +188,6 @@ class AgentApiClient {
     });
   }
 
-  async updateAgent(
-    agentId: string,
-    data: {
-      name?: string;
-      description?: string | null;
-      extendedDescription?: string | null;
-      tags?: string[];
-      icon?: string | null;
-      pricing?: AgentPricing | null;
-      authorName?: string;
-      authorEmail?: string;
-      organization?: string;
-      contactOther?: string;
-      termsOfUseUrl?: string;
-      privacyPolicyUrl?: string;
-      otherUrl?: string;
-      capabilityName?: string;
-      capabilityVersion?: string;
-      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
-    },
-  ): Promise<ApiResponse<Agent>> {
-    return this.request<Agent>(`/${agentId}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  }
-
   async deleteAgent(agentId: string): Promise<ApiResponse<void>> {
     return this.request<void>(`/${agentId}`, {
       method: "DELETE",
