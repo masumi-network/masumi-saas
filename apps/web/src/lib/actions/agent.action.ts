@@ -560,7 +560,10 @@ export async function deleteAgentAction(agentId: string) {
       "DeregistrationRequested",
       "DeregistrationInitiated",
     ];
-    if (liveStates.includes(agent.registrationState)) {
+    const isLegacyConfirmed =
+      agent.registrationState === "RegistrationConfirmed" &&
+      !agent.agentIdentifier;
+    if (liveStates.includes(agent.registrationState) && !isLegacyConfirmed) {
       return {
         success: false as const,
         error:
