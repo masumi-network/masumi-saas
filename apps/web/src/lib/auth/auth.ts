@@ -156,6 +156,16 @@ export const auth = betterAuth({
     apiKey({
       rateLimit: authConfig.apiKey.rateLimit,
       enableMetadata: authConfig.apiKey.enableMetadata,
+      enableSessionForAPIKeys: true,
+      customAPIKeyGetter: (ctx) => {
+        const req = ctx.request;
+        if (!req) return null;
+        const xApiKey = req.headers.get("x-api-key");
+        if (xApiKey) return xApiKey;
+        const auth = req.headers.get("authorization");
+        if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
+        return null;
+      },
     }),
     organization({
       organizationCreation: {
