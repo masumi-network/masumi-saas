@@ -61,10 +61,6 @@ export type AgentFormFields = {
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
-  authorName?: string;
-  authorEmail?: string;
-  organization?: string;
-  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;
@@ -387,7 +383,7 @@ export function RegisterAgentDialog({
   }, [pendingAgentId, form, t]);
 
   const isFree =
-    useWatch({ control: form.control, name: "isFree", defaultValue: true }) ===
+    useWatch({ control: form.control, name: "isFree", defaultValue: false }) ===
     true;
 
   const handleAddTag = () => {
