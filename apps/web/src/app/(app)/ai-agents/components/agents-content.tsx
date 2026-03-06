@@ -129,26 +129,34 @@ export function AgentsContent() {
     [activeTab, debouncedSearch, network],
   );
 
-  const loadPage = useCallback(
-    async (cursorId?: string) => {
-      const initial = await fetchAgents(cursorId);
-      if (!initial) return null;
-
+  /** Shared: sync in-flight agents then refetch. Returns refetched page or initial if nothing to sync. */
+  const syncPendingAndRefetch = useCallback(
+    async (
+      initial: { data: Agent[]; nextCursor: string | null },
+      cursorId?: string,
+    ) => {
       const toSync = initial.data.filter((a) =>
         (SYNC_ON_LOAD_STATES as readonly string[]).includes(
           a.registrationState,
         ),
       );
-
       if (toSync.length === 0) return initial;
-
       await Promise.allSettled(
         toSync.map((a) => syncAgentRegistrationStatusAction(a.id)),
       );
-
-      return fetchAgents(cursorId);
+      const updated = await fetchAgents(cursorId);
+      return updated ?? initial;
     },
     [fetchAgents],
+  );
+
+  const loadPage = useCallback(
+    async (cursorId?: string) => {
+      const initial = await fetchAgents(cursorId);
+      if (!initial) return null;
+      return syncPendingAndRefetch(initial, cursorId);
+    },
+    [fetchAgents, syncPendingAndRefetch],
   );
 
   useEffect(() => {
@@ -163,23 +171,13 @@ export function AgentsContent() {
       setNextCursor(initial.nextCursor);
       setIsLoading(false);
 
-      const toSync = initial.data.filter((a) =>
-        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
-          a.registrationState,
-        ),
-      );
-      if (toSync.length > 0) {
-        await Promise.allSettled(
-          toSync.map((a) => syncAgentRegistrationStatusAction(a.id)),
-        );
-        const updated = await fetchAgents();
-        if (updated) {
-          setAgents(updated.data);
-          setNextCursor(updated.nextCursor);
-        }
+      const page = await syncPendingAndRefetch(initial);
+      if (page !== initial) {
+        setAgents(page.data);
+        setNextCursor(page.nextCursor);
       }
     });
-  }, [fetchAgents, activeOrganizationId, network]);
+  }, [fetchAgents, syncPendingAndRefetch, activeOrganizationId, network]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());

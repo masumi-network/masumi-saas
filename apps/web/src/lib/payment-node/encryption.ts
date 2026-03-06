@@ -1,8 +1,8 @@
 import {
   createCipheriv,
   createDecipheriv,
+  hkdfSync,
   randomBytes,
-  scryptSync,
 } from "node:crypto";
 
 const ALG = "aes-256-gcm";
@@ -11,14 +11,28 @@ const KEY_LEN = 32;
 const IV_LEN = 12;
 const TAG_LEN = 16;
 
-function getEncryptionKey(): Buffer {
+/**
+ * Context string for HKDF (RFC 5869 / NIST SP 800-108). Industry-standard key derivation from a secret;
+ * the info parameter binds the key to this use.
+ * Salt: optional PAYMENT_NODE_KEY_SALT gives per-deployment key separation; when unset, empty salt (backward compatible).
+ */
+const KDF_INFO = "payment-node-aes-256-gcm-key";
+
+function getKdfSalt(): Buffer {
+  const s = process.env.PAYMENT_NODE_KEY_SALT;
+  return s?.trim() ? Buffer.from(s.trim(), "utf8") : Buffer.alloc(0);
+}
+
+function getEncryptionKey(saltOverride?: Buffer): Buffer {
   const raw = process.env.PAYMENT_NODE_ENCRYPTION_KEY;
   if (!raw?.trim()) {
     throw new Error(
       "PAYMENT_NODE_ENCRYPTION_KEY is required to encrypt payment node API keys",
     );
   }
-  return scryptSync(raw, "payment-node-key", KEY_LEN);
+  const ikm = Buffer.from(raw.trim(), "utf8");
+  const salt = saltOverride !== undefined ? saltOverride : getKdfSalt();
+  return Buffer.from(hkdfSync("sha256", ikm, salt, KDF_INFO, KEY_LEN));
 }
 
 /**
@@ -45,11 +59,16 @@ export async function encryptPaymentNodeSecret(
 
 /**
  * Decrypt a value produced by encryptPaymentNodeSecret.
+ * @param options.keySalt - When re-encrypting (migration), pass Buffer.alloc(0) to decrypt with the legacy key (no PAYMENT_NODE_KEY_SALT).
  */
 export async function decryptPaymentNodeSecret(
   ciphertext: string,
+  options?: { keySalt?: Buffer },
 ): Promise<string> {
-  const key = getEncryptionKey();
+  const key =
+    options?.keySalt !== undefined
+      ? getEncryptionKey(options.keySalt)
+      : getEncryptionKey();
   const parts = ciphertext.split(":");
   if (parts.length !== 3) {
     throw new Error("Invalid payment node encrypted value");

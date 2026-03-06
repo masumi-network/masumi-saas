@@ -13,7 +13,8 @@
     "lint:fix": "eslint --fix .",
     "format": "prettier --log-level silent --write \"src/**/*.{ts,tsx}\"",
     "shadcn-add": "pnpm dlx shadcn-ui@latest add",
-    "swagger:generate": "cross-env tsx src/lib/swagger/cli.ts"
+    "swagger:generate": "cross-env tsx src/lib/swagger/cli.ts",
+    "re-encrypt-payment-node-secrets": "tsx scripts/re-encrypt-payment-node-secrets.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",
