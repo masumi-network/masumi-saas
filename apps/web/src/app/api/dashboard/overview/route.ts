@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { getDashboardOverview } from "@/lib/services/dashboard.service";
@@ -9,15 +8,16 @@ export type DashboardOverviewApiResponse =
   | { success: true; data: DashboardOverview }
   | { success: false; error: string };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow();
-    const cookieStore = await cookies();
-    const networkCookie = cookieStore.get("payment_network")?.value;
+
+    const networkParam = request.nextUrl.searchParams.get("network");
     const network =
-      networkCookie === "Mainnet" || networkCookie === "Preprod"
-        ? networkCookie
+      networkParam === "Mainnet" || networkParam === "Preprod"
+        ? networkParam
         : "Preprod";
+
     const data = await getDashboardOverview(user.id, network);
     return NextResponse.json({ success: true, data });
   } catch (error) {

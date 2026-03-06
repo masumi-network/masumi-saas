@@ -117,6 +117,7 @@ export function AgentsContent() {
         {
           cursorId,
           take: PAGE_SIZE,
+          network,
         },
       );
       if (result.success) {
@@ -124,7 +125,7 @@ export function AgentsContent() {
       }
       return null;
     },
-    [activeTab, debouncedSearch],
+    [activeTab, debouncedSearch, network],
   );
 
   const loadPage = useCallback(

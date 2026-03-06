@@ -92,7 +92,11 @@ class AgentApiClient {
       registrationStateIn?: string[];
       search?: string;
     },
-    options?: { cursorId?: string; take?: number },
+    options?: {
+      cursorId?: string;
+      take?: number;
+      network?: "Mainnet" | "Preprod";
+    },
   ): Promise<GetAgentsResult> {
     const params = new URLSearchParams();
     if (filters?.verificationStatus !== undefined) {
@@ -118,6 +122,9 @@ class AgentApiClient {
     }
     if (options?.take !== undefined) {
       params.set("take", String(options.take));
+    }
+    if (options?.network) {
+      params.set("network", options.network);
     }
 
     const queryString = params.toString();

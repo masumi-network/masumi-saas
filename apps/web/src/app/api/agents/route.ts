@@ -20,6 +20,7 @@ const getAgentsQuerySchema = z.object({
   registrationState: z.string().optional(),
   registrationStateIn: z.string().optional(),
   search: z.string().optional(),
+  network: z.enum(["Mainnet", "Preprod"]).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -48,12 +49,12 @@ export async function GET(request: NextRequest) {
       registrationState,
       registrationStateIn,
       search,
+      network: networkParam,
     } = queryValidation.data;
 
-    const networkCookie = request.cookies.get("payment_network")?.value;
     const network =
-      networkCookie === "Mainnet" || networkCookie === "Preprod"
-        ? networkCookie
+      networkParam === "Mainnet" || networkParam === "Preprod"
+        ? networkParam
         : "Preprod";
 
     const searchTrimmed = search?.trim();
