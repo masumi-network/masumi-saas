@@ -213,6 +213,20 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
+    const registrationPayload = {
+      exampleOutputs: parsedExampleOutputs,
+      capabilityName: capabilityName?.trim() || "Masumi",
+      capabilityVersion: capabilityVersion?.trim() || "1.0",
+      authorName: authorName?.trim() || user.name || "Unknown",
+      authorEmail: authorEmail?.trim() || user.email,
+      organization: organization?.trim(),
+      contactOther: contactOther?.trim(),
+      termsOfUseUrl: termsOfUseUrl?.trim(),
+      privacyPolicyUrl: privacyPolicyUrl?.trim(),
+      otherUrl: otherUrl?.trim(),
+      agentPricing,
+    };
+
     await prisma.agentReference.create({
       data: {
         agentId: agent.id,
@@ -221,15 +235,18 @@ export async function registerAgentAction(formData: FormData) {
         buyingWalletVkey: buyingWallet.walletVkey,
         networkIdentifier: network,
         status: "PENDING",
+        metadata: {
+          sellingWalletAddress: sellingWallet.walletAddress,
+          registrationPayload,
+        },
       },
     });
 
-    // Wait for the dispenser funding transaction to confirm on-chain before
-    // calling registerAgent.  The payment node needs at least one UTXO in the
-    // selling wallet to build the registration transaction; submitting before
-    // the funds arrive produces a RegistrationFailed entry on the payment node.
-    const POLL_INTERVAL_MS = 5_000;
-    const POLL_TIMEOUT_MS = 120_000; // 2 minutes
+    // Wait briefly for dispenser funding so we don't block the server for minutes.
+    // If funding isn't ready, return WALLET_FUNDING_PENDING so the client can poll
+    // completeRegistrationIfReadyAction(agentId) until the wallet is funded.
+    const POLL_INTERVAL_MS = 3_000;
+    const POLL_TIMEOUT_MS = 18_000; // 18s — under typical serverless limits
     const pollStart = Date.now();
     let walletFunded = false;
 
@@ -244,8 +261,6 @@ export async function registerAgentAction(formData: FormData) {
           break;
         }
       } catch (utxoError) {
-        // 404 means the address has no UTXOs yet (Blockfrost doesn't know it) —
-        // keep polling.  Any other error is unexpected and should abort.
         const msg =
           utxoError instanceof Error ? utxoError.message : String(utxoError);
         if (!msg.startsWith("404")) {
@@ -261,11 +276,10 @@ export async function registerAgentAction(formData: FormData) {
     }
 
     if (!walletFunded) {
-      await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
       return {
         success: false as const,
-        error:
-          "Wallet funding timed out. The dispenser may be slow — please try again.",
+        error: "WALLET_FUNDING_PENDING",
+        agentId: agent.id,
       };
     }
 
@@ -307,13 +321,22 @@ export async function registerAgentAction(formData: FormData) {
       throw paymentNodeError;
     }
 
+    const existingRef = await prisma.agentReference.findUnique({
+      where: { agentId: agent.id },
+      select: { metadata: true },
+    });
+    const existingMeta =
+      (existingRef?.metadata as Record<string, unknown> | null) ?? {};
     await prisma.agentReference.update({
       where: { agentId: agent.id },
       data: {
         externalId: registryEntry.id,
-        ...(registryEntry.agentIdentifier && {
-          metadata: { agentIdentifier: registryEntry.agentIdentifier },
-        }),
+        metadata: {
+          ...existingMeta,
+          ...(registryEntry.agentIdentifier && {
+            agentIdentifier: registryEntry.agentIdentifier,
+          }),
+        },
       },
     });
 
@@ -338,6 +361,154 @@ export async function registerAgentAction(formData: FormData) {
       success: false as const,
       error:
         error instanceof Error ? error.message : "Failed to register agent",
+    };
+  }
+}
+
+type RegistrationPayloadStored = {
+  sellingWalletAddress?: string;
+  registrationPayload?: {
+    exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
+    capabilityName: string;
+    capabilityVersion: string;
+    authorName: string;
+    authorEmail?: string;
+    organization?: string;
+    contactOther?: string;
+    termsOfUseUrl?: string;
+    privacyPolicyUrl?: string;
+    otherUrl?: string;
+    agentPricing: RegisterAgentInput["AgentPricing"];
+  };
+};
+
+/** Called by the client when registerAgentAction returned WALLET_FUNDING_PENDING.
+ *  Poll until status is "registered" or the user gives up. */
+export async function completeRegistrationIfReadyAction(
+  agentId: string,
+): Promise<
+  | {
+      status: "registered";
+      data: Awaited<ReturnType<typeof prisma.agent.findUnique>>;
+    }
+  | { status: "pending" }
+  | { status: "error"; error: string }
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow();
+    const agent = await prisma.agent.findFirst({
+      where: { id: agentId, userId: user.id },
+      include: { agentReference: true },
+    });
+    if (!agent?.agentReference) {
+      return { status: "error", error: "Agent not found" };
+    }
+    const ref = agent.agentReference;
+    if (ref.externalId) {
+      const updated = await prisma.agent.findUnique({
+        where: { id: agentId },
+      });
+      return { status: "registered", data: updated ?? agent };
+    }
+    const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
+    const address = meta.sellingWalletAddress;
+    const payload = meta.registrationPayload;
+    if (!address || !payload) {
+      return { status: "error", error: "Missing registration data" };
+    }
+    const network = (ref.networkIdentifier ??
+      DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const userClient = await getPaymentNodeClientForUser(user.id);
+    if (!userClient) {
+      return { status: "error", error: "Payment node unavailable" };
+    }
+    if (!ref.sellingWalletVkey) {
+      return { status: "error", error: "Missing wallet key" };
+    }
+    try {
+      const { Utxos } = await userClient.getUtxos({
+        address,
+        network,
+      });
+      if (Utxos.length === 0) {
+        return { status: "pending" };
+      }
+    } catch (utxoErr) {
+      const msg = utxoErr instanceof Error ? utxoErr.message : String(utxoErr);
+      if (msg.startsWith("404")) return { status: "pending" };
+      return { status: "error", error: msg };
+    }
+    // Re-check in case another poll (e.g. second tab) already completed registration
+    const refAgain = await prisma.agentReference.findUnique({
+      where: { agentId: agent.id },
+      select: { externalId: true },
+    });
+    if (refAgain?.externalId) {
+      const updatedAgent = await prisma.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { status: "registered", data: updatedAgent };
+    }
+    const registryEntry = await userClient.registerAgent({
+      network,
+      sellingWalletVkey: ref.sellingWalletVkey,
+      name: agent.name,
+      apiBaseUrl: agent.apiUrl,
+      description: agent.description?.trim() ?? "",
+      Tags: agent.tags,
+      ExampleOutputs: payload.exampleOutputs,
+      Capability: {
+        name: payload.capabilityName,
+        version: payload.capabilityVersion,
+      },
+      Author: {
+        name: payload.authorName,
+        contactEmail: payload.authorEmail,
+        contactOther: payload.contactOther,
+        organization: payload.organization,
+      },
+      ...(payload.termsOfUseUrl || payload.privacyPolicyUrl || payload.otherUrl
+        ? {
+            Legal: {
+              terms: payload.termsOfUseUrl,
+              privacyPolicy: payload.privacyPolicyUrl,
+              other: payload.otherUrl,
+            },
+          }
+        : {}),
+      AgentPricing: payload.agentPricing,
+    });
+    const existingMeta = (ref.metadata as Record<string, unknown> | null) ?? {};
+    await prisma.agentReference.update({
+      where: { agentId: agent.id },
+      data: {
+        externalId: registryEntry.id,
+        metadata: {
+          ...existingMeta,
+          ...(registryEntry.agentIdentifier && {
+            agentIdentifier: registryEntry.agentIdentifier,
+          }),
+        },
+      },
+    });
+    if (registryEntry.agentIdentifier) {
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { agentIdentifier: registryEntry.agentIdentifier },
+      });
+    }
+    const updatedAgent = await prisma.agent.findUniqueOrThrow({
+      where: { id: agent.id },
+    });
+    return { status: "registered", data: updatedAgent };
+  } catch (error) {
+    console.error("completeRegistrationIfReadyAction:", error);
+    return {
+      status: "error",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to complete registration",
     };
   }
 }

@@ -693,7 +693,8 @@
         "submit": "Register Agent",
         "cancel": "Cancel",
         "success": "Agent registered successfully!",
-        "error": "Failed to register agent. Please try again."
+        "error": "Failed to register agent. Please try again.",
+        "fundingWallet": "Funding wallet — we'll complete registration in a moment."
       },
       "Edit": {
         "title": "Edit Agent",

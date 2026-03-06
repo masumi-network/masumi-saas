@@ -2,7 +2,7 @@
 
 import { CircleHelp, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -35,7 +35,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { registerAgentAction } from "@/lib/actions/agent.action";
+import {
+  completeRegistrationIfReadyAction,
+  registerAgentAction,
+} from "@/lib/actions/agent.action";
 import { zodResolver } from "@/lib/form-zod-resolver";
 
 import { AgentIconPicker } from "./agent-icon-picker";
@@ -255,8 +258,48 @@ export function RegisterAgentDialog({
   const t = useTranslations("App.Agents.Register");
 
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!pendingAgentId) return;
+    const POLL_MS = 5_000;
+    const poll = async () => {
+      const res = await completeRegistrationIfReadyAction(pendingAgentId);
+      if (res.status === "registered") {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.success(t("success"));
+        form.reset();
+        setTags([]);
+        setTagInput("");
+        onSuccess();
+        onClose();
+        setIsLoading(false);
+      } else if (res.status === "error") {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.error(res.error || t("error"));
+        setIsLoading(false);
+      }
+    };
+    poll();
+    pollIntervalRef.current = setInterval(poll, POLL_MS);
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [pendingAgentId, onSuccess, onClose, t]);
 
   const registerAgentSchema = z
     .object({
@@ -409,20 +452,34 @@ export function RegisterAgentDialog({
         setTagInput("");
         onSuccess();
         onClose();
+      } else if (
+        result.error === "WALLET_FUNDING_PENDING" &&
+        "agentId" in result &&
+        typeof result.agentId === "string"
+      ) {
+        setPendingAgentId(result.agentId);
+        toast.info(t("fundingWallet"));
+        // Keep loading until completeRegistrationIfReadyAction poll succeeds/fails
       } else {
         toast.error(result.error || t("error"));
+        setIsLoading(false);
       }
     } catch (error) {
       toast.error(t("error"));
       console.error("Failed to register agent:", error);
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (isLoading) return;
+    if (isLoading && !pendingAgentId) return;
     if (!newOpen) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      setPendingAgentId(null);
+      setIsLoading(false);
       form.reset({
         name: "",
         description: "",

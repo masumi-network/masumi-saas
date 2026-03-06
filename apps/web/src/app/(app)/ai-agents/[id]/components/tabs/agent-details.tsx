@@ -416,68 +416,78 @@ export function AgentDetails({
         </Card>
       </div>
 
-      {(agent.registrationState === "RegistrationConfirmed" ||
-        agent.registrationState === "DeregistrationConfirmed" ||
-        agent.registrationState === "RegistrationFailed" ||
-        agent.registrationState === "DeregistrationFailed") && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <Separator className="flex-1" />
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-              {t("dangerZone")}
-            </span>
-            <Separator className="flex-1" />
-          </div>
-          {agent.registrationState === "RegistrationConfirmed" &&
-          agent.agentIdentifier ? (
-            <Card className="border-destructive/60 bg-destructive/5">
-              <CardContent>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm">{t("deregister")}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {t("deregisterDescription")}
-                    </p>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    onClick={onDeregisterClick}
-                    className="gap-2 shrink-0 w-full sm:w-auto"
-                  >
-                    {t("deregister")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-          {agent.registrationState === "DeregistrationConfirmed" ||
+      {(() => {
+        const showDangerZone =
+          agent.registrationState === "RegistrationConfirmed" ||
+          agent.registrationState === "DeregistrationConfirmed" ||
+          agent.registrationState === "RegistrationFailed" ||
+          agent.registrationState === "DeregistrationFailed";
+        const showDeregisterCard =
+          agent.registrationState === "RegistrationConfirmed" &&
+          Boolean(agent.agentIdentifier);
+        const showDeleteCard =
+          agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
           agent.registrationState === "DeregistrationFailed" ||
           (agent.registrationState === "RegistrationConfirmed" &&
-            !agent.agentIdentifier) ? (
-            <Card className="border-destructive/60 bg-destructive/5">
-              <CardContent>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm">{t("delete")}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {t("deleteDescription")}
-                    </p>
+            !agent.agentIdentifier);
+        if (!showDangerZone || (!showDeregisterCard && !showDeleteCard))
+          return null;
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Separator className="flex-1" />
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                {t("dangerZone")}
+              </span>
+              <Separator className="flex-1" />
+            </div>
+            {showDeregisterCard && (
+              <Card className="border-destructive/60 bg-destructive/5">
+                <CardContent>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">{t("deregister")}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {t("deregisterDescription")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={onDeregisterClick}
+                      className="gap-2 shrink-0 w-full sm:w-auto"
+                    >
+                      {t("deregister")}
+                    </Button>
                   </div>
-                  <Button
-                    variant="destructive"
-                    onClick={onDeleteClick}
-                    className="gap-2 shrink-0 w-full sm:w-auto"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {t("delete")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            )}
+            {showDeleteCard && (
+              <Card className="border-destructive/60 bg-destructive/5">
+                <CardContent>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">{t("delete")}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {t("deleteDescription")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={onDeleteClick}
+                      className="gap-2 shrink-0 w-full sm:w-auto"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t("delete")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
