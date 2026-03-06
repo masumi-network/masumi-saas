@@ -140,6 +140,7 @@ export function AgentsTable({
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
                 agent.registrationState === "RegistrationFailed" ||
+                agent.registrationState === "DeregistrationFailed" ||
                 isLegacyConfirmed;
               const isPending =
                 agent.registrationState === "RegistrationRequested" ||

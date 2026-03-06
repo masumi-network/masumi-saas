@@ -27,12 +27,13 @@ import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
-const PENDING_STATES = [
+/** States we sync on list load (in-flight only). Excludes failed states to avoid N syncs + refetch on "failed" tab. */
+const SYNC_ON_LOAD_STATES = [
   "RegistrationRequested",
   "RegistrationInitiated",
   "DeregistrationRequested",
   "DeregistrationInitiated",
-];
+] as const;
 
 const VALID_TABS = [
   "all",
@@ -133,14 +134,16 @@ export function AgentsContent() {
       const initial = await fetchAgents(cursorId);
       if (!initial) return null;
 
-      const pendingAgents = initial.data.filter((a) =>
-        PENDING_STATES.includes(a.registrationState),
+      const toSync = initial.data.filter((a) =>
+        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
+          a.registrationState,
+        ),
       );
 
-      if (pendingAgents.length === 0) return initial;
+      if (toSync.length === 0) return initial;
 
       await Promise.allSettled(
-        pendingAgents.map((a) => syncAgentRegistrationStatusAction(a.id)),
+        toSync.map((a) => syncAgentRegistrationStatusAction(a.id)),
       );
 
       return fetchAgents(cursorId);

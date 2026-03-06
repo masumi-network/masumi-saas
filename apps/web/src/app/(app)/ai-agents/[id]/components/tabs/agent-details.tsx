@@ -418,7 +418,8 @@ export function AgentDetails({
 
       {(agent.registrationState === "RegistrationConfirmed" ||
         agent.registrationState === "DeregistrationConfirmed" ||
-        agent.registrationState === "RegistrationFailed") && (
+        agent.registrationState === "RegistrationFailed" ||
+        agent.registrationState === "DeregistrationFailed") && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
             <Separator className="flex-1" />
@@ -451,6 +452,7 @@ export function AgentDetails({
           ) : null}
           {agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
+          agent.registrationState === "DeregistrationFailed" ||
           (agent.registrationState === "RegistrationConfirmed" &&
             !agent.agentIdentifier) ? (
             <Card className="border-destructive/60 bg-destructive/5">
