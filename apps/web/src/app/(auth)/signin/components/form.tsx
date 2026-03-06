@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -21,13 +20,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 interface SignInFormProps {
   oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+  /** After sign-in, redirect here (e.g. from accept-invitation link). Must be a path on our origin. */
+  callbackUrl?: string;
 }
 
-export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
+export default function SignInForm({
+  oauthProviders = [],
+  callbackUrl,
+}: SignInFormProps) {
   const t = useTranslations("Auth.SignIn");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
@@ -64,7 +70,7 @@ export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
           ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        router.push("/");
+        router.push(sanitizeCallbackUrl(callbackUrl) ?? "/");
       }
     } catch (error) {
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
@@ -89,7 +95,10 @@ export default function SignInForm({ oauthProviders = [] }: SignInFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} />
+        <SocialAuthButtons
+          providers={oauthProviders}
+          callbackURL={sanitizeCallbackUrl(callbackUrl)}
+        />
       )}
 
       <Form {...form}>

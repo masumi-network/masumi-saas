@@ -1,6 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleHelp, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -36,6 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { zodResolver } from "@/lib/form-zod-resolver";
 
 import { AgentIconPicker } from "./agent-icon-picker";
 import {

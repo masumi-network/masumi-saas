@@ -6,7 +6,6 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Users,
   Wallet,
 } from "lucide-react";
@@ -30,7 +29,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OrganizationDashboardData } from "@/lib/actions/organization.action";
+import type {
+  OrganizationDashboardData,
+  OrgInvitation,
+  OrgMember,
+} from "@/lib/actions/organization.action";
 import type { Agent } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import {
@@ -40,8 +43,13 @@ import {
   getVerificationStatusKey,
 } from "@/lib/utils/agent-utils";
 
+import { InviteMemberDialog } from "./invite-member-dialog";
+import { MembersSection } from "./members-section";
+
 interface OrganizationDashboardOverviewProps {
   data: OrganizationDashboardData;
+  members: OrgMember[];
+  pendingInvitations: OrgInvitation[];
 }
 
 function getKybStatusVariant(
@@ -64,6 +72,8 @@ function getKybStatusVariant(
 
 export function OrganizationDashboardOverview({
   data,
+  members,
+  pendingInvitations,
 }: OrganizationDashboardOverviewProps) {
   const t = useTranslations("App.Organizations.Dashboard");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
@@ -85,6 +95,8 @@ export function OrganizationDashboardOverview({
   const router = useRouter();
   const isActive = activeOrganization?.id === organization.id;
   const slugDisplay = `@${organization.slug}`;
+  const isOwnerOrAdmin =
+    organization.role === "owner" || organization.role === "admin";
 
   return (
     <div className="animate-in fade-in duration-300 space-y-8">
@@ -112,8 +124,6 @@ export function OrganizationDashboardOverview({
           {breadcrumbLabel}
         </Link>
       </div>
-
-      {/* organization header */}
 
       {/* Organization info card */}
       <Card className="bg-muted-surface/30 py-4 sm:py-6">
@@ -188,7 +198,7 @@ export function OrganizationDashboardOverview({
               </Card>
             </Link>
 
-            {/* Members — TODO: replace static memberCount with live data once member management is implemented */}
+            {/* Members */}
             <Card className="h-full rounded-xl bg-muted-surface">
               <CardHeader className="space-y-0 pb-2">
                 <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
@@ -223,14 +233,16 @@ export function OrganizationDashboardOverview({
               {tDetail("switchTo")}
             </Button>
           )}
-          {/* TODO: implement member invite flow */}
-          <Button variant="outline" disabled>
-            <Plus className="h-4 w-4" />
-            {t("quickActions.inviteMember")}
-          </Button>
+          {isOwnerOrAdmin && (
+            <InviteMemberDialog
+              organizationId={organization.id}
+              onSuccess={() => router.refresh()}
+            />
+          )}
         </div>
       </div>
-      {/* Linked agents & API Keys — same row */}
+
+      {/* Linked agents & Members — same row */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         {/* Linked agents section */}
         <Card className="min-w-0 overflow-hidden rounded-lg shadow-none">
@@ -320,27 +332,13 @@ export function OrganizationDashboardOverview({
         </Card>
 
         {/* Members section */}
-        {/* TODO: fetch and display org members once member management is implemented */}
-        <Card className="min-w-0 overflow-hidden rounded-lg shadow-none">
-          <CardHeader>
-            <div className="min-w-0 space-y-1.5">
-              <CardTitle className="inline-flex items-center gap-1 leading-none font-semibold">
-                {t("membersSection.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("membersSection.description")}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="min-w-0 space-y-4">
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-              <Users className="mb-3 h-10 w-10 text-muted-foreground" />
-              <p className="text-center text-sm text-muted-foreground">
-                {t("membersSection.empty")}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <MembersSection
+          members={members}
+          pendingInvitations={pendingInvitations}
+          organizationId={organization.id}
+          currentUserRole={organization.role}
+          onMutationSuccess={() => router.refresh()}
+        />
       </div>
     </div>
   );
@@ -392,7 +390,7 @@ export function OrganizationDashboardSkeleton() {
                 <Skeleton className="mt-1 h-3 w-28" />
               </CardContent>
             </Card>
-            {/* API keys */}
+            {/* Members */}
             <Card className="h-full rounded-xl">
               <CardHeader className="space-y-0 pb-2">
                 <Skeleton className="h-4 w-16" />
@@ -415,7 +413,7 @@ export function OrganizationDashboardSkeleton() {
         </div>
       </div>
 
-      {/* Agents & API Keys grid */}
+      {/* Agents & Members grid */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <Card className="rounded-lg shadow-none">
           <CardHeader>
@@ -438,9 +436,9 @@ export function OrganizationDashboardSkeleton() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Skeleton className="h-14 w-full rounded-md" />
-            <Skeleton className="h-14 w-full rounded-md" />
-            <Skeleton className="h-14 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-md" />
           </CardContent>
         </Card>
       </div>

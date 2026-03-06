@@ -15,9 +15,11 @@ import {
   Text,
 } from "@react-email/components";
 
-interface VerificationEmailProps {
-  name: string;
-  verificationLink: string;
+interface InvitationEmailProps {
+  inviteLink: string;
+  organizationName: string;
+  inviterName: string;
+  role: string;
   logoUrl?: string;
   translations: {
     preview: string;
@@ -30,12 +32,14 @@ interface VerificationEmailProps {
   };
 }
 
-export const VerificationEmail = ({
-  name,
-  verificationLink,
+export const InvitationEmail = ({
+  inviteLink,
+  organizationName,
+  inviterName,
+  role,
   logoUrl,
   translations,
-}: VerificationEmailProps) => {
+}: InvitationEmailProps) => {
   return (
     <Html>
       <Head />
@@ -59,7 +63,15 @@ export const VerificationEmail = ({
               {translations.title}
             </Heading>
             <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting.replace("{name}", name)}
+              {translations.greeting.replace(
+                /\{(inviter|organization|role)\}/g,
+                (_match, key: "inviter" | "organization" | "role") =>
+                  ({
+                    inviter: inviterName,
+                    organization: organizationName,
+                    role,
+                  })[key],
+              )}
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}
@@ -67,18 +79,15 @@ export const VerificationEmail = ({
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button
                 className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"
-                href={verificationLink}
+                href={inviteLink}
               >
                 {translations.button}
               </Button>
             </Section>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.linkText}{" "}
-              <Link
-                href={verificationLink}
-                className="text-blue-600 no-underline"
-              >
-                {verificationLink}
+              <Link href={inviteLink} className="text-blue-600 no-underline">
+                {inviteLink}
               </Link>
             </Text>
             <Hr className="mx-0 my-[26px] w-full border border-solid border-[#eaeaea]" />
@@ -92,6 +101,6 @@ export const VerificationEmail = ({
   );
 };
 
-export async function reactVerificationEmail(props: VerificationEmailProps) {
-  return await render(<VerificationEmail {...props} />);
+export async function reactInvitationEmail(props: InvitationEmailProps) {
+  return await render(<InvitationEmail {...props} />);
 }
