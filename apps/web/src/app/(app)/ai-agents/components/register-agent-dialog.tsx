@@ -260,6 +260,7 @@ export function RegisterAgentDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollResolvedRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
@@ -346,10 +347,13 @@ export function RegisterAgentDialog({
 
   useEffect(() => {
     if (!pendingAgentId) return;
+    pollResolvedRef.current = false;
     const POLL_MS = 5_000;
     const poll = async () => {
       const res = await completeRegistrationIfReadyAction(pendingAgentId);
+      if (pollResolvedRef.current) return;
       if (res.status === "registered") {
+        pollResolvedRef.current = true;
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
@@ -363,6 +367,7 @@ export function RegisterAgentDialog({
         onCloseRef.current();
         setIsLoading(false);
       } else if (res.status === "error") {
+        pollResolvedRef.current = true;
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
