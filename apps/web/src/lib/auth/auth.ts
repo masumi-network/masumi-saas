@@ -72,7 +72,7 @@ export const auth = betterAuth({
           translations: {
             preview: t("preview"),
             title: t("title"),
-            greeting: t("greeting"),
+            greeting: t("greeting", { name: user.name || "User" }),
             message: t("message"),
             button: t("button"),
             linkText: t("linkText"),
@@ -121,7 +121,7 @@ export const auth = betterAuth({
           translations: {
             preview: t("preview"),
             title: t("title"),
-            greeting: t("greeting"),
+            greeting: t("greeting", { name: user.name || "User" }),
             message: t("message"),
             button: t("button"),
             linkText: t("linkText"),
