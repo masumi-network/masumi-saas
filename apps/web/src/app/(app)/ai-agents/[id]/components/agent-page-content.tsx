@@ -115,6 +115,12 @@ export function AgentPageContent({
     };
   }, [pendingRegistration, syncAndRefetch]);
 
+  // One-time sync on mount for RegistrationFailed (tx may land on-chain after initial failure).
+  useEffect(() => {
+    if (agent.registrationState !== "RegistrationFailed") return;
+    void syncAndRefetch();
+  }, [agent.registrationState, syncAndRefetch]);
+
   // Silently reconcile any PENDING credentials on mount.
   // Handles the case where the user accepted the credential in Veridian
   // after the dialog was closed or the page was reloaded.
