@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       userId: user.id,
       ...verificationFilter,
       ...registrationFilter,
-      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+      networkIdentifier: network,
     };
 
     const finalWhere =
