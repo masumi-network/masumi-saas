@@ -70,6 +70,7 @@ export async function GET(
         id: agentId,
         userId: user.id,
       },
+      include: { agentReference: true },
     });
 
     if (!agent) {
@@ -82,9 +83,52 @@ export async function GET(
       );
     }
 
+    // Merge in author/metadata from AgentReference.metadata (registrationPayload) when
+    // Agent.metadata is missing those keys, so the edit dialog can show values set at registration.
+    const metadataKeys = [
+      "authorName",
+      "authorEmail",
+      "organization",
+      "contactOther",
+      "termsOfUseUrl",
+      "privacyPolicyUrl",
+      "otherUrl",
+      "capabilityName",
+      "capabilityVersion",
+      "exampleOutputs",
+    ] as const;
+    const mergedMetadata = agent.metadata
+      ? (JSON.parse(agent.metadata) as Record<string, unknown>)
+      : {};
+    const refMeta = agent.agentReference?.metadata as
+      | Record<string, unknown>
+      | null
+      | undefined;
+    const registrationPayload = refMeta?.registrationPayload as
+      | Record<string, unknown>
+      | undefined;
+    if (registrationPayload) {
+      for (const key of metadataKeys) {
+        if (
+          registrationPayload[key] !== undefined &&
+          mergedMetadata[key] === undefined
+        ) {
+          mergedMetadata[key] = registrationPayload[key];
+        }
+      }
+    }
+    const { agentReference: _ref, ...agentRest } = agent;
+    const data = {
+      ...agentRest,
+      metadata:
+        Object.keys(mergedMetadata).length > 0
+          ? JSON.stringify(mergedMetadata)
+          : null,
+    };
+
     return NextResponse.json({
       success: true,
-      data: agent,
+      data,
     });
   } catch (error) {
     console.error("Failed to get agent:", error);

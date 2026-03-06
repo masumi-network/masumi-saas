@@ -56,6 +56,14 @@ function parseAgentMetadata(agent: Agent): Partial<AgentFormFields> {
   if (!agent.metadata) return meta;
   try {
     const parsed = JSON.parse(agent.metadata) as Record<string, unknown>;
+    if (typeof parsed.authorName === "string")
+      meta.authorName = parsed.authorName;
+    if (typeof parsed.authorEmail === "string")
+      meta.authorEmail = parsed.authorEmail;
+    if (typeof parsed.organization === "string")
+      meta.organization = parsed.organization;
+    if (typeof parsed.contactOther === "string")
+      meta.contactOther = parsed.contactOther;
     if (typeof parsed.termsOfUseUrl === "string")
       meta.termsOfUseUrl = parsed.termsOfUseUrl;
     if (typeof parsed.privacyPolicyUrl === "string")
@@ -117,6 +125,12 @@ export function EditAgentDialog({
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
+      authorName: z.string().max(250).optional().or(z.literal("")),
+      authorEmail: z
+        .union([z.literal(""), z.string().email().max(250)])
+        .optional(),
+      organization: z.string().max(250).optional().or(z.literal("")),
+      contactOther: z.string().max(250).optional().or(z.literal("")),
       termsOfUseUrl: z
         .union([z.literal(""), z.string().url().max(250)])
         .optional(),
@@ -166,6 +180,10 @@ export function EditAgentDialog({
       prices,
       tags: agent.tags?.join(", ") ?? "",
       icon: agent.icon ?? "bot",
+      authorName: metadata.authorName ?? "",
+      authorEmail: metadata.authorEmail ?? "",
+      organization: metadata.organization ?? "",
+      contactOther: metadata.contactOther ?? "",
       termsOfUseUrl: metadata.termsOfUseUrl ?? "",
       privacyPolicyUrl: metadata.privacyPolicyUrl ?? "",
       otherUrl: metadata.otherUrl ?? "",
@@ -195,6 +213,10 @@ export function EditAgentDialog({
         prices: pr,
         tags: agent.tags?.join(", ") ?? "",
         icon: agent.icon ?? "bot",
+        authorName: meta.authorName ?? "",
+        authorEmail: meta.authorEmail ?? "",
+        organization: meta.organization ?? "",
+        contactOther: meta.contactOther ?? "",
         termsOfUseUrl: meta.termsOfUseUrl ?? "",
         privacyPolicyUrl: meta.privacyPolicyUrl ?? "",
         otherUrl: meta.otherUrl ?? "",
@@ -255,6 +277,10 @@ export function EditAgentDialog({
           : fixedPrices.length > 0
             ? pricing
             : null,
+        authorName: data.authorName?.trim() || undefined,
+        authorEmail: data.authorEmail?.trim() || undefined,
+        organization: data.organization?.trim() || undefined,
+        contactOther: data.contactOther?.trim() || undefined,
         termsOfUseUrl: data.termsOfUseUrl?.trim() || undefined,
         privacyPolicyUrl: data.privacyPolicyUrl?.trim() || undefined,
         otherUrl: data.otherUrl?.trim() || undefined,
@@ -494,6 +520,77 @@ export function EditAgentDialog({
               </div>
 
               <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="authorName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("authorName")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={tRegister("authorNamePlaceholder")}
+                            {...field}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="authorEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("authorEmail")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder={tRegister("authorEmailPlaceholder")}
+                            {...field}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="organization"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tRegister("organization")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={tRegister("organizationPlaceholder")}
+                          {...field}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="contactOther"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tRegister("contactOther")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={tRegister("contactOtherPlaceholder")}
+                          {...field}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="termsOfUseUrl"

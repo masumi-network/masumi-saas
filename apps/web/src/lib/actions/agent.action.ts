@@ -178,22 +178,54 @@ export async function registerAgentAction(formData: FormData) {
       (w) => w.walletVkey === sellingWallet.walletVkey,
     )?.id;
 
-    // TODO(mainnet): On mainnet, show the user the selling wallet address and
-    // prompt them to fund it manually instead of using the dispenser.
+    // Request wallet funding from dispenser before creating the agent, so we can fail fast
+    // and avoid leaving an agent in RegistrationRequested with no funding request in flight.
     if (network === "Preprod") {
-      fetch("https://dispenser.masumi.network/submit_transaction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          network: "testnet",
-          receiverAddress: sellingWallet.walletAddress,
-          lovelaceAmount: 10_000_000, // 10 ADA
-          assetAmount: 1_000_000, // 1 tUSDM (required — dispenser errors with assetAmount 0)
-          testnet_collateral: false,
-        }),
-      }).catch((err) => {
-        console.warn("[Dispenser] Failed to fund selling wallet:", err);
-      });
+      const DISPENSER_TIMEOUT_MS = 15_000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        DISPENSER_TIMEOUT_MS,
+      );
+      try {
+        const res = await fetch(
+          "https://dispenser.masumi.network/submit_transaction",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              network: "testnet",
+              receiverAddress: sellingWallet.walletAddress,
+              lovelaceAmount: 10_000_000, // 10 ADA
+              assetAmount: 1_000_000, // 1 tUSDM
+              testnet_collateral: false,
+            }),
+            signal: controller.signal,
+          },
+        );
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          console.warn("[Dispenser] Non-OK response:", res.status, text);
+          return {
+            success: false as const,
+            error:
+              "Wallet funding request failed. The dispenser may be unavailable — please try again.",
+          };
+        }
+      } catch (dispenserErr) {
+        clearTimeout(timeoutId);
+        const msg =
+          dispenserErr instanceof Error
+            ? dispenserErr.message
+            : String(dispenserErr);
+        console.warn("[Dispenser] Failed to fund selling wallet:", msg);
+        return {
+          success: false as const,
+          error:
+            "Could not reach the wallet dispenser. Please try again in a moment.",
+        };
+      }
     }
 
     const agent = await prisma.agent.create({

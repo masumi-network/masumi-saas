@@ -154,14 +154,32 @@ export function AgentsContent() {
   useEffect(() => {
     queueMicrotask(() => setIsLoading(true));
     startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
-        setAgents(page.data);
-        setNextCursor(page.nextCursor);
+      const initial = await fetchAgents();
+      if (!initial) {
+        setIsLoading(false);
+        return;
       }
+      setAgents(initial.data);
+      setNextCursor(initial.nextCursor);
       setIsLoading(false);
+
+      const toSync = initial.data.filter((a) =>
+        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
+          a.registrationState,
+        ),
+      );
+      if (toSync.length > 0) {
+        await Promise.allSettled(
+          toSync.map((a) => syncAgentRegistrationStatusAction(a.id)),
+        );
+        const updated = await fetchAgents();
+        if (updated) {
+          setAgents(updated.data);
+          setNextCursor(updated.nextCursor);
+        }
+      }
     });
-  }, [loadPage, activeOrganizationId, network]);
+  }, [fetchAgents, activeOrganizationId, network]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());

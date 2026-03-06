@@ -4,7 +4,7 @@ import { CircleHelp, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -61,6 +61,10 @@ export type AgentFormFields = {
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
+  authorName?: string;
+  authorEmail?: string;
+  organization?: string;
+  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;
@@ -260,46 +264,15 @@ export function RegisterAgentDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onSuccessRef = useRef(onSuccess);
+  const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!pendingAgentId) return;
-    const POLL_MS = 5_000;
-    const poll = async () => {
-      const res = await completeRegistrationIfReadyAction(pendingAgentId);
-      if (res.status === "registered") {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        setPendingAgentId(null);
-        toast.success(t("success"));
-        form.reset();
-        setTags([]);
-        setTagInput("");
-        onSuccess();
-        onClose();
-        setIsLoading(false);
-      } else if (res.status === "error") {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        setPendingAgentId(null);
-        toast.error(res.error || t("error"));
-        setIsLoading(false);
-      }
-    };
-    poll();
-    pollIntervalRef.current = setInterval(poll, POLL_MS);
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [pendingAgentId, onSuccess, onClose, t]);
+    onSuccessRef.current = onSuccess;
+    onCloseRef.current = onClose;
+  }, [onSuccess, onClose]);
 
   const registerAgentSchema = z
     .object({
@@ -375,7 +348,47 @@ export function RegisterAgentDialog({
     },
   });
 
-  const isFree = form.watch("isFree") === true;
+  useEffect(() => {
+    if (!pendingAgentId) return;
+    const POLL_MS = 5_000;
+    const poll = async () => {
+      const res = await completeRegistrationIfReadyAction(pendingAgentId);
+      if (res.status === "registered") {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.success(t("success"));
+        form.reset();
+        setTags([]);
+        setTagInput("");
+        onSuccessRef.current();
+        onCloseRef.current();
+        setIsLoading(false);
+      } else if (res.status === "error") {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.error(res.error || t("error"));
+        setIsLoading(false);
+      }
+    };
+    poll();
+    pollIntervalRef.current = setInterval(poll, POLL_MS);
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [pendingAgentId, form, t]);
+
+  const isFree =
+    useWatch({ control: form.control, name: "isFree", defaultValue: true }) ===
+    true;
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
