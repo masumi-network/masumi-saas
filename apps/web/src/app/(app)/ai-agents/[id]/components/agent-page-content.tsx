@@ -118,7 +118,9 @@ export function AgentPageContent({
   // One-time sync on mount for RegistrationFailed (tx may land on-chain after initial failure).
   useEffect(() => {
     if (agent.registrationState !== "RegistrationFailed") return;
-    void syncAndRefetch();
+    void (async () => {
+      await syncAndRefetch();
+    })();
   }, [agent.registrationState, syncAndRefetch]);
 
   // Silently reconcile any PENDING credentials on mount.
