@@ -13,24 +13,34 @@ import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export type { DashboardOverview };
 
-export async function getDashboardOverviewAction(): Promise<
+export async function getDashboardOverviewAction(
+  network?: "Mainnet" | "Preprod",
+): Promise<
   { success: true; data: DashboardOverview } | { success: false; error: string }
 > {
   try {
     const { user } = await getAuthenticatedOrThrow();
+    const resolvedNetwork =
+      network === "Mainnet" || network === "Preprod" ? network : "Preprod";
     const headersList = await headers();
 
     const baseUrl = resolveBaseUrl(headersList);
     if (!isAllowedOrigin(baseUrl)) {
-      return { success: true, data: await getDashboardOverview(user.id) };
+      return {
+        success: true,
+        data: await getDashboardOverview(user.id, resolvedNetwork),
+      };
     }
 
     // In production, header-derived host (x-forwarded-host, host) is spoofable.
-    // Only use cookie-based API call when we have a trusted configured URL.
+    // Only use API call when we have a trusted configured URL.
     const hasConfiguredUrl = appConfig.appUrl !== "http://localhost:3000";
     const isDev = process.env.NODE_ENV === "development";
     if (!isDev && !hasConfiguredUrl) {
-      return { success: true, data: await getDashboardOverview(user.id) };
+      return {
+        success: true,
+        data: await getDashboardOverview(user.id, resolvedNetwork),
+      };
     }
 
     const cookie = headersList.get("cookie");
@@ -39,6 +49,7 @@ export async function getDashboardOverviewAction(): Promise<
       await dashboardApiClient.getOverview({
         baseUrl,
         headers: cookie ? { cookie } : undefined,
+        network: resolvedNetwork,
       });
 
     if (!result.success) {

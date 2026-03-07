@@ -5,9 +5,15 @@ type VeridianCredential = {
   credentialId: string;
   schemaSaid: string;
   aid: string;
-  status: "ISSUED" | "REVOKED" | "EXPIRED";
+  status: "PENDING" | "ISSUED" | "REVOKED" | "EXPIRED";
   issuedAt: Date;
   expiresAt: Date | null;
+};
+
+type CredentialStatusResponse = {
+  id: string;
+  credentialId: string;
+  status: "PENDING" | "ISSUED" | "REVOKED" | "EXPIRED";
 };
 
 type IssueCredentialRequest = {
@@ -92,7 +98,29 @@ class CredentialApiClient {
       method: "GET",
     });
   }
+
+  async checkCredentialStatus(
+    id: string,
+  ): Promise<ApiResponse<CredentialStatusResponse>> {
+    return this.request<CredentialStatusResponse>(
+      `/status?id=${encodeURIComponent(id)}`,
+      { method: "GET" },
+    );
+  }
+
+  async reconcilePendingCredentials(
+    agentId: string,
+  ): Promise<ApiResponse<{ resolved: boolean }>> {
+    return this.request<{ resolved: boolean }>(
+      `/reconcile?agentId=${encodeURIComponent(agentId)}`,
+      { method: "GET" },
+    );
+  }
 }
 
 export const credentialApiClient = new CredentialApiClient();
-export type { IssueCredentialRequest, VeridianCredential };
+export type {
+  CredentialStatusResponse,
+  IssueCredentialRequest,
+  VeridianCredential,
+};

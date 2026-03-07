@@ -44,6 +44,9 @@ model User {
   kycSubmissions    KycSubmission[]
   walletCaches      WalletCache[]
 
+  // Payment node: API key for this user (encrypted, server-side only; created on signup)
+  paymentNodeApiKeyEncrypted String?
+
   // Two-factor authentication
   twoFactor TwoFactor?
 
@@ -267,14 +270,13 @@ enum RegistrationState {
 model Agent {
   id          String  @id @default(cuid())
   name        String
-  summary     String? // Short tagline, max 250 chars
-  description String? // Optional detailed overview (Markdown supported)
+  description         String? // Short tagline, max 250 chars
+  extendedDescription String? // Optional detailed overview (Markdown supported)
   apiUrl      String
   userId      String
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Organization ownership (optional; set when agent is created under an active org)
-  // TODO: Link to payment node id; handle agent registration/deregistration via payment node API
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
@@ -295,8 +297,9 @@ model Agent {
   icon     String? // Preset key (e.g. "bot", "sparkles") or URL for custom icon
 
   // Registry / pricing
-  agentIdentifier String? // On-chain or registry identifier
-  pricing         Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
+  agentIdentifier  String? // On-chain or registry identifier
+  networkIdentifier String? // Network this agent is registered on (e.g. Preprod, Mainnet)
+  pricing          Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -308,6 +311,7 @@ model Agent {
   @@index([organizationId])
   @@index([verificationStatus])
   @@index([registrationState])
+  @@index([networkIdentifier])
   @@map("agent")
 }
 
@@ -429,15 +433,19 @@ model WalletCache {
 /// registry. One-to-one with Agent — an agent may or may not have a
 /// registry entry yet (status: "pending" until registered).
 ///
-/// Stores the external registry URL, network identifier, and any metadata
-/// needed to look up or verify the agent in the Masumi network.
+/// Stores the external registry URL, network identifier, payment node wallet
+/// vkeys (we do not store mnemonic or address), and any metadata needed to
+/// look up or verify the agent in the Masumi network.
 model AgentReference {
   id                String               @id @default(cuid())
   agentId           String               @unique
   agent             Agent                @relation(fields: [agentId], references: [id], onDelete: Cascade)
   registryUrl       String? // URL of the agent's entry in the Masumi registry
-  externalId        String? // Agent's ID within the external registry
-  networkIdentifier String? // Masumi network identifier (e.g. mainnet, testnet)
+  externalId        String? // Payment node registry request id (cuid)
+  networkIdentifier String? // Masumi network identifier (e.g. Preprod, Mainnet)
+  sellingWalletVkey String? // Payment node selling wallet vkey (store only vkey, not mnemonic/address)
+  sellingWalletId   String? // Payment node internal wallet ID (for GET /wallet/ status checks)
+  buyingWalletVkey  String? // Payment node buying wallet vkey (store only vkey)
   registeredAt      DateTime?
   lastVerifiedAt    DateTime?
   status            AgentReferenceStatus @default(PENDING)

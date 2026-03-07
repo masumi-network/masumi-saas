@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, Key } from "lucide-react";
+import { Bot, ChevronRight, Key, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -18,8 +18,6 @@ import { getGreeting } from "@/lib/utils";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
-  getVerificationStatusBadgeVariant,
-  getVerificationStatusKey,
 } from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardKycBanner } from "./dashboard-kyc-banner";
@@ -37,7 +35,6 @@ export default async function DashboardOverview({
   const tRegistrationStatus = await getTranslations(
     "App.Agents.registrationStatus",
   );
-  const tStatus = await getTranslations("App.Agents.status");
 
   const {
     user,
@@ -186,38 +183,32 @@ export default async function DashboardOverview({
                       aria-label={t("agentLinkAria", { name: agent.name })}
                       className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
                     >
-                      <p
-                        className="min-w-0 truncate text-sm font-medium"
-                        title={agent.name}
-                      >
-                        {agent.name}
-                      </p>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <p
+                          className="min-w-0 truncate text-sm font-medium"
+                          title={agent.name}
+                        >
+                          {agent.name}
+                        </p>
+                        {agent.verificationStatus === "VERIFIED" && (
+                          <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
+                        )}
+                      </div>
                       <Badge
                         variant={
-                          agent.verificationStatus === "VERIFIED"
-                            ? getVerificationStatusBadgeVariant(
-                                agent.verificationStatus,
+                          agent.registrationState === "RegistrationConfirmed"
+                            ? "success"
+                            : getRegistrationStatusBadgeVariant(
+                                agent.registrationState as Agent["registrationState"],
                               )
-                            : agent.registrationState ===
-                                "RegistrationConfirmed"
-                              ? "success"
-                              : getRegistrationStatusBadgeVariant(
-                                  agent.registrationState as Agent["registrationState"],
-                                )
                         }
                         className="min-w-fit shrink-0 capitalize"
                       >
-                        {agent.verificationStatus === "VERIFIED"
-                          ? tStatus(
-                              getVerificationStatusKey(
-                                agent.verificationStatus,
-                              ),
-                            )
-                          : tRegistrationStatus(
-                              getRegistrationStatusKey(
-                                agent.registrationState as Agent["registrationState"],
-                              ),
-                            )}
+                        {tRegistrationStatus(
+                          getRegistrationStatusKey(
+                            agent.registrationState as Agent["registrationState"],
+                          ),
+                        )}
                       </Badge>
                     </Link>
                   </li>

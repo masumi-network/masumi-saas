@@ -14,10 +14,15 @@ class DashboardApiClient {
   async getOverview(options?: {
     baseUrl?: string;
     headers?: HeadersInit;
+    network?: "Mainnet" | "Preprod";
   }): Promise<GetDashboardOverviewResult> {
-    const url = options?.baseUrl
+    const base = options?.baseUrl
       ? `${options.baseUrl}${this.baseUrl}`
       : this.baseUrl;
+    const params = new URLSearchParams();
+    if (options?.network) params.set("network", options.network);
+    const query = params.toString();
+    const url = query ? `${base}?${query}` : base;
 
     try {
       const response = await fetch(url, {

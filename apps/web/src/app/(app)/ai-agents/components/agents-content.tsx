@@ -18,12 +18,22 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
+
+/** States we sync on list load (in-flight only). Excludes failed states to avoid N syncs + refetch on "failed" tab. */
+const SYNC_ON_LOAD_STATES = [
+  "RegistrationRequested",
+  "RegistrationInitiated",
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+] as const;
 
 const VALID_TABS = [
   "all",
@@ -59,6 +69,7 @@ export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
   const { activeOrganizationId } = useOrganizationContext();
+  const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +85,6 @@ export function AgentsContent() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key?.toLowerCase() !== "f") return;
@@ -96,7 +106,7 @@ export function AgentsContent() {
 
   const PAGE_SIZE = 10;
 
-  const loadPage = useCallback(
+  const fetchAgents = useCallback(
     async (cursorId?: string) => {
       const filters = getFiltersForTab(activeTab);
       const result = await agentApiClient.getAgents(
@@ -107,6 +117,7 @@ export function AgentsContent() {
         {
           cursorId,
           take: PAGE_SIZE,
+          network,
         },
       );
       if (result.success) {
@@ -114,20 +125,64 @@ export function AgentsContent() {
       }
       return null;
     },
-    [activeTab, debouncedSearch],
+    [activeTab, debouncedSearch, network],
+  );
+
+  /** Shared: sync in-flight agents then refetch. Returns refetched page or initial if nothing to sync. */
+  const syncPendingAndRefetch = useCallback(
+    async (
+      initial: { data: Agent[]; nextCursor: string | null },
+      cursorId?: string,
+    ) => {
+      const toSync = initial.data.filter((a) =>
+        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
+          a.registrationState,
+        ),
+      );
+      if (toSync.length === 0) return initial;
+      await Promise.allSettled(
+        toSync.map((a) => syncAgentRegistrationStatusAction(a.id)),
+      );
+      const updated = await fetchAgents(cursorId);
+      return updated ?? initial;
+    },
+    [fetchAgents],
+  );
+
+  const loadPage = useCallback(
+    async (cursorId?: string) => {
+      const initial = await fetchAgents(cursorId);
+      if (!initial) return null;
+      return syncPendingAndRefetch(initial, cursorId);
+    },
+    [fetchAgents, syncPendingAndRefetch],
   );
 
   useEffect(() => {
+    let cancelled = false;
     queueMicrotask(() => setIsLoading(true));
     startTransition(async () => {
-      const page = await loadPage();
-      if (page) {
+      const initial = await fetchAgents();
+      if (cancelled) return;
+      if (!initial) {
+        setIsLoading(false);
+        return;
+      }
+      setAgents(initial.data);
+      setNextCursor(initial.nextCursor);
+      setIsLoading(false);
+
+      const page = await syncPendingAndRefetch(initial);
+      if (cancelled) return;
+      if (page !== initial) {
         setAgents(page.data);
         setNextCursor(page.nextCursor);
       }
-      setIsLoading(false);
     });
-  }, [loadPage, activeOrganizationId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchAgents, syncPendingAndRefetch, activeOrganizationId, network]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
