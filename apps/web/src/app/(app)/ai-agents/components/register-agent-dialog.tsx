@@ -259,7 +259,7 @@ export function RegisterAgentDialog({
 
   const [isLoading, setIsLoading] = useState(false);
   const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollResolvedRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
@@ -349,14 +349,14 @@ export function RegisterAgentDialog({
     if (!pendingAgentId) return;
     pollResolvedRef.current = false;
     const POLL_MS = 5_000;
-    const poll = async () => {
+    const runPoll = async () => {
       const res = await completeRegistrationIfReadyAction(pendingAgentId);
       if (pollResolvedRef.current) return;
       if (res.status === "registered") {
         if (pollResolvedRef.current) return;
         pollResolvedRef.current = true;
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
+        if (pollIntervalRef.current != null) {
+          clearTimeout(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
         setPendingAgentId(null);
@@ -367,23 +367,28 @@ export function RegisterAgentDialog({
         onSuccessRef.current();
         onCloseRef.current();
         setIsLoading(false);
-      } else if (res.status === "error") {
+        return;
+      }
+      if (res.status === "error") {
         pollResolvedRef.current = true;
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
+        if (pollIntervalRef.current != null) {
+          clearTimeout(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
         setPendingAgentId(null);
         toast.error(res.error || t("error"));
         setIsLoading(false);
+        return;
+      }
+      if (!pollResolvedRef.current) {
+        pollIntervalRef.current = setTimeout(runPoll, POLL_MS);
       }
     };
-    poll();
-    pollIntervalRef.current = setInterval(poll, POLL_MS);
+    runPoll();
     return () => {
       pollResolvedRef.current = true;
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
+      if (pollIntervalRef.current != null) {
+        clearTimeout(pollIntervalRef.current);
         pollIntervalRef.current = null;
       }
     };
@@ -492,8 +497,8 @@ export function RegisterAgentDialog({
     if (!newOpen) {
       // Block close while polling so an in-flight callback doesn't run after unmount.
       if (isLoading && pendingAgentId) return;
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
+      if (pollIntervalRef.current != null) {
+        clearTimeout(pollIntervalRef.current);
         pollIntervalRef.current = null;
       }
       setPendingAgentId(null);
