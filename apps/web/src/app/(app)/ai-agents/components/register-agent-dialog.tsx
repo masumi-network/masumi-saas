@@ -276,11 +276,11 @@ export function RegisterAgentDialog({
     onCloseRef.current = onClose;
   }, [onSuccess, onClose]);
 
-  // Reset closedDuringSubmitRef when dialog opens (parent controls open prop; onOpenChange(true) may not run on reopen).
-  // Do not reset submitIdRef: keep it monotonically increasing so stale responses from prior sessions are rejected.
+  // On open: reset close flag and invalidate any in-flight submit from a previous session so its response is ignored.
   useEffect(() => {
     if (open) {
       closedDuringSubmitRef.current = false;
+      submitIdRef.current += 1;
     }
   }, [open]);
 
