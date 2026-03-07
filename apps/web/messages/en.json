@@ -822,6 +822,8 @@
           "requestSuccess": "Credential issued successfully!",
           "requestError": "Failed to issue credential. Please try again.",
           "acceptanceTimeout": "Timed out waiting for acceptance in wallet. You can close and try again.",
+          "waitingForWalletAcceptance": "Waiting for wallet acceptance",
+          "waitingForWalletDescription": "Please open your Veridian wallet and accept the incoming credential offer.",
           "completeKyc": "Complete KYC Verification",
           "veridianWalletConnection": "Veridian Wallet Connection",
           "fetchingCredentials": "Fetching credentials...",

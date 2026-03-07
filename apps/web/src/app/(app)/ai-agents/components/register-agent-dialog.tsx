@@ -488,6 +488,7 @@ export function RegisterAgentDialog({
 
       if (result.success) {
         toast.success(t("success"));
+        setIsLoading(false);
         onSuccess();
         onClose(); // Parent sets open=false; handleOnOpenChange(false) will run and do form reset + state cleanup
       } else if (

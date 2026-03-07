@@ -81,7 +81,10 @@ export function AgentPageContent({
     !networkDialogDismissed;
 
   const handleSwitchNetwork = () => {
-    if (agentNetwork) setNetwork(agentNetwork);
+    if (agentNetwork) {
+      setNetworkDialogDismissed(true);
+      setNetwork(agentNetwork);
+    }
   };
 
   const handleNetworkDialogBack = () => {
