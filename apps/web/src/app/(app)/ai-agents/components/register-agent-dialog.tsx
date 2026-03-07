@@ -480,12 +480,8 @@ export function RegisterAgentDialog({
 
       if (result.success) {
         toast.success(t("success"));
-        form.reset();
-        setTags([]);
-        setTagInput("");
-        setIsLoading(false);
         onSuccess();
-        onClose();
+        onClose(); // Parent sets open=false; handleOnOpenChange(false) will run and do form reset + state cleanup
       } else if (
         result.error === "WALLET_FUNDING_PENDING" &&
         "agentId" in result &&

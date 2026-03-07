@@ -108,14 +108,34 @@ export function AgentPageContent({
   // syncAndRefetch updates agent and the effect re-runs we don't sync again.
   const registrationFailedSyncAgentIdRef = useRef<string | null>(null);
 
-  // Poll while pending.
+  const pollTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Poll while pending: one run then chain next every 12s (no setInterval to avoid overlapping async calls).
   useEffect(() => {
     if (!pendingRegistration) return;
-    const id = setTimeout(() => syncAndRefetch(), 0);
-    const interval = setInterval(syncAndRefetch, 12_000);
+    let cancelled = false;
+    const scheduleNext = () => {
+      if (cancelled) return;
+      pollTimeoutIdRef.current = setTimeout(() => {
+        if (cancelled) return;
+        void (async () => {
+          await syncAndRefetch();
+          if (cancelled) return;
+          scheduleNext();
+        })();
+      }, 12_000);
+    };
+    void (async () => {
+      await syncAndRefetch();
+      if (cancelled) return;
+      scheduleNext();
+    })();
     return () => {
-      clearTimeout(id);
-      clearInterval(interval);
+      cancelled = true;
+      if (pollTimeoutIdRef.current != null) {
+        clearTimeout(pollTimeoutIdRef.current);
+        pollTimeoutIdRef.current = null;
+      }
     };
   }, [pendingRegistration, syncAndRefetch]);
 
