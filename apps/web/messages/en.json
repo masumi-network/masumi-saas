@@ -686,7 +686,10 @@
         "cancel": "Cancel",
         "success": "Agent registered successfully!",
         "error": "Failed to register agent. Please try again.",
-        "fundingWallet": "Funding wallet — we'll complete registration in a moment."
+        "fundingWallet": "Funding wallet — we'll complete registration in a moment.",
+        "closeConfirmTitle": "Registration in progress",
+        "closeConfirmDescription": "Closing now might leave the agent stuck in a pending state. Close anyway?",
+        "closeAnyway": "Close anyway"
       },
       "Edit": {
         "title": "Edit Agent",
@@ -732,6 +735,7 @@
         "deregisterConfirmDescription": "Are you sure you want to deregister {name}? It will be removed from the marketplace and stop accepting new payments.",
         "delete": "Delete Agent",
         "deleteDescription": "Once you delete an agent there is no going back.",
+        "deleteStuckDescription": "Agent seems to be stuck in registration. You can delete it and try again.",
         "deleteSuccess": "Agent deleted successfully",
         "deleteError": "Failed to delete agent",
         "deleteConfirmTitle": "Delete Agent",

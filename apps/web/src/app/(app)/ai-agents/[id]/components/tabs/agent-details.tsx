@@ -402,7 +402,14 @@ export function AgentDetails({
       </div>
 
       {(() => {
+        const isPendingRegistration =
+          agent.registrationState === "RegistrationRequested" ||
+          agent.registrationState === "RegistrationInitiated";
+        const pendingOver2Min =
+          isPendingRegistration &&
+          Date.now() - new Date(agent.createdAt).getTime() > 2 * 60 * 1000;
         const showDangerZone =
+          pendingOver2Min ||
           agent.registrationState === "RegistrationConfirmed" ||
           agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
@@ -411,6 +418,7 @@ export function AgentDetails({
           agent.registrationState === "RegistrationConfirmed" &&
           Boolean(agent.agentIdentifier);
         const showDeleteCard =
+          pendingOver2Min ||
           agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
           agent.registrationState === "DeregistrationFailed" ||
@@ -455,7 +463,9 @@ export function AgentDetails({
                     <div className="min-w-0">
                       <p className="font-medium text-sm">{t("delete")}</p>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {t("deleteDescription")}
+                        {pendingOver2Min
+                          ? t("deleteStuckDescription")
+                          : t("deleteDescription")}
                       </p>
                     </div>
                     <Button
