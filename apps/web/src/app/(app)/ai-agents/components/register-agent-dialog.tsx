@@ -386,7 +386,7 @@ export function RegisterAgentDialog({
         pollIntervalRef.current = null;
       }
     };
-  }, [pendingAgentId, form, t]);
+  }, [pendingAgentId, form]);
 
   const isFree =
     useWatch({ control: form.control, name: "isFree", defaultValue: false }) ===
