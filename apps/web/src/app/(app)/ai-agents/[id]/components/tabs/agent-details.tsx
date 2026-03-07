@@ -421,7 +421,7 @@ export function AgentDetails({
         const pendingOver2Min =
           isPendingRegistration &&
           now > 0 &&
-          now - new Date(agent.createdAt).getTime() > STUCK_PENDING_MS;
+          now - new Date(agent.updatedAt).getTime() > STUCK_PENDING_MS;
         const showDangerZone =
           pendingOver2Min ||
           agent.registrationState === "RegistrationConfirmed" ||
