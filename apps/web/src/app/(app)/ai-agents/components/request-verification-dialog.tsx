@@ -98,6 +98,12 @@ export function RequestVerificationDialog({
   const [isWaitingForAcceptance, setIsWaitingForAcceptance] = useState(false);
   const veridianConnectKeyRef = useRef(0);
   const lastCheckedAidRef = useRef<string | null>(null);
+  const onSuccessRef = useRef(onSuccess);
+  const onOpenChangeRef = useRef(onOpenChange);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onOpenChangeRef.current = onOpenChange;
+  }, [onSuccess, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
@@ -190,8 +196,8 @@ export function RequestVerificationDialog({
         setIsWaitingForAcceptance(false);
         setPendingCredentialId(null);
         toast.success(t("requestSuccess"));
-        onSuccess();
-        onOpenChange(false);
+        onSuccessRef.current();
+        onOpenChangeRef.current(false);
         return;
       }
       pollIntervalIdRef.current = setTimeout(runPoll, POLL_INTERVAL_MS);
@@ -201,7 +207,7 @@ export function RequestVerificationDialog({
     return () => {
       stopPolling();
     };
-  }, [pendingCredentialId, isWaitingForAcceptance, t, onSuccess, onOpenChange]);
+  }, [pendingCredentialId, isWaitingForAcceptance, t]);
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
