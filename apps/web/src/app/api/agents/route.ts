@@ -184,10 +184,6 @@ export async function POST(request: NextRequest) {
       tags,
       icon,
       pricing,
-      authorName,
-      authorEmail,
-      organization,
-      contactOther,
       termsOfUseUrl,
       privacyPolicyUrl,
       otherUrl,
@@ -204,10 +200,8 @@ export async function POST(request: NextRequest) {
       : [];
 
     const metadata: Record<string, unknown> = {};
-    if (authorName?.trim()) metadata.authorName = authorName.trim();
-    if (authorEmail?.trim()) metadata.authorEmail = authorEmail.trim();
-    if (organization?.trim()) metadata.organization = organization.trim();
-    if (contactOther?.trim()) metadata.contactOther = contactOther.trim();
+    if (user.name?.trim()) metadata.authorName = user.name.trim();
+    if (user.email?.trim()) metadata.authorEmail = user.email.trim();
     if (termsOfUseUrl?.trim()) metadata.termsOfUseUrl = termsOfUseUrl.trim();
     if (privacyPolicyUrl?.trim())
       metadata.privacyPolicyUrl = privacyPolicyUrl.trim();
