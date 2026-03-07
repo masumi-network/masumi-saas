@@ -85,6 +85,7 @@ export function AgentsContent() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const loadCancelledRef = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -160,9 +161,11 @@ export function AgentsContent() {
   );
 
   useEffect(() => {
+    loadCancelledRef.current = false;
     queueMicrotask(() => setIsLoading(true));
     startTransition(async () => {
       const initial = await fetchAgents();
+      if (loadCancelledRef.current) return;
       if (!initial) {
         setIsLoading(false);
         return;
@@ -172,11 +175,15 @@ export function AgentsContent() {
       setIsLoading(false);
 
       const page = await syncPendingAndRefetch(initial);
+      if (loadCancelledRef.current) return;
       if (page !== initial) {
         setAgents(page.data);
         setNextCursor(page.nextCursor);
       }
     });
+    return () => {
+      loadCancelledRef.current = true;
+    };
   }, [fetchAgents, syncPendingAndRefetch, activeOrganizationId, network]);
 
   const handleTabChange = (key: string) => {

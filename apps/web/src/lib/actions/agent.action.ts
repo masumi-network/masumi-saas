@@ -453,7 +453,8 @@ export async function completeRegistrationIfReadyAction(
     if (!userClient) {
       return { status: "error", error: "Payment node unavailable" };
     }
-    if (!ref.sellingWalletVkey) {
+    const sellingWalletVkey = ref.sellingWalletVkey;
+    if (!sellingWalletVkey) {
       return { status: "error", error: "Missing wallet key" };
     }
     try {
@@ -469,70 +470,70 @@ export async function completeRegistrationIfReadyAction(
       if (msg.startsWith("404")) return { status: "pending" };
       return { status: "error", error: msg };
     }
-    // Re-check in case another poll (e.g. second tab) already completed registration
-    const refAgain = await prisma.agentReference.findUnique({
-      where: { agentId: agent.id },
-      select: { externalId: true },
-    });
-    if (refAgain?.externalId) {
-      const updatedAgent = await prisma.agent.findUniqueOrThrow({
-        where: { id: agent.id },
+    // Lock the row so only one concurrent poll can call registerAgent (avoid duplicate on-chain + overwrite).
+    const updatedAgent = await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        Array<{ externalId: string | null }>
+      >`SELECT "externalId" FROM agent_reference WHERE "agentId" = ${agent.id} FOR UPDATE`;
+      if (!rows.length) throw new Error("AgentReference not found");
+      if (rows[0]!.externalId) {
+        return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
+      }
+      const registryEntry = await userClient.registerAgent({
+        network,
+        sellingWalletVkey,
+        name: agent.name,
+        apiBaseUrl: agent.apiUrl,
+        description: agent.description?.trim() ?? "",
+        Tags: agent.tags,
+        ExampleOutputs: payload.exampleOutputs,
+        Capability: {
+          name: payload.capabilityName,
+          version: payload.capabilityVersion,
+        },
+        Author: {
+          name: payload.authorName,
+          contactEmail: payload.authorEmail,
+          contactOther: payload.contactOther,
+          organization: payload.organization,
+        },
+        ...(payload.termsOfUseUrl ||
+        payload.privacyPolicyUrl ||
+        payload.otherUrl
+          ? {
+              Legal: {
+                terms: payload.termsOfUseUrl,
+                privacyPolicy: payload.privacyPolicyUrl,
+                other: payload.otherUrl,
+              },
+            }
+          : {}),
+        AgentPricing: payload.agentPricing,
       });
-      return { status: "registered", data: updatedAgent };
-    }
-    const registryEntry = await userClient.registerAgent({
-      network,
-      sellingWalletVkey: ref.sellingWalletVkey,
-      name: agent.name,
-      apiBaseUrl: agent.apiUrl,
-      description: agent.description?.trim() ?? "",
-      Tags: agent.tags,
-      ExampleOutputs: payload.exampleOutputs,
-      Capability: {
-        name: payload.capabilityName,
-        version: payload.capabilityVersion,
-      },
-      Author: {
-        name: payload.authorName,
-        contactEmail: payload.authorEmail,
-        contactOther: payload.contactOther,
-        organization: payload.organization,
-      },
-      ...(payload.termsOfUseUrl || payload.privacyPolicyUrl || payload.otherUrl
-        ? {
-            Legal: {
-              terms: payload.termsOfUseUrl,
-              privacyPolicy: payload.privacyPolicyUrl,
-              other: payload.otherUrl,
-            },
-          }
-        : {}),
-      AgentPricing: payload.agentPricing,
-    });
-    const existingMeta = (ref.metadata as Record<string, unknown> | null) ?? {};
-    await prisma.agentReference.update({
-      where: { agentId: agent.id },
-      data: {
-        externalId: registryEntry.id,
-        metadata: {
-          ...existingMeta,
+      const existingMeta =
+        (ref.metadata as Record<string, unknown> | null) ?? {};
+      await tx.agentReference.update({
+        where: { agentId: agent.id },
+        data: {
+          externalId: registryEntry.id,
+          metadata: {
+            ...existingMeta,
+            ...(registryEntry.agentIdentifier && {
+              agentIdentifier: registryEntry.agentIdentifier,
+            }),
+          },
+        },
+      });
+      await tx.agent.update({
+        where: { id: agent.id },
+        data: {
+          registrationState: registryEntry.state as RegistrationState,
           ...(registryEntry.agentIdentifier && {
             agentIdentifier: registryEntry.agentIdentifier,
           }),
         },
-      },
-    });
-    await prisma.agent.update({
-      where: { id: agent.id },
-      data: {
-        registrationState: registryEntry.state as RegistrationState,
-        ...(registryEntry.agentIdentifier && {
-          agentIdentifier: registryEntry.agentIdentifier,
-        }),
-      },
-    });
-    const updatedAgent = await prisma.agent.findUniqueOrThrow({
-      where: { id: agent.id },
+      });
+      return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
     });
     return { status: "registered", data: updatedAgent };
   } catch (error) {

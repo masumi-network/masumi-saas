@@ -261,6 +261,7 @@ export function RegisterAgentDialog({
   const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollResolvedRef = useRef(false);
+  const closedDuringSubmitRef = useRef(false);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
@@ -466,6 +467,8 @@ export function RegisterAgentDialog({
 
       const result = await registerAgentAction(formData);
 
+      if (closedDuringSubmitRef.current) return;
+
       if (result.success) {
         toast.success(t("success"));
         form.reset();
@@ -494,10 +497,10 @@ export function RegisterAgentDialog({
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      // Intended: block close while submitting or polling so we don't orphan in-flight
-      // work; user must wait for success/error or reload to exit.
-      if (isLoading) return;
+    if (newOpen) {
+      closedDuringSubmitRef.current = false;
+    } else {
+      if (isLoading) closedDuringSubmitRef.current = true;
       if (pollIntervalRef.current != null) {
         clearTimeout(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -523,9 +526,7 @@ export function RegisterAgentDialog({
       setTags([]);
       setTagInput("");
       onClose();
-      return;
     }
-    if (isLoading && !pendingAgentId) return;
   };
 
   return (
@@ -544,8 +545,9 @@ export function RegisterAgentDialog({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
             className="flex flex-1 flex-col min-h-0 overflow-hidden"
+            // eslint-disable-next-line react-hooks/refs -- closedDuringSubmitRef is read after await; ref is intentional
+            onSubmit={form.handleSubmit(onSubmit)}
           >
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               {/* Icon section */}
