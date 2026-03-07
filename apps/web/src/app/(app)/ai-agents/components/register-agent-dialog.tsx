@@ -262,6 +262,7 @@ export function RegisterAgentDialog({
   const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollResolvedRef = useRef(false);
   const closedDuringSubmitRef = useRef(false);
+  const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
@@ -421,6 +422,7 @@ export function RegisterAgentDialog({
       return;
     }
     setIsLoading(true);
+    const submitId = ++submitIdRef.current;
     try {
       const formData = new FormData();
       formData.set("name", data.name);
@@ -467,7 +469,14 @@ export function RegisterAgentDialog({
 
       const result = await registerAgentAction(formData);
 
-      if (closedDuringSubmitRef.current) return;
+      // Ignore stale response if user closed and reopened (new submit or open invalidates)
+      if (submitId !== submitIdRef.current) return;
+
+      if (closedDuringSubmitRef.current) {
+        // Dialog was closed during submit: refresh list if registration succeeded, but don't toast/reset/start polling
+        if (result.success) onSuccessRef.current();
+        return;
+      }
 
       if (result.success) {
         toast.success(t("success"));
@@ -490,6 +499,7 @@ export function RegisterAgentDialog({
         setIsLoading(false);
       }
     } catch (error) {
+      if (submitId !== submitIdRef.current) return;
       toast.error(t("error"));
       console.error("Failed to register agent:", error);
       setIsLoading(false);
@@ -499,6 +509,7 @@ export function RegisterAgentDialog({
   const handleOnOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       closedDuringSubmitRef.current = false;
+      submitIdRef.current = 0; // Invalidate any in-flight response so it won't apply after reopen
     } else {
       if (isLoading) closedDuringSubmitRef.current = true;
       if (pollIntervalRef.current != null) {
