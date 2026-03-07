@@ -361,12 +361,13 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (!pendingAgentId) return;
     pollResolvedRef.current = false;
+    let cancelled = false;
     const POLL_MS = 5_000;
     const runPoll = async () => {
       const res = await completeRegistrationIfReadyAction(pendingAgentId);
-      if (pollResolvedRef.current) return;
+      if (cancelled || pollResolvedRef.current) return;
       if (res.status === "registered") {
-        if (pollResolvedRef.current) return;
+        if (cancelled || pollResolvedRef.current) return;
         pollResolvedRef.current = true;
         if (pollIntervalRef.current != null) {
           clearTimeout(pollIntervalRef.current);
@@ -383,6 +384,7 @@ export function RegisterAgentDialog({
         return;
       }
       if (res.status === "error") {
+        if (cancelled) return;
         pollResolvedRef.current = true;
         if (pollIntervalRef.current != null) {
           clearTimeout(pollIntervalRef.current);
@@ -393,12 +395,13 @@ export function RegisterAgentDialog({
         setIsLoading(false);
         return;
       }
-      if (!pollResolvedRef.current) {
+      if (!cancelled && !pollResolvedRef.current) {
         pollIntervalRef.current = setTimeout(runPoll, POLL_MS);
       }
     };
     runPoll();
     return () => {
+      cancelled = true;
       pollResolvedRef.current = true;
       if (pollIntervalRef.current != null) {
         clearTimeout(pollIntervalRef.current);

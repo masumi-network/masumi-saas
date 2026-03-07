@@ -148,14 +148,15 @@ export function AgentPageContent({
   }, [pendingRegistration, agent.id]);
 
   // One-time sync for RegistrationFailed (tx may land on-chain after initial failure).
+  // Use ref so effect doesn't re-run when syncAndRefetch identity changes (same as polling effect).
   useEffect(() => {
     if (agent.registrationState !== "RegistrationFailed") return;
     if (registrationFailedSyncAgentIdRef.current === agent.id) return;
     registrationFailedSyncAgentIdRef.current = agent.id;
     void (async () => {
-      await syncAndRefetch();
+      await syncAndRefetchRef.current();
     })();
-  }, [agent.id, agent.registrationState, syncAndRefetch]);
+  }, [agent.id, agent.registrationState]);
 
   // Silently reconcile any PENDING credentials on mount.
   // Handles the case where the user accepted the credential in Veridian
