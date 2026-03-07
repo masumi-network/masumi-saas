@@ -578,7 +578,7 @@ export function RegisterAgentDialog({
           <Form {...form}>
             <form
               className="flex flex-1 flex-col min-h-0 overflow-hidden"
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             >
               <div className="flex-1 overflow-y-auto p-6 space-y-8">
                 {/* Icon section */}
@@ -911,6 +911,9 @@ export function RegisterAgentDialog({
         open={showCloseConfirm}
         onOpenChange={setShowCloseConfirm}
         onConfirm={async () => {
+          // Set ref immediately so any in-flight registerAgentAction that resolves later
+          // sees "user closed during submit" and does orphan cleanup instead of onSuccess/onClose.
+          if (isLoading) closedDuringSubmitRef.current = true;
           if (pendingAgentId) {
             const result = await agentApiClient.deleteAgent(pendingAgentId);
             if (!result.success) {

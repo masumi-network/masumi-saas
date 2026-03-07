@@ -47,12 +47,21 @@ interface AgentDetailsProps {
   onVerificationSuccess?: () => void;
 }
 
+const STUCK_PENDING_MS = 2 * 60 * 1000;
+
 export function AgentDetails({
   agent,
   onDeleteClick,
   onDeregisterClick,
   onVerificationSuccess,
 }: AgentDetailsProps) {
+  // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
   const [kycStatus, setKycStatus] = useState<
@@ -407,7 +416,8 @@ export function AgentDetails({
           agent.registrationState === "RegistrationInitiated";
         const pendingOver2Min =
           isPendingRegistration &&
-          Date.now() - new Date(agent.createdAt).getTime() > 2 * 60 * 1000;
+          now > 0 &&
+          now - new Date(agent.createdAt).getTime() > STUCK_PENDING_MS;
         const showDangerZone =
           pendingOver2Min ||
           agent.registrationState === "RegistrationConfirmed" ||
