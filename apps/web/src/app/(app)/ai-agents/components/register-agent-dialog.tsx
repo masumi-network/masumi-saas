@@ -380,6 +380,7 @@ export function RegisterAgentDialog({
     poll();
     pollIntervalRef.current = setInterval(poll, POLL_MS);
     return () => {
+      pollResolvedRef.current = true;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
