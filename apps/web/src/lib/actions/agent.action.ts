@@ -514,40 +514,45 @@ export async function completeRegistrationIfReadyAction(
           : {}),
         AgentPricing: payload.agentPricing,
       });
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(
+      let timeoutId: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
           () => reject(new Error("Registration request timed out")),
           REGISTER_AGENT_HTTP_TIMEOUT_MS,
-        ),
-      );
-      const registryEntry = await Promise.race([
-        registerPromise,
-        timeoutPromise,
-      ]);
-      const existingMeta =
-        (ref.metadata as Record<string, unknown> | null) ?? {};
-      await tx.agentReference.update({
-        where: { agentId: agent.id },
-        data: {
-          externalId: registryEntry.id,
-          metadata: {
-            ...existingMeta,
+        );
+      });
+      try {
+        const registryEntry = await Promise.race([
+          registerPromise,
+          timeoutPromise,
+        ]);
+        const existingMeta =
+          (ref.metadata as Record<string, unknown> | null) ?? {};
+        await tx.agentReference.update({
+          where: { agentId: agent.id },
+          data: {
+            externalId: registryEntry.id,
+            metadata: {
+              ...existingMeta,
+              ...(registryEntry.agentIdentifier && {
+                agentIdentifier: registryEntry.agentIdentifier,
+              }),
+            },
+          },
+        });
+        await tx.agent.update({
+          where: { id: agent.id },
+          data: {
+            registrationState: registryEntry.state as RegistrationState,
             ...(registryEntry.agentIdentifier && {
               agentIdentifier: registryEntry.agentIdentifier,
             }),
           },
-        },
-      });
-      await tx.agent.update({
-        where: { id: agent.id },
-        data: {
-          registrationState: registryEntry.state as RegistrationState,
-          ...(registryEntry.agentIdentifier && {
-            agentIdentifier: registryEntry.agentIdentifier,
-          }),
-        },
-      });
-      return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
+        });
+        return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
+      } finally {
+        clearTimeout(timeoutId!);
+      }
     });
     return { status: "registered", data: updatedAgent };
   } catch (error) {
