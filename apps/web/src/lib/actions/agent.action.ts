@@ -17,6 +17,9 @@ import { convertZodError } from "@/lib/utils/convert-zod-error";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
+/** Max time we allow the payment node HTTP call inside the registration tx; avoids holding the row lock indefinitely. */
+const REGISTER_AGENT_HTTP_TIMEOUT_MS = 25_000;
+
 async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   const store = await cookies();
   const value = store.get("payment_network")?.value;
@@ -471,6 +474,7 @@ export async function completeRegistrationIfReadyAction(
       return { status: "error", error: msg };
     }
     // Lock the row so only one concurrent poll can call registerAgent (avoid duplicate on-chain + overwrite).
+    // We run the HTTP call with a timeout so the row lock isn't held indefinitely if the payment node is slow (ideal fix: claim column + HTTP outside tx).
     const updatedAgent = await prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<
         Array<{ externalId: string | null }>
@@ -479,7 +483,7 @@ export async function completeRegistrationIfReadyAction(
       if (rows[0]!.externalId) {
         return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
       }
-      const registryEntry = await userClient.registerAgent({
+      const registerPromise = userClient.registerAgent({
         network,
         sellingWalletVkey,
         name: agent.name,
@@ -510,6 +514,16 @@ export async function completeRegistrationIfReadyAction(
           : {}),
         AgentPricing: payload.agentPricing,
       });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Registration request timed out")),
+          REGISTER_AGENT_HTTP_TIMEOUT_MS,
+        ),
+      );
+      const registryEntry = await Promise.race([
+        registerPromise,
+        timeoutPromise,
+      ]);
       const existingMeta =
         (ref.metadata as Record<string, unknown> | null) ?? {};
       await tx.agentReference.update({

@@ -94,7 +94,6 @@ export async function DELETE(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    await getAuthenticatedOrThrow();
     const { agentId } = await params;
     const result = await deleteAgentAction(agentId);
     if (!result.success) {

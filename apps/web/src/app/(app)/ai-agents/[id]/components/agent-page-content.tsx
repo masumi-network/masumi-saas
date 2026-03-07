@@ -108,7 +108,9 @@ export function AgentPageContent({
   }, [agent.id]);
 
   const syncAndRefetchRef = useRef(syncAndRefetch);
-  syncAndRefetchRef.current = syncAndRefetch;
+  useEffect(() => {
+    syncAndRefetchRef.current = syncAndRefetch;
+  }, [syncAndRefetch]);
 
   // Ref: we only run the RegistrationFailed one-time sync once per agent, so when
   // syncAndRefetch updates agent and the effect re-runs we don't sync again.
