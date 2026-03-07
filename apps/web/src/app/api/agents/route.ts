@@ -49,13 +49,9 @@ export async function GET(request: NextRequest) {
       registrationState,
       registrationStateIn,
       search,
-      network: networkParam,
     } = queryValidation.data;
 
-    const network =
-      networkParam === "Mainnet" || networkParam === "Preprod"
-        ? networkParam
-        : "Preprod";
+    const network = getNetworkFromRequest(request);
 
     const searchTrimmed = search?.trim();
 
@@ -154,8 +150,11 @@ export async function GET(request: NextRequest) {
 }
 
 function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
-  const value = request.cookies.get("payment_network")?.value;
-  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
+  const fromQuery = request.nextUrl.searchParams.get("network");
+  if (fromQuery === "Mainnet" || fromQuery === "Preprod") return fromQuery;
+  const fromCookie = request.cookies.get("payment_network")?.value;
+  if (fromCookie === "Mainnet" || fromCookie === "Preprod") return fromCookie;
+  return "Preprod";
 }
 
 // TODO: Replace with on-chain registration + signed data; this flow currently
