@@ -107,13 +107,16 @@ export function AgentPageContent({
     if (result.success && result.data) setAgent(result.data);
   }, [agent.id]);
 
+  const syncAndRefetchRef = useRef(syncAndRefetch);
+  syncAndRefetchRef.current = syncAndRefetch;
+
   // Ref: we only run the RegistrationFailed one-time sync once per agent, so when
   // syncAndRefetch updates agent and the effect re-runs we don't sync again.
   const registrationFailedSyncAgentIdRef = useRef<string | null>(null);
 
   const pollTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Poll while pending: one run then chain next every 12s (no setInterval to avoid overlapping async calls).
+  // Poll while pending: one run then chain next every 12s. Use ref so effect doesn't re-run when syncAndRefetch identity changes.
   useEffect(() => {
     if (!pendingRegistration) return;
     let cancelled = false;
@@ -122,14 +125,14 @@ export function AgentPageContent({
       pollTimeoutIdRef.current = setTimeout(() => {
         if (cancelled) return;
         void (async () => {
-          await syncAndRefetch();
+          await syncAndRefetchRef.current();
           if (cancelled) return;
           scheduleNext();
         })();
       }, 12_000);
     };
     void (async () => {
-      await syncAndRefetch();
+      await syncAndRefetchRef.current();
       if (cancelled) return;
       scheduleNext();
     })();
@@ -140,7 +143,7 @@ export function AgentPageContent({
         pollTimeoutIdRef.current = null;
       }
     };
-  }, [pendingRegistration, syncAndRefetch]);
+  }, [pendingRegistration, agent.id]);
 
   // One-time sync for RegistrationFailed (tx may land on-chain after initial failure).
   useEffect(() => {

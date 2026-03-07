@@ -90,26 +90,33 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
+    await getAuthenticatedOrThrow();
     const { agentId } = await params;
     const result = await deleteAgentAction(agentId);
     if (!result.success) {
+      const status = result.error === "Agent not found" ? 404 : 400;
       return NextResponse.json(
         { success: false, error: result.error },
-        { status: 400 },
+        { status },
       );
     }
     return NextResponse.json({ success: true });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete agent";
+    if (message === "Unauthorized") {
+      return NextResponse.json(
+        { success: false, error: message },
+        { status: 401 },
+      );
+    }
     console.error("Failed to delete agent:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to delete agent",
-      },
+      { success: false, error: "Failed to delete agent" },
       { status: 500 },
     );
   }
