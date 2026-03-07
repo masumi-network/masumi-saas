@@ -495,8 +495,8 @@ export function RegisterAgentDialog({
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      // Block close while polling so an in-flight callback doesn't run after unmount.
-      if (isLoading && pendingAgentId) return;
+      // Block close while submitting or polling so we don't orphan in-flight work.
+      if (isLoading) return;
       if (pollIntervalRef.current != null) {
         clearTimeout(pollIntervalRef.current);
         pollIntervalRef.current = null;
