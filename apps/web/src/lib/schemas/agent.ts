@@ -47,10 +47,6 @@ export const registerAgentBodySchema = z.object({
         .optional(),
     })
     .optional(),
-  authorName: z.string().max(250).optional().or(z.literal("")),
-  authorEmail: z.union([z.literal(""), z.string().email().max(250)]).optional(),
-  organization: z.string().max(250).optional().or(z.literal("")),
-  contactOther: z.string().max(250).optional().or(z.literal("")),
   termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
   privacyPolicyUrl: z
     .union([z.literal(""), z.string().url().max(250)])
@@ -88,10 +84,6 @@ const registerAgentFormBaseSchema = z.object({
   pricingType: z.enum(["Free", "Fixed"]).optional(),
   /** JSON-encoded Array<{ amount: string; currency: string }> */
   prices: z.string().optional(),
-  authorName: z.string().max(250).optional().or(z.literal("")),
-  authorEmail: z.union([z.literal(""), z.string().email().max(250)]).optional(),
-  organization: z.string().max(250).optional().or(z.literal("")),
-  contactOther: z.string().max(250).optional().or(z.literal("")),
   termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
   privacyPolicyUrl: z
     .union([z.literal(""), z.string().url().max(250)])
