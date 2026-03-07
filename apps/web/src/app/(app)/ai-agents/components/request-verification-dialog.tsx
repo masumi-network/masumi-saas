@@ -195,6 +195,7 @@ export function RequestVerificationDialog({
       }
     };
 
+    void poll();
     pollIntervalIdRef.current = setInterval(
       () => void poll(),
       POLL_INTERVAL_MS,
