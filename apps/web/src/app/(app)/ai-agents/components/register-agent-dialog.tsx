@@ -353,6 +353,7 @@ export function RegisterAgentDialog({
       const res = await completeRegistrationIfReadyAction(pendingAgentId);
       if (pollResolvedRef.current) return;
       if (res.status === "registered") {
+        if (pollResolvedRef.current) return;
         pollResolvedRef.current = true;
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
@@ -489,6 +490,8 @@ export function RegisterAgentDialog({
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
+      // Block close while polling so an in-flight callback doesn't run after unmount.
+      if (isLoading && pendingAgentId) return;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;

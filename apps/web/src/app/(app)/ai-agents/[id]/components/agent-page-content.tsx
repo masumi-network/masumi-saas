@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
@@ -104,6 +104,10 @@ export function AgentPageContent({
     if (result.success && result.data) setAgent(result.data);
   }, [agent.id]);
 
+  // Ref: we only run the RegistrationFailed one-time sync once per agent, so when
+  // syncAndRefetch updates agent and the effect re-runs we don't sync again.
+  const registrationFailedSyncAgentIdRef = useRef<string | null>(null);
+
   // Poll while pending.
   useEffect(() => {
     if (!pendingRegistration) return;
@@ -115,13 +119,15 @@ export function AgentPageContent({
     };
   }, [pendingRegistration, syncAndRefetch]);
 
-  // One-time sync on mount for RegistrationFailed (tx may land on-chain after initial failure).
+  // One-time sync for RegistrationFailed (tx may land on-chain after initial failure).
   useEffect(() => {
     if (agent.registrationState !== "RegistrationFailed") return;
+    if (registrationFailedSyncAgentIdRef.current === agent.id) return;
+    registrationFailedSyncAgentIdRef.current = agent.id;
     void (async () => {
       await syncAndRefetch();
     })();
-  }, [agent.registrationState, syncAndRefetch]);
+  }, [agent.id, agent.registrationState, syncAndRefetch]);
 
   // Silently reconcile any PENDING credentials on mount.
   // Handles the case where the user accepted the credential in Veridian
