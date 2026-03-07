@@ -13,11 +13,7 @@ export async function GET(request: NextRequest) {
         ? networkParam
         : "Preprod";
 
-    const networkFilter = {
-      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
-    };
-
-    const baseWhere = { userId: user.id, ...networkFilter };
+    const baseWhere = { userId: user.id, networkIdentifier: network };
 
     const [all, registered, deregistered, pending, failed, verified] =
       await Promise.all([

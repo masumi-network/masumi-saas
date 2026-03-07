@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@masumi/database/client";
+import prisma, { type RegistrationState } from "@masumi/database/client";
 import { cookies } from "next/headers";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
@@ -372,12 +372,15 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
-    if (registryEntry.agentIdentifier) {
-      await prisma.agent.update({
-        where: { id: agent.id },
-        data: { agentIdentifier: registryEntry.agentIdentifier },
-      });
-    }
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: {
+        registrationState: registryEntry.state as RegistrationState,
+        ...(registryEntry.agentIdentifier && {
+          agentIdentifier: registryEntry.agentIdentifier,
+        }),
+      },
+    });
 
     const updatedAgent = await prisma.agent.findUniqueOrThrow({
       where: { id: agent.id },
@@ -523,12 +526,15 @@ export async function completeRegistrationIfReadyAction(
         },
       },
     });
-    if (registryEntry.agentIdentifier) {
-      await prisma.agent.update({
-        where: { id: agent.id },
-        data: { agentIdentifier: registryEntry.agentIdentifier },
-      });
-    }
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: {
+        registrationState: registryEntry.state as RegistrationState,
+        ...(registryEntry.agentIdentifier && {
+          agentIdentifier: registryEntry.agentIdentifier,
+        }),
+      },
+    });
     const updatedAgent = await prisma.agent.findUniqueOrThrow({
       where: { id: agent.id },
     });

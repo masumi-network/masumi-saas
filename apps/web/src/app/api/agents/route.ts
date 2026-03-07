@@ -153,6 +153,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
+  const value = request.cookies.get("payment_network")?.value;
+  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
+}
+
 // TODO: Replace with on-chain registration + signed data; this flow currently
 // creates the agent in DB and sets registrationState to RegistrationConfirmed
 // without on-chain lookup or verification.
@@ -213,6 +218,8 @@ export async function POST(request: NextRequest) {
       metadata.capabilityVersion = capabilityVersion.trim();
     if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
 
+    const network = getNetworkFromRequest(request);
+
     const agent = await prisma.agent.create({
       data: {
         name,
@@ -229,6 +236,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
+        networkIdentifier: network,
       },
     });
 
