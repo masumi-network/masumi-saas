@@ -58,9 +58,13 @@ export function AgentDetails({
   // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
   const [now, setNow] = useState(0);
   useEffect(() => {
-    setNow(Date.now());
+    // Defer initial setState to satisfy react-hooks/set-state-in-effect (no sync setState in effect body)
+    const initialId = setTimeout(() => setNow(Date.now()), 0);
     const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
+    return () => {
+      clearTimeout(initialId);
+      clearInterval(id);
+    };
   }, []);
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
