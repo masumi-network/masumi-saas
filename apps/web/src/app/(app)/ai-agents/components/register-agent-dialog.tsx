@@ -273,6 +273,14 @@ export function RegisterAgentDialog({
     onCloseRef.current = onClose;
   }, [onSuccess, onClose]);
 
+  // Reset refs when dialog opens (parent controls open prop; onOpenChange(true) may not run on reopen).
+  useEffect(() => {
+    if (open) {
+      closedDuringSubmitRef.current = false;
+      submitIdRef.current = 0;
+    }
+  }, [open]);
+
   const registerAgentSchema = z
     .object({
       name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
