@@ -499,8 +499,26 @@ export function RegisterAgentDialog({
       if (result.success) {
         toast.success(t("success"));
         setIsLoading(false);
+        form.reset({
+          name: "",
+          description: "",
+          extendedDescription: "",
+          apiUrl: "",
+          isFree: false,
+          prices: [{ amount: "" }],
+          tags: "",
+          icon: "bot",
+          termsOfUseUrl: "",
+          privacyPolicyUrl: "",
+          otherUrl: "",
+          capabilityName: "",
+          capabilityVersion: "",
+          exampleOutputs: [],
+        });
+        setTags([]);
+        setTagInput("");
         onSuccess();
-        onClose(); // Parent sets open=false; handleOnOpenChange(false) will run and do form reset + state cleanup
+        onClose();
       } else if (
         result.error === "WALLET_FUNDING_PENDING" &&
         "agentId" in result &&
