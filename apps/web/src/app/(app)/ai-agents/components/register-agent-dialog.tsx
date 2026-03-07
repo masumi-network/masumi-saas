@@ -495,7 +495,8 @@ export function RegisterAgentDialog({
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      // Block close while submitting or polling so we don't orphan in-flight work.
+      // Intended: block close while submitting or polling so we don't orphan in-flight
+      // work; user must wait for success/error or reload to exit.
       if (isLoading) return;
       if (pollIntervalRef.current != null) {
         clearTimeout(pollIntervalRef.current);
