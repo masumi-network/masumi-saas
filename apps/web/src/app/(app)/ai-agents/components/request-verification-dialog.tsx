@@ -150,7 +150,7 @@ export function RequestVerificationDialog({
 
   // Poll for credential acceptance after issue (timeout so user is not trapped)
   const pollAttemptsRef = useRef(0);
-  const pollIntervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollIntervalIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const POLL_INTERVAL_MS = 3000;
   const MAX_POLL_ATTEMPTS = 100; // ~5 minutes
 
@@ -160,12 +160,12 @@ export function RequestVerificationDialog({
 
     const stopPolling = () => {
       if (pollIntervalIdRef.current !== null) {
-        clearInterval(pollIntervalIdRef.current);
+        clearTimeout(pollIntervalIdRef.current);
         pollIntervalIdRef.current = null;
       }
     };
 
-    const poll = async () => {
+    const runPoll = async () => {
       pollAttemptsRef.current += 1;
       if (pollAttemptsRef.current > MAX_POLL_ATTEMPTS) {
         stopPolling();
@@ -192,14 +192,12 @@ export function RequestVerificationDialog({
         toast.success(t("requestSuccess"));
         onSuccess();
         onOpenChange(false);
+        return;
       }
+      pollIntervalIdRef.current = setTimeout(runPoll, POLL_INTERVAL_MS);
     };
 
-    void poll();
-    pollIntervalIdRef.current = setInterval(
-      () => void poll(),
-      POLL_INTERVAL_MS,
-    );
+    runPoll();
     return () => {
       stopPolling();
     };
