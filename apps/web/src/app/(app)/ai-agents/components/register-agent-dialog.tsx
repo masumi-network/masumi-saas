@@ -488,7 +488,6 @@ export function RegisterAgentDialog({
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (isLoading && !pendingAgentId) return;
     if (!newOpen) {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -514,8 +513,10 @@ export function RegisterAgentDialog({
       });
       setTags([]);
       setTagInput("");
+      onClose();
+      return;
     }
-    onClose();
+    if (isLoading && !pendingAgentId) return;
   };
 
   return (
