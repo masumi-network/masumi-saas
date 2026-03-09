@@ -5,6 +5,7 @@ export function formatRelativeDate(date: Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
+  if (diffMs < 0) return "just now";
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
