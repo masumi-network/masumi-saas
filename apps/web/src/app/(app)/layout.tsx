@@ -5,11 +5,20 @@ import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthContext } from "@/lib/auth/utils";
 import { OrganizationProvider } from "@/lib/context/organization-context";
+import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import Header from "./components/header";
 import Sidebar from "./components/sidebar";
 
 export const dynamic = "force-dynamic";
+
+function getInitialPaymentNetwork(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+): PaymentNodeNetwork {
+  const value = cookieStore.get("payment_network")?.value;
+  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
+}
 
 export default async function AppLayout({
   children,
@@ -24,26 +33,29 @@ export default async function AppLayout({
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  const initialPaymentNetwork = getInitialPaymentNetwork(cookieStore);
 
   return (
     <OrganizationProvider>
-      <SidebarProvider
-        defaultOpen={defaultOpen}
-        className="flex max-w-svw overflow-clip"
-      >
-        <Sidebar session={authContext.session} />
-        <div className="flex min-w-0 flex-1 flex-col min-h-0">
-          <Header />
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-              {children}
-            </main>
-            <div className="max-w-container mx-auto w-full border-t border-border mt-4">
-              <FooterSections className="p-4" />
+      <PaymentNetworkProvider initialNetwork={initialPaymentNetwork}>
+        <SidebarProvider
+          defaultOpen={defaultOpen}
+          className="flex max-w-svw overflow-clip"
+        >
+          <Sidebar session={authContext.session} />
+          <div className="flex min-w-0 flex-1 flex-col min-h-0">
+            <Header />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+                {children}
+              </main>
+              <div className="max-w-container mx-auto w-full border-t border-border mt-4">
+                <FooterSections className="p-4" />
+              </div>
             </div>
           </div>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </PaymentNetworkProvider>
     </OrganizationProvider>
   );
 }

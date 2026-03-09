@@ -6,7 +6,6 @@ import {
   FileText,
   Fingerprint,
   Link2,
-  Pencil,
   ShieldCheck,
   Tag,
   Tags,
@@ -44,16 +43,29 @@ import { RequestVerificationDialog } from "../../../components/request-verificat
 interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
-  onEditClick?: () => void;
+  onDeregisterClick: () => void;
   onVerificationSuccess?: () => void;
 }
+
+const STUCK_PENDING_MS = 2 * 60 * 1000;
 
 export function AgentDetails({
   agent,
   onDeleteClick,
-  onEditClick,
+  onDeregisterClick,
   onVerificationSuccess,
 }: AgentDetailsProps) {
+  // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    // Defer initial setState to satisfy react-hooks/set-state-in-effect (no sync setState in effect body)
+    const initialId = setTimeout(() => setNow(Date.now()), 0);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => {
+      clearTimeout(initialId);
+      clearInterval(id);
+    };
+  }, []);
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
   const [kycStatus, setKycStatus] = useState<
@@ -64,7 +76,9 @@ export function AgentDetails({
   const [, startTransition] = useTransition();
 
   const isVerified = agent.verificationStatus === "VERIFIED";
-  const showVerificationCta = !isVerified;
+  const isRegistrationConfirmed =
+    agent.registrationState === "RegistrationConfirmed";
+  const showVerificationCta = !isVerified && isRegistrationConfirmed;
 
   const [isVerificationBannerDismissed, setIsVerificationBannerDismissed] =
     useState(true);
@@ -143,30 +157,19 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            {onEditClick && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEditClick}
-                className="gap-2 ml-auto"
-              >
-                <Pencil className="h-4 w-4" />
-                {t("edit")}
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            {/* Summary */}
-            {agent.summary && (
+            {/* Description (short) */}
+            {agent.description && (
               <>
                 <div className="flex gap-3">
                   <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-muted-foreground mb-1">
-                      {t("summary")}
+                      {t("description")}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {agent.summary}
+                      {agent.description}
                     </p>
                   </div>
                 </div>
@@ -174,28 +177,30 @@ export function AgentDetails({
               </>
             )}
 
-            {/* Description */}
-            <div className="flex gap-3">
-              <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  {t("description")}
-                </p>
-                {agent.description ? (
-                  /<[a-z][\s\S]*>/i.test(agent.description) ? (
-                    <HtmlContent html={agent.description} className="text-sm" />
-                  ) : (
-                    <Markdown className="text-sm">{agent.description}</Markdown>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    {t("noDescription")}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
+            {/* Extended Description */}
+            {agent.extendedDescription && (
+              <>
+                <div className="flex gap-3">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                      {t("extendedDescription")}
+                    </p>
+                    {/<[a-z][\s\S]*>/i.test(agent.extendedDescription) ? (
+                      <HtmlContent
+                        html={agent.extendedDescription}
+                        className="text-sm"
+                      />
+                    ) : (
+                      <Markdown className="text-sm">
+                        {agent.extendedDescription}
+                      </Markdown>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
 
             {/* API URL - compact row */}
             <div className="flex gap-3 min-w-0">
@@ -231,13 +236,21 @@ export function AgentDetails({
                   {t("agentId")}
                 </p>
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-xs sm:text-sm truncate min-w-0">
-                    {agent.agentIdentifier ?? agent.id}
-                  </span>
-                  <CopyButton
-                    value={agent.agentIdentifier ?? agent.id}
-                    className="h-7 w-7 shrink-0"
-                  />
+                  {agent.agentIdentifier ? (
+                    <>
+                      <span className="font-mono text-xs sm:text-sm truncate min-w-0">
+                        {agent.agentIdentifier}
+                      </span>
+                      <CopyButton
+                        value={agent.agentIdentifier}
+                        className="h-7 w-7 shrink-0"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-xs sm:text-sm text-muted-foreground">
+                      {t("noAgentId")}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -280,31 +293,34 @@ export function AgentDetails({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Hire in Sokosumi */}
-            <div className="flex gap-3 min-w-0">
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {t("hireInSokosumi")}
-                </p>
-                <div className="flex items-center gap-2 min-w-0">
-                  <Link
-                    href={sokosumiUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
-                  >
-                    {sokosumiUrl}
-                  </Link>
-                  <CopyButton
-                    value={sokosumiUrl}
-                    className="h-7 w-7 shrink-0"
-                  />
+            {isRegistrationConfirmed && (
+              <>
+                <Separator />
+                {/* Hire in Sokosumi */}
+                <div className="flex gap-3 min-w-0">
+                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("hireInSokosumi")}
+                    </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Link
+                        href={sokosumiUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
+                      >
+                        {sokosumiUrl}
+                      </Link>
+                      <CopyButton
+                        value={sokosumiUrl}
+                        className="h-7 w-7 shrink-0"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
             {/* Request verification CTA */}
             {showVerificationCta && onVerificationSuccess && (
@@ -398,35 +414,89 @@ export function AgentDetails({
         </Card>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4">
-          <Separator className="flex-1" />
-          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-            {t("dangerZone")}
-          </span>
-          <Separator className="flex-1" />
-        </div>
-        <Card className="border-destructive/60 bg-destructive/5">
-          <CardContent>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
-              <div className="min-w-0">
-                <p className="font-medium text-sm">{t("delete")}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {t("deleteDescription")}
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={onDeleteClick}
-                className="gap-2 shrink-0 w-full sm:w-auto"
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("delete")}
-              </Button>
+      {(() => {
+        const isPendingRegistration =
+          agent.registrationState === "RegistrationRequested" ||
+          agent.registrationState === "RegistrationInitiated";
+        const pendingOver2Min =
+          isPendingRegistration &&
+          now > 0 &&
+          now - new Date(agent.updatedAt).getTime() > STUCK_PENDING_MS;
+        const showDangerZone =
+          pendingOver2Min ||
+          agent.registrationState === "RegistrationConfirmed" ||
+          agent.registrationState === "DeregistrationConfirmed" ||
+          agent.registrationState === "RegistrationFailed" ||
+          agent.registrationState === "DeregistrationFailed";
+        const showDeregisterCard =
+          agent.registrationState === "RegistrationConfirmed" &&
+          Boolean(agent.agentIdentifier);
+        const showDeleteCard =
+          pendingOver2Min ||
+          agent.registrationState === "DeregistrationConfirmed" ||
+          agent.registrationState === "RegistrationFailed" ||
+          agent.registrationState === "DeregistrationFailed" ||
+          (agent.registrationState === "RegistrationConfirmed" &&
+            !agent.agentIdentifier);
+        if (!showDangerZone || (!showDeregisterCard && !showDeleteCard))
+          return null;
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Separator className="flex-1" />
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                {t("dangerZone")}
+              </span>
+              <Separator className="flex-1" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            {showDeregisterCard && (
+              <Card className="border-destructive/60 bg-destructive/5">
+                <CardContent>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">{t("deregister")}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {t("deregisterDescription")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={onDeregisterClick}
+                      className="gap-2 shrink-0 w-full sm:w-auto"
+                    >
+                      {t("deregister")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {showDeleteCard && (
+              <Card className="border-destructive/60 bg-destructive/5">
+                <CardContent>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">{t("delete")}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {pendingOver2Min
+                          ? t("deleteStuckDescription")
+                          : t("deleteDescription")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={onDeleteClick}
+                      className="gap-2 shrink-0 w-full sm:w-auto"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t("delete")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

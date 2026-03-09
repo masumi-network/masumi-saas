@@ -92,8 +92,18 @@ export function RequestVerificationDialog({
   const [isRegeneratingChallenge, setIsRegeneratingChallenge] = useState(false);
   const [isTestingEndpoint, setIsTestingEndpoint] = useState(false);
   const [issueError, setIssueError] = useState<string | null>(null);
+  const [pendingCredentialId, setPendingCredentialId] = useState<string | null>(
+    null,
+  );
+  const [isWaitingForAcceptance, setIsWaitingForAcceptance] = useState(false);
   const veridianConnectKeyRef = useRef(0);
   const lastCheckedAidRef = useRef<string | null>(null);
+  const onSuccessRef = useRef(onSuccess);
+  const onOpenChangeRef = useRef(onOpenChange);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onOpenChangeRef.current = onOpenChange;
+  }, [onSuccess, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
@@ -107,6 +117,8 @@ export function RequestVerificationDialog({
       setSecret(null);
       setShowSecret(false);
       setIssueError(null);
+      setPendingCredentialId(null);
+      setIsWaitingForAcceptance(false);
       lastCheckedAidRef.current = null;
     }
   }, [open]);
@@ -141,6 +153,61 @@ export function RequestVerificationDialog({
       cancelled = true;
     };
   }, [open, agent.id, kycStatus]);
+
+  // Poll for credential acceptance after issue (timeout so user is not trapped)
+  const pollAttemptsRef = useRef(0);
+  const pollIntervalIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const POLL_INTERVAL_MS = 3000;
+  const MAX_POLL_ATTEMPTS = 100; // ~5 minutes
+
+  useEffect(() => {
+    if (!pendingCredentialId || !isWaitingForAcceptance) return;
+    pollAttemptsRef.current = 0;
+
+    const stopPolling = () => {
+      if (pollIntervalIdRef.current !== null) {
+        clearTimeout(pollIntervalIdRef.current);
+        pollIntervalIdRef.current = null;
+      }
+    };
+
+    const runPoll = async () => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current > MAX_POLL_ATTEMPTS) {
+        stopPolling();
+        setIsWaitingForAcceptance(false);
+        setPendingCredentialId(null);
+        toast.error(t("acceptanceTimeout"));
+        return;
+      }
+
+      const result =
+        await credentialApiClient.checkCredentialStatus(pendingCredentialId);
+      if (!result.success) {
+        stopPolling();
+        setIsWaitingForAcceptance(false);
+        setPendingCredentialId(null);
+        setIssueError(result.error);
+        toast.error(result.error);
+        return;
+      }
+      if (result.data.status === "ISSUED") {
+        stopPolling();
+        setIsWaitingForAcceptance(false);
+        setPendingCredentialId(null);
+        toast.success(t("requestSuccess"));
+        onSuccessRef.current();
+        onOpenChangeRef.current(false);
+        return;
+      }
+      pollIntervalIdRef.current = setTimeout(runPoll, POLL_INTERVAL_MS);
+    };
+
+    runPoll();
+    return () => {
+      stopPolling();
+    };
+  }, [pendingCredentialId, isWaitingForAcceptance, t]);
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
@@ -241,7 +308,7 @@ export function RequestVerificationDialog({
         return null;
       }
 
-      const message = `Issue credential for agent verification\n\nAgent: ${agent.name}\nAgent ID: ${agent.id}\nAID: ${aid}\nTimestamp: ${new Date().toISOString()}\n\nBy signing this message, you confirm that you want to issue a verification credential for this agent.`;
+      const message = `Issue credential for agent verification\n\nAgent: ${agent.name}\nAgent ID: ${agent.agentIdentifier}\nAID: ${aid}\nTimestamp: ${new Date().toISOString()}\n\nBy signing this message, you confirm that you want to issue a verification credential for this agent.`;
 
       const signature = await enabledApi.experimental.signKeri(aid, message);
 
@@ -351,10 +418,15 @@ export function RequestVerificationDialog({
       });
 
       if (result.success) {
-        toast.success(t("requestSuccess"));
-        onSuccess();
-        onOpenChange(false);
-        setAid(null);
+        if (result.data.status === "PENDING") {
+          setPendingCredentialId(result.data.id);
+          setIsWaitingForAcceptance(true);
+        } else {
+          toast.success(t("requestSuccess"));
+          onSuccess();
+          onOpenChange(false);
+          setAid(null);
+        }
       } else {
         setIssueError(result.error || t("requestError"));
         toast.error(result.error || t("requestError"));
@@ -370,7 +442,7 @@ export function RequestVerificationDialog({
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (isSubmitting) return;
+    if (isSubmitting || isWaitingForAcceptance) return;
     onOpenChange(newOpen);
   };
 
@@ -730,16 +802,31 @@ export function RequestVerificationDialog({
             )}
 
             {/* Step 2: Credential info + ready to submit */}
-            {step === 2 && (
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">{t("whatWillBeIssued")}</h3>
-                <div className="rounded-lg border bg-muted/40 p-4">
-                  <p className="text-sm text-muted-foreground">
-                    {t("credentialDescription")}
-                  </p>
+            {step === 2 &&
+              (isWaitingForAcceptance ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <Spinner size={32} />
+                  <div className="text-center space-y-2">
+                    <p className="text-sm font-medium">
+                      {t("waitingForWalletAcceptance")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("waitingForWalletDescription")}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-sm font-medium">
+                    {t("whatWillBeIssued")}
+                  </h3>
+                  <div className="rounded-lg border bg-muted/40 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t("credentialDescription")}
+                    </p>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -802,16 +889,21 @@ export function RequestVerificationDialog({
                 disabled={
                   isSubmitting ||
                   isSigning ||
+                  isWaitingForAcceptance ||
                   !aid ||
                   !challenge ||
                   !secret ||
                   kycStatus !== "APPROVED"
                 }
               >
-                {(isSubmitting || isSigning) && (
+                {(isSubmitting || isSigning || isWaitingForAcceptance) && (
                   <Spinner size={16} className="mr-2" />
                 )}
-                {isSigning ? "Signing..." : t("submitRequest")}
+                {isWaitingForAcceptance
+                  ? "Waiting for acceptance..."
+                  : isSigning
+                    ? "Signing..."
+                    : t("submitRequest")}
               </Button>
             )}
           </div>

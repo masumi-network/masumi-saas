@@ -1,11 +1,10 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleHelp, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -13,6 +12,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  completeRegistrationIfReadyAction,
+  registerAgentAction,
+} from "@/lib/actions/agent.action";
 import { agentApiClient } from "@/lib/api/agent.client";
+import { zodResolver } from "@/lib/form-zod-resolver";
 
 import { AgentIconPicker } from "./agent-icon-picker";
 
@@ -50,18 +55,14 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
-export type AgentFormFields = {
+type AgentFormFields = {
   name: string;
-  summary?: string;
   description?: string;
+  extendedDescription?: string;
   isFree: boolean;
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
-  authorName?: string;
-  authorEmail?: string;
-  organization?: string;
-  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;
@@ -70,7 +71,7 @@ export type AgentFormFields = {
   exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
 };
 
-export function ExampleOutputsFields({
+function ExampleOutputsFields({
   form: outputsForm,
   t: outputsT,
 }: {
@@ -98,9 +99,9 @@ export function ExampleOutputsFields({
       {fields.map((field, index) => (
         <div
           key={field.id}
-          className="relative rounded-md border border-border/60 bg-background p-4 space-y-4"
+          className="relative flex items-center rounded-md border border-border/60 bg-background p-4 gap-2"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 mb-0">
             <FormField
               control={outputsForm.control}
               name={`exampleOutputs.${index}.name`}
@@ -156,7 +157,7 @@ export function ExampleOutputsFields({
             variant="ghost"
             size="icon"
             onClick={() => remove(index)}
-            className="absolute top-2 right-2"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -166,21 +167,28 @@ export function ExampleOutputsFields({
   );
 }
 
-export function PricingFields({
+function PricingFields({
   form: pricingForm,
   t: pricingT,
+  isFree,
 }: {
   form: UseFormReturn<AgentFormFields>;
   t: (key: string) => string;
+  isFree: boolean;
 }) {
   const { fields, append, remove } = useFieldArray({
     control: pricingForm.control,
     name: "prices",
   });
-  const isFree = pricingForm.watch("isFree");
 
   return (
-    <div className="space-y-3">
+    <div
+      className="space-y-3 transition-opacity duration-200"
+      style={{
+        opacity: isFree ? 0.4 : 1,
+        pointerEvents: isFree ? "none" : undefined,
+      }}
+    >
       <div className="flex items-center justify-between">
         <FormLabel>{pricingT("prices")}</FormLabel>
         <Button
@@ -193,39 +201,33 @@ export function PricingFields({
           {pricingT("addPrice")}
         </Button>
       </div>
-      <div
-        className={
-          isFree ? "pointer-events-none select-none opacity-40" : undefined
-        }
-      >
+      <div className="space-y-2">
         {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2 items-start">
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm shrink-0">
-                {CURRENCY_SYMBOL}
-              </span>
-              <FormField
-                control={pricingForm.control}
-                name={`prices.${index}.amount`}
-                render={({ field: amountField }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        disabled={isFree}
-                        {...amountField}
-                        className="h-11"
-                        onChange={(e) => amountField.onChange(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div key={field.id} className="flex gap-2 items-center">
+            <span className="text-muted-foreground text-sm shrink-0">
+              {CURRENCY_SYMBOL}
+            </span>
+            <FormField
+              control={pricingForm.control}
+              name={`prices.${index}.amount`}
+              render={({ field: amountField }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      {...amountField}
+                      disabled={isFree}
+                      className="h-11"
+                      onChange={(e) => amountField.onChange(e.target.value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {fields.length > 1 && (
               <Button
                 type="button"
@@ -233,7 +235,7 @@ export function PricingFields({
                 size="icon"
                 disabled={isFree}
                 onClick={() => remove(index)}
-                className="shrink-0 mt-2"
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -258,20 +260,41 @@ export function RegisterAgentDialog({
   const t = useTranslations("App.Agents.Register");
 
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollResolvedRef = useRef(false);
+  const closedDuringSubmitRef = useRef(false);
+  const submitIdRef = useRef(0);
+  const onSuccessRef = useRef(onSuccess);
+  const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onCloseRef.current = onClose;
+  }, [onSuccess, onClose]);
+
+  // On open: reset close flag and invalidate any in-flight submit from a previous session so its response is ignored.
+  useEffect(() => {
+    if (open) {
+      closedDuringSubmitRef.current = false;
+      submitIdRef.current += 1;
+    }
+  }, [open]);
 
   const registerAgentSchema = z
     .object({
       name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
-      summary: z
-        .string()
-        .max(250, t("summaryMaxLength"))
-        .optional()
-        .or(z.literal("")),
       description: z
         .string()
-        .max(5000, t("descriptionMaxLength"))
+        .max(250, t("descriptionMaxLength"))
+        .optional()
+        .or(z.literal("")),
+      extendedDescription: z
+        .string()
+        .max(5000, t("extendedDescriptionMaxLength"))
         .optional()
         .or(z.literal("")),
       apiUrl: z
@@ -287,12 +310,6 @@ export function RegisterAgentDialog({
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
-      authorName: z.string().max(250).optional(),
-      authorEmail: z
-        .union([z.literal(""), z.string().email().max(250)])
-        .optional(),
-      organization: z.string().max(250).optional(),
-      contactOther: z.string().max(250).optional(),
       termsOfUseUrl: z
         .union([z.literal(""), z.string().url().max(250)])
         .optional(),
@@ -325,17 +342,13 @@ export function RegisterAgentDialog({
     resolver: zodResolver(registerAgentSchema),
     defaultValues: {
       name: "",
-      summary: "",
       description: "",
+      extendedDescription: "",
       apiUrl: "",
       isFree: false,
       prices: [{ amount: "" }],
       tags: "",
       icon: "bot",
-      authorName: "",
-      authorEmail: "",
-      organization: "",
-      contactOther: "",
       termsOfUseUrl: "",
       privacyPolicyUrl: "",
       otherUrl: "",
@@ -345,12 +358,70 @@ export function RegisterAgentDialog({
     },
   });
 
+  useEffect(() => {
+    if (!pendingAgentId) return;
+    pollResolvedRef.current = false;
+    let cancelled = false;
+    const POLL_MS = 5_000;
+    const runPoll = async () => {
+      const res = await completeRegistrationIfReadyAction(pendingAgentId);
+      if (cancelled || pollResolvedRef.current) return;
+      if (res.status === "registered") {
+        if (cancelled || pollResolvedRef.current) return;
+        pollResolvedRef.current = true;
+        if (pollIntervalRef.current != null) {
+          clearTimeout(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.success(t("success"));
+        form.reset();
+        setTags([]);
+        setTagInput("");
+        setShowCloseConfirm(false);
+        onSuccessRef.current();
+        onCloseRef.current();
+        setIsLoading(false);
+        return;
+      }
+      if (res.status === "error") {
+        if (cancelled) return;
+        pollResolvedRef.current = true;
+        if (pollIntervalRef.current != null) {
+          clearTimeout(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setPendingAgentId(null);
+        toast.error(res.error || t("error"));
+        setIsLoading(false);
+        return;
+      }
+      if (!cancelled && !pollResolvedRef.current) {
+        pollIntervalRef.current = setTimeout(runPoll, POLL_MS);
+      }
+    };
+    runPoll();
+    return () => {
+      cancelled = true;
+      pollResolvedRef.current = true;
+      if (pollIntervalRef.current != null) {
+        clearTimeout(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [pendingAgentId, form, t]);
+
+  const isFree =
+    useWatch({ control: form.control, name: "isFree", defaultValue: false }) ===
+    true;
+
   const handleAddTag = () => {
     const tag = tagInput.trim();
     if (tag && !tags.includes(tag)) {
       setTags([...tags, tag]);
       setTagInput("");
       form.setValue("tags", [...tags, tag].join(", "));
+      form.clearErrors("tags");
     }
   };
 
@@ -361,455 +432,400 @@ export function RegisterAgentDialog({
   };
 
   const onSubmit = async (data: RegisterAgentFormType) => {
+    if (tags.length === 0) {
+      form.setError("tags", { message: t("tagsRequired") });
+      return;
+    }
     setIsLoading(true);
+    const submitId = ++submitIdRef.current;
     try {
-      const pricing = data.isFree
-        ? { pricingType: "Free" as const }
-        : {
-            pricingType: "Fixed" as const,
-            prices: (data.prices ?? [])
-              .filter((p) => p.amount?.trim())
-              .map((p) => ({ amount: p.amount.trim(), currency: "USD" })),
-          };
+      const formData = new FormData();
+      formData.set("name", data.name);
+      if (data.description?.trim())
+        formData.set("description", data.description.trim());
+      if (data.extendedDescription?.trim())
+        formData.set("extendedDescription", data.extendedDescription.trim());
+      formData.set("apiUrl", data.apiUrl);
+      formData.set("tags", tags.join(", "));
+      if (data.icon?.trim()) formData.set("icon", data.icon.trim());
 
-      const exampleOutputs =
-        data.exampleOutputs
-          ?.filter((e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim())
-          .map((e) => ({
-            name: e.name.trim(),
-            url: e.url.trim(),
-            mimeType: e.mimeType.trim(),
-          })) ?? [];
+      // Pricing
+      const pricingType = data.isFree ? "Free" : "Fixed";
+      formData.set("pricingType", pricingType);
+      if (!data.isFree) {
+        const prices = (data.prices ?? [])
+          .filter((p) => p.amount?.trim())
+          .map((p) => ({ amount: p.amount.trim(), currency: "USD" }));
+        if (prices.length > 0) {
+          formData.set("prices", JSON.stringify(prices));
+        }
+      }
 
-      const result = await agentApiClient.registerAgent({
-        name: data.name,
-        summary: data.summary?.trim() || undefined,
-        description: data.description?.trim() || undefined,
-        apiUrl: data.apiUrl,
-        pricing: data.isFree
-          ? pricing
-          : (pricing.prices?.length ?? 0) > 0
-            ? pricing
-            : undefined,
-        tags: tags.join(", "),
-        icon: data.icon?.trim() || undefined,
-        authorName: data.authorName?.trim() || undefined,
-        authorEmail: data.authorEmail?.trim() || undefined,
-        organization: data.organization?.trim() || undefined,
-        contactOther: data.contactOther?.trim() || undefined,
-        termsOfUseUrl: data.termsOfUseUrl?.trim() || undefined,
-        privacyPolicyUrl: data.privacyPolicyUrl?.trim() || undefined,
-        otherUrl: data.otherUrl?.trim() || undefined,
-        capabilityName: data.capabilityName?.trim() || undefined,
-        capabilityVersion: data.capabilityVersion?.trim() || undefined,
-        exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
-      });
+      // Legal
+      if (data.termsOfUseUrl?.trim())
+        formData.set("termsOfUseUrl", data.termsOfUseUrl.trim());
+      if (data.privacyPolicyUrl?.trim())
+        formData.set("privacyPolicyUrl", data.privacyPolicyUrl.trim());
+      if (data.otherUrl?.trim()) formData.set("otherUrl", data.otherUrl.trim());
+
+      // Capability
+      if (data.capabilityName?.trim())
+        formData.set("capabilityName", data.capabilityName.trim());
+      if (data.capabilityVersion?.trim())
+        formData.set("capabilityVersion", data.capabilityVersion.trim());
+
+      // Example outputs (JSON-encoded)
+      const exampleOutputs = (data.exampleOutputs ?? []).filter(
+        (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
+      );
+      if (exampleOutputs.length > 0) {
+        formData.set("exampleOutputs", JSON.stringify(exampleOutputs));
+      }
+
+      const result = await registerAgentAction(formData);
+
+      // Ignore stale response if user closed and reopened (new submit or open invalidates)
+      if (submitId !== submitIdRef.current) return;
+
+      if (closedDuringSubmitRef.current) {
+        // Dialog was closed during submit: refresh list if registration succeeded; otherwise delete the pending agent we created
+        if (result.success) {
+          onSuccessRef.current();
+        } else if ("agentId" in result && typeof result.agentId === "string") {
+          void agentApiClient.deleteAgent(result.agentId);
+        }
+        return;
+      }
 
       if (result.success) {
         toast.success(t("success"));
-        form.reset();
+        setIsLoading(false);
+        form.reset({
+          name: "",
+          description: "",
+          extendedDescription: "",
+          apiUrl: "",
+          isFree: false,
+          prices: [{ amount: "" }],
+          tags: "",
+          icon: "bot",
+          termsOfUseUrl: "",
+          privacyPolicyUrl: "",
+          otherUrl: "",
+          capabilityName: "",
+          capabilityVersion: "",
+          exampleOutputs: [],
+        });
         setTags([]);
         setTagInput("");
         onSuccess();
         onClose();
+      } else if (
+        result.error === "WALLET_FUNDING_PENDING" &&
+        "agentId" in result &&
+        typeof result.agentId === "string"
+      ) {
+        setPendingAgentId(result.agentId);
+        toast.info(t("fundingWallet"));
+        // Keep loading until completeRegistrationIfReadyAction poll succeeds/fails
       } else {
         toast.error(result.error || t("error"));
+        setIsLoading(false);
       }
     } catch (error) {
+      if (submitId !== submitIdRef.current) return;
       toast.error(t("error"));
       console.error("Failed to register agent:", error);
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOnOpenChange = (newOpen: boolean) => {
-    if (isLoading) return;
-    if (!newOpen) {
-      form.reset({
-        name: "",
-        summary: "",
-        description: "",
-        apiUrl: "",
-        isFree: false,
-        prices: [{ amount: "" }],
-        tags: "",
-        icon: "bot",
-        authorName: "",
-        authorEmail: "",
-        organization: "",
-        contactOther: "",
-        termsOfUseUrl: "",
-        privacyPolicyUrl: "",
-        otherUrl: "",
-        capabilityName: "",
-        capabilityVersion: "",
-        exampleOutputs: [],
-      });
-      setTags([]);
-      setTagInput("");
+  const performClose = () => {
+    if (isLoading) closedDuringSubmitRef.current = true;
+    if (pollIntervalRef.current != null) {
+      clearTimeout(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
+    setPendingAgentId(null);
+    setIsLoading(false);
+    form.reset({
+      name: "",
+      description: "",
+      extendedDescription: "",
+      apiUrl: "",
+      isFree: false,
+      prices: [{ amount: "" }],
+      tags: "",
+      icon: "bot",
+      termsOfUseUrl: "",
+      privacyPolicyUrl: "",
+      otherUrl: "",
+      capabilityName: "",
+      capabilityVersion: "",
+      exampleOutputs: [],
+    });
+    setTags([]);
+    setTagInput("");
     onClose();
   };
 
+  const handleOnOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      closedDuringSubmitRef.current = false;
+      setShowCloseConfirm(false);
+    } else {
+      if (isLoading) {
+        setShowCloseConfirm(true);
+        return;
+      }
+      performClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent
-        className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
-        closeButtonClassName="top-8 right-4 -translate-y-1/2"
-      >
-        <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold tracking-tight">
-              {t("title")}
-            </DialogTitle>
-          </DialogHeader>
-        </div>
+    <>
+      <Dialog open={open} onOpenChange={handleOnOpenChange}>
+        <DialogContent
+          className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+          closeButtonClassName="top-8 right-4 -translate-y-1/2"
+        >
+          <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold tracking-tight">
+                {t("title")}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-1 flex-col min-h-0 overflow-hidden"
-          >
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Icon section */}
-              <FormField
-                control={form.control}
-                name="icon"
-                render={({ field }) => (
-                  <AgentIconPicker
-                    value={field.value ?? "bot"}
-                    onChange={field.onChange}
-                    onClearError={() => form.clearErrors("icon")}
-                    onClearIcon={() => form.setValue("icon", "bot")}
-                    translations={{
-                      icon: t("icon"),
-                      iconTooltip: t("iconTooltip"),
-                      iconDescription: t("iconDescription"),
-                      iconCustomUrlPlaceholder: t("iconCustomUrlPlaceholder"),
-                      scrollLeft: t("scrollLeft"),
-                      scrollRight: t("scrollRight"),
-                      iconClear: t("iconClear"),
-                    }}
+          <Form {...form}>
+            <form
+              className="flex flex-1 flex-col min-h-0 overflow-hidden"
+              onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
+            >
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Icon section */}
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <AgentIconPicker
+                      value={field.value ?? "bot"}
+                      onChange={field.onChange}
+                      onClearError={() => form.clearErrors("icon")}
+                      onClearIcon={() => form.setValue("icon", "bot")}
+                      translations={{
+                        icon: t("icon"),
+                        iconTooltip: t("iconTooltip"),
+                        iconDescription: t("iconDescription"),
+                        iconCustomUrlPlaceholder: t("iconCustomUrlPlaceholder"),
+                        scrollLeft: t("scrollLeft"),
+                        scrollRight: t("scrollRight"),
+                        iconClear: t("iconClear"),
+                      }}
+                    />
+                  )}
+                />
+
+                <Separator />
+
+                {/* Basic info */}
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("name")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={t("namePlaceholder")}
+                            {...field}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                )}
-              />
 
-              <Separator />
-
-              {/* Basic info */}
-              <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("name")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("namePlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="summary"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("summary")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("summaryPlaceholder")}
-                          {...field}
-                          className="h-11"
-                          maxLength={251}
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {(field.value ?? "").length}
-                        {" / "}
-                        {250}
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
                         <FormLabel>{t("description")}</FormLabel>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                              <CircleHelp className="h-4 w-4" />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t("descriptionRichTextHint")}
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <FormControl>
-                        <RichTextEditor
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          placeholder={t("descriptionPlaceholder")}
-                          minHeight="min-h-28"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="apiUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("apiUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={t("apiUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="isFree"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(checked) =>
-                            field.onChange(checked === true)
-                          }
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
-                        {t("isFree")}
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                <PricingFields
-                  form={form as unknown as UseFormReturn<AgentFormFields>}
-                  t={t}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Tags */}
-              <FormItem>
-                <FormLabel>{t("tags")}</FormLabel>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    placeholder={t("tagsPlaceholder")}
-                    className="h-11"
+                        <FormControl>
+                          <Input
+                            placeholder={t("descriptionPlaceholder")}
+                            {...field}
+                            className="h-11"
+                            maxLength={251}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          {(field.value ?? "").length}
+                          {" / "}
+                          {250}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Button
-                    type="button"
-                    onClick={handleAddTag}
-                    variant="secondary"
-                    className="shrink-0"
-                  >
-                    {t("addTag")}
-                  </Button>
+
+                  <FormField
+                    control={form.control}
+                    name="extendedDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-2">
+                          <FormLabel>{t("extendedDescription")}</FormLabel>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                                <CircleHelp className="h-4 w-4" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("descriptionRichTextHint")}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <FormControl>
+                          <RichTextEditor
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            placeholder={t("extendedDescriptionPlaceholder")}
+                            minHeight="min-h-28"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="apiUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("apiUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={t("apiUrlPlaceholder")}
+                            {...field}
+                            className="h-11 font-mono text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="isFree"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              field.onChange(checked === true)
+                            }
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">
+                          {t("isFree")}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+
+                  <PricingFields
+                    form={form as unknown as UseFormReturn<AgentFormFields>}
+                    t={t}
+                    isFree={isFree}
+                  />
                 </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {tags.map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
-                      >
-                        {tag}
-                        <button
+
+                <Separator />
+
+                {/* Tags */}
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>{t("tags")}</FormLabel>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddTag();
+                            }
+                          }}
+                          placeholder={t("tagsPlaceholder")}
+                          className="h-11"
+                        />
+                        <Button
                           type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                          onClick={handleAddTag}
+                          variant="secondary"
+                          className="shrink-0"
                         >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </FormItem>
+                          {t("addTag")}
+                        </Button>
+                      </div>
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {tags.map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                            >
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(tag)}
+                                className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="flex items-center gap-4 pt-2">
-                <Separator className="flex-1" />
-                <h3 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  {t("additionalFields")}
-                </h3>
-                <Separator className="flex-1" />
-              </div>
+                <div className="flex items-center gap-4 pt-2">
+                  <Separator className="flex-1" />
+                  <h3 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                    {t("additionalFields")}
+                  </h3>
+                  <Separator className="flex-1" />
+                </div>
 
-              <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="authorName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("authorName")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("authorNamePlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="authorEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("authorEmail")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder={t("authorEmailPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="organization"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("organization")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("organizationPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contactOther"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("contactOther")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("contactOtherPlaceholder")}
-                          {...field}
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="termsOfUseUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("termsOfUseUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={t("termsOfUseUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="privacyPolicyUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("privacyPolicyUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={t("privacyPolicyUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="otherUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("otherUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={t("otherUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="capabilityName"
+                    name="termsOfUseUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("capabilityName")}</FormLabel>
+                        <FormLabel>{t("termsOfUseUrl")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t("capabilityNamePlaceholder")}
+                            type="url"
+                            placeholder={t("termsOfUseUrlPlaceholder")}
                             {...field}
-                            className="h-11"
+                            className="h-11 font-mono text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -818,46 +834,122 @@ export function RegisterAgentDialog({
                   />
                   <FormField
                     control={form.control}
-                    name="capabilityVersion"
+                    name="privacyPolicyUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("capabilityVersion")}</FormLabel>
+                        <FormLabel>{t("privacyPolicyUrl")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t("capabilityVersionPlaceholder")}
+                            type="url"
+                            placeholder={t("privacyPolicyUrlPlaceholder")}
                             {...field}
-                            className="h-11"
+                            className="h-11 font-mono text-sm"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="otherUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("otherUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={t("otherUrlPlaceholder")}
+                            {...field}
+                            className="h-11 font-mono text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="capabilityName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("capabilityName")}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t("capabilityNamePlaceholder")}
+                              {...field}
+                              className="h-11"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="capabilityVersion"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("capabilityVersion")}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t("capabilityVersionPlaceholder")}
+                              {...field}
+                              className="h-11"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <ExampleOutputsFields
+                    form={form as unknown as UseFormReturn<AgentFormFields>}
+                    t={t}
                   />
                 </div>
-                <ExampleOutputsFields
-                  form={form as unknown as UseFormReturn<AgentFormFields>}
-                  t={t}
-                />
               </div>
-            </div>
 
-            <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOnOpenChange(false)}
-                disabled={isLoading}
-              >
-                {t("cancel")}
-              </Button>
-              <Button type="submit" variant="primary" disabled={isLoading}>
-                {isLoading && <Spinner size={16} className="mr-2" />}
-                {t("submit")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOnOpenChange(false)}
+                  disabled={isLoading}
+                >
+                  {t("cancel")}
+                </Button>
+                <Button type="submit" variant="primary" disabled={isLoading}>
+                  {isLoading && <Spinner size={16} className="mr-2" />}
+                  {t("submit")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        onConfirm={async () => {
+          // Set ref immediately so any in-flight registerAgentAction that resolves later
+          // sees "user closed during submit" and does orphan cleanup instead of onSuccess/onClose.
+          if (isLoading) closedDuringSubmitRef.current = true;
+          if (pendingAgentId) {
+            const result = await agentApiClient.deleteAgent(pendingAgentId);
+            if (!result.success) {
+              toast.error(result.error || t("error"));
+            }
+          }
+          performClose();
+          setShowCloseConfirm(false);
+        }}
+        title={t("closeConfirmTitle")}
+        description={t("closeConfirmDescription")}
+        confirmText={t("closeAnyway")}
+        cancelText={t("cancel")}
+      />
+    </>
   );
 }

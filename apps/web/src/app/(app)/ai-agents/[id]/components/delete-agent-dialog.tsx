@@ -45,7 +45,7 @@ export function DeleteAgentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent className="w-sm">
+      <DialogContent className="w-sm gap-6">
         <DialogHeader>
           <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
           <DialogDescription>
@@ -70,6 +70,14 @@ export function DeleteAgentDialog({
         </div>
         <DialogFooter className="flex justify-end gap-2">
           <Button
+            variant="outline"
+            className="w-fit"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            {t("cancel")}
+          </Button>
+          <Button
             variant="destructive"
             className="w-fit"
             onClick={onConfirm}
@@ -77,14 +85,6 @@ export function DeleteAgentDialog({
           >
             {isLoading && <Spinner size={16} className="mr-2" />}
             {t("delete")}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-fit"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            {t("cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>
