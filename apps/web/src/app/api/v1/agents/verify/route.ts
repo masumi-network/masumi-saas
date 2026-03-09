@@ -2,7 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
-import { checkRateLimit } from "@/lib/api/rate-limit";
+import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflightResponse(request);
@@ -10,28 +10,12 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
-    const rl = await checkRateLimit(`public-agent-verify:${ip}`);
-
-    if (!rl.allowed) {
-      const res = NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded. Please try again later.",
-        },
-        { status: 429 },
-      );
-      res.headers.set(
-        "Retry-After",
-        String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
-      );
-      res.headers.set("X-RateLimit-Limit", String(rl.limit));
-      res.headers.set("X-RateLimit-Remaining", "0");
-      return addCorsHeaders(res, request);
-    }
+    const rateLimitResult = await checkRateLimitOrRespond(
+      request,
+      "public-agent-verify",
+    );
+    if ("response" in rateLimitResult) return rateLimitResult.response;
+    const { rl } = rateLimitResult;
 
     const agentIdentifier = request.nextUrl.searchParams.get("agentIdentifier");
     if (!agentIdentifier) {
