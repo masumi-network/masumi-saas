@@ -179,7 +179,10 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                           className="min-w-[120px]"
                         >
                           <DropdownMenuItem
-                            onClick={() => setRevokeKeyId(key.id)}
+                            onClick={() => {
+                              setRevokeError(null);
+                              setRevokeKeyId(key.id);
+                            }}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4 shrink-0" />
@@ -207,7 +210,14 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
 
       <Dialog
         open={!!revokeKeyId}
-        onOpenChange={(open) => !open && setRevokeKeyId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRevokeKeyId(null);
+            setRevokeError(null);
+          } else {
+            setRevokeError(null);
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
