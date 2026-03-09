@@ -29,6 +29,16 @@ function getEnabledOAuthProviders(): (
   return providers;
 }
 
-export default function SignInPage() {
-  return <SignInForm oauthProviders={getEnabledOAuthProviders()} />;
+interface SignInPageProps {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const { callbackUrl } = await searchParams;
+  return (
+    <SignInForm
+      oauthProviders={getEnabledOAuthProviders()}
+      callbackUrl={callbackUrl}
+    />
+  );
 }

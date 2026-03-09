@@ -6,6 +6,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   render,
@@ -17,6 +18,7 @@ import {
 interface VerificationEmailProps {
   name: string;
   verificationLink: string;
+  logoUrl?: string;
   translations: {
     preview: string;
     title: string;
@@ -31,6 +33,7 @@ interface VerificationEmailProps {
 export const VerificationEmail = ({
   name,
   verificationLink,
+  logoUrl,
   translations,
 }: VerificationEmailProps) => {
   return (
@@ -40,11 +43,23 @@ export const VerificationEmail = ({
       <Tailwind>
         <Body className="mx-auto my-auto bg-white px-2 font-sans">
           <Container className="mx-auto my-[40px] max-w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]">
+            {logoUrl ? (
+              <Section className="mb-[24px] text-center">
+                <Img
+                  src={logoUrl}
+                  alt="Masumi"
+                  width={48}
+                  height={48}
+                  className="mx-auto rounded-full"
+                  style={{ borderRadius: "50%" }}
+                />
+              </Section>
+            ) : null}
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-black">
               {translations.title}
             </Heading>
             <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting.replace("{name}", name)}
+              {translations.greeting.replace("{name}", () => name)}
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}

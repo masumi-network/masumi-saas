@@ -63,6 +63,10 @@ type AgentFormFields = {
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
+  authorName?: string;
+  authorEmail?: string;
+  organization?: string;
+  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;

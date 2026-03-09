@@ -6,6 +6,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   render,
@@ -14,9 +15,12 @@ import {
   Text,
 } from "@react-email/components";
 
-interface ResetPasswordEmailProps {
-  name: string;
-  resetLink: string;
+interface InvitationEmailProps {
+  inviteLink: string;
+  organizationName: string;
+  inviterName: string;
+  role: string;
+  logoUrl?: string;
   translations: {
     preview: string;
     title: string;
@@ -28,11 +32,14 @@ interface ResetPasswordEmailProps {
   };
 }
 
-export const ResetPasswordEmail = ({
-  name,
-  resetLink,
+export const InvitationEmail = ({
+  inviteLink,
+  organizationName,
+  inviterName,
+  role,
+  logoUrl,
   translations,
-}: ResetPasswordEmailProps) => {
+}: InvitationEmailProps) => {
   return (
     <Html>
       <Head />
@@ -40,11 +47,31 @@ export const ResetPasswordEmail = ({
       <Tailwind>
         <Body className="mx-auto my-auto bg-white px-2 font-sans">
           <Container className="mx-auto my-[40px] max-w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]">
+            {logoUrl ? (
+              <Section className="mb-[24px] text-center">
+                <Img
+                  src={logoUrl}
+                  alt="Masumi"
+                  width={48}
+                  height={48}
+                  className="mx-auto rounded-full"
+                  style={{ borderRadius: "50%" }}
+                />
+              </Section>
+            ) : null}
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-black">
               {translations.title}
             </Heading>
             <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting.replace("{name}", () => name)}
+              {translations.greeting.replace(
+                /\{(inviter|organization|role)\}/g,
+                (_match, key: "inviter" | "organization" | "role") =>
+                  ({
+                    inviter: inviterName,
+                    organization: organizationName,
+                    role,
+                  })[key],
+              )}
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}
@@ -52,15 +79,15 @@ export const ResetPasswordEmail = ({
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button
                 className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"
-                href={resetLink}
+                href={inviteLink}
               >
                 {translations.button}
               </Button>
             </Section>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.linkText}{" "}
-              <Link href={resetLink} className="text-blue-600 no-underline">
-                {resetLink}
+              <Link href={inviteLink} className="text-blue-600 no-underline">
+                {inviteLink}
               </Link>
             </Text>
             <Hr className="mx-0 my-[26px] w-full border border-solid border-[#eaeaea]" />
@@ -74,6 +101,6 @@ export const ResetPasswordEmail = ({
   );
 };
 
-export async function reactResetPasswordEmail(props: ResetPasswordEmailProps) {
-  return await render(<ResetPasswordEmail {...props} />);
+export async function reactInvitationEmail(props: InvitationEmailProps) {
+  return await render(<InvitationEmail {...props} />);
 }

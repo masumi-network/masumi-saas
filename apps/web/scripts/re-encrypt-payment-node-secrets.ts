@@ -13,7 +13,7 @@
  * If PAYMENT_NODE_KEY_SALT is not set, the script exits without changes.
  */
 
-import { existsSync,readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // Load .env from apps/web so PAYMENT_NODE_* are set when running standalone

@@ -6,11 +6,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
-import { getTranslations } from "next-intl/server";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import { reactInvitationEmail } from "@/lib/email/invitation";
+import { emailMessagesEn } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
@@ -56,27 +57,24 @@ export const auth = betterAuth({
         return;
       }
 
-      const t = await getTranslations({
-        locale: "en",
-        namespace: "Email.ResetPassword",
-      });
+      const msg = emailMessagesEn.ResetPassword;
 
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "reset-password",
-        Subject: t("preview"),
+        Subject: msg.preview,
         HtmlBody: await reactResetPasswordEmail({
           name: user.name || "User",
           resetLink: url,
           translations: {
-            preview: t("preview"),
-            title: t("title"),
-            greeting: t("greeting", { name: user.name || "User" }),
-            message: t("message"),
-            button: t("button"),
-            linkText: t("linkText"),
-            footer: t("footer"),
+            preview: msg.preview,
+            title: msg.title,
+            greeting: msg.greeting,
+            message: msg.message,
+            button: msg.button,
+            linkText: msg.linkText,
+            footer: msg.footer,
           },
         }),
         MessageStream: "outbound",
@@ -105,27 +103,26 @@ export const auth = betterAuth({
         return;
       }
 
-      const t = await getTranslations({
-        locale: "en",
-        namespace: "Email.Verification",
-      });
+      const msg = emailMessagesEn.Verification;
 
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "verification-email",
-        Subject: t("preview"),
+        Subject: msg.preview,
         HtmlBody: await reactVerificationEmail({
           name: user.name || "User",
           verificationLink: url,
+          logoUrl:
+            "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
           translations: {
-            preview: t("preview"),
-            title: t("title"),
-            greeting: t("greeting", { name: user.name || "User" }),
-            message: t("message"),
-            button: t("button"),
-            linkText: t("linkText"),
-            footer: t("footer"),
+            preview: msg.preview,
+            title: msg.title,
+            greeting: msg.greeting,
+            message: msg.message,
+            button: msg.button,
+            linkText: msg.linkText,
+            footer: msg.footer,
           },
         }),
         MessageStream: "outbound",
@@ -193,15 +190,63 @@ export const auth = betterAuth({
       },
       async sendInvitationEmail(data) {
         const inviteLink = `${authEnvConfig.baseUrl}/accept-invitation/${data.id}`;
-        // TODO(MAS-XXX): Implement invitation email sending via Postmark
-        // Users will not receive invite emails until this is implemented.
-        if (process.env.NODE_ENV === "development") {
-          console.log("[DEV] Invitation email:", {
-            to: data.email,
-            organization: data.organization.name,
-            link: inviteLink,
-          });
+
+        if (!postmarkClient) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("\n[DEV] Invitation email (Postmark not configured)");
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(`To: ${data.email}`);
+            console.log(`Organization: ${data.organization.name}`);
+            console.log(`Invite Link: ${inviteLink}`);
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(
+              "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+            );
+          } else {
+            console.error("Postmark not configured. Invitation email failed.", {
+              to: data.email,
+              inviteLink,
+            });
+          }
+          return;
         }
+
+        const msg = emailMessagesEn.Invitation;
+        const orgName = data.organization.name;
+        const replaceOrganization = (template: string): string =>
+          template.replace("{organization}", () => orgName);
+
+        const roleName =
+          data.role === "admin"
+            ? "Admin"
+            : data.role === "owner"
+              ? "Owner"
+              : "Member";
+
+        await postmarkClient.sendEmail({
+          From: emailConfig.postmarkFromEmail,
+          To: data.email,
+          Tag: "organization-invitation",
+          Subject: replaceOrganization(msg.preview),
+          HtmlBody: await reactInvitationEmail({
+            inviteLink,
+            organizationName: orgName,
+            inviterName: data.inviter.user.name || data.inviter.user.email,
+            role: roleName,
+            logoUrl:
+              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            translations: {
+              preview: replaceOrganization(msg.preview),
+              title: replaceOrganization(msg.title),
+              greeting: msg.greeting,
+              message: msg.message,
+              button: msg.button,
+              linkText: msg.linkText,
+              footer: msg.footer,
+            },
+          }),
+          MessageStream: "outbound",
+        });
       },
       invitationLimit: authConfig.organization.invitationLimit,
       cancelPendingInvitationsOnReInvite:
