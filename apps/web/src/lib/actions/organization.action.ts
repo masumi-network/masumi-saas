@@ -8,6 +8,27 @@ import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 /** Roles that can be set via invite or role update (never "owner"). */
 const ALLOWED_MEMBER_ROLES = ["member", "admin"] as const;
 
+/**
+ * Authenticate the current user and verify they are a member of the
+ * organization identified by `slug`. Returns the member record with
+ * `organizationId` and `role`, or throws on failure.
+ */
+async function getAuthenticatedMemberOrThrow(slug: string) {
+  const { user } = await getAuthenticatedOrThrow();
+  const normalizedSlug = decodeURIComponent(slug).trim();
+
+  const member = await prisma.member.findFirst({
+    where: { userId: user.id, organization: { slug: normalizedSlug } },
+    select: { organizationId: true, role: true },
+  });
+
+  if (!member) {
+    throw new Error("Organization not found");
+  }
+
+  return { user, member };
+}
+
 function parseMemberRole(role: string): "member" | "admin" | null {
   if (
     ALLOWED_MEMBER_ROLES.includes(role as (typeof ALLOWED_MEMBER_ROLES)[number])
@@ -90,41 +111,22 @@ export async function getOrganizationBySlugAction(
   { success: true; data: OrganizationInfo } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
-    const normalizedSlug = decodeURIComponent(slug).trim();
+    const { member } = await getAuthenticatedMemberOrThrow(slug);
 
-    const member = await prisma.member.findFirst({
-      where: {
-        userId: user.id,
-        organization: { slug: normalizedSlug },
-      },
-      select: {
-        role: true,
-        organization: {
-          select: { id: true, name: true, slug: true },
-        },
-      },
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: member.organizationId },
+      select: { id: true, name: true, slug: true },
     });
-
-    if (!member) {
-      return { success: false, error: "Organization not found" };
-    }
 
     return {
       success: true,
-      data: {
-        id: member.organization.id,
-        name: member.organization.name,
-        slug: member.organization.slug,
-        role: member.role,
-      },
+      data: { ...organization, role: member.role },
     };
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load organization";
     console.error("Failed to get organization:", error);
-    return {
-      success: false,
-      error: "Failed to load organization",
-    };
+    return { success: false, error: message };
   }
 }
 
@@ -135,34 +137,11 @@ export async function getOrganizationDashboardAction(
   | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
-    const normalizedSlug = decodeURIComponent(slug).trim();
-
-    const member = await prisma.member.findFirst({
-      where: {
-        userId: user.id,
-        organization: { slug: normalizedSlug },
-      },
-      select: {
-        role: true,
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            kybVerification: { select: { status: true } },
-          },
-        },
-      },
-    });
-
-    if (!member) {
-      return { success: false, error: "Organization not found" };
-    }
-
-    const organizationId = member.organization.id;
+    const { member } = await getAuthenticatedMemberOrThrow(slug);
+    const organizationId = member.organizationId;
 
     const [
+      organization,
       memberCount,
       apiKeyCount,
       activeApiKeyCount,
@@ -170,6 +149,15 @@ export async function getOrganizationDashboardAction(
       agents,
       apiKeys,
     ] = await Promise.all([
+      prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          kybVerification: { select: { status: true } },
+        },
+      }),
       prisma.member.count({ where: { organizationId } }),
       prisma.orgApiKey.count({ where: { organizationId } }),
       prisma.orgApiKey.count({ where: { organizationId, enabled: true } }),
@@ -198,13 +186,13 @@ export async function getOrganizationDashboardAction(
       success: true,
       data: {
         organization: {
-          id: member.organization.id,
-          name: member.organization.name,
-          slug: member.organization.slug,
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
           role: member.role,
         },
         memberCount,
-        kybStatus: member.organization.kybVerification?.status ?? null,
+        kybStatus: organization.kybVerification?.status ?? null,
         agentCount,
         agents,
         apiKeyCount,
@@ -213,11 +201,12 @@ export async function getOrganizationDashboardAction(
       },
     };
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to load organization dashboard";
     console.error("Failed to get organization dashboard:", error);
-    return {
-      success: false,
-      error: "Failed to load organization dashboard",
-    };
+    return { success: false, error: message };
   }
 }
 
@@ -260,20 +249,10 @@ export async function getOrganizationMembersAction(
   { success: true; data: OrgMember[] } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
-    const normalizedSlug = decodeURIComponent(slug).trim();
-
-    const currentMember = await prisma.member.findFirst({
-      where: { userId: user.id, organization: { slug: normalizedSlug } },
-      select: { organizationId: true },
-    });
-
-    if (!currentMember) {
-      return { success: false, error: "Organization not found" };
-    }
+    const { member } = await getAuthenticatedMemberOrThrow(slug);
 
     const members = await prisma.member.findMany({
-      where: { organizationId: currentMember.organizationId },
+      where: { organizationId: member.organizationId },
       include: { user: { select: { name: true, email: true } } },
       orderBy: { createdAt: "asc" },
     });
@@ -290,8 +269,10 @@ export async function getOrganizationMembersAction(
       })),
     };
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load members";
     console.error("Failed to get organization members:", error);
-    return { success: false, error: "Failed to load members" };
+    return { success: false, error: message };
   }
 }
 
@@ -301,26 +282,16 @@ export async function getOrganizationPendingInvitationsAction(
   { success: true; data: OrgInvitation[] } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
-    const normalizedSlug = decodeURIComponent(slug).trim();
-
-    const currentMember = await prisma.member.findFirst({
-      where: { userId: user.id, organization: { slug: normalizedSlug } },
-      select: { organizationId: true, role: true },
-    });
-
-    if (!currentMember) {
-      return { success: false, error: "Organization not found" };
-    }
+    const { member } = await getAuthenticatedMemberOrThrow(slug);
 
     // Only admin/owner can see pending invitations
-    if (currentMember.role !== "owner" && currentMember.role !== "admin") {
+    if (member.role !== "owner" && member.role !== "admin") {
       return { success: false, error: "Insufficient permissions" };
     }
 
     const invitations = await prisma.invitation.findMany({
       where: {
-        organizationId: currentMember.organizationId,
+        organizationId: member.organizationId,
         status: "pending",
         expiresAt: { gt: new Date() },
       },
@@ -340,8 +311,10 @@ export async function getOrganizationPendingInvitationsAction(
       })),
     };
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to load invitations";
     console.error("Failed to get pending invitations:", error);
-    return { success: false, error: "Failed to load invitations" };
+    return { success: false, error: message };
   }
 }
 
