@@ -6,6 +6,8 @@ import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { agentPaginationSchema, publicAgentSelect } from "@/lib/schemas/agent";
 
+// Agent verification uses PENDING | VERIFIED | REVOKED | EXPIRED (not KYC-style APPROVED).
+// Verified agents have always been set to VERIFIED in this product; no migration from APPROVED.
 const querySchema = z.object({
   status: z
     .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
