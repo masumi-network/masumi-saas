@@ -473,6 +473,41 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>;
 };
 
+export type EnumAgentActivityEventTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentActivityEventType
+    | Prisma.EnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>
+    | $Enums.AgentActivityEventType;
+};
+
+export type EnumAgentActivityEventTypeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.AgentActivityEventType
+    | Prisma.EnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentActivityEventTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.AgentActivityEventType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>;
+};
+
 export type EnumWalletTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.WalletType | Prisma.EnumWalletTypeFieldRefInput<$PrismaModel>;
   in?:
@@ -1039,6 +1074,41 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
     | runtime.InputJsonValue
     | Prisma.JsonFieldRefInput<$PrismaModel>
     | Prisma.JsonNullValueFilter;
+};
+
+export type NestedEnumAgentActivityEventTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentActivityEventType
+    | Prisma.EnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>
+    | $Enums.AgentActivityEventType;
+};
+
+export type NestedEnumAgentActivityEventTypeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.AgentActivityEventType
+    | Prisma.EnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentActivityEventType[]
+    | Prisma.ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentActivityEventTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.AgentActivityEventType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumAgentActivityEventTypeFilter<$PrismaModel>;
 };
 
 export type NestedEnumWalletTypeFilter<$PrismaModel = never> = {

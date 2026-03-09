@@ -265,6 +265,7 @@
           "earnings": "Earnings",
           "earningsDescription": "Total revenue from your agents",
           "viewAnalytics": "View analytics",
+          "viewActivity": "View activity",
           "period24h": "24 Hours",
           "period7d": "7 Days",
           "period30d": "30 Days",
@@ -347,11 +348,36 @@
       "description": "Revenue, usage, and performance across your agents.",
       "comingSoon": "Analytics are coming soon."
     },
+    "Activity": {
+      "title": "Activity",
+      "description": "Recent transactions and agent lifecycle events across your agents.",
+      "tabAll": "All",
+      "tabTransactions": "Transactions",
+      "tabEarnings": "Earnings",
+      "filterAll": "All",
+      "filterTransactions": "Transactions",
+      "filterLifecycle": "Agent activity",
+      "noActivity": "No activity yet. Register agents and complete transactions to see them here.",
+      "noTransactions": "No transactions yet.",
+      "noEarnings": "Earnings will appear here when your agents receive payments.",
+      "tryAgain": "Try again",
+      "earningsSummary": "Total earnings",
+      "earningsPeriod": "Last 7 days",
+      "type": "Type",
+      "agent": "Agent",
+      "amount": "Amount",
+      "status": "Status",
+      "date": "Date",
+      "details": "Details",
+      "agentActivity": "Agent activity",
+      "transactionHash": "Transaction Hash"
+    },
     "Sidebar": {
       "network": "Network",
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "activity": "Activity",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -572,6 +598,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "activity": "Activity",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -867,7 +894,10 @@
           "periodAll": "All Time",
           "loading": "Loading earnings data...",
           "tryAgain": "Try again",
-          "noEarningsData": "No earnings data available in the selected period. Earnings will appear here once the agent receives payments."
+          "noEarningsData": "No earnings data available in the selected period. Earnings will appear here once the agent receives payments.",
+          "totalIncome": "Total income",
+          "totalRefunded": "Total refunded",
+          "transactions": "transactions"
         },
         "Verification": {
           "pending": {

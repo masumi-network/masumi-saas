@@ -307,7 +307,8 @@ model Agent {
   updatedAt DateTime @updatedAt
 
   // Domain relations
-  agentReference AgentReference?
+  agentReference   AgentReference?
+  activityEvents   AgentActivityEvent[]
 
   @@index([userId])
   @@index([organizationId])
@@ -315,6 +316,31 @@ model Agent {
   @@index([registrationState])
   @@index([networkIdentifier])
   @@map("agent")
+}
+
+/// Audit log of agent lifecycle events for the Activity feed.
+/// Emitted when registration state changes, verification, deregister, or delete.
+model AgentActivityEvent {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  type      AgentActivityEventType
+  createdAt DateTime @default(now())
+
+  @@index([agentId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("agent_activity_event")
+}
+
+enum AgentActivityEventType {
+  RegistrationInitiated
+  RegistrationConfirmed
+  RegistrationFailed
+  DeregistrationRequested
+  DeregistrationConfirmed
+  AgentVerified
+  AgentDeleted
 }
 
 // ─── New Domain Entity Models ─────────────────────────────────────────────────

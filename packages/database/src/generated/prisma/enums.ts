@@ -35,6 +35,19 @@ export const RegistrationState = {
 export type RegistrationState =
   (typeof RegistrationState)[keyof typeof RegistrationState];
 
+export const AgentActivityEventType = {
+  RegistrationInitiated: "RegistrationInitiated",
+  RegistrationConfirmed: "RegistrationConfirmed",
+  RegistrationFailed: "RegistrationFailed",
+  DeregistrationRequested: "DeregistrationRequested",
+  DeregistrationConfirmed: "DeregistrationConfirmed",
+  AgentVerified: "AgentVerified",
+  AgentDeleted: "AgentDeleted",
+} as const;
+
+export type AgentActivityEventType =
+  (typeof AgentActivityEventType)[keyof typeof AgentActivityEventType];
+
 export const CredentialStatus = {
   PENDING: "PENDING",
   ISSUED: "ISSUED",

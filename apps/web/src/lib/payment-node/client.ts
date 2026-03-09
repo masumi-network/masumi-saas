@@ -212,6 +212,130 @@ export interface GetUtxosOutput {
   Utxos: Utxo[];
 }
 
+/** Payment source (from GET payment-source/get). Used to resolve smartContractAddress. */
+export interface PaymentSourceInfo {
+  id: string;
+  network: PaymentNodeNetwork;
+  smartContractAddress: string;
+  createdAt: string;
+  updatedAt: string;
+  policyId: string | null;
+  lastIdentifierChecked: string | null;
+  lastCheckedAt: string | null;
+  AdminWallets: Array<{ walletAddress: string; order: number }>;
+  PurchasingWallets: Array<{
+    id: string;
+    walletVkey: string;
+    walletAddress: string;
+    collectionAddress: string | null;
+    note: string | null;
+  }>;
+  SellingWallets: Array<{
+    id: string;
+    walletVkey: string;
+    walletAddress: string;
+    collectionAddress: string | null;
+    note: string | null;
+  }>;
+  FeeReceiverNetworkWallet: { walletAddress: string } | null;
+  feeRatePermille: number;
+}
+
+export interface GetPaymentSourcesOutput {
+  PaymentSources: PaymentSourceInfo[];
+}
+
+/** Single payment or purchase from list endpoints (minimal shape for transactions). */
+export interface PaymentOrPurchaseItem {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  blockchainIdentifier: string;
+  agentIdentifier: string | null;
+  onChainState: string | null;
+  nextActionLastChangedAt?: string;
+  onChainStateOrResultLastChangedAt?: string;
+  nextActionOrOnChainStateOrResultLastChangedAt?: string;
+  NextAction?: {
+    requestedAction?: string;
+    errorType?: string;
+    errorNote?: string | null;
+  } | null;
+  unlockTime?: string | null;
+  payByTime?: string | null;
+  submitResultTime?: string;
+  RequestedFunds?: Array<{ unit: string; amount: string }>;
+  CurrentTransaction?: { txHash: string | null; status: string } | null;
+  PaymentSource?: { network: string; smartContractAddress: string };
+}
+
+export interface ListPaymentsOutput {
+  Payments: PaymentOrPurchaseItem[];
+}
+
+export interface ListPurchasesOutput {
+  Purchases: PaymentOrPurchaseItem[];
+}
+
+/** Income response from POST payment/income. */
+export interface PaymentIncomeOutput {
+  agentIdentifier: string | null;
+  periodStart: string;
+  periodEnd: string;
+  totalTransactions: number;
+  totalIncome: {
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  };
+  totalRefunded: {
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  };
+  totalPending: {
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  };
+  dailyIncome: Array<{
+    day: number;
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+  dailyRefunded: Array<{
+    day: number;
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+  dailyPending: Array<{
+    day: number;
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+  monthlyIncome: Array<{
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+  monthlyRefunded: Array<{
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+  monthlyPending: Array<{
+    month: number;
+    year: number;
+    units: Array<{ unit: string; amount: number }>;
+    blockchainFees: number;
+  }>;
+}
+
 // ─── Client factory ─────────────────────────────────────────────────────────
 
 export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
@@ -374,6 +498,104 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           ...(params.count != null && { count: String(params.count) }),
           ...(params.page != null && { page: String(params.page) }),
           ...(params.order != null && { order: params.order }),
+        },
+      });
+    },
+
+    /** List payment sources (READ). Returns id and smartContractAddress for filtering transactions. */
+    async getPaymentSources(params?: {
+      take?: number;
+      cursorId?: string;
+    }): Promise<GetPaymentSourcesOutput> {
+      return request<GetPaymentSourcesOutput>(base, apiKey, `/payment-source`, {
+        method: "GET",
+        query: {
+          ...(params?.take != null && { take: String(params.take) }),
+          ...(params?.cursorId && { cursorId: params.cursorId }),
+        },
+      });
+    },
+
+    /** List payments (READ). Filter by smartContractAddress for a given payment source. */
+    async listPayments(params: {
+      network: PaymentNodeNetwork;
+      filterSmartContractAddress?: string | null;
+      limit?: number;
+      cursorId?: string;
+      filterOnChainState?: string;
+      searchQuery?: string;
+      includeHistory?: boolean;
+    }): Promise<ListPaymentsOutput> {
+      const q: Record<string, string> = {
+        network: params.network,
+        ...(params.limit != null && { limit: String(params.limit) }),
+        ...(params.cursorId && { cursorId: params.cursorId }),
+        ...(params.filterSmartContractAddress != null &&
+          params.filterSmartContractAddress !== "" && {
+            filterSmartContractAddress: params.filterSmartContractAddress,
+          }),
+        ...(params.filterOnChainState && {
+          filterOnChainState: params.filterOnChainState,
+        }),
+        ...(params.searchQuery && { searchQuery: params.searchQuery }),
+        ...(params.includeHistory != null && {
+          includeHistory: params.includeHistory ? "true" : "false",
+        }),
+      };
+      return request<ListPaymentsOutput>(base, apiKey, `/payment`, {
+        method: "GET",
+        query: q,
+      });
+    },
+
+    /** List purchases (READ). Filter by smartContractAddress for a given payment source. */
+    async listPurchases(params: {
+      network: PaymentNodeNetwork;
+      filterSmartContractAddress?: string | null;
+      limit?: number;
+      cursorId?: string;
+      filterOnChainState?: string;
+      searchQuery?: string;
+      includeHistory?: boolean;
+    }): Promise<ListPurchasesOutput> {
+      const q: Record<string, string> = {
+        network: params.network,
+        ...(params.limit != null && { limit: String(params.limit) }),
+        ...(params.cursorId && { cursorId: params.cursorId }),
+        ...(params.filterSmartContractAddress != null &&
+          params.filterSmartContractAddress !== "" && {
+            filterSmartContractAddress: params.filterSmartContractAddress,
+          }),
+        ...(params.filterOnChainState && {
+          filterOnChainState: params.filterOnChainState,
+        }),
+        ...(params.searchQuery && { searchQuery: params.searchQuery }),
+        ...(params.includeHistory != null && {
+          includeHistory: params.includeHistory ? "true" : "false",
+        }),
+      };
+      return request<ListPurchasesOutput>(base, apiKey, `/purchase`, {
+        method: "GET",
+        query: q,
+      });
+    },
+
+    /** Get payment income (READ). Pass agentIdentifier for per-agent earnings. */
+    async getPaymentIncome(params: {
+      network: PaymentNodeNetwork;
+      agentIdentifier?: string | null;
+      startDate?: string | null; // ISO date 2024-01-01
+      endDate?: string | null;
+      timeZone?: string;
+    }): Promise<PaymentIncomeOutput> {
+      return request<PaymentIncomeOutput>(base, apiKey, `/payment/income`, {
+        method: "POST",
+        body: {
+          network: params.network,
+          agentIdentifier: params.agentIdentifier ?? null,
+          startDate: params.startDate ?? null,
+          endDate: params.endDate ?? null,
+          timeZone: params.timeZone ?? "Etc/UTC",
         },
       });
     },

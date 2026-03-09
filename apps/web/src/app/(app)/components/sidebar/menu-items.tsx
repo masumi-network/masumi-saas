@@ -1,12 +1,12 @@
 "use client";
 
 import {
+  Activity,
   Bot,
   Building2,
   Code,
   Key,
   LayoutDashboard,
-  TrendingUp,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -52,10 +52,10 @@ export default function MenuItems() {
       Icon: Bot,
     },
     {
-      key: "analytics",
-      href: "/analytics",
-      label: t("analytics"),
-      Icon: TrendingUp,
+      key: "activity",
+      href: "/activity",
+      label: t("activity"),
+      Icon: Activity,
     },
     {
       key: "organizations",

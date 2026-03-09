@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Activity,
   BookOpen,
   Bot,
   Building2,
@@ -10,7 +11,6 @@ import {
   LayoutDashboard,
   MessageSquare,
   Shield,
-  TrendingUp,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/ai-agents", icon: Bot },
-  { key: "analytics", href: "/analytics", icon: TrendingUp },
+  { key: "activity", href: "/activity", icon: Activity },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },
   { key: "account", href: "/account", icon: User },

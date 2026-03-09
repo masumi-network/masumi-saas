@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
@@ -80,6 +81,8 @@ export async function GET(request: NextRequest) {
             veridianCredentialId: credentialId,
           },
         });
+
+        await recordAgentActivityEvent(agentId, "AgentVerified");
 
         resolved = true;
         // One resolved is enough to flip the agent to VERIFIED

@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
@@ -179,6 +180,8 @@ export async function POST(
         veridianCredentialId: credentialId,
       },
     });
+
+    await recordAgentActivityEvent(agentId, "AgentVerified");
 
     return NextResponse.json({
       success: true,

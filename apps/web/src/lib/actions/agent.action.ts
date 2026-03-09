@@ -3,6 +3,7 @@
 import prisma, { type RegistrationState } from "@masumi/database/client";
 import { cookies } from "next/headers";
 
+import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createPaymentNodeClient,
@@ -273,6 +274,8 @@ export async function registerAgentAction(formData: FormData) {
       },
     });
 
+    await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
+
     // Wait briefly for dispenser funding so we don't block the server for minutes.
     // If funding isn't ready, return WALLET_FUNDING_PENDING so the client can poll
     // completeRegistrationIfReadyAction(agentId) until the wallet is funded.
@@ -380,6 +383,12 @@ export async function registerAgentAction(formData: FormData) {
         }),
       },
     });
+
+    if (registryEntry.state === "RegistrationConfirmed") {
+      await recordAgentActivityEvent(agent.id, "RegistrationConfirmed");
+    } else if (registryEntry.state === "RegistrationFailed") {
+      await recordAgentActivityEvent(agent.id, "RegistrationFailed");
+    }
 
     const updatedAgent = await prisma.agent.findUniqueOrThrow({
       where: { id: agent.id },
@@ -549,6 +558,11 @@ export async function completeRegistrationIfReadyAction(
             }),
           },
         });
+        if (registryEntry.state === "RegistrationConfirmed") {
+          await recordAgentActivityEvent(agent.id, "RegistrationConfirmed");
+        } else if (registryEntry.state === "RegistrationFailed") {
+          await recordAgentActivityEvent(agent.id, "RegistrationFailed");
+        }
         return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
       } finally {
         clearTimeout(timeoutId!);
@@ -641,6 +655,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
       ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
       : existingMeta;
 
+    const previousState = agent.registrationState;
     await prisma.$transaction([
       prisma.agent.update({
         where: { id: agentId },
@@ -662,6 +677,15 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
         },
       }),
     ]);
+    if (registrationState !== previousState) {
+      if (registrationState === "RegistrationConfirmed") {
+        await recordAgentActivityEvent(agentId, "RegistrationConfirmed");
+      } else if (registrationState === "RegistrationFailed") {
+        await recordAgentActivityEvent(agentId, "RegistrationFailed");
+      } else if (registrationState === "DeregistrationConfirmed") {
+        await recordAgentActivityEvent(agentId, "DeregistrationConfirmed");
+      }
+    }
     return { success: true as const };
   } catch (error) {
     console.error("Failed to sync agent registration status:", error);
@@ -706,6 +730,8 @@ export async function deregisterAgentAction(agentId: string) {
       where: { id: agentId },
       data: { registrationState: "DeregistrationRequested" },
     });
+
+    await recordAgentActivityEvent(agentId, "DeregistrationRequested");
 
     return { success: true as const };
   } catch (error) {
@@ -770,6 +796,7 @@ export async function deleteAgentAction(agentId: string) {
     if (!hasExternalRegistration) {
       // Legacy agent (created via old POST /api/agents): no payment-node entry;
       // allow direct delete so the user can remove it.
+      await recordAgentActivityEvent(agentId, "AgentDeleted");
       await prisma.agent.delete({
         where: { id: agentId },
       });
@@ -808,6 +835,7 @@ export async function deleteAgentAction(agentId: string) {
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
     await adminClient.deleteRegistryEntry(externalId);
 
+    await recordAgentActivityEvent(agentId, "AgentDeleted");
     await prisma.agent.delete({
       where: { id: agentId },
     });

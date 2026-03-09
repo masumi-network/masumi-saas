@@ -67,6 +67,7 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
@@ -303,6 +304,16 @@ export const AgentScalarFieldEnum = {
 
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const AgentActivityEventScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  type: "type",
+  createdAt: "createdAt",
+} as const;
+
+export type AgentActivityEventScalarFieldEnum =
+  (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum];
 
 export const OrgApiKeyScalarFieldEnum = {
   id: "id",
