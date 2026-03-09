@@ -55,7 +55,7 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
-export type AgentFormFields = {
+type AgentFormFields = {
   name: string;
   description?: string;
   extendedDescription?: string;
@@ -63,6 +63,10 @@ export type AgentFormFields = {
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
+  authorName?: string;
+  authorEmail?: string;
+  organization?: string;
+  contactOther?: string;
   termsOfUseUrl?: string;
   privacyPolicyUrl?: string;
   otherUrl?: string;
@@ -71,7 +75,7 @@ export type AgentFormFields = {
   exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
 };
 
-export function ExampleOutputsFields({
+function ExampleOutputsFields({
   form: outputsForm,
   t: outputsT,
 }: {
@@ -167,7 +171,7 @@ export function ExampleOutputsFields({
   );
 }
 
-export function PricingFields({
+function PricingFields({
   form: pricingForm,
   t: pricingT,
   isFree,
