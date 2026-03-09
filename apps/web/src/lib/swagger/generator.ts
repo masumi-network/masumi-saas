@@ -17,15 +17,15 @@ const AgentSchema = registry.register(
       .openapi({ example: "A payment processing agent on the Masumi network" }),
     apiUrl: z.string().openapi({ example: "https://my-agent.example.com" }),
     verificationStatus: z
-      .enum(["PENDING", "APPROVED", "REJECTED", "REVIEW"])
+      .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
       .openapi({
-        example: "APPROVED",
+        example: "VERIFIED",
         description:
-          "Current verification status of the agent on the Masumi network",
+          "Agent verification status (credential-based). PENDING = not yet verified, VERIFIED = credential validated, REVOKED/EXPIRED = credential state.",
       }),
     veridianCredentialId: z.string().nullable().openapi({
       example: "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-      description: "Veridian KERI credential ID, present when APPROVED",
+      description: "Veridian KERI credential ID, present when VERIFIED",
     }),
     tags: z.array(z.string()).openapi({ example: ["payments", "ai"] }),
     createdAt: z
@@ -52,16 +52,16 @@ registry.registerPath({
   tags: ["Agents"],
   summary: "List agents",
   description:
-    "Returns a list of agents filtered by verification status. Defaults to APPROVED agents only. No authentication required.",
+    "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required.",
   request: {
     query: z.object({
       status: z
-        .enum(["PENDING", "APPROVED", "REJECTED", "REVIEW"])
+        .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
         .optional()
         .openapi({
           description:
-            "Filter by verification status. Defaults to APPROVED if not specified.",
-          example: "APPROVED",
+            "Filter by agent verification status. Defaults to VERIFIED if not specified.",
+          example: "VERIFIED",
         }),
       page: z.coerce.number().int().min(1).optional().openapi({
         description: "Page number for pagination. Defaults to 1.",
@@ -99,7 +99,7 @@ registry.registerPath({
                     description:
                       "A payment processing agent on the Masumi network",
                     apiUrl: "https://my-agent.example.com",
-                    verificationStatus: "APPROVED",
+                    verificationStatus: "VERIFIED",
                     veridianCredentialId:
                       "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
                     tags: ["payments", "ai"],
@@ -127,8 +127,7 @@ registry.registerPath({
   path: "/agents/{agentId}",
   tags: ["Agents"],
   summary: "Get agent by ID",
-  description:
-    "Returns a single agent by its ID. Returns all verification statuses (not filtered to APPROVED). No authentication required.",
+  description: "Returns a single agent by its ID. No authentication required.",
   request: {
     params: z.object({
       agentId: z.string().openapi({
@@ -156,7 +155,7 @@ registry.registerPath({
                   description:
                     "A payment processing agent on the Masumi network",
                   apiUrl: "https://my-agent.example.com",
-                  verificationStatus: "APPROVED",
+                  verificationStatus: "VERIFIED",
                   veridianCredentialId:
                     "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
                   tags: ["payments", "ai"],

@@ -48,7 +48,7 @@ export async function getDashboardOverview(
     getKycStatusAction(),
     prisma.apikey.findMany({
       where: { userId },
-      select: { id: true, name: true, prefix: true },
+      select: { id: true, name: true, prefix: true, start: true },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
@@ -126,6 +126,7 @@ export async function getDashboardOverview(
     id: k.id,
     name: k.name,
     prefix: k.prefix,
+    start: k.start,
   }));
 
   return {

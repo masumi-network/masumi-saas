@@ -4,7 +4,6 @@ import {
   Bot,
   Building2,
   Code,
-  CreditCard,
   Key,
   LayoutDashboard,
   TrendingUp,
@@ -63,12 +62,6 @@ export default function MenuItems() {
       href: "/organizations",
       label: t("organizations"),
       Icon: Building2,
-    },
-    {
-      key: "payment-methods",
-      href: "/payment-methods",
-      label: t("paymentMethods"),
-      Icon: CreditCard,
     },
     {
       key: "api-keys",

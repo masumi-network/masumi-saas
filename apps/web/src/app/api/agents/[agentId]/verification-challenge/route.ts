@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { apiError } from "@/lib/api/error";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 const bodySchema = z.object({
   regenerate: z.boolean().optional().default(false),
@@ -16,10 +16,10 @@ const bodySchema = z.object({
  * POST with { regenerate: true } to generate a new challenge (invalidates the previous).
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
-  return handleChallengeRequest(params, false);
+  return handleChallengeRequest(request, params, false);
 }
 
 export async function POST(
@@ -29,15 +29,16 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(body);
   const regenerate = parsed.success ? parsed.data.regenerate : false;
-  return handleChallengeRequest(params, regenerate);
+  return handleChallengeRequest(request, params, regenerate);
 }
 
 async function handleChallengeRequest(
+  request: NextRequest,
   params: Promise<{ agentId: string }>,
   regenerate: boolean,
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
@@ -85,6 +86,8 @@ async function handleChallengeRequest(
       },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to get verification challenge:", error);
     return apiError(
       error instanceof Error

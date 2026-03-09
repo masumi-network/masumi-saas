@@ -1,5 +1,6 @@
 "use server";
 
+import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 import { zfd } from "zod-form-data";
 
@@ -254,6 +255,52 @@ export async function deleteAccountAction(formData: FormData) {
       error:
         error instanceof Error ? error.message : "Failed to delete account",
       errorKey: "UnexpectedError",
+    };
+  }
+}
+
+export type ApiKeyListItem = {
+  id: string;
+  name: string | null;
+  prefix: string | null;
+  start: string | null;
+  createdAt: Date;
+  lastRequest: Date | null;
+};
+
+export async function getApiKeysAction(): Promise<
+  { success: true; keys: ApiKeyListItem[] } | { success: false; error: string }
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow();
+    const keys = await prisma.apikey.findMany({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        name: true,
+        prefix: true,
+        start: true,
+        createdAt: true,
+        lastRequest: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return {
+      success: true,
+      keys: keys.map((k) => ({
+        id: k.id,
+        name: k.name,
+        prefix: k.prefix,
+        start: k.start,
+        createdAt: k.createdAt,
+        lastRequest: k.lastRequest,
+      })),
+    };
+  } catch (error) {
+    console.error("Failed to list API keys:", error);
+    return {
+      success: false,
+      error: "Failed to load API keys",
     };
   }
 }

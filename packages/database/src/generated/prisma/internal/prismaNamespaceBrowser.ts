@@ -245,6 +245,7 @@ export const ApikeyScalarFieldEnum = {
   remaining: "remaining",
   lastRequest: "lastRequest",
   expiresAt: "expiresAt",
+  metadata: "metadata",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
 } as const;

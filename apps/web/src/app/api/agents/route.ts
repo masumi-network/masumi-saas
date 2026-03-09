@@ -2,7 +2,7 @@ import prisma, { RegistrationState } from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
 const getAgentsQuerySchema = z.object({
@@ -25,7 +25,7 @@ const getAgentsQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
 
     const rawParams = Object.fromEntries(
       request.nextUrl.searchParams.entries(),
@@ -138,12 +138,11 @@ export async function GET(request: NextRequest) {
       nextCursor,
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to get agents:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to get agents",
-      },
+      { success: false, error: "Failed to get agents" },
       { status: 500 },
     );
   }
@@ -162,7 +161,8 @@ function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
 // without on-chain lookup or verification.
 export async function POST(request: NextRequest) {
   try {
-    const { user, activeOrganizationId } = await getAuthenticatedOrThrow();
+    const { user, activeOrganizationId } =
+      await getAuthenticatedOrThrow(request);
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -238,13 +238,11 @@ export async function POST(request: NextRequest) {
       data: agent,
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to register agent:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to register agent",
-      },
+      { success: false, error: "Failed to register agent" },
       { status: 500 },
     );
   }

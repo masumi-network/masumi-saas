@@ -1,11 +1,11 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
 
     const networkParam = request.nextUrl.searchParams.get("network");
     const network =
@@ -66,13 +66,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to get agent counts:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to get agent counts",
-      },
+      { success: false, error: "Failed to get agent counts" },
       { status: 500 },
     );
   }

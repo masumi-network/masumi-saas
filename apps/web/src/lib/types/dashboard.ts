@@ -35,6 +35,7 @@ export type DashboardOverview = {
     id: string;
     name: string | null;
     prefix: string | null;
+    start: string | null;
   }>;
   apiKeyCount: number;
   agentCount: number;

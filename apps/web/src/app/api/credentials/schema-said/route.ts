@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    await getAuthenticatedOrThrow();
+    await getAuthenticatedOrThrow(request);
 
     const schemaSaid = getAgentVerificationSchemaSaid();
 
@@ -14,13 +14,11 @@ export async function GET(_request: NextRequest) {
       data: { schemaSaid },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to get schema SAID:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to get schema SAID",
-      },
+      { success: false, error: "Failed to get schema SAID" },
       { status: 500 },
     );
   }

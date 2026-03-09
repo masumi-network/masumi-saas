@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { apiError } from "@/lib/api/error";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { checkContactExists } from "@/lib/veridian";
 
 const checkConnectionSchema = z.object({
@@ -11,7 +11,7 @@ const checkConnectionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedOrThrow();
+    await getAuthenticatedOrThrow(request);
 
     const body = await request.json().catch(() => ({}));
     const validation = checkConnectionSchema.safeParse(body);
@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
       data: { exists },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to check connection:", error);
     return apiError(
       error instanceof Error ? error.message : "Failed to check connection",

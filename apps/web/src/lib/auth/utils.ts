@@ -1,11 +1,20 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { cache } from "react";
 
 import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
 import type { SessionWithOrganization } from "./session-types";
+
+/** Thrown when the request has no valid session or API key. Use for 401 responses in API routes. */
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
+}
 
 export interface AuthContext {
   isAuthenticated: boolean;
@@ -21,8 +30,10 @@ export async function getRequestHeaders() {
 export const getSession = cache(async () => {
   try {
     const headersList = await getRequestHeaders();
+    const standardHeaders =
+      headersList instanceof Headers ? headersList : new Headers(headersList);
     return await auth.api.getSession({
-      headers: headersList,
+      headers: standardHeaders,
     });
   } catch (error) {
     console.error("Failed to get session:", error);
@@ -41,26 +52,28 @@ export async function getAuthContext(): Promise<AuthContext> {
 
 export async function getAuthContextWithHeaders(): Promise<
   AuthContext & {
-    headers: Awaited<ReturnType<typeof getRequestHeaders>>;
+    headers: Headers;
     user: NonNullable<
       NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>["user"]
     >;
   }
 > {
   const headersList = await getRequestHeaders();
+  const standardHeaders =
+    headersList instanceof Headers ? headersList : new Headers(headersList);
   const session = await auth.api.getSession({
-    headers: headersList,
+    headers: standardHeaders,
   });
 
   if (!session?.user) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   return {
     isAuthenticated: true,
     userId: session.user.id,
     session,
-    headers: headersList,
+    headers: standardHeaders,
     user: session.user,
   };
 }
@@ -73,22 +86,42 @@ function getActiveOrganizationId(
   );
 }
 
-export async function getAuthenticatedOrThrow() {
-  const headersList = await getRequestHeaders();
+/**
+ * Returns the current user and session. Supports both:
+ * - Session (cookie): browser requests with a logged-in session.
+ * - API key: CLI/MCP/scripts send `Authorization: Bearer <key>` or `x-api-key: <key>`.
+ * Throws UnauthorizedError when neither is valid. Use handleAuthError() in API route catch blocks to return 401.
+ */
+export async function getAuthenticatedOrThrow(request?: Request) {
+  const headersList =
+    request instanceof Request ? request.headers : await getRequestHeaders();
+  const standardHeaders =
+    headersList instanceof Headers ? headersList : new Headers(headersList);
   const session = await auth.api.getSession({
-    headers: headersList,
+    headers: standardHeaders,
   });
 
   if (!session?.user) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   return {
-    headers: headersList,
+    headers: standardHeaders,
     user: session.user,
     session,
     activeOrganizationId: getActiveOrganizationId(session),
   };
+}
+
+/** Use in API route catch blocks: returns 401 JSON response for UnauthorizedError, otherwise null. */
+export function handleAuthError(error: unknown): NextResponse | null {
+  if (error instanceof UnauthorizedError) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+  return null;
 }
 
 /**

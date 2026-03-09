@@ -4,7 +4,6 @@ import {
   BookOpen,
   Bot,
   Building2,
-  CreditCard,
   ExternalLink,
   History,
   Key,
@@ -53,7 +52,6 @@ const navigationItems: NavigationItem[] = [
   { key: "agents", href: "/ai-agents", icon: Bot },
   { key: "analytics", href: "/analytics", icon: TrendingUp },
   { key: "organizations", href: "/organizations", icon: Building2 },
-  { key: "paymentMethods", href: "/payment-methods", icon: CreditCard },
   { key: "apiKeys", href: "/api-keys", icon: Key },
   { key: "account", href: "/account", icon: User },
 ];
