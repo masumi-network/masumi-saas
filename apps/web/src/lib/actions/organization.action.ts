@@ -315,7 +315,7 @@ export async function getOrganizationPendingInvitationsAction(
 
     // Only admin/owner can see pending invitations
     if (currentMember.role !== "owner" && currentMember.role !== "admin") {
-      return { success: true, data: [] };
+      return { success: false, error: "Insufficient permissions" };
     }
 
     const invitations = await prisma.invitation.findMany({
