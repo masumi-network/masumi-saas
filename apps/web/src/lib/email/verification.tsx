@@ -59,7 +59,7 @@ export const VerificationEmail = ({
               {translations.title}
             </Heading>
             <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting.replace("{name}", name)}
+              {translations.greeting.replace("{name}", () => name)}
             </Text>
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}

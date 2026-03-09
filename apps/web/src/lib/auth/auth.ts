@@ -203,6 +203,8 @@ export const auth = betterAuth({
 
         const msg = emailMessagesEn.Invitation;
         const orgName = data.organization.name;
+        const replaceOrganization = (template: string): string =>
+          template.replace("{organization}", () => orgName);
 
         const roleName =
           data.role === "admin"
@@ -215,7 +217,7 @@ export const auth = betterAuth({
           From: emailConfig.postmarkFromEmail,
           To: data.email,
           Tag: "organization-invitation",
-          Subject: msg.preview.replace("{organization}", orgName),
+          Subject: replaceOrganization(msg.preview),
           HtmlBody: await reactInvitationEmail({
             inviteLink,
             organizationName: orgName,
@@ -224,8 +226,8 @@ export const auth = betterAuth({
             logoUrl:
               "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
             translations: {
-              preview: msg.preview.replace("{organization}", orgName),
-              title: msg.title.replace("{organization}", orgName),
+              preview: replaceOrganization(msg.preview),
+              title: replaceOrganization(msg.title),
               greeting: msg.greeting,
               message: msg.message,
               button: msg.button,
