@@ -151,15 +151,21 @@ export const auth = betterAuth({
       adminUserIds: getBootstrapAdminIds(),
     }),
     apiKey({
+      defaultPrefix: "mas_",
+      startingCharactersConfig: {
+        shouldStore: true,
+        charactersLength: 12,
+      },
       rateLimit: authConfig.apiKey.rateLimit,
       enableMetadata: authConfig.apiKey.enableMetadata,
       enableSessionForAPIKeys: true,
       customAPIKeyGetter: (ctx) => {
-        const req = ctx.request;
-        if (!req) return null;
-        const xApiKey = req.headers.get("x-api-key");
+        // When getSession({ headers }) is used (e.g. from API routes), context has ctx.headers, not ctx.request
+        const headers = ctx.request?.headers ?? ctx.headers;
+        if (!headers) return null;
+        const xApiKey = headers.get("x-api-key");
         if (xApiKey) return xApiKey;
-        const auth = req.headers.get("authorization");
+        const auth = headers.get("authorization");
         if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
         return null;
       },

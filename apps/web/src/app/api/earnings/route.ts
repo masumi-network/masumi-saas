@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 export type EarningsDataPoint = {
   date: string;
@@ -15,7 +15,7 @@ const VALID_PERIODS = ["24h", "7d", "30d", "all"] as const;
 
 export async function GET(request: Request) {
   try {
-    await getAuthenticatedOrThrow();
+    await getAuthenticatedOrThrow(request);
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") ?? "7d";
@@ -36,19 +36,12 @@ export async function GET(request: Request) {
       data: { earnings, total },
     });
   } catch (error) {
-    const isUnauthorized =
-      error instanceof Error && error.message === "Unauthorized";
-    const status = isUnauthorized ? 401 : 500;
-    if (!isUnauthorized) {
-      console.error("Failed to get earnings:", error);
-    }
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
+    console.error("Failed to get earnings:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to load earnings",
-      },
-      { status },
+      { success: false, error: "Failed to load earnings" },
+      { status: 500 },
     );
   }
 }

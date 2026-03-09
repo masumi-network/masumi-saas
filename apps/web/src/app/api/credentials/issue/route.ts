@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
 import { apiError } from "@/lib/api/error";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   getAgentVerificationSchemaSaid,
   issueCredential,
@@ -35,7 +35,7 @@ const issueCredentialSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
 
     const body = await request.json().catch(() => ({}));
     const validation = issueCredentialSchema.safeParse(body);
@@ -260,6 +260,8 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to issue credential:", error);
     return apiError(
       error instanceof Error ? error.message : "Failed to issue credential",

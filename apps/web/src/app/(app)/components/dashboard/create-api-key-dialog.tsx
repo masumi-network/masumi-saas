@@ -1,11 +1,12 @@
 "use client";
 
-import { Key, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth.client";
 
 interface CreateApiKeyDialogProps {
@@ -29,14 +31,15 @@ export function CreateApiKeyDialog({
   onClose,
   onSuccess,
 }: CreateApiKeyDialogProps) {
-  const t = useTranslations("App.Home.Dashboard.ApiKey");
-  const router = useRouter();
+  const tDashboard = useTranslations("App.Home.Dashboard.ApiKey");
+  const t = useTranslations("App.ApiKeys");
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
   const handleClose = () => {
+    if (createdKey) onSuccess();
     setCreatedKey(null);
     setName("");
     setError(null);
@@ -54,19 +57,17 @@ export function CreateApiKeyDialog({
       });
 
       if (createError) {
-        setError(createError.message || t("error"));
+        setError(createError.message || tDashboard("error"));
         return;
       }
 
       if (data?.key) {
         setCreatedKey(data.key);
-        onSuccess();
-        router.refresh();
       } else {
-        setError(t("error"));
+        setError(tDashboard("error"));
       }
     } catch {
-      setError(t("error"));
+      setError(tDashboard("error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,40 +76,60 @@ export function CreateApiKeyDialog({
   const showKeyResult = createdKey && open;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && !showKeyResult) handleClose();
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-md"
+        showCloseButton={!showKeyResult}
+        {...(showKeyResult && {
+          onInteractOutside: (e) => e.preventDefault(),
+          onEscapeKeyDown: (e) => e.preventDefault(),
+        })}
+      >
         {showKeyResult ? (
           <>
             <DialogHeader>
-              <DialogTitle>{t("createdTitle")}</DialogTitle>
-              <DialogDescription>{t("createdDescription")}</DialogDescription>
+              <DialogTitle>{tDashboard("createdTitle")}</DialogTitle>
+              <DialogDescription>
+                {tDashboard("createdDescription")}
+              </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border bg-muted/50 p-4 font-mono text-sm break-all">
-              {createdKey}
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
+              <code className="min-w-0 flex-1 break-all font-mono text-sm">
+                {createdKey}
+              </code>
+              <CopyButton value={createdKey ?? ""} className="shrink-0" />
             </div>
-            <p className="text-xs text-muted-foreground">{t("copyWarning")}</p>
+            <p className="text-xs text-muted-foreground">
+              {tDashboard("copyWarning")}
+            </p>
             <DialogFooter>
-              <Button onClick={handleClose}>{t("done")}</Button>
+              <Button variant="primary" onClick={handleClose}>
+                {tDashboard("done")}
+              </Button>
             </DialogFooter>
           </>
         ) : (
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{t("title")}</DialogTitle>
-              <DialogDescription>{t("description")}</DialogDescription>
+              <DialogTitle>{t("addKeyTitle")}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="api-key-name">{t("name")}</Label>
+                <Label htmlFor="api-key-name">{tDashboard("name")}</Label>
                 <Input
                   id="api-key-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={t("namePlaceholder")}
+                  placeholder={tDashboard("namePlaceholder")}
                   disabled={isSubmitting}
-                  autoFocus
                 />
               </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
             <DialogFooter>
@@ -118,16 +139,16 @@ export function CreateApiKeyDialog({
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
-                {t("cancel")}
+                {tDashboard("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("submitting")}
+                    <Spinner size={16} className="mr-2" />
+                    {t("creating")}
                   </>
                 ) : (
-                  t("submit")
+                  t("create")
                 )}
               </Button>
             </DialogFooter>
@@ -139,7 +160,7 @@ export function CreateApiKeyDialog({
 }
 
 export function DashboardCreateApiKeyButton() {
-  const t = useTranslations("App.Home.Dashboard");
+  const t = useTranslations("App.ApiKeys");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -150,8 +171,8 @@ export function DashboardCreateApiKeyButton() {
           className="flex items-center gap-2"
           onClick={() => setIsOpen(true)}
         >
-          <Key className="h-4 w-4" />
-          {t("createApiKey")}
+          <Plus className="h-4 w-4" />
+          {t("addApiKey")}
         </Button>
       </div>
       <CreateApiKeyDialog

@@ -248,17 +248,12 @@ export default async function DashboardOverview({
                 {apiKeys.map((key) => (
                   <li key={key.id}>
                     <div className="flex items-center justify-between rounded-md border p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                          <Key className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium">
-                          {key.name || key.prefix || "API Key"}
-                        </p>
-                      </div>
-                      {key.prefix && (
+                      <p className="font-medium">
+                        {key.name || key.start || key.prefix || "API Key"}
+                      </p>
+                      {(key.start ?? key.prefix) && (
                         <span className="font-mono text-xs text-muted-foreground">
-                          {key.prefix}…
+                          {key.start ?? key.prefix}…
                         </span>
                       )}
                     </div>

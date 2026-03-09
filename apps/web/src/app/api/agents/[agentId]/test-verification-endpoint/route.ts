@@ -3,18 +3,18 @@ import { NextResponse } from "next/server";
 
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
 import { apiError } from "@/lib/api/error";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 /**
  * POST /api/agents/[agentId]/test-verification-endpoint
  * Tests that the agent's /get-credential endpoint returns the correct HMAC.
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
@@ -60,6 +60,8 @@ export async function POST(
       data: { message: "Endpoint is working correctly." },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to test verification endpoint:", error);
     return apiError(
       error instanceof Error

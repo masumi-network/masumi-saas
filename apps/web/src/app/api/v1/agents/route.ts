@@ -7,7 +7,10 @@ import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { agentPaginationSchema, publicAgentSelect } from "@/lib/schemas/agent";
 
 const querySchema = z.object({
-  status: z.enum(["PENDING", "APPROVED", "REJECTED", "REVIEW"]).optional(),
+  status: z
+    .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
+    .optional()
+    .default("VERIFIED"),
 });
 
 export async function OPTIONS(request: NextRequest) {
@@ -46,9 +49,8 @@ export async function GET(request: NextRequest) {
       ? paginationValidation.data
       : { page: 1, limit: 50 };
 
-    // 3. Build where clause — default to APPROVED
     const where = {
-      verificationStatus: status ?? "APPROVED",
+      verificationStatus: status,
     };
 
     // 4. Query

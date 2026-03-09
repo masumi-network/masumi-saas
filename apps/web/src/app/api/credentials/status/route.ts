@@ -2,7 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { apiError } from "@/lib/api/error";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
@@ -10,7 +10,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
 
     const id = request.nextUrl.searchParams.get("id");
     if (!id) {
@@ -108,6 +108,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to check credential status:", error);
     return apiError(
       error instanceof Error

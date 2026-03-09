@@ -2,14 +2,14 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { deleteAgentAction } from "@/lib/actions/agent.action";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
@@ -78,23 +78,22 @@ export async function GET(
       data,
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to get agent:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to get agent",
-      },
+      { success: false, error: "Failed to get agent" },
       { status: 500 },
     );
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    await getAuthenticatedOrThrow();
+    await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
     const result = await deleteAgentAction(agentId);
     if (!result.success) {
@@ -106,14 +105,8 @@ export async function DELETE(
     }
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to delete agent";
-    if (message === "Unauthorized") {
-      return NextResponse.json(
-        { success: false, error: message },
-        { status: 401 },
-      );
-    }
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
     console.error("Failed to delete agent:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete agent" },

@@ -31,6 +31,54 @@ This project uses a hybrid architecture depending on the feature:
 
 **Dashboard/other data flow:** `Server Component / Action → API Client → API Route → Service → Prisma`
 
+**API authentication:** Authenticated API routes (`/api/agents`, `/api/dashboard/overview`, `/api/credentials/*`, etc.) accept either a session cookie (browser) or an API key: `Authorization: Bearer <key>` or `x-api-key: <key>`.
+
+## API
+
+### Authentication
+
+Authenticated routes require either:
+
+- **Session cookie** – used by the browser when you’re logged in.
+- **API key** – for CLIs, MCP, scripts, and server-to-server calls. Create keys in the app under **API Keys**. Send the key in one of two ways:
+
+  ```bash
+  # Option 1: Authorization header (recommended)
+  curl -H "Authorization: Bearer YOUR_API_KEY" https://your-domain.com/api/agents
+
+  # Option 2: x-api-key header
+  curl -H "x-api-key: YOUR_API_KEY" https://your-domain.com/api/agents
+  ```
+
+Unauthenticated requests receive `401 Unauthorized` with `{"success":false,"error":"Unauthorized"}`.
+
+### Authenticated routes (session or API key)
+
+| Path                          | Description                                           |
+| ----------------------------- | ----------------------------------------------------- |
+| `GET/POST /api/agents`        | List or register agents                               |
+| `GET/DELETE /api/agents/[id]` | Get or delete an agent                                |
+| `GET /api/agents/counts`      | Agent counts by status and network                    |
+| `GET /api/dashboard/overview` | User, KYC, orgs, agents, API keys, balance            |
+| `GET /api/earnings`           | Earnings and payouts                                  |
+| `GET/POST /api/credentials/*` | Veridian credentials (issue, status, reconcile, etc.) |
+
+### Public API (no auth)
+
+The **v1** namespace exposes read-only, rate-limited endpoints for agent discovery. No API key required.
+
+| Path                      | Description                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/agents`      | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
+| `GET /api/v1/agents/[id]` | Get a single agent by ID.                                                                                                     |
+| `GET /api/v1/openapi`     | OpenAPI 3.0 spec for the public API.                                                                                          |
+
+Example:
+
+```bash
+curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
+```
+
 ## Project Structure
 
 ```
@@ -48,9 +96,10 @@ masumi-saas/
 │       │   │   │   └── withdraw/      # Withdraw earnings
 │       │   │   ├── (auth)/    # Authentication routes
 │       │   │   └── api/       # API routes
-│       │   │       ├── agents/        # Agent CRUD
-│       │   │       ├── dashboard/     # Dashboard overview
-│       │   │       ├── credentials/   # Veridian credentials
+│       │   │       ├── agents/        # Agent CRUD (authenticated)
+│       │   │       ├── dashboard/     # Dashboard overview (authenticated)
+│       │   │       ├── credentials/   # Veridian credentials (authenticated)
+│       │   │       ├── v1/            # Public API (agents, openapi; no auth)
 │       │   │       └── webhooks/      # External webhooks
 │       │   ├── components/    # UI components
 │       │   ├── lib/
@@ -175,7 +224,8 @@ After promoting, admins can sign in at `/admin/signin`.
 
 - ✅ User authentication (email/password, social sign-in, forgot password, 2FA)
 - ✅ Organization management (multi-tenant, org dashboard)
-- ✅ API key management
+- ✅ **API key authentication** – Use API keys for CLIs, MCP, and scripts (`Authorization: Bearer` or `x-api-key`)
+- ✅ **Public API (v1)** – Unauthenticated, rate-limited agent listing and OpenAPI spec
 - ✅ **Dashboard** – Overview with balance, agents, organizations; top up & withdraw
 - ✅ **AI Agent management** – Register, verify, and manage agents on the Masumi network
 - ✅ **Payment node integration** – Wallet generation, agent registration via Masumi payment node; Preprod/Mainnet network toggle
@@ -205,7 +255,7 @@ After promoting, admins can sign in at `/admin/signin`.
 
 - **Email/Password Authentication**: Sign up and sign in with email and password
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
-- **API Key Plugin**: Generate and manage API keys with rate limiting
+- **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
 - **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages
 
