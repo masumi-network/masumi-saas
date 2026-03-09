@@ -17,18 +17,19 @@ Masumi SaaS is a platform for registering, managing, and verifying your AI agent
 
 ## Architecture
 
-This project follows an **API-first** architecture with clear separation of concerns:
+This project uses a hybrid architecture depending on the feature:
 
 1. **Config** (`apps/web/src/lib/config/`) - Centralized environment configuration (app, auth, email, sumsub, veridian)
-2. **API Clients** (`apps/web/src/lib/api/`) - Client-side and server-side fetch wrappers for API routes
-3. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints that handle auth and delegate to services
-4. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
-5. **Actions** (`apps/web/src/lib/actions/`) - Server actions that call API clients or services
-6. **Types** (`apps/web/src/lib/types/`) - Shared TypeScript types
+2. **Server Actions** (`apps/web/src/lib/actions/`) - Directly call Prisma and external services (payment node, Veridian)
+3. **API Routes** (`apps/web/src/app/api/`) - HTTP endpoints for client-side fetching and public API
+4. **API Clients** (`apps/web/src/lib/api/`) - Client-side fetch wrappers for API routes
+5. **Payment Node** (`apps/web/src/lib/payment-node/`) - Typed HTTP client + per-user key encryption for Masumi payment node
+6. **Services** (`apps/web/src/lib/services/`) - Business logic and data access (Prisma)
+7. **Schemas** (`apps/web/src/lib/schemas/`) - Shared Zod schemas for API routes and server actions
 
-**Data flow (Option B):** `Action → API Client → API Route → Service → Prisma`
+**Agent registration flow:** `Server Action → Payment Node Client → Prisma` (wallets generated server-side, no API route involved)
 
-This keeps a single API boundary for dashboard, agents, and other features—enabling client-side fetching, caching, and consistency across the app.
+**Dashboard/other data flow:** `Server Component / Action → API Client → API Route → Service → Prisma`
 
 ## Project Structure
 
@@ -39,7 +40,7 @@ masumi-saas/
 │       ├── src/
 │       │   ├── app/           # App Router routes
 │       │   │   ├── (app)/     # Authenticated routes
-│       │   │   │   ├── agents/        # Agent management
+│       │   │   │   ├── ai-agents/     # Agent management
 │       │   │   │   ├── organizations/ # Organization management
 │       │   │   │   ├── account/       # User account
 │       │   │   │   ├── onboarding/    # KYC flow
@@ -53,13 +54,15 @@ masumi-saas/
 │       │   │       └── webhooks/      # External webhooks
 │       │   ├── components/    # UI components
 │       │   ├── lib/
-│       │   │   ├── config/    # Env config (app, auth, email, sumsub, veridian)
-│       │   │   ├── actions/   # Server actions
-│       │   │   ├── api/       # API clients (agent, dashboard, credential)
-│       │   │   ├── services/  # Business logic
-│       │   │   ├── types/     # Shared types
-│       │   │   ├── schemas/   # Zod schemas
-│       │   │   └── auth/      # Better Auth setup
+│       │   │   ├── config/        # Env config (app, auth, email, sumsub, veridian)
+│       │   │   ├── actions/       # Server actions (agent, auth, organization)
+│       │   │   ├── api/           # API clients (agent, dashboard, credential)
+│       │   │   ├── payment-node/  # Masumi payment node client + encryption
+│       │   │   ├── services/      # Business logic
+│       │   │   ├── types/         # Shared TypeScript types
+│       │   │   ├── schemas/       # Zod schemas
+│       │   │   ├── utils/         # Shared utilities
+│       │   │   └── auth/          # Better Auth setup
 │       │   └── ...
 │       └── messages/          # i18n messages
 ├── packages/
@@ -86,87 +89,49 @@ masumi-saas/
    cp apps/web/.env.example apps/web/.env
    ```
 
-   Edit `apps/web/.env` with the following values. These are centralized in `apps/web/src/lib/config/` (app.config, auth.config, email.config, sumsub.config, veridian.config).
+   Edit `apps/web/.env` with the following values:
    - **DATABASE_URL**: Your PostgreSQL connection string
      - Format: `postgresql://username:password@host:port/database?schema=public`
-     - Example: `postgresql://postgres:mypassword@localhost:5432/masumi_saas?schema=public`
 
    - **BETTER_AUTH_SECRET**: A random secret key for signing session tokens
      - Generate one with: `openssl rand -base64 32`
-     - Or use any secure random string (keep it secret!)
 
    - **BETTER_AUTH_URL**: Your application's base URL
      - For local development: `http://localhost:3000`
-     - For production: Your production domain (e.g., `https://yourdomain.com`)
 
    - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
-     - For local development: `http://localhost:3000`
-     - For production: Your production domain (e.g., `https://yourdomain.com`)
-     - Used when server actions fetch from API routes; falls back to request headers if not set
+     - Falls back to request headers if not set
 
    - **NEXT_PUBLIC_SOKOSUMI_MARKETPLACE_URL**: Sokosumi marketplace base URL (optional)
-     - Defaults to `https://app.sokosumi.com` if not set
-     - Used for the "Hire in Sokosumi" link in agent details (URL format: `{base}/{agentIdentifier}`)
+     - Defaults to `https://app.sokosumi.com`
 
-   - **POSTMARK_SERVER_ID**: Your Postmark server API token (optional, for email sending)
-     - Get one from [Postmark](https://postmarkapp.com/)
-     - If not set, password reset emails will be logged to console in development
+   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
+     - If not set, emails are logged to console in development
 
-   - **POSTMARK_FROM_EMAIL**: The email address to send emails from (optional)
-     - Defaults to `noreply@masumi.network` if not set
-     - Must be a verified sender in your Postmark account
+   - **NEXT_PUBLIC_SENTRY_DSN** / **SENTRY_AUTH_TOKEN** / **SENTRY_PROJECT**: Sentry config (optional)
 
-   - **NEXT_PUBLIC_SENTRY_DSN**: Your Sentry DSN (optional, for error tracking)
-   - **SENTRY_AUTH_TOKEN**: Your Sentry auth token (optional, for source maps)
-   - **SENTRY_PROJECT**: Your Sentry project name (defaults to "masumi-saas")
+   - **SUMSUB_APP_TOKEN** / **SUMSUB_SECRET_KEY**: Sumsub credentials (optional, for KYC/KYB)
+   - **SUMSUB_BASE_URL**: Defaults to `https://api.sumsub.com`
+   - **SUMSUB_KYC_LEVEL** / **SUMSUB_KYB_LEVEL**: Verification level names (default: `"id-only"`)
 
-   - **SUMSUB_APP_TOKEN**: Your Sumsub application token (optional, for KYC/KYB verification)
-     - Get one from [Sumsub Dashboard](https://sumsub.com/)
-     - Required for identity verification features
-   - **SUMSUB_SECRET_KEY**: Your Sumsub secret key (optional, for KYC/KYB verification)
-     - Get one from [Sumsub Dashboard](https://sumsub.com/)
-     - Required for webhook signature verification and API authentication
-   - **SUMSUB_BASE_URL**: Sumsub API base URL (optional)
-     - Defaults to `https://api.sumsub.com` for production
-     - Use `https://api.sumsub.com` for sandbox/testing
-   - **SUMSUB_KYC_LEVEL**: Verification level name for KYC (optional)
-     - Defaults to `"id-only"` (simpler, faster for development)
-     - Recommended: `"id-and-liveness"` for production (includes liveness check)
-     - Must match an existing verification level in your Sumsub dashboard
-   - **SUMSUB_KYB_LEVEL**: Verification level name for KYB (optional)
-     - Defaults to `"id-only"`
-     - Must match an existing verification level in your Sumsub dashboard
+   - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional)
+   - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, use port 3901 not 3903)
+   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification credentials
 
-   - **VERIDIAN_CREDENTIAL_SERVER_URL**: Veridian credential server URL (optional, for agent verification)
-     - For local development: `http://localhost:3001`
-     - For production: Your deployed credential server URL (e.g., `https://cred-issuance.yourdomain.com` or `https://cred-issuance-production.up.railway.app`)
-     - Required for Veridian wallet integration and agent verification features
+   - **PAYMENT_NODE_BASE_URL**: Base URL of the Masumi payment node API, including the version path
+     - e.g. `https://payment.masumi.network/api/v1` or `http://localhost:3001/api/v1`
+   - **PAYMENT_NODE_ADMIN_API_KEY**: Admin API key for the payment node (server-side only, never exposed to client)
+     - Used to generate wallets and create per-user API keys
+   - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
+   - **PAYMENT_NODE_ENCRYPTION_KEY**: Encryption key for storing per-user payment node API keys (min 32 chars)
+     - Generate with: `openssl rand -base64 32`
+   - **PAYMENT_NODE_OPTIONAL** _(optional)_: Set to `1` to allow startup without payment node config
+   - **PAYMENT_NODE_STRICT_STARTUP** _(optional)_: Set to `1` to throw on startup if payment node is unreachable
 
-   - **VERIDIAN_KERIA_URL**: KERIA connect URL (optional, for signature verification)
-     - For local development: `http://localhost:3901` (use the connect URL, not the boot URL)
-     - For production: Your deployed KERIA connect URL (e.g., `https://keria.yourdomain.com`)
-     - **Important**: Use the connect URL (port 3901), not the boot URL (port 3903)
-     - Required for cryptographic signature verification when issuing credentials
-
-   - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification (required)
-     - The credential schema SAID to use for agent verification credentials
-     - Must match a schema registered in your Veridian credential server
-     - Default: `EBV88FehFeDa1tiFUQxuuVi1QXKOXVpwOc1cdFMCzBlI` (KERIA-compatible, `additionalProperties: false`)
-     - Schema file: `scripts/schemas/masumi-agent-verification.json`
-     - To regenerate: run `pnpm create:agent-verification-schema` (requires credential-schema-builder backend)
-
-3. **Configure Sumsub Webhook** (required for automatic status updates):
+3. **Configure Sumsub Webhook** (required for automatic KYC status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
-   - Add a new webhook with:
-     - **URL**: `https://yourdomain.com/api/webhooks/sumsub`
-     - **Events**: Select `applicantWorkflowCompleted` (or all events)
-     - **Secret**: Use the same `SUMSUB_SECRET_KEY` from your `.env` file
-   - For local development, use a tool like [ngrok](https://ngrok.com/) to expose your local server:
-     ```bash
-     ngrok http 3000
-     # Then use the ngrok URL: https://your-ngrok-url.ngrok.io/api/webhooks/sumsub
-     ```
-   - **Note**: The webhook is required for automatic status updates. Without it, you'll need to manually refresh or rely on the instant status check when users submit verification.
+   - Add a webhook pointing to `https://yourdomain.com/api/webhooks/sumsub`
+   - For local development, use [ngrok](https://ngrok.com/) to expose your local server
 
 4. **Set up the database:**
 
@@ -185,7 +150,7 @@ masumi-saas/
 
 ## Admin Management
 
-The project includes a CLI tool for managing admin users. No need to manually look up user IDs in the database — just use their email address.
+The project includes a CLI tool for managing admin users.
 
 ### Setting Up Your First Admin
 
@@ -196,39 +161,31 @@ The project includes a CLI tool for managing admin users. No need to manually lo
    pnpm admin:promote your@email.com
    ```
 
-The script updates the user's role in the database and automatically syncs `ADMIN_USER_IDS` in `apps/web/.env`.
-
 ### Available Commands
 
 ```bash
-# Promote one or more users to admin
-pnpm admin:promote user@example.com
-pnpm admin:promote user1@example.com user2@example.com
-
-# Demote an admin back to regular user
-pnpm admin:demote user@example.com
-
-# List all current admin users
-pnpm admin:list
+pnpm admin:promote user@example.com   # Promote to admin
+pnpm admin:demote user@example.com    # Demote to regular user
+pnpm admin:list                       # List all admins
 ```
 
-After promoting a user, they can sign in at `/admin/signin` to access the admin dashboard.
+After promoting, admins can sign in at `/admin/signin`.
 
 ## Features
 
-- ✅ User authentication (email/password, forgot password)
-- ✅ Organization management (multi-tenant)
+- ✅ User authentication (email/password, social sign-in, forgot password, 2FA)
+- ✅ Organization management (multi-tenant, org dashboard)
 - ✅ API key management
-- ✅ **Dashboard** – Overview with balance, agents, organizations; Top up & Withdraw
+- ✅ **Dashboard** – Overview with balance, agents, organizations; top up & withdraw
 - ✅ **AI Agent management** – Register, verify, and manage agents on the Masumi network
+- ✅ **Payment node integration** – Wallet generation, agent registration via Masumi payment node; Preprod/Mainnet network toggle
 - ✅ **KYC/KYB** – Identity verification via Sumsub
 - ✅ **Veridian integration** – Cryptographic credentials for agent verification
 - ✅ Cookie consent banner
 - ✅ Error tracking with Sentry
 - ✅ Dark/light theme (auto-detect)
 - ✅ Responsive design
-- ✅ Server-side rendering with Suspense
-- ✅ API-first architecture (actions → API clients → API routes → services)
+- ✅ Server-side rendering with Suspense + skeleton loading
 
 ## Scripts
 
@@ -249,6 +206,7 @@ After promoting a user, they can sign in at `/admin/signin` to access the admin 
 - **Email/Password Authentication**: Sign up and sign in with email and password
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
 - **API Key Plugin**: Generate and manage API keys with rate limiting
+- **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages
 
 ## Sentry Integration

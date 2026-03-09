@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
@@ -42,7 +43,13 @@ async function HomePageContent() {
     );
   }
 
-  const result = await getDashboardOverviewAction();
+  const cookieStore = await cookies();
+  const networkCookie = cookieStore.get("payment_network")?.value;
+  const network =
+    networkCookie === "Mainnet" || networkCookie === "Preprod"
+      ? networkCookie
+      : undefined;
+  const result = await getDashboardOverviewAction(network);
 
   if (!result.success) {
     return (

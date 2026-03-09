@@ -5,13 +5,14 @@ import type { AgentPricing } from "@/lib/utils";
 type Agent = {
   id: string;
   name: string;
-  summary: string | null;
   description: string | null;
+  extendedDescription: string | null;
   apiUrl: string;
   tags: string[];
   icon: string | null;
   metadata?: string | null;
   agentIdentifier: string | null;
+  networkIdentifier: string | null;
   pricing: AgentPricing | null;
   registrationState:
     | "RegistrationRequested"
@@ -91,7 +92,11 @@ class AgentApiClient {
       registrationStateIn?: string[];
       search?: string;
     },
-    options?: { cursorId?: string; take?: number },
+    options?: {
+      cursorId?: string;
+      take?: number;
+      network?: "Mainnet" | "Preprod";
+    },
   ): Promise<GetAgentsResult> {
     const params = new URLSearchParams();
     if (filters?.verificationStatus !== undefined) {
@@ -117,6 +122,9 @@ class AgentApiClient {
     }
     if (options?.take !== undefined) {
       params.set("take", String(options.take));
+    }
+    if (options?.network) {
+      params.set("network", options.network);
     }
 
     const queryString = params.toString();
@@ -157,8 +165,8 @@ class AgentApiClient {
 
   async registerAgent(data: {
     name: string;
-    summary?: string;
     description?: string;
+    extendedDescription?: string;
     apiUrl: string;
     tags?: string;
     icon?: string;
@@ -180,40 +188,13 @@ class AgentApiClient {
     });
   }
 
-  async updateAgent(
-    agentId: string,
-    data: {
-      name?: string;
-      summary?: string | null;
-      description?: string | null;
-      tags?: string[];
-      icon?: string | null;
-      pricing?: AgentPricing | null;
-      authorName?: string;
-      authorEmail?: string;
-      organization?: string;
-      contactOther?: string;
-      termsOfUseUrl?: string;
-      privacyPolicyUrl?: string;
-      otherUrl?: string;
-      capabilityName?: string;
-      capabilityVersion?: string;
-      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
-    },
-  ): Promise<ApiResponse<Agent>> {
-    return this.request<Agent>(`/${agentId}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  }
-
   async deleteAgent(agentId: string): Promise<ApiResponse<void>> {
     return this.request<void>(`/${agentId}`, {
       method: "DELETE",
     });
   }
 
-  async getCounts(): Promise<
+  async getCounts(network?: "Mainnet" | "Preprod"): Promise<
     | {
         success: true;
         data: {
@@ -228,7 +209,13 @@ class AgentApiClient {
     | { success: false; error: string }
   > {
     try {
-      const response = await fetch(`${this.baseUrl}/counts`, {
+      const params = new URLSearchParams();
+      if (network) params.set("network", network);
+      const query = params.toString();
+      const url = query
+        ? `${this.baseUrl}/counts?${query}`
+        : `${this.baseUrl}/counts`;
+      const response = await fetch(url, {
         headers: { "Content-Type": "application/json" },
       });
       const json = (await response.json()) as

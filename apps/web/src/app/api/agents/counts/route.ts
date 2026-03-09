@@ -1,13 +1,19 @@
 import prisma from "@masumi/database/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow();
 
-    const baseWhere = { userId: user.id };
+    const networkParam = request.nextUrl.searchParams.get("network");
+    const network =
+      networkParam === "Mainnet" || networkParam === "Preprod"
+        ? networkParam
+        : "Preprod";
+
+    const baseWhere = { userId: user.id, networkIdentifier: network };
 
     const [all, registered, deregistered, pending, failed, verified] =
       await Promise.all([

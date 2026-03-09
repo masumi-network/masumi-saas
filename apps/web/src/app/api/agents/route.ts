@@ -20,6 +20,7 @@ const getAgentsQuerySchema = z.object({
   registrationState: z.string().optional(),
   registrationStateIn: z.string().optional(),
   search: z.string().optional(),
+  network: z.enum(["Mainnet", "Preprod"]).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -50,39 +51,30 @@ export async function GET(request: NextRequest) {
       search,
     } = queryValidation.data;
 
-    const searchTrimmed = search?.trim();
-    const where: {
-      userId: string;
-      verificationStatus?:
-        | { not: "VERIFIED" }
-        | "PENDING"
-        | "VERIFIED"
-        | "REVOKED"
-        | "EXPIRED"
-        | null;
-      registrationState?: RegistrationState | { in: RegistrationState[] };
-    } = {
-      userId: user.id,
-    };
+    const network = getNetworkFromRequest(request);
 
-    if (unverified) {
-      where.verificationStatus = { not: "VERIFIED" as const };
-    } else if (verificationStatus) {
-      where.verificationStatus = verificationStatus;
-    }
+    const searchTrimmed = search?.trim();
+
+    const verificationFilter = unverified
+      ? { verificationStatus: { not: "VERIFIED" as const } }
+      : verificationStatus
+        ? { verificationStatus }
+        : {};
 
     const validStates = Object.values(RegistrationState) as string[];
-    if (registrationStateIn) {
-      const states = registrationStateIn
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => validStates.includes(s)) as RegistrationState[];
-      if (states.length > 0) {
-        where.registrationState = { in: states };
+    const registrationFilter = (() => {
+      if (registrationStateIn) {
+        const states = registrationStateIn
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => validStates.includes(s)) as RegistrationState[];
+        if (states.length > 0) return { registrationState: { in: states } };
       }
-    } else if (registrationState && validStates.includes(registrationState)) {
-      where.registrationState = registrationState as RegistrationState;
-    }
+      if (registrationState && validStates.includes(registrationState)) {
+        return { registrationState: registrationState as RegistrationState };
+      }
+      return {};
+    })();
 
     const searchFilter =
       searchTrimmed && searchTrimmed.length > 0
@@ -92,13 +84,13 @@ export async function GET(request: NextRequest) {
                 name: { contains: searchTrimmed, mode: "insensitive" as const },
               },
               {
-                summary: {
+                description: {
                   contains: searchTrimmed,
                   mode: "insensitive" as const,
                 },
               },
               {
-                description: {
+                extendedDescription: {
                   contains: searchTrimmed,
                   mode: "insensitive" as const,
                 },
@@ -114,8 +106,17 @@ export async function GET(request: NextRequest) {
           }
         : undefined;
 
+    const baseWhere = {
+      userId: user.id,
+      ...verificationFilter,
+      ...registrationFilter,
+      networkIdentifier: network,
+    };
+
     const finalWhere =
-      searchFilter !== undefined ? { AND: [where, searchFilter] } : where;
+      searchFilter !== undefined
+        ? { AND: [baseWhere, searchFilter] }
+        : baseWhere;
 
     const agents = await prisma.agent.findMany({
       where: finalWhere,
@@ -148,6 +149,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
+  const fromQuery = request.nextUrl.searchParams.get("network");
+  if (fromQuery === "Mainnet" || fromQuery === "Preprod") return fromQuery;
+  const fromCookie = request.cookies.get("payment_network")?.value;
+  if (fromCookie === "Mainnet" || fromCookie === "Preprod") return fromCookie;
+  return "Preprod";
+}
+
 // TODO: Replace with on-chain registration + signed data; this flow currently
 // creates the agent in DB and sets registrationState to RegistrationConfirmed
 // without on-chain lookup or verification.
@@ -169,16 +178,12 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
-      summary,
       description,
+      extendedDescription,
       apiUrl,
       tags,
       icon,
       pricing,
-      authorName,
-      authorEmail,
-      organization,
-      contactOther,
       termsOfUseUrl,
       privacyPolicyUrl,
       otherUrl,
@@ -195,10 +200,8 @@ export async function POST(request: NextRequest) {
       : [];
 
     const metadata: Record<string, unknown> = {};
-    if (authorName?.trim()) metadata.authorName = authorName.trim();
-    if (authorEmail?.trim()) metadata.authorEmail = authorEmail.trim();
-    if (organization?.trim()) metadata.organization = organization.trim();
-    if (contactOther?.trim()) metadata.contactOther = contactOther.trim();
+    if (user.name?.trim()) metadata.authorName = user.name.trim();
+    if (user.email?.trim()) metadata.authorEmail = user.email.trim();
     if (termsOfUseUrl?.trim()) metadata.termsOfUseUrl = termsOfUseUrl.trim();
     if (privacyPolicyUrl?.trim())
       metadata.privacyPolicyUrl = privacyPolicyUrl.trim();
@@ -208,11 +211,15 @@ export async function POST(request: NextRequest) {
       metadata.capabilityVersion = capabilityVersion.trim();
     if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
 
+    const network = getNetworkFromRequest(request);
+
     const agent = await prisma.agent.create({
       data: {
         name,
-        summary: summary?.trim() || null,
-        description: (description?.trim() || null) as string | null,
+        description: description?.trim() || null,
+        extendedDescription: (extendedDescription?.trim() || null) as
+          | string
+          | null,
         apiUrl,
         tags: tagsArray,
         icon: icon?.trim() || null,
@@ -222,6 +229,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         organizationId: activeOrganizationId,
         registrationState: "RegistrationConfirmed",
+        networkIdentifier: network,
       },
     });
 

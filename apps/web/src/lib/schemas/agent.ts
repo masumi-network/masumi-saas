@@ -16,14 +16,14 @@ export const registerAgentBodySchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
-  summary: z
-    .string()
-    .max(250, "Summary must be 250 characters or less")
-    .optional()
-    .or(z.literal("")),
   description: z
     .string()
-    .max(5000, "Description must be less than 5000 characters")
+    .max(250, "Description must be 250 characters or less")
+    .optional()
+    .or(z.literal("")),
+  extendedDescription: z
+    .string()
+    .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
   apiUrl: z
@@ -47,10 +47,6 @@ export const registerAgentBodySchema = z.object({
         .optional(),
     })
     .optional(),
-  authorName: z.string().max(250).optional().or(z.literal("")),
-  authorEmail: z.union([z.literal(""), z.string().email().max(250)]).optional(),
-  organization: z.string().max(250).optional().or(z.literal("")),
-  contactOther: z.string().max(250).optional().or(z.literal("")),
   termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
   privacyPolicyUrl: z
     .union([z.literal(""), z.string().url().max(250)])
@@ -61,16 +57,21 @@ export const registerAgentBodySchema = z.object({
   exampleOutputs: z.array(exampleOutputSchema).optional(),
 });
 
-/** Minimal schema for form-based registration (server actions) */
+/** Full schema for form-based registration (server actions).
+ * Nested structures (prices, exampleOutputs) are serialised as JSON strings
+ * because FormData is a flat key/value structure.
+ */
 const registerAgentFormBaseSchema = z.object({
   name: z
     .string()
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
-  description: z
+  description: z.string().max(250).optional().or(z.literal("")),
+  extendedDescription: z
     .string()
-    .min(1, "Description is required")
-    .max(5000, "Description must be less than 5000 characters"),
+    .max(5000, "Extended description must be less than 5000 characters")
+    .optional()
+    .or(z.literal("")),
   apiUrl: z
     .string()
     .url("API URL must be a valid URL")
@@ -78,6 +79,20 @@ const registerAgentFormBaseSchema = z.object({
       message: "API URL must start with http:// or https://",
     }),
   tags: z.string().optional(),
+  icon: z.string().max(2000).optional().or(z.literal("")),
+  /** "Free" | "Fixed" */
+  pricingType: z.enum(["Free", "Fixed"]).optional(),
+  /** JSON-encoded Array<{ amount: string; currency: string }> */
+  prices: z.string().optional(),
+  termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  privacyPolicyUrl: z
+    .union([z.literal(""), z.string().url().max(250)])
+    .optional(),
+  otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  capabilityName: z.string().max(250).optional().or(z.literal("")),
+  capabilityVersion: z.string().max(250).optional().or(z.literal("")),
+  /** JSON-encoded Array<{ name: string; url: string; mimeType: string }> */
+  exampleOutputs: z.string().optional(),
 });
 
 /** FormData variant for server actions */

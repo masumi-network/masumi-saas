@@ -39,6 +39,7 @@ export type UserMinAggregateOutputType = {
   stripeCustomerId: string | null;
   twoFactorEnabled: boolean | null;
   kycVerificationId: string | null;
+  paymentNodeApiKeyEncrypted: string | null;
   role: string | null;
   banned: boolean | null;
   banReason: string | null;
@@ -60,6 +61,7 @@ export type UserMaxAggregateOutputType = {
   stripeCustomerId: string | null;
   twoFactorEnabled: boolean | null;
   kycVerificationId: string | null;
+  paymentNodeApiKeyEncrypted: string | null;
   role: string | null;
   banned: boolean | null;
   banReason: string | null;
@@ -81,6 +83,7 @@ export type UserCountAggregateOutputType = {
   stripeCustomerId: number;
   twoFactorEnabled: number;
   kycVerificationId: number;
+  paymentNodeApiKeyEncrypted: number;
   role: number;
   banned: number;
   banReason: number;
@@ -103,6 +106,7 @@ export type UserMinAggregateInputType = {
   stripeCustomerId?: true;
   twoFactorEnabled?: true;
   kycVerificationId?: true;
+  paymentNodeApiKeyEncrypted?: true;
   role?: true;
   banned?: true;
   banReason?: true;
@@ -124,6 +128,7 @@ export type UserMaxAggregateInputType = {
   stripeCustomerId?: true;
   twoFactorEnabled?: true;
   kycVerificationId?: true;
+  paymentNodeApiKeyEncrypted?: true;
   role?: true;
   banned?: true;
   banReason?: true;
@@ -145,6 +150,7 @@ export type UserCountAggregateInputType = {
   stripeCustomerId?: true;
   twoFactorEnabled?: true;
   kycVerificationId?: true;
+  paymentNodeApiKeyEncrypted?: true;
   role?: true;
   banned?: true;
   banReason?: true;
@@ -246,6 +252,7 @@ export type UserGroupByOutputType = {
   stripeCustomerId: string | null;
   twoFactorEnabled: boolean;
   kycVerificationId: string | null;
+  paymentNodeApiKeyEncrypted: string | null;
   role: string;
   banned: boolean;
   banReason: string | null;
@@ -285,6 +292,10 @@ export type UserWhereInput = {
   stripeCustomerId?: Prisma.StringNullableFilter<"User"> | string | null;
   twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
   kycVerificationId?: Prisma.StringNullableFilter<"User"> | string | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.StringNullableFilter<"User">
+    | string
+    | null;
   role?: Prisma.StringFilter<"User"> | string;
   banned?: Prisma.BoolFilter<"User"> | boolean;
   banReason?: Prisma.StringNullableFilter<"User"> | string | null;
@@ -324,6 +335,7 @@ export type UserOrderByWithRelationInput = {
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  paymentNodeApiKeyEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder;
   role?: Prisma.SortOrder;
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -361,6 +373,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     marketingOptIn?: Prisma.BoolFilter<"User"> | boolean;
     onboardingCompleted?: Prisma.BoolFilter<"User"> | boolean;
     twoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
+    paymentNodeApiKeyEncrypted?:
+      | Prisma.StringNullableFilter<"User">
+      | string
+      | null;
     role?: Prisma.StringFilter<"User"> | string;
     banned?: Prisma.BoolFilter<"User"> | boolean;
     banReason?: Prisma.StringNullableFilter<"User"> | string | null;
@@ -402,6 +418,7 @@ export type UserOrderByWithAggregationInput = {
   stripeCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder;
   twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  paymentNodeApiKeyEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder;
   role?: Prisma.SortOrder;
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -439,6 +456,10 @@ export type UserScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"User">
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.StringNullableWithAggregatesFilter<"User">
+    | string
+    | null;
   role?: Prisma.StringWithAggregatesFilter<"User"> | string;
   banned?: Prisma.BoolWithAggregatesFilter<"User"> | boolean;
   banReason?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
@@ -463,6 +484,7 @@ export type UserCreateInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -496,6 +518,7 @@ export type UserUncheckedCreateInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -530,6 +553,10 @@ export type UserUpdateInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -573,6 +600,10 @@ export type UserUncheckedUpdateInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -609,6 +640,7 @@ export type UserCreateManyInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -632,6 +664,10 @@ export type UserUpdateManyMutationInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -663,6 +699,10 @@ export type UserUncheckedUpdateManyInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -688,6 +728,7 @@ export type UserCountOrderByAggregateInput = {
   stripeCustomerId?: Prisma.SortOrder;
   twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
+  paymentNodeApiKeyEncrypted?: Prisma.SortOrder;
   role?: Prisma.SortOrder;
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrder;
@@ -709,6 +750,7 @@ export type UserMaxOrderByAggregateInput = {
   stripeCustomerId?: Prisma.SortOrder;
   twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
+  paymentNodeApiKeyEncrypted?: Prisma.SortOrder;
   role?: Prisma.SortOrder;
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrder;
@@ -730,6 +772,7 @@ export type UserMinOrderByAggregateInput = {
   stripeCustomerId?: Prisma.SortOrder;
   twoFactorEnabled?: Prisma.SortOrder;
   kycVerificationId?: Prisma.SortOrder;
+  paymentNodeApiKeyEncrypted?: Prisma.SortOrder;
   role?: Prisma.SortOrder;
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrder;
@@ -1126,6 +1169,7 @@ export type UserCreateWithoutTwoFactorInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1158,6 +1202,7 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1219,6 +1264,10 @@ export type UserUpdateWithoutTwoFactorInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1261,6 +1310,10 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1295,6 +1348,7 @@ export type UserCreateWithoutSessionsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1327,6 +1381,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1388,6 +1443,10 @@ export type UserUpdateWithoutSessionsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1430,6 +1489,10 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1464,6 +1527,7 @@ export type UserCreateWithoutAccountsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1496,6 +1560,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1557,6 +1622,10 @@ export type UserUpdateWithoutAccountsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1599,6 +1668,10 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1633,6 +1706,7 @@ export type UserCreateWithoutMembersInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1665,6 +1739,7 @@ export type UserUncheckedCreateWithoutMembersInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1726,6 +1801,10 @@ export type UserUpdateWithoutMembersInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1768,6 +1847,10 @@ export type UserUncheckedUpdateWithoutMembersInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1802,6 +1885,7 @@ export type UserCreateWithoutInvitationsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1834,6 +1918,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -1895,6 +1980,10 @@ export type UserUpdateWithoutInvitationsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1937,6 +2026,10 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1971,6 +2064,7 @@ export type UserCreateWithoutApikeysInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2003,6 +2097,7 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2064,6 +2159,10 @@ export type UserUpdateWithoutApikeysInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2106,6 +2205,10 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2140,6 +2243,7 @@ export type UserCreateWithoutKycVerificationInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2171,6 +2275,7 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2233,6 +2338,10 @@ export type UserUpdateWithoutKycVerificationInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2271,6 +2380,10 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2306,6 +2419,7 @@ export type UserCreateWithoutAgentsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2338,6 +2452,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2399,6 +2514,10 @@ export type UserUpdateWithoutAgentsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2441,6 +2560,10 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2475,6 +2598,7 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2507,6 +2631,7 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2568,6 +2693,10 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2610,6 +2739,10 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2644,6 +2777,7 @@ export type UserCreateWithoutKycSubmissionsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2676,6 +2810,7 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2737,6 +2872,10 @@ export type UserUpdateWithoutKycSubmissionsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2779,6 +2918,10 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2813,6 +2956,7 @@ export type UserCreateWithoutWalletCachesInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2845,6 +2989,7 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -2906,6 +3051,10 @@ export type UserUpdateWithoutWalletCachesInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2948,6 +3097,10 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -2982,6 +3135,7 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   onboardingCompleted?: boolean;
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -3014,6 +3168,7 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   stripeCustomerId?: string | null;
   twoFactorEnabled?: boolean;
   kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
   role?: string;
   banned?: boolean;
   banReason?: string | null;
@@ -3075,6 +3230,10 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   role?: Prisma.StringFieldUpdateOperationsInput | string;
   banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -3114,6 +3273,10 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
   kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeApiKeyEncrypted?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
@@ -3304,6 +3467,7 @@ export type UserSelect<
     stripeCustomerId?: boolean;
     twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
+    paymentNodeApiKeyEncrypted?: boolean;
     role?: boolean;
     banned?: boolean;
     banReason?: boolean;
@@ -3346,6 +3510,7 @@ export type UserSelectCreateManyAndReturn<
     stripeCustomerId?: boolean;
     twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
+    paymentNodeApiKeyEncrypted?: boolean;
     role?: boolean;
     banned?: boolean;
     banReason?: boolean;
@@ -3374,6 +3539,7 @@ export type UserSelectUpdateManyAndReturn<
     stripeCustomerId?: boolean;
     twoFactorEnabled?: boolean;
     kycVerificationId?: boolean;
+    paymentNodeApiKeyEncrypted?: boolean;
     role?: boolean;
     banned?: boolean;
     banReason?: boolean;
@@ -3398,6 +3564,7 @@ export type UserSelectScalar = {
   stripeCustomerId?: boolean;
   twoFactorEnabled?: boolean;
   kycVerificationId?: boolean;
+  paymentNodeApiKeyEncrypted?: boolean;
   role?: boolean;
   banned?: boolean;
   banReason?: boolean;
@@ -3422,6 +3589,7 @@ export type UserOmit<
   | "stripeCustomerId"
   | "twoFactorEnabled"
   | "kycVerificationId"
+  | "paymentNodeApiKeyEncrypted"
   | "role"
   | "banned"
   | "banReason"
@@ -3494,6 +3662,7 @@ export type $UserPayload<
       stripeCustomerId: string | null;
       twoFactorEnabled: boolean;
       kycVerificationId: string | null;
+      paymentNodeApiKeyEncrypted: string | null;
       role: string;
       banned: boolean;
       banReason: string | null;
@@ -4242,6 +4411,7 @@ export interface UserFieldRefs {
   readonly stripeCustomerId: Prisma.FieldRef<"User", "String">;
   readonly twoFactorEnabled: Prisma.FieldRef<"User", "Boolean">;
   readonly kycVerificationId: Prisma.FieldRef<"User", "String">;
+  readonly paymentNodeApiKeyEncrypted: Prisma.FieldRef<"User", "String">;
   readonly role: Prisma.FieldRef<"User", "String">;
   readonly banned: Prisma.FieldRef<"User", "Boolean">;
   readonly banReason: Prisma.FieldRef<"User", "String">;
