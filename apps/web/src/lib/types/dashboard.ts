@@ -30,6 +30,7 @@ export type DashboardOverview = {
     icon: string | null;
     registrationState: string;
     verificationStatus: string | null;
+    pricing?: Record<string, unknown> | null;
   }>;
   apiKeys: Array<{
     id: string;

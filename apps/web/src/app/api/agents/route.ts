@@ -156,9 +156,9 @@ function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   return "Preprod";
 }
 
-// TODO: Replace with on-chain registration + signed data; this flow currently
-// creates the agent in DB and sets registrationState to RegistrationConfirmed
-// without on-chain lookup or verification.
+// Creates the agent in DB only. State is RegistrationRequested until on-chain
+// registration is completed (e.g. via UI flow or completeRegistrationIfReadyAction).
+// Do not set RegistrationConfirmed here — that must come from the payment node/chain.
 export async function POST(request: NextRequest) {
   try {
     const { user, activeOrganizationId } =
@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
           Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
         userId: user.id,
         organizationId: activeOrganizationId,
-        registrationState: "RegistrationConfirmed",
+        registrationState: "RegistrationRequested",
         networkIdentifier: network,
       },
     });

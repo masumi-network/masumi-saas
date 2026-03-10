@@ -12,7 +12,14 @@ export type { ActivityFeedItem };
 const FEED_LIMIT = 80;
 
 type Network = "Mainnet" | "Preprod";
-type FeedFilter = "all" | "transactions" | "lifecycle";
+type FeedFilter =
+  | "all"
+  | "lifecycle"
+  | "transactions"
+  | "purchases"
+  | "payments"
+  | "refundRequests"
+  | "disputes";
 
 function toNetwork(n: string | null): Network {
   return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
@@ -64,9 +71,17 @@ export async function GET(request: Request) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
     const { searchParams } = new URL(request.url);
-    const filter = (searchParams.get("filter") ?? "all") as FeedFilter;
-    const validFilter: FeedFilter =
-      filter === "transactions" || filter === "lifecycle" ? filter : "all";
+    const filter = (searchParams.get("filter") ?? "all") as string;
+    const validFilter: FeedFilter = [
+      "lifecycle",
+      "transactions",
+      "purchases",
+      "payments",
+      "refundRequests",
+      "disputes",
+    ].includes(filter)
+      ? (filter as FeedFilter)
+      : "all";
 
     const agents = await prisma.agent.findMany({
       where: { userId: user.id },
@@ -208,14 +223,46 @@ export async function GET(request: Request) {
     }
 
     let merged: ActivityFeedItem[] = [...lifecycleItems, ...transactionItems];
-    if (validFilter === "transactions") {
-      merged = merged.filter((i) => i.kind === "transaction");
-    } else if (validFilter === "lifecycle") {
+    if (validFilter === "lifecycle") {
       merged = merged.filter((i) => i.kind === "lifecycle");
+    } else if (validFilter === "transactions") {
+      merged = merged.filter((i) => i.kind === "transaction");
+    } else if (validFilter === "purchases") {
+      merged = merged.filter(
+        (i) => i.kind === "transaction" && i.type === "purchase",
+      );
+    } else if (validFilter === "payments") {
+      merged = merged.filter(
+        (i) => i.kind === "transaction" && i.type === "payment",
+      );
+    } else if (validFilter === "refundRequests") {
+      merged = merged.filter(
+        (i) => i.kind === "transaction" && i.status === "RefundRequested",
+      );
+    } else if (validFilter === "disputes") {
+      merged = merged.filter(
+        (i) =>
+          i.kind === "transaction" &&
+          i.status.toLowerCase().includes("dispute"),
+      );
     }
     merged.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
+
+    const summary = searchParams.get("summary") === "1";
+    if (summary) {
+      const totalTransactions = merged.filter(
+        (i) => i.kind === "transaction",
+      ).length;
+      return NextResponse.json({
+        success: true,
+        data: {
+          totalTransactions,
+          totalActivity: merged.length,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

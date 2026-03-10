@@ -1,11 +1,9 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
-import Link from "next/link";
+import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -90,6 +88,7 @@ export function DashboardRevenueCard() {
   const [period, setPeriod] = useState<TimePeriod>("7d");
   const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
   const [total, setTotal] = useState(0);
+  const [previousTotal, setPreviousTotal] = useState<number | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,14 +104,17 @@ export function DashboardRevenueCard() {
         setError(json.error ?? "Failed to load earnings");
         setEarnings([]);
         setTotal(0);
+        setPreviousTotal(undefined);
         return;
       }
       setEarnings(json.data.earnings ?? []);
       setTotal(json.data.total ?? 0);
+      setPreviousTotal(json.data.previousTotal);
     } catch {
       setError("Failed to load earnings");
       setEarnings([]);
       setTotal(0);
+      setPreviousTotal(undefined);
     } finally {
       setIsLoading(false);
     }
@@ -124,12 +126,13 @@ export function DashboardRevenueCard() {
 
   return (
     <Card
-      className="group relative col-span-2 overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 lg:col-span-1"
+      className="group relative overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
       role="group"
       aria-label={`${t("earnings")}: ${formatRevenue(total)}`}
     >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
-        <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
+        <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground flex items-center gap-2">
+          <DollarSign className="h-4 w-4 shrink-0" />
           {t("earnings")}
         </CardTitle>
         <Select
@@ -207,24 +210,37 @@ export function DashboardRevenueCard() {
             {formatRevenue(0)}
           </p>
         ) : (
-          <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
-            {formatRevenue(total)}
-          </p>
+          <div className="mb-1 flex flex-wrap items-baseline gap-2">
+            <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
+              {formatRevenue(total)}
+            </p>
+            {previousTotal !== undefined &&
+              previousTotal > 0 &&
+              total !== previousTotal && (
+                <span
+                  className={
+                    total >= previousTotal
+                      ? "text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-0.5"
+                      : "text-destructive/90 text-xs font-medium flex items-center gap-0.5"
+                  }
+                >
+                  {total >= previousTotal ? (
+                    <TrendingUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5" />
+                  )}
+                  {Math.abs(
+                    Math.round(((total - previousTotal) / previousTotal) * 100),
+                  )}
+                  {"% "}
+                  {t("vsPreviousPeriod")}
+                </span>
+              )}
+          </div>
         )}
         <p className="mb-4 text-xs text-muted-foreground">
           {t("earningsDescription")}
         </p>
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className="h-9 gap-2 relative backdrop-blur-sm"
-        >
-          <Link href="/activity">
-            <TrendingUp className="h-4 w-4" />
-            {t("viewActivity")}
-          </Link>
-        </Button>
       </CardContent>
     </Card>
   );

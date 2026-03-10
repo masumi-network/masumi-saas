@@ -8,7 +8,15 @@ export type EarningsDataPoint = {
 };
 
 export type EarningsApiResponse =
-  | { success: true; data: { earnings: EarningsDataPoint[]; total: number } }
+  | {
+      success: true;
+      data: {
+        earnings: EarningsDataPoint[];
+        total: number;
+        /** Previous period total for trend (e.g. prior 7 days when period=7d). */
+        previousTotal?: number;
+      };
+    }
   | { success: false; error: string };
 
 const VALID_PERIODS = ["24h", "7d", "30d", "all"] as const;
@@ -30,10 +38,11 @@ export async function GET(request: Request) {
     // For now return zero earnings; the array structure is ready for line graph
     const earnings: EarningsDataPoint[] = [];
     const total = earnings.reduce((sum, p) => sum + p.amount, 0);
+    const previousTotal = 0; // TODO: set when real earnings integrated
 
     return NextResponse.json({
       success: true,
-      data: { earnings, total },
+      data: { earnings, total, previousTotal },
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
