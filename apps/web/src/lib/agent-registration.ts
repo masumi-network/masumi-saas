@@ -419,7 +419,10 @@ export async function completeOnChainRegistration(
     >`SELECT "externalId" FROM agent_reference WHERE "agentId" = ${agent.id} FOR UPDATE`;
     if (!rows.length) throw new Error("AgentReference not found");
     if (rows[0]!.externalId) {
-      return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
+      const existing = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { agent: existing, eventType: null as const };
     }
     const registerPromise = userClient.registerAgent({
       network,
@@ -485,17 +488,24 @@ export async function completeOnChainRegistration(
           }),
         },
       });
-      if (registryEntry.state === "RegistrationConfirmed") {
-        await recordAgentActivityEvent(agent.id, "RegistrationConfirmed");
-      } else if (registryEntry.state === "RegistrationFailed") {
-        await recordAgentActivityEvent(agent.id, "RegistrationFailed");
-      }
-      return tx.agent.findUniqueOrThrow({ where: { id: agent.id } });
+      const eventType =
+        registryEntry.state === "RegistrationConfirmed"
+          ? ("RegistrationConfirmed" as const)
+          : registryEntry.state === "RegistrationFailed"
+            ? ("RegistrationFailed" as const)
+            : null;
+      const updated = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { agent: updated, eventType };
     } finally {
       clearTimeout(timeoutId!);
     }
   });
-  return { status: "registered", data: updatedAgent };
+  if (updatedAgent.eventType) {
+    await recordAgentActivityEvent(agent.id, updatedAgent.eventType);
+  }
+  return { status: "registered", data: updatedAgent.agent };
 }
 
 /** Build AgentPricing for payment node from API/form pricing shape and network. */
