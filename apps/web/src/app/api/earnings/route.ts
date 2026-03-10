@@ -38,11 +38,10 @@ export async function GET(request: Request) {
     // For now return zero earnings; the array structure is ready for line graph
     const earnings: EarningsDataPoint[] = [];
     const total = earnings.reduce((sum, p) => sum + p.amount, 0);
-    const previousTotal = 0; // TODO: set when real earnings integrated
-
+    // Omit previousTotal when no prior data — undefined = "no data", 0 = "zero earnings in prior period"
     return NextResponse.json({
       success: true,
-      data: { earnings, total, previousTotal },
+      data: { earnings, total },
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
