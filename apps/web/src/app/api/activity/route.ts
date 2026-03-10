@@ -360,15 +360,15 @@ export async function GET(request: Request) {
         (i) => i.kind === "transaction" && i.type === "payment",
       );
     } else if (validFilter === "refundRequests") {
-      merged = merged.filter(
-        (i) => i.kind === "transaction" && i.status === "RefundRequested",
-      );
+      merged = merged.filter((i) => {
+        if (i.kind !== "transaction") return false;
+        return i.status === "RefundRequested";
+      });
     } else if (validFilter === "disputes") {
-      merged = merged.filter(
-        (i) =>
-          i.kind === "transaction" &&
-          i.status.toLowerCase().includes("dispute"),
-      );
+      merged = merged.filter((i) => {
+        if (i.kind !== "transaction") return false;
+        return i.status.toLowerCase().includes("dispute");
+      });
     }
     merged.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),

@@ -123,9 +123,10 @@ export function ActivityPageContent() {
     link.download = `activity-${activeTab}-${new Date().toISOString().slice(0, 10)}.csv`;
     link.style.visibility = "hidden";
     document.body.appendChild(link);
+    const blobUrl = link.href;
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    URL.revokeObjectURL(blobUrl);
   }, [t, activeTab]);
 
   const tabConfig = useMemo(
