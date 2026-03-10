@@ -10,6 +10,33 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 export type { ActivityFeedItem };
 
 const FEED_LIMIT = 80;
+/** Cache TTL for transaction-only responses (badge count). Reduces payment node load when multiple tabs or frequent polls. */
+const TRANSACTIONS_CACHE_TTL_MS = 25_000;
+
+const transactionsCache = new Map<
+  string,
+  { items: ActivityFeedItem[]; cachedAt: number }
+>();
+
+function getCachedTransactions(userId: string): ActivityFeedItem[] | null {
+  const entry = transactionsCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > TRANSACTIONS_CACHE_TTL_MS) {
+    transactionsCache.delete(userId);
+    return null;
+  }
+  return entry.items;
+}
+
+function setCachedTransactions(
+  userId: string,
+  items: ActivityFeedItem[],
+): void {
+  transactionsCache.set(userId, { items, cachedAt: Date.now() });
+}
+
+/** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
+const backfillLocks = new Map<string, Promise<void>>();
 
 type Network = "Mainnet" | "Preprod";
 type FeedFilter =
@@ -84,6 +111,16 @@ export async function GET(request: Request) {
       ? (filter as FeedFilter)
       : "all";
 
+    if (validFilter === "transactions") {
+      const cached = getCachedTransactions(user.id);
+      if (cached) {
+        return NextResponse.json({
+          success: true,
+          data: { items: cached },
+        });
+      }
+    }
+
     const agents = await prisma.agent.findMany({
       where: { userId: user.id },
       select: {
@@ -128,47 +165,64 @@ export async function GET(request: Request) {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, FEED_LIMIT);
 
-      // One-time backfill: if user has agents but no events, create one event per agent from current state
+      // One-time backfill: if user has agents but no events, create one event per agent from current state.
+      // Use a per-user lock so concurrent requests don't both create duplicates.
       if (events.length === 0 && agents.length > 0) {
-        for (const agent of agents) {
-          const stateEventType = registrationStateToEventType(
-            agent.registrationState,
-          );
-          if (stateEventType) {
-            try {
-              await prisma.agentActivityEvent.create({
-                data: {
-                  agentId: agent.id,
-                  userId: user.id,
-                  type: stateEventType,
-                },
-              });
-            } catch (err) {
-              console.error(
-                "[Activity] Backfill create failed:",
-                agent.id,
-                err,
-              );
+        const lockKey = user.id;
+        const runBackfill = async () => {
+          const recheck = await prisma.agentActivityEvent.findMany({
+            where: { agentId: { in: agentIds } },
+            take: 1,
+          });
+          if (recheck.length > 0) return;
+          for (const agent of agents) {
+            const stateEventType = registrationStateToEventType(
+              agent.registrationState,
+            );
+            if (stateEventType) {
+              try {
+                await prisma.agentActivityEvent.create({
+                  data: {
+                    agentId: agent.id,
+                    userId: user.id,
+                    type: stateEventType,
+                  },
+                });
+              } catch (err) {
+                console.error(
+                  "[Activity] Backfill create failed:",
+                  agent.id,
+                  err,
+                );
+              }
+            }
+            if (agent.verificationStatus === "VERIFIED") {
+              try {
+                await prisma.agentActivityEvent.create({
+                  data: {
+                    agentId: agent.id,
+                    userId: user.id,
+                    type: "AgentVerified",
+                  },
+                });
+              } catch (err) {
+                console.error(
+                  "[Activity] Backfill verified failed:",
+                  agent.id,
+                  err,
+                );
+              }
             }
           }
-          if (agent.verificationStatus === "VERIFIED") {
-            try {
-              await prisma.agentActivityEvent.create({
-                data: {
-                  agentId: agent.id,
-                  userId: user.id,
-                  type: "AgentVerified",
-                },
-              });
-            } catch (err) {
-              console.error(
-                "[Activity] Backfill verified failed:",
-                agent.id,
-                err,
-              );
-            }
-          }
+        };
+        let lockPromise = backfillLocks.get(lockKey);
+        if (!lockPromise) {
+          lockPromise = runBackfill().finally(() => {
+            backfillLocks.delete(lockKey);
+          });
+          backfillLocks.set(lockKey, lockPromise);
         }
+        await lockPromise;
         const [refetchForAgents, refetchOrphans] = await Promise.all([
           prisma.agentActivityEvent.findMany({
             where: { agentId: { in: agentIds } },
@@ -212,6 +266,7 @@ export async function GET(request: Request) {
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
           if (smartContractAddress && agentIdentifiers.size > 0) {
+            // Activity feed is scoped to one network (first agent's); we do not aggregate across networks.
             const network = toNetwork(agents[0]?.networkIdentifier ?? null);
             const [paymentsRes, purchasesRes] = await Promise.all([
               client.listPayments({
@@ -316,9 +371,13 @@ export async function GET(request: Request) {
       });
     }
 
+    const items = merged.slice(0, FEED_LIMIT);
+    if (validFilter === "transactions") {
+      setCachedTransactions(user.id, items);
+    }
     return NextResponse.json({
       success: true,
-      data: { items: merged.slice(0, FEED_LIMIT) },
+      data: { items },
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
