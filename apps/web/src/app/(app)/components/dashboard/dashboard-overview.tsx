@@ -253,7 +253,7 @@ export function DashboardOverviewSkeleton() {
       {/* Stats grid - Revenue, Agents, Activity summary */}
       <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
         {/* Revenue card */}
-        <Card className="overflow-hidden rounded-xl pt-0">
+        <Card className="col-span-2 overflow-hidden rounded-xl pt-0 lg:col-span-1">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-8 w-28 rounded-md" />

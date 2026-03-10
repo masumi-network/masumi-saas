@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { type Agent } from "@/lib/api/agent.client";
+import { formatUnits } from "@/lib/payment-node/format";
 
 type TimePeriod = "1d" | "7d" | "30d" | "all";
 
@@ -39,17 +40,6 @@ type EarningsData = {
   periodStart: string | null;
   periodEnd: string | null;
 };
-
-function formatUnits(units: Array<{ unit: string; amount: number }>): string {
-  if (!units.length) return "0";
-  const ada = units.find((u) => u.unit === "");
-  if (ada) {
-    const lovelace = ada.amount;
-    const adaNum = lovelace / 1_000_000;
-    return adaNum.toFixed(6) + " ADA";
-  }
-  return units.map((u) => `${u.amount} ${u.unit.slice(0, 8)}`).join(", ");
-}
 
 export function AgentEarnings({ agent }: AgentEarningsProps) {
   const t = useTranslations("App.Agents.Details.Earnings");
