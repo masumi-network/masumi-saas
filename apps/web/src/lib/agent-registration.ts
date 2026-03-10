@@ -422,7 +422,7 @@ export async function completeOnChainRegistration(
       const existing = await tx.agent.findUniqueOrThrow({
         where: { id: agent.id },
       });
-      return { agent: existing, eventType: null as const };
+      return { agent: existing, eventType: null };
     }
     const registerPromise = userClient.registerAgent({
       network,

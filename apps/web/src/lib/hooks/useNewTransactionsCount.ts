@@ -37,6 +37,7 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
   );
   const seenIdsRef = useRef<Set<string>>(new Set());
   const lastItemsRef = useRef<TransactionItem[]>([]);
+  const hasSeededSeenRef = useRef(false);
 
   const fetchTransactions = useCallback(async (): Promise<
     TransactionItem[]
@@ -64,8 +65,16 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
       if (!lastVisit) {
         setLastVisit(new Date().toISOString());
         seenIdsRef.current = new Set(items.map((i) => i.id));
+        hasSeededSeenRef.current = true;
         setNewCount(0);
         setStoredCount(0);
+        return;
+      }
+
+      // First run after remount: seed seen with current items so we don't double-count
+      if (!hasSeededSeenRef.current) {
+        items.forEach((i) => seenIdsRef.current.add(i.id));
+        hasSeededSeenRef.current = true;
         return;
       }
 
@@ -97,6 +106,7 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
     if (!trackVisit) return;
     setLastVisit(new Date().toISOString());
     seenIdsRef.current = new Set();
+    hasSeededSeenRef.current = false;
     setNewCount(0);
     setStoredCount(0);
   }, [trackVisit]);
