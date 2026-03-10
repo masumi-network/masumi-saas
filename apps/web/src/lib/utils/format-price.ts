@@ -30,17 +30,18 @@ export function formatPricingDisplay(
   const fixed = pricing as {
     pricingType?: string;
     prices?: Array<{ amount: string }>;
-    Pricing?: Array<{ amount: string }>; // legacy
+    Pricing?: Array<{ amount: string }>;
   };
-  const priceList = fixed.prices ?? fixed.Pricing ?? [];
+  // New agents: Pricing = on-chain units (6 decimals). Legacy agents: prices = dollar amounts.
+  const usePricing = fixed.Pricing && fixed.Pricing.length > 0;
+  const priceList = usePricing ? fixed.Pricing! : (fixed.prices ?? []);
   if (fixed.pricingType === "Fixed" && priceList.length) {
     return (
       priceList
         .map((p) => {
           const raw = parseFloat(p.amount);
           if (Number.isNaN(raw)) return null;
-          // Amounts are stored in on-chain units (6 decimals, like USDM/tUSDM)
-          const dollars = raw / 1_000_000;
+          const dollars = usePricing ? raw / 1_000_000 : raw;
           return `$${formatBalance(dollars.toFixed(2))}`;
         })
         .filter(Boolean)

@@ -47,10 +47,6 @@ export type ActivityTabFilter =
   | "refundRequests"
   | "disputes";
 
-function toApiFilter(filter: ActivityTabFilter): string {
-  return filter;
-}
-
 interface ActivityFeedTableProps {
   filter: ActivityTabFilter;
   searchQuery?: string;
@@ -121,11 +117,8 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
   const fetchFeed = useCallback(async () => {
     setError(null);
     setIsLoading(true);
-    const apiFilter = toApiFilter(filter);
     const url =
-      apiFilter === "all"
-        ? "/api/activity"
-        : `/api/activity?filter=${apiFilter}`;
+      filter === "all" ? "/api/activity" : `/api/activity?filter=${filter}`;
     try {
       const res = await fetch(url);
       const json = await res.json();

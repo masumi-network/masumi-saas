@@ -26,7 +26,7 @@ export function formatUnits(
   if (!units.length) return "0";
   const ada = units.find((u) => u.unit === "");
   if (ada) {
-    const lovelace = BigInt(ada.amount);
+    const lovelace = BigInt(Math.round(ada.amount));
     const adaNum = Number(lovelace) / 1_000_000;
     return adaNum.toFixed(6) + " ADA";
   }
