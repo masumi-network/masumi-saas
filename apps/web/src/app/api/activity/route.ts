@@ -199,71 +199,79 @@ export async function GET(request: Request) {
       }));
     }
 
+    const needTransactions = validFilter !== "lifecycle";
+
     let transactionItems: ActivityFeedItem[] = [];
-    try {
-      const client = await getPaymentNodeClientForUser(user.id);
-      if (client) {
-        const smartContractAddress =
-          await getSmartContractAddressForConfiguredSource(client);
-        const agentIdentifiers = new Set(
-          agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
-        );
-        if (smartContractAddress && agentIdentifiers.size > 0) {
-          const network = toNetwork(agents[0]?.networkIdentifier ?? null);
-          const [paymentsRes, purchasesRes] = await Promise.all([
-            client.listPayments({
-              network,
-              filterSmartContractAddress: smartContractAddress,
-              limit: 50,
-            }),
-            client.listPurchases({
-              network,
-              filterSmartContractAddress: smartContractAddress,
-              limit: 50,
-            }),
-          ]);
-          const payments = (paymentsRes.Payments ?? []).filter((p) =>
-            p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
+    if (needTransactions) {
+      try {
+        const client = await getPaymentNodeClientForUser(user.id);
+        if (client) {
+          const smartContractAddress =
+            await getSmartContractAddressForConfiguredSource(client);
+          const agentIdentifiers = new Set(
+            agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
-          const purchases = (purchasesRes.Purchases ?? []).filter((p) =>
-            p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
-          );
-          const toItem = (
-            p: PaymentOrPurchaseItem,
-            type: "payment" | "purchase",
-          ): ActivityFeedItem => {
-            const agent = p.agentIdentifier
-              ? agentByIdentifier.get(p.agentIdentifier)
-              : null;
-            const status =
-              p.onChainState ??
-              (
-                p as PaymentOrPurchaseItem & {
-                  NextAction?: { requestedAction?: string };
-                }
-              ).NextAction?.requestedAction ??
-              "—";
-            return {
-              kind: "transaction",
-              id: p.id,
-              date: p.createdAt,
-              type,
-              agentId: agent?.id ?? null,
-              agentName: agent?.name ?? null,
-              amount: formatAmount(p.RequestedFunds),
-              status: String(status),
-              txHash: p.CurrentTransaction?.txHash ?? null,
+          if (smartContractAddress && agentIdentifiers.size > 0) {
+            const network = toNetwork(agents[0]?.networkIdentifier ?? null);
+            const [paymentsRes, purchasesRes] = await Promise.all([
+              client.listPayments({
+                network,
+                filterSmartContractAddress: smartContractAddress,
+                limit: 50,
+              }),
+              client.listPurchases({
+                network,
+                filterSmartContractAddress: smartContractAddress,
+                limit: 50,
+              }),
+            ]);
+            const payments = (paymentsRes.Payments ?? []).filter((p) =>
+              p.agentIdentifier
+                ? agentIdentifiers.has(p.agentIdentifier)
+                : false,
+            );
+            const purchases = (purchasesRes.Purchases ?? []).filter((p) =>
+              p.agentIdentifier
+                ? agentIdentifiers.has(p.agentIdentifier)
+                : false,
+            );
+            const toItem = (
+              p: PaymentOrPurchaseItem,
+              type: "payment" | "purchase",
+            ): ActivityFeedItem => {
+              const agent = p.agentIdentifier
+                ? agentByIdentifier.get(p.agentIdentifier)
+                : null;
+              const status =
+                p.onChainState ??
+                (
+                  p as PaymentOrPurchaseItem & {
+                    NextAction?: { requestedAction?: string };
+                  }
+                ).NextAction?.requestedAction ??
+                "—";
+              return {
+                kind: "transaction",
+                id: p.id,
+                date: p.createdAt,
+                type,
+                agentId: agent?.id ?? null,
+                agentName: agent?.name ?? null,
+                amount: formatAmount(p.RequestedFunds),
+                status: String(status),
+                txHash: p.CurrentTransaction?.txHash ?? null,
+              };
             };
-          };
-          transactionItems = [
-            ...payments.map((p) => toItem(p, "payment")),
-            ...purchases.map((p) => toItem(p, "purchase")),
-          ];
+            transactionItems = [
+              ...payments.map((p) => toItem(p, "payment")),
+              ...purchases.map((p) => toItem(p, "purchase")),
+            ];
+          }
         }
+      } catch (txError) {
+        console.error("[Activity] Payment node / transactions error:", txError);
+        // Continue with lifecycle-only; don't fail the whole request
       }
-    } catch (txError) {
-      console.error("[Activity] Payment node / transactions error:", txError);
-      // Continue with lifecycle-only; don't fail the whole request
     }
 
     let merged: ActivityFeedItem[] = [...lifecycleItems, ...transactionItems];

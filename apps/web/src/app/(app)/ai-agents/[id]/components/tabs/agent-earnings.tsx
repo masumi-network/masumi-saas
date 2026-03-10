@@ -54,6 +54,7 @@ function formatUnits(units: Array<{ unit: string; amount: number }>): string {
 export function AgentEarnings({ agent }: AgentEarningsProps) {
   const t = useTranslations("App.Agents.Details.Earnings");
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1d");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     return () => {
       cancelled = true;
     };
-  }, [agent.id, selectedPeriod]);
+  }, [agent.id, selectedPeriod, refreshKey]);
 
   if (isLoading) {
     return (
@@ -115,27 +116,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
           onClick={() => {
             setError(null);
             setEarningsData(null);
-            setIsLoading(true);
-            fetch(`/api/agents/${agent.id}/earnings?period=${selectedPeriod}`)
-              .then((res) => res.json())
-              .then(
-                (json: {
-                  success: boolean;
-                  data?: EarningsData;
-                  error?: string;
-                }) => {
-                  if (json.success && json.data) setEarningsData(json.data);
-                  else {
-                    setEarningsData(null);
-                    if (!json.success && json.error) setError(json.error);
-                  }
-                },
-              )
-              .catch((err) => {
-                setEarningsData(null);
-                setError(err instanceof Error ? err.message : "Failed to load");
-              })
-              .finally(() => setIsLoading(false));
+            setRefreshKey((k) => k + 1);
           }}
         >
           {t("tryAgain")}
