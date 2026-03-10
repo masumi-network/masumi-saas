@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -146,22 +147,20 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
     fetchFeed();
   }, [fetchFeed, refreshKey]);
 
+  const filteredItems = useMemo(
+    () =>
+      error
+        ? []
+        : filterItemsBySearch(items, searchQuery, LIFECYCLE_LABELS, formatDate),
+    [error, items, searchQuery],
+  );
+
   useEffect(() => {
-    if (error) {
-      onFilteredItemsChange?.([]);
-      return;
-    }
-    const filtered = filterItemsBySearch(
-      items,
-      searchQuery,
-      LIFECYCLE_LABELS,
-      formatDate,
-    );
-    onFilteredItemsChange?.(filtered);
-  }, [error, items, searchQuery, onFilteredItemsChange]);
+    exportDataRef.current = filteredItems;
+    onFilteredItemsChange?.(filteredItems);
+  }, [filteredItems, onFilteredItemsChange]);
 
   if (error) {
-    exportDataRef.current = [];
     return (
       <div className="rounded-lg border border-border bg-muted-surface/50 p-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
@@ -175,14 +174,6 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
       </div>
     );
   }
-
-  const filteredItems = filterItemsBySearch(
-    items,
-    searchQuery,
-    LIFECYCLE_LABELS,
-    formatDate,
-  );
-  exportDataRef.current = filteredItems;
 
   if (!isLoading && items.length === 0) {
     return (

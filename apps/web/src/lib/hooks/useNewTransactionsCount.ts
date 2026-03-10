@@ -71,15 +71,24 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
         return;
       }
 
-      // First run after remount: seed seen with current items so we don't double-count
+      const lastVisitTime = new Date(lastVisit).getTime();
+      const seen = seenIdsRef.current;
+
       if (!hasSeededSeenRef.current) {
-        items.forEach((i) => seenIdsRef.current.add(i.id));
+        // First run after mount: count items new since lastVisit (e.g. user was offline), then seed seen so next poll doesn't double-count
+        const newOnes = items.filter(
+          (i) => new Date(i.date).getTime() > lastVisitTime,
+        );
+        if (newOnes.length > 0) {
+          const nextCount = getStoredCount() + newOnes.length;
+          setNewCount(nextCount);
+          setStoredCount(nextCount);
+        }
+        items.forEach((i) => seen.add(i.id));
         hasSeededSeenRef.current = true;
         return;
       }
 
-      const lastVisitTime = new Date(lastVisit).getTime();
-      const seen = seenIdsRef.current;
       const newOnes = items.filter(
         (i) => !seen.has(i.id) && new Date(i.date).getTime() > lastVisitTime,
       );
