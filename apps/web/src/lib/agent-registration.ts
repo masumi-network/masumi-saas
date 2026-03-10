@@ -1,6 +1,6 @@
 /**
  * Shared agent registration logic for on-chain registration.
- * Used by POST /api/agents and (optionally) registerAgentAction.
+ * Used by POST /api/agents.
  * No "use server" — receives user and params from callers.
  */
 

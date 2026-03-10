@@ -4,12 +4,7 @@ import prisma from "@masumi/database/client";
 import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
-import {
-  buildAgentPricing,
-  completeOnChainRegistration,
-  registerAgentOnChain,
-  type RegisterAgentParams,
-} from "@/lib/agent-registration";
+import { completeOnChainRegistration } from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createPaymentNodeClient,
@@ -17,8 +12,6 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-import { registerAgentFormDataSchema } from "@/lib/schemas/agent";
-import { convertZodError } from "@/lib/utils/convert-zod-error";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -28,133 +21,7 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
-export async function registerAgentAction(formData: FormData) {
-  try {
-    const { user, activeOrganizationId } = await getAuthenticatedOrThrow();
-
-    const validation = registerAgentFormDataSchema.safeParse(formData);
-    if (!validation.success) {
-      return {
-        success: false as const,
-        error: convertZodError(validation.error),
-      };
-    }
-
-    const {
-      name,
-      description,
-      extendedDescription,
-      apiUrl,
-      tags,
-      icon,
-      pricingType,
-      prices: pricesJson,
-      termsOfUseUrl,
-      privacyPolicyUrl,
-      otherUrl,
-      capabilityName,
-      capabilityVersion,
-      exampleOutputs: exampleOutputsJson,
-    } = validation.data;
-
-    const tagsArray = tags
-      ? tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter((tag) => tag.length > 0)
-      : [];
-
-    type ExampleOutput = { name: string; url: string; mimeType: string };
-    let parsedExampleOutputs: ExampleOutput[] = [];
-    if (exampleOutputsJson) {
-      try {
-        parsedExampleOutputs = JSON.parse(
-          exampleOutputsJson,
-        ) as ExampleOutput[];
-      } catch {
-        return {
-          success: false as const,
-          error: "Invalid example outputs data. Please re-enter your examples.",
-        };
-      }
-    }
-
-    const network = await getNetworkFromCookie();
-    let parsedPrices: Array<{ amount: string; currency?: string }> = [];
-    if (pricesJson) {
-      try {
-        parsedPrices = JSON.parse(pricesJson) as Array<{
-          amount: string;
-          currency?: string;
-        }>;
-      } catch {
-        return {
-          success: false as const,
-          error: "Invalid pricing data. Please re-enter your prices.",
-        };
-      }
-    }
-
-    const agentPricing = buildAgentPricing(network, {
-      pricingType: pricingType ?? "Free",
-      prices: parsedPrices,
-    });
-
-    const params: RegisterAgentParams = {
-      name,
-      description: description?.trim() || null,
-      extendedDescription: extendedDescription?.trim() || null,
-      apiUrl,
-      tags: tagsArray,
-      icon: icon?.trim() || null,
-      agentPricing,
-      exampleOutputs: parsedExampleOutputs,
-      capabilityName: capabilityName?.trim() || "Masumi",
-      capabilityVersion: capabilityVersion?.trim() || "1.0",
-      termsOfUseUrl: termsOfUseUrl?.trim() || null,
-      privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
-      otherUrl: otherUrl?.trim() || null,
-    };
-
-    const result = await registerAgentOnChain(
-      {
-        user: {
-          id: user.id,
-          name: user.name ?? null,
-          email: user.email ?? null,
-        },
-        activeOrganizationId,
-        network,
-      },
-      params,
-    );
-
-    if (result.success) {
-      return { success: true as const, data: result.data };
-    }
-    if (
-      result.error === "WALLET_FUNDING_PENDING" &&
-      "agentId" in result &&
-      typeof result.agentId === "string"
-    ) {
-      return {
-        success: false as const,
-        error: "WALLET_FUNDING_PENDING",
-        agentId: result.agentId,
-      };
-    }
-    return { success: false as const, error: result.error };
-  } catch (error) {
-    console.error("Failed to register agent:", error);
-    return {
-      success: false as const,
-      error:
-        error instanceof Error ? error.message : "Failed to register agent",
-    };
-  }
-}
-
-/** Called by the client when registerAgentAction returned WALLET_FUNDING_PENDING.
+/** Called by the client when POST /api/agents returned WALLET_FUNDING_PENDING.
  *  Poll until status is "registered" or the user gives up. */
 export async function completeRegistrationIfReadyAction(
   agentId: string,

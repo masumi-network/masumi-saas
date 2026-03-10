@@ -921,7 +921,7 @@ export function RegisterAgentDialog({
         open={showCloseConfirm}
         onOpenChange={setShowCloseConfirm}
         onConfirm={async () => {
-          // Set ref immediately so any in-flight registerAgentAction that resolves later
+          // Set ref immediately so any in-flight registration request that resolves later
           // sees "user closed during submit" and does orphan cleanup instead of onSuccess/onClose.
           if (isLoading) closedDuringSubmitRef.current = true;
           if (pendingAgentId) {

@@ -13,6 +13,8 @@ export type { ActivityFeedItem };
 const FEED_LIMIT = 80;
 /** Cache TTL for transaction-only responses (badge count). Reduces payment node load when multiple tabs or frequent polls. */
 const TRANSACTIONS_CACHE_TTL_MS = 25_000;
+/** Max number of user entries; oldest (by cachedAt) evicted when full to prevent unbounded growth. */
+const TRANSACTIONS_CACHE_MAX_USERS = 500;
 
 const transactionsCache = new Map<
   string,
@@ -33,7 +35,26 @@ function setCachedTransactions(
   userId: string,
   items: ActivityFeedItem[],
 ): void {
-  transactionsCache.set(userId, { items, cachedAt: Date.now() });
+  const now = Date.now();
+  // Evict expired entries so users who never return don't leak memory
+  for (const [uid, e] of transactionsCache) {
+    if (now - e.cachedAt > TRANSACTIONS_CACHE_TTL_MS) {
+      transactionsCache.delete(uid);
+    }
+  }
+  // If at capacity, evict oldest entry
+  if (transactionsCache.size >= TRANSACTIONS_CACHE_MAX_USERS) {
+    let oldestKey: string | null = null;
+    let oldestAt = now;
+    for (const [uid, e] of transactionsCache) {
+      if (e.cachedAt < oldestAt) {
+        oldestAt = e.cachedAt;
+        oldestKey = uid;
+      }
+    }
+    if (oldestKey) transactionsCache.delete(oldestKey);
+  }
+  transactionsCache.set(userId, { items, cachedAt: now });
 }
 
 /** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
