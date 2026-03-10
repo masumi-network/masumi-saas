@@ -239,7 +239,7 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
                         {EMPTY_CELL}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {item.agentName}
+                        {item.agentName ?? "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {EMPTY_CELL}

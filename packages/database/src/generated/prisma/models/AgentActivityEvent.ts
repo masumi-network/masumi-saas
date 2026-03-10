@@ -15,6 +15,7 @@ import type * as Prisma from "../internal/prismaNamespace.js";
  * Model AgentActivityEvent
  * Audit log of agent lifecycle events for the Activity feed.
  * Emitted when registration state changes, verification, deregister, or delete.
+ * agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
  */
 export type AgentActivityEventModel =
   runtime.Types.Result.DefaultSelection<Prisma.$AgentActivityEventPayload>;
@@ -27,6 +28,7 @@ export type AggregateAgentActivityEvent = {
 
 export type AgentActivityEventMinAggregateOutputType = {
   id: string | null;
+  userId: string | null;
   agentId: string | null;
   type: $Enums.AgentActivityEventType | null;
   createdAt: Date | null;
@@ -34,6 +36,7 @@ export type AgentActivityEventMinAggregateOutputType = {
 
 export type AgentActivityEventMaxAggregateOutputType = {
   id: string | null;
+  userId: string | null;
   agentId: string | null;
   type: $Enums.AgentActivityEventType | null;
   createdAt: Date | null;
@@ -41,6 +44,7 @@ export type AgentActivityEventMaxAggregateOutputType = {
 
 export type AgentActivityEventCountAggregateOutputType = {
   id: number;
+  userId: number;
   agentId: number;
   type: number;
   createdAt: number;
@@ -49,6 +53,7 @@ export type AgentActivityEventCountAggregateOutputType = {
 
 export type AgentActivityEventMinAggregateInputType = {
   id?: true;
+  userId?: true;
   agentId?: true;
   type?: true;
   createdAt?: true;
@@ -56,6 +61,7 @@ export type AgentActivityEventMinAggregateInputType = {
 
 export type AgentActivityEventMaxAggregateInputType = {
   id?: true;
+  userId?: true;
   agentId?: true;
   type?: true;
   createdAt?: true;
@@ -63,6 +69,7 @@ export type AgentActivityEventMaxAggregateInputType = {
 
 export type AgentActivityEventCountAggregateInputType = {
   id?: true;
+  userId?: true;
   agentId?: true;
   type?: true;
   createdAt?: true;
@@ -156,7 +163,8 @@ export type AgentActivityEventGroupByArgs<
 
 export type AgentActivityEventGroupByOutputType = {
   id: string;
-  agentId: string;
+  userId: string;
+  agentId: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt: Date;
   _count: AgentActivityEventCountAggregateOutputType | null;
@@ -188,19 +196,26 @@ export type AgentActivityEventWhereInput = {
     | Prisma.AgentActivityEventWhereInput
     | Prisma.AgentActivityEventWhereInput[];
   id?: Prisma.StringFilter<"AgentActivityEvent"> | string;
-  agentId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+  userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+  agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
     | $Enums.AgentActivityEventType;
   createdAt?: Prisma.DateTimeFilter<"AgentActivityEvent"> | Date | string;
-  agent?: Prisma.XOR<Prisma.AgentScalarRelationFilter, Prisma.AgentWhereInput>;
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+  agent?: Prisma.XOR<
+    Prisma.AgentNullableScalarRelationFilter,
+    Prisma.AgentWhereInput
+  > | null;
 };
 
 export type AgentActivityEventOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
-  agentId?: Prisma.SortOrder;
+  userId?: Prisma.SortOrder;
+  agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+  user?: Prisma.UserOrderByWithRelationInput;
   agent?: Prisma.AgentOrderByWithRelationInput;
 };
 
@@ -214,22 +229,25 @@ export type AgentActivityEventWhereUniqueInput = Prisma.AtLeast<
     NOT?:
       | Prisma.AgentActivityEventWhereInput
       | Prisma.AgentActivityEventWhereInput[];
-    agentId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+    userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+    agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
     type?:
       | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
       | $Enums.AgentActivityEventType;
     createdAt?: Prisma.DateTimeFilter<"AgentActivityEvent"> | Date | string;
+    user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
     agent?: Prisma.XOR<
-      Prisma.AgentScalarRelationFilter,
+      Prisma.AgentNullableScalarRelationFilter,
       Prisma.AgentWhereInput
-    >;
+    > | null;
   },
   "id"
 >;
 
 export type AgentActivityEventOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
-  agentId?: Prisma.SortOrder;
+  userId?: Prisma.SortOrder;
+  agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   _count?: Prisma.AgentActivityEventCountOrderByAggregateInput;
@@ -246,7 +264,11 @@ export type AgentActivityEventScalarWhereWithAggregatesInput = {
     | Prisma.AgentActivityEventScalarWhereWithAggregatesInput
     | Prisma.AgentActivityEventScalarWhereWithAggregatesInput[];
   id?: Prisma.StringWithAggregatesFilter<"AgentActivityEvent"> | string;
-  agentId?: Prisma.StringWithAggregatesFilter<"AgentActivityEvent"> | string;
+  userId?: Prisma.StringWithAggregatesFilter<"AgentActivityEvent"> | string;
+  agentId?:
+    | Prisma.StringNullableWithAggregatesFilter<"AgentActivityEvent">
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeWithAggregatesFilter<"AgentActivityEvent">
     | $Enums.AgentActivityEventType;
@@ -260,12 +282,14 @@ export type AgentActivityEventCreateInput = {
   id?: string;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
-  agent: Prisma.AgentCreateNestedOneWithoutActivityEventsInput;
+  user: Prisma.UserCreateNestedOneWithoutAgentActivityEventsInput;
+  agent?: Prisma.AgentCreateNestedOneWithoutActivityEventsInput;
 };
 
 export type AgentActivityEventUncheckedCreateInput = {
   id?: string;
-  agentId: string;
+  userId: string;
+  agentId?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -276,12 +300,14 @@ export type AgentActivityEventUpdateInput = {
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  agent?: Prisma.AgentUpdateOneRequiredWithoutActivityEventsNestedInput;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentActivityEventsNestedInput;
+  agent?: Prisma.AgentUpdateOneWithoutActivityEventsNestedInput;
 };
 
 export type AgentActivityEventUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentId?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -290,7 +316,8 @@ export type AgentActivityEventUncheckedUpdateInput = {
 
 export type AgentActivityEventCreateManyInput = {
   id?: string;
-  agentId: string;
+  userId: string;
+  agentId?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -305,7 +332,8 @@ export type AgentActivityEventUpdateManyMutationInput = {
 
 export type AgentActivityEventUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentId?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -324,6 +352,7 @@ export type AgentActivityEventOrderByRelationAggregateInput = {
 
 export type AgentActivityEventCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -331,6 +360,7 @@ export type AgentActivityEventCountOrderByAggregateInput = {
 
 export type AgentActivityEventMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -338,9 +368,120 @@ export type AgentActivityEventMaxOrderByAggregateInput = {
 
 export type AgentActivityEventMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
+};
+
+export type AgentActivityEventCreateNestedManyWithoutUserInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentActivityEventCreateWithoutUserInput,
+        Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+      >
+    | Prisma.AgentActivityEventCreateWithoutUserInput[]
+    | Prisma.AgentActivityEventUncheckedCreateWithoutUserInput[];
+  connectOrCreate?:
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput[];
+  createMany?: Prisma.AgentActivityEventCreateManyUserInputEnvelope;
+  connect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+};
+
+export type AgentActivityEventUncheckedCreateNestedManyWithoutUserInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentActivityEventCreateWithoutUserInput,
+        Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+      >
+    | Prisma.AgentActivityEventCreateWithoutUserInput[]
+    | Prisma.AgentActivityEventUncheckedCreateWithoutUserInput[];
+  connectOrCreate?:
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput[];
+  createMany?: Prisma.AgentActivityEventCreateManyUserInputEnvelope;
+  connect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+};
+
+export type AgentActivityEventUpdateManyWithoutUserNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentActivityEventCreateWithoutUserInput,
+        Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+      >
+    | Prisma.AgentActivityEventCreateWithoutUserInput[]
+    | Prisma.AgentActivityEventUncheckedCreateWithoutUserInput[];
+  connectOrCreate?:
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput[];
+  upsert?:
+    | Prisma.AgentActivityEventUpsertWithWhereUniqueWithoutUserInput
+    | Prisma.AgentActivityEventUpsertWithWhereUniqueWithoutUserInput[];
+  createMany?: Prisma.AgentActivityEventCreateManyUserInputEnvelope;
+  set?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  disconnect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  delete?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  connect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  update?:
+    | Prisma.AgentActivityEventUpdateWithWhereUniqueWithoutUserInput
+    | Prisma.AgentActivityEventUpdateWithWhereUniqueWithoutUserInput[];
+  updateMany?:
+    | Prisma.AgentActivityEventUpdateManyWithWhereWithoutUserInput
+    | Prisma.AgentActivityEventUpdateManyWithWhereWithoutUserInput[];
+  deleteMany?:
+    | Prisma.AgentActivityEventScalarWhereInput
+    | Prisma.AgentActivityEventScalarWhereInput[];
+};
+
+export type AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentActivityEventCreateWithoutUserInput,
+        Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+      >
+    | Prisma.AgentActivityEventCreateWithoutUserInput[]
+    | Prisma.AgentActivityEventUncheckedCreateWithoutUserInput[];
+  connectOrCreate?:
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput
+    | Prisma.AgentActivityEventCreateOrConnectWithoutUserInput[];
+  upsert?:
+    | Prisma.AgentActivityEventUpsertWithWhereUniqueWithoutUserInput
+    | Prisma.AgentActivityEventUpsertWithWhereUniqueWithoutUserInput[];
+  createMany?: Prisma.AgentActivityEventCreateManyUserInputEnvelope;
+  set?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  disconnect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  delete?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  connect?:
+    | Prisma.AgentActivityEventWhereUniqueInput
+    | Prisma.AgentActivityEventWhereUniqueInput[];
+  update?:
+    | Prisma.AgentActivityEventUpdateWithWhereUniqueWithoutUserInput
+    | Prisma.AgentActivityEventUpdateWithWhereUniqueWithoutUserInput[];
+  updateMany?:
+    | Prisma.AgentActivityEventUpdateManyWithWhereWithoutUserInput
+    | Prisma.AgentActivityEventUpdateManyWithWhereWithoutUserInput[];
+  deleteMany?:
+    | Prisma.AgentActivityEventScalarWhereInput
+    | Prisma.AgentActivityEventScalarWhereInput[];
 };
 
 export type AgentActivityEventCreateNestedManyWithoutAgentInput = {
@@ -457,14 +598,90 @@ export type EnumAgentActivityEventTypeFieldUpdateOperationsInput = {
   set?: $Enums.AgentActivityEventType;
 };
 
-export type AgentActivityEventCreateWithoutAgentInput = {
+export type AgentActivityEventCreateWithoutUserInput = {
   id?: string;
+  type: $Enums.AgentActivityEventType;
+  createdAt?: Date | string;
+  agent?: Prisma.AgentCreateNestedOneWithoutActivityEventsInput;
+};
+
+export type AgentActivityEventUncheckedCreateWithoutUserInput = {
+  id?: string;
+  agentId?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
 
+export type AgentActivityEventCreateOrConnectWithoutUserInput = {
+  where: Prisma.AgentActivityEventWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentActivityEventCreateWithoutUserInput,
+    Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+  >;
+};
+
+export type AgentActivityEventCreateManyUserInputEnvelope = {
+  data:
+    | Prisma.AgentActivityEventCreateManyUserInput
+    | Prisma.AgentActivityEventCreateManyUserInput[];
+  skipDuplicates?: boolean;
+};
+
+export type AgentActivityEventUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.AgentActivityEventWhereUniqueInput;
+  update: Prisma.XOR<
+    Prisma.AgentActivityEventUpdateWithoutUserInput,
+    Prisma.AgentActivityEventUncheckedUpdateWithoutUserInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentActivityEventCreateWithoutUserInput,
+    Prisma.AgentActivityEventUncheckedCreateWithoutUserInput
+  >;
+};
+
+export type AgentActivityEventUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.AgentActivityEventWhereUniqueInput;
+  data: Prisma.XOR<
+    Prisma.AgentActivityEventUpdateWithoutUserInput,
+    Prisma.AgentActivityEventUncheckedUpdateWithoutUserInput
+  >;
+};
+
+export type AgentActivityEventUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.AgentActivityEventScalarWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentActivityEventUpdateManyMutationInput,
+    Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserInput
+  >;
+};
+
+export type AgentActivityEventScalarWhereInput = {
+  AND?:
+    | Prisma.AgentActivityEventScalarWhereInput
+    | Prisma.AgentActivityEventScalarWhereInput[];
+  OR?: Prisma.AgentActivityEventScalarWhereInput[];
+  NOT?:
+    | Prisma.AgentActivityEventScalarWhereInput
+    | Prisma.AgentActivityEventScalarWhereInput[];
+  id?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+  userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+  agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
+  type?:
+    | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
+    | $Enums.AgentActivityEventType;
+  createdAt?: Prisma.DateTimeFilter<"AgentActivityEvent"> | Date | string;
+};
+
+export type AgentActivityEventCreateWithoutAgentInput = {
+  id?: string;
+  type: $Enums.AgentActivityEventType;
+  createdAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentActivityEventsInput;
+};
+
 export type AgentActivityEventUncheckedCreateWithoutAgentInput = {
   id?: string;
+  userId: string;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -512,24 +729,43 @@ export type AgentActivityEventUpdateManyWithWhereWithoutAgentInput = {
   >;
 };
 
-export type AgentActivityEventScalarWhereInput = {
-  AND?:
-    | Prisma.AgentActivityEventScalarWhereInput
-    | Prisma.AgentActivityEventScalarWhereInput[];
-  OR?: Prisma.AgentActivityEventScalarWhereInput[];
-  NOT?:
-    | Prisma.AgentActivityEventScalarWhereInput
-    | Prisma.AgentActivityEventScalarWhereInput[];
-  id?: Prisma.StringFilter<"AgentActivityEvent"> | string;
-  agentId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
+export type AgentActivityEventCreateManyUserInput = {
+  id?: string;
+  agentId?: string | null;
+  type: $Enums.AgentActivityEventType;
+  createdAt?: Date | string;
+};
+
+export type AgentActivityEventUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
   type?:
-    | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
+    | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
-  createdAt?: Prisma.DateTimeFilter<"AgentActivityEvent"> | Date | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  agent?: Prisma.AgentUpdateOneWithoutActivityEventsNestedInput;
+};
+
+export type AgentActivityEventUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  type?:
+    | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
+    | $Enums.AgentActivityEventType;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+export type AgentActivityEventUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  type?:
+    | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
+    | $Enums.AgentActivityEventType;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type AgentActivityEventCreateManyAgentInput = {
   id?: string;
+  userId: string;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -540,10 +776,12 @@ export type AgentActivityEventUpdateWithoutAgentInput = {
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentActivityEventsNestedInput;
 };
 
 export type AgentActivityEventUncheckedUpdateWithoutAgentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -552,6 +790,7 @@ export type AgentActivityEventUncheckedUpdateWithoutAgentInput = {
 
 export type AgentActivityEventUncheckedUpdateManyWithoutAgentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -564,10 +803,12 @@ export type AgentActivityEventSelect<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    userId?: boolean;
     agentId?: boolean;
     type?: boolean;
     createdAt?: boolean;
-    agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
   },
   ExtArgs["result"]["agentActivityEvent"]
 >;
@@ -578,10 +819,12 @@ export type AgentActivityEventSelectCreateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    userId?: boolean;
     agentId?: boolean;
     type?: boolean;
     createdAt?: boolean;
-    agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
   },
   ExtArgs["result"]["agentActivityEvent"]
 >;
@@ -592,16 +835,19 @@ export type AgentActivityEventSelectUpdateManyAndReturn<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
+    userId?: boolean;
     agentId?: boolean;
     type?: boolean;
     createdAt?: boolean;
-    agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
   },
   ExtArgs["result"]["agentActivityEvent"]
 >;
 
 export type AgentActivityEventSelectScalar = {
   id?: boolean;
+  userId?: boolean;
   agentId?: boolean;
   type?: boolean;
   createdAt?: boolean;
@@ -611,26 +857,29 @@ export type AgentActivityEventOmit<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-  "id" | "agentId" | "type" | "createdAt",
+  "id" | "userId" | "agentId" | "type" | "createdAt",
   ExtArgs["result"]["agentActivityEvent"]
 >;
 export type AgentActivityEventInclude<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = {
-  agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+  agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
 };
 export type AgentActivityEventIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = {
-  agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+  agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
 };
 export type AgentActivityEventIncludeUpdateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = {
-  agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>;
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+  agent?: boolean | Prisma.AgentActivityEvent$agentArgs<ExtArgs>;
 };
 
 export type $AgentActivityEventPayload<
@@ -639,12 +888,14 @@ export type $AgentActivityEventPayload<
 > = {
   name: "AgentActivityEvent";
   objects: {
-    agent: Prisma.$AgentPayload<ExtArgs>;
+    user: Prisma.$UserPayload<ExtArgs>;
+    agent: Prisma.$AgentPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
       id: string;
-      agentId: string;
+      userId: string;
+      agentId: string | null;
       type: $Enums.AgentActivityEventType;
       createdAt: Date;
     },
@@ -1219,17 +1470,30 @@ export interface Prisma__AgentActivityEventClient<
   GlobalOmitOptions = {},
 > extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise";
-  agent<T extends Prisma.AgentDefaultArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.AgentDefaultArgs<ExtArgs>>,
-  ): Prisma.Prisma__AgentClient<
+  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>,
+  ): Prisma.Prisma__UserClient<
     | runtime.Types.Result.GetResult<
-        Prisma.$AgentPayload<ExtArgs>,
+        Prisma.$UserPayload<ExtArgs>,
         T,
         "findUniqueOrThrow",
         GlobalOmitOptions
       >
     | Null,
     Null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
+  agent<T extends Prisma.AgentActivityEvent$agentArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.AgentActivityEvent$agentArgs<ExtArgs>>,
+  ): Prisma.Prisma__AgentClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$AgentPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
     ExtArgs,
     GlobalOmitOptions
   >;
@@ -1276,6 +1540,7 @@ export interface Prisma__AgentActivityEventClient<
  */
 export interface AgentActivityEventFieldRefs {
   readonly id: Prisma.FieldRef<"AgentActivityEvent", "String">;
+  readonly userId: Prisma.FieldRef<"AgentActivityEvent", "String">;
   readonly agentId: Prisma.FieldRef<"AgentActivityEvent", "String">;
   readonly type: Prisma.FieldRef<
     "AgentActivityEvent",
@@ -1750,6 +2015,28 @@ export type AgentActivityEventDeleteManyArgs<
    * Limit how many AgentActivityEvents to delete.
    */
   limit?: number;
+};
+
+/**
+ * AgentActivityEvent.agent
+ */
+export type AgentActivityEvent$agentArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Agent
+   */
+  select?: Prisma.AgentSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Agent
+   */
+  omit?: Prisma.AgentOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentInclude<ExtArgs> | null;
+  where?: Prisma.AgentWhereInput;
 };
 
 /**

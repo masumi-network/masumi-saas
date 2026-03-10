@@ -878,14 +878,14 @@ export type AgentMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type AgentScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput;
-  isNot?: Prisma.AgentWhereInput;
-};
-
 export type AgentNullableScalarRelationFilter = {
   is?: Prisma.AgentWhereInput | null;
   isNot?: Prisma.AgentWhereInput | null;
+};
+
+export type AgentScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput;
+  isNot?: Prisma.AgentWhereInput;
 };
 
 export type AgentCreateNestedManyWithoutUserInput = {
@@ -1086,13 +1086,15 @@ export type AgentCreateNestedOneWithoutActivityEventsInput = {
   connect?: Prisma.AgentWhereUniqueInput;
 };
 
-export type AgentUpdateOneRequiredWithoutActivityEventsNestedInput = {
+export type AgentUpdateOneWithoutActivityEventsNestedInput = {
   create?: Prisma.XOR<
     Prisma.AgentCreateWithoutActivityEventsInput,
     Prisma.AgentUncheckedCreateWithoutActivityEventsInput
   >;
   connectOrCreate?: Prisma.AgentCreateOrConnectWithoutActivityEventsInput;
   upsert?: Prisma.AgentUpsertWithoutActivityEventsInput;
+  disconnect?: Prisma.AgentWhereInput | boolean;
+  delete?: Prisma.AgentWhereInput | boolean;
   connect?: Prisma.AgentWhereUniqueInput;
   update?: Prisma.XOR<
     Prisma.XOR<

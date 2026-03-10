@@ -307,6 +307,7 @@ export type AgentScalarFieldEnum =
 
 export const AgentActivityEventScalarFieldEnum = {
   id: "id",
+  userId: "userId",
   agentId: "agentId",
   type: "type",
   createdAt: "createdAt",

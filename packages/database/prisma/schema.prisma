@@ -26,6 +26,7 @@ model User {
   invitations         Invitation[]
   apikeys             Apikey[]
   agents              Agent[]
+  agentActivityEvents AgentActivityEvent[]
   veridianCredentials VeridianCredential[]
 
   // Additional fields
@@ -320,13 +321,17 @@ model Agent {
 
 /// Audit log of agent lifecycle events for the Activity feed.
 /// Emitted when registration state changes, verification, deregister, or delete.
+/// agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
 model AgentActivityEvent {
   id        String   @id @default(cuid())
-  agentId   String
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
   type      AgentActivityEventType
   createdAt DateTime @default(now())
 
+  @@index([userId])
   @@index([agentId])
   @@index([createdAt])
   @@index([type])

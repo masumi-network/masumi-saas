@@ -4,8 +4,8 @@ export type ActivityFeedItem =
       id: string;
       date: string;
       type: string;
-      agentId: string;
-      agentName: string;
+      agentId: string | null;
+      agentName: string | null;
     }
   | {
       kind: "transaction";
