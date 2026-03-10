@@ -149,6 +149,11 @@ export async function registerAgentOnChain(
     ],
   });
 
+  const sellingWalletId =
+    paymentSource.SellingWallets.find(
+      (w) => w.walletVkey === sellingWallet.walletVkey,
+    )?.id ?? null;
+
   if (network === "Preprod") {
     const DISPENSER_TIMEOUT_MS = 15_000;
     const controller = new AbortController();
@@ -232,7 +237,7 @@ export async function registerAgentOnChain(
     data: {
       agentId: agent.id,
       sellingWalletVkey: sellingWallet.walletVkey,
-      sellingWalletId: null,
+      sellingWalletId,
       buyingWalletVkey: buyingWallet.walletVkey,
       networkIdentifier: network,
       status: "PENDING",

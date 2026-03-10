@@ -146,9 +146,22 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
     fetchFeed();
   }, [fetchFeed, refreshKey]);
 
+  useEffect(() => {
+    if (error) {
+      onFilteredItemsChange?.([]);
+      return;
+    }
+    const filtered = filterItemsBySearch(
+      items,
+      searchQuery,
+      LIFECYCLE_LABELS,
+      formatDate,
+    );
+    onFilteredItemsChange?.(filtered);
+  }, [error, items, searchQuery, onFilteredItemsChange]);
+
   if (error) {
     exportDataRef.current = [];
-    onFilteredItemsChange?.([]);
     return (
       <div className="rounded-lg border border-border bg-muted-surface/50 p-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
@@ -170,7 +183,6 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
     formatDate,
   );
   exportDataRef.current = filteredItems;
-  onFilteredItemsChange?.(filteredItems);
 
   if (!isLoading && items.length === 0) {
     return (

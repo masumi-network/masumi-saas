@@ -6,7 +6,6 @@
 import type { PaymentNodeClient } from "@/lib/payment-node/client";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 
-const CACHE_KEY = "payment_source_smart_contract_address" as const;
 let cached: { id: string; address: string } | null = null;
 
 /**
