@@ -70,7 +70,7 @@ export async function GET(
     }
 
     const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(client);
+      await getSmartContractAddressForConfiguredSource(client, user.id);
     if (!smartContractAddress) {
       return NextResponse.json({
         success: true,

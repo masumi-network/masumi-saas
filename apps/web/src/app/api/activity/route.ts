@@ -278,7 +278,7 @@ export async function GET(request: Request) {
         const client = await getPaymentNodeClientForUser(user.id);
         if (client) {
           const smartContractAddress =
-            await getSmartContractAddressForConfiguredSource(client);
+            await getSmartContractAddressForConfiguredSource(client, user.id);
           const agentIdentifiers = new Set(
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );

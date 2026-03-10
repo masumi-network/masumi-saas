@@ -1,22 +1,28 @@
 /**
  * Resolve PAYMENT_NODE_PAYMENT_SOURCE_ID to smartContractAddress via payment node API.
  * Used when calling payment/get and purchase/get with filterSmartContractAddress.
+ * Cache is per-user to avoid sharing one user's result with others or masking per-user access failures.
  */
 
 import type { PaymentNodeClient } from "@/lib/payment-node/client";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 
-let cached: { id: string; address: string } | null = null;
+const cacheByUser = new Map<
+  string,
+  { paymentSourceId: string; address: string }
+>();
 
 /**
  * Returns the smart contract address for the configured payment source id.
- * Uses in-memory cache. Call clearSmartContractAddressCache() if the source changes.
+ * Uses in-memory cache per userId. Call clearSmartContractAddressCache() if the source changes.
  */
 export async function getSmartContractAddressForConfiguredSource(
   client: PaymentNodeClient,
+  userId: string,
 ): Promise<string | null> {
   const paymentSourceId = paymentNodeConfig.getPaymentSourceId();
-  if (cached?.id === paymentSourceId) return cached.address;
+  const entry = cacheByUser.get(userId);
+  if (entry?.paymentSourceId === paymentSourceId) return entry.address;
 
   const maxTake = 100;
   let cursorId: string | undefined;
@@ -27,7 +33,10 @@ export async function getSmartContractAddressForConfiguredSource(
     });
     const found = PaymentSources.find((ps) => ps.id === paymentSourceId);
     if (found) {
-      cached = { id: paymentSourceId, address: found.smartContractAddress };
+      cacheByUser.set(userId, {
+        paymentSourceId,
+        address: found.smartContractAddress,
+      });
       return found.smartContractAddress;
     }
     if (PaymentSources.length === 0) break;
@@ -37,5 +46,5 @@ export async function getSmartContractAddressForConfiguredSource(
 }
 
 export function clearSmartContractAddressCache(): void {
-  cached = null;
+  cacheByUser.clear();
 }
