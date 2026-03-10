@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
-import { toNetwork, formatRequestedAmount } from "@/lib/payment-node/format";
+import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 
