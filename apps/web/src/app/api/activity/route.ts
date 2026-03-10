@@ -102,92 +102,102 @@ export async function GET(request: Request) {
         .map((a) => [a.agentIdentifier!, a] as const),
     );
 
-    const agentIds = agents.map((a) => a.id);
-    const [eventsForAgents, orphanEvents] = await Promise.all([
-      prisma.agentActivityEvent.findMany({
-        where: { agentId: { in: agentIds } },
-        orderBy: { createdAt: "desc" },
-        take: FEED_LIMIT,
-        include: { agent: { select: { id: true, name: true } } },
-      }),
-      // Orphan events (e.g. AgentDeleted after agent row removed); agentId is null
-      prisma.agentActivityEvent.findMany({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma nullable filter type mismatch before client regen
-        where: { userId: user.id, agentId: null } as any,
-        orderBy: { createdAt: "desc" },
-        take: FEED_LIMIT,
-        include: { agent: { select: { id: true, name: true } } },
-      }),
-    ]);
-    let events = [...eventsForAgents, ...orphanEvents]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, FEED_LIMIT);
+    const needLifecycle = validFilter === "all" || validFilter === "lifecycle";
 
-    // One-time backfill: if user has agents but no events, create one event per agent from current state
-    if (events.length === 0 && agents.length > 0) {
-      for (const agent of agents) {
-        const stateEventType = registrationStateToEventType(
-          agent.registrationState,
-        );
-        if (stateEventType) {
-          try {
-            await prisma.agentActivityEvent.create({
-              data: {
-                agentId: agent.id,
-                userId: user.id,
-                type: stateEventType,
-              },
-            });
-          } catch (err) {
-            console.error("[Activity] Backfill create failed:", agent.id, err);
-          }
-        }
-        if (agent.verificationStatus === "VERIFIED") {
-          try {
-            await prisma.agentActivityEvent.create({
-              data: {
-                agentId: agent.id,
-                userId: user.id,
-                type: "AgentVerified",
-              },
-            });
-          } catch (err) {
-            console.error(
-              "[Activity] Backfill verified failed:",
-              agent.id,
-              err,
-            );
-          }
-        }
-      }
-      const [refetchForAgents, refetchOrphans] = await Promise.all([
+    let lifecycleItems: ActivityFeedItem[] = [];
+
+    if (needLifecycle) {
+      const agentIds = agents.map((a) => a.id);
+      const [eventsForAgents, orphanEvents] = await Promise.all([
         prisma.agentActivityEvent.findMany({
           where: { agentId: { in: agentIds } },
           orderBy: { createdAt: "desc" },
           take: FEED_LIMIT,
           include: { agent: { select: { id: true, name: true } } },
         }),
+        // Orphan events (e.g. AgentDeleted after agent row removed); agentId is null
         prisma.agentActivityEvent.findMany({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- nullable agentId filter
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma nullable filter type mismatch before client regen
           where: { userId: user.id, agentId: null } as any,
           orderBy: { createdAt: "desc" },
           take: FEED_LIMIT,
           include: { agent: { select: { id: true, name: true } } },
         }),
       ]);
-      events = [...refetchForAgents, ...refetchOrphans]
+      let events = [...eventsForAgents, ...orphanEvents]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, FEED_LIMIT);
-    }
 
-    const lifecycleItems: ActivityFeedItem[] = events.map((e) => ({
-      kind: "lifecycle",
-      id: e.id,
-      date: e.createdAt.toISOString(),
-      type: e.type,
-      agentId: e.agent?.id ?? null,
-      agentName: e.agent?.name ?? null,
-    }));
+      // One-time backfill: if user has agents but no events, create one event per agent from current state
+      if (events.length === 0 && agents.length > 0) {
+        for (const agent of agents) {
+          const stateEventType = registrationStateToEventType(
+            agent.registrationState,
+          );
+          if (stateEventType) {
+            try {
+              await prisma.agentActivityEvent.create({
+                data: {
+                  agentId: agent.id,
+                  userId: user.id,
+                  type: stateEventType,
+                },
+              });
+            } catch (err) {
+              console.error(
+                "[Activity] Backfill create failed:",
+                agent.id,
+                err,
+              );
+            }
+          }
+          if (agent.verificationStatus === "VERIFIED") {
+            try {
+              await prisma.agentActivityEvent.create({
+                data: {
+                  agentId: agent.id,
+                  userId: user.id,
+                  type: "AgentVerified",
+                },
+              });
+            } catch (err) {
+              console.error(
+                "[Activity] Backfill verified failed:",
+                agent.id,
+                err,
+              );
+            }
+          }
+        }
+        const [refetchForAgents, refetchOrphans] = await Promise.all([
+          prisma.agentActivityEvent.findMany({
+            where: { agentId: { in: agentIds } },
+            orderBy: { createdAt: "desc" },
+            take: FEED_LIMIT,
+            include: { agent: { select: { id: true, name: true } } },
+          }),
+          prisma.agentActivityEvent.findMany({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- nullable agentId filter
+            where: { userId: user.id, agentId: null } as any,
+            orderBy: { createdAt: "desc" },
+            take: FEED_LIMIT,
+            include: { agent: { select: { id: true, name: true } } },
+          }),
+        ]);
+        events = [...refetchForAgents, ...refetchOrphans]
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+          .slice(0, FEED_LIMIT);
+      }
+
+      lifecycleItems = events.map((e) => ({
+        kind: "lifecycle",
+        id: e.id,
+        date: e.createdAt.toISOString(),
+        type: e.type,
+        agentId: e.agent?.id ?? null,
+        agentName: e.agent?.name ?? null,
+      }));
+    }
 
     let transactionItems: ActivityFeedItem[] = [];
     try {

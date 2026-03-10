@@ -114,6 +114,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
           className="mt-3 text-sm font-medium text-primary underline-offset-4 hover:underline"
           onClick={() => {
             setError(null);
+            setEarningsData(null);
             setIsLoading(true);
             fetch(`/api/agents/${agent.id}/earnings?period=${selectedPeriod}`)
               .then((res) => res.json())
@@ -124,12 +125,16 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
                   error?: string;
                 }) => {
                   if (json.success && json.data) setEarningsData(json.data);
-                  else if (!json.success && json.error) setError(json.error);
+                  else {
+                    setEarningsData(null);
+                    if (!json.success && json.error) setError(json.error);
+                  }
                 },
               )
-              .catch((err) =>
-                setError(err instanceof Error ? err.message : "Failed to load"),
-              )
+              .catch((err) => {
+                setEarningsData(null);
+                setError(err instanceof Error ? err.message : "Failed to load");
+              })
               .finally(() => setIsLoading(false));
           }}
         >

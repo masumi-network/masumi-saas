@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs } from "@/components/ui/tabs";
 import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
+import type { ActivityFeedItem } from "@/lib/types/activity";
 import { formatDate } from "@/lib/utils";
 
 import {
@@ -39,6 +40,10 @@ export function ActivityPageContent() {
   const [hasItemsToExport, setHasItemsToExport] = useState(false);
   const tableRef = useRef<ActivityFeedTableHandle>(null);
   const { markAllAsRead } = useNewTransactionsCount();
+
+  const handleFilteredItemsChange = useCallback((items: ActivityFeedItem[]) => {
+    setHasItemsToExport(items.length > 0);
+  }, []);
 
   useEffect(() => {
     markAllAsRead();
@@ -194,9 +199,7 @@ export function ActivityPageContent() {
           filter={activeTab}
           searchQuery={searchQuery}
           refreshKey={refreshKey}
-          onFilteredItemsChange={(items) =>
-            setHasItemsToExport(items.length > 0)
-          }
+          onFilteredItemsChange={handleFilteredItemsChange}
         />
       </div>
     </div>
