@@ -2,6 +2,11 @@ import prisma, { RegistrationState } from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  buildAgentPricing,
+  registerAgentOnChain,
+  type RegisterAgentParams,
+} from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
@@ -156,9 +161,6 @@ function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   return "Preprod";
 }
 
-// Creates the agent in DB only. State is RegistrationRequested until on-chain
-// registration is completed (e.g. via UI flow or completeRegistrationIfReadyAction).
-// Do not set RegistrationConfirmed here — that must come from the payment node/chain.
 export async function POST(request: NextRequest) {
   try {
     const { user, activeOrganizationId } =
@@ -199,44 +201,73 @@ export async function POST(request: NextRequest) {
           .filter((tag) => tag.length > 0)
       : [];
 
-    const metadata: Record<string, unknown> = {};
-    if (user.name?.trim()) metadata.authorName = user.name.trim();
-    if (user.email?.trim()) metadata.authorEmail = user.email.trim();
-    if (termsOfUseUrl?.trim()) metadata.termsOfUseUrl = termsOfUseUrl.trim();
-    if (privacyPolicyUrl?.trim())
-      metadata.privacyPolicyUrl = privacyPolicyUrl.trim();
-    if (otherUrl?.trim()) metadata.otherUrl = otherUrl.trim();
-    if (capabilityName?.trim()) metadata.capabilityName = capabilityName.trim();
-    if (capabilityVersion?.trim())
-      metadata.capabilityVersion = capabilityVersion.trim();
-    if (exampleOutputs?.length) metadata.exampleOutputs = exampleOutputs;
+    if (tagsArray.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "At least one tag is required." },
+        { status: 400 },
+      );
+    }
 
     const network = getNetworkFromRequest(request);
+    const agentPricing = buildAgentPricing(network, pricing ?? undefined);
 
-    const agent = await prisma.agent.create({
-      data: {
-        name,
-        description: description?.trim() || null,
-        extendedDescription: (extendedDescription?.trim() || null) as
-          | string
-          | null,
-        apiUrl,
-        tags: tagsArray,
-        icon: icon?.trim() || null,
-        pricing: pricing ?? null,
-        metadata:
-          Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
-        userId: user.id,
-        organizationId: activeOrganizationId,
-        registrationState: "RegistrationRequested",
-        networkIdentifier: network,
+    const params: RegisterAgentParams = {
+      name,
+      description: description?.trim() || null,
+      extendedDescription: (extendedDescription?.trim() || null) as
+        | string
+        | null,
+      apiUrl,
+      tags: tagsArray,
+      icon: icon?.trim() || null,
+      agentPricing,
+      exampleOutputs: exampleOutputs ?? [],
+      capabilityName: (capabilityName?.trim() || "Masumi") as string,
+      capabilityVersion: (capabilityVersion?.trim() || "1.0") as string,
+      termsOfUseUrl: termsOfUseUrl?.trim() || null,
+      privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
+      otherUrl: otherUrl?.trim() || null,
+    };
+
+    const result = await registerAgentOnChain(
+      {
+        user: {
+          id: user.id,
+          name: user.name ?? null,
+          email: user.email ?? null,
+        },
+        activeOrganizationId,
+        network,
       },
-    });
+      params,
+    );
 
-    return NextResponse.json({
-      success: true,
-      data: agent,
-    });
+    if (result.success) {
+      return NextResponse.json({
+        success: true,
+        data: result.data,
+      });
+    }
+    if (
+      result.error === "WALLET_FUNDING_PENDING" &&
+      "agentId" in result &&
+      typeof result.agentId === "string"
+    ) {
+      return NextResponse.json(
+        {
+          success: true,
+          status: "wallet_funding_pending",
+          agentId: result.agentId,
+          message:
+            "Wallet is being funded. Poll POST /api/agents/:id/complete-registration until status is registered.",
+        },
+        { status: 202 },
+      );
+    }
+    return NextResponse.json(
+      { success: false, error: result.error },
+      { status: 400 },
+    );
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
