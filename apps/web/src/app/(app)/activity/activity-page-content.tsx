@@ -36,6 +36,7 @@ export function ActivityPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [hasItemsToExport, setHasItemsToExport] = useState(false);
   const tableRef = useRef<ActivityFeedTableHandle>(null);
   const { markAllAsRead } = useNewTransactionsCount();
 
@@ -180,6 +181,7 @@ export function ActivityPageContent() {
               variant="outline"
               className="flex items-center gap-2"
               onClick={downloadCsv}
+              disabled={!hasItemsToExport}
               aria-label={t("downloadCsv")}
             >
               <Download className="h-4 w-4" />
@@ -192,6 +194,9 @@ export function ActivityPageContent() {
           filter={activeTab}
           searchQuery={searchQuery}
           refreshKey={refreshKey}
+          onFilteredItemsChange={(items) =>
+            setHasItemsToExport(items.length > 0)
+          }
         />
       </div>
     </div>

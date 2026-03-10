@@ -70,7 +70,7 @@ export function MembersSection({
       </CardHeader>
       <CardContent className="min-w-0 space-y-4">
         {members.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
             <Users className="mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-center text-sm text-muted-foreground">
               {t("empty")}

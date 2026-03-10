@@ -55,6 +55,8 @@ interface ActivityFeedTableProps {
   searchQuery?: string;
   /** Change to trigger a refetch (e.g. from a refresh button). */
   refreshKey?: number;
+  /** Called when filtered items change (e.g. to enable/disable CSV download). */
+  onFilteredItemsChange?: (items: ActivityFeedItem[]) => void;
 }
 
 export interface ActivityFeedTableHandle {
@@ -92,7 +94,12 @@ function filterItemsBySearch(
 }
 
 const ActivityFeedTableComponent = function ActivityFeedTableInner(
-  { filter, searchQuery = "", refreshKey }: ActivityFeedTableProps,
+  {
+    filter,
+    searchQuery = "",
+    refreshKey,
+    onFilteredItemsChange,
+  }: ActivityFeedTableProps,
   ref: React.Ref<ActivityFeedTableHandle>,
 ) {
   const t = useTranslations("App.Activity");
@@ -141,8 +148,9 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
 
   if (error) {
     exportDataRef.current = [];
+    onFilteredItemsChange?.([]);
     return (
-      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center">
+      <div className="rounded-lg border border-border bg-muted-surface/50 p-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
         <button
           type="button"
@@ -162,10 +170,11 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
     formatDate,
   );
   exportDataRef.current = filteredItems;
+  onFilteredItemsChange?.(filteredItems);
 
   if (!isLoading && items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center">
+      <div className="rounded-lg border border-border bg-muted-surface/50 p-8 text-center">
         <p className="text-sm text-muted-foreground">{t("noActivity")}</p>
       </div>
     );
@@ -173,7 +182,7 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
 
   if (!isLoading && filteredItems.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center">
+      <div className="rounded-lg border border-border bg-muted-surface/50 p-8 text-center">
         <p className="text-sm text-muted-foreground">{t("noSearchResults")}</p>
       </div>
     );
