@@ -3,29 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
+import { toNetwork, formatRequestedAmount } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
-
-type Network = "Mainnet" | "Preprod";
-
-function toNetwork(networkIdentifier: string | null): Network {
-  if (networkIdentifier === "Mainnet" || networkIdentifier === "Preprod")
-    return networkIdentifier;
-  return "Preprod";
-}
-
-function formatRequestedAmount(
-  requestedFunds?: Array<{ unit: string; amount: string }>,
-): string {
-  if (!requestedFunds?.length) return "—";
-  const first = requestedFunds[0]!;
-  if (first.unit === "") {
-    const lovelace = BigInt(first.amount);
-    const ada = Number(lovelace) / 1_000_000;
-    return ada.toFixed(6) + " ADA";
-  }
-  return `${first.amount} ${first.unit.slice(0, 8)}`;
-}
 
 function mapItem(
   item: PaymentOrPurchaseItem,

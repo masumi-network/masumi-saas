@@ -2,15 +2,8 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-
-type Network = "Mainnet" | "Preprod";
-
-function toNetwork(networkIdentifier: string | null): Network {
-  if (networkIdentifier === "Mainnet" || networkIdentifier === "Preprod")
-    return networkIdentifier;
-  return "Preprod";
-}
 
 function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;

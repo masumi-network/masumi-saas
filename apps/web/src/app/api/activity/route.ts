@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { toNetwork, formatRequestedAmount } from "@/lib/payment-node/format";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 
@@ -38,7 +39,6 @@ function setCachedTransactions(
 /** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
 const backfillLocks = new Map<string, Promise<void>>();
 
-type Network = "Mainnet" | "Preprod";
 type FeedFilter =
   | "all"
   | "lifecycle"
@@ -47,10 +47,6 @@ type FeedFilter =
   | "payments"
   | "refundRequests"
   | "disputes";
-
-function toNetwork(n: string | null): Network {
-  return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
-}
 
 /** Map current registration state to a single lifecycle event for backfill. */
 function registrationStateToEventType(
@@ -82,19 +78,6 @@ function registrationStateToEventType(
   }
 }
 
-function formatAmount(
-  requestedFunds?: Array<{ unit: string; amount: string }>,
-): string {
-  if (!requestedFunds?.length) return "—";
-  const first = requestedFunds[0]!;
-  if (first.unit === "") {
-    const lovelace = BigInt(first.amount);
-    const ada = Number(lovelace) / 1_000_000;
-    return ada.toFixed(6) + " ADA";
-  }
-  return `${first.amount} ${first.unit.slice(0, 8)}`;
-}
-
 export async function GET(request: Request) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
@@ -114,6 +97,19 @@ export async function GET(request: Request) {
     if (validFilter === "transactions") {
       const cached = getCachedTransactions(user.id);
       if (cached) {
+        const summary = searchParams.get("summary") === "1";
+        if (summary) {
+          const totalTransactions = cached.filter(
+            (i) => i.kind === "transaction",
+          ).length;
+          return NextResponse.json({
+            success: true,
+            data: {
+              totalTransactions,
+              totalActivity: cached.length,
+            },
+          });
+        }
         return NextResponse.json({
           success: true,
           data: { items: cached },
@@ -312,7 +308,7 @@ export async function GET(request: Request) {
                 type,
                 agentId: agent?.id ?? null,
                 agentName: agent?.name ?? null,
-                amount: formatAmount(p.RequestedFunds),
+                amount: formatRequestedAmount(p.RequestedFunds),
                 status: String(status),
                 txHash: p.CurrentTransaction?.txHash ?? null,
               };
