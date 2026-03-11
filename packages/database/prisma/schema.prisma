@@ -26,6 +26,7 @@ model User {
   invitations         Invitation[]
   apikeys             Apikey[]
   agents              Agent[]
+  agentActivityEvents AgentActivityEvent[]
   veridianCredentials VeridianCredential[]
 
   // Additional fields
@@ -307,7 +308,8 @@ model Agent {
   updatedAt DateTime @updatedAt
 
   // Domain relations
-  agentReference AgentReference?
+  agentReference   AgentReference?
+  activityEvents   AgentActivityEvent[]
 
   @@index([userId])
   @@index([organizationId])
@@ -315,6 +317,35 @@ model Agent {
   @@index([registrationState])
   @@index([networkIdentifier])
   @@map("agent")
+}
+
+/// Audit log of agent lifecycle events for the Activity feed.
+/// Emitted when registration state changes, verification, deregister, or delete.
+/// agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
+model AgentActivityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  type      AgentActivityEventType
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("agent_activity_event")
+}
+
+enum AgentActivityEventType {
+  RegistrationInitiated
+  RegistrationConfirmed
+  RegistrationFailed
+  DeregistrationRequested
+  DeregistrationConfirmed
+  AgentVerified
+  AgentDeleted
 }
 
 // ─── New Domain Entity Models ─────────────────────────────────────────────────

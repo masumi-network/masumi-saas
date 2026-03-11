@@ -87,6 +87,7 @@ export async function getDashboardOverview(
         icon: true,
         registrationState: true,
         verificationStatus: true,
+        pricing: true,
       },
       orderBy: { updatedAt: "desc" },
       take: 10,
@@ -120,6 +121,7 @@ export async function getDashboardOverview(
     icon: a.icon,
     registrationState: a.registrationState,
     verificationStatus: a.verificationStatus,
+    pricing: a.pricing as Record<string, unknown> | null,
   }));
 
   const apiKeysList = apiKeysResult.map((k) => ({

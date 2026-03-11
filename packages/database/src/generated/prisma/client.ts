@@ -110,6 +110,13 @@ export type KycVerification = Prisma.KycVerificationModel;
  */
 export type Agent = Prisma.AgentModel;
 /**
+ * Model AgentActivityEvent
+ * Audit log of agent lifecycle events for the Activity feed.
+ * Emitted when registration state changes, verification, deregister, or delete.
+ * agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
+ */
+export type AgentActivityEvent = Prisma.AgentActivityEventModel;
+/**
  * Model OrgApiKey
  * Organization-scoped API keys for programmatic access to the platform.
  *

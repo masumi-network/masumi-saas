@@ -425,6 +425,7 @@ export const ModelName = {
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
@@ -466,6 +467,7 @@ export type TypeMap<
       | "rateLimit"
       | "kycVerification"
       | "agent"
+      | "agentActivityEvent"
       | "orgApiKey"
       | "kycSubmission"
       | "kybSubmission"
@@ -1463,6 +1465,82 @@ export type TypeMap<
         };
       };
     };
+    AgentActivityEvent: {
+      payload: Prisma.$AgentActivityEventPayload<ExtArgs>;
+      fields: Prisma.AgentActivityEventFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.AgentActivityEventFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.AgentActivityEventFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        findFirst: {
+          args: Prisma.AgentActivityEventFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.AgentActivityEventFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        findMany: {
+          args: Prisma.AgentActivityEventFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>[];
+        };
+        create: {
+          args: Prisma.AgentActivityEventCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        createMany: {
+          args: Prisma.AgentActivityEventCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.AgentActivityEventCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>[];
+        };
+        delete: {
+          args: Prisma.AgentActivityEventDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        update: {
+          args: Prisma.AgentActivityEventUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        deleteMany: {
+          args: Prisma.AgentActivityEventDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.AgentActivityEventUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.AgentActivityEventUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>[];
+        };
+        upsert: {
+          args: Prisma.AgentActivityEventUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentActivityEventPayload>;
+        };
+        aggregate: {
+          args: Prisma.AgentActivityEventAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAgentActivityEvent>;
+        };
+        groupBy: {
+          args: Prisma.AgentActivityEventGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AgentActivityEventGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.AgentActivityEventCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.AgentActivityEventCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     OrgApiKey: {
       payload: Prisma.$OrgApiKeyPayload<ExtArgs>;
       fields: Prisma.OrgApiKeyFieldRefs;
@@ -2171,6 +2249,17 @@ export const AgentScalarFieldEnum = {
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
 
+export const AgentActivityEventScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  agentId: "agentId",
+  type: "type",
+  createdAt: "createdAt",
+} as const;
+
+export type AgentActivityEventScalarFieldEnum =
+  (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum];
+
 export const OrgApiKeyScalarFieldEnum = {
   id: "id",
   name: "name",
@@ -2436,6 +2525,18 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'AgentActivityEventType'
+ */
+export type EnumAgentActivityEventTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentActivityEventType">;
+
+/**
+ * Reference to a field of type 'AgentActivityEventType[]'
+ */
+export type ListEnumAgentActivityEventTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentActivityEventType[]">;
+
+/**
  * Reference to a field of type 'WalletType'
  */
 export type EnumWalletTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -2605,6 +2706,7 @@ export type GlobalOmitConfig = {
   rateLimit?: Prisma.RateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
+  agentActivityEvent?: Prisma.AgentActivityEventOmit;
   orgApiKey?: Prisma.OrgApiKeyOmit;
   kycSubmission?: Prisma.KycSubmissionOmit;
   kybSubmission?: Prisma.KybSubmissionOmit;

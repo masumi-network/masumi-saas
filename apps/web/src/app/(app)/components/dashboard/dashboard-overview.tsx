@@ -2,7 +2,6 @@ import { Bot, ChevronRight, Key, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -11,15 +10,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Agent } from "@/lib/api/agent.client";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { getGreeting } from "@/lib/utils";
+import { formatPricingDisplay, getGreeting } from "@/lib/utils";
 
-import {
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
-} from "../../ai-agents/components/agent-utils";
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
+import { DashboardActivitySummaryCard } from "./dashboard-activity-summary-card";
 import { DashboardKycBanner } from "./dashboard-kyc-banner";
 import { DashboardOrgContextBanner } from "./dashboard-org-context-banner";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
@@ -32,9 +27,6 @@ export default async function DashboardOverview({
   data: DashboardOverview;
 }) {
   const t = await getTranslations("App.Home.Dashboard");
-  const tRegistrationStatus = await getTranslations(
-    "App.Agents.registrationStatus",
-  );
 
   const {
     user,
@@ -79,50 +71,37 @@ export default async function DashboardOverview({
       {/* Org context banner - shown when viewing as an org member */}
       <DashboardOrgContextBanner />
 
-      {/* Stats grid - Revenue, Agents, Organizations */}
+      {/* Stats grid - Revenue, Agents, Activity summary */}
       <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
-        <DashboardRevenueCard />
-
-        {/* Agents */}
-        <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-          <CardHeader className="space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground">
-              {t("stats.registeredAgents")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-              {agentCount}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("stats.registeredAgentsDescription")}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Organizations */}
-        <Link
-          href="/organizations"
-          aria-label={t("stats.organizationsCardAria", {
-            count: organizationCount,
-          })}
-        >
-          <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <CardHeader className="space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors hover:underline">
-                {t("stats.organizations")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                {organizationCount}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("stats.organizationsDescription")}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        <div className="col-span-2 lg:col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
+          <DashboardRevenueCard />
+        </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
+          <Link
+            href="/ai-agents"
+            aria-label={t("stats.agentsCardAria", { count: agentCount })}
+          >
+            <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+              <CardHeader className="space-y-0 pb-2">
+                <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline flex items-center gap-2">
+                  <Bot className="h-4 w-4 shrink-0" />
+                  {t("stats.registeredAgents")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                  {agentCount}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("stats.registeredAgentsDescription")}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-150">
+          <DashboardActivitySummaryCard />
+        </div>
       </div>
 
       {/* KYC load error - when lookup failed */}
@@ -168,10 +147,13 @@ export default async function DashboardOverview({
           </CardHeader>
           <CardContent className="min-w-0 space-y-4">
             {agents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
                 <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-sm font-medium text-foreground">
                   {t("noAgentsYet")}
+                </p>
+                <p className="mt-1 text-center text-xs text-muted-foreground">
+                  {t("noAgentsYetDescription")}
                 </p>
               </div>
             ) : (
@@ -194,22 +176,9 @@ export default async function DashboardOverview({
                           <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
                         )}
                       </div>
-                      <Badge
-                        variant={
-                          agent.registrationState === "RegistrationConfirmed"
-                            ? "success"
-                            : getRegistrationStatusBadgeVariant(
-                                agent.registrationState as Agent["registrationState"],
-                              )
-                        }
-                        className="min-w-fit shrink-0 capitalize"
-                      >
-                        {tRegistrationStatus(
-                          getRegistrationStatusKey(
-                            agent.registrationState as Agent["registrationState"],
-                          ),
-                        )}
-                      </Badge>
+                      <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
+                        {formatPricingDisplay(agent.pricing)}
+                      </span>
                     </Link>
                   </li>
                 ))}
@@ -237,10 +206,13 @@ export default async function DashboardOverview({
           </CardHeader>
           <CardContent className="space-y-4">
             {apiKeys.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
                 <Key className="mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-sm font-medium text-foreground">
                   {t("noApiKeysYet")}
+                </p>
+                <p className="mt-1 text-center text-xs text-muted-foreground">
+                  {t("noApiKeysYetDescription")}
                 </p>
               </div>
             ) : (
@@ -278,7 +250,7 @@ export function DashboardOverviewSkeleton() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
-      {/* Stats grid - Revenue, Agents, Organizations */}
+      {/* Stats grid - Revenue, Agents, Activity summary */}
       <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
         {/* Revenue card */}
         <Card className="col-span-2 overflow-hidden rounded-xl pt-0 lg:col-span-1">
@@ -301,14 +273,14 @@ export function DashboardOverviewSkeleton() {
             <Skeleton className="mt-1 h-3 w-24" />
           </CardContent>
         </Card>
-        {/* Organizations card */}
+        {/* Activity summary card */}
         <Card className="h-full rounded-xl border border-border/80">
           <CardHeader className="space-y-0 pb-2">
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-28" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-9 w-8" />
-            <Skeleton className="mt-1 h-3 w-28" />
+            <Skeleton className="h-9 w-12" />
+            <Skeleton className="mt-1 h-3 w-36" />
           </CardContent>
         </Card>
       </div>

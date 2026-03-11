@@ -1,10 +1,11 @@
 "use client";
 
-import { Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { ShieldCheck, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface CompletionStepProps {
   verificationCompleted: boolean;
@@ -45,7 +46,7 @@ export function CompletionStep({
   if (kycStatus === "REVIEW") {
     return (
       <div className="flex justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <Spinner size={64} className="text-primary" />
       </div>
     );
   }
@@ -106,7 +107,7 @@ export function CompletionStep({
         </>
       ) : (
         <div className="flex justify-center">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <Spinner size={64} className="text-primary" />
         </div>
       )}
     </div>

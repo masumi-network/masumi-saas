@@ -36,7 +36,7 @@ export function OrganizationsContent({
 
   if (organizations.length === 0) {
     return (
-      <Card>
+      <Card className="border-border bg-muted-surface/50">
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
           <p className="mb-6 text-center text-muted-foreground">{t("empty")}</p>

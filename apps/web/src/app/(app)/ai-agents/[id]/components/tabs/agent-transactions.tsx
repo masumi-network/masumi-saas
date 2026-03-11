@@ -23,12 +23,64 @@ interface AgentTransactionsProps {
   agent: Agent;
 }
 
+type ApiTransaction = {
+  id: string;
+  type: "payment" | "purchase";
+  txHash: string | null;
+  amount: string;
+  network: string;
+  status: string;
+  unlockTime: string | null;
+  createdAt: string;
+};
+
 export function AgentTransactions({ agent }: AgentTransactionsProps) {
   const t = useTranslations("App.Agents.Details.Transactions");
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<TransactionFilter>("all");
   const [isFocused, setIsFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setError(null);
+      setIsLoading(true);
+      fetch(`/api/agents/${agent.id}/transactions`)
+        .then((res) => res.json())
+        .then(
+          (json: {
+            success: boolean;
+            data?: { transactions: ApiTransaction[] };
+            error?: string;
+          }) => {
+            if (cancelled) return;
+            if (json.success && json.data?.transactions) {
+              setTransactions(json.data.transactions);
+            } else {
+              setTransactions([]);
+              if (!json.success && json.error) setError(json.error);
+            }
+          },
+        )
+        .catch((err) => {
+          if (!cancelled) {
+            setTransactions([]);
+            setError(err instanceof Error ? err.message : "Failed to load");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [agent.id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,8 +154,11 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
           </Select>
         </div>
       </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <AgentTransactionsTable
         agentId={agent.id}
+        transactions={transactions}
+        isLoading={isLoading}
         searchQuery={searchQuery}
         filter={filter}
       />

@@ -122,7 +122,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
         </div>
 
         {filteredKeys.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
             <p className="text-muted-foreground text-sm">
               {searchQuery.trim()
                 ? t("noKeysMatchingSearch")

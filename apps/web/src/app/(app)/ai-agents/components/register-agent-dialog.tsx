@@ -36,10 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  completeRegistrationIfReadyAction,
-  registerAgentAction,
-} from "@/lib/actions/agent.action";
+import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
 import { agentApiClient } from "@/lib/api/agent.client";
 import { zodResolver } from "@/lib/form-zod-resolver";
 
@@ -443,65 +440,57 @@ export function RegisterAgentDialog({
     setIsLoading(true);
     const submitId = ++submitIdRef.current;
     try {
-      const formData = new FormData();
-      formData.set("name", data.name);
-      if (data.description?.trim())
-        formData.set("description", data.description.trim());
-      if (data.extendedDescription?.trim())
-        formData.set("extendedDescription", data.extendedDescription.trim());
-      formData.set("apiUrl", data.apiUrl);
-      formData.set("tags", tags.join(", "));
-      if (data.icon?.trim()) formData.set("icon", data.icon.trim());
-
-      // Pricing
       const pricingType = data.isFree ? "Free" : "Fixed";
-      formData.set("pricingType", pricingType);
-      if (!data.isFree) {
-        const prices = (data.prices ?? [])
-          .filter((p) => p.amount?.trim())
-          .map((p) => ({ amount: p.amount.trim(), currency: "USD" }));
-        if (prices.length > 0) {
-          formData.set("prices", JSON.stringify(prices));
-        }
-      }
-
-      // Legal
-      if (data.termsOfUseUrl?.trim())
-        formData.set("termsOfUseUrl", data.termsOfUseUrl.trim());
-      if (data.privacyPolicyUrl?.trim())
-        formData.set("privacyPolicyUrl", data.privacyPolicyUrl.trim());
-      if (data.otherUrl?.trim()) formData.set("otherUrl", data.otherUrl.trim());
-
-      // Capability
-      if (data.capabilityName?.trim())
-        formData.set("capabilityName", data.capabilityName.trim());
-      if (data.capabilityVersion?.trim())
-        formData.set("capabilityVersion", data.capabilityVersion.trim());
-
-      // Example outputs (JSON-encoded)
+      const prices =
+        !data.isFree && (data.prices ?? []).length > 0
+          ? (data.prices ?? [])
+              .filter((p) => p.amount?.trim())
+              .map((p) => ({ amount: p.amount.trim(), currency: "USD" }))
+          : undefined;
       const exampleOutputs = (data.exampleOutputs ?? []).filter(
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
-      if (exampleOutputs.length > 0) {
-        formData.set("exampleOutputs", JSON.stringify(exampleOutputs));
-      }
 
-      const result = await registerAgentAction(formData);
+      const body = {
+        name: data.name,
+        description: data.description?.trim() ?? "",
+        extendedDescription: data.extendedDescription?.trim() ?? "",
+        apiUrl: data.apiUrl,
+        tags: tags.join(", "),
+        icon: data.icon?.trim() ?? "",
+        pricing:
+          pricingType === "Fixed" && prices && prices.length > 0
+            ? { pricingType: "Fixed" as const, prices }
+            : { pricingType: "Free" as const },
+        termsOfUseUrl: data.termsOfUseUrl?.trim() ?? "",
+        privacyPolicyUrl: data.privacyPolicyUrl?.trim() ?? "",
+        otherUrl: data.otherUrl?.trim() ?? "",
+        capabilityName: data.capabilityName?.trim() ?? "",
+        capabilityVersion: data.capabilityVersion?.trim() ?? "",
+        exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
+      };
 
-      // Ignore stale response if user closed and reopened (new submit or open invalidates)
+      const res = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
       if (submitId !== submitIdRef.current) return;
 
       if (closedDuringSubmitRef.current) {
-        // Dialog was closed during submit: refresh list if registration succeeded; otherwise delete the pending agent we created
-        if (result.success) {
+        if (res.ok && res.status === 200 && json.success && json.data) {
           onSuccessRef.current();
-        } else if ("agentId" in result && typeof result.agentId === "string") {
-          void agentApiClient.deleteAgent(result.agentId);
+        } else if (res.status === 202 && json.agentId) {
+          void agentApiClient.deleteAgent(json.agentId);
         }
         return;
       }
 
-      if (result.success) {
+      if (res.ok && res.status === 200 && json.success && json.data) {
         toast.success(t("success"));
         setIsLoading(false);
         form.reset({
@@ -524,16 +513,11 @@ export function RegisterAgentDialog({
         setTagInput("");
         onSuccess();
         onClose();
-      } else if (
-        result.error === "WALLET_FUNDING_PENDING" &&
-        "agentId" in result &&
-        typeof result.agentId === "string"
-      ) {
-        setPendingAgentId(result.agentId);
+      } else if (res.status === 202 && json.agentId) {
+        setPendingAgentId(json.agentId);
         toast.info(t("fundingWallet"));
-        // Keep loading until completeRegistrationIfReadyAction poll succeeds/fails
       } else {
-        toast.error(result.error || t("error"));
+        toast.error(json.error || t("error"));
         setIsLoading(false);
       }
     } catch (error) {
@@ -937,7 +921,7 @@ export function RegisterAgentDialog({
         open={showCloseConfirm}
         onOpenChange={setShowCloseConfirm}
         onConfirm={async () => {
-          // Set ref immediately so any in-flight registerAgentAction that resolves later
+          // Set ref immediately so any in-flight registration request that resolves later
           // sees "user closed during submit" and does orphan cleanup instead of onSuccess/onClose.
           if (isLoading) closedDuringSubmitRef.current = true;
           if (pendingAgentId) {
