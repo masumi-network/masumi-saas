@@ -17,7 +17,7 @@ import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { formatName } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/format-name";
 
-export async function UserProfileCard() {
+export async function KycStatusCard() {
   const t = await getTranslations("App.Home.KycStatus");
 
   const { user } = await getAuthenticatedOrThrow(undefined, {
