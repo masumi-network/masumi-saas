@@ -23,10 +23,17 @@ const messagesByLocale: Record<string, EmailMessages> = {
 /** Parse Accept-Language header to preferred locale. Returns "en" if unsupported or missing. */
 export function parseAcceptLanguage(header: string | null): string {
   if (!header) return "en";
-  const parts = header.split(",").map((p) => {
-    const [lang, q = "1"] = p.trim().split(";q=");
-    return { lang: lang.split("-")[0].toLowerCase(), q: parseFloat(q) || 1 };
-  });
+  const parts = header
+    .split(",")
+    .map((p) => {
+      const [lang, q = "1"] = p.trim().split(";q=");
+      const qVal = parseFloat(q);
+      return {
+        lang: lang.split("-")[0].toLowerCase(),
+        q: Number.isNaN(qVal) ? 1 : qVal,
+      };
+    })
+    .filter((p) => p.q > 0);
   parts.sort((a, b) => b.q - a.q);
   const supported = new Set(SUPPORTED_LOCALES);
   for (const { lang } of parts) {
