@@ -1,16 +1,15 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Receipt } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,9 +101,31 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
   const t = useTranslations("App.Activity");
   const router = useRouter();
   const exportDataRef = useRef<ActivityFeedItem[]>([]);
-  const [items, setItems] = useState<ActivityFeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const url =
+    filter === "all" ? "/api/activity" : `/api/activity?filter=${filter}`;
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch: fetchFeed,
+  } = useQuery({
+    queryKey: ["activity", filter, refreshKey],
+    queryFn: async (): Promise<ActivityFeedItem[]> => {
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!json.success) {
+        if (json.error) throw new Error(json.error);
+        return [];
+      }
+      return (json.data?.items ?? []) as ActivityFeedItem[];
+    },
+    staleTime: 25_000,
+    refetchInterval: 25_000,
+  });
+
+  const error = queryError instanceof Error ? queryError.message : null;
+  const items = useMemo(() => (error ? [] : (data ?? [])), [error, data]);
 
   useImperativeHandle(
     ref,
@@ -113,32 +134,6 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
     }),
     [],
   );
-
-  const fetchFeed = useCallback(async () => {
-    setError(null);
-    setIsLoading(true);
-    const url =
-      filter === "all" ? "/api/activity" : `/api/activity?filter=${filter}`;
-    try {
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.success && json.data?.items) {
-        setItems(json.data.items);
-      } else {
-        setItems([]);
-        if (!json.success && json.error) setError(json.error);
-      }
-    } catch (err) {
-      setItems([]);
-      setError(err instanceof Error ? err.message : "Failed to load");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    fetchFeed();
-  }, [fetchFeed, refreshKey]);
 
   const filteredItems = useMemo(
     () =>

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
+import { agentVerifyQuerySchema } from "@/lib/schemas";
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflightResponse(request);
@@ -17,16 +18,24 @@ export async function GET(request: NextRequest) {
     if ("response" in rateLimitResult) return rateLimitResult.response;
     const { rl } = rateLimitResult;
 
-    const agentIdentifier = request.nextUrl.searchParams.get("agentIdentifier");
-    if (!agentIdentifier) {
+    const queryResult = agentVerifyQuerySchema.safeParse({
+      agentIdentifier: request.nextUrl.searchParams.get("agentIdentifier"),
+    });
+    if (!queryResult.success) {
       return addCorsHeaders(
         NextResponse.json(
-          { success: false, error: "Missing agentIdentifier" },
+          {
+            success: false,
+            error:
+              queryResult.error.issues.map((i) => i.message).join("; ") ||
+              "Invalid query",
+          },
           { status: 400 },
         ),
         request,
       );
     }
+    const { agentIdentifier } = queryResult.data;
 
     const agent = await prisma.agent.findFirst({
       where: { agentIdentifier },

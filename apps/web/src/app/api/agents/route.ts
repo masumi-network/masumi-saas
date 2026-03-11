@@ -8,6 +8,7 @@ import {
   type RegisterAgentParams,
 } from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { parseNetwork } from "@/lib/schemas";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
 const getAgentsQuerySchema = z.object({
@@ -155,10 +156,8 @@ export async function GET(request: NextRequest) {
 
 function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   const fromQuery = request.nextUrl.searchParams.get("network");
-  if (fromQuery === "Mainnet" || fromQuery === "Preprod") return fromQuery;
   const fromCookie = request.cookies.get("payment_network")?.value;
-  if (fromCookie === "Mainnet" || fromCookie === "Preprod") return fromCookie;
-  return "Preprod";
+  return parseNetwork(fromQuery ?? fromCookie ?? undefined);
 }
 
 export async function POST(request: NextRequest) {

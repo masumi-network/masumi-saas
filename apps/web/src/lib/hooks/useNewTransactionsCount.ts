@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const LAST_VISIT_KEY = "masumi_last_activity_visit";
 const NEW_COUNT_KEY = "masumi_new_transactions_count";
@@ -36,80 +37,97 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
     trackVisit ? getStoredCount() : 0,
   );
   const seenIdsRef = useRef<Set<string>>(new Set());
-  const lastItemsRef = useRef<TransactionItem[]>([]);
   const hasSeededSeenRef = useRef(false);
+  const lastUpdateRef = useRef<string | null>(null);
 
-  const fetchTransactions = useCallback(async (): Promise<
-    TransactionItem[]
-  > => {
-    const res = await fetch("/api/activity?filter=transactions");
-    const json = await res.json();
-    if (!json.success || !Array.isArray(json.data?.items)) return [];
-    return (json.data.items as TransactionItem[]).filter(
-      (i) => i && typeof i.id === "string" && typeof i.date === "string",
-    );
-  }, []);
+  const { data } = useQuery({
+    queryKey: ["activity", "transactions", "badge"],
+    queryFn: async (): Promise<{
+      items: TransactionItem[];
+      lastUpdate?: string;
+      usedLastUpdate: boolean;
+    }> => {
+      const sentLastUpdate = lastUpdateRef.current;
+      const params = new URLSearchParams({ filter: "transactions" });
+      if (sentLastUpdate) params.set("lastUpdate", sentLastUpdate);
+      const res = await fetch(`/api/activity?${params.toString()}`);
+      const json = await res.json();
+      if (!json.success)
+        return { items: [], usedLastUpdate: Boolean(sentLastUpdate) };
+      const raw = (json.data?.items ?? []) as TransactionItem[];
+      const items = raw.filter(
+        (i) => i && typeof i.id === "string" && typeof i.date === "string",
+      );
+      const newLastUpdate = json.data?.lastUpdate as string | undefined;
+      if (newLastUpdate) lastUpdateRef.current = newLastUpdate;
+      return {
+        items,
+        lastUpdate: newLastUpdate,
+        usedLastUpdate: Boolean(sentLastUpdate),
+      };
+    },
+    staleTime: REFETCH_INTERVAL_MS,
+    refetchInterval: REFETCH_INTERVAL_MS,
+    enabled: trackVisit,
+  });
+
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
+  const usedLastUpdate = data?.usedLastUpdate ?? false;
 
   useEffect(() => {
-    if (!trackVisit) return;
+    if (!trackVisit || !data) return;
 
-    let cancelled = false;
-
-    const run = async () => {
-      const items = await fetchTransactions();
-      if (cancelled) return;
-
-      lastItemsRef.current = items;
-      const lastVisit = getLastVisit();
-
-      if (!lastVisit) {
-        setLastVisit(new Date().toISOString());
-        seenIdsRef.current = new Set(items.map((i) => i.id));
-        hasSeededSeenRef.current = true;
-        setNewCount(0);
-        setStoredCount(0);
-        return;
+    if (usedLastUpdate) {
+      if (items.length > 0) {
+        const nextCount = getStoredCount() + items.length;
+        items.forEach((i) => seenIdsRef.current.add(i.id));
+        setStoredCount(nextCount);
+        queueMicrotask(() => setNewCount(nextCount));
       }
+      return;
+    }
 
-      const lastVisitTime = new Date(lastVisit).getTime();
-      const seen = seenIdsRef.current;
+    if (items.length === 0) return;
 
-      if (!hasSeededSeenRef.current) {
-        // First run after mount: count items new since lastVisit (e.g. user was offline), then seed seen so next poll doesn't double-count
-        const newOnes = items.filter(
-          (i) => new Date(i.date).getTime() > lastVisitTime,
-        );
-        if (newOnes.length > 0) {
-          const nextCount = getStoredCount() + newOnes.length;
-          setNewCount(nextCount);
-          setStoredCount(nextCount);
-        }
-        items.forEach((i) => seen.add(i.id));
-        hasSeededSeenRef.current = true;
-        return;
-      }
+    const lastVisit = getLastVisit();
 
+    if (!lastVisit) {
+      setLastVisit(new Date().toISOString());
+      seenIdsRef.current = new Set(items.map((i) => i.id));
+      hasSeededSeenRef.current = true;
+      setStoredCount(0);
+      queueMicrotask(() => setNewCount(0));
+      return;
+    }
+
+    const lastVisitTime = new Date(lastVisit).getTime();
+    const seen = seenIdsRef.current;
+
+    if (!hasSeededSeenRef.current) {
       const newOnes = items.filter(
-        (i) => !seen.has(i.id) && new Date(i.date).getTime() > lastVisitTime,
+        (i) => new Date(i.date).getTime() > lastVisitTime,
       );
-
       if (newOnes.length > 0) {
         const nextCount = getStoredCount() + newOnes.length;
-        setNewCount(nextCount);
         setStoredCount(nextCount);
-        newOnes.forEach((i) => seen.add(i.id));
+        queueMicrotask(() => setNewCount(nextCount));
       }
-
       items.forEach((i) => seen.add(i.id));
-    };
+      hasSeededSeenRef.current = true;
+      return;
+    }
 
-    run();
-    const interval = setInterval(run, REFETCH_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [trackVisit, fetchTransactions]);
+    const newOnes = items.filter(
+      (i) => !seen.has(i.id) && new Date(i.date).getTime() > lastVisitTime,
+    );
+    if (newOnes.length > 0) {
+      const nextCount = getStoredCount() + newOnes.length;
+      setStoredCount(nextCount);
+      queueMicrotask(() => setNewCount(nextCount));
+      newOnes.forEach((i) => seen.add(i.id));
+    }
+    items.forEach((i) => seen.add(i.id));
+  }, [trackVisit, data, items, usedLastUpdate]);
 
   const markAllAsRead = useCallback(() => {
     if (!trackVisit) return;

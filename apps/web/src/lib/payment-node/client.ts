@@ -1,18 +1,57 @@
 /**
  * Payment node API client (server-side only).
  * All requests use header "token" for API key auth.
- * Response shape: { status: "success", data: T } or error.
+ * Responses are parsed with Zod schemas to stay in sync with the payment node API.
  */
 
-const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
+import type { z } from "zod";
 
-export type PaymentNodeNetwork = "Preprod" | "Mainnet";
+import {
+  addWalletToSourceOutputSchema,
+  createApiKeyOutputSchema,
+  generatedWalletSchema,
+  getPaymentSourcesOutputSchema,
+  getUtxosOutputSchema,
+  listPaymentsOutputSchema,
+  listPurchasesOutputSchema,
+  parsePaymentNodeData,
+  paymentIncomeOutputSchema,
+  registryEntrySchema,
+  registryListResponseSchema,
+  walletStatusSchema,
+} from "./schemas";
+
+export type {
+  AddWalletToSourceInput,
+  AddWalletToSourceOutput,
+  CreateApiKeyInput,
+  CreateApiKeyOutput,
+  DeregisterAgentInput,
+  GeneratedWallet,
+  GetPaymentSourcesOutput,
+  GetUtxosOutput,
+  ListPaymentsOutput,
+  ListPurchasesOutput,
+  PaymentIncomeOutput,
+  PaymentNodeNetwork,
+  PaymentOrPurchaseItem,
+  PaymentSourceInfo,
+  PaymentSourceWallet,
+  RegisterAgentInput,
+  RegistryEntry,
+  RegistryRequestState,
+  Utxo,
+  UtxoAmount,
+  WalletStatus,
+} from "./schemas";
+
+const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
 
 type PaymentNodeResponse<T> =
   | { status: "success"; data: T }
   | { status: string; error?: string; message?: string };
 
-async function request<T>(
+async function requestParse<T>(
   baseUrl: string,
   apiKey: string,
   path: string,
@@ -21,6 +60,7 @@ async function request<T>(
     body?: unknown;
     query?: Record<string, string>;
   },
+  schema: z.ZodType<T>,
 ): Promise<T> {
   const base = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
   const url = new URL(path.startsWith("/") ? path.slice(1) : path, base);
@@ -37,7 +77,7 @@ async function request<T>(
     },
     body: options.body != null ? JSON.stringify(options.body) : undefined,
   });
-  const json = (await res.json()) as PaymentNodeResponse<T>;
+  const json = (await res.json()) as PaymentNodeResponse<unknown>;
   if (!res.ok) {
     const errObj = json && "error" in json ? json.error : null;
     const msg =
@@ -59,281 +99,7 @@ async function request<T>(
   if (json.status !== "success" || !("data" in json)) {
     throw new Error("Invalid payment node response");
   }
-  return json.data as T;
-}
-
-// ─── Types (align with payment node API) ─────────────────────────────────────
-
-export type RegistryRequestState =
-  | "RegistrationRequested"
-  | "RegistrationInitiated"
-  | "RegistrationConfirmed"
-  | "RegistrationFailed"
-  | "DeregistrationRequested"
-  | "DeregistrationInitiated"
-  | "DeregistrationConfirmed"
-  | "DeregistrationFailed";
-
-export interface RegistryEntry {
-  id: string;
-  name: string;
-  description: string | null;
-  apiBaseUrl: string;
-  state: RegistryRequestState;
-  agentIdentifier: string | null;
-  createdAt: string;
-  updatedAt: string;
-  Capability: { name: string | null; version: string | null };
-  Author: {
-    name: string;
-    contactEmail: string | null;
-    contactOther: string | null;
-    organization: string | null;
-  };
-  Tags: string[];
-  AgentPricing:
-    | { pricingType: "Fixed"; Pricing: Array<{ unit: string; amount: string }> }
-    | { pricingType: "Free" };
-  SmartContractWallet?: { walletVkey: string; walletAddress: string };
-}
-
-export interface RegisterAgentInput {
-  network: PaymentNodeNetwork;
-  sellingWalletVkey: string;
-  name: string;
-  apiBaseUrl: string;
-  description: string;
-  Tags: string[];
-  ExampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
-  Capability: { name: string; version: string };
-  Author: {
-    name: string;
-    contactEmail?: string;
-    contactOther?: string;
-    organization?: string;
-  };
-  Legal?: { privacyPolicy?: string; terms?: string; other?: string };
-  AgentPricing:
-    | { pricingType: "Free" }
-    | {
-        pricingType: "Fixed";
-        Pricing: Array<{ unit: string; amount: string }>;
-      };
-}
-
-export interface DeregisterAgentInput {
-  network: PaymentNodeNetwork;
-  agentIdentifier: string;
-  smartContractAddress?: string;
-}
-
-export interface CreateApiKeyInput {
-  permission: "Read" | "ReadAndPay" | "Admin";
-  networkLimit: PaymentNodeNetwork[];
-  /** Payment node API expects the string "true"/"false", not a boolean. */
-  usageLimited: "true" | "false";
-  UsageCredits: Array<{ unit: string; amount: string }>;
-}
-
-export interface CreateApiKeyOutput {
-  id: string;
-  token: string;
-  permission: string;
-  usageLimited: boolean;
-  networkLimit: PaymentNodeNetwork[];
-  RemainingUsageCredits: Array<{ unit: string; amount: string }>;
-  status: string;
-}
-
-export interface AddWalletToSourceInput {
-  paymentSourceId: string;
-  AddSellingWallets?: Array<{
-    walletMnemonic: string;
-    note: string;
-    collectionAddress: string | null;
-  }>;
-  AddPurchasingWallets?: Array<{
-    walletMnemonic: string;
-    note: string;
-    collectionAddress: string | null;
-  }>;
-}
-
-export interface PaymentSourceWallet {
-  id: string;
-  walletVkey: string;
-  walletAddress: string;
-  collectionAddress: string | null;
-  note: string | null;
-}
-
-export interface AddWalletToSourceOutput {
-  id: string;
-  SellingWallets: PaymentSourceWallet[];
-  PurchasingWallets: PaymentSourceWallet[];
-}
-
-export interface WalletStatus {
-  note: string | null;
-  walletVkey: string;
-  walletAddress: string;
-  collectionAddress: string | null;
-  PendingTransaction: {
-    createdAt: string;
-    updatedAt: string;
-    hash: string | null;
-    lastCheckedAt: string | null;
-  } | null;
-}
-
-export interface GeneratedWallet {
-  walletMnemonic: string;
-  walletAddress: string;
-  walletVkey: string;
-}
-
-export interface UtxoAmount {
-  unit: string;
-  quantity: number;
-}
-
-export interface Utxo {
-  txHash: string;
-  address: string;
-  Amounts: UtxoAmount[];
-  dataHash: string | null;
-  inlineDatum: string | null;
-  referenceScriptHash: string | null;
-  outputIndex: number;
-  block: string;
-}
-
-export interface GetUtxosOutput {
-  Utxos: Utxo[];
-}
-
-/** Payment source (from GET payment-source/get). Used to resolve smartContractAddress. */
-export interface PaymentSourceInfo {
-  id: string;
-  network: PaymentNodeNetwork;
-  smartContractAddress: string;
-  createdAt: string;
-  updatedAt: string;
-  policyId: string | null;
-  lastIdentifierChecked: string | null;
-  lastCheckedAt: string | null;
-  AdminWallets: Array<{ walletAddress: string; order: number }>;
-  PurchasingWallets: Array<{
-    id: string;
-    walletVkey: string;
-    walletAddress: string;
-    collectionAddress: string | null;
-    note: string | null;
-  }>;
-  SellingWallets: Array<{
-    id: string;
-    walletVkey: string;
-    walletAddress: string;
-    collectionAddress: string | null;
-    note: string | null;
-  }>;
-  FeeReceiverNetworkWallet: { walletAddress: string } | null;
-  feeRatePermille: number;
-}
-
-export interface GetPaymentSourcesOutput {
-  PaymentSources: PaymentSourceInfo[];
-}
-
-/** Single payment or purchase from list endpoints (minimal shape for transactions). */
-export interface PaymentOrPurchaseItem {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  blockchainIdentifier: string;
-  agentIdentifier: string | null;
-  onChainState: string | null;
-  nextActionLastChangedAt?: string;
-  onChainStateOrResultLastChangedAt?: string;
-  nextActionOrOnChainStateOrResultLastChangedAt?: string;
-  NextAction?: {
-    requestedAction?: string;
-    errorType?: string;
-    errorNote?: string | null;
-  } | null;
-  unlockTime?: string | null;
-  payByTime?: string | null;
-  submitResultTime?: string;
-  RequestedFunds?: Array<{ unit: string; amount: string }>;
-  CurrentTransaction?: { txHash: string | null; status: string } | null;
-  PaymentSource?: { network: string; smartContractAddress: string };
-}
-
-export interface ListPaymentsOutput {
-  Payments: PaymentOrPurchaseItem[];
-}
-
-export interface ListPurchasesOutput {
-  Purchases: PaymentOrPurchaseItem[];
-}
-
-/** Income response from POST payment/income. */
-export interface PaymentIncomeOutput {
-  agentIdentifier: string | null;
-  periodStart: string;
-  periodEnd: string;
-  totalTransactions: number;
-  totalIncome: {
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  };
-  totalRefunded: {
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  };
-  totalPending: {
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  };
-  dailyIncome: Array<{
-    day: number;
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
-  dailyRefunded: Array<{
-    day: number;
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
-  dailyPending: Array<{
-    day: number;
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
-  monthlyIncome: Array<{
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
-  monthlyRefunded: Array<{
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
-  monthlyPending: Array<{
-    month: number;
-    year: number;
-    units: Array<{ unit: string; amount: number }>;
-    blockchainFees: number;
-  }>;
+  return parsePaymentNodeData(json.data, schema);
 }
 
 // ─── Client factory ─────────────────────────────────────────────────────────
@@ -344,27 +110,45 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
   return {
     /** Register an agent (pay-authenticated). Use user's API key. */
     async registerAgent(body: RegisterAgentInput): Promise<RegistryEntry> {
-      return request<RegistryEntry>(base, apiKey, `/registry`, {
-        method: "POST",
-        body,
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/registry`,
+        {
+          method: "POST",
+          body,
+        },
+        registryEntrySchema,
+      );
     },
 
     /** Deregister an agent (pay-authenticated). Use user's API key. */
     async deregisterAgent(body: DeregisterAgentInput): Promise<RegistryEntry> {
-      return request<RegistryEntry>(base, apiKey, `/registry/deregister`, {
-        method: "POST",
-        body,
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/registry/deregister`,
+        {
+          method: "POST",
+          body,
+        },
+        registryEntrySchema,
+      );
     },
 
     /** Permanently delete a registry entry from the payment node DB (admin only).
      *  Only valid for RegistrationFailed or DeregistrationConfirmed entries. */
     async deleteRegistryEntry(id: string): Promise<RegistryEntry> {
-      return request<RegistryEntry>(base, apiKey, `/registry`, {
-        method: "DELETE",
-        body: { id },
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/registry`,
+        {
+          method: "DELETE",
+          body: { id },
+        },
+        registryEntrySchema,
+      );
     },
 
     /** List registry requests (pay-authenticated). Use user's API key. */
@@ -372,13 +156,19 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       network: PaymentNodeNetwork;
       cursorId?: string;
     }): Promise<{ Assets: RegistryEntry[] }> {
-      return request<{ Assets: RegistryEntry[] }>(base, apiKey, `/registry`, {
-        method: "GET",
-        query: {
-          network: params.network,
-          ...(params.cursorId && { cursorId: params.cursorId }),
+      return requestParse(
+        base,
+        apiKey,
+        `/registry`,
+        {
+          method: "GET",
+          query: {
+            network: params.network,
+            ...(params.cursorId && { cursorId: params.cursorId }),
+          },
         },
-      });
+        registryListResponseSchema,
+      );
     },
 
     /** Get single registry entry by id (pay-authenticated). Use user's API key. */
@@ -424,28 +214,35 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         const json = await res.json().catch(() => ({}));
         throw new Error((json as { error?: string }).error ?? res.statusText);
       }
-      const json = (await res.json()) as PaymentNodeResponse<RegistryEntry>;
-      return json.status === "success" && "data" in json
-        ? (json.data as RegistryEntry)
-        : null;
+      const json = (await res.json()) as PaymentNodeResponse<unknown>;
+      if (json.status === "success" && "data" in json && json.data != null) {
+        return registryEntrySchema.parse(json.data);
+      }
+      return null;
     },
 
     /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */
     async createApiKey(body: CreateApiKeyInput): Promise<CreateApiKeyOutput> {
-      return request<CreateApiKeyOutput>(base, apiKey, `/api-key`, {
-        method: "POST",
-        body: {
-          ...body,
-          UsageCredits: body.UsageCredits,
+      return requestParse(
+        base,
+        apiKey,
+        `/api-key`,
+        {
+          method: "POST",
+          body: {
+            ...body,
+            UsageCredits: body.UsageCredits,
+          },
         },
-      });
+        createApiKeyOutputSchema,
+      );
     },
 
     /** Add selling/purchasing wallets to an existing payment source (admin only). */
     async addWalletsToPaymentSource(
       body: AddWalletToSourceInput,
     ): Promise<AddWalletToSourceOutput> {
-      return request<AddWalletToSourceOutput>(
+      return requestParse(
         base,
         apiKey,
         `/payment-source-extended`,
@@ -457,6 +254,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
             AddPurchasingWallets: body.AddPurchasingWallets,
           },
         },
+        addWalletToSourceOutputSchema,
       );
     },
 
@@ -465,20 +263,32 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       walletType: "Selling" | "Buying";
       id: string;
     }): Promise<WalletStatus> {
-      return request<WalletStatus>(base, apiKey, `/wallet`, {
-        method: "GET",
-        query: { walletType: params.walletType, id: params.id },
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet`,
+        {
+          method: "GET",
+          query: { walletType: params.walletType, id: params.id },
+        },
+        walletStatusSchema,
+      );
     },
 
     /** Generate a new wallet (admin only). Does NOT persist on payment node; use addWalletsToPaymentSource to persist. */
     async generateWallet(
       network: PaymentNodeNetwork,
     ): Promise<GeneratedWallet> {
-      return request<GeneratedWallet>(base, apiKey, `/wallet`, {
-        method: "POST",
-        body: { network },
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet`,
+        {
+          method: "POST",
+          body: { network },
+        },
+        generatedWalletSchema,
+      );
     },
 
     /** Get UTXOs at a Cardano address (READ access required).
@@ -490,16 +300,22 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       page?: number;
       order?: "asc" | "desc";
     }): Promise<GetUtxosOutput> {
-      return request<GetUtxosOutput>(base, apiKey, `/utxos`, {
-        method: "GET",
-        query: {
-          address: params.address,
-          network: params.network,
-          ...(params.count != null && { count: String(params.count) }),
-          ...(params.page != null && { page: String(params.page) }),
-          ...(params.order != null && { order: params.order }),
+      return requestParse(
+        base,
+        apiKey,
+        `/utxos`,
+        {
+          method: "GET",
+          query: {
+            address: params.address,
+            network: params.network,
+            ...(params.count != null && { count: String(params.count) }),
+            ...(params.page != null && { page: String(params.page) }),
+            ...(params.order != null && { order: params.order }),
+          },
         },
-      });
+        getUtxosOutputSchema,
+      );
     },
 
     /** List payment sources (READ). Returns id and smartContractAddress for filtering transactions. */
@@ -507,13 +323,19 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       take?: number;
       cursorId?: string;
     }): Promise<GetPaymentSourcesOutput> {
-      return request<GetPaymentSourcesOutput>(base, apiKey, `/payment-source`, {
-        method: "GET",
-        query: {
-          ...(params?.take != null && { take: String(params.take) }),
-          ...(params?.cursorId && { cursorId: params.cursorId }),
+      return requestParse(
+        base,
+        apiKey,
+        `/payment-source`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.take != null && { take: String(params.take) }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+          },
         },
-      });
+        getPaymentSourcesOutputSchema,
+      );
     },
 
     /** List payments (READ). Filter by smartContractAddress for a given payment source. */
@@ -542,10 +364,52 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           includeHistory: params.includeHistory ? "true" : "false",
         }),
       };
-      return request<ListPaymentsOutput>(base, apiKey, `/payment`, {
-        method: "GET",
-        query: q,
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/payment`,
+        {
+          method: "GET",
+          query: q,
+        },
+        listPaymentsOutputSchema,
+      );
+    },
+
+    /**
+     * List payment changes since lastUpdate (diff). Same response shape as listPayments; use for polling.
+     */
+    async listPaymentDiff(params: {
+      network: PaymentNodeNetwork;
+      lastUpdate: string; // ISO timestamp
+      filterSmartContractAddress?: string | null;
+      limit?: number;
+      cursorId?: string;
+      includeHistory?: boolean;
+    }): Promise<ListPaymentsOutput> {
+      const q: Record<string, string> = {
+        network: params.network,
+        lastUpdate: params.lastUpdate,
+        ...(params.limit != null && { limit: String(params.limit) }),
+        ...(params.cursorId && { cursorId: params.cursorId }),
+        ...(params.filterSmartContractAddress != null &&
+          params.filterSmartContractAddress !== "" && {
+            filterSmartContractAddress: params.filterSmartContractAddress,
+          }),
+        ...(params.includeHistory != null && {
+          includeHistory: params.includeHistory ? "true" : "false",
+        }),
+      };
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/diff`,
+        {
+          method: "GET",
+          query: q,
+        },
+        listPaymentsOutputSchema,
+      );
     },
 
     /** List purchases (READ). Filter by smartContractAddress for a given payment source. */
@@ -574,10 +438,52 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           includeHistory: params.includeHistory ? "true" : "false",
         }),
       };
-      return request<ListPurchasesOutput>(base, apiKey, `/purchase`, {
-        method: "GET",
-        query: q,
-      });
+      return requestParse(
+        base,
+        apiKey,
+        `/purchase`,
+        {
+          method: "GET",
+          query: q,
+        },
+        listPurchasesOutputSchema,
+      );
+    },
+
+    /**
+     * List purchase changes since lastUpdate (diff). Same response shape as listPurchases; use for polling.
+     */
+    async listPurchaseDiff(params: {
+      network: PaymentNodeNetwork;
+      lastUpdate: string; // ISO timestamp
+      filterSmartContractAddress?: string | null;
+      limit?: number;
+      cursorId?: string;
+      includeHistory?: boolean;
+    }): Promise<ListPurchasesOutput> {
+      const q: Record<string, string> = {
+        network: params.network,
+        lastUpdate: params.lastUpdate,
+        ...(params.limit != null && { limit: String(params.limit) }),
+        ...(params.cursorId && { cursorId: params.cursorId }),
+        ...(params.filterSmartContractAddress != null &&
+          params.filterSmartContractAddress !== "" && {
+            filterSmartContractAddress: params.filterSmartContractAddress,
+          }),
+        ...(params.includeHistory != null && {
+          includeHistory: params.includeHistory ? "true" : "false",
+        }),
+      };
+      return requestParse(
+        base,
+        apiKey,
+        `/purchase/diff`,
+        {
+          method: "GET",
+          query: q,
+        },
+        listPurchasesOutputSchema,
+      );
     },
 
     /** Get payment income (READ). Pass agentIdentifier for per-agent earnings. */
@@ -588,16 +494,22 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       endDate?: string | null;
       timeZone?: string;
     }): Promise<PaymentIncomeOutput> {
-      return request<PaymentIncomeOutput>(base, apiKey, `/payment/income`, {
-        method: "POST",
-        body: {
-          network: params.network,
-          agentIdentifier: params.agentIdentifier ?? null,
-          startDate: params.startDate ?? null,
-          endDate: params.endDate ?? null,
-          timeZone: params.timeZone ?? "Etc/UTC",
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/income`,
+        {
+          method: "POST",
+          body: {
+            network: params.network,
+            agentIdentifier: params.agentIdentifier ?? null,
+            startDate: params.startDate ?? null,
+            endDate: params.endDate ?? null,
+            timeZone: params.timeZone ?? "Etc/UTC",
+          },
         },
-      });
+        paymentIncomeOutputSchema,
+      );
     },
   };
 }

@@ -1,5 +1,6 @@
 import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
@@ -11,63 +12,36 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 export type { ActivityFeedItem };
 
 const FEED_LIMIT = 80;
-/** Cache TTL for transaction-only responses (badge count). Reduces payment node load when multiple tabs or frequent polls. */
-const TRANSACTIONS_CACHE_TTL_MS = 25_000;
-/** Max number of user entries; oldest (by cachedAt) evicted when full to prevent unbounded growth. */
-const TRANSACTIONS_CACHE_MAX_USERS = 500;
 
-const transactionsCache = new Map<
-  string,
-  { items: ActivityFeedItem[]; cachedAt: number }
->();
+const feedFilterSchema = z.enum([
+  "all",
+  "lifecycle",
+  "transactions",
+  "purchases",
+  "payments",
+  "refundRequests",
+  "disputes",
+]);
+export type FeedFilter = z.infer<typeof feedFilterSchema>;
 
-function getCachedTransactions(userId: string): ActivityFeedItem[] | null {
-  const entry = transactionsCache.get(userId);
-  if (!entry) return null;
-  if (Date.now() - entry.cachedAt > TRANSACTIONS_CACHE_TTL_MS) {
-    transactionsCache.delete(userId);
-    return null;
-  }
-  return entry.items;
-}
-
-function setCachedTransactions(
-  userId: string,
-  items: ActivityFeedItem[],
-): void {
-  const now = Date.now();
-  // Evict expired entries so users who never return don't leak memory
-  for (const [uid, e] of transactionsCache) {
-    if (now - e.cachedAt > TRANSACTIONS_CACHE_TTL_MS) {
-      transactionsCache.delete(uid);
-    }
-  }
-  // If at capacity, evict oldest entry
-  if (transactionsCache.size >= TRANSACTIONS_CACHE_MAX_USERS) {
-    let oldestKey: string | null = null;
-    let oldestAt = now;
-    for (const [uid, e] of transactionsCache) {
-      if (e.cachedAt < oldestAt) {
-        oldestAt = e.cachedAt;
-        oldestKey = uid;
-      }
-    }
-    if (oldestKey) transactionsCache.delete(oldestKey);
-  }
-  transactionsCache.set(userId, { items, cachedAt: now });
-}
+const activityQuerySchema = z.object({
+  filter: feedFilterSchema.catch("all"),
+  summary: z
+    .string()
+    .optional()
+    .transform((v) => v === "1"),
+  lastUpdate: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v?.trim()) return undefined;
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+    }),
+});
 
 /** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
 const backfillLocks = new Map<string, Promise<void>>();
-
-type FeedFilter =
-  | "all"
-  | "lifecycle"
-  | "transactions"
-  | "purchases"
-  | "payments"
-  | "refundRequests"
-  | "disputes";
 
 /** Map current registration state to a single lifecycle event for backfill. */
 function registrationStateToEventType(
@@ -103,40 +77,12 @@ export async function GET(request: Request) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
     const { searchParams } = new URL(request.url);
-    const filter = (searchParams.get("filter") ?? "all") as string;
-    const validFilter: FeedFilter = [
-      "lifecycle",
-      "transactions",
-      "purchases",
-      "payments",
-      "refundRequests",
-      "disputes",
-    ].includes(filter)
-      ? (filter as FeedFilter)
-      : "all";
-
-    if (validFilter === "transactions") {
-      const cached = getCachedTransactions(user.id);
-      if (cached) {
-        const summary = searchParams.get("summary") === "1";
-        if (summary) {
-          const totalTransactions = cached.filter(
-            (i) => i.kind === "transaction",
-          ).length;
-          return NextResponse.json({
-            success: true,
-            data: {
-              totalTransactions,
-              totalActivity: cached.length,
-            },
-          });
-        }
-        return NextResponse.json({
-          success: true,
-          data: { items: cached },
-        });
-      }
-    }
+    const query = activityQuerySchema.parse({
+      filter: searchParams.get("filter") ?? "all",
+      summary: searchParams.get("summary") ?? undefined,
+      lastUpdate: searchParams.get("lastUpdate") ?? undefined,
+    });
+    const validFilter = query.filter;
 
     const agents = await prisma.agent.findMany({
       where: { userId: user.id },
@@ -270,9 +216,11 @@ export async function GET(request: Request) {
       }));
     }
 
+    const useDiff = Boolean(query.lastUpdate);
     const needTransactions = validFilter !== "lifecycle";
 
     let transactionItems: ActivityFeedItem[] = [];
+    let transactionLastUpdate: string | undefined;
     if (needTransactions) {
       try {
         const client = await getPaymentNodeClientForUser(user.id);
@@ -283,20 +231,36 @@ export async function GET(request: Request) {
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
           if (smartContractAddress && agentIdentifiers.size > 0) {
-            // Activity feed is scoped to one network (first agent's); we do not aggregate across networks.
             const network = toNetwork(agents[0]?.networkIdentifier ?? null);
-            const [paymentsRes, purchasesRes] = await Promise.all([
-              client.listPayments({
-                network,
-                filterSmartContractAddress: smartContractAddress,
-                limit: 50,
-              }),
-              client.listPurchases({
-                network,
-                filterSmartContractAddress: smartContractAddress,
-                limit: 50,
-              }),
-            ]);
+            const listLimit = 50;
+            const diffLimit = 100;
+            const [paymentsRes, purchasesRes] = useDiff
+              ? await Promise.all([
+                  client.listPaymentDiff({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    lastUpdate: query.lastUpdate!,
+                    limit: diffLimit,
+                  }),
+                  client.listPurchaseDiff({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    lastUpdate: query.lastUpdate!,
+                    limit: diffLimit,
+                  }),
+                ])
+              : await Promise.all([
+                  client.listPayments({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    limit: listLimit,
+                  }),
+                  client.listPurchases({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    limit: listLimit,
+                  }),
+                ]);
             const payments = (paymentsRes.Payments ?? []).filter((p) =>
               p.agentIdentifier
                 ? agentIdentifiers.has(p.agentIdentifier)
@@ -338,11 +302,20 @@ export async function GET(request: Request) {
               ...payments.map((p) => toItem(p, "payment")),
               ...purchases.map((p) => toItem(p, "purchase")),
             ];
+            const lastChangedFields = [...payments, ...purchases].map(
+              (p) =>
+                p.nextActionOrOnChainStateOrResultLastChangedAt ??
+                p.updatedAt ??
+                p.createdAt,
+            );
+            transactionLastUpdate =
+              lastChangedFields.length > 0
+                ? lastChangedFields.reduce((a, b) => (a > b ? a : b))
+                : query.lastUpdate;
           }
         }
       } catch (txError) {
         console.error("[Activity] Payment node / transactions error:", txError);
-        // Continue with lifecycle-only; don't fail the whole request
       }
     }
 
@@ -374,27 +347,35 @@ export async function GET(request: Request) {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
-    const summary = searchParams.get("summary") === "1";
+    const summary = query.summary === true;
     if (summary) {
       const totalTransactions = merged.filter(
         (i) => i.kind === "transaction",
       ).length;
+      const data: {
+        totalTransactions: number;
+        totalActivity: number;
+        lastUpdate?: string;
+      } = {
+        totalTransactions,
+        totalActivity: merged.length,
+      };
+      if (transactionLastUpdate) data.lastUpdate = transactionLastUpdate;
       return NextResponse.json({
         success: true,
-        data: {
-          totalTransactions,
-          totalActivity: merged.length,
-        },
+        data,
       });
     }
 
     const items = merged.slice(0, FEED_LIMIT);
-    if (validFilter === "transactions") {
-      setCachedTransactions(user.id, items);
-    }
+    const data: { items: ActivityFeedItem[]; lastUpdate?: string } = {
+      items,
+    };
+    if (validFilter === "transactions" && transactionLastUpdate)
+      data.lastUpdate = transactionLastUpdate;
     return NextResponse.json({
       success: true,
-      data: { items },
+      data,
     });
   } catch (error) {
     const authResponse = handleAuthError(error);

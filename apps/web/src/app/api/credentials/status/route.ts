@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { apiError } from "@/lib/api/error";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { credentialStatusQuerySchema } from "@/lib/schemas";
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
@@ -12,10 +13,17 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
 
-    const id = request.nextUrl.searchParams.get("id");
-    if (!id) {
-      return apiError("Missing credential ID", 400);
+    const queryResult = credentialStatusQuerySchema.safeParse({
+      id: request.nextUrl.searchParams.get("id"),
+    });
+    if (!queryResult.success) {
+      return apiError(
+        queryResult.error.issues.map((i) => i.message).join("; ") ||
+          "Invalid query",
+        400,
+      );
     }
+    const { id } = queryResult.data;
 
     const pendingCredential = await prisma.veridianCredential.findFirst({
       where: { id, userId: user.id },

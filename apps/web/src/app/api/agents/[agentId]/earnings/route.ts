@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { agentEarningsQuerySchema } from "@/lib/schemas";
 
 function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;
@@ -54,11 +55,19 @@ export async function GET(
     }
 
     const { searchParams } = new URL(request.url);
-    const period = (searchParams.get("period") ?? "7d") as
-      | "1d"
-      | "7d"
-      | "30d"
-      | "all";
+    const queryResult = agentEarningsQuerySchema.safeParse({
+      period: searchParams.get("period") ?? undefined,
+    });
+    if (!queryResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: queryResult.error.issues.map((i) => i.message).join("; "),
+        },
+        { status: 400 },
+      );
+    }
+    const period = queryResult.data.period;
 
     const client = await getPaymentNodeClientForUser(user.id);
     if (!client) {
