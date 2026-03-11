@@ -1,12 +1,13 @@
 import prisma from "@masumi/database/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
-import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
+import { formatRequestedAmount } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+import { parseNetwork } from "@/lib/schemas/api-query";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 
 export type { ActivityFeedItem };
@@ -26,6 +27,11 @@ export type FeedFilter = z.infer<typeof feedFilterSchema>;
 
 const activityQuerySchema = z.object({
   filter: feedFilterSchema.catch("all"),
+  network: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => parseNetwork(v)),
   summary: z
     .string()
     .optional()
@@ -73,19 +79,24 @@ function registrationStateToEventType(
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const query = activityQuerySchema.parse({
       filter: searchParams.get("filter") ?? "all",
+      network: searchParams.get("network") ?? undefined,
       summary: searchParams.get("summary") ?? undefined,
       lastUpdate: searchParams.get("lastUpdate") ?? undefined,
     });
     const validFilter = query.filter;
+    const network = query.network;
 
+    const networkFilter = {
+      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+    };
     const agents = await prisma.agent.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, ...networkFilter },
       select: {
         id: true,
         name: true,
@@ -231,9 +242,6 @@ export async function GET(request: Request) {
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
           if (smartContractAddress && agentIdentifiers.size > 0) {
-            // Transaction results are network-specific: we use the first agent's network.
-            // Users with agents on both Mainnet and Preprod will only see transactions for this network.
-            const network = toNetwork(agents[0]?.networkIdentifier ?? null);
             const listLimit = 50;
             const diffLimit = 100;
             const [paymentsRes, purchasesRes] = useDiff

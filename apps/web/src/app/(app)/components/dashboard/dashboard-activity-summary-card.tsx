@@ -16,7 +16,7 @@ export function DashboardActivitySummaryCard() {
   });
 
   return (
-    <Link href="/activity" aria-label={ariaLabel}>
+    <Link href="/activity?tab=transactions" aria-label={ariaLabel}>
       <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
         <CardHeader className="space-y-0 pb-2">
           <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline flex items-center gap-2">

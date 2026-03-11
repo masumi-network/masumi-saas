@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 import { formatDate } from "@/lib/utils";
 
@@ -100,17 +101,19 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
 ) {
   const t = useTranslations("App.Activity");
   const router = useRouter();
+  const { network } = usePaymentNetwork();
   const exportDataRef = useRef<ActivityFeedItem[]>([]);
 
-  const url =
-    filter === "all" ? "/api/activity" : `/api/activity?filter=${filter}`;
+  const params = new URLSearchParams({ network });
+  if (filter !== "all") params.set("filter", filter);
+  const url = `/api/activity?${params.toString()}`;
   const {
     data,
     isLoading,
     error: queryError,
     refetch: fetchFeed,
   } = useQuery({
-    queryKey: ["activity", filter, refreshKey],
+    queryKey: ["activity", filter, network, refreshKey],
     queryFn: async (): Promise<ActivityFeedItem[]> => {
       const res = await fetch(url);
       const json = await res.json();

@@ -3,6 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+
 const LAST_VISIT_KEY = "masumi_last_activity_visit";
 const NEW_COUNT_KEY = "masumi_new_transactions_count";
 
@@ -36,6 +38,7 @@ function setStoredCount(n: number): void {
 
 export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
   const trackVisit = options?.trackVisit !== false;
+  const { network } = usePaymentNetwork();
   const [newCount, setNewCount] = useState(() =>
     trackVisit ? getStoredCount() : 0,
   );
@@ -44,14 +47,14 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
   const lastUpdateRef = useRef<string | null>(null);
 
   const { data } = useQuery({
-    queryKey: ["activity", "transactions", "badge"],
+    queryKey: ["activity", "transactions", "badge", network],
     queryFn: async (): Promise<{
       items: TransactionItem[];
       lastUpdate?: string;
       usedLastUpdate: boolean;
     }> => {
       const sentLastUpdate = lastUpdateRef.current;
-      const params = new URLSearchParams({ filter: "transactions" });
+      const params = new URLSearchParams({ filter: "transactions", network });
       if (sentLastUpdate) params.set("lastUpdate", sentLastUpdate);
       const res = await fetch(`/api/activity?${params.toString()}`);
       const json = await res.json();

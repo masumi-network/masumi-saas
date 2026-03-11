@@ -22,7 +22,10 @@ export const registryRequestStateSchema = z.enum([
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
 
-const unitAmountSchema = z.object({ unit: z.string(), amount: z.string() });
+const unitAmountSchema = z.object({
+  unit: z.string(),
+  amount: z.union([z.string(), z.number().transform(String)]),
+});
 const unitAmountNumberSchema = z.object({
   unit: z.string(),
   amount: z.number(),
@@ -168,36 +171,46 @@ const dateLikeSchema = z.union([
   z.number().transform((n) => new Date(n).toISOString()),
 ]);
 
-export const paymentOrPurchaseItemSchema = z.object({
-  id: z.string(),
-  createdAt: dateLikeSchema,
-  updatedAt: dateLikeSchema,
-  blockchainIdentifier: z.string(),
-  agentIdentifier: z.string().nullable(),
-  onChainState: z.string().nullable(),
-  nextActionLastChangedAt: dateLikeSchema.optional(),
-  onChainStateOrResultLastChangedAt: dateLikeSchema.optional(),
-  nextActionOrOnChainStateOrResultLastChangedAt: dateLikeSchema.optional(),
-  NextAction: z
-    .object({
-      requestedAction: z.string().optional(),
-      errorType: z.string().optional(),
-      errorNote: z.string().nullable().optional(),
-    })
-    .nullable()
-    .optional(),
-  unlockTime: z.string().nullable().optional(),
-  payByTime: z.string().nullable().optional(),
-  submitResultTime: z.string().optional(),
-  RequestedFunds: z.array(unitAmountSchema).optional(),
-  CurrentTransaction: z
-    .object({ txHash: z.string().nullable(), status: z.string() })
-    .nullable()
-    .optional(),
-  PaymentSource: z
-    .object({ network: z.string(), smartContractAddress: z.string() })
-    .optional(),
-});
+export const paymentOrPurchaseItemSchema = z
+  .object({
+    id: z.union([z.string(), z.number().transform(String)]),
+    createdAt: dateLikeSchema,
+    updatedAt: dateLikeSchema,
+    blockchainIdentifier: z.string().optional().default(""),
+    agentIdentifier: z.string().nullable().optional(),
+    onChainState: z.string().nullable().optional(),
+    nextActionLastChangedAt: dateLikeSchema.optional(),
+    onChainStateOrResultLastChangedAt: dateLikeSchema.optional(),
+    nextActionOrOnChainStateOrResultLastChangedAt: dateLikeSchema.optional(),
+    NextAction: z
+      .object({
+        requestedAction: z.string().nullable().optional(),
+        errorType: z.string().nullable().optional(),
+        errorNote: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    unlockTime: z.union([dateLikeSchema, z.null()]).optional(),
+    payByTime: z.string().nullable().optional(),
+    submitResultTime: z.string().optional(),
+    RequestedFunds: z.array(unitAmountSchema).optional(),
+    PaidFunds: z.array(unitAmountSchema).optional(),
+    CurrentTransaction: z
+      .object({
+        txHash: z.string().nullable().optional(),
+        status: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
+    PaymentSource: z
+      .object({
+        network: z.string().optional(),
+        smartContractAddress: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
 export type PaymentOrPurchaseItem = z.infer<typeof paymentOrPurchaseItemSchema>;
 
 export const listPaymentsOutputSchema = z.object({
