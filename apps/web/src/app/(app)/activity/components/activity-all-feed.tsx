@@ -25,7 +25,7 @@ import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 import { formatDate } from "@/lib/utils";
 
-const EMPTY_CELL = "\u2014"; // em dash for empty table cells
+const EMPTY_CELL = "\u2014";
 
 export const LIFECYCLE_LABELS: Record<string, string> = {
   RegistrationInitiated: "Registration initiated",
@@ -104,9 +104,6 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
   const { network } = usePaymentNetwork();
   const exportDataRef = useRef<ActivityFeedItem[]>([]);
 
-  const params = new URLSearchParams({ network });
-  if (filter !== "all") params.set("filter", filter);
-  const url = `/api/activity?${params.toString()}`;
   const {
     data,
     isLoading,
@@ -115,6 +112,9 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
   } = useQuery({
     queryKey: ["activity", filter, network, refreshKey],
     queryFn: async (): Promise<ActivityFeedItem[]> => {
+      const params = new URLSearchParams({ network });
+      if (filter !== "all") params.set("filter", filter);
+      const url = `/api/activity?${params.toString()}`;
       const res = await fetch(url);
       const json = await res.json();
       if (!json.success) {
