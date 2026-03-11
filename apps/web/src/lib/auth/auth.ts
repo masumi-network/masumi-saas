@@ -1,7 +1,7 @@
 import "server-only";
 
 import prisma from "@masumi/database/client";
-import { betterAuth } from "better-auth";
+import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
@@ -83,7 +83,11 @@ export const auth = betterAuth({
   },
   socialProviders: authEnvConfig.socialProviders,
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
+      const isResend =
+        typeof request?.url === "string" &&
+        request.url.includes("send-verification-email");
+
       if (!postmarkClient) {
         if (process.env.NODE_ENV === "development") {
           console.log("\n[DEV] Email verification (Postmark not configured)");
@@ -98,6 +102,11 @@ export const auth = betterAuth({
           console.error("Postmark not configured. Email verification failed.", {
             to: user.email,
             verificationLink: url,
+          });
+        }
+        if (isResend) {
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send verification email. Please try again.",
           });
         }
         return;
@@ -130,6 +139,11 @@ export const auth = betterAuth({
         });
       } catch (err) {
         console.error("[Postmark] Verification email failed:", err);
+        if (isResend) {
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send verification email. Please try again.",
+          });
+        }
         if (process.env.NODE_ENV === "development") {
           console.log("[DEV] Verification link (Postmark failed):", url);
         }
