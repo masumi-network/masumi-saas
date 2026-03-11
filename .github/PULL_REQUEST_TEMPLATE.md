@@ -6,10 +6,10 @@
 
 <!-- (Select the applicable option by placing an "X" in the box.)  -->
 
-- [ ] Documentation update
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Other: <!-- (please explain) -->
+[ ] Documentation update
+[ ] Bug fix
+[ ] New feature
+[ ] Other: <!-- (please explain) -->
 
 ## **Overview of Changes**
 
