@@ -6,6 +6,23 @@
 
 import type { z } from "zod";
 
+import type {
+  AddWalletToSourceInput,
+  AddWalletToSourceOutput,
+  CreateApiKeyInput,
+  CreateApiKeyOutput,
+  DeregisterAgentInput,
+  GeneratedWallet,
+  GetPaymentSourcesOutput,
+  GetUtxosOutput,
+  ListPaymentsOutput,
+  ListPurchasesOutput,
+  PaymentIncomeOutput,
+  PaymentNodeNetwork,
+  RegisterAgentInput,
+  RegistryEntry,
+  WalletStatus,
+} from "./schemas";
 import {
   addWalletToSourceOutputSchema,
   createApiKeyOutputSchema,

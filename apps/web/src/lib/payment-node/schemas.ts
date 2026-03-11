@@ -156,6 +156,9 @@ export type PaymentSourceInfo = z.infer<typeof paymentSourceInfoSchema>;
 export const getPaymentSourcesOutputSchema = z.object({
   PaymentSources: z.array(paymentSourceInfoSchema),
 });
+export type GetPaymentSourcesOutput = z.infer<
+  typeof getPaymentSourcesOutputSchema
+>;
 
 // ─── Payment / purchase list items ──────────────────────────────────────────
 

@@ -13,6 +13,7 @@ import {
   type PaymentNodeNetwork,
   type RegisterAgentInput,
 } from "@/lib/payment-node";
+import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
 
@@ -151,7 +152,7 @@ export async function registerAgentOnChain(
 
   const sellingWalletId =
     paymentSource.SellingWallets.find(
-      (w) => w.walletVkey === sellingWallet.walletVkey,
+      (w: PaymentSourceWallet) => w.walletVkey === sellingWallet.walletVkey,
     )?.id ?? null;
 
   if (network === "Preprod") {

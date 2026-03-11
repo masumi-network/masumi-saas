@@ -95,15 +95,19 @@ export async function GET(
 
     const agentIdVal = agent.agentIdentifier;
     const payments = (paymentsRes.Payments ?? []).filter(
-      (p) => p.agentIdentifier === agentIdVal,
+      (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
     );
     const purchases = (purchasesRes.Purchases ?? []).filter(
-      (p) => p.agentIdentifier === agentIdVal,
+      (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
     );
 
     const transactions = [
-      ...payments.map((p) => mapItem(p, "payment", network)),
-      ...purchases.map((p) => mapItem(p, "purchase", network)),
+      ...payments.map((p: PaymentOrPurchaseItem) =>
+        mapItem(p, "payment", network),
+      ),
+      ...purchases.map((p: PaymentOrPurchaseItem) =>
+        mapItem(p, "purchase", network),
+      ),
     ].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

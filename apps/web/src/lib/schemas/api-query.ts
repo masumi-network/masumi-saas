@@ -17,25 +17,23 @@ export function parseNetwork(value: string | null | undefined): NetworkQuery {
 }
 
 /** Earnings overview period (GET /api/earnings). */
-export const earningsPeriodSchema = z
-  .enum(["24h", "7d", "30d", "all"])
-  .default("7d");
+const earningsPeriodEnum = z.enum(["24h", "7d", "30d", "all"]);
+export const earningsPeriodSchema = earningsPeriodEnum.default("7d");
 export type EarningsPeriod = z.infer<typeof earningsPeriodSchema>;
 
-/** Agent earnings period (GET /api/agents/[id]/earnings). */
-export const agentEarningsPeriodSchema = z
-  .enum(["1d", "7d", "30d", "all"])
-  .default("7d");
+/** Agent earnings period (GET /api/agents/[agentId]/earnings). */
+const agentEarningsPeriodEnum = z.enum(["1d", "7d", "30d", "all"]);
+export const agentEarningsPeriodSchema = agentEarningsPeriodEnum.default("7d");
 export type AgentEarningsPeriod = z.infer<typeof agentEarningsPeriodSchema>;
 
 /** GET /api/earnings query. */
 export const earningsQuerySchema = z.object({
-  period: z.string().optional().default("7d").pipe(earningsPeriodSchema),
+  period: z.string().optional().default("7d").pipe(earningsPeriodEnum),
 });
 
 /** GET /api/agents/[agentId]/earnings query. */
 export const agentEarningsQuerySchema = z.object({
-  period: z.string().optional().default("7d").pipe(agentEarningsPeriodSchema),
+  period: z.string().optional().default("7d").pipe(agentEarningsPeriodEnum),
 });
 
 /** GET /api/dashboard/overview query. */
@@ -56,13 +54,19 @@ export const agentCountsQuerySchema = z.object({
     .transform((v) => parseNetwork(v)),
 });
 
+const requiredString = (msg: string) =>
+  z
+    .string({
+      error: (issue) =>
+        issue.input === undefined ? msg : "Must be a non-empty string",
+    })
+    .min(1, msg);
+
 /** GET /api/credentials/status query — required id. */
 export const credentialStatusQuerySchema = z.object({
   id: z.preprocess(
     (v) => (v === null || v === "" ? undefined : v),
-    z
-      .string({ required_error: "Credential ID is required" })
-      .min(1, "Credential ID is required"),
+    requiredString("Credential ID is required"),
   ),
 });
 
@@ -70,9 +74,7 @@ export const credentialStatusQuerySchema = z.object({
 export const credentialReconcileQuerySchema = z.object({
   agentId: z.preprocess(
     (v) => (v === null || v === "" ? undefined : v),
-    z
-      .string({ required_error: "Agent ID is required" })
-      .min(1, "Agent ID is required"),
+    requiredString("Agent ID is required"),
   ),
 });
 
@@ -80,8 +82,6 @@ export const credentialReconcileQuerySchema = z.object({
 export const agentVerifyQuerySchema = z.object({
   agentIdentifier: z.preprocess(
     (v) => (v === null || v === "" ? undefined : v),
-    z
-      .string({ required_error: "Agent identifier is required" })
-      .min(1, "Agent identifier is required"),
+    requiredString("Agent identifier is required"),
   ),
 });

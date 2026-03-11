@@ -261,15 +261,17 @@ export async function GET(request: Request) {
                     limit: listLimit,
                   }),
                 ]);
-            const payments = (paymentsRes.Payments ?? []).filter((p) =>
-              p.agentIdentifier
-                ? agentIdentifiers.has(p.agentIdentifier)
-                : false,
+            const payments = (paymentsRes.Payments ?? []).filter(
+              (p: PaymentOrPurchaseItem) =>
+                p.agentIdentifier
+                  ? agentIdentifiers.has(p.agentIdentifier)
+                  : false,
             );
-            const purchases = (purchasesRes.Purchases ?? []).filter((p) =>
-              p.agentIdentifier
-                ? agentIdentifiers.has(p.agentIdentifier)
-                : false,
+            const purchases = (purchasesRes.Purchases ?? []).filter(
+              (p: PaymentOrPurchaseItem) =>
+                p.agentIdentifier
+                  ? agentIdentifiers.has(p.agentIdentifier)
+                  : false,
             );
             const toItem = (
               p: PaymentOrPurchaseItem,
@@ -299,11 +301,15 @@ export async function GET(request: Request) {
               };
             };
             transactionItems = [
-              ...payments.map((p) => toItem(p, "payment")),
-              ...purchases.map((p) => toItem(p, "purchase")),
+              ...payments.map((p: PaymentOrPurchaseItem) =>
+                toItem(p, "payment"),
+              ),
+              ...purchases.map((p: PaymentOrPurchaseItem) =>
+                toItem(p, "purchase"),
+              ),
             ];
             const lastChangedFields = [...payments, ...purchases].map(
-              (p) =>
+              (p: PaymentOrPurchaseItem) =>
                 p.nextActionOrOnChainStateOrResultLastChangedAt ??
                 p.updatedAt ??
                 p.createdAt,
