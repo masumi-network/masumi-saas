@@ -21,13 +21,11 @@ import { config as loadEnv } from "dotenv";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { createConsoleLogger, demote, list, promote } from "./admin-lib.js";
 
-// Load .env from apps/web (where DATABASE_URL lives) and fall back to package root
+// Load .env from apps/web
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ENV_PATH = path.resolve(__dirname, "../../../apps/web/.env");
-const LOCAL_ENV_PATH = path.resolve(__dirname, "../.env");
 
 loadEnv({ path: ENV_PATH });
-loadEnv({ path: LOCAL_ENV_PATH });
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 

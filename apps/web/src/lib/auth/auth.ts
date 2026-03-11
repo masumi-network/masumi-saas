@@ -1,7 +1,7 @@
 import "server-only";
 
 import prisma from "@masumi/database/client";
-import { betterAuth } from "better-auth";
+import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
@@ -83,7 +83,11 @@ export const auth = betterAuth({
   },
   socialProviders: authEnvConfig.socialProviders,
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
+      const isResend =
+        typeof request?.url === "string" &&
+        request.url.includes("send-verification-email");
+
       if (!postmarkClient) {
         if (process.env.NODE_ENV === "development") {
           console.log("\n[DEV] Email verification (Postmark not configured)");
@@ -100,33 +104,50 @@ export const auth = betterAuth({
             verificationLink: url,
           });
         }
+        if (isResend) {
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send verification email. Please try again.",
+          });
+        }
         return;
       }
 
       const msg = emailMessagesEn.Verification;
 
-      await postmarkClient.sendEmail({
-        From: emailConfig.postmarkFromEmail,
-        To: user.email,
-        Tag: "verification-email",
-        Subject: msg.preview,
-        HtmlBody: await reactVerificationEmail({
-          name: user.name || "User",
-          verificationLink: url,
-          logoUrl:
-            "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
-          translations: {
-            preview: msg.preview,
-            title: msg.title,
-            greeting: msg.greeting,
-            message: msg.message,
-            button: msg.button,
-            linkText: msg.linkText,
-            footer: msg.footer,
-          },
-        }),
-        MessageStream: "outbound",
-      });
+      try {
+        await postmarkClient.sendEmail({
+          From: emailConfig.postmarkFromEmail,
+          To: user.email,
+          Tag: "verification-email",
+          Subject: msg.preview,
+          HtmlBody: await reactVerificationEmail({
+            name: user.name || "User",
+            verificationLink: url,
+            logoUrl:
+              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            translations: {
+              preview: msg.preview,
+              title: msg.title,
+              greeting: msg.greeting,
+              message: msg.message,
+              button: msg.button,
+              linkText: msg.linkText,
+              footer: msg.footer,
+            },
+          }),
+          MessageStream: "outbound",
+        });
+      } catch (err) {
+        console.error("[Postmark] Verification email failed:", err);
+        if (isResend) {
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send verification email. Please try again.",
+          });
+        }
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DEV] Verification link (Postmark failed):", url);
+        }
+      }
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
