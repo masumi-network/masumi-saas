@@ -134,6 +134,8 @@ masumi-saas/
 
 2. **Set up environment variables:**
 
+   Configure environment variables in `apps/web/.env`.
+
    ```bash
    cp apps/web/.env.example apps/web/.env
    ```

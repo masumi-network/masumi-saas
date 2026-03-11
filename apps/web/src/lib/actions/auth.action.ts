@@ -130,6 +130,7 @@ export async function signUpAction(formData: FormData) {
       resultKey: "SignUpSuccess",
     };
   } catch (error) {
+    console.error("[signUpAction] error:", error);
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
       if (

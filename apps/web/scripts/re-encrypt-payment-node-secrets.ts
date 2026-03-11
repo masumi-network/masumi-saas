@@ -14,10 +14,12 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-// Load .env from apps/web so PAYMENT_NODE_* are set when running standalone
-const envPath = resolve(process.cwd(), ".env");
+// Load .env from apps/web
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, "../.env");
 if (existsSync(envPath)) {
   const content = readFileSync(envPath, "utf8");
   for (const line of content.split("\n")) {

@@ -267,11 +267,11 @@ export type CreateApiKeyInput = z.infer<typeof createApiKeyInputSchema>;
 export const createApiKeyOutputSchema = z.object({
   id: z.string(),
   token: z.string(),
-  permission: z.string(),
-  usageLimited: z.boolean(),
-  networkLimit: z.array(paymentNodeNetworkSchema),
-  RemainingUsageCredits: z.array(unitAmountSchema),
-  status: z.string(),
+  permission: z.string().optional(),
+  usageLimited: z.boolean().optional(),
+  networkLimit: z.array(paymentNodeNetworkSchema).optional().default([]),
+  RemainingUsageCredits: z.array(unitAmountSchema).optional().default([]),
+  status: z.string().optional(),
 });
 export type CreateApiKeyOutput = z.infer<typeof createApiKeyOutputSchema>;
 
