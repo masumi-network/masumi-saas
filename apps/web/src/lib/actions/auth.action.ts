@@ -35,11 +35,13 @@ export async function signInAction(formData: FormData) {
   }
 
   try {
+    const headersList = await getRequestHeaders();
     const result = await auth.api.signInEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
       },
+      headers: headersList,
     });
 
     if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
@@ -61,6 +63,14 @@ export async function signInAction(formData: FormData) {
       resultKey: "SignInSuccess",
     };
   } catch (error) {
+    const err = error as Error & { status?: number; statusCode?: number };
+    const status = err.status ?? err.statusCode;
+    if (status === 403) {
+      return {
+        error: "Please verify your email address before signing in.",
+        errorKey: "EmailVerificationRequired",
+      };
+    }
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
       if (
@@ -76,9 +86,17 @@ export async function signInAction(formData: FormData) {
         };
       }
       if (
+        errorMessage.includes("verification") ||
+        errorMessage.includes("verify your email")
+      ) {
+        return {
+          error: "Please verify your email address before signing in.",
+          errorKey: "EmailVerificationRequired",
+        };
+      }
+      if (
         errorMessage.includes("invalid") ||
         errorMessage.includes("password") ||
-        errorMessage.includes("email") ||
         errorMessage.includes("credentials")
       ) {
         return {

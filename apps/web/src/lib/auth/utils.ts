@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
 
+import { authConfig } from "@/lib/config/auth.config";
+
 import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
 import type { SessionWithOrganization } from "./session-types";
@@ -13,6 +15,14 @@ export class UnauthorizedError extends Error {
   constructor() {
     super("Unauthorized");
     this.name = "UnauthorizedError";
+  }
+}
+
+/** Thrown when email verification is required but user has not verified. Use for 403 responses. */
+export class EmailNotVerifiedError extends Error {
+  constructor() {
+    super("Email verification required");
+    this.name = "EmailNotVerifiedError";
   }
 }
 
@@ -86,13 +96,23 @@ function getActiveOrganizationId(
   );
 }
 
+export interface GetAuthenticatedOptions {
+  /** When true (default when REQUIRE_EMAIL_VERIFICATION is on), throws if user has not verified email. Set false for flows that must work before verification (e.g. accept-invitation). */
+  requireEmailVerified?: boolean;
+}
+
 /**
  * Returns the current user and session. Supports both:
  * - Session (cookie): browser requests with a logged-in session.
  * - API key: CLI/MCP/scripts send `Authorization: Bearer <key>` or `x-api-key: <key>`.
  * Throws UnauthorizedError when neither is valid. Use handleAuthError() in API route catch blocks to return 401.
+ * When REQUIRE_EMAIL_VERIFICATION is true, throws EmailNotVerifiedError if user has not verified email (403).
+ * Pass { requireEmailVerified: false } to skip the email check for flows like accept-invitation.
  */
-export async function getAuthenticatedOrThrow(request?: Request) {
+export async function getAuthenticatedOrThrow(
+  request?: Request,
+  options?: GetAuthenticatedOptions,
+) {
   const headersList =
     request instanceof Request ? request.headers : await getRequestHeaders();
   const standardHeaders =
@@ -105,6 +125,13 @@ export async function getAuthenticatedOrThrow(request?: Request) {
     throw new UnauthorizedError();
   }
 
+  const requireEmailVerified =
+    options?.requireEmailVerified ??
+    authConfig.emailAndPassword.requireEmailVerification;
+  if (requireEmailVerified && session.user.emailVerified !== true) {
+    throw new EmailNotVerifiedError();
+  }
+
   return {
     headers: standardHeaders,
     user: session.user,
@@ -113,12 +140,18 @@ export async function getAuthenticatedOrThrow(request?: Request) {
   };
 }
 
-/** Use in API route catch blocks: returns 401 JSON response for UnauthorizedError, otherwise null. */
+/** Use in API route catch blocks: returns 401 for UnauthorizedError, 403 for EmailNotVerifiedError, otherwise null. */
 export function handleAuthError(error: unknown): NextResponse | null {
   if (error instanceof UnauthorizedError) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 },
+    );
+  }
+  if (error instanceof EmailNotVerifiedError) {
+    return NextResponse.json(
+      { success: false, error: "Email verification required" },
+      { status: 403 },
     );
   }
   return null;

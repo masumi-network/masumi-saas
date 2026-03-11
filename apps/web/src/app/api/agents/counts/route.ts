@@ -6,7 +6,9 @@ import { agentCountsQuerySchema } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
 
     const queryResult = agentCountsQuerySchema.safeParse({
       network: request.nextUrl.searchParams.get("network"),

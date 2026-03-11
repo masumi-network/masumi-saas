@@ -20,8 +20,10 @@ import { getInitials } from "@/lib/utils/format-name";
 export async function UserProfileCard() {
   const t = await getTranslations("App.Home.KycStatus");
 
-  const { user } = await getAuthenticatedOrThrow();
-  const result = await getKycStatusAction();
+  const { user } = await getAuthenticatedOrThrow(undefined, {
+    requireEmailVerified: false,
+  });
+  const result = await getKycStatusAction({ requireEmailVerified: false });
 
   if (!result.success || !result.data) {
     return null;

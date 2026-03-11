@@ -3,7 +3,10 @@
 import prisma from "@masumi/database/client";
 
 import { auth } from "@/lib/auth/auth";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  type GetAuthenticatedOptions,
+  getAuthenticatedOrThrow,
+} from "@/lib/auth/utils";
 
 /** Roles that can be set via invite or role update (never "owner"). */
 const ALLOWED_MEMBER_ROLES = ["member", "admin"] as const;
@@ -13,8 +16,11 @@ const ALLOWED_MEMBER_ROLES = ["member", "admin"] as const;
  * organization identified by `slug`. Returns the member record with
  * `organizationId` and `role`, or throws on failure.
  */
-async function getAuthenticatedMemberOrThrow(slug: string) {
-  const { user } = await getAuthenticatedOrThrow();
+async function getAuthenticatedMemberOrThrow(
+  slug: string,
+  options?: GetAuthenticatedOptions,
+) {
+  const { user } = await getAuthenticatedOrThrow(undefined, options);
   const normalizedSlug = decodeURIComponent(slug).trim();
 
   const member = await prisma.member.findFirst({
@@ -76,7 +82,9 @@ export async function getOrganizationsAction(): Promise<
   | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
 
     const members = await prisma.member.findMany({
       where: { userId: user.id },
@@ -111,7 +119,9 @@ export async function getOrganizationBySlugAction(
   { success: true; data: OrganizationInfo } | { success: false; error: string }
 > {
   try {
-    const { member } = await getAuthenticatedMemberOrThrow(slug);
+    const { member } = await getAuthenticatedMemberOrThrow(slug, {
+      requireEmailVerified: false,
+    });
 
     const organization = await prisma.organization.findUniqueOrThrow({
       where: { id: member.organizationId },
@@ -137,7 +147,9 @@ export async function getOrganizationDashboardAction(
   | { success: false; error: string }
 > {
   try {
-    const { member } = await getAuthenticatedMemberOrThrow(slug);
+    const { member } = await getAuthenticatedMemberOrThrow(slug, {
+      requireEmailVerified: false,
+    });
     const organizationId = member.organizationId;
 
     const [
@@ -249,7 +261,9 @@ export async function getOrganizationMembersAction(
   { success: true; data: OrgMember[] } | { success: false; error: string }
 > {
   try {
-    const { member } = await getAuthenticatedMemberOrThrow(slug);
+    const { member } = await getAuthenticatedMemberOrThrow(slug, {
+      requireEmailVerified: false,
+    });
 
     const members = await prisma.member.findMany({
       where: { organizationId: member.organizationId },
@@ -282,7 +296,9 @@ export async function getOrganizationPendingInvitationsAction(
   { success: true; data: OrgInvitation[] } | { success: false; error: string }
 > {
   try {
-    const { member } = await getAuthenticatedMemberOrThrow(slug);
+    const { member } = await getAuthenticatedMemberOrThrow(slug, {
+      requireEmailVerified: false,
+    });
 
     // Only admin/owner can see pending invitations
     if (member.role !== "owner" && member.role !== "admin") {
@@ -419,7 +435,9 @@ export async function acceptInvitationAction(
   invitationId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const { headers: headersList } = await getAuthenticatedOrThrow();
+    const { headers: headersList } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
     await auth.api.acceptInvitation({
       headers: headersList,
       body: { invitationId },
@@ -437,7 +455,9 @@ export async function rejectInvitationAction(
   invitationId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const { headers: headersList } = await getAuthenticatedOrThrow();
+    const { headers: headersList } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
     await auth.api.rejectInvitation({
       headers: headersList,
       body: { invitationId },
@@ -457,7 +477,9 @@ export async function getInvitationAction(
   { success: true; data: InvitationDetails } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
 
     // Fetch directly from DB — Better Auth's getInvitation API only allows
     // the recipient to call it, which breaks the flow for inviters or any

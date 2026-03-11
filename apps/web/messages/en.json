@@ -8,6 +8,7 @@
     "Errors": {
       "InvalidInput": "Invalid input",
       "InvalidCredentials": "Invalid email or password",
+      "EmailVerificationRequired": "Please verify your email address before signing in.",
       "DatabaseError": "Database connection error. Please check your database configuration.",
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",

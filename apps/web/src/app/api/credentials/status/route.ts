@@ -11,7 +11,9 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
 
     const queryResult = credentialStatusQuerySchema.safeParse({
       id: request.nextUrl.searchParams.get("id"),

@@ -27,8 +27,10 @@ export async function UserProfileCard() {
   const t = await getTranslations("App.Home.KycStatus");
   const tStatus = await getTranslations("App.Agents");
 
-  const { user } = await getAuthenticatedOrThrow();
-  const result = await getKycStatusAction();
+  const { user } = await getAuthenticatedOrThrow(undefined, {
+    requireEmailVerified: false,
+  });
+  const result = await getKycStatusAction({ requireEmailVerified: false });
 
   if (!result.success || !result.data) {
     return null;

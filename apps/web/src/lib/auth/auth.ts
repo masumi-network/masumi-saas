@@ -6,12 +6,13 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
 import { localization } from "better-auth-localization";
+import { headers } from "next/headers";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
 import { reactInvitationEmail } from "@/lib/email/invitation";
-import { emailMessagesEn } from "@/lib/email/messages";
+import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
@@ -31,10 +32,14 @@ export const auth = betterAuth({
   ],
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification:
-      authConfig.emailAndPassword.requireEmailVerification,
+    // Allow unverified users to sign in; we enforce verification at the action level instead
+    requireEmailVerification: false,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
+      const headersList = await headers();
+      const locale = parseAcceptLanguage(headersList.get("accept-language"));
+      const msg = getEmailMessages(locale);
+
       if (!postmarkClient) {
         if (process.env.NODE_ENV === "development") {
           console.log("\n[DEV] Password reset email (Postmark not configured)");
@@ -57,24 +62,22 @@ export const auth = betterAuth({
         return;
       }
 
-      const msg = emailMessagesEn.ResetPassword;
-
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
         To: user.email,
         Tag: "reset-password",
-        Subject: msg.preview,
+        Subject: msg.ResetPassword.preview,
         HtmlBody: await reactResetPasswordEmail({
           name: user.name || "User",
           resetLink: url,
           translations: {
-            preview: msg.preview,
-            title: msg.title,
-            greeting: msg.greeting,
-            message: msg.message,
-            button: msg.button,
-            linkText: msg.linkText,
-            footer: msg.footer,
+            preview: msg.ResetPassword.preview,
+            title: msg.ResetPassword.title,
+            greeting: msg.ResetPassword.greeting,
+            message: msg.ResetPassword.message,
+            button: msg.ResetPassword.button,
+            linkText: msg.ResetPassword.linkText,
+            footer: msg.ResetPassword.footer,
           },
         }),
         MessageStream: "outbound",
@@ -112,7 +115,9 @@ export const auth = betterAuth({
         return;
       }
 
-      const msg = emailMessagesEn.Verification;
+      const headersList = await headers();
+      const locale = parseAcceptLanguage(headersList.get("accept-language"));
+      const msg = getEmailMessages(locale).Verification;
 
       try {
         await postmarkClient.sendEmail({
@@ -238,7 +243,9 @@ export const auth = betterAuth({
           return;
         }
 
-        const msg = emailMessagesEn.Invitation;
+        const headersList = await headers();
+        const locale = parseAcceptLanguage(headersList.get("accept-language"));
+        const msg = getEmailMessages(locale).Invitation;
         const orgName = data.organization.name;
         const replaceOrganization = (template: string): string =>
           template.replace("{organization}", () => orgName);

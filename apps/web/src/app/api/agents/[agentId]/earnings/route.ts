@@ -39,7 +39,9 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({

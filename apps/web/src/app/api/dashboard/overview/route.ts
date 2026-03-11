@@ -11,7 +11,9 @@ export type DashboardOverviewApiResponse =
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
 
     const queryResult = dashboardOverviewQuerySchema.safeParse({
       network: request.nextUrl.searchParams.get("network"),

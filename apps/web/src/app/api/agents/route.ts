@@ -31,7 +31,9 @@ const getAgentsQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
 
     const rawParams = Object.fromEntries(
       request.nextUrl.searchParams.entries(),
