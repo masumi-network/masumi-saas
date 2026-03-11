@@ -23,12 +23,15 @@ function setLastVisit(iso: string): void {
 function getStoredCount(): number {
   if (typeof window === "undefined") return 0;
   const v = localStorage.getItem(NEW_COUNT_KEY);
-  return v ? parseInt(v, 10) : 0;
+  if (!v) return 0;
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? 0 : n;
 }
 
 function setStoredCount(n: number): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(NEW_COUNT_KEY, String(n));
+  const safe = Number.isNaN(n) ? 0 : n;
+  localStorage.setItem(NEW_COUNT_KEY, String(safe));
 }
 
 export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {

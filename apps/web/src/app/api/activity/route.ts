@@ -231,6 +231,8 @@ export async function GET(request: Request) {
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
           if (smartContractAddress && agentIdentifiers.size > 0) {
+            // Transaction results are network-specific: we use the first agent's network.
+            // Users with agents on both Mainnet and Preprod will only see transactions for this network.
             const network = toNetwork(agents[0]?.networkIdentifier ?? null);
             const listLimit = 50;
             const diffLimit = 100;
