@@ -66,9 +66,22 @@ export async function signInAction(formData: FormData) {
     const err = error as Error & { status?: number; statusCode?: number };
     const status = err.status ?? err.statusCode;
     if (status === 403) {
+      const msg = (error instanceof Error ? error.message : "").toLowerCase();
+      if (msg.includes("banned") || msg.includes("ban")) {
+        return {
+          error: "Your account has been suspended.",
+          errorKey: "AccountBanned",
+        };
+      }
+      if (msg.includes("verification") || msg.includes("verify")) {
+        return {
+          error: "Please verify your email address before signing in.",
+          errorKey: "EmailVerificationRequired",
+        };
+      }
       return {
-        error: "Please verify your email address before signing in.",
-        errorKey: "EmailVerificationRequired",
+        error: "Access denied.",
+        errorKey: "AccessDenied",
       };
     }
     if (error instanceof Error) {
