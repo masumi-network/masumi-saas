@@ -30,7 +30,7 @@ export async function UserProfileCard() {
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
   });
-  const result = await getKycStatusAction({ requireEmailVerified: false });
+  const result = await getKycStatusAction();
 
   if (!result.success || !result.data) {
     return null;

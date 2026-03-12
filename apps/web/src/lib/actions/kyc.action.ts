@@ -2,10 +2,7 @@
 
 import prisma from "@masumi/database/client";
 
-import {
-  type GetAuthenticatedOptions,
-  getAuthenticatedOrThrow,
-} from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { sumsubConfig } from "@/lib/config/sumsub.config";
 import {
   generateSumsubAccessToken,
@@ -142,11 +139,13 @@ export async function markKycAsSubmittedAction() {
 /**
  * Get current user's KYC status
  * If status is REVIEW, checks Sumsub API for latest status
- * @param options.requireEmailVerified - when false, allows unverified users (e.g. on /account page)
+ * Allows unverified users (read-only KYC status for browsing).
  */
-export async function getKycStatusAction(options?: GetAuthenticatedOptions) {
+export async function getKycStatusAction() {
   try {
-    const { user } = await getAuthenticatedOrThrow(options);
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
 
     const userWithKyc = await prisma.user.findUnique({
       where: { id: user.id },
