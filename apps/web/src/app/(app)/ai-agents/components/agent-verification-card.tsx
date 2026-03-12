@@ -40,7 +40,7 @@ export function AgentVerificationCard({
 
   useEffect(() => {
     startTransition(async () => {
-      const result = await getKycStatusAction();
+      const result = await getKycStatusAction({ requireEmailVerified: false });
       if (result.success && result.data) {
         setKycStatus(result.data.kycStatus);
       }

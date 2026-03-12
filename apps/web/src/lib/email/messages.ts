@@ -53,6 +53,3 @@ export function getEmailMessages(locale?: string): EmailMessages {
       : "en";
   return messagesByLocale[resolved] ?? messagesByLocale.en;
 }
-
-/** @deprecated Use getEmailMessages(locale) for locale-aware emails. */
-export const emailMessagesEn: EmailMessages = messagesByLocale.en;

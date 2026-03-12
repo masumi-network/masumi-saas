@@ -45,7 +45,7 @@ export async function getDashboardOverview(
         },
       },
     }),
-    getKycStatusAction(),
+    getKycStatusAction({ requireEmailVerified: false }),
     prisma.apikey.findMany({
       where: { userId },
       select: { id: true, name: true, prefix: true, start: true },

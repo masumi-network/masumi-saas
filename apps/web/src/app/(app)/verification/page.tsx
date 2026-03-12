@@ -24,7 +24,7 @@ export default async function VerificationPage() {
     redirect("/signin");
   }
 
-  const result = await getKycStatusAction();
+  const result = await getKycStatusAction({ requireEmailVerified: false });
 
   if (!result.success || !result.data) {
     redirect("/");
