@@ -102,18 +102,6 @@ export interface GetAuthenticatedOptions {
 }
 
 /**
- * Build auth options only when requireEmailVerified is explicitly set.
- * Avoids passing { requireEmailVerified: undefined } to getAuthenticatedOrThrow.
- */
-export function toAuthOptions(
-  requireEmailVerified?: boolean,
-): GetAuthenticatedOptions | undefined {
-  return requireEmailVerified !== undefined
-    ? { requireEmailVerified }
-    : undefined;
-}
-
-/**
  * Returns the current user and session. Supports both:
  * - Session (cookie): browser requests with a logged-in session.
  * - API key: CLI/MCP/scripts send `Authorization: Bearer <key>` or `x-api-key: <key>`.

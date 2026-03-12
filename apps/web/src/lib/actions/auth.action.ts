@@ -110,7 +110,8 @@ export async function signInAction(formData: FormData) {
       if (
         errorMessage.includes("invalid") ||
         errorMessage.includes("password") ||
-        errorMessage.includes("credentials")
+        errorMessage.includes("credentials") ||
+        errorMessage.includes("email")
       ) {
         return {
           error: "Invalid email or password",
