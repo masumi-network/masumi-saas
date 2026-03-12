@@ -97,9 +97,7 @@ export async function getAgentsAction(filters?: {
 
 export async function syncAgentRegistrationStatusAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
-      requireEmailVerified: false,
-    });
+    const { user } = await getAuthenticatedOrThrow();
     const agent = await prisma.agent.findFirst({
       where: { id: agentId, userId: user.id },
       include: { agentReference: true },
