@@ -60,7 +60,9 @@ export async function getAgentsAction(filters?: {
   unverified?: boolean;
 }) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
     const network = await getNetworkFromCookie();
 
     const verificationFilter = filters?.unverified
@@ -95,7 +97,9 @@ export async function getAgentsAction(filters?: {
 
 export async function syncAgentRegistrationStatusAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
     const agent = await prisma.agent.findFirst({
       where: { id: agentId, userId: user.id },
       include: { agentReference: true },
@@ -220,7 +224,9 @@ export async function deregisterAgentAction(agentId: string) {
 
 export async function getAgentAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow(undefined, {
+      requireEmailVerified: false,
+    });
 
     const agent = await prisma.agent.findFirst({
       where: {

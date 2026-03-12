@@ -8,7 +8,7 @@
     "Errors": {
       "InvalidInput": "Invalid input",
       "InvalidCredentials": "Invalid email or password",
-      "EmailVerificationRequired": "Please verify your email address before signing in.",
+      "EmailVerificationRequired": "Your email address must be verified.",
       "AccountBanned": "Your account has been suspended.",
       "AccessDenied": "Access denied.",
       "DatabaseError": "Database connection error. Please check your database configuration.",

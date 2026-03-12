@@ -75,7 +75,7 @@ export async function signInAction(formData: FormData) {
       }
       if (msg.includes("verification") || msg.includes("verify")) {
         return {
-          error: "Please verify your email address before signing in.",
+          error: "Your email address must be verified.",
           errorKey: "EmailVerificationRequired",
         };
       }
@@ -103,7 +103,7 @@ export async function signInAction(formData: FormData) {
         errorMessage.includes("verify your email")
       ) {
         return {
-          error: "Please verify your email address before signing in.",
+          error: "Your email address must be verified.",
           errorKey: "EmailVerificationRequired",
         };
       }
