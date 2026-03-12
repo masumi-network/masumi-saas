@@ -20,7 +20,7 @@ async function getAuthenticatedMemberOrThrow(
   slug: string,
   options?: GetAuthenticatedOptions,
 ) {
-  const { user } = await getAuthenticatedOrThrow(undefined, options);
+  const { user } = await getAuthenticatedOrThrow(options);
   const normalizedSlug = decodeURIComponent(slug).trim();
 
   const member = await prisma.member.findFirst({
@@ -82,7 +82,7 @@ export async function getOrganizationsAction(): Promise<
   | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
 
@@ -435,7 +435,7 @@ export async function acceptInvitationAction(
   invitationId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const { headers: headersList } = await getAuthenticatedOrThrow(undefined, {
+    const { headers: headersList } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
     await auth.api.acceptInvitation({
@@ -455,7 +455,7 @@ export async function rejectInvitationAction(
   invitationId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const { headers: headersList } = await getAuthenticatedOrThrow(undefined, {
+    const { headers: headersList } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
     await auth.api.rejectInvitation({
@@ -477,7 +477,7 @@ export async function getInvitationAction(
   { success: true; data: InvitationDetails } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
 

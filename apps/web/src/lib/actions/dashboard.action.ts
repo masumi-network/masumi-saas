@@ -19,7 +19,7 @@ export async function getDashboardOverviewAction(
   { success: true; data: DashboardOverview } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
     const resolvedNetwork =

@@ -60,7 +60,7 @@ export async function getAgentsAction(filters?: {
   unverified?: boolean;
 }) {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
     const network = await getNetworkFromCookie();
@@ -222,7 +222,7 @@ export async function deregisterAgentAction(agentId: string) {
 
 export async function getAgentAction(agentId: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
 

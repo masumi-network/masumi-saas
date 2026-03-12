@@ -108,11 +108,20 @@ export interface GetAuthenticatedOptions {
  * Throws UnauthorizedError when neither is valid. Use handleAuthError() in API route catch blocks to return 401.
  * When REQUIRE_EMAIL_VERIFICATION is true, throws EmailNotVerifiedError if user has not verified email (403).
  * Pass { requireEmailVerified: false } to skip the email check for flows like accept-invitation.
+ *
+ * Call as getAuthenticatedOrThrow(request) for API routes, or getAuthenticatedOrThrow(options) when passing options only.
  */
 export async function getAuthenticatedOrThrow(
-  request?: Request,
+  requestOrOptions?: Request | GetAuthenticatedOptions,
   options?: GetAuthenticatedOptions,
 ) {
+  const request =
+    requestOrOptions instanceof Request ? requestOrOptions : undefined;
+  const opts =
+    requestOrOptions instanceof Request
+      ? options
+      : (requestOrOptions ?? options);
+
   const headersList =
     request instanceof Request ? request.headers : await getRequestHeaders();
   const standardHeaders =
@@ -126,7 +135,7 @@ export async function getAuthenticatedOrThrow(
   }
 
   const requireEmailVerified =
-    options?.requireEmailVerified ??
+    opts?.requireEmailVerified ??
     authConfig.emailAndPassword.requireEmailVerification;
   if (requireEmailVerified && session.user.emailVerified !== true) {
     throw new EmailNotVerifiedError();

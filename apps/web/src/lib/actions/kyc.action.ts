@@ -145,7 +145,7 @@ export async function getKycStatusAction(options?: {
   requireEmailVerified?: boolean;
 }) {
   try {
-    const { user } = await getAuthenticatedOrThrow(undefined, {
+    const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: options?.requireEmailVerified,
     });
 
