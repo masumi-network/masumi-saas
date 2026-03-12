@@ -36,10 +36,6 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
-      const headersList = await headers();
-      const locale = parseAcceptLanguage(headersList.get("accept-language"));
-      const msg = getEmailMessages(locale);
-
       if (!postmarkClient) {
         if (process.env.NODE_ENV === "development") {
           console.log("\n[DEV] Password reset email (Postmark not configured)");
@@ -61,6 +57,10 @@ export const auth = betterAuth({
         }
         return;
       }
+
+      const headersList = await headers();
+      const locale = parseAcceptLanguage(headersList.get("accept-language"));
+      const msg = getEmailMessages(locale);
 
       await postmarkClient.sendEmail({
         From: emailConfig.postmarkFromEmail,
