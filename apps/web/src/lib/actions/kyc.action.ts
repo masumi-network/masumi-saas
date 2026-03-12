@@ -2,7 +2,7 @@
 
 import prisma from "@masumi/database/client";
 
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, toAuthOptions } from "@/lib/auth/utils";
 import { sumsubConfig } from "@/lib/config/sumsub.config";
 import {
   generateSumsubAccessToken,
@@ -145,9 +145,9 @@ export async function getKycStatusAction(options?: {
   requireEmailVerified?: boolean;
 }) {
   try {
-    const { user } = await getAuthenticatedOrThrow({
-      requireEmailVerified: options?.requireEmailVerified,
-    });
+    const { user } = await getAuthenticatedOrThrow(
+      toAuthOptions(options?.requireEmailVerified),
+    );
 
     const userWithKyc = await prisma.user.findUnique({
       where: { id: user.id },
