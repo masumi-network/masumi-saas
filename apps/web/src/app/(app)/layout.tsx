@@ -6,6 +6,7 @@ import { getMessages } from "next-intl/server";
 import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthContext } from "@/lib/auth/utils";
+import { authConfig } from "@/lib/config/auth.config";
 import { OrganizationProvider } from "@/lib/context/organization-context";
 import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
@@ -52,7 +53,8 @@ export default async function AppLayout({
               <Header />
               <div className="flex-1 min-h-0 overflow-y-auto">
                 <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-                  {authContext.session.user.emailVerified !== true &&
+                  {authConfig.emailAndPassword.requireEmailVerification &&
+                    authContext.session.user.emailVerified !== true &&
                     authContext.session.user.email && (
                       <div className="mb-4">
                         <VerifyEmailBanner
