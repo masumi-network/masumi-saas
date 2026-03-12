@@ -73,7 +73,10 @@ export async function signInAction(formData: FormData) {
           errorKey: "AccountBanned",
         };
       }
-      if (msg.includes("verification") || msg.includes("verify")) {
+      if (
+        msg.includes("email verification") ||
+        msg.includes("verify your email")
+      ) {
         return {
           error: "Your email address must be verified.",
           errorKey: "EmailVerificationRequired",
@@ -99,8 +102,8 @@ export async function signInAction(formData: FormData) {
         };
       }
       if (
-        errorMessage.includes("verification") ||
-        errorMessage.includes("verify")
+        errorMessage.includes("email verification") ||
+        errorMessage.includes("verify your email")
       ) {
         return {
           error: "Your email address must be verified.",
