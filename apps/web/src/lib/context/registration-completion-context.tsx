@@ -49,9 +49,9 @@ export function RegistrationCompletionProvider({
     });
   }, []);
 
+  // Single long-lived interval: reads from pendingRef so we never restart when
+  // pendingIds.size changes (which would overlap with in-flight async callbacks).
   useEffect(() => {
-    if (pendingIds.size === 0) return;
-
     const intervalId = setInterval(async () => {
       const ids = Array.from(pendingRef.current);
       if (ids.length === 0) return;
@@ -88,7 +88,7 @@ export function RegistrationCompletionProvider({
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [pendingIds.size]);
+  }, []);
 
   const value: RegistrationCompletionContextValue = {
     addPendingAgent,

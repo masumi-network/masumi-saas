@@ -499,6 +499,7 @@ export function RegisterAgentDialog({
       setShowCloseConfirm(false);
     } else {
       if (isLoading) {
+        closedDuringSubmitRef.current = true;
         setShowCloseConfirm(true);
         return;
       }
@@ -855,9 +856,11 @@ export function RegisterAgentDialog({
       </Dialog>
       <ConfirmDialog
         open={showCloseConfirm}
-        onOpenChange={setShowCloseConfirm}
+        onOpenChange={(open) => {
+          setShowCloseConfirm(open);
+          if (!open) closedDuringSubmitRef.current = false;
+        }}
         onConfirm={() => {
-          if (isLoading) closedDuringSubmitRef.current = true;
           performClose();
           setShowCloseConfirm(false);
         }}
