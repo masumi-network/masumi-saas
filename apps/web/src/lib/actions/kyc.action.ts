@@ -139,10 +139,13 @@ export async function markKycAsSubmittedAction() {
 /**
  * Get current user's KYC status
  * If status is REVIEW, checks Sumsub API for latest status
+ * Allows unverified users (read-only KYC status for browsing).
  */
 export async function getKycStatusAction() {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
 
     const userWithKyc = await prisma.user.findUnique({
       where: { id: user.id },

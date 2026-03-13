@@ -81,7 +81,9 @@ function registrationStateToEventType(
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const { user } = await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
     const { searchParams } = request.nextUrl;
     const query = activityQuerySchema.parse({
       filter: searchParams.get("filter") ?? "all",

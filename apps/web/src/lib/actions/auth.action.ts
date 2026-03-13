@@ -35,11 +35,13 @@ export async function signInAction(formData: FormData) {
   }
 
   try {
+    const headersList = await getRequestHeaders();
     const result = await auth.api.signInEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
       },
+      headers: headersList,
     });
 
     if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
@@ -61,6 +63,30 @@ export async function signInAction(formData: FormData) {
       resultKey: "SignInSuccess",
     };
   } catch (error) {
+    const err = error as Error & { status?: number; statusCode?: number };
+    const status = err.status ?? err.statusCode;
+    if (status === 403) {
+      const msg = (error instanceof Error ? error.message : "").toLowerCase();
+      if (msg.includes("banned") || msg.includes("ban")) {
+        return {
+          error: "Your account has been suspended.",
+          errorKey: "AccountBanned",
+        };
+      }
+      if (
+        msg.includes("email verification") ||
+        msg.includes("verify your email")
+      ) {
+        return {
+          error: "Your email address must be verified.",
+          errorKey: "EmailVerificationRequired",
+        };
+      }
+      return {
+        error: "Access denied.",
+        errorKey: "AccessDenied",
+      };
+    }
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
       if (
@@ -76,10 +102,19 @@ export async function signInAction(formData: FormData) {
         };
       }
       if (
+        errorMessage.includes("email verification") ||
+        errorMessage.includes("verify your email")
+      ) {
+        return {
+          error: "Your email address must be verified.",
+          errorKey: "EmailVerificationRequired",
+        };
+      }
+      if (
         errorMessage.includes("invalid") ||
         errorMessage.includes("password") ||
-        errorMessage.includes("email") ||
-        errorMessage.includes("credentials")
+        errorMessage.includes("credentials") ||
+        errorMessage.includes("email")
       ) {
         return {
           error: "Invalid email or password",

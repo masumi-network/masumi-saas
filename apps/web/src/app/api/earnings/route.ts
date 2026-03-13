@@ -22,7 +22,9 @@ export type EarningsApiResponse =
 
 export async function GET(request: Request) {
   try {
-    await getAuthenticatedOrThrow(request);
+    await getAuthenticatedOrThrow(request, {
+      requireEmailVerified: false,
+    });
 
     const { searchParams } = new URL(request.url);
     const queryResult = earningsQuerySchema.safeParse({
