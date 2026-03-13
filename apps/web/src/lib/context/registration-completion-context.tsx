@@ -60,11 +60,13 @@ export function RegistrationCompletionProvider({
         try {
           const result = await completeRegistrationIfReadyAction(agentId);
           if (result.status === "registered") {
+            const next = new Set(pendingRef.current);
+            next.delete(agentId);
+            pendingRef.current = next;
             setPendingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(agentId);
-              pendingRef.current = next;
-              return next;
+              const nextState = new Set(prev);
+              nextState.delete(agentId);
+              return nextState;
             });
             toast.success("Agent registered successfully!");
             window.dispatchEvent(
@@ -73,11 +75,13 @@ export function RegistrationCompletionProvider({
               }),
             );
           } else if (result.status === "error") {
+            const next = new Set(pendingRef.current);
+            next.delete(agentId);
+            pendingRef.current = next;
             setPendingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(agentId);
-              pendingRef.current = next;
-              return next;
+              const nextState = new Set(prev);
+              nextState.delete(agentId);
+              return nextState;
             });
             toast.error(result.error ?? "Registration failed");
           }

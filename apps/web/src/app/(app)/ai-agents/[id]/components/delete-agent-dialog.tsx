@@ -54,26 +54,28 @@ export function DeleteAgentDialog({
             <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
           <DialogDescription className="text-muted-foreground text-sm">
             {t("deleteConfirmDescription", { name: agentName })}
           </DialogDescription>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-2">
-          <Label htmlFor="delete-confirm-input">
-            {t.rich("deleteConfirmTypeToConfirm", {
-              name: agentName,
-              bold: (chunks) => <span className="font-semibold">{chunks}</span>,
-            })}
-          </Label>
-          <Input
-            id="delete-confirm-input"
-            value={confirmValue}
-            onChange={(e) => setConfirmValue(e.target.value)}
-            placeholder={t("deleteConfirmPlaceholder")}
-            disabled={isLoading}
-            autoComplete="off"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="delete-confirm-input">
+              {t.rich("deleteConfirmTypeToConfirm", {
+                name: agentName,
+                bold: (chunks) => (
+                  <span className="font-semibold">{chunks}</span>
+                ),
+              })}
+            </Label>
+            <Input
+              id="delete-confirm-input"
+              value={confirmValue}
+              onChange={(e) => setConfirmValue(e.target.value)}
+              placeholder={t("deleteConfirmPlaceholder")}
+              disabled={isLoading}
+              autoComplete="off"
+            />
+          </div>
         </div>
         <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-4">
           <Button
