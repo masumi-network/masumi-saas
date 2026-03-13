@@ -50,30 +50,42 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEarnings = useCallback(() => {
-    setError(null);
-    setIsLoading(true);
-    fetch(`/api/agents/${agent.id}/earnings?period=${selectedPeriod}`)
-      .then((res) => res.json())
-      .then(
-        (json: { success: boolean; data?: EarningsData; error?: string }) => {
-          if (json.success && json.data) {
-            setEarningsData(json.data);
-          } else {
-            setEarningsData(null);
-            if (!json.success && json.error) setError(json.error);
-          }
-        },
-      )
-      .catch((err) => {
-        setEarningsData(null);
-        setError(err instanceof Error ? err.message : "Failed to load");
-      })
-      .finally(() => setIsLoading(false));
-  }, [agent.id, selectedPeriod]);
+  const fetchEarnings = useCallback(
+    (getIsCancelled?: () => boolean) => {
+      setError(null);
+      setIsLoading(true);
+      fetch(`/api/agents/${agent.id}/earnings?period=${selectedPeriod}`)
+        .then((res) => res.json())
+        .then(
+          (json: { success: boolean; data?: EarningsData; error?: string }) => {
+            if (getIsCancelled?.()) return;
+            if (json.success && json.data) {
+              setEarningsData(json.data);
+            } else {
+              setEarningsData(null);
+              if (!json.success && json.error) setError(json.error);
+            }
+          },
+        )
+        .catch((err) => {
+          if (getIsCancelled?.()) return;
+          setEarningsData(null);
+          setError(err instanceof Error ? err.message : "Failed to load");
+        })
+        .finally(() => {
+          if (!getIsCancelled?.()) setIsLoading(false);
+        });
+    },
+    [agent.id, selectedPeriod],
+  );
 
   useEffect(() => {
-    queueMicrotask(() => fetchEarnings());
+    let cancelled = false;
+    const getIsCancelled = () => cancelled;
+    queueMicrotask(() => fetchEarnings(getIsCancelled));
+    return () => {
+      cancelled = true;
+    };
   }, [fetchEarnings, refreshKey]);
 
   if (isLoading && !earningsData) {

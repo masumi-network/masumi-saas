@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 
@@ -73,6 +73,7 @@ export default function AgentsList({
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(currentSearch);
 
@@ -120,9 +121,9 @@ export default function AgentsList({
   };
 
   const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (newPage > 1) params.set("page", String(newPage));
-    if (currentSearch) params.set("search", currentSearch);
+    else params.delete("page");
     const q = params.toString();
     startTransition(() => {
       router.push(q ? `/admin/agents?${q}` : "/admin/agents");

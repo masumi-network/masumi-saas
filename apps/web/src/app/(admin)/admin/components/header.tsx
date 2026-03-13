@@ -43,17 +43,6 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
               </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 min-w-8 md:hidden"
-            >
-              <PanelLeftIcon className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
     </header>
