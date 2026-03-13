@@ -93,19 +93,17 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
-    const [total, agents] = await Promise.all([
-      prisma.agent.count({ where: searchCondition }),
-      prisma.agent.findMany({
-        where: searchCondition,
-        select: agentSelect,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip: (page - 1) * limit,
-      }),
-    ]);
-
+    const total = await prisma.agent.count({ where: searchCondition });
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const currentPage = Math.min(page, totalPages);
+
+    const agents = await prisma.agent.findMany({
+      where: searchCondition,
+      select: agentSelect,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: (currentPage - 1) * limit,
+    });
 
     const data: AdminAgentRow[] = agents.map((a) => ({
       id: a.id,

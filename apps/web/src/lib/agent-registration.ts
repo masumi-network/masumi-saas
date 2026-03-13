@@ -439,13 +439,6 @@ async function registerAgentOnChainFull(
     ctx.user,
     ctx.network,
   );
-  if (continueResult.success) return continueResult;
-  if (
-    continueResult.error === "WALLET_FUNDING_PENDING" &&
-    "agentId" in continueResult
-  ) {
-    return continueResult;
-  }
   return continueResult;
 }
 

@@ -263,6 +263,7 @@ export function RegisterAgentDialog({
 
   const [isLoading, setIsLoading] = useState(false);
   const closedDuringSubmitRef = useRef(false);
+  const closedViaConfirmRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
@@ -858,9 +859,14 @@ export function RegisterAgentDialog({
         open={showCloseConfirm}
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
-          if (!open) closedDuringSubmitRef.current = false;
+          if (!open) {
+            if (!closedViaConfirmRef.current)
+              closedDuringSubmitRef.current = false;
+            closedViaConfirmRef.current = false;
+          }
         }}
         onConfirm={() => {
+          closedViaConfirmRef.current = true;
           performClose();
           setShowCloseConfirm(false);
         }}
