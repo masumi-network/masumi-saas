@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import {
   buildAgentPricing,
-  registerAgentOnChain,
   type RegisterAgentParams,
+  startAgentRegistration,
 } from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
       otherUrl: otherUrl?.trim() || null,
     };
 
-    const result = await registerAgentOnChain(
+    const result = await startAgentRegistration(
       {
         user: {
           id: user.id,
@@ -244,23 +244,13 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.success) {
-      return NextResponse.json({
-        success: true,
-        data: result.data,
-      });
-    }
-    if (
-      result.error === "WALLET_FUNDING_PENDING" &&
-      "agentId" in result &&
-      typeof result.agentId === "string"
-    ) {
       return NextResponse.json(
         {
           success: true,
-          status: "wallet_funding_pending",
+          status: "registration_started",
           agentId: result.agentId,
           message:
-            "Wallet is being funded. Poll POST /api/agents/:id/complete-registration until status is registered.",
+            "Registration started. Completion runs in the background. Poll GET /api/agents or use complete-registration to sync.",
         },
         { status: 202 },
       );

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { ActivityFeedItem } from "@/lib/types/activity";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const EMPTY_CELL = "\u2014";
 
@@ -219,20 +219,23 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
                   </TableCell>
                 </TableRow>
               ))
-            : filteredItems.map((item) => {
+            : filteredItems.map((item, index) => {
                 const agentId = item.agentId ?? null;
                 const handleRowClick = agentId
                   ? () => router.push(`/ai-agents/${agentId}`)
                   : undefined;
+                const rowAnimation = {
+                  animationDelay: `${Math.min(index, 9) * 40}ms`,
+                };
                 if (item.kind === "lifecycle") {
                   return (
                     <TableRow
                       key={item.id}
-                      className={
-                        agentId
-                          ? "cursor-pointer hover:bg-muted/50"
-                          : "hover:bg-muted/50"
-                      }
+                      className={cn(
+                        agentId && "cursor-pointer",
+                        "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
+                      )}
+                      style={rowAnimation}
                       onClick={handleRowClick}
                     >
                       <TableCell className="text-sm">
@@ -259,11 +262,11 @@ const ActivityFeedTableComponent = function ActivityFeedTableInner(
                 return (
                   <TableRow
                     key={item.id}
-                    className={
-                      agentId
-                        ? "cursor-pointer hover:bg-muted/50"
-                        : "hover:bg-muted/50"
-                    }
+                    className={cn(
+                      agentId && "cursor-pointer",
+                      "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
+                    )}
+                    style={rowAnimation}
                     onClick={handleRowClick}
                   >
                     <TableCell>

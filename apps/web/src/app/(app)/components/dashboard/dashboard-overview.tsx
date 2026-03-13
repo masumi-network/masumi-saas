@@ -158,8 +158,14 @@ export default async function DashboardOverview({
               </div>
             ) : (
               <ul className="min-w-0 space-y-3">
-                {agents.map((agent) => (
-                  <li key={agent.id} className="min-w-0">
+                {agents.map((agent, index) => (
+                  <li
+                    key={agent.id}
+                    className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
+                    style={{
+                      animationDelay: `${Math.min(index, 9) * 40}ms`,
+                    }}
+                  >
                     <Link
                       href={`/ai-agents/${agent.id}?from=dashboard`}
                       aria-label={t("agentLinkAria", { name: agent.name })}
@@ -217,8 +223,14 @@ export default async function DashboardOverview({
               </div>
             ) : (
               <ul className="space-y-3">
-                {apiKeys.map((key) => (
-                  <li key={key.id}>
+                {apiKeys.map((key, index) => (
+                  <li
+                    key={key.id}
+                    className="animate-table-row-in transition-[opacity] duration-150"
+                    style={{
+                      animationDelay: `${Math.min(index, 9) * 40}ms`,
+                    }}
+                  >
                     <div className="flex items-center justify-between rounded-md border p-3">
                       <p className="font-medium">
                         {key.name || key.start || key.prefix || "API Key"}

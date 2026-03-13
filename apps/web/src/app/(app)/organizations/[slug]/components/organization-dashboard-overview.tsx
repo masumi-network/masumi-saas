@@ -6,12 +6,14 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Plus,
   Users,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,7 @@ import {
   getVerificationStatusKey,
 } from "@/lib/utils/agent-utils";
 
+import { RegisterAgentDialog } from "../../../ai-agents/components/register-agent-dialog";
 import { InviteMemberDialog } from "./invite-member-dialog";
 import { MembersSection } from "./members-section";
 
@@ -93,6 +96,7 @@ export function OrganizationDashboardOverview({
   const breadcrumbLabel =
     backHref === "/" ? tSidebar("dashboard") : tSidebar("organizations");
   const router = useRouter();
+  const [isRegisterAgentOpen, setIsRegisterAgentOpen] = useState(false);
   const isActive = activeOrganization?.id === organization.id;
   const slugDisplay = `@${organization.slug}`;
   const isOwnerOrAdmin =
@@ -320,14 +324,31 @@ export function OrganizationDashboardOverview({
                 ))}
               </ul>
             )}
-            {agentCount > 5 && (
-              <Button variant="ghost" size="sm" asChild className="w-full">
-                <Link href="/ai-agents">
-                  {t("linkedAgentsSection.viewAll")}
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                className="flex items-center gap-2"
+                onClick={() => setIsRegisterAgentOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                {t("linkedAgentsSection.registerAgent")}
               </Button>
-            )}
+              {agentCount > 5 && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/ai-agents">
+                    {t("linkedAgentsSection.viewAll")}
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+            <RegisterAgentDialog
+              open={isRegisterAgentOpen}
+              onClose={() => setIsRegisterAgentOpen(false)}
+              onSuccess={() => {
+                setIsRegisterAgentOpen(false);
+                router.refresh();
+              }}
+            />
           </CardContent>
         </Card>
 

@@ -36,8 +36,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
 import { agentApiClient } from "@/lib/api/agent.client";
+import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
 
 import { AgentIconPicker } from "./agent-icon-picker";
@@ -259,11 +259,9 @@ export function RegisterAgentDialog({
   onSuccess,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
+  const { addPendingAgent } = useRegistrationCompletion();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingAgentId, setPendingAgentId] = useState<string | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollResolvedRef = useRef(false);
   const closedDuringSubmitRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
@@ -359,59 +357,6 @@ export function RegisterAgentDialog({
     },
   });
 
-  useEffect(() => {
-    if (!pendingAgentId) return;
-    pollResolvedRef.current = false;
-    let cancelled = false;
-    const POLL_MS = 5_000;
-    const runPoll = async () => {
-      const res = await completeRegistrationIfReadyAction(pendingAgentId);
-      if (cancelled || pollResolvedRef.current) return;
-      if (res.status === "registered") {
-        if (cancelled || pollResolvedRef.current) return;
-        pollResolvedRef.current = true;
-        if (pollIntervalRef.current != null) {
-          clearTimeout(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        setPendingAgentId(null);
-        toast.success(t("success"));
-        form.reset();
-        setTags([]);
-        setTagInput("");
-        setShowCloseConfirm(false);
-        onSuccessRef.current();
-        onCloseRef.current();
-        setIsLoading(false);
-        return;
-      }
-      if (res.status === "error") {
-        if (cancelled) return;
-        pollResolvedRef.current = true;
-        if (pollIntervalRef.current != null) {
-          clearTimeout(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        setPendingAgentId(null);
-        toast.error(res.error || t("error"));
-        setIsLoading(false);
-        return;
-      }
-      if (!cancelled && !pollResolvedRef.current) {
-        pollIntervalRef.current = setTimeout(runPoll, POLL_MS);
-      }
-    };
-    runPoll();
-    return () => {
-      cancelled = true;
-      pollResolvedRef.current = true;
-      if (pollIntervalRef.current != null) {
-        clearTimeout(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [pendingAgentId, form, t]);
-
   const isFree =
     useWatch({ control: form.control, name: "isFree", defaultValue: false }) ===
     true;
@@ -482,17 +427,15 @@ export function RegisterAgentDialog({
       if (submitId !== submitIdRef.current) return;
 
       if (closedDuringSubmitRef.current) {
-        if (res.ok && res.status === 200 && json.success && json.data) {
-          onSuccessRef.current();
-        } else if (res.status === 202 && json.agentId) {
+        if (res.status === 202 && json.agentId) {
           void agentApiClient.deleteAgent(json.agentId);
         }
         return;
       }
 
-      if (res.ok && res.status === 200 && json.success && json.data) {
-        toast.success(t("success"));
-        setIsLoading(false);
+      if (res.status === 202 && json.agentId) {
+        addPendingAgent(json.agentId);
+        toast.info(t("registrationStarted"));
         form.reset({
           name: "",
           description: "",
@@ -511,11 +454,9 @@ export function RegisterAgentDialog({
         });
         setTags([]);
         setTagInput("");
-        onSuccess();
-        onClose();
-      } else if (res.status === 202 && json.agentId) {
-        setPendingAgentId(json.agentId);
-        toast.info(t("fundingWallet"));
+        setIsLoading(false);
+        onSuccessRef.current();
+        onCloseRef.current();
       } else {
         toast.error(json.error || t("error"));
         setIsLoading(false);
@@ -530,11 +471,6 @@ export function RegisterAgentDialog({
 
   const performClose = () => {
     if (isLoading) closedDuringSubmitRef.current = true;
-    if (pollIntervalRef.current != null) {
-      clearTimeout(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-    setPendingAgentId(null);
     setIsLoading(false);
     form.reset({
       name: "",
@@ -920,16 +856,8 @@ export function RegisterAgentDialog({
       <ConfirmDialog
         open={showCloseConfirm}
         onOpenChange={setShowCloseConfirm}
-        onConfirm={async () => {
-          // Set ref immediately so any in-flight registration request that resolves later
-          // sees "user closed during submit" and does orphan cleanup instead of onSuccess/onClose.
+        onConfirm={() => {
           if (isLoading) closedDuringSubmitRef.current = true;
-          if (pendingAgentId) {
-            const result = await agentApiClient.deleteAgent(pendingAgentId);
-            if (!result.success) {
-              toast.error(result.error || t("error"));
-            }
-          }
           performClose();
           setShowCloseConfirm(false);
         }}

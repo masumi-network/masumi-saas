@@ -212,10 +212,27 @@ export async function deregisterAgentAction(agentId: string) {
     return { success: true as const };
   } catch (error) {
     console.error("Failed to deregister agent:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to deregister agent";
+    // Payment node 4xx/5xx are thrown as "status: message" – surface something user-friendly
+    if (/^\d{3}:/.test(message)) {
+      const status = message.slice(0, 3);
+      if (status === "404") {
+        return {
+          success: false as const,
+          error:
+            "Registration not found on the network. It may already be deregistered.",
+        };
+      }
+      return {
+        success: false as const,
+        error:
+          "The registration service is temporarily unavailable. Please try again later.",
+      };
+    }
     return {
       success: false as const,
-      error:
-        error instanceof Error ? error.message : "Failed to deregister agent",
+      error: message || "Failed to deregister agent",
     };
   }
 }

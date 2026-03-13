@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Users } from "lucide-react";
+import { Bot, LayoutDashboard, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -38,6 +38,12 @@ export default function AdminMenuItems() {
       href: "/admin/users",
       label: t("users"),
       Icon: Users,
+    },
+    {
+      key: "agents",
+      href: "/admin/agents",
+      label: t("agents"),
+      Icon: Bot,
     },
   ];
 

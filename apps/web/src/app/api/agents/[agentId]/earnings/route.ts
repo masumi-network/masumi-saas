@@ -56,6 +56,21 @@ export async function GET(
       );
     }
 
+    // Pending agents not on-chain yet have no earnings data
+    if (!agent.agentIdentifier) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          totalTransactions: 0,
+          totalIncome: { units: [], blockchainFees: 0 },
+          totalRefunded: { units: [], blockchainFees: 0 },
+          totalPending: { units: [], blockchainFees: 0 },
+          periodStart: null,
+          periodEnd: null,
+        },
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const queryResult = agentEarningsQuerySchema.safeParse({
       period: searchParams.get("period") ?? undefined,
@@ -97,17 +112,38 @@ export async function GET(
       timeZone: "Etc/UTC",
     });
 
+    // Map payment node PascalCase/Units to frontend camelCase/units
     return NextResponse.json({
       success: true,
       data: {
         totalTransactions: income.totalTransactions,
-        totalIncome: income.totalIncome,
-        totalRefunded: income.totalRefunded,
-        totalPending: income.totalPending,
+        totalIncome: {
+          units: income.TotalIncome.Units,
+          blockchainFees: income.TotalIncome.blockchainFees,
+        },
+        totalRefunded: {
+          units: income.TotalRefunded.Units,
+          blockchainFees: income.TotalRefunded.blockchainFees,
+        },
+        totalPending: {
+          units: income.TotalPending.Units,
+          blockchainFees: income.TotalPending.blockchainFees,
+        },
         periodStart: income.periodStart,
         periodEnd: income.periodEnd,
-        dailyIncome: income.dailyIncome,
-        monthlyIncome: income.monthlyIncome,
+        dailyIncome: income.DailyIncome.map((d) => ({
+          day: d.day,
+          month: d.month,
+          year: d.year,
+          units: d.Units,
+          blockchainFees: d.blockchainFees,
+        })),
+        monthlyIncome: income.MonthlyIncome.map((m) => ({
+          month: m.month,
+          year: m.year,
+          units: m.Units,
+          blockchainFees: m.blockchainFees,
+        })),
       },
     });
   } catch (error) {

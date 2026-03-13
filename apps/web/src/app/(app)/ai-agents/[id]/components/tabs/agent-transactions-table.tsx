@@ -150,8 +150,14 @@ export function AgentTransactionsTable({
               </TableCell>
             </TableRow>
           ) : (
-            filteredTransactions.map((tx) => (
-              <TableRow key={tx.id} className="hover:bg-muted/50">
+            filteredTransactions.map((tx, index) => (
+              <TableRow
+                key={tx.id}
+                className="hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150"
+                style={{
+                  animationDelay: `${Math.min(index, 9) * 40}ms`,
+                }}
+              >
                 <TableCell className="capitalize">{tx.type}</TableCell>
                 <TableCell className="font-mono text-sm text-muted-foreground">
                   {tx.txHash

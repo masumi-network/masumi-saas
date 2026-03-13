@@ -131,7 +131,8 @@
     "Sidebar": {
       "MenuItems": {
         "dashboard": "Dashboard",
-        "users": "Users"
+        "users": "Users",
+        "agents": "Agents"
       }
     },
     "Dashboard": {
@@ -207,6 +208,44 @@
       "errorLoadingUsers": "Failed to load users. Please try refreshing the page.",
       "errorDescription": "Something went wrong while loading the user data. This may be a temporary issue.",
       "tryAgain": "Try again"
+    },
+    "Agents": {
+      "title": "Agents",
+      "description": "View all agents on the platform.",
+      "name": "Agent",
+      "owner": "Owner",
+      "agentIdentifier": "Agent Identifier",
+      "status": "Status",
+      "verificationStatus": "Verification",
+      "createdAt": "Created",
+      "searchPlaceholder": "Search by agent name or owner email...",
+      "noAgents": "No agents found.",
+      "noSearchResults": "No agents match your search",
+      "noSearchResultsDescription": "Try adjusting your search",
+      "clearSearch": "Clear search",
+      "showingRange": "Showing {start}–{end} of {total} agents",
+      "previous": "Previous",
+      "next": "Next",
+      "paginationPrevious": "Go to previous page",
+      "paginationNext": "Go to next page",
+      "page": "Page",
+      "perPage": "per page",
+      "loading": "Loading...",
+      "errorLoadingAgents": "Failed to load agents. Please try refreshing the page.",
+      "registrationConfirmed": "Registered",
+      "registrationRequested": "Pending",
+      "registrationInitiated": "In progress",
+      "registrationFailed": "Failed",
+      "deregistrationRequested": "Deregistering",
+      "deregistrationInitiated": "Deregistering",
+      "deregistrationConfirmed": "Deregistered",
+      "deregistrationFailed": "Deregister failed",
+      "verificationPending": "Pending",
+      "verificationVerified": "Verified",
+      "verificationRevoked": "Revoked",
+      "verificationExpired": "Expired",
+      "copyIdentifier": "Copy agent identifier",
+      "copied": "Copied to clipboard"
     }
   },
   "App": {
@@ -535,7 +574,8 @@
           "title": "Linked agents",
           "description": "Agents registered under this organization",
           "empty": "No agents linked to this organization yet",
-          "viewAll": "View all"
+          "viewAll": "View all",
+          "registerAgent": "Register Agent"
         },
         "apiKeysSection": {
           "title": "API keys",
@@ -836,7 +876,11 @@
         "fundingWallet": "Funding wallet — we'll complete registration in a moment.",
         "closeConfirmTitle": "Registration in progress",
         "closeConfirmDescription": "Closing now might leave the agent stuck in a pending state. Close anyway?",
-        "closeAnyway": "Close anyway"
+        "closeAnyway": "Close anyway",
+        "progressStep1": "Creating agent and wallets",
+        "progressStep2": "Funding wallet",
+        "progressStep3": "Registering on network",
+        "registrationStarted": "Registration started. We'll notify you when it's done."
       },
       "Edit": {
         "title": "Edit Agent",
@@ -924,7 +968,6 @@
           "periodAll": "All Time",
           "loading": "Loading earnings data...",
           "tryAgain": "Try again",
-          "noEarningsData": "No earnings data available in the selected period. Earnings will appear here once the agent receives payments.",
           "totalIncome": "Total income",
           "totalRefunded": "Total refunded",
           "transactions": "transactions"

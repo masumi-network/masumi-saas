@@ -133,7 +133,7 @@ export function AgentsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {agents.map((agent) => {
+            {agents.map((agent, index) => {
               const isConfirmed =
                 agent.registrationState === "RegistrationConfirmed";
               const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
@@ -150,7 +150,10 @@ export function AgentsTable({
               return (
                 <TableRow
                   key={agent.id}
-                  className="cursor-pointer hover:bg-muted/50 group"
+                  className="cursor-pointer hover:bg-muted/50 group animate-table-row-in transition-[background-color,opacity] duration-150"
+                  style={{
+                    animationDelay: `${Math.min(index, 9) * 40}ms`,
+                  }}
                   onClick={() => onAgentClick(agent)}
                 >
                   <TableCell className="max-w-52">

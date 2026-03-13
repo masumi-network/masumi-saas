@@ -194,6 +194,12 @@ class AgentApiClient {
     });
   }
 
+  async deregisterAgent(agentId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/${agentId}/deregister`, {
+      method: "POST",
+    });
+  }
+
   async getCounts(network?: "Mainnet" | "Preprod"): Promise<
     | {
         success: true;

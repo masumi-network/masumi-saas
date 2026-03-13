@@ -58,6 +58,11 @@ export type RegisterAgentResult =
   | { success: false; error: string }
   | { success: false; error: "WALLET_FUNDING_PENDING"; agentId: string };
 
+/** Result of startAgentRegistration: fast path that returns 202 with agentId for background completion. */
+export type StartAgentRegistrationResult =
+  | { success: true; agentId: string }
+  | { success: false; error: string };
+
 export type CompleteRegistrationResult =
   | { status: "registered"; data: Agent }
   | { status: "pending" }
@@ -83,11 +88,38 @@ type RegistrationPayloadStored = {
 /**
  * Full on-chain registration: create agent, wallets, ref, wait for funding, registerAgent, update.
  * Caller must pass authenticated user and network (e.g. from API route or server action).
+ * Can return WALLET_FUNDING_PENDING + agentId if UTXO wait times out.
  */
 export async function registerAgentOnChain(
   ctx: RegisterAgentContext,
   params: RegisterAgentParams,
 ): Promise<RegisterAgentResult> {
+  return registerAgentOnChainFull(ctx, params);
+}
+
+/**
+ * Fast path: create agent, wallets, ref, fund via dispenser; return agentId immediately.
+ * Completion (UTXO wait + registerAgent) is done by POST /api/agents/:id/complete-registration (client or background).
+ */
+export async function startAgentRegistration(
+  ctx: RegisterAgentContext,
+  params: RegisterAgentParams,
+): Promise<StartAgentRegistrationResult> {
+  const result = await registerAgentOnChainUntilDispenser(ctx, params);
+  if (!result.success) return result;
+  return { success: true, agentId: result.agentId };
+}
+
+/**
+ * Internal: does validation, wallets, dispenser, agent + ref creation; returns agentId for either
+ * full flow (then continues) or fast path (caller returns 202).
+ */
+async function registerAgentOnChainUntilDispenser(
+  ctx: RegisterAgentContext,
+  params: RegisterAgentParams,
+): Promise<
+  { success: true; agentId: string } | { success: false; error: string }
+> {
   const { user, activeOrganizationId, network } = ctx;
 
   if (params.tags.length === 0) {
@@ -251,13 +283,47 @@ export async function registerAgentOnChain(
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
+  return { success: true, agentId: agent.id };
+}
+
+/** Continues from registerAgentOnChainUntilDispenser: UTXO poll then registerAgent. Used by registerAgentOnChain (legacy) and completeOnChainRegistration. */
+async function continueRegistrationAfterDispenser(
+  agentId: string,
+  user: { id: string; name: string | null; email: string | null },
+  network: PaymentNodeNetwork,
+): Promise<RegisterAgentResult> {
+  const agent = await prisma.agent.findUniqueOrThrow({
+    where: { id: agentId },
+    include: { agentReference: true },
+  });
+  if (!agent.agentReference) {
+    return { success: false, error: "Agent or reference not found." };
+  }
+  const ref = agent.agentReference;
+  const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
+  const address = meta.sellingWalletAddress;
+  const payload = meta.registrationPayload;
+  if (!address || !payload) {
+    return { success: false, error: "Missing registration data." };
+  }
+  const userClient = await getPaymentNodeClientForUser(user.id);
+  if (!userClient) {
+    return {
+      success: false,
+      error: "Something went wrong. Please try again in a moment.",
+    };
+  }
+  const sellingWalletVkey = ref.sellingWalletVkey;
+  if (!sellingWalletVkey) {
+    return { success: false, error: "Missing wallet key." };
+  }
+
   const pollStart = Date.now();
   let walletFunded = false;
-
   while (Date.now() - pollStart < POLL_TIMEOUT_MS) {
     try {
       const { Utxos } = await userClient.getUtxos({
-        address: sellingWallet.walletAddress,
+        address,
         network,
       });
       if (Utxos.length > 0) {
@@ -268,9 +334,6 @@ export async function registerAgentOnChain(
       const msg =
         utxoError instanceof Error ? utxoError.message : String(utxoError);
       if (!msg.startsWith("404")) {
-        await prisma.agent
-          .delete({ where: { id: agent.id } })
-          .catch(() => null);
         throw utxoError;
       }
     }
@@ -287,39 +350,38 @@ export async function registerAgentOnChain(
 
   const registerPayload: RegisterAgentInput = {
     network,
-    sellingWalletVkey: sellingWallet.walletVkey,
-    name: params.name,
-    apiBaseUrl: params.apiUrl,
-    description: params.description?.trim() ?? "",
-    Tags: params.tags,
-    ExampleOutputs: params.exampleOutputs,
+    sellingWalletVkey,
+    name: agent.name,
+    apiBaseUrl: agent.apiUrl,
+    description: agent.description?.trim() ?? "",
+    Tags: agent.tags,
+    ExampleOutputs: payload.exampleOutputs,
     Capability: {
-      name: params.capabilityName,
-      version: params.capabilityVersion,
+      name: payload.capabilityName,
+      version: payload.capabilityVersion,
     },
     Author: {
-      name: user.name?.trim() || "Unknown",
-      contactEmail: user.email ?? undefined,
-      contactOther: undefined,
-      organization: undefined,
+      name: payload.authorName,
+      contactEmail: payload.authorEmail,
+      contactOther: payload.contactOther,
+      organization: payload.organization,
     },
-    ...(params.termsOfUseUrl || params.privacyPolicyUrl || params.otherUrl
+    ...(payload.termsOfUseUrl || payload.privacyPolicyUrl || payload.otherUrl
       ? {
           Legal: {
-            terms: params.termsOfUseUrl ?? undefined,
-            privacyPolicy: params.privacyPolicyUrl ?? undefined,
-            other: params.otherUrl ?? undefined,
+            terms: payload.termsOfUseUrl,
+            privacyPolicy: payload.privacyPolicyUrl,
+            other: payload.otherUrl,
           },
         }
       : {}),
-    AgentPricing: params.agentPricing,
+    AgentPricing: payload.agentPricing,
   };
 
   let registryEntry;
   try {
     registryEntry = await userClient.registerAgent(registerPayload);
   } catch (paymentNodeError) {
-    await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
     throw paymentNodeError;
   }
 
@@ -363,6 +425,28 @@ export async function registerAgentOnChain(
   });
 
   return { success: true, data: updatedAgent };
+}
+
+// Full flow: start then continue in same request (can return WALLET_FUNDING_PENDING).
+async function registerAgentOnChainFull(
+  ctx: RegisterAgentContext,
+  params: RegisterAgentParams,
+): Promise<RegisterAgentResult> {
+  const startResult = await registerAgentOnChainUntilDispenser(ctx, params);
+  if (!startResult.success) return startResult;
+  const continueResult = await continueRegistrationAfterDispenser(
+    startResult.agentId,
+    ctx.user,
+    ctx.network,
+  );
+  if (continueResult.success) return continueResult;
+  if (
+    continueResult.error === "WALLET_FUNDING_PENDING" &&
+    "agentId" in continueResult
+  ) {
+    return continueResult;
+  }
+  return continueResult;
 }
 
 /**
