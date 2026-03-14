@@ -687,7 +687,11 @@
     "Notifications": {
       "title": "Notifications",
       "empty": "No notifications yet",
-      "markAllRead": "Mark all as read"
+      "markAllRead": "Mark all as read",
+      "clearAll": "Clear all",
+      "dismiss": "Dismiss",
+      "agentRegistrationComplete": "Agent registered successfully",
+      "viewAgent": "View agent"
     },
     "UserProfile": {
       "unavailable": "User unavailable"

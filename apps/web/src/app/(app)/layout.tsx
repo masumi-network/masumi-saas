@@ -7,6 +7,7 @@ import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAuthContext } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
+import { NotificationsProvider } from "@/lib/context/notifications-context";
 import { OrganizationProvider } from "@/lib/context/organization-context";
 import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
 import { RegistrationCompletionProvider } from "@/lib/context/registration-completion-context";
@@ -45,34 +46,36 @@ export default async function AppLayout({
     <NextIntlClientProvider messages={messages}>
       <OrganizationProvider>
         <PaymentNetworkProvider initialNetwork={initialPaymentNetwork}>
-          <RegistrationCompletionProvider>
-            <SidebarProvider
-              defaultOpen={defaultOpen}
-              className="flex max-w-svw overflow-clip"
-            >
-              <Sidebar session={authContext.session} />
-              <div className="flex min-w-0 flex-1 flex-col min-h-0">
-                <Header />
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-                    {authConfig.emailAndPassword.requireEmailVerification &&
-                      authContext.session.user.emailVerified !== true &&
-                      authContext.session.user.email && (
-                        <div className="mb-4">
-                          <VerifyEmailBanner
-                            email={authContext.session.user.email}
-                          />
-                        </div>
-                      )}
-                    {children}
-                  </main>
-                  <div className="max-w-container mx-auto w-full border-t border-border mt-4">
-                    <FooterSections className="p-4" />
+          <NotificationsProvider>
+            <RegistrationCompletionProvider>
+              <SidebarProvider
+                defaultOpen={defaultOpen}
+                className="flex max-w-svw overflow-clip"
+              >
+                <Sidebar session={authContext.session} />
+                <div className="flex min-w-0 flex-1 flex-col min-h-0">
+                  <Header />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+                      {authConfig.emailAndPassword.requireEmailVerification &&
+                        authContext.session.user.emailVerified !== true &&
+                        authContext.session.user.email && (
+                          <div className="mb-4">
+                            <VerifyEmailBanner
+                              email={authContext.session.user.email}
+                            />
+                          </div>
+                        )}
+                      {children}
+                    </main>
+                    <div className="max-w-container mx-auto w-full border-t border-border mt-4">
+                      <FooterSections className="p-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SidebarProvider>
-          </RegistrationCompletionProvider>
+              </SidebarProvider>
+            </RegistrationCompletionProvider>
+          </NotificationsProvider>
         </PaymentNetworkProvider>
       </OrganizationProvider>
     </NextIntlClientProvider>

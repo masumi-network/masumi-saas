@@ -5,12 +5,13 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
-  useState,
 } from "react";
 import { toast } from "sonner";
 
 import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
+import { useNotifications } from "@/lib/context/notifications-context";
 
 const POLL_INTERVAL_MS = 5_000;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
@@ -37,16 +38,17 @@ export function RegistrationCompletionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const pendingRef = useRef<Set<string>>(new Set());
+  const { addNotification } = useNotifications();
+  const addNotificationRef = useRef(addNotification);
+  useEffect(() => {
+    addNotificationRef.current = addNotification;
+  }, [addNotification]);
 
   const addPendingAgent = useCallback((agentId: string) => {
-    setPendingIds((prev) => {
-      const next = new Set(prev);
-      next.add(agentId);
-      pendingRef.current = next;
-      return next;
-    });
+    const next = new Set(pendingRef.current);
+    next.add(agentId);
+    pendingRef.current = next;
   }, []);
 
   // Single long-lived interval: reads from pendingRef so we never restart when
@@ -63,12 +65,15 @@ export function RegistrationCompletionProvider({
             const next = new Set(pendingRef.current);
             next.delete(agentId);
             pendingRef.current = next;
-            setPendingIds((prev) => {
-              const nextState = new Set(prev);
-              nextState.delete(agentId);
-              return nextState;
-            });
             toast.success("Agent registered successfully!");
+            addNotificationRef.current({
+              type: "success",
+              titleKey: "agentRegistrationComplete",
+              link: {
+                href: `/ai-agents/${agentId}`,
+                labelKey: "viewAgent",
+              },
+            });
             window.dispatchEvent(
               new CustomEvent(EVENT_AGENT_REGISTRATION_COMPLETE, {
                 detail: { agentId },
@@ -78,11 +83,6 @@ export function RegistrationCompletionProvider({
             const next = new Set(pendingRef.current);
             next.delete(agentId);
             pendingRef.current = next;
-            setPendingIds((prev) => {
-              const nextState = new Set(prev);
-              nextState.delete(agentId);
-              return nextState;
-            });
             toast.error(result.error ?? "Registration failed");
           }
         } catch {
@@ -94,9 +94,10 @@ export function RegistrationCompletionProvider({
     return () => clearInterval(intervalId);
   }, []);
 
-  const value: RegistrationCompletionContextValue = {
-    addPendingAgent,
-  };
+  const value = useMemo<RegistrationCompletionContextValue>(
+    () => ({ addPendingAgent }),
+    [addPendingAgent],
+  );
 
   return (
     <RegistrationCompletionContext.Provider value={value}>

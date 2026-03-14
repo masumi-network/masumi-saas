@@ -7,6 +7,7 @@
 import prisma, { type RegistrationState } from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import {
   createPaymentNodeClient,
   paymentNodeConfig,
@@ -462,7 +463,61 @@ export async function completeOnChainRegistration(
     const updated = await prisma.agent.findUnique({
       where: { id: agentId },
     });
-    return { status: "registered", data: updated ?? agent };
+    const current = updated ?? agent;
+    if (current.registrationState === "RegistrationConfirmed") {
+      return { status: "registered", data: current };
+    }
+    if (current.registrationState === "RegistrationFailed") {
+      return {
+        status: "error",
+        error: "Registration was rejected or failed on the network.",
+      };
+    }
+    const network = (ref.networkIdentifier ??
+      DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const userClient = await getPaymentNodeClientForUser(userId);
+    if (userClient) {
+      try {
+        const entry = await userClient.getRegistryById({
+          id: ref.externalId,
+          network,
+        });
+        if (entry) {
+          const state = entry.state as RegistrationState;
+          await prisma.agent.update({
+            where: { id: agentId },
+            data: {
+              registrationState: state,
+              ...(entry.agentIdentifier && {
+                agentIdentifier: entry.agentIdentifier,
+              }),
+            },
+          });
+          if (state === "RegistrationConfirmed") {
+            await recordAgentActivityEvent(agentId, "RegistrationConfirmed");
+            const fresh = await prisma.agent.findUniqueOrThrow({
+              where: { id: agentId },
+            });
+            await sendAgentRegistrationCompleteEmail(
+              userId,
+              agentId,
+              fresh.name,
+            );
+            return { status: "registered", data: fresh };
+          }
+          if (state === "RegistrationFailed") {
+            await recordAgentActivityEvent(agentId, "RegistrationFailed");
+            return {
+              status: "error",
+              error: "Registration was rejected or failed on the network.",
+            };
+          }
+        }
+      } catch {
+        // Non-fatal: fall through to return pending
+      }
+    }
+    return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
   const address = meta.sellingWalletAddress;
@@ -583,7 +638,22 @@ export async function completeOnChainRegistration(
   if (updatedAgent.eventType) {
     await recordAgentActivityEvent(agent.id, updatedAgent.eventType);
   }
-  return { status: "registered", data: updatedAgent.agent };
+  const state = updatedAgent.agent.registrationState;
+  if (state === "RegistrationConfirmed") {
+    await sendAgentRegistrationCompleteEmail(
+      updatedAgent.agent.userId,
+      updatedAgent.agent.id,
+      updatedAgent.agent.name,
+    );
+    return { status: "registered", data: updatedAgent.agent };
+  }
+  if (state === "RegistrationFailed") {
+    return {
+      status: "error",
+      error: "Registration was rejected or failed on the network.",
+    };
+  }
+  return { status: "pending" };
 }
 
 /** Build AgentPricing for payment node from API/form pricing shape and network. */
