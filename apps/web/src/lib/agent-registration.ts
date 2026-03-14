@@ -13,7 +13,6 @@ import {
   createPaymentNodeClient,
   paymentNodeConfig,
   type PaymentNodeNetwork,
-  type RegisterAgentInput,
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
@@ -22,8 +21,6 @@ import { USDM } from "@/lib/payment-node/tokens";
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
-const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS = 18_000;
 const REGISTER_AGENT_HTTP_TIMEOUT_MS = 25_000;
 
 export type AgentPricing =
@@ -55,11 +52,6 @@ export type RegisterAgentContext = {
   network: PaymentNodeNetwork;
 };
 
-export type RegisterAgentResult =
-  | { success: true; data: Agent }
-  | { success: false; error: string }
-  | { success: false; error: "WALLET_FUNDING_PENDING"; agentId: string };
-
 /** Result of startAgentRegistration: fast path that returns 202 with agentId for background completion. */
 export type StartAgentRegistrationResult =
   | { success: true; agentId: string }
@@ -86,18 +78,6 @@ type RegistrationPayloadStored = {
     agentPricing: AgentPricing;
   };
 };
-
-/**
- * Full on-chain registration: create agent, wallets, ref, wait for funding, registerAgent, update.
- * Caller must pass authenticated user and network (e.g. from API route or server action).
- * Can return WALLET_FUNDING_PENDING + agentId if UTXO wait times out.
- */
-export async function registerAgentOnChain(
-  ctx: RegisterAgentContext,
-  params: RegisterAgentParams,
-): Promise<RegisterAgentResult> {
-  return registerAgentOnChainFull(ctx, params);
-}
 
 /**
  * Fast path: create agent, wallets, ref, fund via dispenser; return agentId immediately.
@@ -286,162 +266,6 @@ async function registerAgentOnChainUntilDispenser(
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
   return { success: true, agentId: agent.id };
-}
-
-/** Continues from registerAgentOnChainUntilDispenser: UTXO poll then registerAgent. Used by registerAgentOnChain (legacy) and completeOnChainRegistration. */
-async function continueRegistrationAfterDispenser(
-  agentId: string,
-  user: { id: string; name: string | null; email: string | null },
-  network: PaymentNodeNetwork,
-): Promise<RegisterAgentResult> {
-  const agent = await prisma.agent.findUniqueOrThrow({
-    where: { id: agentId },
-    include: { agentReference: true },
-  });
-  if (!agent.agentReference) {
-    return { success: false, error: "Agent or reference not found." };
-  }
-  const ref = agent.agentReference;
-  const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
-  const address = meta.sellingWalletAddress;
-  const payload = meta.registrationPayload;
-  if (!address || !payload) {
-    return { success: false, error: "Missing registration data." };
-  }
-  const userClient = await getPaymentNodeClientForUser(user.id);
-  if (!userClient) {
-    return {
-      success: false,
-      error: "Something went wrong. Please try again in a moment.",
-    };
-  }
-  const sellingWalletVkey = ref.sellingWalletVkey;
-  if (!sellingWalletVkey) {
-    return { success: false, error: "Missing wallet key." };
-  }
-
-  const pollStart = Date.now();
-  let walletFunded = false;
-  while (Date.now() - pollStart < POLL_TIMEOUT_MS) {
-    try {
-      const { Utxos } = await userClient.getUtxos({
-        address,
-        network,
-      });
-      if (Utxos.length > 0) {
-        walletFunded = true;
-        break;
-      }
-    } catch (utxoError) {
-      const msg =
-        utxoError instanceof Error ? utxoError.message : String(utxoError);
-      if (!msg.startsWith("404")) {
-        throw utxoError;
-      }
-    }
-    await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-  }
-
-  if (!walletFunded) {
-    return {
-      success: false,
-      error: "WALLET_FUNDING_PENDING",
-      agentId: agent.id,
-    };
-  }
-
-  const registerPayload: RegisterAgentInput = {
-    network,
-    sellingWalletVkey,
-    name: agent.name,
-    apiBaseUrl: agent.apiUrl,
-    description: agent.description?.trim() ?? "",
-    Tags: agent.tags,
-    ExampleOutputs: payload.exampleOutputs,
-    Capability: {
-      name: payload.capabilityName,
-      version: payload.capabilityVersion,
-    },
-    Author: {
-      name: payload.authorName,
-      contactEmail: payload.authorEmail,
-      contactOther: payload.contactOther,
-      organization: payload.organization,
-    },
-    ...(payload.termsOfUseUrl || payload.privacyPolicyUrl || payload.otherUrl
-      ? {
-          Legal: {
-            terms: payload.termsOfUseUrl,
-            privacyPolicy: payload.privacyPolicyUrl,
-            other: payload.otherUrl,
-          },
-        }
-      : {}),
-    AgentPricing: payload.agentPricing,
-  };
-
-  let registryEntry;
-  try {
-    registryEntry = await userClient.registerAgent(registerPayload);
-  } catch (paymentNodeError) {
-    throw paymentNodeError;
-  }
-
-  const existingRef = await prisma.agentReference.findUnique({
-    where: { agentId: agent.id },
-    select: { metadata: true },
-  });
-  const existingMeta =
-    (existingRef?.metadata as Record<string, unknown> | null) ?? {};
-  await prisma.agentReference.update({
-    where: { agentId: agent.id },
-    data: {
-      externalId: registryEntry.id,
-      metadata: {
-        ...existingMeta,
-        ...(registryEntry.agentIdentifier && {
-          agentIdentifier: registryEntry.agentIdentifier,
-        }),
-      },
-    },
-  });
-
-  await prisma.agent.update({
-    where: { id: agent.id },
-    data: {
-      registrationState: registryEntry.state as RegistrationState,
-      ...(registryEntry.agentIdentifier && {
-        agentIdentifier: registryEntry.agentIdentifier,
-      }),
-    },
-  });
-
-  if (registryEntry.state === "RegistrationConfirmed") {
-    await recordAgentActivityEvent(agent.id, "RegistrationConfirmed");
-  } else if (registryEntry.state === "RegistrationFailed") {
-    await recordAgentActivityEvent(agent.id, "RegistrationFailed");
-  }
-
-  const updatedAgent = await prisma.agent.findUniqueOrThrow({
-    where: { id: agent.id },
-  });
-
-  return { success: true, data: updatedAgent };
-}
-
-// Full flow: start then continue in same request (can return WALLET_FUNDING_PENDING).
-async function registerAgentOnChainFull(
-  ctx: RegisterAgentContext,
-  params: RegisterAgentParams,
-): Promise<RegisterAgentResult> {
-  const startResult = await registerAgentOnChainUntilDispenser(ctx, params);
-  if (!startResult.success) return startResult;
-  const continueResult = await continueRegistrationAfterDispenser(
-    startResult.agentId,
-    ctx.user,
-    ctx.network,
-  );
-  return continueResult;
 }
 
 /**
