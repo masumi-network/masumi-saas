@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -18,13 +18,23 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-20 h-16 border-b border-border bg-background/95 backdrop-blur-md ${className || ""}`}
+      className={`sticky top-0 z-20 h-16 border-b border-border bg-background/80 backdrop-blur-md ${className || ""}`}
     >
       <div className="max-w-container mx-auto w-full h-full">
         <div className="h-full px-4 flex items-center justify-between gap-4">
-          <Link href="/admin" className="md:hidden">
-            <MasumiLogo />
-          </Link>
+          <div className="md:hidden flex items-center gap-2 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 min-w-8"
+            >
+              <PanelLeftIcon className="h-4 w-4" />
+            </Button>
+            <Link href="/admin" className="flex items-center">
+              <MasumiLogo />
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -32,17 +42,6 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
                 {t("portalTitle")}
               </span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 min-w-8 md:hidden"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>

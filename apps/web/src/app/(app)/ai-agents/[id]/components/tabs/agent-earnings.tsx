@@ -1,11 +1,11 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
+import { ArrowDownLeft, RotateCcw, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Select,
   SelectContent,
@@ -13,9 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { type Agent } from "@/lib/api/agent.client";
-import { formatUnits } from "@/lib/payment-node/format";
+import { formatEarningsAsUsd } from "@/lib/payment-node/format";
+
+import { TabSkeleton } from "../agent-tab-skeletons";
 
 type TimePeriod = "1d" | "7d" | "30d" | "all";
 
@@ -49,17 +50,15 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
+  const fetchEarnings = useCallback(
+    (getIsCancelled?: () => boolean) => {
       setError(null);
       setIsLoading(true);
       fetch(`/api/agents/${agent.id}/earnings?period=${selectedPeriod}`)
         .then((res) => res.json())
         .then(
           (json: { success: boolean; data?: EarningsData; error?: string }) => {
-            if (cancelled) return;
+            if (getIsCancelled?.()) return;
             if (json.success && json.data) {
               setEarningsData(json.data);
             } else {
@@ -69,31 +68,28 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
           },
         )
         .catch((err) => {
-          if (!cancelled) {
-            setEarningsData(null);
-            setError(err instanceof Error ? err.message : "Failed to load");
-          }
+          if (getIsCancelled?.()) return;
+          setEarningsData(null);
+          setError(err instanceof Error ? err.message : "Failed to load");
         })
         .finally(() => {
-          if (!cancelled) setIsLoading(false);
+          if (!getIsCancelled?.()) setIsLoading(false);
         });
-    });
+    },
+    [agent.id, selectedPeriod],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const getIsCancelled = () => cancelled;
+    queueMicrotask(() => fetchEarnings(getIsCancelled));
     return () => {
       cancelled = true;
     };
-  }, [agent.id, selectedPeriod, refreshKey]);
+  }, [fetchEarnings, refreshKey]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size={32} />
-          <span className="text-sm font-medium text-muted-foreground">
-            {t("loading")}
-          </span>
-        </div>
-      </div>
-    );
+  if (isLoading && !earningsData) {
+    return <TabSkeleton tab="earnings" />;
   }
 
   if (error) {
@@ -115,6 +111,13 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     );
   }
 
+  const incomeFormatted = formatEarningsAsUsd(
+    earningsData?.totalIncome?.units ?? [],
+  );
+  const refundedFormatted = formatEarningsAsUsd(
+    earningsData?.totalRefunded?.units ?? [],
+  );
+  const txCount = earningsData?.totalTransactions ?? 0;
   return (
     <div className="mx-auto w-full max-w-3xl">
       <Card className="overflow-hidden gap-0 py-0">
@@ -126,6 +129,12 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
             {t("title")}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <RefreshButton
+              onRefresh={() => setRefreshKey((k) => k + 1)}
+              isRefreshing={isLoading}
+              size="sm"
+              variant="icon-only"
+            />
             <Select
               value={selectedPeriod}
               onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}
@@ -142,40 +151,53 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          {earningsData ? (
-            <>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
+              <Card className="h-full gap-2 rounded-xl border border-border/80 py-4 shadow-sm">
+                <CardHeader className="space-y-0 px-4 pb-0 pt-0">
+                  <CardTitle className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <ArrowDownLeft className="h-3.5 w-3.5 shrink-0" />
                     {t("totalIncome")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-1">
+                  <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
+                    {incomeFormatted || "—"}
                   </span>
-                  <span className="text-lg font-semibold">
-                    {formatUnits(earningsData.totalIncome?.units ?? [])}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("totalRefunded")}
-                  </span>
-                  <span className="text-lg font-semibold">
-                    {formatUnits(earningsData.totalRefunded?.units ?? [])}
-                  </span>
-                </div>
-              </div>
-              <div className="flex justify-center pt-4">
-                <Badge variant="secondary" className="font-medium">
-                  {earningsData.totalTransactions ?? 0} {t("transactions")}
-                </Badge>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
-              <p className="text-sm text-muted-foreground">
-                {t("noEarningsData")}
-              </p>
+                </CardContent>
+              </Card>
             </div>
-          )}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
+              <Card className="h-full gap-2 rounded-xl border border-border/80 py-4 shadow-sm">
+                <CardHeader className="space-y-0 px-4 pb-0 pt-0">
+                  <CardTitle className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                    {t("totalRefunded")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-1">
+                  <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
+                    {refundedFormatted || "—"}
+                  </span>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-150">
+              <Card className="h-full gap-2 rounded-xl border border-border/80 py-4 shadow-sm">
+                <CardHeader className="space-y-0 px-4 pb-0 pt-0">
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    {t("transactions")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-1">
+                  <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
+                    {txCount}
+                  </span>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

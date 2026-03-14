@@ -8,13 +8,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,15 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -52,6 +37,12 @@ import {
 import { Tabs } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth/auth.client";
 
+import { AdminPaginationBar } from "../../components/admin-pagination-bar";
+import {
+  getPaginationRange,
+  type PaginationInfo,
+} from "../../components/list-utils";
+
 interface User {
   id: string;
   name: string;
@@ -62,13 +53,6 @@ interface User {
   banned: boolean;
   banReason: string | null;
   createdAt: string;
-}
-
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  total: number;
-  limit: number;
 }
 
 interface UsersListProps {
@@ -293,58 +277,7 @@ export default function UsersList({
     { name: t("filterUnverified"), key: "unverified" },
   ];
 
-  const startIndex =
-    pagination.total > 0
-      ? (pagination.currentPage - 1) * pagination.limit + 1
-      : 0;
-  const endIndex = Math.min(
-    pagination.currentPage * pagination.limit,
-    pagination.total,
-  );
-
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisiblePages = 5;
-
-    if (pagination.totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= pagination.totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (pagination.currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push("ellipsis");
-        pages.push(pagination.totalPages);
-      } else if (pagination.currentPage >= pagination.totalPages - 2) {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (
-          let i = pagination.totalPages - 3;
-          i <= pagination.totalPages;
-          i++
-        ) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (
-          let i = pagination.currentPage - 1;
-          i <= pagination.currentPage + 1;
-          i++
-        ) {
-          pages.push(i);
-        }
-        pages.push("ellipsis");
-        pages.push(pagination.totalPages);
-      }
-    }
-
-    return pages;
-  };
+  const { startIndex, endIndex } = getPaginationRange(pagination);
 
   const isEmpty =
     users.length === 0 && !currentSearch && currentFilter === "all";
@@ -355,10 +288,6 @@ export default function UsersList({
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle>{t("title")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
-          </div>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -532,62 +461,17 @@ export default function UsersList({
                 })}
               </div>
 
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      text={t("previous")}
-                      ariaLabel={t("paginationPrevious")}
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage - 1)
-                      }
-                      aria-disabled={pagination.currentPage === 1}
-                      className={
-                        pagination.currentPage === 1
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
-
-                  {getPageNumbers().map((page, idx) => (
-                    <PaginationItem
-                      key={
-                        page === "ellipsis" ? `ellipsis-${idx}` : `page-${page}`
-                      }
-                    >
-                      {page === "ellipsis" ? (
-                        <PaginationEllipsis srText={t("paginationMore")} />
-                      ) : (
-                        <PaginationLink
-                          onClick={() => handlePageChange(page as number)}
-                          isActive={page === pagination.currentPage}
-                        >
-                          {page}
-                        </PaginationLink>
-                      )}
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      text={t("next")}
-                      ariaLabel={t("paginationNext")}
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage + 1)
-                      }
-                      aria-disabled={
-                        pagination.currentPage === pagination.totalPages
-                      }
-                      className={
-                        pagination.currentPage === pagination.totalPages
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <AdminPaginationBar
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                labels={{
+                  previous: t("previous"),
+                  next: t("next"),
+                  previousAriaLabel: t("paginationPrevious"),
+                  nextAriaLabel: t("paginationNext"),
+                  ellipsisSrText: t("paginationMore"),
+                }}
+              />
 
               <div className="flex items-center gap-2">
                 <Select

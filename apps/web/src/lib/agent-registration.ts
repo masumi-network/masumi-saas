@@ -7,11 +7,12 @@
 import prisma, { type RegistrationState } from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
+import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
   createPaymentNodeClient,
   paymentNodeConfig,
   type PaymentNodeNetwork,
-  type RegisterAgentInput,
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
@@ -20,8 +21,6 @@ import { USDM } from "@/lib/payment-node/tokens";
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
-const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS = 18_000;
 const REGISTER_AGENT_HTTP_TIMEOUT_MS = 25_000;
 
 export type AgentPricing =
@@ -53,10 +52,10 @@ export type RegisterAgentContext = {
   network: PaymentNodeNetwork;
 };
 
-export type RegisterAgentResult =
-  | { success: true; data: Agent }
-  | { success: false; error: string }
-  | { success: false; error: "WALLET_FUNDING_PENDING"; agentId: string };
+/** Result of startAgentRegistration: fast path that returns 202 with agentId for background completion. */
+export type StartAgentRegistrationResult =
+  | { success: true; agentId: string }
+  | { success: false; error: string };
 
 export type CompleteRegistrationResult =
   | { status: "registered"; data: Agent }
@@ -81,13 +80,28 @@ type RegistrationPayloadStored = {
 };
 
 /**
- * Full on-chain registration: create agent, wallets, ref, wait for funding, registerAgent, update.
- * Caller must pass authenticated user and network (e.g. from API route or server action).
+ * Fast path: create agent, wallets, ref, fund via dispenser; return agentId immediately.
+ * Completion (UTXO wait + registerAgent) is done by POST /api/agents/:id/complete-registration (client or background).
  */
-export async function registerAgentOnChain(
+export async function startAgentRegistration(
   ctx: RegisterAgentContext,
   params: RegisterAgentParams,
-): Promise<RegisterAgentResult> {
+): Promise<StartAgentRegistrationResult> {
+  const result = await registerAgentOnChainUntilDispenser(ctx, params);
+  if (!result.success) return result;
+  return { success: true, agentId: result.agentId };
+}
+
+/**
+ * Internal: does validation, wallets, dispenser, agent + ref creation; returns agentId for either
+ * full flow (then continues) or fast path (caller returns 202).
+ */
+async function registerAgentOnChainUntilDispenser(
+  ctx: RegisterAgentContext,
+  params: RegisterAgentParams,
+): Promise<
+  { success: true; agentId: string } | { success: false; error: string }
+> {
   const { user, activeOrganizationId, network } = ctx;
 
   if (params.tags.length === 0) {
@@ -251,118 +265,7 @@ export async function registerAgentOnChain(
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
-  const pollStart = Date.now();
-  let walletFunded = false;
-
-  while (Date.now() - pollStart < POLL_TIMEOUT_MS) {
-    try {
-      const { Utxos } = await userClient.getUtxos({
-        address: sellingWallet.walletAddress,
-        network,
-      });
-      if (Utxos.length > 0) {
-        walletFunded = true;
-        break;
-      }
-    } catch (utxoError) {
-      const msg =
-        utxoError instanceof Error ? utxoError.message : String(utxoError);
-      if (!msg.startsWith("404")) {
-        await prisma.agent
-          .delete({ where: { id: agent.id } })
-          .catch(() => null);
-        throw utxoError;
-      }
-    }
-    await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-  }
-
-  if (!walletFunded) {
-    return {
-      success: false,
-      error: "WALLET_FUNDING_PENDING",
-      agentId: agent.id,
-    };
-  }
-
-  const registerPayload: RegisterAgentInput = {
-    network,
-    sellingWalletVkey: sellingWallet.walletVkey,
-    name: params.name,
-    apiBaseUrl: params.apiUrl,
-    description: params.description?.trim() ?? "",
-    Tags: params.tags,
-    ExampleOutputs: params.exampleOutputs,
-    Capability: {
-      name: params.capabilityName,
-      version: params.capabilityVersion,
-    },
-    Author: {
-      name: user.name?.trim() || "Unknown",
-      contactEmail: user.email ?? undefined,
-      contactOther: undefined,
-      organization: undefined,
-    },
-    ...(params.termsOfUseUrl || params.privacyPolicyUrl || params.otherUrl
-      ? {
-          Legal: {
-            terms: params.termsOfUseUrl ?? undefined,
-            privacyPolicy: params.privacyPolicyUrl ?? undefined,
-            other: params.otherUrl ?? undefined,
-          },
-        }
-      : {}),
-    AgentPricing: params.agentPricing,
-  };
-
-  let registryEntry;
-  try {
-    registryEntry = await userClient.registerAgent(registerPayload);
-  } catch (paymentNodeError) {
-    await prisma.agent.delete({ where: { id: agent.id } }).catch(() => null);
-    throw paymentNodeError;
-  }
-
-  const existingRef = await prisma.agentReference.findUnique({
-    where: { agentId: agent.id },
-    select: { metadata: true },
-  });
-  const existingMeta =
-    (existingRef?.metadata as Record<string, unknown> | null) ?? {};
-  await prisma.agentReference.update({
-    where: { agentId: agent.id },
-    data: {
-      externalId: registryEntry.id,
-      metadata: {
-        ...existingMeta,
-        ...(registryEntry.agentIdentifier && {
-          agentIdentifier: registryEntry.agentIdentifier,
-        }),
-      },
-    },
-  });
-
-  await prisma.agent.update({
-    where: { id: agent.id },
-    data: {
-      registrationState: registryEntry.state as RegistrationState,
-      ...(registryEntry.agentIdentifier && {
-        agentIdentifier: registryEntry.agentIdentifier,
-      }),
-    },
-  });
-
-  if (registryEntry.state === "RegistrationConfirmed") {
-    await recordAgentActivityEvent(agent.id, "RegistrationConfirmed");
-  } else if (registryEntry.state === "RegistrationFailed") {
-    await recordAgentActivityEvent(agent.id, "RegistrationFailed");
-  }
-
-  const updatedAgent = await prisma.agent.findUniqueOrThrow({
-    where: { id: agent.id },
-  });
-
-  return { success: true, data: updatedAgent };
+  return { success: true, agentId: agent.id };
 }
 
 /**
@@ -385,7 +288,66 @@ export async function completeOnChainRegistration(
     const updated = await prisma.agent.findUnique({
       where: { id: agentId },
     });
-    return { status: "registered", data: updated ?? agent };
+    const current = updated ?? agent;
+    if (current.registrationState === "RegistrationConfirmed") {
+      return { status: "registered", data: current };
+    }
+    if (current.registrationState === "RegistrationFailed") {
+      return {
+        status: "error",
+        error: "Registration was rejected or failed on the network.",
+      };
+    }
+    const network = (ref.networkIdentifier ??
+      DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const userClient = await getPaymentNodeClientForUser(userId);
+    if (userClient) {
+      try {
+        const entry = await userClient.getRegistryById({
+          id: ref.externalId,
+          network,
+        });
+        if (entry) {
+          const state = entry.state as RegistrationState;
+          await prisma.agent.update({
+            where: { id: agentId },
+            data: {
+              registrationState: state,
+              ...(entry.agentIdentifier && {
+                agentIdentifier: entry.agentIdentifier,
+              }),
+            },
+          });
+          if (state === "RegistrationConfirmed") {
+            await recordAgentActivityEvent(agentId, "RegistrationConfirmed");
+            const fresh = await prisma.agent.findUniqueOrThrow({
+              where: { id: agentId },
+            });
+            await sendAgentRegistrationCompleteEmail(
+              userId,
+              agentId,
+              fresh.name,
+            );
+            return { status: "registered", data: fresh };
+          }
+          if (state === "RegistrationFailed") {
+            await recordAgentActivityEvent(agentId, "RegistrationFailed");
+            const errorMsg =
+              "Registration was rejected or failed on the network.";
+            await sendAgentRegistrationFailedEmail(
+              userId,
+              agentId,
+              agent.name,
+              errorMsg,
+            );
+            return { status: "error", error: errorMsg };
+          }
+        }
+      } catch {
+        // Non-fatal: fall through to return pending
+      }
+    }
+    return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
   const address = meta.sellingWalletAddress;
@@ -506,7 +468,26 @@ export async function completeOnChainRegistration(
   if (updatedAgent.eventType) {
     await recordAgentActivityEvent(agent.id, updatedAgent.eventType);
   }
-  return { status: "registered", data: updatedAgent.agent };
+  const state = updatedAgent.agent.registrationState;
+  if (state === "RegistrationConfirmed") {
+    await sendAgentRegistrationCompleteEmail(
+      updatedAgent.agent.userId,
+      updatedAgent.agent.id,
+      updatedAgent.agent.name,
+    );
+    return { status: "registered", data: updatedAgent.agent };
+  }
+  if (state === "RegistrationFailed") {
+    const errorMsg = "Registration was rejected or failed on the network.";
+    await sendAgentRegistrationFailedEmail(
+      updatedAgent.agent.userId,
+      updatedAgent.agent.id,
+      updatedAgent.agent.name,
+      errorMsg,
+    );
+    return { status: "error", error: errorMsg };
+  }
+  return { status: "pending" };
 }
 
 /** Build AgentPricing for payment node from API/form pricing shape and network. */

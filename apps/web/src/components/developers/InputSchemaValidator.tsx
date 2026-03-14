@@ -1,6 +1,7 @@
 "use client";
 
 import { SchemaPlayground } from "masumi-schema-validator-component";
+import { useTheme } from "next-themes";
 
 const EXAMPLES = [
   {
@@ -221,7 +222,14 @@ const EXAMPLES = [
 ];
 
 export function InputSchemaValidator() {
+  const { resolvedTheme } = useTheme();
   return (
-    <SchemaPlayground initialSchema={EXAMPLES[0].value} examples={EXAMPLES} />
+    <div className="schema-playground-wrapper relative min-h-[540px]">
+      <SchemaPlayground
+        initialSchema={EXAMPLES[0].value}
+        examples={EXAMPLES}
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
+      />
+    </div>
   );
 }

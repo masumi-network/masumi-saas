@@ -223,17 +223,23 @@ export const listPurchasesOutputSchema = z.object({
 });
 export type ListPurchasesOutput = z.infer<typeof listPurchasesOutputSchema>;
 
-// ─── Income ─────────────────────────────────────────────────────────────────
+// ─── Income (matches payment node POST /payment/income: PascalCase, Units) ───
 
 const incomeUnitsBlockSchema = z.object({
-  units: z.array(unitAmountNumberSchema),
+  Units: z.array(unitAmountNumberSchema),
   blockchainFees: z.number(),
 });
-const dailyMonthlyUnitsSchema = z.object({
-  day: z.number().optional(),
+const dailyFundsItemSchema = z.object({
+  day: z.number(),
   month: z.number(),
   year: z.number(),
-  units: z.array(unitAmountNumberSchema),
+  Units: z.array(unitAmountNumberSchema),
+  blockchainFees: z.number(),
+});
+const monthlyFundsItemSchema = z.object({
+  month: z.number(),
+  year: z.number(),
+  Units: z.array(unitAmountNumberSchema),
   blockchainFees: z.number(),
 });
 
@@ -242,15 +248,15 @@ export const paymentIncomeOutputSchema = z.object({
   periodStart: z.string(),
   periodEnd: z.string(),
   totalTransactions: z.number(),
-  totalIncome: incomeUnitsBlockSchema,
-  totalRefunded: incomeUnitsBlockSchema,
-  totalPending: incomeUnitsBlockSchema,
-  dailyIncome: z.array(dailyMonthlyUnitsSchema),
-  dailyRefunded: z.array(dailyMonthlyUnitsSchema),
-  dailyPending: z.array(dailyMonthlyUnitsSchema),
-  monthlyIncome: z.array(dailyMonthlyUnitsSchema),
-  monthlyRefunded: z.array(dailyMonthlyUnitsSchema),
-  monthlyPending: z.array(dailyMonthlyUnitsSchema),
+  TotalIncome: incomeUnitsBlockSchema,
+  TotalRefunded: incomeUnitsBlockSchema,
+  TotalPending: incomeUnitsBlockSchema,
+  DailyIncome: z.array(dailyFundsItemSchema),
+  DailyRefunded: z.array(dailyFundsItemSchema),
+  DailyPending: z.array(dailyFundsItemSchema),
+  MonthlyIncome: z.array(monthlyFundsItemSchema),
+  MonthlyRefunded: z.array(monthlyFundsItemSchema),
+  MonthlyPending: z.array(monthlyFundsItemSchema),
 });
 export type PaymentIncomeOutput = z.infer<typeof paymentIncomeOutputSchema>;
 

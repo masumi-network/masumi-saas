@@ -22,6 +22,7 @@ import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
@@ -183,6 +184,21 @@ export function AgentsContent() {
       cancelled = true;
     };
   }, [fetchAgents, syncPendingAndRefetch, activeOrganizationId, network]);
+
+  // Refetch when background registration completes (toast from provider).
+  useEffect(() => {
+    const handler = () => {
+      loadPage().then((page) => {
+        if (page) {
+          setAgents(page.data);
+          setNextCursor(page.nextCursor);
+        }
+      });
+    };
+    window.addEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+    return () =>
+      window.removeEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+  }, [loadPage]);
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());

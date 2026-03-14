@@ -144,8 +144,14 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredKeys.map((key) => (
-                  <TableRow key={key.id}>
+                {filteredKeys.map((key, index) => (
+                  <TableRow
+                    key={key.id}
+                    className="animate-table-row-in transition-[background-color,opacity] duration-150"
+                    style={{
+                      animationDelay: `${Math.min(index, 9) * 40}ms`,
+                    }}
+                  >
                     <TableCell className="p-4 pl-6 font-medium">
                       {key.name || key.prefix || key.start || "API Key"}
                     </TableCell>

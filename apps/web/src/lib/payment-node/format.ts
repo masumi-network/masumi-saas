@@ -46,3 +46,31 @@ export function formatUnits(
   if (!units.length) return "0";
   return units.map((u) => formatOneUnitAmount(u.unit, u.amount)).join(", ");
 }
+
+/** Format earnings as USD when units are USDM/tUSDM (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
+export function formatEarningsAsUsd(
+  units: Array<{ unit: string; amount: number }>,
+): string {
+  if (!units.length) return "$0.00";
+  const usdDecimals = 6;
+  let usdCents = 0;
+  const other: Array<{ unit: string; amount: number }> = [];
+  for (const u of units) {
+    if (u.unit === USDM.Preprod.unit || u.unit === USDM.Mainnet.unit) {
+      usdCents += Math.round(Number(u.amount) / 10 ** (usdDecimals - 2));
+    } else {
+      other.push(u);
+    }
+  }
+  const usdFormatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(usdCents / 100);
+  if (other.length === 0) return usdFormatted;
+  const rest = other
+    .map((u) => formatOneUnitAmount(u.unit, u.amount))
+    .join(", ");
+  return usdCents > 0 ? `${usdFormatted} + ${rest}` : rest;
+}
