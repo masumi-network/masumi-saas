@@ -456,6 +456,7 @@ export function RegisterAgentDialog({
         setTags([]);
         setTagInput("");
         setIsLoading(false);
+        setShowCloseConfirm(false);
         onSuccessRef.current();
         onCloseRef.current();
       } else {

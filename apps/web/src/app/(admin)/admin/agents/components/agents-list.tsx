@@ -3,22 +3,13 @@
 import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Input } from "@/components/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -28,6 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
+
+import { AdminPaginationBar } from "../../components/admin-pagination-bar";
+import {
+  getPaginationRange,
+  type PaginationInfo,
+} from "../../components/list-utils";
+import { useAdminListSearch } from "../../components/use-admin-list-search";
 
 type RegistrationState =
   | "RegistrationRequested"
@@ -53,13 +51,6 @@ interface AgentRow {
   ownerEmail: string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  total: number;
-  limit: number;
-}
-
 interface AgentsListProps {
   agents: AgentRow[];
   pagination: PaginationInfo;
@@ -72,39 +63,9 @@ export default function AgentsList({
   currentSearch,
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [searchInput, setSearchInput] = useState(currentSearch);
-
-  useEffect(() => {
-    setSearchInput(currentSearch);
-  }, [currentSearch]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== currentSearch) {
-        const params = new URLSearchParams(window.location.search);
-        if (searchInput) {
-          params.set("search", searchInput);
-        } else {
-          params.delete("search");
-        }
-        params.set("page", "1");
-        startTransition(() => {
-          router.push(`/admin/agents?${params.toString()}`);
-        });
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput, currentSearch, router]);
-
-  const handleClearSearch = () => {
-    setSearchInput("");
-    startTransition(() => {
-      router.push("/admin/agents");
-    });
-  };
+  const { searchInput, setSearchInput, handleClearSearch, isPending } =
+    useAdminListSearch(currentSearch, "/admin/agents");
 
   const getRegistrationLabel = (state: RegistrationState | string) => {
     const map: Record<RegistrationState, string> = {
@@ -120,6 +81,8 @@ export default function AgentsList({
     return map[state as RegistrationState] ?? state;
   };
 
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newPage > 1) params.set("page", String(newPage));
@@ -141,45 +104,7 @@ export default function AgentsList({
     return map[status] ?? status;
   };
 
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisiblePages = 5;
-    if (pagination.totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= pagination.totalPages; i++) pages.push(i);
-    } else {
-      if (pagination.currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(pagination.totalPages);
-      } else if (pagination.currentPage >= pagination.totalPages - 2) {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = pagination.totalPages - 3; i <= pagination.totalPages; i++)
-          pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (
-          let i = pagination.currentPage - 1;
-          i <= pagination.currentPage + 1;
-          i++
-        )
-          pages.push(i);
-        pages.push("ellipsis");
-        pages.push(pagination.totalPages);
-      }
-    }
-    return pages;
-  };
-
-  const startIndex =
-    pagination.total > 0
-      ? (pagination.currentPage - 1) * pagination.limit + 1
-      : 0;
-  const endIndex = Math.min(
-    pagination.currentPage * pagination.limit,
-    pagination.total,
-  );
+  const { startIndex, endIndex } = getPaginationRange(pagination);
   const isEmpty = agents.length === 0 && !currentSearch;
   const isNoResults = agents.length === 0 && currentSearch;
 
@@ -309,58 +234,17 @@ export default function AgentsList({
                   total: pagination.total,
                 })}
               </p>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      text={t("previous")}
-                      ariaLabel={t("paginationPrevious")}
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage - 1)
-                      }
-                      aria-disabled={pagination.currentPage === 1}
-                      className={
-                        pagination.currentPage === 1
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
-                  {getPageNumbers().map((p, i) =>
-                    p === "ellipsis" ? (
-                      <PaginationItem key={`ellipsis-${i}`}>
-                        <PaginationEllipsis srText={t("page")} />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={p}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(p as number)}
-                          isActive={pagination.currentPage === p}
-                        >
-                          {p}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ),
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      text={t("next")}
-                      ariaLabel={t("paginationNext")}
-                      onClick={() =>
-                        handlePageChange(pagination.currentPage + 1)
-                      }
-                      aria-disabled={
-                        pagination.currentPage === pagination.totalPages
-                      }
-                      className={
-                        pagination.currentPage === pagination.totalPages
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <AdminPaginationBar
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                labels={{
+                  previous: t("previous"),
+                  next: t("next"),
+                  previousAriaLabel: t("paginationPrevious"),
+                  nextAriaLabel: t("paginationNext"),
+                  ellipsisSrText: t("page"),
+                }}
+              />
             </div>
           )}
         </div>
