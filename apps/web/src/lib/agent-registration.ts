@@ -469,14 +469,10 @@ export async function completeOnChainRegistration(
       return { status: "registered", data: current };
     }
     if (current.registrationState === "RegistrationFailed") {
-      const errorMsg = "Registration was rejected or failed on the network.";
-      await sendAgentRegistrationFailedEmail(
-        userId,
-        agentId,
-        current.name,
-        errorMsg,
-      );
-      return { status: "error", error: errorMsg };
+      return {
+        status: "error",
+        error: "Registration was rejected or failed on the network.",
+      };
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
