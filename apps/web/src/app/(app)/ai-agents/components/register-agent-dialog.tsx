@@ -500,7 +500,6 @@ export function RegisterAgentDialog({
       setShowCloseConfirm(false);
     } else {
       if (isLoading) {
-        closedDuringSubmitRef.current = true;
         setShowCloseConfirm(true);
         return;
       }
