@@ -98,24 +98,25 @@ export default function AdminAgentsContent() {
   useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => {
+      if (cancelled) return;
       setLoading(true);
       setError(null);
+      adminApiClient
+        .getAgents({ page, limit, search })
+        .then((result) => {
+          if (cancelled) return;
+          if (result.success) {
+            setAgents(result.data);
+            setError(null);
+          } else {
+            setAgents(null);
+            setError(result.error);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
     });
-    adminApiClient
-      .getAgents({ page, limit, search })
-      .then((result) => {
-        if (cancelled) return;
-        if (result.success) {
-          setAgents(result.data);
-          setError(null);
-        } else {
-          setAgents(null);
-          setError(result.error);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
     return () => {
       cancelled = true;
     };
