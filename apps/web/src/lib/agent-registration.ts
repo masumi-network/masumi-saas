@@ -8,6 +8,7 @@ import prisma, { type RegistrationState } from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
+import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
   createPaymentNodeClient,
   paymentNodeConfig,
@@ -468,10 +469,14 @@ export async function completeOnChainRegistration(
       return { status: "registered", data: current };
     }
     if (current.registrationState === "RegistrationFailed") {
-      return {
-        status: "error",
-        error: "Registration was rejected or failed on the network.",
-      };
+      const errorMsg = "Registration was rejected or failed on the network.";
+      await sendAgentRegistrationFailedEmail(
+        userId,
+        agentId,
+        current.name,
+        errorMsg,
+      );
+      return { status: "error", error: errorMsg };
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
@@ -507,10 +512,15 @@ export async function completeOnChainRegistration(
           }
           if (state === "RegistrationFailed") {
             await recordAgentActivityEvent(agentId, "RegistrationFailed");
-            return {
-              status: "error",
-              error: "Registration was rejected or failed on the network.",
-            };
+            const errorMsg =
+              "Registration was rejected or failed on the network.";
+            await sendAgentRegistrationFailedEmail(
+              userId,
+              agentId,
+              agent.name,
+              errorMsg,
+            );
+            return { status: "error", error: errorMsg };
           }
         }
       } catch {
@@ -648,10 +658,14 @@ export async function completeOnChainRegistration(
     return { status: "registered", data: updatedAgent.agent };
   }
   if (state === "RegistrationFailed") {
-    return {
-      status: "error",
-      error: "Registration was rejected or failed on the network.",
-    };
+    const errorMsg = "Registration was rejected or failed on the network.";
+    await sendAgentRegistrationFailedEmail(
+      updatedAgent.agent.userId,
+      updatedAgent.agent.id,
+      updatedAgent.agent.name,
+      errorMsg,
+    );
+    return { status: "error", error: errorMsg };
   }
   return { status: "pending" };
 }

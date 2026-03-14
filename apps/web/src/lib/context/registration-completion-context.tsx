@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   createContext,
   useCallback,
@@ -38,8 +39,11 @@ export function RegistrationCompletionProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("App.Notifications");
   const pendingRef = useRef<Set<string>>(new Set());
   const isPollingRef = useRef(false);
+  const tRef = useRef(t);
+  tRef.current = t;
   const { addNotification } = useNotifications();
   const addNotificationRef = useRef(addNotification);
   useEffect(() => {
@@ -69,7 +73,7 @@ export function RegistrationCompletionProvider({
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
-              toast.success("Agent registered successfully!");
+              toast.success(tRef.current("agentRegistrationComplete"));
               addNotificationRef.current({
                 type: "success",
                 titleKey: "agentRegistrationComplete",
@@ -87,7 +91,17 @@ export function RegistrationCompletionProvider({
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
-              toast.error(result.error ?? "Registration failed");
+              const errorMessage =
+                result.error ?? tRef.current("registrationFailed");
+              toast.error(errorMessage);
+              addNotificationRef.current({
+                type: "error",
+                titleKey: "registrationFailed",
+                link: {
+                  href: `/ai-agents/${agentId}`,
+                  labelKey: "viewAgent",
+                },
+              });
             }
           } catch {
             // Keep in pending; will retry next interval

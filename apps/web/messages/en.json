@@ -691,6 +691,7 @@
       "clearAll": "Clear all",
       "dismiss": "Dismiss",
       "agentRegistrationComplete": "Agent registered successfully",
+      "registrationFailed": "Registration failed",
       "viewAgent": "View agent"
     },
     "UserProfile": {
