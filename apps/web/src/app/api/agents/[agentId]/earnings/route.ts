@@ -46,7 +46,11 @@ export async function GET(
 
     const agent = await prisma.agent.findFirst({
       where: { id: agentId, userId: user.id },
-      select: { agentIdentifier: true, networkIdentifier: true },
+      select: {
+        agentIdentifier: true,
+        networkIdentifier: true,
+        registrationState: true,
+      },
     });
 
     if (!agent) {
@@ -56,8 +60,12 @@ export async function GET(
       );
     }
 
-    // Pending agents not on-chain yet have no earnings data
-    if (!agent.agentIdentifier) {
+    // Only agents confirmed on-chain have earnings data (initiated agents may have
+    // an identifier but are not yet on-chain in the payment service)
+    const isOnChain =
+      agent.agentIdentifier &&
+      agent.registrationState === "RegistrationConfirmed";
+    if (!isOnChain) {
       return NextResponse.json({
         success: true,
         data: {

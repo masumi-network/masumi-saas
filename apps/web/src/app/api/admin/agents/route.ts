@@ -1,12 +1,19 @@
 import type { Prisma } from "@masumi/database";
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import {
   getAuthenticatedOrThrow,
   handleAuthError,
   isAdminUser,
 } from "@/lib/auth/utils";
+
+const getAdminAgentsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  search: z.string().max(200).optional().default(""),
+});
 
 type AdminAgentRow = {
   id: string;
@@ -54,20 +61,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const page = Math.max(
-      1,
-      Math.floor(Number(request.nextUrl.searchParams.get("page")) || 1),
+    const rawParams = Object.fromEntries(
+      request.nextUrl.searchParams.entries(),
     );
-    const limit = Math.min(
-      50,
-      Math.max(
-        1,
-        Math.floor(Number(request.nextUrl.searchParams.get("limit")) || 10),
-      ),
-    );
-    const search = String(request.nextUrl.searchParams.get("search") || "")
-      .trim()
-      .slice(0, 200);
+    const queryResult = getAdminAgentsQuerySchema.safeParse(rawParams);
+    if (!queryResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: queryResult.error.issues.map((e) => e.message).join(", "),
+        },
+        { status: 400 },
+      );
+    }
+    const { page, limit, search: searchRaw } = queryResult.data;
+    const search = searchRaw.trim();
     const escapedSearch = search
       ? search.replace(/[\\_%]/g, (match) => "\\" + match)
       : "";
