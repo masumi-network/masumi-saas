@@ -80,8 +80,10 @@ export default function UsersList({
   const [unbanDialogOpen, setUnbanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [banReason, setBanReason] = useState("");
-  const { searchInput, setSearchInput, handleClearSearch, isPending } =
-    useAdminListSearch(currentSearch, "/admin/users");
+  const { searchInput, setSearchInput, isPending } = useAdminListSearch(
+    currentSearch,
+    "/admin/users",
+  );
 
   const updateParams = (newParams: Record<string, string>) => {
     const params = new URLSearchParams(window.location.search);
@@ -108,6 +110,11 @@ export default function UsersList({
 
   const handleLimitChange = (limit: string) => {
     updateParams({ limit, page: "1" });
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    updateParams({ search: "", filter: "", page: "1" });
   };
 
   const validRoles = ["admin", "user"] as const;
