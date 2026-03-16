@@ -71,15 +71,6 @@ export function RegistrationCompletionProvider({
   const t = useTranslations("App.Notifications");
   const pendingRef = useRef<Set<string>>(new Set());
 
-  // Hydrate pending IDs from sessionStorage; merge with ref so runtime additions before this runs are kept
-  useEffect(() => {
-    const stored = loadPendingFromStorage();
-    if (stored.size > 0) {
-      pendingRef.current = new Set([...pendingRef.current, ...stored]);
-      savePendingToStorage(pendingRef.current);
-    }
-  }, []);
-
   const isPollingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const tRef = useRef(t);
@@ -90,7 +81,6 @@ export function RegistrationCompletionProvider({
     addNotificationRef.current = addNotification;
   }, [addNotification]);
 
-  // Tick ref so we can restart the interval from addPendingAgent when going 0 -> 1 pending.
   const runTickRef = useRef<() => void>(null!);
 
   const addPendingAgent = useCallback((agentId: string) => {
@@ -103,7 +93,7 @@ export function RegistrationCompletionProvider({
     }
   }, []);
 
-  // Poll only while there are pending agents; clear interval when set becomes empty.
+  // Define tick and set runTickRef only; do not start interval on mount.
   useEffect(() => {
     const tick = async () => {
       if (pendingRef.current.size === 0) {
@@ -166,15 +156,25 @@ export function RegistrationCompletionProvider({
         isPollingRef.current = false;
       }
     };
-    const tickWrapper = () => void tick();
-    runTickRef.current = tickWrapper;
-    intervalRef.current = setInterval(tickWrapper, POLL_INTERVAL_MS);
+    runTickRef.current = () => void tick();
     return () => {
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
+  }, []);
+
+  // Hydrate from sessionStorage; start polling only when we have pending IDs.
+  useEffect(() => {
+    const stored = loadPendingFromStorage();
+    if (stored.size > 0) {
+      pendingRef.current = new Set([...pendingRef.current, ...stored]);
+      savePendingToStorage(pendingRef.current);
+      if (intervalRef.current === null && runTickRef.current) {
+        intervalRef.current = setInterval(runTickRef.current, POLL_INTERVAL_MS);
+      }
+    }
   }, []);
 
   const value = useMemo<RegistrationCompletionContextValue>(

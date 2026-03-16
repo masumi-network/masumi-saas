@@ -6,7 +6,6 @@ import { cookies } from "next/headers";
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import { deregisterAgentForUser } from "@/lib/deregister-agent";
 import {
   createPaymentNodeClient,
   paymentNodeConfig,
@@ -168,11 +167,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     console.error("Failed to sync agent registration status:", error);
     return { success: false as const, error: "Failed to sync status" };
   }
-}
-
-export async function deregisterAgentAction(agentId: string) {
-  const { user } = await getAuthenticatedOrThrow();
-  return deregisterAgentForUser(agentId, user.id);
 }
 
 export async function getAgentAction(agentId: string) {
