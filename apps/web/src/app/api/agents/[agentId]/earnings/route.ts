@@ -60,12 +60,21 @@ export async function GET(
       );
     }
 
-    // Only agents confirmed on-chain have earnings data (initiated agents may have
-    // an identifier but are not yet on-chain in the payment service)
-    const isOnChain =
-      agent.agentIdentifier &&
-      agent.registrationState === "RegistrationConfirmed";
-    if (!isOnChain) {
+    // Agents must have been on-chain to have earnings. Exclude: not yet registered
+    // (RegistrationRequested, RegistrationInitiated) or failed (RegistrationFailed).
+    // Include: RegistrationConfirmed and all deregistration states (they have
+    // historical earnings even while/after deregistering).
+    const statesWithEarnings = new Set([
+      "RegistrationConfirmed",
+      "DeregistrationRequested",
+      "DeregistrationInitiated",
+      "DeregistrationConfirmed",
+      "DeregistrationFailed",
+    ]);
+    const hasEarningsData =
+      !!agent.agentIdentifier &&
+      statesWithEarnings.has(agent.registrationState);
+    if (!hasEarningsData) {
       return NextResponse.json({
         success: true,
         data: {

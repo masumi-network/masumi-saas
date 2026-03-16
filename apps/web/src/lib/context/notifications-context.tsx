@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useId, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useId,
+  useMemo,
+  useState,
+} from "react";
 
 export type AppNotification = {
   id: string;
@@ -67,12 +74,15 @@ export function NotificationsProvider({
     setNotifications([]);
   }, []);
 
-  const value: NotificationsContextValue = {
-    notifications,
-    addNotification,
-    dismissNotification,
-    clearAll,
-  };
+  const value = useMemo<NotificationsContextValue>(
+    () => ({
+      notifications,
+      addNotification,
+      dismissNotification,
+      clearAll,
+    }),
+    [notifications, addNotification, dismissNotification, clearAll],
+  );
 
   return (
     <NotificationsContext.Provider value={value}>
