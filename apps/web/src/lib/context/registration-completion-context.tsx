@@ -90,6 +90,7 @@ export function RegistrationCompletionProvider({
     savePendingToStorage(next);
     if (intervalRef.current === null && runTickRef.current) {
       intervalRef.current = setInterval(runTickRef.current, POLL_INTERVAL_MS);
+      runTickRef.current();
     }
   }, []);
 
@@ -173,6 +174,7 @@ export function RegistrationCompletionProvider({
       savePendingToStorage(pendingRef.current);
       if (intervalRef.current === null && runTickRef.current) {
         intervalRef.current = setInterval(runTickRef.current, POLL_INTERVAL_MS);
+        runTickRef.current();
       }
     }
   }, []);
