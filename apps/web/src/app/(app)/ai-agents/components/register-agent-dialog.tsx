@@ -276,10 +276,11 @@ export function RegisterAgentDialog({
     onCloseRef.current = onClose;
   }, [onSuccess, onClose]);
 
-  // On open: reset close flag and invalidate any in-flight submit from a previous session so its response is ignored.
+  // On open: reset close flags and invalidate any in-flight submit from a previous session so its response is ignored.
   useEffect(() => {
     if (open) {
       closedDuringSubmitRef.current = false;
+      closedViaConfirmRef.current = false;
       submitIdRef.current += 1;
     }
   }, [open]);
@@ -458,7 +459,6 @@ export function RegisterAgentDialog({
         setIsLoading(false);
         setShowCloseConfirm(false);
         onSuccessRef.current();
-        onCloseRef.current();
       } else {
         toast.error(json.error || t("error"));
         setIsLoading(false);

@@ -211,6 +211,7 @@ export function AgentsContent() {
   };
 
   const handleRegisterSuccess = () => {
+    setIsRegisterDialogOpen(false);
     // Invalidate the server component cache so the org dashboard
     // reflects the new agent count without requiring a manual reload.
     router.refresh();
