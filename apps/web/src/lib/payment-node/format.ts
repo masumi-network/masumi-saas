@@ -52,12 +52,17 @@ export function formatEarningsAsUsd(
   units: Array<{ unit: string; amount: number }>,
 ): string {
   if (!units.length) return "$0.00";
-  const usdDecimals = 6;
   let usdCents = 0;
   const other: Array<{ unit: string; amount: number }> = [];
   for (const u of units) {
-    if (u.unit === USDM.Preprod.unit || u.unit === USDM.Mainnet.unit) {
-      usdCents += Math.round(Number(u.amount) / 10 ** (usdDecimals - 2));
+    if (u.unit === USDM.Preprod.unit) {
+      usdCents += Math.round(
+        Number(u.amount) / 10 ** (USDM.Preprod.decimals - 2),
+      );
+    } else if (u.unit === USDM.Mainnet.unit) {
+      usdCents += Math.round(
+        Number(u.amount) / 10 ** (USDM.Mainnet.decimals - 2),
+      );
     } else {
       other.push(u);
     }
