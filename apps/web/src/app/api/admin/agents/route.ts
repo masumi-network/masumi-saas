@@ -121,8 +121,8 @@ export async function GET(request: NextRequest) {
       verificationStatus: a.verificationStatus,
       agentIdentifier: a.agentIdentifier,
       createdAt: a.createdAt.toISOString(),
-      ownerName: a.user.name,
-      ownerEmail: a.user.email,
+      ownerName: a.user.name ?? "",
+      ownerEmail: a.user.email ?? "",
     }));
 
     return NextResponse.json({
