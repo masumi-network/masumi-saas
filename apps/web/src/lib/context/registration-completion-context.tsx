@@ -16,6 +16,35 @@ import { useNotifications } from "@/lib/context/notifications-context";
 
 const POLL_INTERVAL_MS = 5_000;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
+const PENDING_STORAGE_KEY = "masumi-pending-registration-ids";
+
+function loadPendingFromStorage(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = sessionStorage.getItem(PENDING_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
+      return new Set(parsed);
+    }
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function savePendingToStorage(ids: Set<string>): void {
+  if (typeof window === "undefined") return;
+  try {
+    const arr = Array.from(ids);
+    if (arr.length === 0) {
+      sessionStorage.removeItem(PENDING_STORAGE_KEY);
+    } else {
+      sessionStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(arr));
+    }
+  } catch {
+    // ignore
+  }
+}
 
 export type RegistrationCompletionContextValue = {
   addPendingAgent: (agentId: string) => void;
@@ -41,6 +70,15 @@ export function RegistrationCompletionProvider({
 }) {
   const t = useTranslations("App.Notifications");
   const pendingRef = useRef<Set<string>>(new Set());
+
+  // Hydrate pending IDs from sessionStorage so they survive refresh
+  useEffect(() => {
+    const stored = loadPendingFromStorage();
+    if (stored.size > 0) {
+      pendingRef.current = stored;
+    }
+  }, []);
+
   const isPollingRef = useRef(false);
   const tRef = useRef(t);
   tRef.current = t;
@@ -54,6 +92,7 @@ export function RegistrationCompletionProvider({
     const next = new Set(pendingRef.current);
     next.add(agentId);
     pendingRef.current = next;
+    savePendingToStorage(next);
   }, []);
 
   // Single long-lived interval: skip tick if previous run still in flight to avoid
@@ -73,6 +112,7 @@ export function RegistrationCompletionProvider({
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
+              savePendingToStorage(next);
               toast.success(tRef.current("agentRegistrationComplete"));
               addNotificationRef.current({
                 type: "success",
@@ -91,6 +131,7 @@ export function RegistrationCompletionProvider({
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
+              savePendingToStorage(next);
               const errorMessage =
                 result.error ?? tRef.current("registrationFailed");
               toast.error(errorMessage);
