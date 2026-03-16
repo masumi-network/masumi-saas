@@ -36,7 +36,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { agentApiClient } from "@/lib/api/agent.client";
 import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
 
@@ -429,8 +428,10 @@ export function RegisterAgentDialog({
       if (submitId !== submitIdRef.current) return;
 
       if (closedDuringSubmitRef.current) {
+        // 202 indicates registration was accepted; keep agent and add to pending
+        // so completion polling can finish. Do not delete on close-during-submit.
         if (res.status === 202 && json.agentId) {
-          void agentApiClient.deleteAgent(json.agentId);
+          addPendingAgent(json.agentId);
         }
         return;
       }
