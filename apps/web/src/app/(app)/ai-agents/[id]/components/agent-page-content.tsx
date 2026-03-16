@@ -6,10 +6,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
-import {
-  deregisterAgentAction,
-  syncAgentRegistrationStatusAction,
-} from "@/lib/actions/agent.action";
+import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
@@ -198,7 +195,7 @@ export function AgentPageContent({
   const handleDeregisterConfirm = () => {
     setIsDeregistering(true);
     startTransition(async () => {
-      const result = await deregisterAgentAction(agent.id);
+      const result = await agentApiClient.deregisterAgent(agent.id);
       if (result.success) {
         toast.success(t("deregisterSuccess"));
         const next = await agentApiClient.getAgent(agent.id);

@@ -23,7 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { deregisterAgentAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import {
   formatPricingDisplay,
@@ -97,7 +96,9 @@ export function AgentsTable({
     if (!selectedAgentToDeregister) return;
     setIsDeregistering(true);
     startTransition(async () => {
-      const result = await deregisterAgentAction(selectedAgentToDeregister.id);
+      const result = await agentApiClient.deregisterAgent(
+        selectedAgentToDeregister.id,
+      );
       if (result.success) {
         toast.success(tDetails("deregisterSuccess"));
         onDeleteSuccess(); // refetch list
