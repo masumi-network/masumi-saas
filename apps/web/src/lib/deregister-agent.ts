@@ -29,6 +29,13 @@ export async function deregisterAgentForUser(
     if (!agent) {
       return { success: false, error: "Agent not found" };
     }
+    if (agent.registrationState !== "RegistrationConfirmed") {
+      return {
+        success: false,
+        error:
+          "Agent must be registered on the network before it can be deregistered.",
+      };
+    }
     const agentIdentifier =
       agent.agentIdentifier ??
       (agent.agentReference?.metadata as { agentIdentifier?: string } | null)

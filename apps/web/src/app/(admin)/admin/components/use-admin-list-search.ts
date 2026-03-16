@@ -30,8 +30,7 @@ export function useAdminListSearch(
       } else {
         params.delete("search");
       }
-      params.set("page", "1");
-      if (params.get("page") === "1") params.delete("page");
+      params.delete("page");
       const base = pathPrefix || pathname;
       const q = params.toString();
       const url = q ? `${base}?${q}` : base;
