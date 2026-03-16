@@ -15,7 +15,13 @@ export function AuthFooter() {
       <div className="max-w-container mx-auto w-full h-full px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled
+            title="Language selection coming soon"
+            aria-label="Language (coming soon)"
+          >
             <Languages className="h-3 w-3" />
             <span className="text-xs sm:text-sm tracking-tight">
               {"English"}
