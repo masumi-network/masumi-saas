@@ -3,7 +3,7 @@
 import { Check, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ import {
   getPaginationRange,
   type PaginationInfo,
 } from "../../components/list-utils";
+import { useAdminListSearch } from "../../components/use-admin-list-search";
 
 interface User {
   id: string;
@@ -72,38 +73,15 @@ export default function UsersList({
 }: UsersListProps) {
   const t = useTranslations("Admin.Users");
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [paramsPending, startTransition] = useTransition();
   const [loading, setLoading] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [unbanDialogOpen, setUnbanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [banReason, setBanReason] = useState("");
-  const [searchInput, setSearchInput] = useState(currentSearch);
-
-  // Debounced search effect
-  useEffect(() => {
-    setSearchInput(currentSearch);
-  }, [currentSearch]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== currentSearch) {
-        const params = new URLSearchParams(window.location.search);
-        if (searchInput) {
-          params.set("search", searchInput);
-        } else {
-          params.delete("search");
-        }
-        params.set("page", "1");
-        startTransition(() => {
-          router.push(`?${params.toString()}`);
-        });
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, currentSearch, router, startTransition]);
+  const { searchInput, setSearchInput, handleClearSearch, isPending } =
+    useAdminListSearch(currentSearch, "/admin/users");
 
   const updateParams = (newParams: Record<string, string>) => {
     const params = new URLSearchParams(window.location.search);
@@ -130,11 +108,6 @@ export default function UsersList({
 
   const handleLimitChange = (limit: string) => {
     updateParams({ limit, page: "1" });
-  };
-
-  const handleClearSearch = () => {
-    setSearchInput("");
-    updateParams({ search: "", filter: "", page: "1" });
   };
 
   const validRoles = ["admin", "user"] as const;
@@ -312,7 +285,7 @@ export default function UsersList({
 
           {/* Screen reader announcement for dynamic content changes */}
           <div aria-live="polite" className="sr-only">
-            {isPending
+            {paramsPending || isPending
               ? t("loading")
               : !isEmpty && !isNoResults
                 ? t("showingRange", {
@@ -324,7 +297,11 @@ export default function UsersList({
           </div>
 
           {/* Table with loading overlay */}
-          <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
+          <div
+            className={
+              paramsPending || isPending ? "opacity-50 pointer-events-none" : ""
+            }
+          >
             {isEmpty ? (
               <div className="text-center py-8 text-muted-foreground">
                 {t("noUsers")}

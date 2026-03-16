@@ -427,16 +427,18 @@ export function RegisterAgentDialog({
 
       if (submitId !== submitIdRef.current) return;
 
+      const registrationAccepted =
+        (res.status === 200 || res.status === 202) && json.agentId;
       if (closedDuringSubmitRef.current) {
-        // 202 indicates registration was accepted; keep agent and add to pending
-        // so completion polling can finish. Do not delete on close-during-submit.
-        if (res.status === 202 && json.agentId) {
+        // Registration accepted; keep agent and add to pending so completion
+        // polling can finish. Do not delete on close-during-submit.
+        if (registrationAccepted) {
           addPendingAgent(json.agentId);
         }
         return;
       }
 
-      if (res.status === 202 && json.agentId) {
+      if (registrationAccepted) {
         addPendingAgent(json.agentId);
         toast.info(t("registrationStarted"));
         form.reset({

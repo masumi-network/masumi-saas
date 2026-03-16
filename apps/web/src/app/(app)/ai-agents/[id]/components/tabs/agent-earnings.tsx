@@ -118,6 +118,54 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     earningsData?.totalRefunded?.units ?? [],
   );
   const txCount = earningsData?.totalTransactions ?? 0;
+  const hasNoEarnings = txCount === 0;
+
+  if (hasNoEarnings) {
+    return (
+      <div className="mx-auto w-full max-w-3xl">
+        <Card className="overflow-hidden gap-0 py-0">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
+            <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </span>
+              {t("title")}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <RefreshButton
+                onRefresh={() => setRefreshKey((k) => k + 1)}
+                isRefreshing={isLoading}
+                size="sm"
+                variant="icon-only"
+              />
+              <Select
+                value={selectedPeriod}
+                onValueChange={(value) =>
+                  setSelectedPeriod(value as TimePeriod)
+                }
+              >
+                <SelectTrigger className="w-42">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="1d">{t("period1d")}</SelectItem>
+                  <SelectItem value="7d">{t("period7d")}</SelectItem>
+                  <SelectItem value="30d">{t("period30d")}</SelectItem>
+                  <SelectItem value="all">{t("periodAll")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm text-muted-foreground">
+              {t("noEarningsData")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl">
       <Card className="overflow-hidden gap-0 py-0">

@@ -975,7 +975,8 @@
           "tryAgain": "Try again",
           "totalIncome": "Total income",
           "totalRefunded": "Total refunded",
-          "transactions": "transactions"
+          "transactions": "transactions",
+          "noEarningsData": "No earnings in this period yet. Revenue will appear here when this agent receives payments."
         },
         "Verification": {
           "pending": {
