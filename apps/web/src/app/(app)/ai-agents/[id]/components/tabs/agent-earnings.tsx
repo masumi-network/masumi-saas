@@ -163,7 +163,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-1">
                   <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
-                    {incomeFormatted || "—"}
+                    {incomeFormatted}
                   </span>
                 </CardContent>
               </Card>
@@ -178,7 +178,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-1">
                   <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
-                    {refundedFormatted || "—"}
+                    {refundedFormatted}
                   </span>
                 </CardContent>
               </Card>
