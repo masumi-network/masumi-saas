@@ -60,6 +60,12 @@ export function useAdminListSearch(
   ]);
 
   const handleClearSearch = () => {
+    const skipRef = options?.skipNextPushRef;
+    // MutableRefObject is intentionally mutable; immutability rule does not apply to ref.current
+    if (skipRef) {
+      // eslint-disable-next-line react-hooks/immutability -- mutating ref.current is by design
+      skipRef.current = true;
+    }
     setSearchInput("");
     const base = pathPrefix || pathname;
     startTransition(() => {

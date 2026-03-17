@@ -66,18 +66,10 @@ export default function AgentsList({
   const searchParams = useSearchParams();
   const router = useRouter();
   const skipNextSearchPushRef = useRef(false);
-  const { searchInput, setSearchInput, isPending } = useAdminListSearch(
-    currentSearch,
-    "/admin/agents",
-    { skipNextPushRef: skipNextSearchPushRef },
-  );
-  const handleClearSearch = () => {
-    skipNextSearchPushRef.current = true;
-    setSearchInput("");
-    startTransition(() => {
-      router.push("/admin/agents");
+  const { searchInput, setSearchInput, handleClearSearch, isPending } =
+    useAdminListSearch(currentSearch, "/admin/agents", {
+      skipNextPushRef: skipNextSearchPushRef,
     });
-  };
 
   const getRegistrationLabel = (state: RegistrationState | string) => {
     const map: Record<RegistrationState, string> = {
