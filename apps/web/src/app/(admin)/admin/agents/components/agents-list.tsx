@@ -250,7 +250,7 @@ export default function AgentsList({
                   next: t("next"),
                   previousAriaLabel: t("paginationPrevious"),
                   nextAriaLabel: t("paginationNext"),
-                  ellipsisSrText: t("page"),
+                  ellipsisSrText: t("paginationMore"),
                 }}
               />
             </div>

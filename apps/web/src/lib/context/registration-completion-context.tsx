@@ -12,18 +12,23 @@ import {
 import { toast } from "sonner";
 
 import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
+import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
 
 const POLL_INTERVAL_MS = 5_000;
 /** Stop polling an agent after this many attempts (~3 min at 5s interval). */
 const MAX_POLL_ATTEMPTS = 36;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
-const PENDING_STORAGE_KEY = "masumi-pending-registration-ids";
+const PENDING_STORAGE_KEY_PREFIX = "masumi-pending-registration-ids";
 
-function loadPendingFromStorage(): Set<string> {
-  if (typeof window === "undefined") return new Set();
+function getStorageKey(userId: string | null): string | null {
+  return userId ? `${PENDING_STORAGE_KEY_PREFIX}-${userId}` : null;
+}
+
+function loadPendingFromStorage(storageKey: string | null): Set<string> {
+  if (typeof window === "undefined" || !storageKey) return new Set();
   try {
-    const raw = sessionStorage.getItem(PENDING_STORAGE_KEY);
+    const raw = sessionStorage.getItem(storageKey);
     const parsed = raw ? (JSON.parse(raw) as unknown) : null;
     if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
       return new Set(parsed);
@@ -34,14 +39,17 @@ function loadPendingFromStorage(): Set<string> {
   return new Set();
 }
 
-function savePendingToStorage(ids: Set<string>): void {
-  if (typeof window === "undefined") return;
+function savePendingToStorage(
+  ids: Set<string>,
+  storageKey: string | null,
+): void {
+  if (typeof window === "undefined" || !storageKey) return;
   try {
     const arr = Array.from(ids);
     if (arr.length === 0) {
-      sessionStorage.removeItem(PENDING_STORAGE_KEY);
+      sessionStorage.removeItem(storageKey);
     } else {
-      sessionStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(arr));
+      sessionStorage.setItem(storageKey, JSON.stringify(arr));
     }
   } catch {
     // ignore
@@ -71,6 +79,10 @@ export function RegistrationCompletionProvider({
   children: React.ReactNode;
 }) {
   const t = useTranslations("App.Notifications");
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
+  const storageKey = getStorageKey(userId);
+
   const pendingRef = useRef<Set<string>>(new Set());
 
   const isPollingRef = useRef(false);
@@ -85,6 +97,8 @@ export function RegistrationCompletionProvider({
   }, [addNotification]);
 
   const runTickRef = useRef<(() => void) | null>(null);
+  const storageKeyRef = useRef<string | null>(null);
+  storageKeyRef.current = storageKey;
 
   const clearPollingInterval = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -93,19 +107,26 @@ export function RegistrationCompletionProvider({
     }
   }, []);
 
+  // Clear in-memory pending when user logs out so next user doesn't inherit.
+  useEffect(() => {
+    if (!storageKey) {
+      pendingRef.current = new Set();
+    }
+  }, [storageKey]);
+
   const addPendingAgent = useCallback(
     (agentId: string) => {
       const next = new Set(pendingRef.current);
       next.add(agentId);
       pendingRef.current = next;
-      savePendingToStorage(next);
+      savePendingToStorage(next, storageKey);
       clearPollingInterval();
       intervalRef.current = setInterval(() => {
         runTickRef.current?.();
       }, POLL_INTERVAL_MS);
       runTickRef.current?.();
     },
-    [clearPollingInterval],
+    [clearPollingInterval, storageKey],
   );
 
   // Define tick and set runTickRef only; do not start interval on mount.
@@ -133,7 +154,7 @@ export function RegistrationCompletionProvider({
             next.delete(agentId);
             pendingRef.current = next;
             retryCountRef.current.delete(agentId);
-            savePendingToStorage(next);
+            savePendingToStorage(next, storageKeyRef.current);
             toast.error(tRef.current("registrationTimedOut"));
             addNotificationRef.current({
               type: "error",
@@ -178,7 +199,7 @@ export function RegistrationCompletionProvider({
             retryCountRef.current.delete(agentId);
           }
           pendingRef.current = next;
-          savePendingToStorage(next);
+          savePendingToStorage(next, storageKeyRef.current);
           for (const { agentId, kind, errorMessage } of toRemove) {
             if (kind === "registered") {
               toast.success(tRef.current("agentRegistrationComplete"));
@@ -217,19 +238,20 @@ export function RegistrationCompletionProvider({
     return clearPollingInterval;
   }, [clearPollingInterval]);
 
-  // Hydrate from sessionStorage; start polling only when we have pending IDs.
+  // Hydrate from sessionStorage for current user; start polling when we have pending IDs.
   useEffect(() => {
-    const stored = loadPendingFromStorage();
+    if (!storageKey) return;
+    const stored = loadPendingFromStorage(storageKey);
     if (stored.size > 0) {
       pendingRef.current = new Set([...pendingRef.current, ...stored]);
-      savePendingToStorage(pendingRef.current);
+      savePendingToStorage(pendingRef.current, storageKey);
       clearPollingInterval();
       intervalRef.current = setInterval(() => {
         runTickRef.current?.();
       }, POLL_INTERVAL_MS);
       runTickRef.current?.();
     }
-  }, [clearPollingInterval]);
+  }, [storageKey, clearPollingInterval]);
 
   const value = useMemo<RegistrationCompletionContextValue>(
     () => ({ addPendingAgent }),
