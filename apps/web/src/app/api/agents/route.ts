@@ -11,6 +11,54 @@ import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
+const METADATA_KEYS = [
+  "authorName",
+  "authorEmail",
+  "organization",
+  "contactOther",
+  "termsOfUseUrl",
+  "privacyPolicyUrl",
+  "otherUrl",
+  "capabilityName",
+  "capabilityVersion",
+  "exampleOutputs",
+] as const;
+
+function shapeAgentForApi(agent: {
+  metadata: string | null;
+  agentReference?: { metadata: unknown } | null;
+  [key: string]: unknown;
+}) {
+  const mergedMetadata = agent.metadata
+    ? (JSON.parse(agent.metadata) as Record<string, unknown>)
+    : {};
+  const refMeta = agent.agentReference?.metadata as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  const registrationPayload = refMeta?.registrationPayload as
+    | Record<string, unknown>
+    | undefined;
+  if (registrationPayload) {
+    for (const key of METADATA_KEYS) {
+      if (
+        registrationPayload[key] !== undefined &&
+        mergedMetadata[key] === undefined
+      ) {
+        mergedMetadata[key] = registrationPayload[key];
+      }
+    }
+  }
+  const { agentReference: _ref, ...agentRest } = agent;
+  return {
+    ...agentRest,
+    metadata:
+      Object.keys(mergedMetadata).length > 0
+        ? JSON.stringify(mergedMetadata)
+        : null,
+  };
+}
+
 const getAgentsQuerySchema = z.object({
   verificationStatus: z
     .string()
@@ -244,15 +292,20 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.success) {
+      const agent = await prisma.agent.findFirst({
+        where: { id: result.agentId, userId: user.id },
+        include: { agentReference: true },
+      });
+      if (!agent) {
+        return NextResponse.json(
+          { success: false, error: "Failed to load created agent" },
+          { status: 500 },
+        );
+      }
+      const data = shapeAgentForApi(agent);
       return NextResponse.json(
-        {
-          success: true,
-          status: "registration_started",
-          agentId: result.agentId,
-          message:
-            "Registration started. Completion runs in the background. Poll GET /api/agents or use complete-registration to sync.",
-        },
-        { status: 202 },
+        { success: true, data, agentId: result.agentId },
+        { status: 200 },
       );
     }
     return NextResponse.json(

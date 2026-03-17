@@ -42,7 +42,11 @@ export function AdminPaginationBar({
           <PaginationPrevious
             text={previous}
             ariaLabel={previousAriaLabel}
-            onClick={() => onPageChange(pagination.currentPage - 1)}
+            onClick={() => {
+              if (pagination.currentPage > 1) {
+                onPageChange(pagination.currentPage - 1);
+              }
+            }}
             aria-disabled={pagination.currentPage === 1}
             className={
               pagination.currentPage === 1
@@ -71,7 +75,11 @@ export function AdminPaginationBar({
           <PaginationNext
             text={next}
             ariaLabel={nextAriaLabel}
-            onClick={() => onPageChange(pagination.currentPage + 1)}
+            onClick={() => {
+              if (pagination.currentPage < pagination.totalPages) {
+                onPageChange(pagination.currentPage + 1);
+              }
+            }}
             aria-disabled={pagination.currentPage === pagination.totalPages}
             className={
               pagination.currentPage === pagination.totalPages
