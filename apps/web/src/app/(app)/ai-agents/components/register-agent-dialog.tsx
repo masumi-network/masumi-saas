@@ -428,7 +428,9 @@ export function RegisterAgentDialog({
       if (submitId !== submitIdRef.current) return;
 
       const registrationAccepted =
-        (res.status === 200 || res.status === 202) && json.agentId;
+        (res.status === 200 || res.status === 202) &&
+        json.success === true &&
+        typeof json.agentId === "string";
       if (closedDuringSubmitRef.current) {
         // Registration accepted; keep agent and add to pending so completion
         // polling can finish. Do not delete on close-during-submit.

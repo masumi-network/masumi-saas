@@ -61,15 +61,16 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
             if (getIsCancelled?.()) return;
             if (json.success && json.data) {
               setEarningsData(json.data);
+              setError(null);
             } else {
-              setEarningsData(null);
+              // Keep stale data on refresh failure; only set error
               if (!json.success && json.error) setError(json.error);
             }
           },
         )
         .catch((err) => {
           if (getIsCancelled?.()) return;
-          setEarningsData(null);
+          // Keep stale data on network error so refresh failure doesn't wipe the UI
           setError(err instanceof Error ? err.message : "Failed to load");
         })
         .finally(() => {
@@ -92,7 +93,8 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     return <TabSkeleton tab="earnings" />;
   }
 
-  if (error) {
+  // Full-screen error only when we have no data; otherwise show stale data + inline error
+  if (error && !earningsData) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <p className="text-sm font-medium text-destructive">{error}</p>
@@ -121,7 +123,22 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
   const hasNoEarnings = txCount === 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl space-y-3">
+      {error && earningsData && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
+          <p className="text-destructive">{error}</p>
+          <button
+            type="button"
+            className="shrink-0 font-medium text-primary underline-offset-4 hover:underline"
+            onClick={() => {
+              setError(null);
+              setRefreshKey((k) => k + 1);
+            }}
+          >
+            {t("tryAgain")}
+          </button>
+        </div>
+      )}
       <Card className="overflow-hidden gap-0 py-0">
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
           <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
