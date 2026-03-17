@@ -29,7 +29,10 @@ export async function deregisterAgentForUser(
     if (!agent) {
       return { success: false, error: "Agent not found" };
     }
-    if (agent.registrationState !== "RegistrationConfirmed") {
+    const canDeregister =
+      agent.registrationState === "RegistrationConfirmed" ||
+      agent.registrationState === "DeregistrationFailed";
+    if (!canDeregister) {
       return {
         success: false,
         error:
