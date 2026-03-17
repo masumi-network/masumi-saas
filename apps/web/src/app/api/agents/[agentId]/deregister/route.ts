@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { deregisterAgentForUser } from "@/lib/deregister-agent";
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
+
+function networkFromRequest(request: NextRequest): PaymentNodeNetwork {
+  const value = request.cookies.get("payment_network")?.value;
+  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
+}
 
 export async function POST(
   request: NextRequest,
@@ -10,8 +16,11 @@ export async function POST(
   try {
     const { user } = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
+    const networkFallback = networkFromRequest(request);
 
-    const result = await deregisterAgentForUser(agentId, user.id);
+    const result = await deregisterAgentForUser(agentId, user.id, {
+      networkFallback,
+    });
     if (!result.success) {
       const status =
         result.error === "Agent not found"

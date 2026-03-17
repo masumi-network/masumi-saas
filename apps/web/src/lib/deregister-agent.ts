@@ -1,5 +1,4 @@
 import prisma from "@masumi/database/client";
-import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
@@ -7,19 +6,17 @@ import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client"
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
-async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
-  const store = await cookies();
-  const value = store.get("payment_network")?.value;
-  return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
-}
-
 /**
  * Deregister an agent on the payment node and update DB. Caller must have already
  * authenticated and verified that the agent belongs to the given user.
+ * When the agent has no stored network, options.networkFallback is used (e.g. from
+ * request cookies); pass it when calling from a Route Handler so the core stays
+ * request-agnostic.
  */
 export async function deregisterAgentForUser(
   agentId: string,
   userId: string,
+  options?: { networkFallback?: PaymentNodeNetwork },
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const agent = await prisma.agent.findFirst({
@@ -59,7 +56,8 @@ export async function deregisterAgentForUser(
     }
 
     const network = (agent.agentReference?.networkIdentifier ??
-      (await getNetworkFromCookie())) as PaymentNodeNetwork;
+      options?.networkFallback ??
+      DEFAULT_NETWORK) as PaymentNodeNetwork;
     await userClient.deregisterAgent({ network, agentIdentifier });
 
     await prisma.agent.update({
