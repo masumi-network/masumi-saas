@@ -9,7 +9,10 @@ import {
 } from "@/lib/agent-registration";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
-import { registerAgentBodySchema } from "@/lib/schemas/agent";
+import {
+  agentMetadataSchema,
+  registerAgentBodySchema,
+} from "@/lib/schemas/agent";
 
 const METADATA_KEYS = [
   "authorName",
@@ -32,8 +35,11 @@ function shapeAgentForApi(agent: {
   let mergedMetadata: Record<string, unknown> = {};
   if (agent.metadata) {
     try {
-      mergedMetadata =
-        (JSON.parse(agent.metadata) as Record<string, unknown>) ?? {};
+      const parsed = JSON.parse(agent.metadata) as unknown;
+      const result = agentMetadataSchema.safeParse(parsed);
+      mergedMetadata = result.success
+        ? (result.data as Record<string, unknown>)
+        : {};
     } catch {
       // Corrupt or non-JSON metadata; use empty so response still returns agent
     }

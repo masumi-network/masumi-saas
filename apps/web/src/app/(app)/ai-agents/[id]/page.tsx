@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { getAgentAction } from "@/lib/actions/agent.action";
-import { type Agent } from "@/lib/api/agent.client";
+import { getAgent } from "@/lib/api/agent.server";
 
 import { AgentPageContent } from "./components/agent-page-content";
 
@@ -16,7 +15,7 @@ export async function generateMetadata({
 }: AgentPageProps): Promise<Metadata> {
   const t = await getTranslations("App.Agents");
   const { id } = await params;
-  const result = await getAgentAction(id);
+  const result = await getAgent(id);
   const agentName = result.success ? result.data.name : t("title");
   return {
     title: `Masumi - ${agentName}`,
@@ -26,17 +25,15 @@ export async function generateMetadata({
 export default async function AgentPage({ params }: AgentPageProps) {
   const { id } = await params;
 
-  const result = await getAgentAction(id);
+  const result = await getAgent(id);
 
   if (!result.success || !result.data) {
     notFound();
   }
 
-  const agent = result.data as unknown as Agent;
-
   return (
     <div className="w-full space-y-4">
-      <AgentPageContent agent={agent} />
+      <AgentPageContent agent={result.data} />
     </div>
   );
 }

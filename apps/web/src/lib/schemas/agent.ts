@@ -11,6 +11,25 @@ const exampleOutputSchema = z.object({
   mimeType: z.string().max(60).min(1),
 });
 
+/**
+ * Schema for agent.metadata JSON. Only allowed keys are accepted to prevent
+ * metadata injection. Used when parsing stored metadata in API responses.
+ */
+export const agentMetadataSchema = z
+  .object({
+    authorName: z.string().optional(),
+    authorEmail: z.string().optional(),
+    organization: z.string().optional(),
+    contactOther: z.string().optional(),
+    termsOfUseUrl: z.string().optional(),
+    privacyPolicyUrl: z.string().optional(),
+    otherUrl: z.string().optional(),
+    capabilityName: z.string().optional(),
+    capabilityVersion: z.string().optional(),
+    exampleOutputs: z.array(exampleOutputSchema).optional(),
+  })
+  .strict();
+
 export const registerAgentBodySchema = z.object({
   name: z
     .string()
