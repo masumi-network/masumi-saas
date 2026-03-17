@@ -3,7 +3,7 @@
 import { Check, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -80,9 +80,11 @@ export default function UsersList({
   const [unbanDialogOpen, setUnbanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [banReason, setBanReason] = useState("");
+  const skipNextSearchPushRef = useRef(false);
   const { searchInput, setSearchInput, isPending } = useAdminListSearch(
     currentSearch,
     "/admin/users",
+    { skipNextPushRef: skipNextSearchPushRef },
   );
 
   const updateParams = (newParams: Record<string, string>) => {
@@ -113,6 +115,8 @@ export default function UsersList({
   };
 
   const handleClearSearch = () => {
+    skipNextSearchPushRef.current = true;
+    setSearchInput("");
     updateParams({ search: "", filter: "", page: "1" });
   };
 

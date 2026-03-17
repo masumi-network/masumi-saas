@@ -1,7 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import type { MutableRefObject } from "react";
 import { useEffect, useState, useTransition } from "react";
+
+export type UseAdminListSearchOptions = {
+  /** When set to true by the caller before updating input/URL, the next debounced push is skipped (avoids double navigation on clear). */
+  skipNextPushRef?: MutableRefObject<boolean>;
+};
 
 /**
  * Debounced search that syncs input to URL search param.
@@ -11,6 +17,7 @@ import { useEffect, useState, useTransition } from "react";
 export function useAdminListSearch(
   currentSearch: string,
   pathPrefix: string = "",
+  options?: UseAdminListSearchOptions,
 ) {
   const router = useRouter();
   const pathname = usePathname();
@@ -23,6 +30,10 @@ export function useAdminListSearch(
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (options?.skipNextPushRef?.current) {
+        options.skipNextPushRef.current = false;
+        return;
+      }
       if (searchInput === currentSearch) return;
       const params = new URLSearchParams(window.location.search);
       if (searchInput) {
@@ -39,7 +50,14 @@ export function useAdminListSearch(
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, currentSearch, router, pathname, pathPrefix]);
+  }, [
+    searchInput,
+    currentSearch,
+    router,
+    pathname,
+    pathPrefix,
+    options?.skipNextPushRef,
+  ]);
 
   const handleClearSearch = () => {
     setSearchInput("");
