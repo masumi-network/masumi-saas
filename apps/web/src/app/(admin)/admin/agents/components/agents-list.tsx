@@ -85,7 +85,7 @@ export default function AgentsList({
     return map[state as RegistrationState] ?? state;
   };
 
-  const [, startTransition] = useTransition();
+  const [paramsPending, startTransition] = useTransition();
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newPage > 1) params.set("page", String(newPage));
@@ -131,7 +131,7 @@ export default function AgentsList({
       <CardContent>
         <div className="space-y-4">
           <div aria-live="polite" className="sr-only">
-            {isPending
+            {paramsPending || isPending
               ? t("loading")
               : !isEmpty && !isNoResults
                 ? t("showingRange", {
@@ -142,7 +142,11 @@ export default function AgentsList({
                 : ""}
           </div>
 
-          <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
+          <div
+            className={
+              paramsPending || isPending ? "opacity-50 pointer-events-none" : ""
+            }
+          >
             {isEmpty ? (
               <div className="text-center py-8 text-muted-foreground">
                 {t("noAgents")}
