@@ -247,7 +247,7 @@ export default function AgentsList({
             )}
           </div>
 
-          {!isEmpty && !isNoResults && pagination.totalPages > 1 && (
+          {!isEmpty && !isNoResults && (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-4">
               <p className="text-sm text-muted-foreground">
                 {t("showingRange", {

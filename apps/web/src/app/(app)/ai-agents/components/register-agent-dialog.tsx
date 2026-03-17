@@ -507,6 +507,7 @@ export function RegisterAgentDialog({
       setShowCloseConfirm(false);
     } else {
       if (isLoading) {
+        closedDuringSubmitRef.current = true;
         setShowCloseConfirm(true);
         return;
       }
@@ -866,7 +867,10 @@ export function RegisterAgentDialog({
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
           if (!open) {
-            if (!closedViaConfirmRef.current)
+            // Only reset closedDuringSubmitRef when user confirmed close; if they
+            // dismissed the confirm dialog, leave it true so submit completion
+            // doesn't run onSuccess/onClose while dialog is still open.
+            if (closedViaConfirmRef.current)
               closedDuringSubmitRef.current = false;
             closedViaConfirmRef.current = false;
           }
