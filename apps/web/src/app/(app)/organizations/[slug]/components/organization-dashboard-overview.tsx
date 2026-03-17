@@ -344,10 +344,7 @@ export function OrganizationDashboardOverview({
             <RegisterAgentDialog
               open={isRegisterAgentOpen}
               onClose={() => setIsRegisterAgentOpen(false)}
-              onSuccess={() => {
-                setIsRegisterAgentOpen(false);
-                router.refresh();
-              }}
+              onSuccess={() => router.refresh()}
             />
           </CardContent>
         </Card>

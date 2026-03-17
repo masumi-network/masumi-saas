@@ -93,7 +93,9 @@ export function AgentsTable({
       } finally {
         setIsDeleting(false);
       }
-    })();
+    })().catch(() => {
+      setIsDeleting(false);
+    });
   };
 
   const handleDeregisterConfirm = () => {
@@ -115,7 +117,9 @@ export function AgentsTable({
       } finally {
         setIsDeregistering(false);
       }
-    })();
+    })().catch(() => {
+      setIsDeregistering(false);
+    });
   };
 
   if (agents.length === 0) {

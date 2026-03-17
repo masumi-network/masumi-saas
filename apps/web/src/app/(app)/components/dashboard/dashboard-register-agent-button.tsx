@@ -44,10 +44,7 @@ export function DashboardRegisterAgentButton({
       <RegisterAgentDialog
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        onSuccess={() => {
-          setIsOpen(false);
-          router.refresh();
-        }}
+        onSuccess={() => router.refresh()}
       />
     </>
   );
