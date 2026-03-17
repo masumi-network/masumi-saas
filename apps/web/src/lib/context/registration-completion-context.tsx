@@ -113,6 +113,7 @@ export function RegistrationCompletionProvider({
 
       isPollingRef.current = true;
       try {
+        const toPoll: string[] = [];
         for (const agentId of ids) {
           const attempts = (retryCountRef.current.get(agentId) ?? 0) + 1;
           retryCountRef.current.set(agentId, attempts);
@@ -131,16 +132,44 @@ export function RegistrationCompletionProvider({
                 labelKey: "viewAgent",
               },
             });
-            continue;
+          } else {
+            toPoll.push(agentId);
           }
-          try {
-            const result = await completeRegistrationIfReadyAction(agentId);
+        }
+        const results = await Promise.allSettled(
+          toPoll.map((agentId) => completeRegistrationIfReadyAction(agentId)),
+        );
+        const toRemove: {
+          agentId: string;
+          kind: "registered" | "error";
+          errorMessage?: string;
+        }[] = [];
+        for (let i = 0; i < toPoll.length; i++) {
+          const agentId = toPoll[i];
+          const settled = results[i];
+          if (settled.status === "fulfilled") {
+            const result = settled.value;
             if (result.status === "registered") {
-              const next = new Set(pendingRef.current);
-              next.delete(agentId);
-              pendingRef.current = next;
-              retryCountRef.current.delete(agentId);
-              savePendingToStorage(next);
+              toRemove.push({ agentId, kind: "registered" });
+            } else if (result.status === "error") {
+              toRemove.push({
+                agentId,
+                kind: "error",
+                errorMessage: result.error,
+              });
+            }
+          }
+        }
+        if (toRemove.length > 0) {
+          const next = new Set(pendingRef.current);
+          for (const { agentId } of toRemove) {
+            next.delete(agentId);
+            retryCountRef.current.delete(agentId);
+          }
+          pendingRef.current = next;
+          savePendingToStorage(next);
+          for (const { agentId, kind, errorMessage } of toRemove) {
+            if (kind === "registered") {
               toast.success(tRef.current("agentRegistrationComplete"));
               addNotificationRef.current({
                 type: "success",
@@ -155,15 +184,9 @@ export function RegistrationCompletionProvider({
                   detail: { agentId },
                 }),
               );
-            } else if (result.status === "error") {
-              const next = new Set(pendingRef.current);
-              next.delete(agentId);
-              pendingRef.current = next;
-              retryCountRef.current.delete(agentId);
-              savePendingToStorage(next);
-              const errorMessage =
-                result.error ?? tRef.current("registrationFailed");
-              toast.error(errorMessage);
+            } else {
+              const msg = errorMessage ?? tRef.current("registrationFailed");
+              toast.error(msg);
               addNotificationRef.current({
                 type: "error",
                 titleKey: "registrationFailed",
@@ -173,8 +196,6 @@ export function RegistrationCompletionProvider({
                 },
               });
             }
-          } catch {
-            // Keep in pending; will retry next interval
           }
         }
       } finally {

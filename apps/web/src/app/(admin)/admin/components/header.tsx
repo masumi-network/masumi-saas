@@ -22,27 +22,29 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
     >
       <div className="max-w-container mx-auto w-full h-full">
         <div className="h-full px-4 flex items-center justify-between gap-4">
-          <div className="md:hidden flex items-center gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 min-w-8"
-            >
-              <PanelLeftIcon className="h-4 w-4" />
-            </Button>
-            <Link href="/admin" className="flex items-center">
-              <MasumiLogo />
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <span className="px-2 py-1 rounded-md bg-primary/10 text-primary">
-                {t("portalTitle")}
-              </span>
+          <div className="flex flex-1 items-center gap-2 md:min-w-0">
+            <div className="md:hidden flex items-center gap-2 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 min-w-8"
+              >
+                <PanelLeftIcon className="h-4 w-4" />
+              </Button>
+              <Link href="/admin" className="flex items-center">
+                <MasumiLogo />
+              </Link>
             </div>
           </div>
+
+          <div className="flex shrink-0 items-center gap-2 text-sm font-medium text-muted-foreground">
+            <span className="hidden md:inline-block px-2 py-1 rounded-md bg-primary/10 text-primary">
+              {t("portalTitle")}
+            </span>
+          </div>
+
+          <div className="flex flex-1" aria-hidden />
         </div>
       </div>
     </header>
