@@ -97,12 +97,8 @@ export default function UsersList({
   const { searchInput, setSearchInput, handleClearSearch, isPending } =
     useAdminListSearch(currentSearch, "/admin/users", {
       skipNextPushRef: skipNextSearchPushRef,
-      // Navigate to bare path so limit (and other params) are dropped, consistent with agents list clear.
-      onClearSearch: () => {
-        startTransition(() => {
-          router.push("/admin/users");
-        });
-      },
+      // Clear only search/filter/page; preserve limit so custom page size is not reset.
+      onClearSearch: () => updateParams({ search: "", filter: "", page: "1" }),
     });
 
   const handleFilterChange = (filter: string) => {

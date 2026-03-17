@@ -188,12 +188,16 @@ export function AgentsContent() {
   // Refetch when background registration completes (toast from provider).
   useEffect(() => {
     const handler = () => {
-      loadPage().then((page) => {
-        if (page) {
-          setAgents(page.data);
-          setNextCursor(page.nextCursor);
-        }
-      });
+      loadPage()
+        .then((page) => {
+          if (page) {
+            setAgents(page.data);
+            setNextCursor(page.nextCursor);
+          }
+        })
+        .catch(() => {
+          // Network/auth error: list won't refresh; user can manually refresh.
+        });
     };
     window.addEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
     return () =>

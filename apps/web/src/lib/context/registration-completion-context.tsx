@@ -240,7 +240,7 @@ export function RegistrationCompletionProvider({
 
   // Hydrate from sessionStorage for current user; start polling when we have pending IDs.
   useEffect(() => {
-    if (!storageKey) return;
+    if (!storageKey) return clearPollingInterval;
     const stored = loadPendingFromStorage(storageKey);
     if (stored.size > 0) {
       pendingRef.current = new Set([...pendingRef.current, ...stored]);
@@ -251,6 +251,7 @@ export function RegistrationCompletionProvider({
       }, POLL_INTERVAL_MS);
       runTickRef.current?.();
     }
+    return clearPollingInterval;
   }, [storageKey, clearPollingInterval]);
 
   const value = useMemo<RegistrationCompletionContextValue>(
