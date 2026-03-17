@@ -113,7 +113,6 @@ export default function UsersList({
   };
 
   const handleClearSearch = () => {
-    setSearchInput("");
     updateParams({ search: "", filter: "", page: "1" });
   };
 
