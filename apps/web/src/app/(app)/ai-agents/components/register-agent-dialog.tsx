@@ -261,8 +261,9 @@ export function RegisterAgentDialog({
   const { addPendingAgent } = useRegistrationCompletion();
 
   const [isLoading, setIsLoading] = useState(false);
-  const closedDuringSubmitRef = useRef(false);
   const closedViaConfirmRef = useRef(false);
+  const showCloseConfirmRef = useRef(false);
+  const pendingSuccessRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
@@ -275,11 +276,15 @@ export function RegisterAgentDialog({
     onCloseRef.current = onClose;
   }, [onSuccess, onClose]);
 
+  useEffect(() => {
+    showCloseConfirmRef.current = showCloseConfirm;
+  }, [showCloseConfirm]);
+
   // On open: reset close flags and invalidate any in-flight submit from a previous session so its response is ignored.
   useEffect(() => {
     if (open) {
-      closedDuringSubmitRef.current = false;
       closedViaConfirmRef.current = false;
+      pendingSuccessRef.current = false;
       submitIdRef.current += 1;
     }
   }, [open]);
@@ -378,6 +383,37 @@ export function RegisterAgentDialog({
     form.setValue("tags", newTags.join(", "));
   };
 
+  const resetSuccessfulSubmitState = () => {
+    form.reset({
+      name: "",
+      description: "",
+      extendedDescription: "",
+      apiUrl: "",
+      isFree: false,
+      prices: [{ amount: "" }],
+      tags: "",
+      icon: "bot",
+      termsOfUseUrl: "",
+      privacyPolicyUrl: "",
+      otherUrl: "",
+      capabilityName: "",
+      capabilityVersion: "",
+      exampleOutputs: [],
+    });
+    setTags([]);
+    setTagInput("");
+  };
+
+  const finalizeSuccessfulSubmit = () => {
+    pendingSuccessRef.current = false;
+    toast.info(t("registrationStarted"));
+    resetSuccessfulSubmitState();
+    setIsLoading(false);
+    setShowCloseConfirm(false);
+    onSuccessRef.current();
+    onCloseRef.current();
+  };
+
   const onSubmit = async (data: RegisterAgentFormType) => {
     if (tags.length === 0) {
       form.setError("tags", { message: t("tagsRequired") });
@@ -431,40 +467,20 @@ export function RegisterAgentDialog({
         res.status === 200 &&
         json.success === true &&
         typeof json.agentId === "string";
-      if (closedDuringSubmitRef.current) {
-        // Registration accepted; keep agent and add to pending so completion
-        // polling can finish. Do not delete on close-during-submit.
-        if (registrationAccepted) {
-          addPendingAgent(json.agentId);
-        }
-        return;
-      }
-
       if (registrationAccepted) {
         addPendingAgent(json.agentId);
-        toast.info(t("registrationStarted"));
-        form.reset({
-          name: "",
-          description: "",
-          extendedDescription: "",
-          apiUrl: "",
-          isFree: false,
-          prices: [{ amount: "" }],
-          tags: "",
-          icon: "bot",
-          termsOfUseUrl: "",
-          privacyPolicyUrl: "",
-          otherUrl: "",
-          capabilityName: "",
-          capabilityVersion: "",
-          exampleOutputs: [],
-        });
-        setTags([]);
-        setTagInput("");
-        setIsLoading(false);
-        setShowCloseConfirm(false);
-        onSuccessRef.current();
-        onCloseRef.current();
+        if (closedViaConfirmRef.current) {
+          setIsLoading(false);
+          setShowCloseConfirm(false);
+          return;
+        }
+        if (showCloseConfirmRef.current) {
+          pendingSuccessRef.current = true;
+          setIsLoading(false);
+          setShowCloseConfirm(false);
+          return;
+        }
+        finalizeSuccessfulSubmit();
       } else {
         toast.error(json.error || t("error"));
         setIsLoading(false);
@@ -478,36 +494,18 @@ export function RegisterAgentDialog({
   };
 
   const performClose = () => {
-    if (isLoading) closedDuringSubmitRef.current = true;
     setIsLoading(false);
-    form.reset({
-      name: "",
-      description: "",
-      extendedDescription: "",
-      apiUrl: "",
-      isFree: false,
-      prices: [{ amount: "" }],
-      tags: "",
-      icon: "bot",
-      termsOfUseUrl: "",
-      privacyPolicyUrl: "",
-      otherUrl: "",
-      capabilityName: "",
-      capabilityVersion: "",
-      exampleOutputs: [],
-    });
-    setTags([]);
-    setTagInput("");
+    resetSuccessfulSubmitState();
     onClose();
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      closedDuringSubmitRef.current = false;
+      closedViaConfirmRef.current = false;
+      pendingSuccessRef.current = false;
       setShowCloseConfirm(false);
     } else {
       if (isLoading) {
-        closedDuringSubmitRef.current = true;
         setShowCloseConfirm(true);
         return;
       }
@@ -867,12 +865,13 @@ export function RegisterAgentDialog({
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
           if (!open) {
-            // Only reset closedDuringSubmitRef when user confirmed close; if they
-            // dismissed the confirm dialog, leave it true so submit completion
-            // doesn't run onSuccess/onClose while dialog is still open.
-            if (closedViaConfirmRef.current)
-              closedDuringSubmitRef.current = false;
-            closedViaConfirmRef.current = false;
+            if (closedViaConfirmRef.current) {
+              pendingSuccessRef.current = false;
+              return;
+            }
+            if (pendingSuccessRef.current) {
+              finalizeSuccessfulSubmit();
+            }
           }
         }}
         onConfirm={() => {

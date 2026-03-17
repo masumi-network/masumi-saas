@@ -3,22 +3,9 @@ import "server-only";
 import prisma from "@masumi/database/client";
 
 import type { Agent } from "@/lib/api/agent.types";
+import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import { agentMetadataSchema } from "@/lib/schemas/agent";
 import type { AgentPricing } from "@/lib/utils";
-
-const METADATA_KEYS = [
-  "authorName",
-  "authorEmail",
-  "organization",
-  "contactOther",
-  "termsOfUseUrl",
-  "privacyPolicyUrl",
-  "otherUrl",
-  "capabilityName",
-  "capabilityVersion",
-  "exampleOutputs",
-] as const;
 
 export type GetAgentResult =
   | { success: true; data: Agent }
@@ -47,38 +34,8 @@ export async function getAgent(agentId: string): Promise<GetAgentResult> {
       return { success: false, error: "Agent not found" };
     }
 
-    let mergedMetadata: Record<string, unknown> = {};
-    if (agent.metadata) {
-      try {
-        const parsed = JSON.parse(agent.metadata) as unknown;
-        const result = agentMetadataSchema.safeParse(parsed);
-        mergedMetadata = result.success
-          ? (result.data as Record<string, unknown>)
-          : {};
-      } catch {
-        // Corrupt or non-JSON metadata
-      }
-    }
-    const refMeta = agent.agentReference?.metadata as
-      | Record<string, unknown>
-      | null
-      | undefined;
-    const registrationPayload = refMeta?.registrationPayload as
-      | Record<string, unknown>
-      | undefined;
-    if (registrationPayload) {
-      for (const key of METADATA_KEYS) {
-        if (
-          registrationPayload[key] !== undefined &&
-          mergedMetadata[key] === undefined
-        ) {
-          mergedMetadata[key] = registrationPayload[key];
-        }
-      }
-    }
-
-    const { agentReference: _ref, ...agentRest } = agent;
-    const pricing = agentRest.pricing as AgentPricing | null | undefined;
+    const shapedAgent = shapeAgentWithMergedMetadata(agent);
+    const pricing = shapedAgent.pricing as AgentPricing | null | undefined;
     const allowedStatuses = [
       "PENDING",
       "VERIFIED",
@@ -86,18 +43,14 @@ export async function getAgent(agentId: string): Promise<GetAgentResult> {
       "EXPIRED",
     ] as const;
     const verificationStatus =
-      agentRest.verificationStatus &&
+      shapedAgent.verificationStatus &&
       allowedStatuses.includes(
-        agentRest.verificationStatus as (typeof allowedStatuses)[number],
+        shapedAgent.verificationStatus as (typeof allowedStatuses)[number],
       )
-        ? (agentRest.verificationStatus as Agent["verificationStatus"])
+        ? (shapedAgent.verificationStatus as Agent["verificationStatus"])
         : null;
     const data: Agent = {
-      ...agentRest,
-      metadata:
-        Object.keys(mergedMetadata).length > 0
-          ? JSON.stringify(mergedMetadata)
-          : null,
+      ...shapedAgent,
       pricing: pricing ?? null,
       verificationStatus,
     };

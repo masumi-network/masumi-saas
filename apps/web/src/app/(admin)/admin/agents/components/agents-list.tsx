@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useTransition } from "react";
 
@@ -63,12 +63,11 @@ export default function AgentsList({
   currentSearch,
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [paramsPending, startTransition] = useTransition();
   const skipNextSearchPushRef = useRef(false);
   const updateParams = (newParams: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     Object.entries(newParams).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
@@ -102,7 +101,7 @@ export default function AgentsList({
 
   // Page-change transition; combined with isPending (search) for loading overlay below
   const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     if (newPage > 1) params.set("page", String(newPage));
     else params.delete("page");
     const q = params.toString();
