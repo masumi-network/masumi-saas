@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useTransition } from "react";
+import { useRef, useTransition } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,8 +64,20 @@ export default function AgentsList({
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
   const searchParams = useSearchParams();
-  const { searchInput, setSearchInput, handleClearSearch, isPending } =
-    useAdminListSearch(currentSearch, "/admin/agents");
+  const router = useRouter();
+  const skipNextSearchPushRef = useRef(false);
+  const { searchInput, setSearchInput, isPending } = useAdminListSearch(
+    currentSearch,
+    "/admin/agents",
+    { skipNextPushRef: skipNextSearchPushRef },
+  );
+  const handleClearSearch = () => {
+    skipNextSearchPushRef.current = true;
+    setSearchInput("");
+    startTransition(() => {
+      router.push("/admin/agents");
+    });
+  };
 
   const getRegistrationLabel = (state: RegistrationState | string) => {
     const map: Record<RegistrationState, string> = {
@@ -81,7 +93,6 @@ export default function AgentsList({
     return map[state as RegistrationState] ?? state;
   };
 
-  const router = useRouter();
   const [, startTransition] = useTransition();
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
