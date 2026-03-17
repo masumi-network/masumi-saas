@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
@@ -65,7 +65,6 @@ export function AgentPageContent({
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
-  const [, startTransition] = useTransition();
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
@@ -194,41 +193,45 @@ export function AgentPageContent({
 
   const handleDeregisterConfirm = () => {
     setIsDeregistering(true);
-    startTransition(async () => {
-      const result = await agentApiClient.deregisterAgent(agent.id);
-      if (result.success) {
-        toast.success(t("deregisterSuccess"));
-        const next = await agentApiClient.getAgent(agent.id);
-        if (next.success && next.data) setAgent(next.data);
-        setIsDeregisterDialogOpen(false);
-      } else {
-        toast.error(result.error ?? t("deregisterError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deregisterAgent(agent.id);
+        if (result.success) {
+          toast.success(t("deregisterSuccess"));
+          const next = await agentApiClient.getAgent(agent.id);
+          if (next.success && next.data) setAgent(next.data);
+          setIsDeregisterDialogOpen(false);
+        } else {
+          toast.error(result.error ?? t("deregisterError"));
+        }
+      } finally {
+        setIsDeregistering(false);
       }
-      setIsDeregistering(false);
-    });
+    })();
   };
 
   const handleDeleteConfirm = () => {
     setIsDeleting(true);
-    startTransition(async () => {
-      const result = await agentApiClient.deleteAgent(agent.id);
-      if (result.success) {
-        toast.success(t("deleteSuccess"));
-        router.push(backHref);
-      } else {
-        toast.error(result.error || t("deleteError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deleteAgent(agent.id);
+        if (result.success) {
+          toast.success(t("deleteSuccess"));
+          router.push(backHref);
+        } else {
+          toast.error(result.error || t("deleteError"));
+        }
+      } finally {
         setIsDeleting(false);
       }
-    });
+    })();
   };
 
   const handleVerificationSuccess = () => {
-    startTransition(async () => {
+    (async () => {
       const result = await agentApiClient.getAgent(agent.id);
-      if (result.success) {
-        setAgent(result.data);
-      }
-    });
+      if (result.success && result.data) setAgent(result.data);
+    })();
   };
 
   return (
