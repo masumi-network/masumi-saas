@@ -159,7 +159,7 @@ export function AgentPageContent({
   // after the dialog was closed or the page was reloaded.
   useEffect(() => {
     if (agent.verificationStatus === "VERIFIED") return;
-    void (async () => {
+    (async () => {
       const result = await credentialApiClient.reconcilePendingCredentials(
         agent.id,
       );
@@ -167,7 +167,9 @@ export function AgentPageContent({
         const next = await agentApiClient.getAgent(agent.id);
         if (next.success && next.data) setAgent(next.data);
       }
-    })();
+    })().catch(() => {
+      // Reconcile or refetch failed; ignore.
+    });
   }, [agent.id, agent.verificationStatus]);
 
   const tabParam = searchParams.get("tab");
@@ -207,7 +209,9 @@ export function AgentPageContent({
       } finally {
         setIsDeregistering(false);
       }
-    })();
+    })().catch(() => {
+      setIsDeregistering(false);
+    });
   };
 
   const handleDeleteConfirm = () => {
@@ -224,14 +228,18 @@ export function AgentPageContent({
       } finally {
         setIsDeleting(false);
       }
-    })();
+    })().catch(() => {
+      setIsDeleting(false);
+    });
   };
 
   const handleVerificationSuccess = () => {
     (async () => {
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
-    })();
+    })().catch(() => {
+      // Refetch failed; user can refresh the page.
+    });
   };
 
   return (

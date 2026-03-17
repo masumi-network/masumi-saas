@@ -88,7 +88,10 @@ export default function AdminAgentsContent() {
   const [error, setError] = useState<string | null>(null);
   const [agents, setAgents] = useState<AgentsData | null>(null);
 
-  const page = Math.max(1, Math.floor(Number(searchParams.get("page")) || 1));
+  const page = Math.min(
+    10_000,
+    Math.max(1, Math.floor(Number(searchParams.get("page")) || 1)),
+  );
   const limit = Math.min(
     50,
     Math.max(1, Math.floor(Number(searchParams.get("limit")) || 10)),
