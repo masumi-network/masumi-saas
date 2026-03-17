@@ -428,7 +428,7 @@ export function RegisterAgentDialog({
       if (submitId !== submitIdRef.current) return;
 
       const registrationAccepted =
-        (res.status === 200 || res.status === 202) &&
+        res.status === 200 &&
         json.success === true &&
         typeof json.agentId === "string";
       if (closedDuringSubmitRef.current) {

@@ -210,7 +210,7 @@ export function AgentPageContent({
         setIsDeregistering(false);
       }
     })().catch(() => {
-      setIsDeregistering(false);
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 
@@ -229,7 +229,7 @@ export function AgentPageContent({
         setIsDeleting(false);
       }
     })().catch(() => {
-      setIsDeleting(false);
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 

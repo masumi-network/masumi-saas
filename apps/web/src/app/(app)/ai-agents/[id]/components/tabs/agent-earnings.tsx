@@ -47,6 +47,8 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("1d");
   const [refreshKey, setRefreshKey] = useState(0);
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
+  /** Period (and agent) this data is for; when it differs from selection we show loading. */
+  const [earningsDataKey, setEarningsDataKey] = useState<string>(() => "");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +63,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
             if (getIsCancelled?.()) return;
             if (json.success && json.data) {
               setEarningsData(json.data);
+              setEarningsDataKey(`${agent.id}:${selectedPeriod}`);
               setError(null);
             } else {
               // Keep stale data on refresh failure; only set error
@@ -80,6 +83,9 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     [agent.id, selectedPeriod],
   );
 
+  const currentKey = `${agent.id}:${selectedPeriod}`;
+  const isDataForCurrentSelection = earningsDataKey === currentKey;
+
   useEffect(() => {
     let cancelled = false;
     const getIsCancelled = () => cancelled;
@@ -89,12 +95,12 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     };
   }, [fetchEarnings, refreshKey]);
 
-  if (isLoading && !earningsData) {
+  if (isLoading && (!earningsData || !isDataForCurrentSelection)) {
     return <TabSkeleton tab="earnings" />;
   }
 
-  // Full-screen error only when we have no data; otherwise show stale data + inline error
-  if (error && !earningsData) {
+  // Full-screen error only when we have no data for this selection; otherwise show stale + inline error
+  if (error && (!earningsData || !isDataForCurrentSelection)) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <p className="text-sm font-medium text-destructive">{error}</p>
@@ -113,18 +119,20 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     );
   }
 
+  // Only use earningsData when it matches current period/agent
+  const dataToShow = isDataForCurrentSelection ? earningsData : null;
   const incomeFormatted = formatEarningsAsUsd(
-    earningsData?.totalIncome?.units ?? [],
+    dataToShow?.totalIncome?.units ?? [],
   );
   const refundedFormatted = formatEarningsAsUsd(
-    earningsData?.totalRefunded?.units ?? [],
+    dataToShow?.totalRefunded?.units ?? [],
   );
-  const txCount = earningsData?.totalTransactions ?? 0;
+  const txCount = dataToShow?.totalTransactions ?? 0;
   const hasNoEarnings = txCount === 0;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3">
-      {error && earningsData && (
+      {error && dataToShow && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
           <p className="text-destructive">{error}</p>
           <button

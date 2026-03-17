@@ -65,10 +65,25 @@ export default function AgentsList({
   const t = useTranslations("Admin.Agents");
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [paramsPending, startTransition] = useTransition();
   const skipNextSearchPushRef = useRef(false);
+  const updateParams = (newParams: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+    startTransition(() => {
+      router.push(`/admin/agents?${params.toString()}`);
+    });
+  };
   const { searchInput, setSearchInput, handleClearSearch, isPending } =
     useAdminListSearch(currentSearch, "/admin/agents", {
       skipNextPushRef: skipNextSearchPushRef,
+      onClearSearch: () => updateParams({ search: "", page: "1" }),
     });
 
   const getRegistrationLabel = (state: RegistrationState | string) => {
@@ -86,7 +101,6 @@ export default function AgentsList({
   };
 
   // Page-change transition; combined with isPending (search) for loading overlay below
-  const [paramsPending, startTransition] = useTransition();
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (newPage > 1) params.set("page", String(newPage));
