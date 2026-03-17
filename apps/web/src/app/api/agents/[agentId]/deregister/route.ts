@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { deregisterAgentForUser } from "@/lib/deregister-agent";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 
 function networkFromRequest(request: NextRequest): PaymentNodeNetwork {
   const value = request.cookies.get("payment_network")?.value;
@@ -15,7 +16,20 @@ export async function POST(
 ) {
   try {
     const { user } = await getAuthenticatedOrThrow(request);
-    const { agentId } = await params;
+    const { agentId: rawAgentId } = await params;
+    const agentIdResult = agentIdRouteParamSchema.safeParse(rawAgentId);
+    if (!agentIdResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            agentIdResult.error.issues.map((e) => e.message).join(", ") ||
+            "Invalid agent ID",
+        },
+        { status: 400 },
+      );
+    }
+    const agentId = agentIdResult.data;
     const networkFallback = networkFromRequest(request);
 
     const result = await deregisterAgentForUser(agentId, user.id, {

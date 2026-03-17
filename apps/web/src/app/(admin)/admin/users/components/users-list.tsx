@@ -442,19 +442,18 @@ export default function UsersList({
                 })}
               </div>
 
-              <AdminPaginationBar
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                labels={{
-                  previous: t("previous"),
-                  next: t("next"),
-                  previousAriaLabel: t("paginationPrevious"),
-                  nextAriaLabel: t("paginationNext"),
-                  ellipsisSrText: t("paginationMore"),
-                }}
-              />
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                <AdminPaginationBar
+                  pagination={pagination}
+                  onPageChange={handlePageChange}
+                  labels={{
+                    previous: t("previous"),
+                    next: t("next"),
+                    previousAriaLabel: t("paginationPrevious"),
+                    nextAriaLabel: t("paginationNext"),
+                    ellipsisSrText: t("paginationMore"),
+                  }}
+                />
                 <Select
                   value={String(pagination.limit)}
                   onValueChange={handleLimitChange}

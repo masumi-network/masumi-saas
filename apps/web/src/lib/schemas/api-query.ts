@@ -85,3 +85,9 @@ export const agentVerifyQuerySchema = z.object({
     requiredString("Agent identifier is required"),
   ),
 });
+
+/** [agentId] route param — validates format and length to prevent injection. */
+export const agentIdRouteParamSchema = z
+  .string()
+  .min(1, "Agent ID is required")
+  .max(64, "Agent ID is invalid");
