@@ -275,4 +275,3 @@ class AgentApiClient {
 }
 
 export const agentApiClient = new AgentApiClient();
-export type { Agent };
