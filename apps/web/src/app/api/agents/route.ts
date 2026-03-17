@@ -29,9 +29,15 @@ function shapeAgentForApi(agent: {
   agentReference?: { metadata: unknown } | null;
   [key: string]: unknown;
 }) {
-  const mergedMetadata = agent.metadata
-    ? (JSON.parse(agent.metadata) as Record<string, unknown>)
-    : {};
+  let mergedMetadata: Record<string, unknown> = {};
+  if (agent.metadata) {
+    try {
+      mergedMetadata =
+        (JSON.parse(agent.metadata) as Record<string, unknown>) ?? {};
+    } catch {
+      // Corrupt or non-JSON metadata; use empty so response still returns agent
+    }
+  }
   const refMeta = agent.agentReference?.metadata as
     | Record<string, unknown>
     | null
