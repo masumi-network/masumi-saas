@@ -85,6 +85,7 @@ export default function AgentsList({
     return map[state as RegistrationState] ?? state;
   };
 
+  // Page-change transition; combined with isPending (search) for loading overlay below
   const [paramsPending, startTransition] = useTransition();
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -217,6 +217,27 @@ async function registerAgentOnChainUntilDispenser(
     }
   }
 
+  const agentMetadata: Record<string, unknown> = {
+    authorName: user.name?.trim() || "Unknown",
+    authorEmail: user.email ?? undefined,
+    organization: undefined,
+    contactOther: undefined,
+    termsOfUseUrl: params.termsOfUseUrl ?? undefined,
+    privacyPolicyUrl: params.privacyPolicyUrl ?? undefined,
+    otherUrl: params.otherUrl ?? undefined,
+    capabilityName: params.capabilityName,
+    capabilityVersion: params.capabilityVersion,
+    exampleOutputs: params.exampleOutputs,
+  };
+  const metadataCleaned: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(agentMetadata)) {
+    if (v !== undefined) metadataCleaned[k] = v;
+  }
+  const agentMetadataJson =
+    Object.keys(metadataCleaned).length > 0
+      ? JSON.stringify(metadataCleaned)
+      : null;
+
   const agent = await prisma.agent.create({
     data: {
       name: params.name,
@@ -231,6 +252,7 @@ async function registerAgentOnChainUntilDispenser(
       verificationStatus: "PENDING",
       pricing: params.agentPricing as Record<string, unknown>,
       networkIdentifier: network,
+      metadata: agentMetadataJson,
     },
   });
 
