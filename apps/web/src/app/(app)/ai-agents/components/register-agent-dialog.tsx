@@ -464,6 +464,7 @@ export function RegisterAgentDialog({
         setIsLoading(false);
         setShowCloseConfirm(false);
         onSuccessRef.current();
+        onCloseRef.current();
       } else {
         toast.error(json.error || t("error"));
         setIsLoading(false);
