@@ -7,6 +7,8 @@ import { useEffect, useState, useTransition } from "react";
 export type UseAdminListSearchOptions = {
   /** When set to true by the caller before updating input/URL, the next debounced push is skipped (avoids double navigation on clear). */
   skipNextPushRef?: MutableRefObject<boolean>;
+  /** When provided, called instead of router.push(base) on clear; use to preserve or clear other params (e.g. filter, limit). */
+  onClearSearch?: () => void;
 };
 
 /**
@@ -67,10 +69,14 @@ export function useAdminListSearch(
       skipRef.current = true;
     }
     setSearchInput("");
-    const base = pathPrefix || pathname;
-    startTransition(() => {
-      router.push(base);
-    });
+    if (options?.onClearSearch) {
+      options.onClearSearch();
+    } else {
+      const base = pathPrefix || pathname;
+      startTransition(() => {
+        router.push(base);
+      });
+    }
   };
 
   return { searchInput, setSearchInput, handleClearSearch, isPending };

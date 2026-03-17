@@ -81,12 +81,6 @@ export default function UsersList({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [banReason, setBanReason] = useState("");
   const skipNextSearchPushRef = useRef(false);
-  const { searchInput, setSearchInput, isPending } = useAdminListSearch(
-    currentSearch,
-    "/admin/users",
-    { skipNextPushRef: skipNextSearchPushRef },
-  );
-
   const updateParams = (newParams: Record<string, string>) => {
     const params = new URLSearchParams(window.location.search);
     Object.entries(newParams).forEach(([key, value]) => {
@@ -100,6 +94,11 @@ export default function UsersList({
       router.push(`?${params.toString()}`);
     });
   };
+  const { searchInput, setSearchInput, handleClearSearch, isPending } =
+    useAdminListSearch(currentSearch, "/admin/users", {
+      skipNextPushRef: skipNextSearchPushRef,
+      onClearSearch: () => updateParams({ search: "", filter: "", page: "1" }),
+    });
 
   const handleFilterChange = (filter: string) => {
     updateParams({ filter: filter === "all" ? "" : filter, page: "1" });
@@ -112,12 +111,6 @@ export default function UsersList({
 
   const handleLimitChange = (limit: string) => {
     updateParams({ limit, page: "1" });
-  };
-
-  const handleClearSearch = () => {
-    skipNextSearchPushRef.current = true;
-    setSearchInput("");
-    updateParams({ search: "", filter: "", page: "1" });
   };
 
   const validRoles = ["admin", "user"] as const;

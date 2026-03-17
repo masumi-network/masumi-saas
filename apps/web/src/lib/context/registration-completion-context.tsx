@@ -84,16 +84,18 @@ export function RegistrationCompletionProvider({
     addNotificationRef.current = addNotification;
   }, [addNotification]);
 
-  const runTickRef = useRef<() => void>(null!);
+  const runTickRef = useRef<(() => void) | null>(null);
 
   const addPendingAgent = useCallback((agentId: string) => {
     const next = new Set(pendingRef.current);
     next.add(agentId);
     pendingRef.current = next;
     savePendingToStorage(next);
-    if (intervalRef.current === null && runTickRef.current) {
-      intervalRef.current = setInterval(runTickRef.current, POLL_INTERVAL_MS);
-      runTickRef.current();
+    if (intervalRef.current === null) {
+      intervalRef.current = setInterval(() => {
+        runTickRef.current?.();
+      }, POLL_INTERVAL_MS);
+      runTickRef.current?.();
     }
   }, []);
 
@@ -217,9 +219,11 @@ export function RegistrationCompletionProvider({
     if (stored.size > 0) {
       pendingRef.current = new Set([...pendingRef.current, ...stored]);
       savePendingToStorage(pendingRef.current);
-      if (intervalRef.current === null && runTickRef.current) {
-        intervalRef.current = setInterval(runTickRef.current, POLL_INTERVAL_MS);
-        runTickRef.current();
+      if (intervalRef.current === null) {
+        intervalRef.current = setInterval(() => {
+          runTickRef.current?.();
+        }, POLL_INTERVAL_MS);
+        runTickRef.current?.();
       }
     }
   }, []);
