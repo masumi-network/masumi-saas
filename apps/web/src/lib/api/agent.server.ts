@@ -79,6 +79,19 @@ export async function getAgent(agentId: string): Promise<GetAgentResult> {
 
     const { agentReference: _ref, ...agentRest } = agent;
     const pricing = agentRest.pricing as AgentPricing | null | undefined;
+    const allowedStatuses = [
+      "PENDING",
+      "VERIFIED",
+      "REVOKED",
+      "EXPIRED",
+    ] as const;
+    const verificationStatus =
+      agentRest.verificationStatus &&
+      allowedStatuses.includes(
+        agentRest.verificationStatus as (typeof allowedStatuses)[number],
+      )
+        ? (agentRest.verificationStatus as Agent["verificationStatus"])
+        : null;
     const data: Agent = {
       ...agentRest,
       metadata:
@@ -86,6 +99,7 @@ export async function getAgent(agentId: string): Promise<GetAgentResult> {
           ? JSON.stringify(mergedMetadata)
           : null,
       pricing: pricing ?? null,
+      verificationStatus,
     };
 
     return { success: true, data };
