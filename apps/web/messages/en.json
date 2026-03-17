@@ -692,6 +692,7 @@
       "dismiss": "Dismiss",
       "agentRegistrationComplete": "Agent registered successfully",
       "registrationFailed": "Registration failed",
+      "registrationTimedOut": "Registration timed out",
       "viewAgent": "View agent"
     },
     "UserProfile": {

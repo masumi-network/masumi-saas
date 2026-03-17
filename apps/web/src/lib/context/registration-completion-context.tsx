@@ -15,6 +15,8 @@ import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
 import { useNotifications } from "@/lib/context/notifications-context";
 
 const POLL_INTERVAL_MS = 5_000;
+/** Stop polling an agent after this many attempts (~3 min at 5s interval). */
+const MAX_POLL_ATTEMPTS = 36;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
 const PENDING_STORAGE_KEY = "masumi-pending-registration-ids";
 
@@ -73,6 +75,7 @@ export function RegistrationCompletionProvider({
 
   const isPollingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryCountRef = useRef<Map<string, number>>(new Map());
   const tRef = useRef(t);
   tRef.current = t;
   const { addNotification } = useNotifications();
@@ -111,12 +114,32 @@ export function RegistrationCompletionProvider({
       isPollingRef.current = true;
       try {
         for (const agentId of ids) {
+          const attempts = (retryCountRef.current.get(agentId) ?? 0) + 1;
+          retryCountRef.current.set(agentId, attempts);
+          if (attempts > MAX_POLL_ATTEMPTS) {
+            const next = new Set(pendingRef.current);
+            next.delete(agentId);
+            pendingRef.current = next;
+            retryCountRef.current.delete(agentId);
+            savePendingToStorage(next);
+            toast.error(tRef.current("registrationTimedOut"));
+            addNotificationRef.current({
+              type: "error",
+              titleKey: "registrationTimedOut",
+              link: {
+                href: `/ai-agents/${agentId}`,
+                labelKey: "viewAgent",
+              },
+            });
+            continue;
+          }
           try {
             const result = await completeRegistrationIfReadyAction(agentId);
             if (result.status === "registered") {
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
+              retryCountRef.current.delete(agentId);
               savePendingToStorage(next);
               toast.success(tRef.current("agentRegistrationComplete"));
               addNotificationRef.current({
@@ -136,6 +159,7 @@ export function RegistrationCompletionProvider({
               const next = new Set(pendingRef.current);
               next.delete(agentId);
               pendingRef.current = next;
+              retryCountRef.current.delete(agentId);
               savePendingToStorage(next);
               const errorMessage =
                 result.error ?? tRef.current("registrationFailed");
