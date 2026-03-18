@@ -861,7 +861,7 @@ export function RegisterAgentDialog({
         open={showCloseConfirm}
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
-          if (!open) {
+          if (open) {
             closedViaConfirmRef.current = false;
           }
         }}
