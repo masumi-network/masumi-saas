@@ -17,6 +17,7 @@ import {
 } from "@/lib/actions/agent.action";
 import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
+import z from "zod";
 
 const POLL_INTERVAL_MS = 5_000;
 /** Delay before first tick after adding a pending agent so dispenser UTXOs can land. */
@@ -35,13 +36,16 @@ function getRetryCountsStorageKey(userId: string | null): string | null {
   return userId ? `${RETRY_COUNTS_STORAGE_KEY_PREFIX}-${userId}` : null;
 }
 
+const pendingAgentSchema = z.array(z.string());
+
 function loadPendingFromStorage(storageKey: string | null): Set<string> {
   if (typeof window === "undefined" || !storageKey) return new Set();
   try {
     const raw = sessionStorage.getItem(storageKey);
     const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
-      return new Set(parsed);
+    const result = pendingAgentSchema.safeParse(parsed);
+    if (result.success) {
+      return new Set(result.data);
     }
   } catch {
     // ignore
