@@ -474,8 +474,6 @@ export function RegisterAgentDialog({
           return;
         }
         if (showCloseConfirmRef.current) {
-          setIsLoading(false);
-          setShowCloseConfirm(false);
           // Call directly: Radix onOpenChange may not fire when closing via controlled state.
           finalizeSuccessfulSubmit();
           return;

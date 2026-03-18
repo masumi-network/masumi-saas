@@ -11,7 +11,10 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { completeRegistrationIfReadyAction } from "@/lib/actions/agent.action";
+import {
+  completeRegistrationIfReadyAction,
+  getPendingRegistrationAgentIdsAction,
+} from "@/lib/actions/agent.action";
 import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
 
@@ -22,9 +25,14 @@ const FIRST_TICK_DELAY_MS = 2_000;
 const MAX_POLL_ATTEMPTS = 36;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
 const PENDING_STORAGE_KEY_PREFIX = "masumi-pending-registration-ids";
+const RETRY_COUNTS_STORAGE_KEY_PREFIX = "masumi-pending-registration-retries";
 
 function getStorageKey(userId: string | null): string | null {
   return userId ? `${PENDING_STORAGE_KEY_PREFIX}-${userId}` : null;
+}
+
+function getRetryCountsStorageKey(userId: string | null): string | null {
+  return userId ? `${RETRY_COUNTS_STORAGE_KEY_PREFIX}-${userId}` : null;
 }
 
 function loadPendingFromStorage(storageKey: string | null): Set<string> {
@@ -41,6 +49,29 @@ function loadPendingFromStorage(storageKey: string | null): Set<string> {
   return new Set();
 }
 
+function loadRetryCountsFromStorage(
+  retryKey: string | null,
+): Map<string, number> {
+  if (typeof window === "undefined" || !retryKey) return new Map();
+  try {
+    const raw = sessionStorage.getItem(retryKey);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      Object.entries(parsed).every(
+        ([k, v]) => typeof k === "string" && typeof v === "number",
+      )
+    ) {
+      return new Map(Object.entries(parsed) as [string, number][]);
+    }
+  } catch {
+    // ignore
+  }
+  return new Map();
+}
+
 function savePendingToStorage(
   ids: Set<string>,
   storageKey: string | null,
@@ -52,6 +83,25 @@ function savePendingToStorage(
       sessionStorage.removeItem(storageKey);
     } else {
       sessionStorage.setItem(storageKey, JSON.stringify(arr));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function saveRetryCountsToStorage(
+  counts: Map<string, number>,
+  retryKey: string | null,
+): void {
+  if (typeof window === "undefined" || !retryKey) return;
+  try {
+    if (counts.size === 0) {
+      sessionStorage.removeItem(retryKey);
+    } else {
+      sessionStorage.setItem(
+        retryKey,
+        JSON.stringify(Object.fromEntries(counts)),
+      );
     }
   } catch {
     // ignore
@@ -103,7 +153,9 @@ export function RegistrationCompletionProvider({
 
   const runTickRef = useRef<(() => void) | null>(null);
   const storageKeyRef = useRef<string | null>(null);
+  const retryKeyRef = useRef<string | null>(null);
   storageKeyRef.current = storageKey;
+  retryKeyRef.current = getRetryCountsStorageKey(userId);
 
   const clearPollingInterval = useCallback(() => {
     if (firstTickTimeoutRef.current !== null) {
@@ -168,6 +220,10 @@ export function RegistrationCompletionProvider({
             pendingRef.current = next;
             retryCountRef.current.delete(agentId);
             savePendingToStorage(next, storageKeyRef.current);
+            saveRetryCountsToStorage(
+              retryCountRef.current,
+              retryKeyRef.current,
+            );
             toast.error(tRef.current("registrationTimedOut"));
             addNotificationRef.current({
               type: "error",
@@ -181,6 +237,7 @@ export function RegistrationCompletionProvider({
             toPoll.push(agentId);
           }
         }
+        saveRetryCountsToStorage(retryCountRef.current, retryKeyRef.current);
         const results = await Promise.allSettled(
           toPoll.map((agentId) => completeRegistrationIfReadyAction(agentId)),
         );
@@ -213,6 +270,7 @@ export function RegistrationCompletionProvider({
           }
           pendingRef.current = next;
           savePendingToStorage(next, storageKeyRef.current);
+          saveRetryCountsToStorage(retryCountRef.current, retryKeyRef.current);
           for (const { agentId, kind, errorMessage } of toRemove) {
             if (kind === "registered") {
               toast.success(tRef.current("agentRegistrationComplete"));
@@ -251,21 +309,42 @@ export function RegistrationCompletionProvider({
     return clearPollingInterval;
   }, [clearPollingInterval]);
 
-  // Hydrate from sessionStorage for current user; start polling when we have pending IDs.
+  // Hydrate from sessionStorage and recover stuck agents from server; start polling when we have pending IDs.
   useEffect(() => {
     if (!storageKey) return clearPollingInterval;
-    const stored = loadPendingFromStorage(storageKey);
-    if (stored.size > 0) {
-      pendingRef.current = new Set([...pendingRef.current, ...stored]);
-      savePendingToStorage(pendingRef.current, storageKey);
+
+    const startPolling = () => {
       clearPollingInterval();
       intervalRef.current = setInterval(() => {
         runTickRef.current?.();
       }, POLL_INTERVAL_MS);
-      runTickRef.current?.();
+      firstTickTimeoutRef.current = setTimeout(() => {
+        firstTickTimeoutRef.current = null;
+        runTickRef.current?.();
+      }, FIRST_TICK_DELAY_MS);
+    };
+
+    const stored = loadPendingFromStorage(storageKey);
+    const retryKey = getRetryCountsStorageKey(userId);
+    const storedRetries = loadRetryCountsFromStorage(retryKey);
+    for (const [id, count] of storedRetries) {
+      retryCountRef.current.set(id, count);
     }
+    const next = new Set([...pendingRef.current, ...stored]);
+    pendingRef.current = next;
+    savePendingToStorage(next, storageKey);
+    if (next.size > 0) startPolling();
+
+    getPendingRegistrationAgentIdsAction().then((serverIds) => {
+      if (serverIds.length === 0) return;
+      const merged = new Set([...pendingRef.current, ...serverIds]);
+      pendingRef.current = merged;
+      savePendingToStorage(merged, storageKeyRef.current);
+      if (merged.size > 0) startPolling();
+    });
+
     return clearPollingInterval;
-  }, [storageKey, clearPollingInterval]);
+  }, [storageKey, userId, clearPollingInterval]);
 
   const value = useMemo<RegistrationCompletionContextValue>(
     () => ({ addPendingAgent }),

@@ -105,7 +105,6 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
           className="mt-3 text-sm font-medium text-primary underline-offset-4 hover:underline"
           onClick={() => {
             setError(null);
-            setEarningsData(null);
             setRefreshKey((k) => k + 1);
           }}
         >

@@ -21,6 +21,33 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
+/** Returns agent IDs for the current user that need on-chain registration completion
+ *  (stuck after tab close). Used to recover polling on next app load. */
+export async function getPendingRegistrationAgentIdsAction(): Promise<
+  string[]
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+    const agents = await prisma.agent.findMany({
+      where: {
+        userId: user.id,
+        registrationState: {
+          in: ["RegistrationRequested", "RegistrationInitiated"],
+        },
+        agentReference: {
+          externalId: null,
+        },
+      },
+      select: { id: true },
+    });
+    return agents.map((a) => a.id);
+  } catch {
+    return [];
+  }
+}
+
 /** Called by the client when POST /api/agents returned WALLET_FUNDING_PENDING.
  *  Poll until status is "registered" or the user gives up. */
 export async function completeRegistrationIfReadyAction(
