@@ -121,7 +121,7 @@ export function RegistrationCompletionProvider({
       const next = new Set(pendingRef.current);
       next.add(agentId);
       pendingRef.current = next;
-      savePendingToStorage(next, storageKey);
+      savePendingToStorage(next, storageKeyRef.current);
       clearPollingInterval();
       intervalRef.current = setInterval(() => {
         runTickRef.current?.();
@@ -131,7 +131,7 @@ export function RegistrationCompletionProvider({
         runTickRef.current?.();
       }, FIRST_TICK_DELAY_MS);
     },
-    [clearPollingInterval, storageKey],
+    [clearPollingInterval],
   );
 
   // Define tick and set runTickRef only; do not start interval on mount.
