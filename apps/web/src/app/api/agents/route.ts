@@ -7,69 +7,10 @@ import {
   type RegisterAgentParams,
   startAgentRegistration,
 } from "@/lib/agent-registration";
+import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
-import {
-  agentMetadataSchema,
-  registerAgentBodySchema,
-} from "@/lib/schemas/agent";
-
-const METADATA_KEYS = [
-  "authorName",
-  "authorEmail",
-  "organization",
-  "contactOther",
-  "termsOfUseUrl",
-  "privacyPolicyUrl",
-  "otherUrl",
-  "capabilityName",
-  "capabilityVersion",
-  "exampleOutputs",
-] as const;
-
-function shapeAgentForApi(agent: {
-  metadata: string | null;
-  agentReference?: { metadata: unknown } | null;
-  [key: string]: unknown;
-}) {
-  let mergedMetadata: Record<string, unknown> = {};
-  if (agent.metadata) {
-    try {
-      const parsed = JSON.parse(agent.metadata) as unknown;
-      const result = agentMetadataSchema.safeParse(parsed);
-      mergedMetadata = result.success
-        ? (result.data as Record<string, unknown>)
-        : {};
-    } catch {
-      // Corrupt or non-JSON metadata; use empty so response still returns agent
-    }
-  }
-  const refMeta = agent.agentReference?.metadata as
-    | Record<string, unknown>
-    | null
-    | undefined;
-  const registrationPayload = refMeta?.registrationPayload as
-    | Record<string, unknown>
-    | undefined;
-  if (registrationPayload) {
-    for (const key of METADATA_KEYS) {
-      if (
-        registrationPayload[key] !== undefined &&
-        mergedMetadata[key] === undefined
-      ) {
-        mergedMetadata[key] = registrationPayload[key];
-      }
-    }
-  }
-  const { agentReference: _ref, ...agentRest } = agent;
-  return {
-    ...agentRest,
-    metadata:
-      Object.keys(mergedMetadata).length > 0
-        ? JSON.stringify(mergedMetadata)
-        : null,
-  };
-}
+import { registerAgentBodySchema } from "@/lib/schemas/agent";
 
 const getAgentsQuerySchema = z.object({
   verificationStatus: z
@@ -314,7 +255,7 @@ export async function POST(request: NextRequest) {
           { status: 500 },
         );
       }
-      const data = shapeAgentForApi(agent);
+      const data = shapeAgentWithMergedMetadata(agent);
       return NextResponse.json(
         { success: true, data, agentId: result.agentId },
         { status: 200 },
