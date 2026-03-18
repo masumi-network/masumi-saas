@@ -79,6 +79,25 @@ Example:
 curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 ```
 
+### Payment Node Proxy (authenticated)
+
+The **v1** namespace also proxies non-admin payment node endpoints. Use SaaS auth (session or API key); the user's payment node key is used server-side.
+
+| Path                               | Description                                |
+| ---------------------------------- | ------------------------------------------ |
+| `GET/POST /api/v1/purchase`        | Create or list purchases                   |
+| `GET/POST /api/v1/payment`         | Create or list payments                    |
+| `GET/POST /api/v1/registry`        | Register agents, list registry, deregister |
+| `GET /api/v1/api-key-status`       | API key status                             |
+| `GET /api/v1/utxos`                | Query UTXOs                                |
+| `GET /api/v1/payment-source`       | List payment sources                       |
+| `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                   |
+| … and other non-admin endpoints    | See payment node OpenAPI spec              |
+
+Excluded: wallet exports, admin-only (wallet, payment-source-extended, api-key CRUD, swap, monitoring, rpc-api-keys, invoice/monthly/internal).
+
+To regenerate the payment node client from the spec: `pnpm --filter web run payment-node:generate`.
+
 ## Project Structure
 
 ```
