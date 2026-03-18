@@ -89,6 +89,9 @@ export function RegistrationCompletionProvider({
 
   const isPollingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const firstTickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const retryCountRef = useRef<Map<string, number>>(new Map());
   const tRef = useRef(t);
   tRef.current = t;
@@ -103,6 +106,10 @@ export function RegistrationCompletionProvider({
   storageKeyRef.current = storageKey;
 
   const clearPollingInterval = useCallback(() => {
+    if (firstTickTimeoutRef.current !== null) {
+      clearTimeout(firstTickTimeoutRef.current);
+      firstTickTimeoutRef.current = null;
+    }
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -127,7 +134,8 @@ export function RegistrationCompletionProvider({
         runTickRef.current?.();
       }, POLL_INTERVAL_MS);
       // Delay first tick so dispenser UTXOs are visible before we call complete-registration.
-      setTimeout(() => {
+      firstTickTimeoutRef.current = setTimeout(() => {
+        firstTickTimeoutRef.current = null;
         runTickRef.current?.();
       }, FIRST_TICK_DELAY_MS);
     },

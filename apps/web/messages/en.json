@@ -882,7 +882,7 @@
         "error": "Failed to register agent. Please try again.",
         "fundingWallet": "Funding wallet — we'll complete registration in a moment.",
         "closeConfirmTitle": "Registration in progress",
-        "closeConfirmDescription": "Closing now might leave the agent stuck in a pending state. Close anyway?",
+        "closeConfirmDescription": "Registration will continue in the background. Close anyway?",
         "closeAnyway": "Close anyway",
         "progressStep1": "Creating agent and wallets",
         "progressStep2": "Funding wallet",

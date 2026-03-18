@@ -467,6 +467,8 @@ export function RegisterAgentDialog({
       if (registrationAccepted) {
         addPendingAgent(json.agentId);
         if (closedViaConfirmRef.current) {
+          toast.info(t("registrationStarted"));
+          onSuccessRef.current();
           setIsLoading(false);
           setShowCloseConfirm(false);
           return;
