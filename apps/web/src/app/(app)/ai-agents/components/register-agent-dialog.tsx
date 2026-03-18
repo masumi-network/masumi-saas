@@ -263,7 +263,6 @@ export function RegisterAgentDialog({
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
   const showCloseConfirmRef = useRef(false);
-  const pendingSuccessRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
@@ -284,7 +283,6 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (open) {
       closedViaConfirmRef.current = false;
-      pendingSuccessRef.current = false;
       submitIdRef.current += 1;
     }
   }, [open]);
@@ -405,7 +403,6 @@ export function RegisterAgentDialog({
   };
 
   const finalizeSuccessfulSubmit = () => {
-    pendingSuccessRef.current = false;
     toast.info(t("registrationStarted"));
     resetSuccessfulSubmitState();
     setIsLoading(false);
@@ -503,7 +500,6 @@ export function RegisterAgentDialog({
   const handleOnOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       closedViaConfirmRef.current = false;
-      pendingSuccessRef.current = false;
       setShowCloseConfirm(false);
     } else {
       if (isLoading) {
@@ -866,25 +862,13 @@ export function RegisterAgentDialog({
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
           if (!open) {
-            if (closedViaConfirmRef.current) {
-              pendingSuccessRef.current = false;
-              closedViaConfirmRef.current = false;
-              return;
-            }
-            if (pendingSuccessRef.current) {
-              finalizeSuccessfulSubmit();
-            }
             closedViaConfirmRef.current = false;
           }
         }}
         onConfirm={() => {
           closedViaConfirmRef.current = true;
-          if (pendingSuccessRef.current) {
-            finalizeSuccessfulSubmit();
-          } else {
-            performClose();
-            setShowCloseConfirm(false);
-          }
+          performClose();
+          setShowCloseConfirm(false);
         }}
         title={t("closeConfirmTitle")}
         description={t("closeConfirmDescription")}

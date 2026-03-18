@@ -95,12 +95,8 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
     };
   }, [fetchEarnings, refreshKey]);
 
-  if (isLoading && (!earningsData || !isDataForCurrentSelection)) {
-    return <TabSkeleton tab="earnings" />;
-  }
-
   // Full-screen error only when we have no data for this selection; otherwise show stale + inline error
-  if (error && (!earningsData || !isDataForCurrentSelection)) {
+  if (error && !isDataForCurrentSelection) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <p className="text-sm font-medium text-destructive">{error}</p>
@@ -117,6 +113,11 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
         </button>
       </div>
     );
+  }
+
+  // Show skeleton when data doesn't match selection (covers loading + brief window before fetch starts).
+  if (!isDataForCurrentSelection) {
+    return <TabSkeleton tab="earnings" />;
   }
 
   // Only use earningsData when it matches current period/agent
