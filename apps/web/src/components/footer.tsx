@@ -34,7 +34,13 @@ export function FooterSections({ className }: FooterSectionsProps) {
     >
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <Button variant="secondary" size="sm">
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled
+          title="Language selection coming soon"
+          aria-label="Language (coming soon)"
+        >
           <Languages className="h-3 w-3" />
           <span className="text-xs sm:text-sm tracking-tight">{"English"}</span>
         </Button>

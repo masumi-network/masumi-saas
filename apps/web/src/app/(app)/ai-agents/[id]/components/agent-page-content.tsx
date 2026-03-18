@@ -2,14 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
-import {
-  deregisterAgentAction,
-  syncAgentRegistrationStatusAction,
-} from "@/lib/actions/agent.action";
+import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
@@ -68,7 +65,6 @@ export function AgentPageContent({
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
-  const [, startTransition] = useTransition();
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
@@ -163,7 +159,7 @@ export function AgentPageContent({
   // after the dialog was closed or the page was reloaded.
   useEffect(() => {
     if (agent.verificationStatus === "VERIFIED") return;
-    void (async () => {
+    (async () => {
       const result = await credentialApiClient.reconcilePendingCredentials(
         agent.id,
       );
@@ -171,7 +167,9 @@ export function AgentPageContent({
         const next = await agentApiClient.getAgent(agent.id);
         if (next.success && next.data) setAgent(next.data);
       }
-    })();
+    })().catch(() => {
+      // Reconcile or refetch failed; ignore.
+    });
   }, [agent.id, agent.verificationStatus]);
 
   const tabParam = searchParams.get("tab");
@@ -197,40 +195,50 @@ export function AgentPageContent({
 
   const handleDeregisterConfirm = () => {
     setIsDeregistering(true);
-    startTransition(async () => {
-      const result = await deregisterAgentAction(agent.id);
-      if (result.success) {
-        toast.success(t("deregisterSuccess"));
-        const next = await agentApiClient.getAgent(agent.id);
-        if (next.success && next.data) setAgent(next.data);
-        setIsDeregisterDialogOpen(false);
-      } else {
-        toast.error(result.error ?? t("deregisterError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deregisterAgent(agent.id);
+        if (result.success) {
+          toast.success(t("deregisterSuccess"));
+          const next = await agentApiClient.getAgent(agent.id);
+          if (next.success && next.data) setAgent(next.data);
+          setIsDeregisterDialogOpen(false);
+        } else {
+          toast.error(result.error ?? t("deregisterError"));
+        }
+      } finally {
+        setIsDeregistering(false);
       }
-      setIsDeregistering(false);
+    })().catch(() => {
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 
   const handleDeleteConfirm = () => {
     setIsDeleting(true);
-    startTransition(async () => {
-      const result = await agentApiClient.deleteAgent(agent.id);
-      if (result.success) {
-        toast.success(t("deleteSuccess"));
-        router.push(backHref);
-      } else {
-        toast.error(result.error || t("deleteError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deleteAgent(agent.id);
+        if (result.success) {
+          toast.success(t("deleteSuccess"));
+          router.push(backHref);
+        } else {
+          toast.error(result.error || t("deleteError"));
+        }
+      } finally {
         setIsDeleting(false);
       }
+    })().catch(() => {
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 
   const handleVerificationSuccess = () => {
-    startTransition(async () => {
+    (async () => {
       const result = await agentApiClient.getAgent(agent.id);
-      if (result.success) {
-        setAgent(result.data);
-      }
+      if (result.success && result.data) setAgent(result.data);
+    })().catch(() => {
+      // Refetch failed; user can refresh the page.
     });
   };
 

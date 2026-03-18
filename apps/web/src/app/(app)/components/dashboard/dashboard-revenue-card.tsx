@@ -126,7 +126,7 @@ export function DashboardRevenueCard() {
 
   return (
     <Card
-      className="group relative overflow-hidden rounded-xl pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
+      className="group relative overflow-hidden rounded-xl border-l-4 border-l-primary pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
       role="group"
       aria-label={`${t("earnings")}: ${formatRevenue(total)}`}
     >

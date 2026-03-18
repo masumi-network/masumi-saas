@@ -10,7 +10,6 @@ import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -83,7 +82,8 @@ export function CreateApiKeyDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-md max-h-[90vh] p-0 flex flex-col gap-0 overflow-hidden"
+        closeButtonClassName="top-8 right-4 -translate-y-1/2"
         showCloseButton={!showKeyResult}
         {...(showKeyResult && {
           onInteractOutside: (e) => e.preventDefault(),
@@ -92,33 +92,39 @@ export function CreateApiKeyDialog({
       >
         {showKeyResult ? (
           <>
-            <DialogHeader>
-              <DialogTitle>{tDashboard("createdTitle")}</DialogTitle>
-              <DialogDescription>
-                {tDashboard("createdDescription")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
-              <code className="min-w-0 flex-1 break-all font-mono text-sm">
-                {createdKey}
-              </code>
-              <CopyButton value={createdKey ?? ""} className="shrink-0" />
+            <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+              <DialogHeader>
+                <DialogTitle>{tDashboard("createdTitle")}</DialogTitle>
+              </DialogHeader>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {tDashboard("copyWarning")}
-            </p>
-            <DialogFooter>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
+                <code className="min-w-0 flex-1 break-all font-mono text-sm">
+                  {createdKey}
+                </code>
+                <CopyButton value={createdKey ?? ""} className="shrink-0" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {tDashboard("copyWarning")}
+              </p>
+            </div>
+            <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button variant="primary" onClick={handleClose}>
                 {tDashboard("done")}
               </Button>
             </DialogFooter>
           </>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>{t("addKeyTitle")}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+              <DialogHeader>
+                <DialogTitle>{t("addKeyTitle")}</DialogTitle>
+              </DialogHeader>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="api-key-name">{tDashboard("name")}</Label>
                 <Input
@@ -132,7 +138,7 @@ export function CreateApiKeyDialog({
 
               {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
-            <DialogFooter>
+            <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"

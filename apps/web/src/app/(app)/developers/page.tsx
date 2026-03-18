@@ -16,9 +16,11 @@ export default async function DevelopersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("description")}</p>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground text-sm leading-6">
+          {t("description")}
+        </p>
       </div>
 
       <InputSchemaValidator />

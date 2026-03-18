@@ -4,9 +4,10 @@ import { z } from "zod";
 
 import {
   buildAgentPricing,
-  registerAgentOnChain,
   type RegisterAgentParams,
+  startAgentRegistration,
 } from "@/lib/agent-registration";
+import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
 import { registerAgentBodySchema } from "@/lib/schemas/agent";
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
       otherUrl: otherUrl?.trim() || null,
     };
 
-    const result = await registerAgentOnChain(
+    const result = await startAgentRegistration(
       {
         user: {
           id: user.id,
@@ -244,25 +245,20 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.success) {
-      return NextResponse.json({
-        success: true,
-        data: result.data,
+      const agent = await prisma.agent.findFirst({
+        where: { id: result.agentId, userId: user.id },
+        include: { agentReference: true },
       });
-    }
-    if (
-      result.error === "WALLET_FUNDING_PENDING" &&
-      "agentId" in result &&
-      typeof result.agentId === "string"
-    ) {
+      if (!agent) {
+        return NextResponse.json(
+          { success: false, error: "Failed to load created agent" },
+          { status: 500 },
+        );
+      }
+      const data = shapeAgentWithMergedMetadata(agent);
       return NextResponse.json(
-        {
-          success: true,
-          status: "wallet_funding_pending",
-          agentId: result.agentId,
-          message:
-            "Wallet is being funded. Poll POST /api/agents/:id/complete-registration until status is registered.",
-        },
-        { status: 202 },
+        { success: true, data, agentId: result.agentId },
+        { status: 200 },
       );
     }
     return NextResponse.json(

@@ -105,15 +105,20 @@ export function EstablishConnectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t("establishConnection")}</DialogTitle>
-          <DialogDescription>
-            {t("establishConnectionDescription")}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="sm:max-w-lg max-h-[90vh] p-0 flex flex-col gap-0 overflow-hidden"
+        closeButtonClassName="top-8 right-4 -translate-y-1/2"
+      >
+        <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+          <DialogHeader>
+            <DialogTitle>{t("establishConnection")}</DialogTitle>
+            <DialogDescription>
+              {t("establishConnectionDescription")}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {isLoadingIssuerOobi ? (
             <div className="flex items-center justify-center p-8">
               <Spinner size={24} />

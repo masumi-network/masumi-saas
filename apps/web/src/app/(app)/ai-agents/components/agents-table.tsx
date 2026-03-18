@@ -3,7 +3,7 @@
 import { ShieldCheck, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { deregisterAgentAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import {
   formatPricingDisplay,
@@ -62,7 +61,6 @@ export function AgentsTable({
     useState<Agent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
-  const [, startTransition] = useTransition();
 
   const handleDeleteClick = (e: React.MouseEvent, agent: Agent) => {
     e.stopPropagation();
@@ -79,34 +77,48 @@ export function AgentsTable({
   const handleDeleteConfirm = () => {
     if (!selectedAgentToDelete) return;
     setIsDeleting(true);
-    startTransition(async () => {
-      const result = await agentApiClient.deleteAgent(selectedAgentToDelete.id);
-      if (result.success) {
-        toast.success(t("deleteSuccess"));
-        onDeleteSuccess();
-        setIsDeleteDialogOpen(false);
-        setSelectedAgentToDelete(null);
-      } else {
-        toast.error(result.error || t("deleteError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deleteAgent(
+          selectedAgentToDelete.id,
+        );
+        if (result.success) {
+          toast.success(t("deleteSuccess"));
+          onDeleteSuccess();
+          setIsDeleteDialogOpen(false);
+          setSelectedAgentToDelete(null);
+        } else {
+          toast.error(result.error || t("deleteError"));
+        }
+      } finally {
+        setIsDeleting(false);
       }
-      setIsDeleting(false);
+    })().catch(() => {
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 
   const handleDeregisterConfirm = () => {
     if (!selectedAgentToDeregister) return;
     setIsDeregistering(true);
-    startTransition(async () => {
-      const result = await deregisterAgentAction(selectedAgentToDeregister.id);
-      if (result.success) {
-        toast.success(tDetails("deregisterSuccess"));
-        onDeleteSuccess(); // refetch list
-        setIsDeregisterDialogOpen(false);
-        setSelectedAgentToDeregister(null);
-      } else {
-        toast.error(result.error ?? tDetails("deregisterError"));
+    (async () => {
+      try {
+        const result = await agentApiClient.deregisterAgent(
+          selectedAgentToDeregister.id,
+        );
+        if (result.success) {
+          toast.success(tDetails("deregisterSuccess"));
+          onDeleteSuccess(); // refetch list
+          setIsDeregisterDialogOpen(false);
+          setSelectedAgentToDeregister(null);
+        } else {
+          toast.error(result.error ?? tDetails("deregisterError"));
+        }
+      } finally {
+        setIsDeregistering(false);
       }
-      setIsDeregistering(false);
+    })().catch(() => {
+      // finally already cleared loading; catch only prevents unhandled rejection.
     });
   };
 
@@ -133,7 +145,7 @@ export function AgentsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {agents.map((agent) => {
+            {agents.map((agent, index) => {
               const isConfirmed =
                 agent.registrationState === "RegistrationConfirmed";
               const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
@@ -150,7 +162,10 @@ export function AgentsTable({
               return (
                 <TableRow
                   key={agent.id}
-                  className="cursor-pointer hover:bg-muted/50 group"
+                  className="cursor-pointer hover:bg-muted/50 group animate-table-row-in transition-[background-color,opacity] duration-150"
+                  style={{
+                    animationDelay: `${Math.min(index, 9) * 40}ms`,
+                  }}
                   onClick={() => onAgentClick(agent)}
                 >
                   <TableCell className="max-w-52">

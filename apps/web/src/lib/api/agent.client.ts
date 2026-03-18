@@ -2,39 +2,9 @@
 
 import type { AgentPricing } from "@/lib/utils";
 
-type Agent = {
-  id: string;
-  name: string;
-  description: string | null;
-  extendedDescription: string | null;
-  apiUrl: string;
-  tags: string[];
-  icon: string | null;
-  metadata?: string | null;
-  agentIdentifier: string | null;
-  networkIdentifier: string | null;
-  pricing: AgentPricing | null;
-  registrationState:
-    | "RegistrationRequested"
-    | "RegistrationInitiated"
-    | "RegistrationConfirmed"
-    | "RegistrationFailed"
-    | "DeregistrationRequested"
-    | "DeregistrationInitiated"
-    | "DeregistrationConfirmed"
-    | "DeregistrationFailed";
-  verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { Agent, ApiResponse, GetAgentsResult } from "./agent.types";
 
-type ApiResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
-
-export type GetAgentsResult =
-  | { success: true; data: Agent[]; nextCursor: string | null }
-  | { success: false; error: string };
+export type { Agent, ApiResponse, GetAgentsResult };
 
 class AgentApiClient {
   private baseUrl = "/api/agents";
@@ -46,6 +16,7 @@ class AgentApiClient {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...options?.headers,
@@ -194,6 +165,12 @@ class AgentApiClient {
     });
   }
 
+  async deregisterAgent(agentId: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/${agentId}/deregister`, {
+      method: "POST",
+    });
+  }
+
   async getCounts(network?: "Mainnet" | "Preprod"): Promise<
     | {
         success: true;
@@ -298,4 +275,3 @@ class AgentApiClient {
 }
 
 export const agentApiClient = new AgentApiClient();
-export type { Agent };

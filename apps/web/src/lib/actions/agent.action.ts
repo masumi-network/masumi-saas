@@ -21,6 +21,33 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
+/** Returns agent IDs for the current user that need on-chain registration completion
+ *  (stuck after tab close). Used to recover polling on next app load. */
+export async function getPendingRegistrationAgentIdsAction(): Promise<
+  string[]
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+    const agents = await prisma.agent.findMany({
+      where: {
+        userId: user.id,
+        registrationState: {
+          in: ["RegistrationRequested", "RegistrationInitiated"],
+        },
+        agentReference: {
+          externalId: null,
+        },
+      },
+      select: { id: true },
+    });
+    return agents.map((a) => a.id);
+  } catch {
+    return [];
+  }
+}
+
 /** Called by the client when POST /api/agents returned WALLET_FUNDING_PENDING.
  *  Poll until status is "registered" or the user gives up. */
 export async function completeRegistrationIfReadyAction(
@@ -166,57 +193,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
   } catch (error) {
     console.error("Failed to sync agent registration status:", error);
     return { success: false as const, error: "Failed to sync status" };
-  }
-}
-
-export async function deregisterAgentAction(agentId: string) {
-  try {
-    const { user } = await getAuthenticatedOrThrow();
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      include: { agentReference: true },
-    });
-    if (!agent) {
-      return { success: false as const, error: "Agent not found" };
-    }
-    const agentIdentifier =
-      agent.agentIdentifier ??
-      (agent.agentReference?.metadata as { agentIdentifier?: string } | null)
-        ?.agentIdentifier;
-    if (!agentIdentifier) {
-      return {
-        success: false as const,
-        error: "Agent is not registered on the network",
-      };
-    }
-
-    const userClient = await getPaymentNodeClientForUser(user.id);
-    if (!userClient) {
-      return {
-        success: false as const,
-        error: "Something went wrong. Please try again.",
-      };
-    }
-
-    const network = (agent.agentReference?.networkIdentifier ??
-      (await getNetworkFromCookie())) as PaymentNodeNetwork;
-    await userClient.deregisterAgent({ network, agentIdentifier });
-
-    await prisma.agent.update({
-      where: { id: agentId },
-      data: { registrationState: "DeregistrationRequested" },
-    });
-
-    await recordAgentActivityEvent(agentId, "DeregistrationRequested");
-
-    return { success: true as const };
-  } catch (error) {
-    console.error("Failed to deregister agent:", error);
-    return {
-      success: false as const,
-      error:
-        error instanceof Error ? error.message : "Failed to deregister agent",
-    };
   }
 }
 

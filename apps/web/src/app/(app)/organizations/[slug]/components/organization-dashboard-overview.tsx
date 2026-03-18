@@ -6,12 +6,14 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Plus,
   Users,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +38,7 @@ import type {
 } from "@/lib/actions/organization.action";
 import type { Agent } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
@@ -43,6 +46,7 @@ import {
   getVerificationStatusKey,
 } from "@/lib/utils/agent-utils";
 
+import { RegisterAgentDialog } from "../../../ai-agents/components/register-agent-dialog";
 import { InviteMemberDialog } from "./invite-member-dialog";
 import { MembersSection } from "./members-section";
 
@@ -93,10 +97,18 @@ export function OrganizationDashboardOverview({
   const breadcrumbLabel =
     backHref === "/" ? tSidebar("dashboard") : tSidebar("organizations");
   const router = useRouter();
+  const [isRegisterAgentOpen, setIsRegisterAgentOpen] = useState(false);
   const isActive = activeOrganization?.id === organization.id;
   const slugDisplay = `@${organization.slug}`;
   const isOwnerOrAdmin =
     organization.role === "owner" || organization.role === "admin";
+
+  useEffect(() => {
+    const handler = () => router.refresh();
+    window.addEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+    return () =>
+      window.removeEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+  }, [router]);
 
   return (
     <div className="animate-in fade-in duration-300 space-y-8">
@@ -320,14 +332,28 @@ export function OrganizationDashboardOverview({
                 ))}
               </ul>
             )}
-            {agentCount > 5 && (
-              <Button variant="ghost" size="sm" asChild className="w-full">
-                <Link href="/ai-agents">
-                  {t("linkedAgentsSection.viewAll")}
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                className="flex items-center gap-2"
+                onClick={() => setIsRegisterAgentOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                {t("linkedAgentsSection.registerAgent")}
               </Button>
-            )}
+              {agentCount > 5 && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/ai-agents">
+                    {t("linkedAgentsSection.viewAll")}
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+            <RegisterAgentDialog
+              open={isRegisterAgentOpen}
+              onClose={() => setIsRegisterAgentOpen(false)}
+              onSuccess={() => router.refresh()}
+            />
           </CardContent>
         </Card>
 

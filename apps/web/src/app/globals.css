@@ -134,6 +134,21 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Staggered fade-in for table rows (matches payment service frontend) */
+  .animate-table-row-in {
+    opacity: 0;
+    animation: table-row-fade-in 0.2s ease-out forwards;
+  }
+}
+
+@keyframes table-row-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @layer base {
@@ -373,6 +388,19 @@ input[type="number"] {
   animation: highlight 0.5s ease infinite alternate;
   border-radius: var(--radius);
   transition: all 0.2s ease;
+}
+
+/* Schema Playground: keep form preview on top so it stays interactive (Monaco can overlay) */
+.schema-playground-wrapper > div > div:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+/* Schema Playground: use app theme for focus/inputs instead of package blue */
+.schema-playground-wrapper input:focus,
+.schema-playground-wrapper select:focus,
+.schema-playground-wrapper button:focus-visible {
+  --tw-ring-color: hsl(var(--ring));
 }
 
 /* Ensure toast notifications appear above dialog overlays */
