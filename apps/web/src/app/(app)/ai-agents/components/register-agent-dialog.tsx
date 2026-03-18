@@ -262,6 +262,7 @@ export function RegisterAgentDialog({
 
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
+  const userClosedViaConfirmRef = useRef(false);
   const showCloseConfirmRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
@@ -283,6 +284,7 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (open) {
       closedViaConfirmRef.current = false;
+      userClosedViaConfirmRef.current = false;
       submitIdRef.current += 1;
     }
   }, [open]);
@@ -471,6 +473,16 @@ export function RegisterAgentDialog({
           onSuccessRef.current();
           setIsLoading(false);
           setShowCloseConfirm(false);
+          userClosedViaConfirmRef.current = false;
+          return;
+        }
+        if (userClosedViaConfirmRef.current) {
+          // User closed via confirm but reopened before response; don't call onClose
+          toast.info(t("registrationStarted"));
+          onSuccessRef.current();
+          setIsLoading(false);
+          setShowCloseConfirm(false);
+          userClosedViaConfirmRef.current = false;
           return;
         }
         if (showCloseConfirmRef.current) {
@@ -867,7 +879,7 @@ export function RegisterAgentDialog({
         }}
         onConfirm={() => {
           closedViaConfirmRef.current = true;
-          submitIdRef.current += 1; // Invalidate in-flight submit so its response is ignored
+          userClosedViaConfirmRef.current = true;
           performClose();
           setShowCloseConfirm(false);
         }}
