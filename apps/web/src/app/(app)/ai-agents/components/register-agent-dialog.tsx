@@ -867,6 +867,7 @@ export function RegisterAgentDialog({
         }}
         onConfirm={() => {
           closedViaConfirmRef.current = true;
+          submitIdRef.current += 1; // Invalidate in-flight submit so its response is ignored
           performClose();
           setShowCloseConfirm(false);
         }}
