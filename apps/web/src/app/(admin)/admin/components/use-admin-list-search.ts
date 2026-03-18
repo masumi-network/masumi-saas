@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import type { MutableRefObject } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export type UseAdminListSearchOptions = {
   /** When set to true by the caller before updating input/URL, the next debounced push is skipped (avoids double navigation on clear). */
@@ -25,6 +25,8 @@ export function useAdminListSearch(
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(currentSearch);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     setSearchInput(currentSearch);
@@ -32,8 +34,9 @@ export function useAdminListSearch(
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (options?.skipNextPushRef?.current) {
-        options.skipNextPushRef.current = false;
+      const skipRef = optionsRef.current?.skipNextPushRef;
+      if (skipRef?.current) {
+        skipRef.current = false;
         return;
       }
       if (searchInput === currentSearch) return;
@@ -52,25 +55,19 @@ export function useAdminListSearch(
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [
-    searchInput,
-    currentSearch,
-    router,
-    pathname,
-    pathPrefix,
-    options?.skipNextPushRef,
-  ]);
+  }, [searchInput, currentSearch, router, pathname, pathPrefix]);
 
   const handleClearSearch = () => {
-    const skipRef = options?.skipNextPushRef;
+    const opts = optionsRef.current;
+    const skipRef = opts?.skipNextPushRef;
     // MutableRefObject is intentionally mutable; immutability rule does not apply to ref.current
     if (skipRef) {
       // eslint-disable-next-line react-hooks/immutability -- mutating ref.current is by design
       skipRef.current = true;
     }
     setSearchInput("");
-    if (options?.onClearSearch) {
-      options.onClearSearch();
+    if (opts?.onClearSearch) {
+      opts.onClearSearch();
     } else {
       const base = pathPrefix || pathname;
       startTransition(() => {
