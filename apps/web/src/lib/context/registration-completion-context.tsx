@@ -16,6 +16,8 @@ import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
 
 const POLL_INTERVAL_MS = 5_000;
+/** Delay before first tick after adding a pending agent so dispenser UTXOs can land. */
+const FIRST_TICK_DELAY_MS = 2_000;
 /** Stop polling an agent after this many attempts (~3 min at 5s interval). */
 const MAX_POLL_ATTEMPTS = 36;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
@@ -124,7 +126,10 @@ export function RegistrationCompletionProvider({
       intervalRef.current = setInterval(() => {
         runTickRef.current?.();
       }, POLL_INTERVAL_MS);
-      runTickRef.current?.();
+      // Delay first tick so dispenser UTXOs are visible before we call complete-registration.
+      setTimeout(() => {
+        runTickRef.current?.();
+      }, FIRST_TICK_DELAY_MS);
     },
     [clearPollingInterval, storageKey],
   );

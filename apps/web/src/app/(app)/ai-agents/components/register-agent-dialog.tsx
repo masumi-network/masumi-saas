@@ -865,6 +865,11 @@ export function RegisterAgentDialog({
         onOpenChange={(open) => {
           setShowCloseConfirm(open);
           if (!open) {
+            if (closedViaConfirmRef.current) {
+              pendingSuccessRef.current = false;
+              closedViaConfirmRef.current = false;
+              return;
+            }
             if (pendingSuccessRef.current) {
               finalizeSuccessfulSubmit();
             }
@@ -873,8 +878,12 @@ export function RegisterAgentDialog({
         }}
         onConfirm={() => {
           closedViaConfirmRef.current = true;
-          performClose();
-          setShowCloseConfirm(false);
+          if (pendingSuccessRef.current) {
+            finalizeSuccessfulSubmit();
+          } else {
+            performClose();
+            setShowCloseConfirm(false);
+          }
         }}
         title={t("closeConfirmTitle")}
         description={t("closeConfirmDescription")}
