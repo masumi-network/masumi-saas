@@ -335,15 +335,24 @@ export function RegistrationCompletionProvider({
     savePendingToStorage(next, storageKey);
     if (next.size > 0) startPolling();
 
-    getPendingRegistrationAgentIdsAction().then((serverIds) => {
-      if (serverIds.length === 0) return;
-      const merged = new Set([...pendingRef.current, ...serverIds]);
-      pendingRef.current = merged;
-      savePendingToStorage(merged, storageKeyRef.current);
-      if (merged.size > 0) startPolling();
-    });
+    let cancelled = false;
+    getPendingRegistrationAgentIdsAction()
+      .then((serverIds) => {
+        if (cancelled) return;
+        if (serverIds.length === 0) return;
+        const merged = new Set([...pendingRef.current, ...serverIds]);
+        pendingRef.current = merged;
+        savePendingToStorage(merged, storageKeyRef.current);
+        if (merged.size > 0) startPolling();
+      })
+      .catch(() => {
+        // Ignore: action returns [] on error; avoid unhandled rejection
+      });
 
-    return clearPollingInterval;
+    return () => {
+      cancelled = true;
+      clearPollingInterval();
+    };
   }, [storageKey, userId, clearPollingInterval]);
 
   const value = useMemo<RegistrationCompletionContextValue>(
