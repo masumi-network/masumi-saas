@@ -165,7 +165,10 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
             />
             <Select
               value={selectedPeriod}
-              onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}
+              onValueChange={(value) => {
+                setError(null);
+                setSelectedPeriod(value as TimePeriod);
+              }}
             >
               <SelectTrigger className="w-42">
                 <SelectValue />

@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ import type {
 } from "@/lib/actions/organization.action";
 import type { Agent } from "@/lib/api/agent.client";
 import { useOrganizationContext } from "@/lib/context/organization-context";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
@@ -101,6 +102,13 @@ export function OrganizationDashboardOverview({
   const slugDisplay = `@${organization.slug}`;
   const isOwnerOrAdmin =
     organization.role === "owner" || organization.role === "admin";
+
+  useEffect(() => {
+    const handler = () => router.refresh();
+    window.addEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+    return () =>
+      window.removeEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
+  }, [router]);
 
   return (
     <div className="animate-in fade-in duration-300 space-y-8">
