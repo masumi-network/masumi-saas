@@ -10,6 +10,7 @@ import {
   useRef,
 } from "react";
 import { toast } from "sonner";
+import z from "zod";
 
 import {
   completeRegistrationIfReadyAction,
@@ -17,7 +18,6 @@ import {
 } from "@/lib/actions/agent.action";
 import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
-import z from "zod";
 
 const POLL_INTERVAL_MS = 5_000;
 /** Delay before first tick after adding a pending agent so dispenser UTXOs can land. */
