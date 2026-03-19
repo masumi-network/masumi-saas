@@ -89,12 +89,11 @@ The **v1** namespace also proxies non-admin payment node endpoints. Use SaaS aut
 | `GET/POST /api/v1/payment`         | Create or list payments                    |
 | `GET/POST /api/v1/registry`        | Register agents, list registry, deregister |
 | `GET /api/v1/api-key-status`       | API key status                             |
-| `GET /api/v1/utxos`                | Query UTXOs                                |
 | `GET /api/v1/payment-source`       | List payment sources                       |
 | `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                   |
 | … and other non-admin endpoints    | See payment node OpenAPI spec              |
 
-Excluded: wallet exports, admin-only (wallet, payment-source-extended, api-key CRUD, swap, monitoring, rpc-api-keys, invoice/monthly/internal).
+Excluded: wallet exports, admin-only (wallet, payment-source-extended, api-key CRUD, swap, monitoring, rpc-api-keys, invoice/monthly/internal, registry/wallet, utxos).
 
 To regenerate the payment node client from the spec: `pnpm --filter web run payment-node:generate`.
 
