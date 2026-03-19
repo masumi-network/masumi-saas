@@ -18,6 +18,7 @@ const BLOCKED_PREFIXES = [
   "swap",
   "monitoring",
   "rpc-api-keys",
+  "utxos",
 ] as const;
 
 function isBlockedPath(pathSegments: string[]): boolean {
@@ -25,6 +26,7 @@ function isBlockedPath(pathSegments: string[]): boolean {
   const first = pathSegments[0];
   if (BLOCKED_PREFIXES.includes(first as (typeof BLOCKED_PREFIXES)[number]))
     return true;
+  if (first === "registry" && pathSegments[1] === "wallet") return true;
   if (first === "api-key" && pathSegments.length > 1) return true; // api-key-status is api-key-status (single segment)
   if (first === "api-key") return true; // api-key CRUD is admin
   if (
