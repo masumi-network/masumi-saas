@@ -1,8 +1,8 @@
 /**
  * Payment node API proxy.
- * Forwards a whitelist of payment-node paths only (safer than a blocklist when the API grows).
- * When adding new user-facing routes on the payment node, extend ALLOWED_ROOT_SEGMENTS or
- * SPECIAL_ALLOW rules and align with scripts/specs/payment-node-openapi.json.
+ * Exact path allowlist only (no path “parsing” beyond decode + dot-segment rejection).
+ * When the payment node adds routes, add strings here — keep in sync with
+ * scripts/specs/payment-node-openapi.json (omit admin/sensitive paths).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,69 +11,61 @@ import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
 
-/** First path segment under /api/v1 — entire subtree allowed unless SPECIAL_DENY matches. */
-const ALLOWED_ROOT_SEGMENTS = new Set([
+/** Full path under /api/v1 (no leading slash). Must match exactly after segment validation. */
+const ALLOWED_PROXY_PATHS = new Set<string>([
   "api-key-status",
   "health",
-  "invoice",
+  "invoice/monthly",
+  "invoice/monthly/missing",
   "payment",
   "payment-source",
+  "payment/authorize-refund",
+  "payment/count",
+  "payment/diff",
+  "payment/diff/next-action",
+  "payment/diff/onchain-state-or-result",
+  "payment/error-state-recovery",
+  "payment/income",
+  "payment/resolve-blockchain-identifier",
+  "payment/submit-result",
   "purchase",
+  "purchase/cancel-refund-request",
+  "purchase/count",
+  "purchase/diff",
+  "purchase/diff/next-action",
+  "purchase/diff/onchain-state-or-result",
+  "purchase/error-state-recovery",
+  "purchase/request-refund",
+  "purchase/resolve-blockchain-identifier",
+  "purchase/spending",
   "registry",
-  "signature",
+  "registry/agent-identifier",
+  "registry/count",
+  "registry/deregister",
+  "registry/diff",
+  "signature/sign/create-invoice/monthly",
+  "signature/verify/reveal-data",
   "webhooks",
 ]);
 
 /**
- * Subpaths that must not be proxied even when the root is allowed.
- * Keys are path prefixes (no leading slash).
+ * Join catch-all segments into a single path string, or null if invalid.
+ * Rejects empty, `.`, and `..` segments (incl. after decode) — no resolution/canonicalization.
  */
-const SPECIAL_DENY_PREFIXES = ["registry/wallet"] as const;
-
-/**
- * Decode segments, reject `.` / `..` (incl. %2e%2e), and resolve `..` so fetch() URL
- * normalization cannot bypass the whitelist (e.g. payment/%2e%2e/wallet → wallet).
- */
-function canonicalizeProxyPathSegments(
-  pathSegments: string[],
-): string[] | null {
-  const stack: string[] = [];
-  for (const raw of pathSegments) {
+function proxyPathFromSegmentsOrNull(rawSegments: string[]): string | null {
+  const segments: string[] = [];
+  for (const raw of rawSegments) {
     let segment: string;
     try {
       segment = decodeURIComponent(raw);
     } catch {
       return null;
     }
-    if (segment === "" || segment === ".") continue;
-    if (segment === "..") {
-      if (stack.length === 0) return null;
-      stack.pop();
-      continue;
-    }
-    stack.push(segment);
+    if (segment === "" || segment === "." || segment === "..") return null;
+    segments.push(segment);
   }
-  return stack.length === 0 ? null : stack;
-}
-
-/** Expects already-canonical segments (see canonicalizeProxyPathSegments). */
-function isAllowedProxyPath(pathSegments: string[]): boolean {
-  if (pathSegments.length === 0) return false;
-  const path = pathSegments.join("/");
-  for (const deny of SPECIAL_DENY_PREFIXES) {
-    if (path === deny || path.startsWith(`${deny}/`)) return false;
-  }
-
-  const first = pathSegments[0];
-  if (!ALLOWED_ROOT_SEGMENTS.has(first)) return false;
-
-  if (first === "invoice") {
-    if (pathSegments[1] !== "monthly") return false;
-    if (pathSegments[2] === "internal") return false;
-    return true;
-  }
-
-  return true;
+  if (segments.length === 0) return null;
+  return segments.join("/");
 }
 
 export async function GET(
@@ -116,8 +108,8 @@ async function proxyRequest(
 
     const { path: pathParam } = await params;
     const rawSegments = pathParam ?? [];
-    const canonical = canonicalizeProxyPathSegments(rawSegments);
-    if (canonical === null || !isAllowedProxyPath(canonical)) {
+    const path = proxyPathFromSegmentsOrNull(rawSegments);
+    if (path === null || !ALLOWED_PROXY_PATHS.has(path)) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
@@ -131,8 +123,6 @@ async function proxyRequest(
         { status: 403 },
       );
     }
-
-    const path = canonical.join("/");
     const baseUrl = paymentNodeConfig.getBaseUrl();
     const targetUrl = `${baseUrl}/${path}${request.nextUrl.search}`;
 
