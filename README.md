@@ -81,7 +81,9 @@ curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 
 ### Payment Node Proxy (authenticated)
 
-The **v1** namespace also proxies non-admin payment node endpoints. Use SaaS auth (session or API key); the user's payment node key is used server-side.
+The **v1** namespace also proxies **a whitelist** of payment node paths only (new payment-node routes stay blocked until explicitly allowed). Use SaaS auth (session or API key); the user's payment node key is used server-side.
+
+Allowed roots (full subtree unless noted): `api-key-status`, `health`, `payment`, `payment-source`, `purchase`, `registry` (not `registry/wallet`), `signature`, `webhooks`, and `invoice/monthly/*` except `invoice/monthly/internal`.
 
 | Path                               | Description                                |
 | ---------------------------------- | ------------------------------------------ |
@@ -91,11 +93,11 @@ The **v1** namespace also proxies non-admin payment node endpoints. Use SaaS aut
 | `GET /api/v1/api-key-status`       | API key status                             |
 | `GET /api/v1/payment-source`       | List payment sources                       |
 | `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                   |
-| … and other non-admin endpoints    | See payment node OpenAPI spec              |
+| …                                  | Other paths under allowed roots only       |
 
-Excluded: wallet exports, admin-only (wallet, payment-source-extended, api-key CRUD, swap, monitoring, rpc-api-keys, invoice/monthly/internal, registry/wallet, utxos).
+Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_ROOT_SEGMENTS`, `SPECIAL_DENY_PREFIXES`).
 
-To regenerate the payment node client from the spec: `pnpm --filter web run payment-node:generate`.
+To regenerate the payment node client: `pnpm --filter web run payment-node:generate` (fetches latest OpenAPI from `https://payment.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `PAYMENT_NODE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run payment-node:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run payment-node:generate:local`.
 
 ## Project Structure
 

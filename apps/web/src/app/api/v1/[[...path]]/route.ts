@@ -1,7 +1,8 @@
 /**
  * Payment node API proxy.
- * Forwards non-admin, non-wallet-export endpoints to the payment node with the user's API key.
- * Excludes: wallet, payment-source-extended, api-key (CRUD), swap, monitoring, rpc-api-keys, invoice/monthly/internal.
+ * Forwards a whitelist of payment-node paths only (safer than a blocklist when the API grows).
+ * When adding new user-facing routes on the payment node, extend ALLOWED_ROOT_SEGMENTS or
+ * SPECIAL_ALLOW rules and align with scripts/specs/payment-node-openapi.json.
  */
 
 import prisma from "@masumi/database/client";
@@ -12,30 +13,42 @@ import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { decryptPaymentNodeSecret } from "@/lib/payment-node/encryption";
 import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
-const BLOCKED_PREFIXES = [
-  "wallet",
-  "payment-source-extended",
-  "swap",
-  "monitoring",
-  "rpc-api-keys",
-  "utxos",
-] as const;
+/** First path segment under /api/v1 — entire subtree allowed unless SPECIAL_DENY matches. */
+const ALLOWED_ROOT_SEGMENTS = new Set([
+  "api-key-status",
+  "health",
+  "invoice",
+  "payment",
+  "payment-source",
+  "purchase",
+  "registry",
+  "signature",
+  "webhooks",
+]);
 
-function isBlockedPath(pathSegments: string[]): boolean {
-  if (pathSegments.length === 0) return true;
+/**
+ * Subpaths that must not be proxied even when the root is allowed.
+ * Keys are path prefixes (no leading slash).
+ */
+const SPECIAL_DENY_PREFIXES = ["registry/wallet"] as const;
+
+function isAllowedProxyPath(pathSegments: string[]): boolean {
+  if (pathSegments.length === 0) return false;
+  const path = pathSegments.join("/");
+  for (const deny of SPECIAL_DENY_PREFIXES) {
+    if (path === deny || path.startsWith(`${deny}/`)) return false;
+  }
+
   const first = pathSegments[0];
-  if (BLOCKED_PREFIXES.includes(first as (typeof BLOCKED_PREFIXES)[number]))
+  if (!ALLOWED_ROOT_SEGMENTS.has(first)) return false;
+
+  if (first === "invoice") {
+    if (pathSegments[1] !== "monthly") return false;
+    if (pathSegments[2] === "internal") return false;
     return true;
-  if (first === "registry" && pathSegments[1] === "wallet") return true;
-  if (first === "api-key" && pathSegments.length > 1) return true; // api-key-status is api-key-status (single segment)
-  if (first === "api-key") return true; // api-key CRUD is admin
-  if (
-    first === "invoice" &&
-    pathSegments[1] === "monthly" &&
-    pathSegments[2] === "internal"
-  )
-    return true;
-  return false;
+  }
+
+  return true;
 }
 
 async function getPaymentNodeToken(userId: string): Promise<string | null> {
@@ -100,7 +113,7 @@ async function proxyRequest(
 
     const { path: pathParam } = await params;
     const pathSegments = pathParam ?? [];
-    if (isBlockedPath(pathSegments)) {
+    if (!isAllowedProxyPath(pathSegments)) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
