@@ -79,6 +79,24 @@ Example:
 curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 ```
 
+### Payment Node Proxy (authenticated)
+
+The **v1** namespace proxies **only exact paths** listed in code (no prefix/root wildcards). New payment-node routes stay **403** until added to that set. Use SaaS auth (session or API key); the user's payment node key is used server-side. Anything not literally in `ALLOWED_PROXY_PATHS` (including paths containing `..`) gets **403** before `fetch`.
+
+| Path                               | Description                                 |
+| ---------------------------------- | ------------------------------------------- |
+| `GET/POST /api/v1/purchase`        | Create or list purchases                    |
+| `GET/POST /api/v1/payment`         | Create or list payments                     |
+| `GET/POST /api/v1/registry`        | Register agents, list registry, deregister  |
+| `GET /api/v1/api-key-status`       | API key status                              |
+| `GET /api/v1/payment-source`       | List payment sources                        |
+| `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                    |
+| …                                  | See `ALLOWED_PROXY_PATHS` in the route file |
+
+Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_PATHS`).
+
+To regenerate the payment node client: `pnpm --filter web run payment-node:generate` (fetches latest OpenAPI from `https://payment.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `PAYMENT_NODE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run payment-node:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run payment-node:generate:local`.
+
 ## Project Structure
 
 ```

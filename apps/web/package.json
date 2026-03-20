@@ -14,6 +14,9 @@
     "format": "prettier --log-level silent --write \"src/**/*.{ts,tsx}\"",
     "shadcn-add": "pnpm dlx shadcn-ui@latest add",
     "swagger:generate": "cross-env tsx src/lib/swagger/cli.ts",
+    "payment-node:fetch-spec": "node scripts/fetch-payment-node-openapi.mjs",
+    "payment-node:generate": "pnpm run payment-node:fetch-spec && openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
+    "payment-node:generate:local": "openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
     "re-encrypt-payment-node-secrets": "tsx scripts/re-encrypt-payment-node-secrets.ts"
   },
   "dependencies": {
@@ -56,6 +59,7 @@
     "next": "16.0.6",
     "next-intl": "4.5.6",
     "next-themes": "0.4.6",
+    "openapi-fetch": "^0.17.0",
     "postmark": "^4.0.5",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -86,6 +90,7 @@
     "@types/swagger-ui-react": "^5.18.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "cross-env": "^10.1.0",
+    "openapi-typescript": "^7.13.0",
     "eslint": "8.57.1",
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react": "^7.37.5",
