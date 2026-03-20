@@ -1,6 +1,6 @@
 /**
  * Payment node API proxy.
- * Exact path allowlist only (no path “parsing” beyond decode + dot-segment rejection).
+ * Exact path allowlist only — if `path` is not in the set, 403 (no fetch).
  * When the payment node adds routes, add strings here — keep in sync with
  * scripts/specs/payment-node-openapi.json (omit admin/sensitive paths).
  */
@@ -11,7 +11,7 @@ import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
 
-/** Full path under /api/v1 (no leading slash). Must match exactly after segment validation. */
+/** Full path under /api/v1 (no leading slash). Must match exactly. */
 const ALLOWED_PROXY_PATHS = new Set<string>([
   "api-key-status",
   "health",
@@ -47,26 +47,6 @@ const ALLOWED_PROXY_PATHS = new Set<string>([
   "signature/verify/reveal-data",
   "webhooks",
 ]);
-
-/**
- * Join catch-all segments into a single path string, or null if invalid.
- * Rejects empty, `.`, and `..` segments (incl. after decode) — no resolution/canonicalization.
- */
-function proxyPathFromSegmentsOrNull(rawSegments: string[]): string | null {
-  const segments: string[] = [];
-  for (const raw of rawSegments) {
-    let segment: string;
-    try {
-      segment = decodeURIComponent(raw);
-    } catch {
-      return null;
-    }
-    if (segment === "" || segment === "." || segment === "..") return null;
-    segments.push(segment);
-  }
-  if (segments.length === 0) return null;
-  return segments.join("/");
-}
 
 export async function GET(
   request: NextRequest,
@@ -107,9 +87,8 @@ async function proxyRequest(
     });
 
     const { path: pathParam } = await params;
-    const rawSegments = pathParam ?? [];
-    const path = proxyPathFromSegmentsOrNull(rawSegments);
-    if (path === null || !ALLOWED_PROXY_PATHS.has(path)) {
+    const path = (pathParam ?? []).join("/");
+    if (!ALLOWED_PROXY_PATHS.has(path)) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
@@ -126,20 +105,8 @@ async function proxyRequest(
     const baseUrl = paymentNodeConfig.getBaseUrl();
     const targetUrl = `${baseUrl}/${path}${request.nextUrl.search}`;
 
+    // Only headers the payment node needs — do not forward arbitrary client headers.
     const headers = new Headers();
-    request.headers.forEach((value, key) => {
-      const lower = key.toLowerCase();
-      if (
-        lower !== "authorization" &&
-        lower !== "x-api-key" &&
-        lower !== "cookie" &&
-        lower !== "host" &&
-        lower !== "token"
-      ) {
-        headers.set(key, value);
-      }
-    });
-    // After copying: payment node auth must come from the session user only (never client token).
     headers.set("token", token);
     headers.set("Content-Type", "application/json");
 
