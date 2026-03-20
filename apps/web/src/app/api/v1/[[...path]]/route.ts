@@ -5,13 +5,11 @@
  * SPECIAL_ALLOW rules and align with scripts/specs/payment-node-openapi.json.
  */
 
-import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
-import { decryptPaymentNodeSecret } from "@/lib/payment-node/encryption";
-import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
+import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
 
 /** First path segment under /api/v1 — entire subtree allowed unless SPECIAL_DENY matches. */
 const ALLOWED_ROOT_SEGMENTS = new Set([
@@ -32,6 +30,33 @@ const ALLOWED_ROOT_SEGMENTS = new Set([
  */
 const SPECIAL_DENY_PREFIXES = ["registry/wallet"] as const;
 
+/**
+ * Decode segments, reject `.` / `..` (incl. %2e%2e), and resolve `..` so fetch() URL
+ * normalization cannot bypass the whitelist (e.g. payment/%2e%2e/wallet → wallet).
+ */
+function canonicalizeProxyPathSegments(
+  pathSegments: string[],
+): string[] | null {
+  const stack: string[] = [];
+  for (const raw of pathSegments) {
+    let segment: string;
+    try {
+      segment = decodeURIComponent(raw);
+    } catch {
+      return null;
+    }
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (stack.length === 0) return null;
+      stack.pop();
+      continue;
+    }
+    stack.push(segment);
+  }
+  return stack.length === 0 ? null : stack;
+}
+
+/** Expects already-canonical segments (see canonicalizeProxyPathSegments). */
 function isAllowedProxyPath(pathSegments: string[]): boolean {
   if (pathSegments.length === 0) return false;
   const path = pathSegments.join("/");
@@ -49,28 +74,6 @@ function isAllowedProxyPath(pathSegments: string[]): boolean {
   }
 
   return true;
-}
-
-async function getPaymentNodeToken(userId: string): Promise<string | null> {
-  let user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { paymentNodeApiKeyEncrypted: true },
-  });
-
-  if (!user?.paymentNodeApiKeyEncrypted) {
-    await createPaymentNodeKeyForUser(userId);
-    user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { paymentNodeApiKeyEncrypted: true },
-    });
-  }
-
-  if (!user?.paymentNodeApiKeyEncrypted) return null;
-  try {
-    return await decryptPaymentNodeSecret(user.paymentNodeApiKeyEncrypted);
-  } catch {
-    return null;
-  }
 }
 
 export async function GET(
@@ -112,15 +115,16 @@ async function proxyRequest(
     });
 
     const { path: pathParam } = await params;
-    const pathSegments = pathParam ?? [];
-    if (!isAllowedProxyPath(pathSegments)) {
+    const rawSegments = pathParam ?? [];
+    const canonical = canonicalizeProxyPathSegments(rawSegments);
+    if (canonical === null || !isAllowedProxyPath(canonical)) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
       );
     }
 
-    const token = await getPaymentNodeToken(user.id);
+    const token = await getPaymentNodeApiKeyTokenForUser(user.id);
     if (!token) {
       return NextResponse.json(
         { success: false, error: "Payment node not configured for user" },
@@ -128,24 +132,26 @@ async function proxyRequest(
       );
     }
 
-    const path = pathSegments.join("/");
+    const path = canonical.join("/");
     const baseUrl = paymentNodeConfig.getBaseUrl();
     const targetUrl = `${baseUrl}/${path}${request.nextUrl.search}`;
 
     const headers = new Headers();
-    headers.set("token", token);
-    headers.set("Content-Type", "application/json");
     request.headers.forEach((value, key) => {
       const lower = key.toLowerCase();
       if (
         lower !== "authorization" &&
         lower !== "x-api-key" &&
         lower !== "cookie" &&
-        lower !== "host"
+        lower !== "host" &&
+        lower !== "token"
       ) {
         headers.set(key, value);
       }
     });
+    // After copying: payment node auth must come from the session user only (never client token).
+    headers.set("token", token);
+    headers.set("Content-Type", "application/json");
 
     let body: string | undefined;
     if (method !== "GET" && method !== "HEAD") {
