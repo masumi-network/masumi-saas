@@ -23,15 +23,15 @@
       "SignUpSuccess": "Account created successfully!",
       "PasswordResetSent": "If an account exists with this email, you will receive a password reset link."
     },
+    "Social": {
+      "emailFormDivider": "or continue with"
+    },
     "SignIn": {
       "title": "Login",
       "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
-      "orContinueWith": "Or continue with",
       "continueWithGoogle": "Continue with Google",
       "continueWithGithub": "Continue with GitHub",
       "continueWithMicrosoft": "Continue with Microsoft",
-      "continueWithApple": "Continue with Apple",
-      "orSignInWithEmail": "Or sign in with email",
       "email": "Email",
       "password": "Password",
       "submit": "Login",
@@ -44,12 +44,6 @@
     "SignUp": {
       "title": "Register",
       "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
-      "orContinueWith": "Or continue with",
-      "continueWithGoogle": "Continue with Google",
-      "continueWithGithub": "Continue with GitHub",
-      "continueWithMicrosoft": "Continue with Microsoft",
-      "continueWithApple": "Continue with Apple",
-      "orSignUpWithEmail": "Or register with email",
       "name": "Name",
       "email": "Email",
       "password": "Password",

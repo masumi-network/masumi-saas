@@ -25,7 +25,7 @@ import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignUpInput, signUpSchema } from "@/lib/schemas";
 
 interface SignUpFormProps {
-  oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+  oauthProviders?: ("google" | "github" | "microsoft")[];
 }
 
 export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
@@ -99,7 +99,7 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} variant="signup" />
+        <SocialAuthButtons providers={oauthProviders} />
       )}
 
       <Form {...form}>

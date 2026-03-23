@@ -25,7 +25,7 @@ import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
 interface SignInFormProps {
-  oauthProviders?: ("google" | "github" | "microsoft" | "apple")[];
+  oauthProviders?: ("google" | "github" | "microsoft")[];
   /** After sign-in, redirect here (e.g. from accept-invitation link). Must be a path on our origin. */
   callbackUrl?: string;
 }
