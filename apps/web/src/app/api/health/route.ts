@@ -6,23 +6,40 @@ import {
   isPaymentNodeConfigured,
 } from "@/lib/payment-node/health";
 
+function parsePositiveEnvInt(
+  raw: string | undefined,
+  defaultString: string,
+  fallback: number,
+): number {
+  const value = raw != null && raw !== "" ? raw : defaultString;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** Parsed once — env does not change at runtime in normal deployments. */
+const HEALTH_RATE_LIMIT_WINDOW_MS = parsePositiveEnvInt(
+  process.env.HEALTH_RATE_LIMIT_WINDOW_MS,
+  "60000",
+  60_000,
+);
+const HEALTH_RATE_LIMIT_MAX_KNOWN_IP = parsePositiveEnvInt(
+  process.env.HEALTH_RATE_LIMIT_MAX,
+  "30",
+  30,
+);
+const HEALTH_RATE_LIMIT_MAX_UNKNOWN_IP = parsePositiveEnvInt(
+  process.env.HEALTH_RATE_LIMIT_MAX_UNIDENTIFIED,
+  "300",
+  300,
+);
+
 function healthRateLimitOptionsForIp(ip: string) {
-  const windowMs = parseInt(
-    process.env.HEALTH_RATE_LIMIT_WINDOW_MS ?? "60000",
-    10,
-  );
-  const maxKnown = parseInt(process.env.HEALTH_RATE_LIMIT_MAX ?? "30", 10);
-  const maxUnknown = parseInt(
-    process.env.HEALTH_RATE_LIMIT_MAX_UNIDENTIFIED ?? "300",
-    10,
-  );
-  const window = Number.isFinite(windowMs) && windowMs > 0 ? windowMs : 60_000;
-  const capKnown = Number.isFinite(maxKnown) && maxKnown > 0 ? maxKnown : 30;
-  const capUnknown =
-    Number.isFinite(maxUnknown) && maxUnknown > 0 ? maxUnknown : 300;
   return {
-    windowMs: window,
-    maxRequests: ip === "unknown" ? capUnknown : capKnown,
+    windowMs: HEALTH_RATE_LIMIT_WINDOW_MS,
+    maxRequests:
+      ip === "unknown"
+        ? HEALTH_RATE_LIMIT_MAX_UNKNOWN_IP
+        : HEALTH_RATE_LIMIT_MAX_KNOWN_IP,
   };
 }
 
