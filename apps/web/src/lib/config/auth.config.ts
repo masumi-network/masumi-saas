@@ -25,13 +25,6 @@ export const authEnvConfig = {
           clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
         },
       }),
-    ...(process.env.APPLE_CLIENT_ID &&
-      process.env.APPLE_CLIENT_SECRET && {
-        apple: {
-          clientId: process.env.APPLE_CLIENT_ID,
-          clientSecret: process.env.APPLE_CLIENT_SECRET,
-        },
-      }),
   },
 } as const;
 

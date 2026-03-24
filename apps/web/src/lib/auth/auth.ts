@@ -28,7 +28,6 @@ export const auth = betterAuth({
     authEnvConfig.baseUrl,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://appleid.apple.com",
   ],
   emailAndPassword: {
     enabled: true,
