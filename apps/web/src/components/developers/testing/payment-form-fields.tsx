@@ -118,30 +118,36 @@ export function useInputDataHash(
   const identifierFromPurchaser = watch("identifierFromPurchaser");
 
   const recalculateHash = useCallback(
-    async (data: string, identifier: string) => {
+    async (data: string, identifier: string, isStale: () => boolean) => {
+      if (isStale()) return;
       if (!data.trim()) {
         setValue("inputHash", "");
         setInputDataError(null);
         return;
       }
       try {
+        if (isStale()) return;
         const parsed = JSON.parse(data) as unknown;
         if (
           typeof parsed !== "object" ||
           parsed === null ||
           Array.isArray(parsed)
         ) {
+          if (isStale()) return;
           setInputDataError(t("errors.inputDataObject"));
           setValue("inputHash", "");
           return;
         }
+        if (isStale()) return;
         setInputDataError(null);
         const hash = await generateMIP004InputHash(
           parsed as Record<string, unknown>,
           identifier,
         );
+        if (isStale()) return;
         setValue("inputHash", hash);
       } catch {
+        if (isStale()) return;
         setInputDataError(t("errors.invalidJson"));
         setValue("inputHash", "");
       }
@@ -150,9 +156,14 @@ export function useInputDataHash(
   );
 
   useEffect(() => {
+    let cancelled = false;
+    const isStale = () => cancelled;
     queueMicrotask(() => {
-      void recalculateHash(inputData, identifierFromPurchaser);
+      void recalculateHash(inputData, identifierFromPurchaser, isStale);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [inputData, identifierFromPurchaser, recalculateHash]);
 
   const resetInputData = useCallback((defaultPreset = true) => {
