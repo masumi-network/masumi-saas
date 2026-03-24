@@ -1,5 +1,6 @@
-import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+import { z } from "@/lib/zod-openapi";
 
 /**
  * Shared agent validation schema — used by both server actions and API routes.
