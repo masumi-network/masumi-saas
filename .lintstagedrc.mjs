@@ -35,16 +35,17 @@ function lintTs(filenames) {
 }
 
 /** Must match generator output byte-for-byte (see verify-openapi-json-sync.ts). */
-const GENERATED_OPENAPI_JSON = new Set([
-  "apps/web/src/lib/swagger/openapi-docs.json",
-  "apps/web/src/lib/swagger/openapi-platform-docs.json",
-  "apps/web/public/openapi.json",
-]);
+function isGeneratedOpenApiJsonFile(f) {
+  const n = f.replace(/\\/g, "/");
+  return (
+    n.endsWith("/apps/web/public/openapi.json") ||
+    n.endsWith("/apps/web/src/lib/swagger/openapi-docs.json") ||
+    n.endsWith("/apps/web/src/lib/swagger/openapi-platform-docs.json")
+  );
+}
 
 function formatJson(filenames) {
-  const rest = filenames.filter(
-    (f) => !GENERATED_OPENAPI_JSON.has(f.replace(/\\/g, "/")),
-  );
+  const rest = filenames.filter((f) => !isGeneratedOpenApiJsonFile(f));
   if (rest.length === 0) return [];
   return [`prettier --write ${rest.join(" ")}`];
 }
