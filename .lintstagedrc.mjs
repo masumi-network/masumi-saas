@@ -34,8 +34,23 @@ function lintTs(filenames) {
   return commands;
 }
 
+/** Must match generator output byte-for-byte (see verify-openapi-json-sync.ts). */
+const GENERATED_OPENAPI_JSON = new Set([
+  "apps/web/src/lib/swagger/openapi-docs.json",
+  "apps/web/src/lib/swagger/openapi-platform-docs.json",
+  "apps/web/public/openapi.json",
+]);
+
+function formatJson(filenames) {
+  const rest = filenames.filter(
+    (f) => !GENERATED_OPENAPI_JSON.has(f.replace(/\\/g, "/")),
+  );
+  if (rest.length === 0) return [];
+  return [`prettier --write ${rest.join(" ")}`];
+}
+
 export default {
   "**/*.{ts,tsx}": lintTs,
-  "**/*.json": ["prettier --write"],
+  "**/*.json": formatJson,
   "**/*.{js,jsx,mjs,cjs,md,yml,yaml}": ["prettier --write"],
 };
