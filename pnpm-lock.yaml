@@ -128,6 +128,9 @@ importers:
       better-auth-localization:
         specifier: 2.2.2
         version: 2.2.2(better-auth@1.4.4(next@16.0.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+      canonical-json:
+        specifier: ^0.4.0
+        version: 0.4.0
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -5577,6 +5580,14 @@ packages:
       {
         integrity: sha512-JF9ptu1vP2coz98+5051jZ4PwQgd2ni8A+gYSN7EA7dPKIMf0pDlSUxhdmVOaV3/fYK5uWBkgSXJaRLr4+3A6g==,
       }
+
+  canonical-json@0.4.0:
+    resolution:
+      {
+        integrity: sha512-tjdV5Z1ZYX7JfotmcutLzAiwzw0XiViJB9smqVM7sIoOp+IdqRZcnqfFLzHdb9/baDzkNI0ECfLoMt+EBOYx4A==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
 
   cborg@4.5.8:
     resolution:
@@ -15730,6 +15741,8 @@ snapshots:
   camelize@1.0.1: {}
 
   caniuse-lite@1.0.30001761: {}
+
+  canonical-json@0.4.0: {}
 
   cborg@4.5.8: {}
 

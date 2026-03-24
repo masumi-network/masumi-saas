@@ -6,11 +6,13 @@ import { useCallback, useMemo } from "react";
 
 import { InputSchemaValidator } from "@/components/developers/InputSchemaValidator";
 import { OpenApiExplorerEmbed } from "@/components/developers/open-api-explorer-embed";
+import { DevelopersTestingPanel } from "@/components/developers/testing/developers-testing-panel";
 import { Tabs } from "@/components/ui/tabs";
 
-/** Default tab is OpenAPI so Masumi SaaS API docs are visible immediately. `?tab=schema` for the validator. */
+/** Default tab is OpenAPI so Masumi SaaS API docs are visible immediately. `?tab=schema` | `?tab=testing`. */
 const TAB_SCHEMA = "schema";
 const TAB_OPENAPI = "openapi";
+const TAB_TESTING = "testing";
 
 export function DevelopersPageClient() {
   const t = useTranslations("Developers");
@@ -21,6 +23,7 @@ export function DevelopersPageClient() {
   const activeTab = useMemo(() => {
     const tab = searchParams.get("tab");
     if (tab === TAB_SCHEMA) return TAB_SCHEMA;
+    if (tab === TAB_TESTING) return TAB_TESTING;
     return TAB_OPENAPI;
   }, [searchParams]);
 
@@ -31,6 +34,8 @@ export function DevelopersPageClient() {
         params.delete("tab");
       } else if (tab === TAB_SCHEMA) {
         params.set("tab", TAB_SCHEMA);
+      } else if (tab === TAB_TESTING) {
+        params.set("tab", TAB_TESTING);
       }
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
@@ -44,6 +49,7 @@ export function DevelopersPageClient() {
     () => [
       { name: t("tabs.openApi"), key: TAB_OPENAPI },
       { name: t("tabs.schemaValidator"), key: TAB_SCHEMA },
+      { name: t("tabs.testing"), key: TAB_TESTING },
     ],
     [t],
   );
@@ -54,10 +60,12 @@ export function DevelopersPageClient() {
       <div className="min-w-0">
         {activeTab === TAB_OPENAPI ? (
           <OpenApiExplorerEmbed />
-        ) : (
+        ) : activeTab === TAB_SCHEMA ? (
           <div className="animate-fade-in-up opacity-0">
             <InputSchemaValidator />
           </div>
+        ) : (
+          <DevelopersTestingPanel />
         )}
       </div>
     </div>

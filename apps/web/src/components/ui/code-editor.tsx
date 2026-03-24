@@ -19,6 +19,8 @@ const MonacoEditor = dynamic(
 
 interface CodeEditorProps {
   value: string;
+  /** When set, the editor is editable and changes are reported here. */
+  onChange?: (value: string) => void;
   language?: string;
   height?: number | string;
   className?: string;
@@ -26,12 +28,14 @@ interface CodeEditorProps {
 
 export function CodeEditor({
   value,
+  onChange,
   language = "javascript",
   height = 280,
   className,
 }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
   const theme = resolvedTheme === "dark" ? "vs-dark" : "light";
+  const readOnly = onChange == null;
 
   return (
     <div className={className}>
@@ -40,8 +44,9 @@ export function CodeEditor({
         language={language}
         value={value}
         theme={theme}
+        onChange={readOnly ? undefined : (v) => onChange(v ?? "")}
         options={{
-          readOnly: true,
+          readOnly,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           fontSize: 12,
@@ -49,6 +54,9 @@ export function CodeEditor({
           wordWrap: "on",
           padding: { top: 12, bottom: 12 },
           fixedOverflowWidgets: true,
+          automaticLayout: true,
+          tabSize: language === "json" ? 2 : 4,
+          insertSpaces: true,
         }}
       />
     </div>

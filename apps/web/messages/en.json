@@ -1320,12 +1320,84 @@
     "description": "Interactive OpenAPI docs for the Masumi SaaS API, plus schema tools. Use the OpenAPI tab to explore endpoints and try requests with your <apikey>API Key</apikey>.",
     "tabs": {
       "schemaValidator": "Schema Validator",
-      "openApi": "OpenAPI"
+      "openApi": "OpenAPI",
+      "testing": "Testing"
     },
     "openApiEmbed": {
       "swaggerIntro": "Interactive API documentation powered by <swaggerui>Swagger UI</swaggerui>.",
       "openInNewTab": "Open in new tab",
       "iframeTitle": "Masumi SaaS API"
+    },
+    "testing": {
+      "cards": {
+        "comingSoon": "Coming soon",
+        "testPayment": {
+          "title": "Test payment",
+          "description": "Create a single test payment to simulate a seller-side payment request via the Masumi SaaS API proxy."
+        },
+        "testPurchase": {
+          "title": "Test purchase",
+          "description": "Create a single test purchase to simulate a buyer-side purchase request."
+        },
+        "fullCycle": {
+          "title": "Full payment cycle",
+          "description": "Run a complete payment-to-purchase cycle in one step for end-to-end testing."
+        }
+      },
+      "dialog": {
+        "title": "Create test payment",
+        "description": "Creates a payment request through your configured payment node (same as POST /api/v1/payment with session or API key).",
+        "cancel": "Cancel",
+        "submit": "Create payment",
+        "creating": "Creating…",
+        "successToast": "Test payment created",
+        "errors": {
+          "generic": "Failed to create payment",
+          "emptyResponse": "Invalid response from server — no data returned",
+          "requestFailed": "Request failed ({status})"
+        }
+      },
+      "form": {
+        "agentLabel": "Agent",
+        "loadingAgents": "Loading agents…",
+        "noPaidAgents": "No paid agents available",
+        "selectAgent": "Select a paid agent",
+        "freeAgentsHint": "No paid agents available. Free agents cannot be used with the payment flow.",
+        "purchaserIdLabel": "Purchaser identifier",
+        "purchaserIdPlaceholder": "14–26 character hex string",
+        "regenerate": "Regenerate",
+        "mip004Blurb": "Input hashed per <link>MIP-004</link> — SHA-256(identifier + \";\" + JCS(input_data))",
+        "loadPreset": "Load preset…",
+        "inputDataLabel": "Input data",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
+        "inputHashLabel": "Input hash",
+        "inputHashPlaceholder": "Generated from input data",
+        "metadataLabel": "Metadata (optional)",
+        "metadataPlaceholder": "Optional metadata for the payment",
+        "presets": {
+          "textPrompt": "Text prompt",
+          "emailAnalysis": "Email analysis",
+          "documentProcessing": "Document processing",
+          "multiFieldForm": "Multi-field form"
+        },
+        "required": "*",
+        "errors": {
+          "agentIdentifier": "Agent identifier required",
+          "inputHashLength": "Input hash must be 64 characters",
+          "inputHashHex": "Must be valid hex",
+          "identifierMin": "Minimum 14 characters",
+          "identifierMax": "Maximum 26 characters",
+          "identifierHex": "Must be valid hex",
+          "inputDataObject": "Input data must be a JSON object",
+          "invalidJson": "Invalid JSON"
+        }
+      },
+      "curlViewer": {
+        "curlTitle": "cURL",
+        "response": "Response",
+        "badgeError": "Error",
+        "badgeOk": "OK"
+      }
     }
   }
 }
