@@ -26,10 +26,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
   calculateDefaultTimes,
-  extractErrorMessage,
   generateRandomHex,
   generateSaasPaymentCurl,
 } from "@/lib/developers/testing-utils";
+import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 interface TestPaymentDialogProps {
   open: boolean;

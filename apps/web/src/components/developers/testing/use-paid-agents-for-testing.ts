@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 
 import type { PaidTestingAgent } from "@/components/developers/testing/payment-form-fields";
-import {
-  extractErrorMessage,
-  getAgentPricingType,
-} from "@/lib/developers/testing-utils";
+import { getAgentPricingType } from "@/lib/developers/testing-utils";
+import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 export function usePaidAgentsForTesting(): {
   agents: PaidTestingAgent[];

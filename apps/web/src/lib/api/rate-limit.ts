@@ -8,16 +8,24 @@ export type RateLimitResult = {
   resetAt: number;
 };
 
-function createUpstashLimiter(maxRequests: number, windowMs: number) {
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  });
+let _upstashRedis: Redis | null = null;
 
+function getUpstashRedis(): Redis {
+  if (!_upstashRedis) {
+    _upstashRedis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    });
+  }
+  return _upstashRedis;
+}
+
+function createUpstashLimiter(maxRequests: number, windowMs: number) {
   return new Ratelimit({
-    redis,
+    redis: getUpstashRedis(),
     limiter: Ratelimit.slidingWindow(maxRequests, `${windowMs} ms`),
-    prefix: "masumi:ratelimit",
+    // Distinct prefix per policy so counters and Lua keys never mix across limits.
+    prefix: `masumi:ratelimit:${maxRequests}:${windowMs}`,
   });
 }
 
@@ -67,13 +75,20 @@ const hasUpstash =
   !!process.env.UPSTASH_REDIS_REST_URL &&
   !!process.env.UPSTASH_REDIS_REST_TOKEN;
 
-let _upstashLimiter: Ratelimit | null = null;
+const _upstashLimiterByPolicy = new Map<string, Ratelimit>();
+
+function upstashLimiterCacheKey(maxRequests: number, windowMs: number) {
+  return `${windowMs}:${maxRequests}`;
+}
 
 function getUpstashLimiter(maxRequests: number, windowMs: number): Ratelimit {
-  if (!_upstashLimiter) {
-    _upstashLimiter = createUpstashLimiter(maxRequests, windowMs);
+  const cacheKey = upstashLimiterCacheKey(maxRequests, windowMs);
+  let limiter = _upstashLimiterByPolicy.get(cacheKey);
+  if (!limiter) {
+    limiter = createUpstashLimiter(maxRequests, windowMs);
+    _upstashLimiterByPolicy.set(cacheKey, limiter);
   }
-  return _upstashLimiter;
+  return limiter;
 }
 
 export async function checkRateLimit(
