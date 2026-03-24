@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "version": "1.0.0",
-    "title": "Masumi as a Service API",
-    "description": "The main API for the Masumi web app and integrations: agents, dashboard, activity, earnings, and payment-related actions when your account is set up for them. Veridian credential flows used by the app are not listed here. Some `/api/v1/*` routes may proxy to a linked payment service when configured; the server uses an exact path allowlist and those operations are not enumerated here — see product documentation."
+    "title": "Masumi SaaS API",
+    "description": "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app)."
   },
   "servers": [
     {
@@ -12,6 +12,14 @@
     }
   ],
   "tags": [
+    {
+      "name": "System",
+      "description": "Health and availability"
+    },
+    {
+      "name": "API keys",
+      "description": "Masumi SaaS API key introspection"
+    },
     {
       "name": "Agents",
       "description": "Your agents"
@@ -35,21 +43,460 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Platform API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec)."
+        "description": "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec)."
       }
     },
     "schemas": {},
     "parameters": {}
   },
   "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "description": "Confirms this app and the Masumi payment service behind it are up. **503** means the payment service is unreachable or not reporting healthy.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "App and payment service are healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [true]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": ["ok"]
+                        },
+                        "paymentNode": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "ok": {
+                                  "type": "boolean",
+                                  "enum": [true]
+                                }
+                              },
+                              "required": ["ok"]
+                            },
+                            {
+                              "type": "string",
+                              "enum": ["skipped"]
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["status", "paymentNode"]
+                    }
+                  },
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "status": "ok",
+                      "paymentNode": {
+                        "ok": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many health checks from this client in the window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment service unreachable or unhealthy from this environment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": ["degraded"]
+                        },
+                        "paymentNode": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean",
+                              "enum": [false]
+                            }
+                          },
+                          "required": ["ok"]
+                        }
+                      },
+                      "required": ["status", "paymentNode"]
+                    }
+                  },
+                  "required": ["success", "error", "data"],
+                  "example": {
+                    "success": false,
+                    "error": "Payment node health check timed out",
+                    "data": {
+                      "status": "degraded",
+                      "paymentNode": {
+                        "ok": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api-key-status": {
+      "get": {
+        "tags": ["API keys"],
+        "summary": "API key status",
+        "description": "Returns whether the caller is authenticated with a **browser session** or a **Masumi SaaS API key** (`x-api-key` / `Authorization: Bearer`). For API key auth, includes public metadata for that key (id, name, prefix, start fragment). Does **not** echo the secret key.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`authMethod` is `session` for cookie auth, or `apiKey` when the request was authenticated with an API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [true]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "authMethod": {
+                              "type": "string",
+                              "enum": ["session"]
+                            },
+                            "userId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["authMethod", "userId"]
+                        }
+                      },
+                      "required": ["success", "data"],
+                      "example": {
+                        "success": true,
+                        "data": {
+                          "authMethod": "session",
+                          "userId": "clu01exampleuser0001"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [true]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "authMethod": {
+                              "type": "string",
+                              "enum": ["apiKey"]
+                            },
+                            "userId": {
+                              "type": "string"
+                            },
+                            "key": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "prefix": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "start": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                },
+                                "lastRequest": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name",
+                                "prefix",
+                                "start",
+                                "enabled",
+                                "createdAt",
+                                "lastRequest"
+                              ]
+                            }
+                          },
+                          "required": ["authMethod", "userId", "key"]
+                        }
+                      },
+                      "required": ["success", "data"],
+                      "example": {
+                        "success": true,
+                        "data": {
+                          "authMethod": "apiKey",
+                          "userId": "clu01exampleuser0001",
+                          "key": {
+                            "id": "key_example_id",
+                            "name": "CI",
+                            "prefix": "mas_",
+                            "start": "mas_ab12cd",
+                            "enabled": true,
+                            "createdAt": "2025-01-15T12:00:00.000Z",
+                            "lastRequest": null
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [false]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/agents": {
       "get": {
         "tags": ["Agents"],
         "summary": "List agents",
-        "description": "Paginated list of the authenticated user’s agents. Supports filters (verification status, registration state, network, search).",
+        "description": "Paginated list of the authenticated user’s agents. Effective **network** filter uses the `network` query param, or the `payment_network` cookie when the query is omitted.",
         "security": [
           {
             "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "verificationStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "default": "false"
+            },
+            "required": false,
+            "name": "unverified",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "required": false,
+            "name": "take",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "registrationState",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "registrationStateIn",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["Mainnet", "Preprod"]
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
           }
         ],
         "responses": {
@@ -65,11 +512,166 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "extendedDescription": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "apiUrl": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "registrationState": {
+                            "type": "string"
+                          },
+                          "verificationStatus": {
+                            "type": "string",
+                            "nullable": true,
+                            "enum": [
+                              "PENDING",
+                              "VERIFIED",
+                              "REVOKED",
+                              "EXPIRED",
+                              null
+                            ]
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "metadata": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "icon": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "agentIdentifier": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "networkIdentifier": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "pricing": {
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "veridianCredentialId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "verificationChallenge": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
+                          },
+                          "verificationChallengeGeneratedAt": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "ISO time the challenge was issued; null if none."
+                          },
+                          "verificationSecret": {
+                            "type": "string",
+                            "nullable": true,
+                            "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "userId",
+                          "name",
+                          "description",
+                          "extendedDescription",
+                          "apiUrl",
+                          "organizationId",
+                          "registrationState",
+                          "verificationStatus",
+                          "tags",
+                          "metadata",
+                          "icon",
+                          "agentIdentifier",
+                          "networkIdentifier",
+                          "createdAt",
+                          "updatedAt",
+                          "veridianCredentialId",
+                          "verificationChallenge",
+                          "verificationChallengeGeneratedAt",
+                          "verificationSecret"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data", "nextCursor"],
+                  "example": {
+                    "success": true,
+                    "nextCursor": null,
+                    "data": [
+                      {
+                        "id": "cmlf6gswz0000x1uctad958tq",
+                        "userId": "clu01exampleuser0001",
+                        "name": "Research assistant",
+                        "description": "Helps with literature review",
+                        "extendedDescription": null,
+                        "apiUrl": "https://agent.example.com/mip",
+                        "organizationId": null,
+                        "registrationState": "RegistrationConfirmed",
+                        "verificationStatus": "VERIFIED",
+                        "tags": ["research", "nlp"],
+                        "metadata": null,
+                        "icon": "bot",
+                        "agentIdentifier": "policy1.assetname1",
+                        "networkIdentifier": "Preprod",
+                        "pricing": {
+                          "pricingType": "Fixed",
+                          "prices": [
+                            {
+                              "amount": "5",
+                              "currency": "USD"
+                            }
+                          ]
+                        },
+                        "createdAt": "2025-01-15T12:00:00.000Z",
+                        "updatedAt": "2025-01-20T08:30:00.000Z",
+                        "veridianCredentialId": null,
+                        "verificationChallenge": null,
+                        "verificationChallengeGeneratedAt": null,
+                        "verificationSecret": null
+                      }
+                    ]
+                  }
                 }
               }
             }
@@ -179,7 +781,7 @@
       "post": {
         "tags": ["Agents"],
         "summary": "Start agent registration",
-        "description": "Creates a new agent and begins on-platform registration.",
+        "description": "Creates a new agent and begins registration in Masumi SaaS. Returns **400** if `tags` is missing or empty after splitting on commas (at least one tag required).",
         "security": [
           {
             "apiKeyHeader": []
@@ -190,11 +792,191 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {},
-                "additionalProperties": {
-                  "nullable": true
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 250
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      }
+                    ]
+                  },
+                  "extendedDescription": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 5000
+                      },
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      }
+                    ]
+                  },
+                  "apiUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "tags": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "pricing": {
+                    "type": "object",
+                    "properties": {
+                      "pricingType": {
+                        "type": "string",
+                        "enum": ["Free", "Fixed"]
+                      },
+                      "prices": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string"
+                            },
+                            "currency": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["amount"]
+                        }
+                      }
+                    },
+                    "required": ["pricingType"]
+                  },
+                  "termsOfUseUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "privacyPolicyUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "otherUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "capabilityName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      }
+                    ]
+                  },
+                  "capabilityVersion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [""]
+                      }
+                    ]
+                  },
+                  "exampleOutputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "url": {
+                          "type": "string",
+                          "minLength": 1,
+                          "format": "uri"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        }
+                      },
+                      "required": ["name", "url", "mimeType"]
+                    }
+                  }
                 },
-                "description": "Registration payload — see app UI / types"
+                "required": ["name", "apiUrl"],
+                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`).",
+                "example": {
+                  "name": "Research assistant",
+                  "description": "Helps with literature review",
+                  "extendedDescription": "",
+                  "apiUrl": "https://agent.example.com/mip",
+                  "tags": "research, nlp",
+                  "icon": "bot",
+                  "pricing": {
+                    "pricingType": "Fixed",
+                    "prices": [
+                      {
+                        "amount": "5",
+                        "currency": "USD"
+                      }
+                    ]
+                  },
+                  "termsOfUseUrl": "https://example.com/terms",
+                  "privacyPolicyUrl": "https://example.com/privacy",
+                  "otherUrl": "",
+                  "capabilityName": "Masumi",
+                  "capabilityVersion": "1.0",
+                  "exampleOutputs": [
+                    {
+                      "name": "Sample output",
+                      "url": "https://example.com/sample.json",
+                      "mimeType": "application/json"
+                    }
+                  ]
+                }
               }
             }
           }
@@ -211,12 +993,161 @@
                       "type": "boolean",
                       "enum": [true]
                     },
+                    "agentId": {
+                      "type": "string"
+                    },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "extendedDescription": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrationState": {
+                          "type": "string"
+                        },
+                        "verificationStatus": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "PENDING",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED",
+                            null
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metadata": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "icon": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "networkIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "pricing": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "veridianCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "verificationChallenge": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
+                        },
+                        "verificationChallengeGeneratedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "ISO time the challenge was issued; null if none."
+                        },
+                        "verificationSecret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "name",
+                        "description",
+                        "extendedDescription",
+                        "apiUrl",
+                        "organizationId",
+                        "registrationState",
+                        "verificationStatus",
+                        "tags",
+                        "metadata",
+                        "icon",
+                        "agentIdentifier",
+                        "networkIdentifier",
+                        "createdAt",
+                        "updatedAt",
+                        "veridianCredentialId",
+                        "verificationChallenge",
+                        "verificationChallengeGeneratedAt",
+                        "verificationSecret"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "agentId", "data"],
+                  "example": {
+                    "success": true,
+                    "agentId": "cmlf6gswz0000x1uctad958tq",
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "userId": "clu01exampleuser0001",
+                      "name": "Research assistant",
+                      "description": "Helps with literature review",
+                      "extendedDescription": null,
+                      "apiUrl": "https://agent.example.com/mip",
+                      "organizationId": null,
+                      "registrationState": "RegistrationConfirmed",
+                      "verificationStatus": "VERIFIED",
+                      "tags": ["research", "nlp"],
+                      "metadata": null,
+                      "icon": "bot",
+                      "agentIdentifier": "policy1.assetname1",
+                      "networkIdentifier": "Preprod",
+                      "pricing": {
+                        "pricingType": "Fixed",
+                        "prices": [
+                          {
+                            "amount": "5",
+                            "currency": "USD"
+                          }
+                        ]
+                      },
+                      "createdAt": "2025-01-15T12:00:00.000Z",
+                      "updatedAt": "2025-01-20T08:30:00.000Z",
+                      "veridianCredentialId": null,
+                      "verificationChallenge": null,
+                      "verificationChallengeGeneratedAt": null,
+                      "verificationSecret": null
+                    }
+                  }
                 }
               }
             }
@@ -359,11 +1290,156 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "extendedDescription": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrationState": {
+                          "type": "string"
+                        },
+                        "verificationStatus": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "PENDING",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED",
+                            null
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metadata": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "icon": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "networkIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "pricing": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "veridianCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "verificationChallenge": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
+                        },
+                        "verificationChallengeGeneratedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "ISO time the challenge was issued; null if none."
+                        },
+                        "verificationSecret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "name",
+                        "description",
+                        "extendedDescription",
+                        "apiUrl",
+                        "organizationId",
+                        "registrationState",
+                        "verificationStatus",
+                        "tags",
+                        "metadata",
+                        "icon",
+                        "agentIdentifier",
+                        "networkIdentifier",
+                        "createdAt",
+                        "updatedAt",
+                        "veridianCredentialId",
+                        "verificationChallenge",
+                        "verificationChallengeGeneratedAt",
+                        "verificationSecret"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "userId": "clu01exampleuser0001",
+                      "name": "Research assistant",
+                      "description": "Helps with literature review",
+                      "extendedDescription": null,
+                      "apiUrl": "https://agent.example.com/mip",
+                      "organizationId": null,
+                      "registrationState": "RegistrationConfirmed",
+                      "verificationStatus": "VERIFIED",
+                      "tags": ["research", "nlp"],
+                      "metadata": null,
+                      "icon": "bot",
+                      "agentIdentifier": "policy1.assetname1",
+                      "networkIdentifier": "Preprod",
+                      "pricing": {
+                        "pricingType": "Fixed",
+                        "prices": [
+                          {
+                            "amount": "5",
+                            "currency": "USD"
+                          }
+                        ]
+                      },
+                      "createdAt": "2025-01-15T12:00:00.000Z",
+                      "updatedAt": "2025-01-20T08:30:00.000Z",
+                      "veridianCredentialId": null,
+                      "verificationChallenge": null,
+                      "verificationChallengeGeneratedAt": null,
+                      "verificationSecret": null
+                    }
+                  }
                 }
               }
             }
@@ -502,13 +1578,12 @@
                     "success": {
                       "type": "boolean",
                       "enum": [true]
-                    },
-                    "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success"],
+                  "example": {
+                    "success": true
+                  }
                 }
               }
             }
@@ -626,6 +1701,17 @@
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Counts",
@@ -639,11 +1725,49 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "all": {
+                          "type": "number"
+                        },
+                        "registered": {
+                          "type": "number"
+                        },
+                        "deregistered": {
+                          "type": "number"
+                        },
+                        "pending": {
+                          "type": "number"
+                        },
+                        "failed": {
+                          "type": "number"
+                        },
+                        "verified": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "all",
+                        "registered",
+                        "deregistered",
+                        "pending",
+                        "failed",
+                        "verified"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "all": 5,
+                      "registered": 3,
+                      "deregistered": 0,
+                      "pending": 1,
+                      "failed": 0,
+                      "verified": 2
+                    }
+                  }
                 }
               }
             }
@@ -787,11 +1911,75 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": ["payment", "purchase"]
+                              },
+                              "txHash": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "amount": {
+                                "type": "string"
+                              },
+                              "network": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "unlockTime": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "type",
+                              "txHash",
+                              "amount",
+                              "network",
+                              "status",
+                              "unlockTime",
+                              "createdAt"
+                            ]
+                          }
+                        }
+                      },
+                      "required": ["transactions"]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "transactions": [
+                        {
+                          "id": "pay_01",
+                          "type": "payment",
+                          "txHash": "abc123…",
+                          "amount": "10 ADA",
+                          "network": "Preprod",
+                          "status": "FundsLocked",
+                          "unlockTime": null,
+                          "createdAt": "2025-01-18T09:00:00.000Z"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -919,6 +2107,15 @@
             "description": "Agent ID (CUID)",
             "name": "agentId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": "7d"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
           }
         ],
         "responses": {
@@ -934,11 +2131,242 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "totalTransactions": {
+                          "type": "number"
+                        },
+                        "totalIncome": {
+                          "type": "object",
+                          "properties": {
+                            "units": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["unit", "amount"]
+                              }
+                            },
+                            "blockchainFees": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["units", "blockchainFees"]
+                        },
+                        "totalRefunded": {
+                          "type": "object",
+                          "properties": {
+                            "units": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["unit", "amount"]
+                              }
+                            },
+                            "blockchainFees": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["units", "blockchainFees"]
+                        },
+                        "totalPending": {
+                          "type": "object",
+                          "properties": {
+                            "units": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["unit", "amount"]
+                              }
+                            },
+                            "blockchainFees": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["units", "blockchainFees"]
+                        },
+                        "periodStart": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "periodEnd": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dailyIncome": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "day": {
+                                "type": "number"
+                              },
+                              "month": {
+                                "type": "number"
+                              },
+                              "year": {
+                                "type": "number"
+                              },
+                              "units": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": ["unit", "amount"]
+                                }
+                              },
+                              "blockchainFees": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "year",
+                              "units",
+                              "blockchainFees"
+                            ]
+                          }
+                        },
+                        "monthlyIncome": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "day": {
+                                "type": "number"
+                              },
+                              "month": {
+                                "type": "number"
+                              },
+                              "year": {
+                                "type": "number"
+                              },
+                              "units": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "unit": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": ["unit", "amount"]
+                                }
+                              },
+                              "blockchainFees": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "year",
+                              "units",
+                              "blockchainFees"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "totalTransactions",
+                        "totalIncome",
+                        "totalRefunded",
+                        "totalPending",
+                        "periodStart",
+                        "periodEnd"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "totalTransactions": 12,
+                      "totalIncome": {
+                        "units": [
+                          {
+                            "unit": "ADA",
+                            "amount": 45.2
+                          }
+                        ],
+                        "blockchainFees": 0.35
+                      },
+                      "totalRefunded": {
+                        "units": [],
+                        "blockchainFees": 0
+                      },
+                      "totalPending": {
+                        "units": [
+                          {
+                            "unit": "ADA",
+                            "amount": 2
+                          }
+                        ],
+                        "blockchainFees": 0.02
+                      },
+                      "periodStart": "2025-01-01",
+                      "periodEnd": "2025-01-24",
+                      "dailyIncome": [
+                        {
+                          "day": 20,
+                          "month": 1,
+                          "year": 2025,
+                          "units": [
+                            {
+                              "unit": "ADA",
+                              "amount": 3.5
+                            }
+                          ],
+                          "blockchainFees": 0.01
+                        }
+                      ],
+                      "monthlyIncome": [
+                        {
+                          "month": 1,
+                          "year": 2025,
+                          "units": [
+                            {
+                              "unit": "ADA",
+                              "amount": 45.2
+                            }
+                          ],
+                          "blockchainFees": 0.35
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -1068,6 +2496,30 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "aid": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "schemaSaid": {
+                    "type": "string"
+                  }
+                },
+                "required": ["aid"],
+                "description": "Veridian **aid** (required). Optional **schemaSaid** to select a credential schema; defaults to the agent verification schema when omitted.",
+                "example": {
+                  "aid": "EXAMPLE_AID",
+                  "schemaSaid": "optional_schema_said"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Verification step result",
@@ -1081,17 +2533,162 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "extendedDescription": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrationState": {
+                          "type": "string"
+                        },
+                        "verificationStatus": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "PENDING",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED",
+                            null
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metadata": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "icon": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "networkIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "pricing": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "veridianCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "verificationChallenge": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
+                        },
+                        "verificationChallengeGeneratedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "ISO time the challenge was issued; null if none."
+                        },
+                        "verificationSecret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "name",
+                        "description",
+                        "extendedDescription",
+                        "apiUrl",
+                        "organizationId",
+                        "registrationState",
+                        "verificationStatus",
+                        "tags",
+                        "metadata",
+                        "icon",
+                        "agentIdentifier",
+                        "networkIdentifier",
+                        "createdAt",
+                        "updatedAt",
+                        "veridianCredentialId",
+                        "verificationChallenge",
+                        "verificationChallengeGeneratedAt",
+                        "verificationSecret"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "userId": "clu01exampleuser0001",
+                      "name": "Research assistant",
+                      "description": "Helps with literature review",
+                      "extendedDescription": null,
+                      "apiUrl": "https://agent.example.com/mip",
+                      "organizationId": null,
+                      "registrationState": "RegistrationConfirmed",
+                      "verificationStatus": "VERIFIED",
+                      "tags": ["research", "nlp"],
+                      "metadata": null,
+                      "icon": "bot",
+                      "agentIdentifier": "policy1.assetname1",
+                      "networkIdentifier": "Preprod",
+                      "pricing": {
+                        "pricingType": "Fixed",
+                        "prices": [
+                          {
+                            "amount": "5",
+                            "currency": "USD"
+                          }
+                        ]
+                      },
+                      "createdAt": "2025-01-15T12:00:00.000Z",
+                      "updatedAt": "2025-01-20T08:30:00.000Z",
+                      "veridianCredentialId": null,
+                      "verificationChallenge": null,
+                      "verificationChallengeGeneratedAt": null,
+                      "verificationSecret": null
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Validation or bad request",
+            "description": "Invalid body (e.g. missing `aid`), KYC/agent preconditions, or credential validation failure. May include `details` (string[] or credential metadata object).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1103,6 +2700,10 @@
                     },
                     "error": {
                       "type": "string"
+                    },
+                    "details": {
+                      "nullable": true,
+                      "description": "Optional: array of validation messages, or credential metadata (e.g. issuedAt, schemaSaid)."
                     }
                   },
                   "required": ["success", "error"]
@@ -1229,11 +2830,31 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "challenge": {
+                          "type": "string"
+                        },
+                        "secret": {
+                          "type": "string"
+                        },
+                        "generatedAt": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": ["challenge", "secret", "generatedAt"]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "challenge": "550e8400-e29b-41d4-a716-446655440000",
+                      "secret": "a1b2c3…64hex",
+                      "generatedAt": "2025-01-20T11:00:00.000Z"
+                    }
+                  }
                 }
               }
             }
@@ -1369,10 +2990,15 @@
                 "type": "object",
                 "properties": {
                   "regenerate": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "If true, issue a new challenge and invalidate the previous",
+                    "example": true
                   }
                 },
-                "description": "Omit or pass `{ regenerate: true }`"
+                "description": "Empty object `{}` is valid; pass `regenerate: true` to rotate the challenge.",
+                "example": {
+                  "regenerate": true
+                }
               }
             }
           }
@@ -1390,11 +3016,31 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "challenge": {
+                          "type": "string"
+                        },
+                        "secret": {
+                          "type": "string"
+                        },
+                        "generatedAt": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": ["challenge", "secret", "generatedAt"]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "challenge": "550e8400-e29b-41d4-a716-446655440000",
+                      "secret": "a1b2c3…64hex",
+                      "generatedAt": "2025-01-20T11:00:00.000Z"
+                    }
+                  }
                 }
               }
             }
@@ -1537,11 +3183,22 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["message"]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "message": "Endpoint is working correctly."
+                    }
+                  }
                 }
               }
             }
@@ -1673,7 +3330,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Registration completed",
+            "description": "Registration completed on-chain",
             "content": {
               "application/json": {
                 "schema": {
@@ -1683,12 +3340,191 @@
                       "type": "boolean",
                       "enum": [true]
                     },
+                    "status": {
+                      "type": "string",
+                      "enum": ["registered"]
+                    },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "extendedDescription": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrationState": {
+                          "type": "string"
+                        },
+                        "verificationStatus": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "PENDING",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED",
+                            null
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metadata": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "icon": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "networkIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "pricing": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "veridianCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "verificationChallenge": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
+                        },
+                        "verificationChallengeGeneratedAt": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "ISO time the challenge was issued; null if none."
+                        },
+                        "verificationSecret": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "name",
+                        "description",
+                        "extendedDescription",
+                        "apiUrl",
+                        "organizationId",
+                        "registrationState",
+                        "verificationStatus",
+                        "tags",
+                        "metadata",
+                        "icon",
+                        "agentIdentifier",
+                        "networkIdentifier",
+                        "createdAt",
+                        "updatedAt",
+                        "veridianCredentialId",
+                        "verificationChallenge",
+                        "verificationChallengeGeneratedAt",
+                        "verificationSecret"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "status", "data"],
+                  "example": {
+                    "success": true,
+                    "status": "registered",
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "userId": "clu01exampleuser0001",
+                      "name": "Research assistant",
+                      "description": "Helps with literature review",
+                      "extendedDescription": null,
+                      "apiUrl": "https://agent.example.com/mip",
+                      "organizationId": null,
+                      "registrationState": "RegistrationConfirmed",
+                      "verificationStatus": "VERIFIED",
+                      "tags": ["research", "nlp"],
+                      "metadata": null,
+                      "icon": "bot",
+                      "agentIdentifier": "policy1.assetname1",
+                      "networkIdentifier": "Preprod",
+                      "pricing": {
+                        "pricingType": "Fixed",
+                        "prices": [
+                          {
+                            "amount": "5",
+                            "currency": "USD"
+                          }
+                        ]
+                      },
+                      "createdAt": "2025-01-15T12:00:00.000Z",
+                      "updatedAt": "2025-01-20T08:30:00.000Z",
+                      "veridianCredentialId": null,
+                      "verificationChallenge": null,
+                      "verificationChallengeGeneratedAt": null,
+                      "verificationSecret": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Registration still pending (e.g. wallet funding); poll again shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [true]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["pending"]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["success", "status", "message"],
+                  "example": {
+                    "success": true,
+                    "status": "pending",
+                    "message": "Wallet not yet funded. Poll again in a few seconds."
+                  }
                 }
               }
             }
@@ -1820,7 +3656,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Deregistration result",
+            "description": "Deregistered",
             "content": {
               "application/json": {
                 "schema": {
@@ -1829,13 +3665,12 @@
                     "success": {
                       "type": "boolean",
                       "enum": [true]
-                    },
-                    "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success"],
+                  "example": {
+                    "success": true
+                  }
                 }
               }
             }
@@ -1953,6 +3788,17 @@
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Overview",
@@ -1966,11 +3812,222 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "emailVerified": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": ["id", "name", "email", "emailVerified"]
+                        },
+                        "kycStatus": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "REVIEW",
+                            "APPROVED",
+                            "REJECTED",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "kycCompletedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "kycRejectionReason": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "kycError": {
+                          "type": "string"
+                        },
+                        "organizations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "name", "slug", "role"]
+                          }
+                        },
+                        "organizationCount": {
+                          "type": "number"
+                        },
+                        "agents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "icon": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "registrationState": {
+                                "type": "string"
+                              },
+                              "verificationStatus": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "pricing": {
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "icon",
+                              "registrationState",
+                              "verificationStatus"
+                            ]
+                          }
+                        },
+                        "apiKeys": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "prefix": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "start": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": ["id", "name", "prefix", "start"]
+                          }
+                        },
+                        "apiKeyCount": {
+                          "type": "number"
+                        },
+                        "agentCount": {
+                          "type": "number"
+                        },
+                        "verifiedAgentCount": {
+                          "type": "number"
+                        },
+                        "runningAgentCount": {
+                          "type": "number"
+                        },
+                        "pendingAgentCount": {
+                          "type": "number"
+                        },
+                        "failedAgentCount": {
+                          "type": "number"
+                        },
+                        "balance": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "user",
+                        "kycStatus",
+                        "kycCompletedAt",
+                        "kycRejectionReason",
+                        "organizations",
+                        "organizationCount",
+                        "agents",
+                        "apiKeys",
+                        "apiKeyCount",
+                        "agentCount",
+                        "verifiedAgentCount",
+                        "runningAgentCount",
+                        "pendingAgentCount",
+                        "failedAgentCount",
+                        "balance"
+                      ]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "user": {
+                        "id": "clu01exampleuser0001",
+                        "name": "Ada Lovelace",
+                        "email": "ada@example.com",
+                        "emailVerified": true
+                      },
+                      "kycStatus": "APPROVED",
+                      "kycCompletedAt": "2025-01-10T00:00:00.000Z",
+                      "kycRejectionReason": null,
+                      "organizations": [
+                        {
+                          "id": "org1",
+                          "name": "Lab",
+                          "slug": "lab",
+                          "role": "OWNER"
+                        }
+                      ],
+                      "organizationCount": 1,
+                      "agents": [
+                        {
+                          "id": "cmlf6gswz0000x1uctad958tq",
+                          "name": "Research assistant",
+                          "icon": "bot",
+                          "registrationState": "RegistrationConfirmed",
+                          "verificationStatus": "VERIFIED",
+                          "pricing": null
+                        }
+                      ],
+                      "apiKeys": [
+                        {
+                          "id": "key1",
+                          "name": "CI",
+                          "prefix": "msk_",
+                          "start": "msk_ab"
+                        }
+                      ],
+                      "apiKeyCount": 1,
+                      "agentCount": 1,
+                      "verifiedAgentCount": 1,
+                      "runningAgentCount": 1,
+                      "pendingAgentCount": 0,
+                      "failedAgentCount": 0,
+                      "balance": "0"
+                    }
+                  }
                 }
               }
             }
@@ -2082,30 +4139,227 @@
       "get": {
         "tags": ["Activity"],
         "summary": "Activity feed",
-        "description": "Cross-agent activity with filters (tab/type).",
+        "description": "Cross-agent activity with filters (tab/type). Use `summary=1` for counts-only payload.",
         "security": [
           {
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Tab: all | lifecycle | transactions | purchases | payments | refundRequests | disputes. Unknown or missing → \"all\".",
+              "example": "all"
+            },
+            "required": false,
+            "description": "Tab: all | lifecycle | transactions | purchases | payments | refundRequests | disputes. Unknown or missing → \"all\".",
+            "name": "filter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "description": "Prefer Mainnet or Preprod; invalid or missing values default to Preprod (same as `parseNetwork`).",
+              "example": "Preprod"
+            },
+            "required": false,
+            "description": "Prefer Mainnet or Preprod; invalid or missing values default to Preprod (same as `parseNetwork`).",
+            "name": "network",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Set to \"1\" for summary counts (`totalTransactions`, `totalActivity`) instead of `items`.",
+              "example": "1"
+            },
+            "required": false,
+            "description": "Set to \"1\" for summary counts (`totalTransactions`, `totalActivity`) instead of `items`.",
+            "name": "summary",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "ISO timestamp for incremental sync; invalid or empty values are ignored."
+            },
+            "required": false,
+            "description": "ISO timestamp for incremental sync; invalid or empty values are ignored.",
+            "name": "lastUpdate",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Activity items",
+            "description": "Activity feed or summary",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [true]
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [true]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": ["lifecycle"]
+                                      },
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "date": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "type": "string"
+                                      },
+                                      "agentId": {
+                                        "type": "string",
+                                        "nullable": true
+                                      },
+                                      "agentName": {
+                                        "type": "string",
+                                        "nullable": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "id",
+                                      "date",
+                                      "type",
+                                      "agentId",
+                                      "agentName"
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": ["transaction"]
+                                      },
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "date": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["payment", "purchase"]
+                                      },
+                                      "agentId": {
+                                        "type": "string",
+                                        "nullable": true
+                                      },
+                                      "agentName": {
+                                        "type": "string",
+                                        "nullable": true
+                                      },
+                                      "amount": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string"
+                                      },
+                                      "txHash": {
+                                        "type": "string",
+                                        "nullable": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "id",
+                                      "date",
+                                      "type",
+                                      "agentId",
+                                      "agentName",
+                                      "amount",
+                                      "status",
+                                      "txHash"
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            "lastUpdate": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["items"]
+                        }
+                      },
+                      "required": ["success", "data"]
                     },
-                    "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [true]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "totalTransactions": {
+                              "type": "number"
+                            },
+                            "totalActivity": {
+                              "type": "number"
+                            },
+                            "lastUpdate": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["totalTransactions", "totalActivity"]
+                        }
+                      },
+                      "required": ["success", "data"]
                     }
-                  },
-                  "required": ["success"]
+                  ],
+                  "description": "With `summary=true`, `data` has `totalTransactions` and `totalActivity`; otherwise `data.items` is the feed.",
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "items": [
+                        {
+                          "kind": "lifecycle",
+                          "id": "evt1",
+                          "date": "2025-01-20T10:00:00.000Z",
+                          "type": "AgentRegistered",
+                          "agentId": "cmlf6gswz0000x1uctad958tq",
+                          "agentName": "Research assistant"
+                        },
+                        {
+                          "kind": "transaction",
+                          "id": "pay_01",
+                          "date": "2025-01-19T15:30:00.000Z",
+                          "type": "payment",
+                          "agentId": "cmlf6gswz0000x1uctad958tq",
+                          "agentName": "Research assistant",
+                          "amount": "10 ADA",
+                          "status": "FundsLocked",
+                          "txHash": "abc123…"
+                        }
+                      ],
+                      "lastUpdate": "2025-01-20T10:00:00.000Z"
+                    }
+                  }
                 }
               }
             }
@@ -2222,6 +4476,17 @@
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "default": "7d"
+            },
+            "required": false,
+            "name": "period",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Earnings / payouts summary",
@@ -2235,11 +4500,47 @@
                       "enum": [true]
                     },
                     "data": {
-                      "nullable": true,
-                      "description": "Operation-specific JSON payload"
+                      "type": "object",
+                      "properties": {
+                        "earnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["date", "amount"]
+                          }
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "previousTotal": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["earnings", "total"]
                     }
                   },
-                  "required": ["success"]
+                  "required": ["success", "data"],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "earnings": [
+                        {
+                          "date": "2025-01-15",
+                          "amount": 12.5
+                        }
+                      ],
+                      "total": 12.5,
+                      "previousTotal": 10
+                    }
+                  }
                 }
               }
             }

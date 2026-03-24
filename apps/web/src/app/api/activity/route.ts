@@ -1,50 +1,21 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
-import { parseNetwork } from "@/lib/schemas/api-query";
+import {
+  activityQueryInputSchema,
+  parseActivityQueryInput,
+} from "@/lib/schemas/activity";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 
+export type { ActivityFeedFilter as FeedFilter } from "@/lib/schemas/activity";
 export type { ActivityFeedItem };
 
 const FEED_LIMIT = 80;
-
-const feedFilterSchema = z.enum([
-  "all",
-  "lifecycle",
-  "transactions",
-  "purchases",
-  "payments",
-  "refundRequests",
-  "disputes",
-]);
-export type FeedFilter = z.infer<typeof feedFilterSchema>;
-
-const activityQuerySchema = z.object({
-  filter: feedFilterSchema.catch("all"),
-  network: z
-    .string()
-    .optional()
-    .nullable()
-    .transform((v) => parseNetwork(v)),
-  summary: z
-    .string()
-    .optional()
-    .transform((v) => v === "1"),
-  lastUpdate: z
-    .string()
-    .optional()
-    .transform((v) => {
-      if (!v?.trim()) return undefined;
-      const d = new Date(v);
-      return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
-    }),
-});
 
 /** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
 const backfillLocks = new Map<string, Promise<void>>();
@@ -85,12 +56,13 @@ export async function GET(request: NextRequest) {
       requireEmailVerified: false,
     });
     const { searchParams } = request.nextUrl;
-    const query = activityQuerySchema.parse({
-      filter: searchParams.get("filter") ?? "all",
-      network: searchParams.get("network") ?? undefined,
+    const queryRaw = activityQueryInputSchema.parse({
+      filter: searchParams.get("filter") ?? undefined,
+      network: searchParams.get("network"),
       summary: searchParams.get("summary") ?? undefined,
       lastUpdate: searchParams.get("lastUpdate") ?? undefined,
     });
+    const query = parseActivityQueryInput(queryRaw);
     const validFilter = query.filter;
     const network = query.network;
 

@@ -2178,6 +2178,7 @@ export const ApikeyScalarFieldEnum = {
   start: "start",
   prefix: "prefix",
   key: "key",
+  userApiKeySecretEncrypted: "userApiKeySecretEncrypted",
   userId: "userId",
   refillInterval: "refillInterval",
   refillAmount: "refillAmount",

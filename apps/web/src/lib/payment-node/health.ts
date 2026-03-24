@@ -83,3 +83,121 @@ export function isPaymentNodeConfigured(): boolean {
     return false;
   }
 }
+
+const PAYMENT_NODE_HEALTH_TIMEOUT_MS = 5_000;
+
+/**
+ * GET {PAYMENT_NODE_BASE_URL}/health — no auth (payment service public health).
+ * Lighter than {@link checkPaymentNodeHealth} (no admin registry call).
+ */
+export async function checkPaymentNodeLiveness(): Promise<PaymentNodeHealthResult> {
+  let baseUrl: string;
+  try {
+    baseUrl = paymentNodeConfig.getBaseUrl();
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Payment node config missing";
+    return {
+      ok: false,
+      configMissing: true,
+      error: message,
+    };
+  }
+
+  const url = `${baseUrl}/health`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    PAYMENT_NODE_HEALTH_TIMEOUT_MS,
+  );
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+
+    const contentType = res.headers.get("content-type") ?? "";
+    const text = await res.text();
+    const trimmed = text.trim();
+
+    let json: { status?: string; data?: { status?: string } };
+    if (!trimmed) {
+      console.error("[payment-node] health: empty response body", {
+        url,
+        status: res.status,
+        contentType,
+      });
+      return {
+        ok: false,
+        unreachable: true,
+        error: "Payment node /health returned an empty body",
+      };
+    }
+
+    try {
+      json = JSON.parse(trimmed) as {
+        status?: string;
+        data?: { status?: string };
+      };
+    } catch (parseErr) {
+      const preview = trimmed.slice(0, 200);
+      const isLikelyHtml = /^\s*</.test(trimmed);
+      console.error("[payment-node] health: response is not valid JSON", {
+        url,
+        status: res.status,
+        contentType,
+        bodyPreview: preview,
+        isLikelyHtml,
+        parseError:
+          parseErr instanceof Error ? parseErr.message : String(parseErr),
+      });
+      return {
+        ok: false,
+        unreachable: true,
+        error: isLikelyHtml
+          ? "Payment node /health returned HTML or non-JSON (check base URL and reverse proxy)"
+          : "Payment node /health returned invalid JSON",
+      };
+    }
+
+    if (res.ok && json?.status === "success" && json?.data?.status === "ok") {
+      return { ok: true };
+    }
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        unreachable: true,
+        error: `Payment node health returned HTTP ${res.status}`,
+      };
+    }
+
+    return {
+      ok: false,
+      unreachable: true,
+      error: "Unexpected payment node health response body",
+    };
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    if (err.name === "AbortError") {
+      return {
+        ok: false,
+        unreachable: true,
+        error: "Payment node health check timed out",
+      };
+    }
+    console.error("[payment-node] health: request failed", {
+      url,
+      message: err.message,
+    });
+    return {
+      ok: false,
+      unreachable: true,
+      error: err.message || "Payment node unreachable",
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}

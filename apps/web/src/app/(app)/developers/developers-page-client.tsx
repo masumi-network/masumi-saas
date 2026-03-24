@@ -8,7 +8,7 @@ import { InputSchemaValidator } from "@/components/developers/InputSchemaValidat
 import { OpenApiExplorerEmbed } from "@/components/developers/open-api-explorer-embed";
 import { Tabs } from "@/components/ui/tabs";
 
-/** Default tab — URL omits `tab` (matches payment-service “Schema Validator” first). */
+/** Default tab is OpenAPI so Masumi SaaS API docs are visible immediately. `?tab=schema` for the validator. */
 const TAB_SCHEMA = "schema";
 const TAB_OPENAPI = "openapi";
 
@@ -20,17 +20,17 @@ export function DevelopersPageClient() {
 
   const activeTab = useMemo(() => {
     const tab = searchParams.get("tab");
-    if (tab === TAB_OPENAPI) return TAB_OPENAPI;
-    return TAB_SCHEMA;
+    if (tab === TAB_SCHEMA) return TAB_SCHEMA;
+    return TAB_OPENAPI;
   }, [searchParams]);
 
   const setTab = useCallback(
     (tab: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (tab === TAB_SCHEMA) {
+      if (tab === TAB_OPENAPI) {
         params.delete("tab");
-      } else if (tab === TAB_OPENAPI) {
-        params.set("tab", TAB_OPENAPI);
+      } else if (tab === TAB_SCHEMA) {
+        params.set("tab", TAB_SCHEMA);
       }
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
@@ -42,8 +42,8 @@ export function DevelopersPageClient() {
 
   const tabs = useMemo(
     () => [
-      { name: t("tabs.schemaValidator"), key: TAB_SCHEMA },
       { name: t("tabs.openApi"), key: TAB_OPENAPI },
+      { name: t("tabs.schemaValidator"), key: TAB_SCHEMA },
     ],
     [t],
   );

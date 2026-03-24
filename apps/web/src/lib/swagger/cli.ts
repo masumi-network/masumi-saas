@@ -37,7 +37,10 @@ const publicV1Spec = generateOpenAPISpec();
 writeSpec("openapi-docs.json", publicV1Spec);
 writeSpec("openapi-platform-docs.json", generateSaaSAppOpenAPISpec());
 
-/** Legacy static path; same document as `openapi-docs.json` (public v1 discovery). */
+/**
+ * Legacy static file: **public v1** discovery spec only (`generateOpenAPISpec`).
+ * The authenticated Masumi SaaS API spec is `openapi-platform-docs.json` and `GET /api/openapi`.
+ */
 const publicOpenapiPath = path.join(process.cwd(), "public", "openapi.json");
 fs.writeFileSync(
   publicOpenapiPath,

@@ -5,6 +5,7 @@ import {
   BookOpen,
   Bot,
   Building2,
+  Code,
   ExternalLink,
   History,
   Key,
@@ -45,6 +46,8 @@ interface NavigationItem {
   key: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Extra tokens for command-palette fuzzy match (e.g. openapi, swagger). */
+  searchValue?: string;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -53,6 +56,13 @@ const navigationItems: NavigationItem[] = [
   { key: "activity", href: "/activity", icon: Activity },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },
+  {
+    key: "developers",
+    href: "/developers",
+    icon: Code,
+    searchValue:
+      "developers openapi api documentation swagger rest http masumi saas",
+  },
   { key: "account", href: "/account", icon: User },
 ];
 
@@ -180,7 +190,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           {navigationItems.map((item) => (
             <CommandItem
               key={item.key}
-              value={item.key}
+              value={item.searchValue ?? item.key}
               onSelect={() => handleSelect(item.href)}
             >
               <item.icon className="mr-2 h-4 w-4" />

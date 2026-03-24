@@ -33,6 +33,8 @@ export const authConfig = {
     requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === "true",
   },
   apiKey: {
+    /** Must match better-auth `apiKey({ defaultPrefix })` — used to detect API-key sessions vs cookies. */
+    defaultKeyPrefix: "mas_",
     rateLimit: {
       enabled: true,
       timeWindow: parseInt(process.env.API_RATE_LIMIT_TIME_WINDOW || "60", 10),

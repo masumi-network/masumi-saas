@@ -1,6 +1,5 @@
 import prisma, { RegistrationState } from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import {
   buildAgentPricing,
@@ -10,25 +9,10 @@ import {
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
-import { registerAgentBodySchema } from "@/lib/schemas/agent";
-
-const getAgentsQuerySchema = z.object({
-  verificationStatus: z
-    .string()
-    .transform((v) => v.toUpperCase())
-    .pipe(z.enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"]))
-    .optional(),
-  unverified: z
-    .enum(["true", "false"])
-    .default("false")
-    .transform((v) => v === "true"),
-  cursor: z.string().optional(),
-  take: z.coerce.number().int().min(1).max(50).optional().default(10),
-  registrationState: z.string().optional(),
-  registrationStateIn: z.string().optional(),
-  search: z.string().optional(),
-  network: z.enum(["Mainnet", "Preprod"]).optional(),
-});
+import {
+  agentsListQuerySchema,
+  registerAgentBodySchema,
+} from "@/lib/schemas/agent";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +23,7 @@ export async function GET(request: NextRequest) {
     const rawParams = Object.fromEntries(
       request.nextUrl.searchParams.entries(),
     );
-    const queryValidation = getAgentsQuerySchema.safeParse(rawParams);
+    const queryValidation = agentsListQuerySchema.safeParse(rawParams);
     if (!queryValidation.success) {
       return NextResponse.json(
         {

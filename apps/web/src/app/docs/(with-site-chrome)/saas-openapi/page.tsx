@@ -4,7 +4,7 @@ import { MasumiSwaggerUi } from "@/components/developers/masumi-swagger-ui";
 import { SwaggerPoweredByNote } from "@/components/developers/swagger-powered-by-note";
 
 /**
- * Full-page Swagger UI for the platform HTTP API (`GET /api/openapi`).
+ * Full-page Swagger UI for the Masumi SaaS HTTP API (`GET /api/openapi`).
  */
 export default function SaasOpenApiExplorerPage() {
   return (

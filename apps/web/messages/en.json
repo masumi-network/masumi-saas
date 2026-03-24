@@ -667,6 +667,7 @@
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
         "apiKeys": "API Keys",
+        "developers": "Developers & API docs",
         "account": "Account",
         "documentation": "Documentation",
         "support": "Support",
@@ -1308,14 +1309,15 @@
     "signIn": "Sign In"
   },
   "DocsHub": {
-    "saasOpenApiPageTitle": "Masumi as a Service API",
-    "saasOpenApiPageDescription": "Interactive API docs for the Masumi platform application.",
+    "saasOpenApiPageTitle": "Masumi SaaS API",
+    "saasOpenApiPageDescription": "Interactive API docs for Masumi SaaS.",
     "openApiPageTitle": "Public discovery",
     "openApiPageDescription": "Interactive API docs for public agent discovery."
   },
   "Developers": {
     "title": "Developers",
-    "description": "API documentation and testing tools.",
+    "metaDescription": "Interactive OpenAPI docs for the Masumi SaaS API, plus schema tools. Use the OpenAPI tab to explore endpoints and try requests with your API key.",
+    "description": "Interactive OpenAPI docs for the Masumi SaaS API, plus schema tools. Use the OpenAPI tab to explore endpoints and try requests with your <apikey>API Key</apikey>.",
     "tabs": {
       "schemaValidator": "Schema Validator",
       "openApi": "OpenAPI"
@@ -1323,7 +1325,7 @@
     "openApiEmbed": {
       "swaggerIntro": "Interactive API documentation powered by <swaggerui>Swagger UI</swaggerui>.",
       "openInNewTab": "Open in new tab",
-      "iframeTitle": "Masumi as a Service API"
+      "iframeTitle": "Masumi SaaS API"
     }
   }
 }

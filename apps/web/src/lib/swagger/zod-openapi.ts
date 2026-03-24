@@ -1,6 +1,2 @@
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
-
-extendZodWithOpenApi(z);
-
-export { z };
+/** Re-export — callers in this folder can keep `import { z } from "./zod-openapi"`. */
+export { z } from "@/lib/zod-openapi";

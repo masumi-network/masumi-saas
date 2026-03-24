@@ -1,20 +1,15 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { verifyAgentBodySchema } from "@/lib/schemas/agent";
 import {
   fetchContactCredentials,
   findCredentialBySchema,
   getAgentVerificationSchemaSaid,
   validateCredential,
 } from "@/lib/veridian";
-
-const verifyAgentSchema = z.object({
-  aid: z.string().min(1, "AID is required"),
-  schemaSaid: z.string().optional(),
-});
 
 export async function POST(
   request: NextRequest,
@@ -26,7 +21,7 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json().catch(() => ({}));
-    const validation = verifyAgentSchema.safeParse(body);
+    const validation = verifyAgentBodySchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(

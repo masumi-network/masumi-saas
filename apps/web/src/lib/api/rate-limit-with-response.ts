@@ -3,17 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { addCorsHeaders } from "@/lib/api/cors";
 import { checkRateLimit, type RateLimitResult } from "@/lib/api/rate-limit";
 
+function getClientIpForRateLimit(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+type RateLimitOptionsInput =
+  | { windowMs?: number; maxRequests?: number }
+  | ((ip: string) => { windowMs?: number; maxRequests?: number });
+
 export async function checkRateLimitOrRespond(
   request: NextRequest,
   keyPrefix: string,
+  rateOptions?: RateLimitOptionsInput,
 ): Promise<
   { response: NextResponse } | { allowed: true; rl: RateLimitResult }
 > {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown";
-  const rl = await checkRateLimit(`${keyPrefix}:${ip}`);
+  const ip = getClientIpForRateLimit(request);
+  const resolved =
+    typeof rateOptions === "function" ? rateOptions(ip) : rateOptions;
+  const rl = await checkRateLimit(`${keyPrefix}:${ip}`, resolved);
   if (!rl.allowed) {
     const res = NextResponse.json(
       {

@@ -72,6 +72,13 @@ export const updateNameFormDataSchema = zfd.formData(updateNameSchema);
 export const changePasswordFormDataSchema = zfd.formData(changePasswordSchema);
 export const deleteAccountFormDataSchema = zfd.formData(deleteAccountSchema);
 
+export type { ActivityFeedFilter } from "./activity";
+export type { ActivityQueryInput, ParsedActivityQuery } from "./activity";
+export {
+  activityFeedFilterSchema,
+  activityQueryInputSchema,
+  parseActivityQueryInput,
+} from "./activity";
 export {
   agentCountsQuerySchema,
   agentEarningsQuerySchema,

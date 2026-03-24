@@ -1688,11 +1688,27 @@
    ══════════════════════════════════════════════════════════════════════ */
 .swagger-ui .loading-container {
   padding: var(--swg-space-16) !important;
+  /* Default swagger uses column; keep content centered without squeezing label */
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Empty div + absolute pseudos — without min size, label can wrap one char per line */
+.swagger-ui .loading-container .loading {
+  position: relative !important;
+  min-width: 5rem !important;
+  min-height: 5rem !important;
+  flex-shrink: 0 !important;
 }
 
 .swagger-ui .loading-container .loading::after {
   color: var(--swg-brand-orange) !important;
   font-family: "Inter", sans-serif !important;
+  white-space: nowrap !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  letter-spacing: normal !important;
+  word-break: normal !important;
 }
 
 /* Larger screens — more breathing room */

@@ -76,6 +76,31 @@ export const registerAgentBodySchema = z.object({
   exampleOutputs: z.array(exampleOutputSchema).optional(),
 });
 
+/** GET /api/agents query — shared with OpenAPI (`saas-app-openapi`). */
+export const agentsListQuerySchema = z.object({
+  verificationStatus: z
+    .string()
+    .transform((v) => v.toUpperCase())
+    .pipe(z.enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"]))
+    .optional(),
+  unverified: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  cursor: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).optional().default(10),
+  registrationState: z.string().optional(),
+  registrationStateIn: z.string().optional(),
+  search: z.string().optional(),
+  network: z.enum(["Mainnet", "Preprod"]).optional(),
+});
+
+/** POST /api/agents/{agentId}/verify JSON body — shared with OpenAPI. */
+export const verifyAgentBodySchema = z.object({
+  aid: z.string().min(1, "AID is required"),
+  schemaSaid: z.string().optional(),
+});
+
 /** Full schema for form-based registration (server actions).
  * Nested structures (prices, exampleOutputs) are serialised as JSON strings
  * because FormData is a flat key/value structure.
