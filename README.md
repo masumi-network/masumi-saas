@@ -207,7 +207,6 @@ masumi-saas/
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
    - **PAYMENT_NODE_ENCRYPTION_KEY**: Encryption key for storing per-user payment node API keys (min 32 chars)
      - Generate with: `openssl rand -base64 32`
-   - **PAYMENT_NODE_OPTIONAL** _(optional)_: Set to `1` to allow startup without payment node config
    - **PAYMENT_NODE_STRICT_STARTUP** _(optional)_: Set to `1` to throw on startup if payment node is unreachable
 
 3. **Configure Sumsub Webhook** (required for automatic KYC status updates):

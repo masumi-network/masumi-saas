@@ -34,12 +34,7 @@
           },
           "verificationStatus": {
             "type": "string",
-            "enum": [
-              "PENDING",
-              "VERIFIED",
-              "REVOKED",
-              "EXPIRED"
-            ],
+            "enum": ["PENDING", "VERIFIED", "REVOKED", "EXPIRED"],
             "example": "VERIFIED",
             "description": "Agent verification status (credential-based). PENDING = not yet verified, VERIFIED = credential validated, REVOKED/EXPIRED = credential state."
           },
@@ -54,10 +49,7 @@
             "items": {
               "type": "string"
             },
-            "example": [
-              "payments",
-              "ai"
-            ]
+            "example": ["payments", "ai"]
           },
           "createdAt": {
             "type": "string",
@@ -88,21 +80,14 @@
   "paths": {
     "/agents": {
       "get": {
-        "tags": [
-          "Agents"
-        ],
+        "tags": ["Agents"],
         "summary": "List agents",
-        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required.",
+        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters (for example name or tag search) are **not** supported on this public endpoint and are ignored.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "PENDING",
-                "VERIFIED",
-                "REVOKED",
-                "EXPIRED"
-              ],
+              "enum": ["PENDING", "VERIFIED", "REVOKED", "EXPIRED"],
               "description": "Filter by agent verification status. Defaults to VERIFIED if not specified.",
               "example": "VERIFIED"
             },
@@ -147,9 +132,7 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     },
                     "data": {
                       "type": "array",
@@ -177,19 +160,10 @@
                           "example": 1
                         }
                       },
-                      "required": [
-                        "page",
-                        "limit",
-                        "total",
-                        "totalPages"
-                      ]
+                      "required": ["page", "limit", "total", "totalPages"]
                     }
                   },
-                  "required": [
-                    "success",
-                    "data",
-                    "pagination"
-                  ],
+                  "required": ["success", "data", "pagination"],
                   "example": {
                     "success": true,
                     "data": [
@@ -200,10 +174,7 @@
                         "apiUrl": "https://my-agent.example.com",
                         "verificationStatus": "VERIFIED",
                         "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-                        "tags": [
-                          "payments",
-                          "ai"
-                        ],
+                        "tags": ["payments", "ai"],
                         "createdAt": "2026-01-26T10:00:00.000Z",
                         "updatedAt": "2026-01-26T12:00:00.000Z"
                       }
@@ -233,9 +204,7 @@
     },
     "/agents/{agentId}": {
       "get": {
-        "tags": [
-          "Agents"
-        ],
+        "tags": ["Agents"],
         "summary": "Get agent by ID",
         "description": "Returns a single agent by its ID. No authentication required.",
         "parameters": [
@@ -261,18 +230,13 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     },
                     "data": {
                       "$ref": "#/components/schemas/Agent"
                     }
                   },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
+                  "required": ["success", "data"],
                   "example": {
                     "success": true,
                     "data": {
@@ -282,10 +246,7 @@
                       "apiUrl": "https://my-agent.example.com",
                       "verificationStatus": "VERIFIED",
                       "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-                      "tags": [
-                        "payments",
-                        "ai"
-                      ],
+                      "tags": ["payments", "ai"],
                       "createdAt": "2026-01-26T10:00:00.000Z",
                       "updatedAt": "2026-01-26T12:00:00.000Z"
                     }

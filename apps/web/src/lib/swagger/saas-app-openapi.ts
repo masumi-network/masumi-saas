@@ -1,6 +1,10 @@
 /**
  * OpenAPI 3 document for the Masumi SaaS app API (`/api/*`).
  * Public agent listing for third parties stays on `GET /api/v1/openapi` / `/docs/openapi`.
+ *
+ * Response bodies use Zod→OpenAPI where practical; some routes still use broad object schemas
+ * when the handler shape is large or shared—tighten per-endpoint schemas incrementally for
+ * richer Swagger “Example value” / client codegen.
  */
 
 import {

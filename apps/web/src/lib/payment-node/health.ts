@@ -84,7 +84,12 @@ export function isPaymentNodeConfigured(): boolean {
   }
 }
 
-const PAYMENT_NODE_HEALTH_TIMEOUT_MS = 5_000;
+function paymentNodeHealthTimeoutMs(): number {
+  const raw = process.env.PAYMENT_NODE_HEALTH_TIMEOUT_MS;
+  const parsed =
+    raw != null && raw !== "" ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5_000;
+}
 
 /**
  * GET {PAYMENT_NODE_BASE_URL}/health — no auth (payment service public health).
@@ -108,7 +113,7 @@ export async function checkPaymentNodeLiveness(): Promise<PaymentNodeHealthResul
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),
-    PAYMENT_NODE_HEALTH_TIMEOUT_MS,
+    paymentNodeHealthTimeoutMs(),
   );
 
   try {

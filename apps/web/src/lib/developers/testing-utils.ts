@@ -1,3 +1,8 @@
+/**
+ * MIP-004 uses JCS (RFC 8785) for `input_data`. `canonical-json` matches the stack used by
+ * masumi-payment-service’s testing UI; changing libraries risks diverging hashes from the
+ * payment node without obvious errors—re-check against a known-good hash if you swap deps.
+ */
 import stringify from "canonical-json";
 
 export function extractErrorMessage(

@@ -52,7 +52,7 @@ registry.registerPath({
   tags: ["Agents"],
   summary: "List agents",
   description:
-    "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required.",
+    "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters (for example name or tag search) are **not** supported on this public endpoint and are ignored.",
   request: {
     query: z.object({
       status: z
