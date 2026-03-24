@@ -200,7 +200,6 @@ export function TestPaymentDialog({
             <PaymentFormFields
               register={register}
               setValue={setValue}
-              watch={watch}
               control={control}
               errors={errors}
               paidAgents={paidAgents}

@@ -92,7 +92,22 @@ function paymentNodeHealthTimeoutMs(): number {
 }
 
 /**
- * GET {PAYMENT_NODE_BASE_URL}/health — no auth (payment service public health).
+ * Payment service health GET target (no auth).
+ * - Default: append `health` to `PAYMENT_NODE_BASE_URL` using the same base
+ *   normalization as `client.ts` (`new URL('health', base + '/')`), i.e. Masumi
+ *   payment service `GET /api/v1/health` when the base is `…/api/v1`.
+ * - Optional `PAYMENT_NODE_HEALTH_URL`: full URL when a reverse proxy exposes
+ *   liveness only at origin `/health` (or any non-default path).
+ */
+function paymentNodeLivenessRequestUrl(baseUrl: string): string {
+  const override = process.env.PAYMENT_NODE_HEALTH_URL?.trim();
+  if (override) return override;
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return new URL("health", base).toString();
+}
+
+/**
+ * GET payment node health — no auth (public liveness).
  * Lighter than {@link checkPaymentNodeHealth} (no admin registry call).
  */
 export async function checkPaymentNodeLiveness(): Promise<PaymentNodeHealthResult> {
@@ -109,7 +124,7 @@ export async function checkPaymentNodeLiveness(): Promise<PaymentNodeHealthResul
     };
   }
 
-  const url = `${baseUrl}/health`;
+  const url = paymentNodeLivenessRequestUrl(baseUrl);
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),

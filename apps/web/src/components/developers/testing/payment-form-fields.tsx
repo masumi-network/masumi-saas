@@ -177,7 +177,6 @@ export function useInputDataHash(
 interface PaymentFormFieldsProps {
   register: UseFormRegister<PaymentFormValues>;
   setValue: UseFormSetValue<PaymentFormValues>;
-  watch: UseFormWatch<PaymentFormValues>;
   control: Control<PaymentFormValues>;
   errors: FieldErrors<PaymentFormValues>;
   paidAgents: PaidTestingAgent[];
@@ -190,7 +189,6 @@ interface PaymentFormFieldsProps {
 export function PaymentFormFields({
   register,
   setValue,
-  watch: _watch,
   control,
   errors,
   paidAgents,

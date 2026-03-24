@@ -35,7 +35,8 @@ function publicHealthPaymentNodeMessage(detail: string): string {
 
 /**
  * Liveness for load balancers and scripts. No authentication.
- * Requires payment node env; pings `GET {PAYMENT_NODE_BASE_URL}/health` — **503** if
+ * Requires payment node env; pings payment-node liveness (default
+ * `GET {PAYMENT_NODE_BASE_URL}/health` per v1 API layout, or `PAYMENT_NODE_HEALTH_URL`) — **503** if
  * not configured, unreachable, or unhealthy.
  */
 export async function GET(request: NextRequest) {
