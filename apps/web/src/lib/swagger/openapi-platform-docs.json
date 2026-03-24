@@ -52,7 +52,9 @@
   "paths": {
     "/health": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Health check",
         "description": "Confirms this app and the Masumi payment service behind it are up. **503** means the payment service is unreachable or not reporting healthy.",
         "security": [],
@@ -66,14 +68,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
                       "properties": {
                         "status": {
                           "type": "string",
-                          "enum": ["ok"]
+                          "enum": [
+                            "ok"
+                          ]
                         },
                         "paymentNode": {
                           "anyOf": [
@@ -82,22 +88,34 @@
                               "properties": {
                                 "ok": {
                                   "type": "boolean",
-                                  "enum": [true]
+                                  "enum": [
+                                    true
+                                  ]
                                 }
                               },
-                              "required": ["ok"]
+                              "required": [
+                                "ok"
+                              ]
                             },
                             {
                               "type": "string",
-                              "enum": ["skipped"]
+                              "enum": [
+                                "skipped"
+                              ]
                             }
                           ]
                         }
                       },
-                      "required": ["status", "paymentNode"]
+                      "required": [
+                        "status",
+                        "paymentNode"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -120,13 +138,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -140,7 +163,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
@@ -150,23 +175,36 @@
                       "properties": {
                         "status": {
                           "type": "string",
-                          "enum": ["degraded"]
+                          "enum": [
+                            "degraded"
+                          ]
                         },
                         "paymentNode": {
                           "type": "object",
                           "properties": {
                             "ok": {
                               "type": "boolean",
-                              "enum": [false]
+                              "enum": [
+                                false
+                              ]
                             }
                           },
-                          "required": ["ok"]
+                          "required": [
+                            "ok"
+                          ]
                         }
                       },
-                      "required": ["status", "paymentNode"]
+                      "required": [
+                        "status",
+                        "paymentNode"
+                      ]
                     }
                   },
-                  "required": ["success", "error", "data"],
+                  "required": [
+                    "success",
+                    "error",
+                    "data"
+                  ],
                   "example": {
                     "success": false,
                     "error": "Payment node health check timed out",
@@ -186,7 +224,9 @@
     },
     "/api-key-status": {
       "get": {
-        "tags": ["API keys"],
+        "tags": [
+          "API keys"
+        ],
         "summary": "API key status",
         "description": "Returns whether the caller is authenticated with a **browser session** or a **Masumi SaaS API key** (`x-api-key` / `Authorization: Bearer`). For API key auth, includes public metadata for that key (id, name, prefix, start fragment). Does **not** echo the secret key.",
         "security": [
@@ -206,23 +246,33 @@
                       "properties": {
                         "success": {
                           "type": "boolean",
-                          "enum": [true]
+                          "enum": [
+                            true
+                          ]
                         },
                         "data": {
                           "type": "object",
                           "properties": {
                             "authMethod": {
                               "type": "string",
-                              "enum": ["session"]
+                              "enum": [
+                                "session"
+                              ]
                             },
                             "userId": {
                               "type": "string"
                             }
                           },
-                          "required": ["authMethod", "userId"]
+                          "required": [
+                            "authMethod",
+                            "userId"
+                          ]
                         }
                       },
-                      "required": ["success", "data"],
+                      "required": [
+                        "success",
+                        "data"
+                      ],
                       "example": {
                         "success": true,
                         "data": {
@@ -236,14 +286,18 @@
                       "properties": {
                         "success": {
                           "type": "boolean",
-                          "enum": [true]
+                          "enum": [
+                            true
+                          ]
                         },
                         "data": {
                           "type": "object",
                           "properties": {
                             "authMethod": {
                               "type": "string",
-                              "enum": ["apiKey"]
+                              "enum": [
+                                "apiKey"
+                              ]
                             },
                             "userId": {
                               "type": "string"
@@ -288,10 +342,17 @@
                               ]
                             }
                           },
-                          "required": ["authMethod", "userId", "key"]
+                          "required": [
+                            "authMethod",
+                            "userId",
+                            "key"
+                          ]
                         }
                       },
-                      "required": ["success", "data"],
+                      "required": [
+                        "success",
+                        "data"
+                      ],
                       "example": {
                         "success": true,
                         "data": {
@@ -323,13 +384,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -343,13 +409,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -363,13 +434,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -383,13 +459,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -403,13 +484,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -419,7 +505,9 @@
     },
     "/agents": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "List agents",
         "description": "Paginated list of the authenticated user’s agents. Effective **network** filter uses the `network` query param, or the `payment_network` cookie when the query is omitted.",
         "security": [
@@ -439,7 +527,10 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "default": "false"
             },
             "required": false,
@@ -492,7 +583,10 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["Mainnet", "Preprod"]
+              "enum": [
+                "Mainnet",
+                "Preprod"
+              ]
             },
             "required": false,
             "name": "network",
@@ -509,7 +603,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "array",
@@ -634,7 +730,11 @@
                       "nullable": true
                     }
                   },
-                  "required": ["success", "data", "nextCursor"],
+                  "required": [
+                    "success",
+                    "data",
+                    "nextCursor"
+                  ],
                   "example": {
                     "success": true,
                     "nextCursor": null,
@@ -649,7 +749,10 @@
                         "organizationId": null,
                         "registrationState": "RegistrationConfirmed",
                         "verificationStatus": "VERIFIED",
-                        "tags": ["research", "nlp"],
+                        "tags": [
+                          "research",
+                          "nlp"
+                        ],
                         "metadata": null,
                         "icon": "bot",
                         "agentIdentifier": "policy1.assetname1",
@@ -685,13 +788,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -705,13 +813,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -725,13 +838,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -745,13 +863,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -765,13 +888,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -779,7 +907,9 @@
         }
       },
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Start agent registration",
         "description": "Creates a new agent and begins registration in Masumi SaaS. Returns **400** if `tags` is missing or empty after splitting on commas (at least one tag required).",
         "security": [
@@ -806,7 +936,9 @@
                       },
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       }
                     ]
                   },
@@ -818,7 +950,9 @@
                       },
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       }
                     ]
                   },
@@ -838,7 +972,10 @@
                     "properties": {
                       "pricingType": {
                         "type": "string",
-                        "enum": ["Free", "Fixed"]
+                        "enum": [
+                          "Free",
+                          "Fixed"
+                        ]
                       },
                       "prices": {
                         "type": "array",
@@ -852,17 +989,23 @@
                               "type": "string"
                             }
                           },
-                          "required": ["amount"]
+                          "required": [
+                            "amount"
+                          ]
                         }
                       }
                     },
-                    "required": ["pricingType"]
+                    "required": [
+                      "pricingType"
+                    ]
                   },
                   "termsOfUseUrl": {
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       },
                       {
                         "type": "string",
@@ -875,7 +1018,9 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       },
                       {
                         "type": "string",
@@ -888,7 +1033,9 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       },
                       {
                         "type": "string",
@@ -905,7 +1052,9 @@
                       },
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       }
                     ]
                   },
@@ -917,7 +1066,9 @@
                       },
                       {
                         "type": "string",
-                        "enum": [""]
+                        "enum": [
+                          ""
+                        ]
                       }
                     ]
                   },
@@ -942,11 +1093,18 @@
                           "maxLength": 60
                         }
                       },
-                      "required": ["name", "url", "mimeType"]
+                      "required": [
+                        "name",
+                        "url",
+                        "mimeType"
+                      ]
                     }
                   }
                 },
-                "required": ["name", "apiUrl"],
+                "required": [
+                  "name",
+                  "apiUrl"
+                ],
                 "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`).",
                 "example": {
                   "name": "Research assistant",
@@ -991,7 +1149,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "agentId": {
                       "type": "string"
@@ -1112,7 +1272,11 @@
                       ]
                     }
                   },
-                  "required": ["success", "agentId", "data"],
+                  "required": [
+                    "success",
+                    "agentId",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "agentId": "cmlf6gswz0000x1uctad958tq",
@@ -1126,7 +1290,10 @@
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
                       "verificationStatus": "VERIFIED",
-                      "tags": ["research", "nlp"],
+                      "tags": [
+                        "research",
+                        "nlp"
+                      ],
                       "metadata": null,
                       "icon": "bot",
                       "agentIdentifier": "policy1.assetname1",
@@ -1161,13 +1328,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1181,13 +1353,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1201,13 +1378,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1221,13 +1403,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1241,13 +1428,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1257,7 +1449,9 @@
     },
     "/agents/{agentId}": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Get agent",
         "security": [
           {
@@ -1287,7 +1481,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -1405,7 +1601,10 @@
                       ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -1418,7 +1617,10 @@
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
                       "verificationStatus": "VERIFIED",
-                      "tags": ["research", "nlp"],
+                      "tags": [
+                        "research",
+                        "nlp"
+                      ],
                       "metadata": null,
                       "icon": "bot",
                       "agentIdentifier": "policy1.assetname1",
@@ -1453,13 +1655,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1473,13 +1680,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1493,13 +1705,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1513,13 +1730,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1533,13 +1755,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1547,7 +1774,9 @@
         }
       },
       "delete": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Delete agent",
         "security": [
           {
@@ -1577,10 +1806,14 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "example": {
                     "success": true
                   }
@@ -1597,13 +1830,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1617,13 +1855,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1637,13 +1880,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1657,13 +1905,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1677,13 +1930,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1693,7 +1951,9 @@
     },
     "/agents/counts": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Aggregate agent counts",
         "description": "Counts by status and network for the current user.",
         "security": [
@@ -1722,7 +1982,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -1756,7 +2018,10 @@
                       ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -1781,13 +2046,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1801,13 +2071,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1821,13 +2096,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1841,13 +2121,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1861,13 +2146,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -1877,7 +2167,9 @@
     },
     "/agents/{agentId}/transactions": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Agent transactions",
         "description": "Payment and purchase activity for one agent.",
         "security": [
@@ -1908,7 +2200,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -1923,7 +2217,10 @@
                               },
                               "type": {
                                 "type": "string",
-                                "enum": ["payment", "purchase"]
+                                "enum": [
+                                  "payment",
+                                  "purchase"
+                                ]
                               },
                               "txHash": {
                                 "type": "string",
@@ -1959,10 +2256,15 @@
                           }
                         }
                       },
-                      "required": ["transactions"]
+                      "required": [
+                        "transactions"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -1993,13 +2295,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2013,13 +2320,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2033,13 +2345,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2053,13 +2370,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2073,13 +2395,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2089,7 +2416,9 @@
     },
     "/agents/{agentId}/earnings": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Agent earnings",
         "security": [
           {
@@ -2128,7 +2457,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -2151,14 +2482,20 @@
                                     "type": "number"
                                   }
                                 },
-                                "required": ["unit", "amount"]
+                                "required": [
+                                  "unit",
+                                  "amount"
+                                ]
                               }
                             },
                             "blockchainFees": {
                               "type": "number"
                             }
                           },
-                          "required": ["units", "blockchainFees"]
+                          "required": [
+                            "units",
+                            "blockchainFees"
+                          ]
                         },
                         "totalRefunded": {
                           "type": "object",
@@ -2175,14 +2512,20 @@
                                     "type": "number"
                                   }
                                 },
-                                "required": ["unit", "amount"]
+                                "required": [
+                                  "unit",
+                                  "amount"
+                                ]
                               }
                             },
                             "blockchainFees": {
                               "type": "number"
                             }
                           },
-                          "required": ["units", "blockchainFees"]
+                          "required": [
+                            "units",
+                            "blockchainFees"
+                          ]
                         },
                         "totalPending": {
                           "type": "object",
@@ -2199,14 +2542,20 @@
                                     "type": "number"
                                   }
                                 },
-                                "required": ["unit", "amount"]
+                                "required": [
+                                  "unit",
+                                  "amount"
+                                ]
                               }
                             },
                             "blockchainFees": {
                               "type": "number"
                             }
                           },
-                          "required": ["units", "blockchainFees"]
+                          "required": [
+                            "units",
+                            "blockchainFees"
+                          ]
                         },
                         "periodStart": {
                           "type": "string",
@@ -2242,7 +2591,10 @@
                                       "type": "number"
                                     }
                                   },
-                                  "required": ["unit", "amount"]
+                                  "required": [
+                                    "unit",
+                                    "amount"
+                                  ]
                                 }
                               },
                               "blockchainFees": {
@@ -2283,7 +2635,10 @@
                                       "type": "number"
                                     }
                                   },
-                                  "required": ["unit", "amount"]
+                                  "required": [
+                                    "unit",
+                                    "amount"
+                                  ]
                                 }
                               },
                               "blockchainFees": {
@@ -2309,7 +2664,10 @@
                       ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -2380,13 +2738,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2400,13 +2763,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2420,13 +2788,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2440,13 +2813,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2460,13 +2838,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2476,7 +2859,9 @@
     },
     "/agents/{agentId}/verify": {
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Verify agent (credential flow)",
         "security": [
           {
@@ -2510,7 +2895,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["aid"],
+                "required": [
+                  "aid"
+                ],
                 "description": "Veridian **aid** (required). Optional **schemaSaid** to select a credential schema; defaults to the agent verification schema when omitted.",
                 "example": {
                   "aid": "EXAMPLE_AID",
@@ -2530,7 +2917,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -2648,7 +3037,10 @@
                       ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -2661,7 +3053,10 @@
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
                       "verificationStatus": "VERIFIED",
-                      "tags": ["research", "nlp"],
+                      "tags": [
+                        "research",
+                        "nlp"
+                      ],
                       "metadata": null,
                       "icon": "bot",
                       "agentIdentifier": "policy1.assetname1",
@@ -2696,7 +3091,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
@@ -2706,7 +3103,10 @@
                       "description": "Optional: array of validation messages, or credential metadata (e.g. issuedAt, schemaSaid)."
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2720,13 +3120,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2740,13 +3145,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2760,13 +3170,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2780,13 +3195,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2796,7 +3216,9 @@
     },
     "/agents/{agentId}/verification-challenge": {
       "get": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Get verification challenge",
         "description": "Returns the current verification challenge for the agent.",
         "security": [
@@ -2827,7 +3249,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -2843,10 +3267,17 @@
                           "nullable": true
                         }
                       },
-                      "required": ["challenge", "secret", "generatedAt"]
+                      "required": [
+                        "challenge",
+                        "secret",
+                        "generatedAt"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -2868,13 +3299,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2888,13 +3324,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2908,13 +3349,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2928,13 +3374,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2948,13 +3399,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -2962,7 +3418,9 @@
         }
       },
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Refresh verification challenge",
         "description": "Optional body `{ \"regenerate\": true }` to issue a new challenge and invalidate the previous.",
         "security": [
@@ -3013,7 +3471,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -3029,10 +3489,17 @@
                           "nullable": true
                         }
                       },
-                      "required": ["challenge", "secret", "generatedAt"]
+                      "required": [
+                        "challenge",
+                        "secret",
+                        "generatedAt"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -3054,13 +3521,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3074,13 +3546,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3094,13 +3571,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3114,13 +3596,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3134,13 +3621,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3150,7 +3642,9 @@
     },
     "/agents/{agentId}/test-verification-endpoint": {
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Test agent verification URL",
         "security": [
           {
@@ -3180,7 +3674,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -3189,10 +3685,15 @@
                           "type": "string"
                         }
                       },
-                      "required": ["message"]
+                      "required": [
+                        "message"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -3212,13 +3713,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3232,13 +3738,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3252,13 +3763,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3272,13 +3788,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3292,13 +3813,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3308,7 +3834,9 @@
     },
     "/agents/{agentId}/complete-registration": {
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Complete on-chain registration",
         "security": [
           {
@@ -3338,11 +3866,15 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["registered"]
+                      "enum": [
+                        "registered"
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -3460,7 +3992,11 @@
                       ]
                     }
                   },
-                  "required": ["success", "status", "data"],
+                  "required": [
+                    "success",
+                    "status",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "status": "registered",
@@ -3474,7 +4010,10 @@
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
                       "verificationStatus": "VERIFIED",
-                      "tags": ["research", "nlp"],
+                      "tags": [
+                        "research",
+                        "nlp"
+                      ],
                       "metadata": null,
                       "icon": "bot",
                       "agentIdentifier": "policy1.assetname1",
@@ -3509,17 +4048,25 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["pending"]
+                      "enum": [
+                        "pending"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "status", "message"],
+                  "required": [
+                    "success",
+                    "status",
+                    "message"
+                  ],
                   "example": {
                     "success": true,
                     "status": "pending",
@@ -3538,13 +4085,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3558,13 +4110,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3578,13 +4135,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3598,13 +4160,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3618,13 +4185,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3634,7 +4206,9 @@
     },
     "/agents/{agentId}/deregister": {
       "post": {
-        "tags": ["Agents"],
+        "tags": [
+          "Agents"
+        ],
         "summary": "Deregister agent on-chain",
         "security": [
           {
@@ -3664,10 +4238,14 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "example": {
                     "success": true
                   }
@@ -3684,13 +4262,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3704,13 +4287,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3724,13 +4312,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3744,13 +4337,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3764,13 +4362,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -3780,7 +4383,9 @@
     },
     "/dashboard/overview": {
       "get": {
-        "tags": ["Dashboard"],
+        "tags": [
+          "Dashboard"
+        ],
         "summary": "Dashboard overview",
         "description": "User, organizations, agents, API keys, balance snapshot, KYC hints — scoped to the authenticated user.",
         "security": [
@@ -3809,7 +4414,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -3830,7 +4437,12 @@
                               "type": "boolean"
                             }
                           },
-                          "required": ["id", "name", "email", "emailVerified"]
+                          "required": [
+                            "id",
+                            "name",
+                            "email",
+                            "emailVerified"
+                          ]
                         },
                         "kycStatus": {
                           "type": "string",
@@ -3873,7 +4485,12 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["id", "name", "slug", "role"]
+                            "required": [
+                              "id",
+                              "name",
+                              "slug",
+                              "role"
+                            ]
                           }
                         },
                         "organizationCount": {
@@ -3935,7 +4552,12 @@
                                 "nullable": true
                               }
                             },
-                            "required": ["id", "name", "prefix", "start"]
+                            "required": [
+                              "id",
+                              "name",
+                              "prefix",
+                              "start"
+                            ]
                           }
                         },
                         "apiKeyCount": {
@@ -3979,7 +4601,10 @@
                       ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -4041,13 +4666,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4061,13 +4691,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4081,13 +4716,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4101,13 +4741,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4121,13 +4766,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4137,7 +4787,9 @@
     },
     "/activity": {
       "get": {
-        "tags": ["Activity"],
+        "tags": [
+          "Activity"
+        ],
         "summary": "Activity feed",
         "description": "Cross-agent activity with filters (tab/type). Use `summary=1` for counts-only payload.",
         "security": [
@@ -4203,7 +4855,9 @@
                       "properties": {
                         "success": {
                           "type": "boolean",
-                          "enum": [true]
+                          "enum": [
+                            true
+                          ]
                         },
                         "data": {
                           "type": "object",
@@ -4217,7 +4871,9 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
-                                        "enum": ["lifecycle"]
+                                        "enum": [
+                                          "lifecycle"
+                                        ]
                                       },
                                       "id": {
                                         "type": "string"
@@ -4251,7 +4907,9 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
-                                        "enum": ["transaction"]
+                                        "enum": [
+                                          "transaction"
+                                        ]
                                       },
                                       "id": {
                                         "type": "string"
@@ -4261,7 +4919,10 @@
                                       },
                                       "type": {
                                         "type": "string",
-                                        "enum": ["payment", "purchase"]
+                                        "enum": [
+                                          "payment",
+                                          "purchase"
+                                        ]
                                       },
                                       "agentId": {
                                         "type": "string",
@@ -4301,17 +4962,24 @@
                               "type": "string"
                             }
                           },
-                          "required": ["items"]
+                          "required": [
+                            "items"
+                          ]
                         }
                       },
-                      "required": ["success", "data"]
+                      "required": [
+                        "success",
+                        "data"
+                      ]
                     },
                     {
                       "type": "object",
                       "properties": {
                         "success": {
                           "type": "boolean",
-                          "enum": [true]
+                          "enum": [
+                            true
+                          ]
                         },
                         "data": {
                           "type": "object",
@@ -4326,10 +4994,16 @@
                               "type": "string"
                             }
                           },
-                          "required": ["totalTransactions", "totalActivity"]
+                          "required": [
+                            "totalTransactions",
+                            "totalActivity"
+                          ]
                         }
                       },
-                      "required": ["success", "data"]
+                      "required": [
+                        "success",
+                        "data"
+                      ]
                     }
                   ],
                   "description": "With `summary=true`, `data` has `totalTransactions` and `totalActivity`; otherwise `data.items` is the feed.",
@@ -4373,13 +5047,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4393,13 +5072,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4413,13 +5097,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4433,13 +5122,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4453,13 +5147,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4469,7 +5168,9 @@
     },
     "/earnings": {
       "get": {
-        "tags": ["Earnings"],
+        "tags": [
+          "Earnings"
+        ],
         "summary": "User earnings summary",
         "security": [
           {
@@ -4497,7 +5198,9 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
                       "type": "object",
@@ -4514,7 +5217,10 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["date", "amount"]
+                            "required": [
+                              "date",
+                              "amount"
+                            ]
                           }
                         },
                         "total": {
@@ -4524,10 +5230,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["earnings", "total"]
+                      "required": [
+                        "earnings",
+                        "total"
+                      ]
                     }
                   },
-                  "required": ["success", "data"],
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "example": {
                     "success": true,
                     "data": {
@@ -4554,13 +5266,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4574,13 +5291,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4594,13 +5316,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4614,13 +5341,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
@@ -4634,13 +5366,18 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [false]
+                      "enum": [
+                        false
+                      ]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": ["success", "error"]
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
