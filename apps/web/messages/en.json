@@ -469,10 +469,8 @@
       "revokeError": "Failed to revoke API key",
       "neverUsed": "Never",
       "usageTitle": "Using your API key",
-      "usageDescription": "Use this key to authenticate with the Masumi API from a CLI, MCP, or script. Send it in the request header:",
-      "usageHeader": "Authorization: Bearer YOUR_API_KEY",
-      "usageAlt": "Or use the header:",
-      "usageAltHeader": "x-api-key: YOUR_API_KEY",
+      "usageDescription": "Use this key from a CLI, MCP, or script. Send it in the request header:",
+      "usageHeader": "x-api-key: YOUR_API_KEY",
       "refresh": "Refresh",
       "actions": "Actions",
       "emptyDescription": "No API keys yet",
@@ -1309,9 +1307,23 @@
     "returnHome": "Return to Dashboard",
     "signIn": "Sign In"
   },
+  "DocsHub": {
+    "saasOpenApiPageTitle": "Masumi as a Service API",
+    "saasOpenApiPageDescription": "Interactive API docs for the Masumi platform application.",
+    "openApiPageTitle": "Public discovery",
+    "openApiPageDescription": "Interactive API docs for public agent discovery."
+  },
   "Developers": {
     "title": "Developers",
-    "description": "Developer tools and API documentation",
-    "comingSoon": "Developer tools and documentation coming soon."
+    "description": "API documentation and testing tools.",
+    "tabs": {
+      "schemaValidator": "Schema Validator",
+      "openApi": "OpenAPI"
+    },
+    "openApiEmbed": {
+      "swaggerIntro": "Interactive API documentation powered by <swaggerui>Swagger UI</swaggerui>.",
+      "openInNewTab": "Open in new tab",
+      "iframeTitle": "Masumi as a Service API"
+    }
   }
 }

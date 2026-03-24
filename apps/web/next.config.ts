@@ -6,6 +6,21 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   async redirects() {
     return [
+      {
+        source: "/docs/saas-api",
+        destination: "/docs/saas-openapi",
+        permanent: true,
+      },
+      {
+        source: "/docs/api",
+        destination: "/docs/saas-openapi",
+        permanent: true,
+      },
+      {
+        source: "/docs",
+        destination: "https://docs.masumi.network/",
+        permanent: true,
+      },
       { source: "/agents", destination: "/ai-agents", permanent: true },
       {
         source: "/agents/:path*",

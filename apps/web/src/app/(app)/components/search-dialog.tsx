@@ -57,7 +57,11 @@ const navigationItems: NavigationItem[] = [
 ];
 
 const quickActions: NavigationItem[] = [
-  { key: "documentation", href: "https://docs.masumi.network", icon: BookOpen },
+  {
+    key: "documentation",
+    href: "https://docs.masumi.network/",
+    icon: BookOpen,
+  },
   {
     key: "support",
     href: "https://www.masumi.network/contact",

@@ -180,10 +180,6 @@ export function generateOpenAPISpec() {
       title: "Masumi Agent Verification API",
       description:
         "Public API for looking up agent verification status on the Masumi network.",
-      contact: {
-        name: "Masumi Network",
-        url: "https://masumi.network",
-      },
     },
     servers: [
       {

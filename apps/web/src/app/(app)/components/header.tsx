@@ -75,15 +75,17 @@ export default function Header({ className }: HeaderProps) {
                 asChild
                 className="hidden md:flex"
               >
-                <Link
-                  href="https://docs.masumi.network"
+                <a
+                  href="https://docs.masumi.network/"
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4" />
                   {t("documentation")}
-                </Link>
+                </a>
               </Button>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -102,6 +104,22 @@ export default function Header({ className }: HeaderProps) {
               <div className="hidden md:flex">
                 <NotificationsDialog />
               </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                className="w-8 h-8 md:hidden"
+              >
+                <a
+                  href="https://docs.masumi.network/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("documentation")}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </a>
+              </Button>
               <Button
                 variant="outline"
                 size="icon"

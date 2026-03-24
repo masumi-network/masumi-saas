@@ -104,7 +104,7 @@ export interface GetAuthenticatedOptions {
 /**
  * Returns the current user and session. Supports both:
  * - Session (cookie): browser requests with a logged-in session.
- * - API key: CLI/MCP/scripts send `Authorization: Bearer <key>` or `x-api-key: <key>`.
+ * - API key: prefer `x-api-key: <key>`; `Authorization: Bearer <key>` is still accepted for compatibility.
  * Throws UnauthorizedError when neither is valid. Use handleAuthError() in API route catch blocks to return 401.
  * When REQUIRE_EMAIL_VERIFICATION is true, throws EmailNotVerifiedError if user has not verified email (403).
  * Pass { requireEmailVerified: false } to skip the email check for flows like accept-invitation.

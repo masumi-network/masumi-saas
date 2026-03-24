@@ -79,15 +79,16 @@ export default function UserAvatarClient({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const orgContext = useOrganizationContextOptional();
 
+  const router = useRouter();
+
   const handleSupport = () => {
     window.open("https://www.masumi.network/contact", "_blank");
   };
 
   const handleDocumentation = () => {
-    window.open("https://docs.masumi.network", "_blank");
+    setDropdownOpen(false);
+    window.open("https://docs.masumi.network/", "_blank");
   };
-
-  const router = useRouter();
   const { isMobile, toggleSidebar, setIsHovered, setPreventCollapse } =
     useSidebar();
 
