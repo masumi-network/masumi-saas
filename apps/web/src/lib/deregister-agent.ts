@@ -3,6 +3,7 @@ import prisma from "@masumi/database/client";
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -58,7 +59,27 @@ export async function deregisterAgentForUser(
     const network = (agent.agentReference?.networkIdentifier ??
       options?.networkFallback ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    await userClient.deregisterAgent({ network, agentIdentifier });
+
+    const refMeta = (agent.agentReference?.metadata ?? {}) as {
+      smartContractAddress?: string;
+    };
+    let smartContractAddress =
+      typeof refMeta.smartContractAddress === "string"
+        ? refMeta.smartContractAddress
+        : undefined;
+    if (!smartContractAddress) {
+      smartContractAddress =
+        (await getSmartContractAddressForConfiguredSource(
+          userClient,
+          userId,
+        )) ?? undefined;
+    }
+
+    await userClient.deregisterAgent({
+      network,
+      agentIdentifier,
+      ...(smartContractAddress && { smartContractAddress }),
+    });
 
     await prisma.agent.update({
       where: { id: agentId },

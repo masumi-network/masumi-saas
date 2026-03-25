@@ -33,8 +33,18 @@ function getPaymentNodePaymentSourceId(): string {
   return id;
 }
 
+/**
+ * Optional Cardano address of the payment smart contract for the configured source.
+ * When set, avoids an extra GET /payment-source round-trip for filters and deregister fallback.
+ */
+function tryGetPaymentNodeSmartContractAddress(): string | undefined {
+  const v = process.env.PAYMENT_NODE_SMART_CONTRACT_ADDRESS?.trim();
+  return v && v.length > 0 ? v : undefined;
+}
+
 export const paymentNodeConfig = {
   getBaseUrl: getPaymentNodeBaseUrl,
   getAdminApiKey: getPaymentNodeAdminApiKey,
   getPaymentSourceId: getPaymentNodePaymentSourceId,
+  tryGetSmartContractAddress: tryGetPaymentNodeSmartContractAddress,
 } as const;
