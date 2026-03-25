@@ -1,5 +1,8 @@
 import type { ActivityFeedItem } from "@/lib/types/activity";
 
+/** Returned with HTTP 410 when `cursor` decodes but no longer matches the merged feed. */
+export const ACTIVITY_STALE_CURSOR_CODE = "STALE_CURSOR" as const;
+
 /** Opaque cursor for GET /api/activity paginated responses (merged feed order). */
 export function encodeActivityCursor(item: ActivityFeedItem): string {
   return Buffer.from(

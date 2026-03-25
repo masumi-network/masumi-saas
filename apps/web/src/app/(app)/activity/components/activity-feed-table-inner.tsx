@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Receipt } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -23,7 +24,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { useActivityFeedInfiniteQuery } from "@/lib/hooks/use-activity-feed-infinite-query";
+import {
+  getActivityInfiniteQueryKey,
+  StaleCursorError,
+  useActivityFeedInfiniteQuery,
+} from "@/lib/hooks/use-activity-feed-infinite-query";
 import type { ActivityFeedItem, ActivityTabFilter } from "@/lib/types/activity";
 import { cn, formatDate, formatRelativeDate } from "@/lib/utils";
 
@@ -97,10 +102,16 @@ export function ActivityFeedTableInner({
   imperativeRef,
 }: ActivityFeedTableInnerProps) {
   const { network } = usePaymentNetwork();
+  const queryClient = useQueryClient();
   const activityQuery = useActivityFeedInfiniteQuery(
     filter,
     network,
     refreshKey ?? 0,
+  );
+
+  const activityQueryKey = useMemo(
+    () => getActivityInfiniteQueryKey(filter, network, refreshKey ?? 0),
+    [filter, network, refreshKey],
   );
 
   const t = useTranslations("App.Activity");
@@ -111,7 +122,18 @@ export function ActivityFeedTableInner({
 
   /** Local aliases: RQ infinite result + TS narrows `data` to `never` if used inside deps as `activityQuery.data`. */
   const queryError = activityQuery.error;
-  const error = queryError instanceof Error ? queryError.message : null;
+
+  useEffect(() => {
+    if (!(queryError instanceof StaleCursorError)) return;
+    void queryClient.resetQueries({ queryKey: activityQueryKey });
+  }, [activityQueryKey, queryClient, queryError]);
+
+  const error =
+    queryError instanceof StaleCursorError
+      ? null
+      : queryError instanceof Error
+        ? queryError.message
+        : null;
 
   const queryData = activityQuery.data;
   const items = useMemo(() => {

@@ -1,13 +1,31 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
+import { ACTIVITY_STALE_CURSOR_CODE } from "@/lib/activity-cursor";
 import type { ActivityFeedItem, ActivityTabFilter } from "@/lib/types/activity";
 
 const ACTIVITY_FETCH_LIMIT = 20;
+
+/** Decoded cursor no longer matches the merged feed — reset infinite query (see activity route 410). */
+export class StaleCursorError extends Error {
+  readonly code = ACTIVITY_STALE_CURSOR_CODE;
+  constructor(message: string) {
+    super(message);
+    this.name = "StaleCursorError";
+  }
+}
 
 export type ActivityPagePayload = {
   items: ActivityFeedItem[];
   nextCursor: string | null;
 };
+
+export function getActivityInfiniteQueryKey(
+  filter: ActivityTabFilter,
+  network: string,
+  refreshKey: number,
+) {
+  return ["activity", filter, network, refreshKey] as const;
+}
 
 export function useActivityFeedInfiniteQuery(
   filter: ActivityTabFilter,
@@ -15,7 +33,7 @@ export function useActivityFeedInfiniteQuery(
   refreshKey: number,
 ) {
   return useInfiniteQuery({
-    queryKey: ["activity", filter, network, refreshKey],
+    queryKey: getActivityInfiniteQueryKey(filter, network, refreshKey),
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }): Promise<ActivityPagePayload> => {
       const cursor = pageParam as string | undefined;
@@ -29,9 +47,20 @@ export function useActivityFeedInfiniteQuery(
       const json = (await res.json()) as {
         success: boolean;
         error?: string;
+        code?: string;
         data?: { items?: ActivityFeedItem[]; nextCursor?: string | null };
       };
       if (!json.success) {
+        if (
+          json.code === ACTIVITY_STALE_CURSOR_CODE &&
+          cursor &&
+          cursor.length > 0
+        ) {
+          throw new StaleCursorError(
+            json.error ??
+              "Activity feed was updated; loading the latest results.",
+          );
+        }
         if (json.error) throw new Error(json.error);
         return { items: [], nextCursor: null };
       }
