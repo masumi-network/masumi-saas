@@ -260,7 +260,14 @@ export function ActivityFeedTableInner({
                             "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
                           )}
                           style={rowStyle}
-                          onClick={lifecycleRowClick}
+                          onClick={
+                            lifecycleRowClick
+                              ? (e) => {
+                                  e.stopPropagation();
+                                  lifecycleRowClick();
+                                }
+                              : undefined
+                          }
                         >
                           <TableCell className="text-sm">
                             {t("lifecycle")}
@@ -283,6 +290,9 @@ export function ActivityFeedTableInner({
                         </TableRow>
                       );
                     }
+                    if (item.kind !== "transaction") {
+                      return null;
+                    }
                     return (
                       <TableRow
                         key={rowKey}
@@ -291,14 +301,15 @@ export function ActivityFeedTableInner({
                           "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
                         )}
                         style={rowStyle}
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setTransactionDetails({
                             id: item.id,
                             type: item.type,
                             agentName: item.agentName,
                             agentId: item.agentId,
-                          })
-                        }
+                          });
+                        }}
                       >
                         <TableCell>
                           <span className="inline-flex items-center gap-1.5 text-sm capitalize">

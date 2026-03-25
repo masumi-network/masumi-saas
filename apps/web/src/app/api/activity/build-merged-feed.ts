@@ -68,8 +68,12 @@ async function buildActivityMergedFeedUncached({
   validFilter,
   lastUpdate,
 }: BuildMergedFeedParams): Promise<ActivityMergedFeedResult> {
+  /** Selected network plus legacy rows with no network (pre-migration / incomplete data). */
   const agents = await prisma.agent.findMany({
-    where: { userId, networkIdentifier: network },
+    where: {
+      userId,
+      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+    },
     select: {
       id: true,
       name: true,
@@ -100,7 +104,11 @@ async function buildActivityMergedFeedUncached({
         include: { agent: { select: { id: true, name: true } } },
       }),
       prisma.agentActivityEvent.findMany({
-        where: { userId, agentId: null, networkIdentifier: network },
+        where: {
+          userId,
+          agentId: null,
+          OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+        },
         orderBy: { createdAt: "desc" },
         take: ACTIVITY_MERGED_FEED_LIMIT,
         include: { agent: { select: { id: true, name: true } } },
@@ -178,7 +186,11 @@ async function buildActivityMergedFeedUncached({
           include: { agent: { select: { id: true, name: true } } },
         }),
         prisma.agentActivityEvent.findMany({
-          where: { userId, agentId: null, networkIdentifier: network },
+          where: {
+            userId,
+            agentId: null,
+            OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+          },
           orderBy: { createdAt: "desc" },
           take: ACTIVITY_MERGED_FEED_LIMIT,
           include: { agent: { select: { id: true, name: true } } },
@@ -337,24 +349,41 @@ async function buildActivityMergedFeedUncached({
 }
 
 /**
+ * One module-level cached function (do not wrap `unstable_cache` per request — that
+ * creates a new cache wrapper each time and breaks dedupe). Args are primitives so the
+ * Data Cache key is stable; `cacheSegment` is `lastUpdate ?? "__full__"`.
+ */
+const fetchActivityMergedFeedCached = unstable_cache(
+  async (
+    userId: string,
+    network: NetworkQuery,
+    validFilter: ActivityFeedFilter,
+    cacheSegment: string,
+  ): Promise<ActivityMergedFeedResult> => {
+    const lastUpdate = cacheSegment === "__full__" ? undefined : cacheSegment;
+    return buildActivityMergedFeedUncached({
+      userId,
+      network,
+      validFilter,
+      lastUpdate,
+    });
+  },
+  ["api-activity-merged-feed", "v1"],
+  { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
+);
+
+/**
  * Cached merged feed for GET /api/activity. Pagination cursors slice the same snapshot
  * within the revalidate window so "load more" does not repeat payment-node fetches.
  */
 export function getActivityMergedFeedCached(
   params: BuildMergedFeedParams,
 ): Promise<ActivityMergedFeedResult> {
-  const { userId, network, validFilter, lastUpdate } = params;
-  const cacheSegment = lastUpdate ?? "__full__";
-  return unstable_cache(
-    async () => buildActivityMergedFeedUncached(params),
-    [
-      "api-activity-merged-feed",
-      "v1",
-      userId,
-      network,
-      validFilter,
-      cacheSegment,
-    ],
-    { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
-  )();
+  const cacheSegment = params.lastUpdate ?? "__full__";
+  return fetchActivityMergedFeedCached(
+    params.userId,
+    params.network,
+    params.validFilter,
+    cacheSegment,
+  );
 }
