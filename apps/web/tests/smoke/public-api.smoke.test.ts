@@ -115,16 +115,10 @@ describe("SMOKE — Public API /api/v1/", () => {
 
   it("rate limit headers present", async () => {
     const res = await request("/api/v1/agents");
-    // Should have X-RateLimit headers
     const hasRateLimit =
       res.headers.get("x-ratelimit-limit") !== null ||
       res.headers.get("ratelimit-limit") !== null;
-    // Document the absence if missing
-    if (!hasRateLimit) {
-      console.warn(
-        "Rate limit headers not found in response — consider adding X-RateLimit-* headers",
-      );
-    }
+    expect(hasRateLimit).toBe(true);
   });
 });
 

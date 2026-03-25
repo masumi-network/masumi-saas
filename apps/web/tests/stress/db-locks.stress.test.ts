@@ -10,7 +10,13 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CookieJar, request, signIn } from "../helpers";
+import {
+  CookieJar,
+  TEST_EMAIL,
+  TEST_PASSWORD,
+  request,
+  signIn,
+} from "../helpers";
 
 let jar: CookieJar;
 
@@ -116,6 +122,8 @@ describe("STRESS — Pagination consistency under mutation", () => {
         tags: "pagination,stress",
       },
     });
+    expect([200, 201]).toContain(addRes.status);
+    expect((addRes.body as Record<string, unknown>).agentId).toBeDefined();
 
     // Now fetch page 2
     const page2Res = await request(
@@ -180,8 +188,8 @@ describe("STRESS — Auth under load", () => {
         request("/api/auth/sign-in/email", {
           method: "POST",
           body: {
-            email: "admin@masumi.network",
-            password: "Admin@12345",
+            email: TEST_EMAIL,
+            password: TEST_PASSWORD,
           },
         }),
       ),

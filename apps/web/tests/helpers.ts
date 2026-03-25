@@ -5,8 +5,8 @@
 
 export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 
-export const TEST_EMAIL = "admin@masumi.network";
-export const TEST_PASSWORD = "Admin@12345";
+export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
+export const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Admin@12345";
 
 // ─── Cookie jar ─────────────────────────────────────────────────────────────
 
