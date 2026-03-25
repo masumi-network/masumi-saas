@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
@@ -172,6 +173,13 @@ export function TestPaymentDialog({
     [network, t],
   );
 
+  const hasPaymentResultUi = Boolean(
+    (curlCommand && curlCommand.length > 0) ||
+    response !== null ||
+    (error && error.length > 0),
+  );
+  const paymentCreatedSuccessfully = response !== null;
+
   return (
     <Dialog
       open={open}
@@ -208,11 +216,33 @@ export function TestPaymentDialog({
               setInputData={setInputData}
               inputDataError={inputDataError}
             />
-            <CurlResponseViewer
-              curlCommand={curlCommand}
-              response={response}
-              error={error}
-            />
+
+            {hasPaymentResultUi && (
+              <div
+                className="space-y-4 pt-2"
+                role={paymentCreatedSuccessfully ? "region" : undefined}
+                aria-label={
+                  paymentCreatedSuccessfully
+                    ? t("createdPaymentSectionTitle")
+                    : undefined
+                }
+              >
+                {paymentCreatedSuccessfully && (
+                  <div className="flex items-center gap-3">
+                    <Separator className="flex-1 shrink" />
+                    <span className="shrink-0 text-base font-medium text-foreground">
+                      {t("createdPaymentSectionTitle")}
+                    </span>
+                    <Separator className="flex-1 shrink" />
+                  </div>
+                )}
+                <CurlResponseViewer
+                  curlCommand={curlCommand}
+                  response={response}
+                  error={error}
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">

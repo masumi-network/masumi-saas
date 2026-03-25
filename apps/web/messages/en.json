@@ -1351,6 +1351,7 @@
         "submit": "Create payment",
         "creating": "Creating…",
         "successToast": "Test payment created",
+        "createdPaymentSectionTitle": "Created payment",
         "errors": {
           "generic": "Failed to create payment",
           "emptyResponse": "Invalid response from server — no data returned",

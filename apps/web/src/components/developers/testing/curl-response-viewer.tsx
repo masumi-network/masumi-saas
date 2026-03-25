@@ -1,13 +1,14 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Terminal } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CodeEditor } from "@/components/ui/code-editor";
 import { CopyButton } from "@/components/ui/copy-button";
-import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface CurlResponseViewerProps {
   curlCommand?: string;
@@ -27,82 +28,108 @@ export function CurlResponseViewer({
   const hasResponse = response !== null && response !== undefined;
   const hasError = Boolean(error && error.length > 0);
 
+  const responseCopyValue = hasError
+    ? (error ?? "")
+    : JSON.stringify(response, null, 2);
+
   if (!hasCurl && !hasResponse && !hasError) {
     return null;
   }
 
+  const headerBar =
+    "flex w-full flex-row items-center justify-between gap-3 space-y-0 border-b-0 border-border px-4 py-2.5 sm:px-5";
+
   return (
     <div className="space-y-3">
       {hasCurl && (
-        <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md">
-          <button
-            type="button"
-            onClick={() => setCurlExpanded((v) => !v)}
-            className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-150"
-          >
-            <span className="transition-transform duration-200">
-              {curlExpanded ? (
-                <ChevronDown className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5" />
+        <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+          <CardHeader className={headerBar}>
+            <button
+              type="button"
+              aria-expanded={curlExpanded}
+              onClick={() => setCurlExpanded((v) => !v)}
+              className={cn(
+                "flex min-w-0 flex-1 items-center gap-2.5 text-left",
+                "text-sm font-medium text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               )}
-            </span>
-            <Terminal className="h-3.5 w-3.5" />
-            {t("curlTitle")}
-          </button>
+            >
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground bg-muted border -ml-2"
+                aria-hidden
+              >
+                {curlExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </span>
+              <span className="min-w-0 truncate">{t("curlTitle")}</span>
+            </button>
+            <CopyButton
+              value={curlCommand ?? ""}
+              className="shrink-0 text-muted-foreground"
+            />
+          </CardHeader>
           {curlExpanded && (
-            <div className="animate-slide-down">
-              <Separator />
-              <CardContent className="relative p-0">
-                <div className="p-3 overflow-auto max-h-[180px] bg-muted/50">
-                  <pre className="text-xs font-mono whitespace-pre-wrap break-all leading-relaxed pr-8">
-                    {curlCommand}
-                  </pre>
-                </div>
-                <div className="absolute top-2 right-2">
-                  <CopyButton value={curlCommand ?? ""} />
-                </div>
-              </CardContent>
-            </div>
+            <CardContent className="space-y-0 p-0">
+              <div className="bg-muted/30 border-t border-border">
+                <CodeEditor
+                  value={curlCommand ?? ""}
+                  language="shell"
+                  height={220}
+                  embedded
+                />
+              </div>
+            </CardContent>
           )}
         </Card>
       )}
 
       {(hasResponse || hasError) && (
-        <Card className="overflow-hidden animate-fade-in transition-shadow duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between px-3 py-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
+        <Card className="animate-fade-in gap-0 overflow-hidden py-0 shadow-sm">
+          <CardHeader className={headerBar}>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <CardTitle className="text-sm font-medium leading-none text-foreground">
                 {t("response")}
-              </span>
+              </CardTitle>
               {hasError ? (
                 <Badge
                   variant="destructive"
-                  className="text-[10px] px-1.5 py-0"
+                  className="px-1.5 py-0 text-[10px] font-normal"
                 >
                   {t("badgeError")}
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                <Badge
+                  variant="secondary"
+                  className="px-1.5 py-0 text-[10px] font-normal"
+                >
                   {t("badgeOk")}
                 </Badge>
               )}
             </div>
-            {hasResponse && !hasError && (
-              <CopyButton value={JSON.stringify(response, null, 2)} />
-            )}
-          </div>
-          <Separator />
-          <CardContent className="p-0">
-            <div className="p-3 overflow-auto max-h-[220px] bg-muted/50">
+            <CopyButton
+              value={responseCopyValue}
+              className="shrink-0 text-muted-foreground"
+            />
+          </CardHeader>
+          <CardContent className="space-y-0 p-0">
+            <div className="bg-muted/30 border-t border-border">
               {hasError ? (
-                <pre className="font-mono text-xs whitespace-pre-wrap text-destructive">
-                  {error}
-                </pre>
+                <CodeEditor
+                  value={error ?? ""}
+                  language="plaintext"
+                  height={240}
+                  embedded
+                />
               ) : (
-                <pre className="text-xs font-mono whitespace-pre-wrap break-all leading-relaxed">
-                  {JSON.stringify(response, null, 2)}
-                </pre>
+                <CodeEditor
+                  value={JSON.stringify(response, null, 2)}
+                  language="json"
+                  height={300}
+                  embedded
+                />
               )}
             </div>
           </CardContent>
