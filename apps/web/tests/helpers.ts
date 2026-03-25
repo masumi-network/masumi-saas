@@ -164,7 +164,7 @@ export async function pollCompleteRegistration(
     });
     if (res.status === 200) return "registered";
     if (res.status !== 202) return "timeout";
-    await sleep(delayMs);
+    if (i < maxAttempts - 1) await sleep(delayMs);
   }
   return "timeout";
 }
