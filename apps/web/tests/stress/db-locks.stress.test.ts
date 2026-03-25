@@ -12,10 +12,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   CookieJar,
-  TEST_EMAIL,
-  TEST_PASSWORD,
   request,
   signIn,
+  TEST_EMAIL,
+  TEST_PASSWORD,
 } from "../helpers";
 
 let jar: CookieJar;
