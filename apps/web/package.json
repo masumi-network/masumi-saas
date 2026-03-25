@@ -17,7 +17,12 @@
     "payment-node:fetch-spec": "node scripts/fetch-payment-node-openapi.mjs",
     "payment-node:generate": "pnpm run payment-node:fetch-spec && openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
     "payment-node:generate:local": "openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
-    "re-encrypt-payment-node-secrets": "tsx scripts/re-encrypt-payment-node-secrets.ts"
+    "re-encrypt-payment-node-secrets": "tsx scripts/re-encrypt-payment-node-secrets.ts",
+    "test": "vitest run",
+    "test:smoke": "vitest run tests/smoke",
+    "test:e2e": "vitest run tests/e2e",
+    "test:stress": "vitest run tests/stress",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.4.0",
@@ -88,18 +93,20 @@
     "@types/react-dom": "19.2.3",
     "@types/sanitize-html": "^2.16.0",
     "@types/swagger-ui-react": "^5.18.0",
+    "@vitest/coverage-v8": "^4.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "cross-env": "^10.1.0",
-    "openapi-typescript": "^7.13.0",
     "eslint": "8.57.1",
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react": "^7.37.5",
+    "openapi-typescript": "^7.13.0",
     "postcss": "8.4.38",
     "prettier": "3.7.3",
     "prettier-plugin-tailwindcss": "0.7.1",
     "tailwindcss": "^4.1.18",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.48.0"
+    "typescript-eslint": "8.48.0",
+    "vitest": "^4.1.1"
   }
 }
