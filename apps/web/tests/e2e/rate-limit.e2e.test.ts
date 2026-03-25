@@ -3,7 +3,8 @@
  * Sends bursts to the public API and verifies 429 is triggered.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { request, sleep } from "../helpers";
 
 describe("E2E — Public API rate limiting", () => {

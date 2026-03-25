@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { request } from "../helpers";
 
 describe("SMOKE — Public API /api/v1/", () => {

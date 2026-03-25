@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { request, signIn, CookieJar } from "../helpers";
+import { describe, expect, it } from "vitest";
+
+import { CookieJar, request, signIn } from "../helpers";
 
 describe("SMOKE — Auth", () => {
   it("signs in with valid credentials → 200 + user object", async () => {

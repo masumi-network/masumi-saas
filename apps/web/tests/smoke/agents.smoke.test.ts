@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { request, signIn, createAgent, CookieJar } from "../helpers";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import { CookieJar, createAgent, request, signIn } from "../helpers";
 
 let jar: CookieJar;
 

@@ -8,8 +8,9 @@
  * - 10-parallel dashboard queries (no connection pool exhaustion)
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
-import { signIn, request, createAgent, sleep, CookieJar } from "../helpers";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import { CookieJar, request, signIn } from "../helpers";
 
 let jar: CookieJar;
 

@@ -7,8 +7,9 @@
  * - Verifies no duplicate DB rows, no deadlocks, no crashes
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
-import { signIn, request, uniqueAgentName, sleep, CookieJar } from "../helpers";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import { CookieJar, request, signIn, sleep, uniqueAgentName } from "../helpers";
 
 let jar: CookieJar;
 

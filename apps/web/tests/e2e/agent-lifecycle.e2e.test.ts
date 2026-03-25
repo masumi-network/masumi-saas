@@ -8,15 +8,14 @@
  * dispenser being available.
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+
 import {
-  signIn,
-  createAgent,
+  CookieJar,
   getOrCreateAgent,
   pollCompleteRegistration,
   request,
-  sleep,
-  CookieJar,
+  signIn,
 } from "../helpers";
 
 let jar: CookieJar;
