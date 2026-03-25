@@ -216,6 +216,7 @@ model Apikey {
   remaining           Int?
   lastRequest         DateTime?
   expiresAt           DateTime?
+  permissions         String? // Better Auth apiKey plugin (v1.4+)
   metadata            String?   // Better Auth apiKey plugin (enableMetadata: true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

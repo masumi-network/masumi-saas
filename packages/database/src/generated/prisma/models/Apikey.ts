@@ -50,7 +50,6 @@ export type ApikeyMinAggregateOutputType = {
   start: string | null;
   prefix: string | null;
   key: string | null;
-  userApiKeySecretEncrypted: string | null;
   userId: string | null;
   refillInterval: number | null;
   refillAmount: number | null;
@@ -63,6 +62,7 @@ export type ApikeyMinAggregateOutputType = {
   remaining: number | null;
   lastRequest: Date | null;
   expiresAt: Date | null;
+  permissions: string | null;
   metadata: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -74,7 +74,6 @@ export type ApikeyMaxAggregateOutputType = {
   start: string | null;
   prefix: string | null;
   key: string | null;
-  userApiKeySecretEncrypted: string | null;
   userId: string | null;
   refillInterval: number | null;
   refillAmount: number | null;
@@ -87,6 +86,7 @@ export type ApikeyMaxAggregateOutputType = {
   remaining: number | null;
   lastRequest: Date | null;
   expiresAt: Date | null;
+  permissions: string | null;
   metadata: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -98,7 +98,6 @@ export type ApikeyCountAggregateOutputType = {
   start: number;
   prefix: number;
   key: number;
-  userApiKeySecretEncrypted: number;
   userId: number;
   refillInterval: number;
   refillAmount: number;
@@ -111,6 +110,7 @@ export type ApikeyCountAggregateOutputType = {
   remaining: number;
   lastRequest: number;
   expiresAt: number;
+  permissions: number;
   metadata: number;
   createdAt: number;
   updatedAt: number;
@@ -141,7 +141,6 @@ export type ApikeyMinAggregateInputType = {
   start?: true;
   prefix?: true;
   key?: true;
-  userApiKeySecretEncrypted?: true;
   userId?: true;
   refillInterval?: true;
   refillAmount?: true;
@@ -154,6 +153,7 @@ export type ApikeyMinAggregateInputType = {
   remaining?: true;
   lastRequest?: true;
   expiresAt?: true;
+  permissions?: true;
   metadata?: true;
   createdAt?: true;
   updatedAt?: true;
@@ -165,7 +165,6 @@ export type ApikeyMaxAggregateInputType = {
   start?: true;
   prefix?: true;
   key?: true;
-  userApiKeySecretEncrypted?: true;
   userId?: true;
   refillInterval?: true;
   refillAmount?: true;
@@ -178,6 +177,7 @@ export type ApikeyMaxAggregateInputType = {
   remaining?: true;
   lastRequest?: true;
   expiresAt?: true;
+  permissions?: true;
   metadata?: true;
   createdAt?: true;
   updatedAt?: true;
@@ -189,7 +189,6 @@ export type ApikeyCountAggregateInputType = {
   start?: true;
   prefix?: true;
   key?: true;
-  userApiKeySecretEncrypted?: true;
   userId?: true;
   refillInterval?: true;
   refillAmount?: true;
@@ -202,6 +201,7 @@ export type ApikeyCountAggregateInputType = {
   remaining?: true;
   lastRequest?: true;
   expiresAt?: true;
+  permissions?: true;
   metadata?: true;
   createdAt?: true;
   updatedAt?: true;
@@ -307,7 +307,6 @@ export type ApikeyGroupByOutputType = {
   start: string | null;
   prefix: string | null;
   key: string;
-  userApiKeySecretEncrypted: string | null;
   userId: string;
   refillInterval: number | null;
   refillAmount: number | null;
@@ -320,6 +319,7 @@ export type ApikeyGroupByOutputType = {
   remaining: number | null;
   lastRequest: Date | null;
   expiresAt: Date | null;
+  permissions: string | null;
   metadata: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -352,10 +352,6 @@ export type ApikeyWhereInput = {
   start?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   prefix?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   key?: Prisma.StringFilter<"Apikey"> | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.StringNullableFilter<"Apikey">
-    | string
-    | null;
   userId?: Prisma.StringFilter<"Apikey"> | string;
   refillInterval?: Prisma.IntNullableFilter<"Apikey"> | number | null;
   refillAmount?: Prisma.IntNullableFilter<"Apikey"> | number | null;
@@ -368,6 +364,7 @@ export type ApikeyWhereInput = {
   remaining?: Prisma.IntNullableFilter<"Apikey"> | number | null;
   lastRequest?: Prisma.DateTimeNullableFilter<"Apikey"> | Date | string | null;
   expiresAt?: Prisma.DateTimeNullableFilter<"Apikey"> | Date | string | null;
+  permissions?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   metadata?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   createdAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
@@ -380,7 +377,6 @@ export type ApikeyOrderByWithRelationInput = {
   start?: Prisma.SortOrderInput | Prisma.SortOrder;
   prefix?: Prisma.SortOrderInput | Prisma.SortOrder;
   key?: Prisma.SortOrder;
-  userApiKeySecretEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   refillInterval?: Prisma.SortOrderInput | Prisma.SortOrder;
   refillAmount?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -393,6 +389,7 @@ export type ApikeyOrderByWithRelationInput = {
   remaining?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastRequest?: Prisma.SortOrderInput | Prisma.SortOrder;
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  permissions?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -409,10 +406,6 @@ export type ApikeyWhereUniqueInput = Prisma.AtLeast<
     start?: Prisma.StringNullableFilter<"Apikey"> | string | null;
     prefix?: Prisma.StringNullableFilter<"Apikey"> | string | null;
     key?: Prisma.StringFilter<"Apikey"> | string;
-    userApiKeySecretEncrypted?:
-      | Prisma.StringNullableFilter<"Apikey">
-      | string
-      | null;
     userId?: Prisma.StringFilter<"Apikey"> | string;
     refillInterval?: Prisma.IntNullableFilter<"Apikey"> | number | null;
     refillAmount?: Prisma.IntNullableFilter<"Apikey"> | number | null;
@@ -433,6 +426,7 @@ export type ApikeyWhereUniqueInput = Prisma.AtLeast<
       | string
       | null;
     expiresAt?: Prisma.DateTimeNullableFilter<"Apikey"> | Date | string | null;
+    permissions?: Prisma.StringNullableFilter<"Apikey"> | string | null;
     metadata?: Prisma.StringNullableFilter<"Apikey"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
@@ -447,7 +441,6 @@ export type ApikeyOrderByWithAggregationInput = {
   start?: Prisma.SortOrderInput | Prisma.SortOrder;
   prefix?: Prisma.SortOrderInput | Prisma.SortOrder;
   key?: Prisma.SortOrder;
-  userApiKeySecretEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   refillInterval?: Prisma.SortOrderInput | Prisma.SortOrder;
   refillAmount?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -460,6 +453,7 @@ export type ApikeyOrderByWithAggregationInput = {
   remaining?: Prisma.SortOrderInput | Prisma.SortOrder;
   lastRequest?: Prisma.SortOrderInput | Prisma.SortOrder;
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+  permissions?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -483,10 +477,6 @@ export type ApikeyScalarWhereWithAggregatesInput = {
   start?: Prisma.StringNullableWithAggregatesFilter<"Apikey"> | string | null;
   prefix?: Prisma.StringNullableWithAggregatesFilter<"Apikey"> | string | null;
   key?: Prisma.StringWithAggregatesFilter<"Apikey"> | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.StringNullableWithAggregatesFilter<"Apikey">
-    | string
-    | null;
   userId?: Prisma.StringWithAggregatesFilter<"Apikey"> | string;
   refillInterval?:
     | Prisma.IntNullableWithAggregatesFilter<"Apikey">
@@ -529,6 +519,10 @@ export type ApikeyScalarWhereWithAggregatesInput = {
     | Date
     | string
     | null;
+  permissions?:
+    | Prisma.StringNullableWithAggregatesFilter<"Apikey">
+    | string
+    | null;
   metadata?:
     | Prisma.StringNullableWithAggregatesFilter<"Apikey">
     | string
@@ -543,7 +537,6 @@ export type ApikeyCreateInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   refillInterval?: number | null;
   refillAmount?: number | null;
   lastRefillAt?: Date | string | null;
@@ -555,6 +548,7 @@ export type ApikeyCreateInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -567,7 +561,6 @@ export type ApikeyUncheckedCreateInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   userId: string;
   refillInterval?: number | null;
   refillAmount?: number | null;
@@ -580,6 +573,7 @@ export type ApikeyUncheckedCreateInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -591,10 +585,6 @@ export type ApikeyUpdateInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lastRefillAt?:
@@ -624,6 +614,7 @@ export type ApikeyUpdateInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -636,10 +627,6 @@ export type ApikeyUncheckedUpdateInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -670,6 +657,7 @@ export type ApikeyUncheckedUpdateInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -681,7 +669,6 @@ export type ApikeyCreateManyInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   userId: string;
   refillInterval?: number | null;
   refillAmount?: number | null;
@@ -694,6 +681,7 @@ export type ApikeyCreateManyInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -705,10 +693,6 @@ export type ApikeyUpdateManyMutationInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lastRefillAt?:
@@ -738,6 +722,7 @@ export type ApikeyUpdateManyMutationInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -749,10 +734,6 @@ export type ApikeyUncheckedUpdateManyInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
@@ -783,6 +764,7 @@ export type ApikeyUncheckedUpdateManyInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -804,7 +786,6 @@ export type ApikeyCountOrderByAggregateInput = {
   start?: Prisma.SortOrder;
   prefix?: Prisma.SortOrder;
   key?: Prisma.SortOrder;
-  userApiKeySecretEncrypted?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   refillInterval?: Prisma.SortOrder;
   refillAmount?: Prisma.SortOrder;
@@ -817,6 +798,7 @@ export type ApikeyCountOrderByAggregateInput = {
   remaining?: Prisma.SortOrder;
   lastRequest?: Prisma.SortOrder;
   expiresAt?: Prisma.SortOrder;
+  permissions?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -837,7 +819,6 @@ export type ApikeyMaxOrderByAggregateInput = {
   start?: Prisma.SortOrder;
   prefix?: Prisma.SortOrder;
   key?: Prisma.SortOrder;
-  userApiKeySecretEncrypted?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   refillInterval?: Prisma.SortOrder;
   refillAmount?: Prisma.SortOrder;
@@ -850,6 +831,7 @@ export type ApikeyMaxOrderByAggregateInput = {
   remaining?: Prisma.SortOrder;
   lastRequest?: Prisma.SortOrder;
   expiresAt?: Prisma.SortOrder;
+  permissions?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -861,7 +843,6 @@ export type ApikeyMinOrderByAggregateInput = {
   start?: Prisma.SortOrder;
   prefix?: Prisma.SortOrder;
   key?: Prisma.SortOrder;
-  userApiKeySecretEncrypted?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   refillInterval?: Prisma.SortOrder;
   refillAmount?: Prisma.SortOrder;
@@ -874,6 +855,7 @@ export type ApikeyMinOrderByAggregateInput = {
   remaining?: Prisma.SortOrder;
   lastRequest?: Prisma.SortOrder;
   expiresAt?: Prisma.SortOrder;
+  permissions?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
@@ -992,7 +974,6 @@ export type ApikeyCreateWithoutUserInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   refillInterval?: number | null;
   refillAmount?: number | null;
   lastRefillAt?: Date | string | null;
@@ -1004,6 +985,7 @@ export type ApikeyCreateWithoutUserInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1015,7 +997,6 @@ export type ApikeyUncheckedCreateWithoutUserInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   refillInterval?: number | null;
   refillAmount?: number | null;
   lastRefillAt?: Date | string | null;
@@ -1027,6 +1008,7 @@ export type ApikeyUncheckedCreateWithoutUserInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1082,10 +1064,6 @@ export type ApikeyScalarWhereInput = {
   start?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   prefix?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   key?: Prisma.StringFilter<"Apikey"> | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.StringNullableFilter<"Apikey">
-    | string
-    | null;
   userId?: Prisma.StringFilter<"Apikey"> | string;
   refillInterval?: Prisma.IntNullableFilter<"Apikey"> | number | null;
   refillAmount?: Prisma.IntNullableFilter<"Apikey"> | number | null;
@@ -1098,6 +1076,7 @@ export type ApikeyScalarWhereInput = {
   remaining?: Prisma.IntNullableFilter<"Apikey"> | number | null;
   lastRequest?: Prisma.DateTimeNullableFilter<"Apikey"> | Date | string | null;
   expiresAt?: Prisma.DateTimeNullableFilter<"Apikey"> | Date | string | null;
+  permissions?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   metadata?: Prisma.StringNullableFilter<"Apikey"> | string | null;
   createdAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
   updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string;
@@ -1109,7 +1088,6 @@ export type ApikeyCreateManyUserInput = {
   start?: string | null;
   prefix?: string | null;
   key: string;
-  userApiKeySecretEncrypted?: string | null;
   refillInterval?: number | null;
   refillAmount?: number | null;
   lastRefillAt?: Date | string | null;
@@ -1121,6 +1099,7 @@ export type ApikeyCreateManyUserInput = {
   remaining?: number | null;
   lastRequest?: Date | string | null;
   expiresAt?: Date | string | null;
+  permissions?: string | null;
   metadata?: string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -1132,10 +1111,6 @@ export type ApikeyUpdateWithoutUserInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lastRefillAt?:
@@ -1165,6 +1140,7 @@ export type ApikeyUpdateWithoutUserInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1176,10 +1152,6 @@ export type ApikeyUncheckedUpdateWithoutUserInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lastRefillAt?:
@@ -1209,6 +1181,7 @@ export type ApikeyUncheckedUpdateWithoutUserInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1220,10 +1193,6 @@ export type ApikeyUncheckedUpdateManyWithoutUserInput = {
   start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   key?: Prisma.StringFieldUpdateOperationsInput | string;
-  userApiKeySecretEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   lastRefillAt?:
@@ -1253,6 +1222,7 @@ export type ApikeyUncheckedUpdateManyWithoutUserInput = {
     | Date
     | string
     | null;
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1268,7 +1238,6 @@ export type ApikeySelect<
     start?: boolean;
     prefix?: boolean;
     key?: boolean;
-    userApiKeySecretEncrypted?: boolean;
     userId?: boolean;
     refillInterval?: boolean;
     refillAmount?: boolean;
@@ -1281,6 +1250,7 @@ export type ApikeySelect<
     remaining?: boolean;
     lastRequest?: boolean;
     expiresAt?: boolean;
+    permissions?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1299,7 +1269,6 @@ export type ApikeySelectCreateManyAndReturn<
     start?: boolean;
     prefix?: boolean;
     key?: boolean;
-    userApiKeySecretEncrypted?: boolean;
     userId?: boolean;
     refillInterval?: boolean;
     refillAmount?: boolean;
@@ -1312,6 +1281,7 @@ export type ApikeySelectCreateManyAndReturn<
     remaining?: boolean;
     lastRequest?: boolean;
     expiresAt?: boolean;
+    permissions?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1330,7 +1300,6 @@ export type ApikeySelectUpdateManyAndReturn<
     start?: boolean;
     prefix?: boolean;
     key?: boolean;
-    userApiKeySecretEncrypted?: boolean;
     userId?: boolean;
     refillInterval?: boolean;
     refillAmount?: boolean;
@@ -1343,6 +1312,7 @@ export type ApikeySelectUpdateManyAndReturn<
     remaining?: boolean;
     lastRequest?: boolean;
     expiresAt?: boolean;
+    permissions?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -1357,7 +1327,6 @@ export type ApikeySelectScalar = {
   start?: boolean;
   prefix?: boolean;
   key?: boolean;
-  userApiKeySecretEncrypted?: boolean;
   userId?: boolean;
   refillInterval?: boolean;
   refillAmount?: boolean;
@@ -1370,6 +1339,7 @@ export type ApikeySelectScalar = {
   remaining?: boolean;
   lastRequest?: boolean;
   expiresAt?: boolean;
+  permissions?: boolean;
   metadata?: boolean;
   createdAt?: boolean;
   updatedAt?: boolean;
@@ -1384,7 +1354,6 @@ export type ApikeyOmit<
   | "start"
   | "prefix"
   | "key"
-  | "userApiKeySecretEncrypted"
   | "userId"
   | "refillInterval"
   | "refillAmount"
@@ -1397,6 +1366,7 @@ export type ApikeyOmit<
   | "remaining"
   | "lastRequest"
   | "expiresAt"
+  | "permissions"
   | "metadata"
   | "createdAt"
   | "updatedAt",
@@ -1436,10 +1406,6 @@ export type $ApikeyPayload<
       start: string | null;
       prefix: string | null;
       key: string;
-      /**
-       * Encrypted full API key (AES-GCM) so users can view/copy it from the app. Null for keys created before this feature.
-       */
-      userApiKeySecretEncrypted: string | null;
       userId: string;
       refillInterval: number | null;
       refillAmount: number | null;
@@ -1452,6 +1418,7 @@ export type $ApikeyPayload<
       remaining: number | null;
       lastRequest: Date | null;
       expiresAt: Date | null;
+      permissions: string | null;
       metadata: string | null;
       createdAt: Date;
       updatedAt: Date;
@@ -2066,7 +2033,6 @@ export interface ApikeyFieldRefs {
   readonly start: Prisma.FieldRef<"Apikey", "String">;
   readonly prefix: Prisma.FieldRef<"Apikey", "String">;
   readonly key: Prisma.FieldRef<"Apikey", "String">;
-  readonly userApiKeySecretEncrypted: Prisma.FieldRef<"Apikey", "String">;
   readonly userId: Prisma.FieldRef<"Apikey", "String">;
   readonly refillInterval: Prisma.FieldRef<"Apikey", "Int">;
   readonly refillAmount: Prisma.FieldRef<"Apikey", "Int">;
@@ -2079,6 +2045,7 @@ export interface ApikeyFieldRefs {
   readonly remaining: Prisma.FieldRef<"Apikey", "Int">;
   readonly lastRequest: Prisma.FieldRef<"Apikey", "DateTime">;
   readonly expiresAt: Prisma.FieldRef<"Apikey", "DateTime">;
+  readonly permissions: Prisma.FieldRef<"Apikey", "String">;
   readonly metadata: Prisma.FieldRef<"Apikey", "String">;
   readonly createdAt: Prisma.FieldRef<"Apikey", "DateTime">;
   readonly updatedAt: Prisma.FieldRef<"Apikey", "DateTime">;
