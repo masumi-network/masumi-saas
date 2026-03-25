@@ -22,14 +22,20 @@ export async function recordAgentActivityEvent(
   try {
     const agent = await prisma.agent.findUnique({
       where: { id: agentId },
-      select: { userId: true },
+      select: { userId: true, name: true, networkIdentifier: true },
     });
     if (!agent) {
       console.error("[Activity] Agent not found for event:", type, agentId);
       return;
     }
     await prisma.agentActivityEvent.create({
-      data: { agentId, userId: agent.userId, type },
+      data: {
+        agentId,
+        userId: agent.userId,
+        type,
+        agentNameSnapshot: agent.name,
+        networkIdentifier: agent.networkIdentifier,
+      },
     });
   } catch (err) {
     console.error("[Activity] Failed to record event:", type, agentId, err);

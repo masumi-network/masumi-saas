@@ -310,6 +310,8 @@ export const AgentActivityEventScalarFieldEnum = {
   id: "id",
   userId: "userId",
   agentId: "agentId",
+  agentNameSnapshot: "agentNameSnapshot",
+  networkIdentifier: "networkIdentifier",
   type: "type",
   createdAt: "createdAt",
 } as const;

@@ -86,6 +86,8 @@ export type Agent = Prisma.AgentModel;
  * Audit log of agent lifecycle events for the Activity feed.
  * Emitted when registration state changes, verification, deregister, or delete.
  * agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
+ * agentNameSnapshot preserves display name after agentId is cleared on delete.
+ * networkIdentifier scopes orphan events (agentId null) to Mainnet vs Preprod.
  */
 export type AgentActivityEvent = Prisma.AgentActivityEventModel;
 /**

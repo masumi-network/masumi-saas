@@ -16,12 +16,8 @@ const nextConfig: NextConfig = {
         destination: "/docs/saas-openapi",
         permanent: true,
       },
-      {
-        source: "/docs",
-        destination: "https://docs.masumi.network/",
-        // Temporary: external target may change; 308 would cache aggressively.
-        permanent: false,
-      },
+      // /docs is handled by app/docs/page.tsx so local routes (e.g. /docs/saas-openapi)
+      // are never shadowed by a config redirect; trailing slash normalizes to the same page.
       { source: "/agents", destination: "/ai-agents", permanent: true },
       {
         source: "/agents/:path*",

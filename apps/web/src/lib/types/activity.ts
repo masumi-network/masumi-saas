@@ -1,3 +1,13 @@
+/** Tab filter key; maps to API filter (lifecycle = agent lifecycle events). */
+export type ActivityTabFilter =
+  | "all"
+  | "lifecycle"
+  | "transactions"
+  | "purchases"
+  | "payments"
+  | "refundRequests"
+  | "disputes";
+
 export type ActivityFeedItem =
   | {
       kind: "lifecycle";

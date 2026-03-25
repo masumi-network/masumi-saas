@@ -1,6 +1,10 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  decodeActivityCursor,
+  encodeActivityCursor,
+} from "@/lib/activity-cursor";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
@@ -15,7 +19,8 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 export type { ActivityFeedFilter as FeedFilter } from "@/lib/schemas/activity";
 export type { ActivityFeedItem };
 
-const FEED_LIMIT = 80;
+/** Max items merged for the feed (lifecycle + payments/purchases) before response. */
+const FEED_LIMIT = 200;
 
 /** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
 const backfillLocks = new Map<string, Promise<void>>();
@@ -66,11 +71,9 @@ export async function GET(request: NextRequest) {
     const validFilter = query.filter;
     const network = query.network;
 
-    const networkFilter = {
-      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
-    };
+    /** Match GET /api/agents — strict network so Preprod/Mainnet feeds do not share null-network agents. */
     const agents = await prisma.agent.findMany({
-      where: { userId: user.id, ...networkFilter },
+      where: { userId: user.id, networkIdentifier: network },
       select: {
         id: true,
         name: true,
@@ -100,10 +103,9 @@ export async function GET(request: NextRequest) {
           take: FEED_LIMIT,
           include: { agent: { select: { id: true, name: true } } },
         }),
-        // Orphan events (e.g. AgentDeleted after agent row removed); agentId is null
+        // Orphan events (agent deleted); scoped by networkIdentifier — omit rows with null (pre-migration).
         prisma.agentActivityEvent.findMany({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma nullable filter type mismatch before client regen
-          where: { userId: user.id, agentId: null } as any,
+          where: { userId: user.id, agentId: null, networkIdentifier: network },
           orderBy: { createdAt: "desc" },
           take: FEED_LIMIT,
           include: { agent: { select: { id: true, name: true } } },
@@ -134,6 +136,8 @@ export async function GET(request: NextRequest) {
                     agentId: agent.id,
                     userId: user.id,
                     type: stateEventType,
+                    agentNameSnapshot: agent.name,
+                    networkIdentifier: agent.networkIdentifier,
                   },
                 });
               } catch (err) {
@@ -151,6 +155,8 @@ export async function GET(request: NextRequest) {
                     agentId: agent.id,
                     userId: user.id,
                     type: "AgentVerified",
+                    agentNameSnapshot: agent.name,
+                    networkIdentifier: agent.networkIdentifier,
                   },
                 });
               } catch (err) {
@@ -179,8 +185,11 @@ export async function GET(request: NextRequest) {
             include: { agent: { select: { id: true, name: true } } },
           }),
           prisma.agentActivityEvent.findMany({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- nullable agentId filter
-            where: { userId: user.id, agentId: null } as any,
+            where: {
+              userId: user.id,
+              agentId: null,
+              networkIdentifier: network,
+            },
             orderBy: { createdAt: "desc" },
             take: FEED_LIMIT,
             include: { agent: { select: { id: true, name: true } } },
@@ -197,7 +206,7 @@ export async function GET(request: NextRequest) {
         date: e.createdAt.toISOString(),
         type: e.type,
         agentId: e.agent?.id ?? null,
-        agentName: e.agent?.name ?? null,
+        agentName: e.agent?.name ?? e.agentNameSnapshot ?? null,
       }));
     }
 
@@ -216,7 +225,7 @@ export async function GET(request: NextRequest) {
             agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
           );
           if (smartContractAddress && agentIdentifiers.size > 0) {
-            const listLimit = 50;
+            const listLimit = 100;
             const diffLimit = 100;
             const [paymentsRes, purchasesRes] = useDiff
               ? await Promise.all([
@@ -357,9 +366,48 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const items = merged.slice(0, FEED_LIMIT);
-    const data: { items: ActivityFeedItem[]; lastUpdate?: string } = {
-      items,
+    const limitRaw = searchParams.get("limit");
+    const usePagination = limitRaw != null && limitRaw !== "";
+
+    if (!usePagination) {
+      const items = merged.slice(0, FEED_LIMIT);
+      const data: { items: ActivityFeedItem[]; lastUpdate?: string } = {
+        items,
+      };
+      if (validFilter === "transactions" && transactionLastUpdate)
+        data.lastUpdate = transactionLastUpdate;
+      return NextResponse.json({
+        success: true,
+        data,
+      });
+    }
+
+    const pageLimit = Math.min(50, Math.max(1, parseInt(limitRaw, 10) || 20));
+    const cursorParam = searchParams.get("cursor");
+    let start = 0;
+    if (cursorParam) {
+      const c = decodeActivityCursor(cursorParam);
+      if (c) {
+        const idx = merged.findIndex(
+          (it) => it.date === c.d && it.kind === c.k && it.id === c.i,
+        );
+        start = idx >= 0 ? idx + 1 : 0;
+      }
+    }
+
+    const pageItems = merged.slice(start, start + pageLimit);
+    const nextCursor =
+      pageItems.length === pageLimit && start + pageLimit < merged.length
+        ? encodeActivityCursor(pageItems[pageItems.length - 1]!)
+        : null;
+
+    const data: {
+      items: ActivityFeedItem[];
+      nextCursor: string | null;
+      lastUpdate?: string;
+    } = {
+      items: pageItems,
+      nextCursor,
     };
     if (validFilter === "transactions" && transactionLastUpdate)
       data.lastUpdate = transactionLastUpdate;
