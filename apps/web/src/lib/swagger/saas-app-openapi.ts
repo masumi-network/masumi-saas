@@ -100,7 +100,11 @@ const agentId = z.string().openapi({
   example: "cmlf6gswz0000x1uctad958tq",
 });
 
-/** One `Agent` row as returned in `GET /api/agents` (scalar fields as JSON). */
+/**
+ * Full agent row shape at runtime (includes verification fields).
+ * For OpenAPI / Swagger UI, use `agentListItemPublicSchema` so challenge/secret are not documented
+ * (they still appear in JSON responses; do not rely on public docs for those keys).
+ */
 const agentListItemSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -122,23 +126,21 @@ const agentListItemSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   veridianCredentialId: z.string().nullable(),
-  verificationChallenge: z.string().nullable().openapi({
-    description:
-      "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set.",
-  }),
-  verificationChallengeGeneratedAt: z.string().nullable().openapi({
-    description: "ISO time the challenge was issued; null if none.",
-  }),
-  verificationSecret: z.string().nullable().openapi({
-    description:
-      "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side.",
-  }),
+  verificationChallenge: z.string().nullable(),
+  verificationChallengeGeneratedAt: z.string().nullable(),
+  verificationSecret: z.string().nullable(),
+});
+
+const agentListItemPublicSchema = agentListItemSchema.omit({
+  verificationChallenge: true,
+  verificationChallengeGeneratedAt: true,
+  verificationSecret: true,
 });
 
 const agentsListSuccessSchema = z
   .object({
     success: z.literal(true),
-    data: z.array(agentListItemSchema),
+    data: z.array(agentListItemPublicSchema),
     nextCursor: z.string().nullable(),
   })
   .openapi({
@@ -168,9 +170,6 @@ const agentsListSuccessSchema = z
           createdAt: "2025-01-15T12:00:00.000Z",
           updatedAt: "2025-01-20T08:30:00.000Z",
           veridianCredentialId: null,
-          verificationChallenge: null,
-          verificationChallengeGeneratedAt: null,
-          verificationSecret: null,
         },
       ],
     },
@@ -198,16 +197,13 @@ const exampleAgentItem = {
   createdAt: "2025-01-15T12:00:00.000Z",
   updatedAt: "2025-01-20T08:30:00.000Z",
   veridianCredentialId: null,
-  verificationChallenge: null,
-  verificationChallengeGeneratedAt: null,
-  verificationSecret: null,
 };
 
 const startRegistrationSuccessSchema = z
   .object({
     success: z.literal(true),
     agentId: z.string(),
-    data: agentListItemSchema,
+    data: agentListItemPublicSchema,
   })
   .openapi({
     example: {
@@ -220,7 +216,7 @@ const startRegistrationSuccessSchema = z
 const agentDetailSuccessSchema = z
   .object({
     success: z.literal(true),
-    data: agentListItemSchema,
+    data: agentListItemPublicSchema,
   })
   .openapi({
     example: { success: true, data: exampleAgentItem },
@@ -361,7 +357,7 @@ const agentEarningsSuccessSchema = z
 const verifyAgentSuccessSchema = z
   .object({
     success: z.literal(true),
-    data: agentListItemSchema,
+    data: agentListItemPublicSchema,
   })
   .openapi({
     example: {
@@ -373,21 +369,25 @@ const verifyAgentSuccessSchema = z
     },
   });
 
+/** Public doc omits `secret` (still returned by the API once for HMAC setup). */
 const verificationChallengeSuccessSchema = z
   .object({
     success: z.literal(true),
-    data: z.object({
-      challenge: z.string(),
-      secret: z.string(),
-      generatedAt: z.string().nullable(),
-    }),
+    data: z
+      .object({
+        challenge: z.string(),
+        generatedAt: z.string().nullable(),
+      })
+      .openapi({
+        description:
+          "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs.",
+      }),
   })
   .openapi({
     example: {
       success: true,
       data: {
         challenge: "550e8400-e29b-41d4-a716-446655440000",
-        secret: "a1b2c3…64hex",
         generatedAt: "2025-01-20T11:00:00.000Z",
       },
     },
@@ -409,7 +409,7 @@ const completeRegistrationSuccessSchema = z
   .object({
     success: z.literal(true),
     status: z.literal("registered"),
-    data: agentListItemSchema,
+    data: agentListItemPublicSchema,
   })
   .openapi({
     example: {
@@ -1092,8 +1092,20 @@ registry.registerPath({
   },
 });
 
-export function generateSaaSAppOpenAPISpec() {
-  return new OpenApiGeneratorV3(registry.definitions).generateDocument({
+type SaaSAppOpenAPISpec = ReturnType<
+  InstanceType<typeof OpenApiGeneratorV3>["generateDocument"]
+>;
+
+/** Registry is fixed at module load; spec is immutable — compute once per process. */
+let cachedSaaSAppOpenAPISpec: SaaSAppOpenAPISpec | undefined;
+
+export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
+  if (cachedSaaSAppOpenAPISpec !== undefined) {
+    return cachedSaaSAppOpenAPISpec;
+  }
+  cachedSaaSAppOpenAPISpec = new OpenApiGeneratorV3(
+    registry.definitions,
+  ).generateDocument({
     openapi: "3.0.0",
     info: {
       version: "1.0.0",
@@ -1112,4 +1124,5 @@ export function generateSaaSAppOpenAPISpec() {
       { name: "Earnings", description: "Earnings and payouts" },
     ],
   });
+  return cachedSaaSAppOpenAPISpec;
 }

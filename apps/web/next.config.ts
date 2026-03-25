@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
       {
         source: "/docs",
         destination: "https://docs.masumi.network/",
-        permanent: true,
+        // Temporary: external target may change; 308 would cache aggressively.
+        permanent: false,
       },
       { source: "/agents", destination: "/ai-agents", permanent: true },
       {

@@ -46,8 +46,8 @@ interface NavigationItem {
   key: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Extra tokens for command-palette fuzzy match (e.g. openapi, swagger). */
-  searchValue?: string;
+  /** Extra filter tokens for cmdk; keep `value` as `key` for stable selection identity. */
+  searchKeywords?: string[];
 }
 
 const navigationItems: NavigationItem[] = [
@@ -60,8 +60,17 @@ const navigationItems: NavigationItem[] = [
     key: "developers",
     href: "/developers",
     icon: Code,
-    searchValue:
-      "developers openapi api documentation swagger rest http masumi saas",
+    searchKeywords: [
+      "openapi",
+      "api",
+      "documentation",
+      "swagger",
+      "rest",
+      "http",
+      "masumi",
+      "saas",
+      "developers",
+    ],
   },
   { key: "account", href: "/account", icon: User },
 ];
@@ -190,7 +199,8 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           {navigationItems.map((item) => (
             <CommandItem
               key={item.key}
-              value={item.searchValue ?? item.key}
+              value={item.key}
+              keywords={item.searchKeywords}
               onSelect={() => handleSelect(item.href)}
             >
               <item.icon className="mr-2 h-4 w-4" />

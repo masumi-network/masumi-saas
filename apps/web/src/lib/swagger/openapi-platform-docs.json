@@ -684,21 +684,6 @@
                           "veridianCredentialId": {
                             "type": "string",
                             "nullable": true
-                          },
-                          "verificationChallenge": {
-                            "type": "string",
-                            "nullable": true,
-                            "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
-                          },
-                          "verificationChallengeGeneratedAt": {
-                            "type": "string",
-                            "nullable": true,
-                            "description": "ISO time the challenge was issued; null if none."
-                          },
-                          "verificationSecret": {
-                            "type": "string",
-                            "nullable": true,
-                            "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
                           }
                         },
                         "required": [
@@ -718,10 +703,7 @@
                           "networkIdentifier",
                           "createdAt",
                           "updatedAt",
-                          "veridianCredentialId",
-                          "verificationChallenge",
-                          "verificationChallengeGeneratedAt",
-                          "verificationSecret"
+                          "veridianCredentialId"
                         ]
                       }
                     },
@@ -768,10 +750,7 @@
                         },
                         "createdAt": "2025-01-15T12:00:00.000Z",
                         "updatedAt": "2025-01-20T08:30:00.000Z",
-                        "veridianCredentialId": null,
-                        "verificationChallenge": null,
-                        "verificationChallengeGeneratedAt": null,
-                        "verificationSecret": null
+                        "veridianCredentialId": null
                       }
                     ]
                   }
@@ -1231,21 +1210,6 @@
                         "veridianCredentialId": {
                           "type": "string",
                           "nullable": true
-                        },
-                        "verificationChallenge": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
-                        },
-                        "verificationChallengeGeneratedAt": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "ISO time the challenge was issued; null if none."
-                        },
-                        "verificationSecret": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
                         }
                       },
                       "required": [
@@ -1265,10 +1229,7 @@
                         "networkIdentifier",
                         "createdAt",
                         "updatedAt",
-                        "veridianCredentialId",
-                        "verificationChallenge",
-                        "verificationChallengeGeneratedAt",
-                        "verificationSecret"
+                        "veridianCredentialId"
                       ]
                     }
                   },
@@ -1309,10 +1270,7 @@
                       },
                       "createdAt": "2025-01-15T12:00:00.000Z",
                       "updatedAt": "2025-01-20T08:30:00.000Z",
-                      "veridianCredentialId": null,
-                      "verificationChallenge": null,
-                      "verificationChallengeGeneratedAt": null,
-                      "verificationSecret": null
+                      "veridianCredentialId": null
                     }
                   }
                 }
@@ -1560,21 +1518,6 @@
                         "veridianCredentialId": {
                           "type": "string",
                           "nullable": true
-                        },
-                        "verificationChallenge": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
-                        },
-                        "verificationChallengeGeneratedAt": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "ISO time the challenge was issued; null if none."
-                        },
-                        "verificationSecret": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
                         }
                       },
                       "required": [
@@ -1594,10 +1537,7 @@
                         "networkIdentifier",
                         "createdAt",
                         "updatedAt",
-                        "veridianCredentialId",
-                        "verificationChallenge",
-                        "verificationChallengeGeneratedAt",
-                        "verificationSecret"
+                        "veridianCredentialId"
                       ]
                     }
                   },
@@ -1636,10 +1576,7 @@
                       },
                       "createdAt": "2025-01-15T12:00:00.000Z",
                       "updatedAt": "2025-01-20T08:30:00.000Z",
-                      "veridianCredentialId": null,
-                      "verificationChallenge": null,
-                      "verificationChallengeGeneratedAt": null,
-                      "verificationSecret": null
+                      "veridianCredentialId": null
                     }
                   }
                 }
@@ -2996,21 +2933,6 @@
                         "veridianCredentialId": {
                           "type": "string",
                           "nullable": true
-                        },
-                        "verificationChallenge": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
-                        },
-                        "verificationChallengeGeneratedAt": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "ISO time the challenge was issued; null if none."
-                        },
-                        "verificationSecret": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
                         }
                       },
                       "required": [
@@ -3030,10 +2952,7 @@
                         "networkIdentifier",
                         "createdAt",
                         "updatedAt",
-                        "veridianCredentialId",
-                        "verificationChallenge",
-                        "verificationChallengeGeneratedAt",
-                        "verificationSecret"
+                        "veridianCredentialId"
                       ]
                     }
                   },
@@ -3072,10 +2991,7 @@
                       },
                       "createdAt": "2025-01-15T12:00:00.000Z",
                       "updatedAt": "2025-01-20T08:30:00.000Z",
-                      "veridianCredentialId": null,
-                      "verificationChallenge": null,
-                      "verificationChallengeGeneratedAt": null,
-                      "verificationSecret": null
+                      "veridianCredentialId": null
                     }
                   }
                 }
@@ -3259,9 +3175,6 @@
                         "challenge": {
                           "type": "string"
                         },
-                        "secret": {
-                          "type": "string"
-                        },
                         "generatedAt": {
                           "type": "string",
                           "nullable": true
@@ -3269,9 +3182,9 @@
                       },
                       "required": [
                         "challenge",
-                        "secret",
                         "generatedAt"
-                      ]
+                      ],
+                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
                     }
                   },
                   "required": [
@@ -3282,7 +3195,6 @@
                     "success": true,
                     "data": {
                       "challenge": "550e8400-e29b-41d4-a716-446655440000",
-                      "secret": "a1b2c3…64hex",
                       "generatedAt": "2025-01-20T11:00:00.000Z"
                     }
                   }
@@ -3481,9 +3393,6 @@
                         "challenge": {
                           "type": "string"
                         },
-                        "secret": {
-                          "type": "string"
-                        },
                         "generatedAt": {
                           "type": "string",
                           "nullable": true
@@ -3491,9 +3400,9 @@
                       },
                       "required": [
                         "challenge",
-                        "secret",
                         "generatedAt"
-                      ]
+                      ],
+                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
                     }
                   },
                   "required": [
@@ -3504,7 +3413,6 @@
                     "success": true,
                     "data": {
                       "challenge": "550e8400-e29b-41d4-a716-446655440000",
-                      "secret": "a1b2c3…64hex",
                       "generatedAt": "2025-01-20T11:00:00.000Z"
                     }
                   }
@@ -3951,21 +3859,6 @@
                         "veridianCredentialId": {
                           "type": "string",
                           "nullable": true
-                        },
-                        "verificationChallenge": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "Challenge for the agent verification URL flow; null until generated. Treat as sensitive when set."
-                        },
-                        "verificationChallengeGeneratedAt": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "ISO time the challenge was issued; null if none."
-                        },
-                        "verificationSecret": {
-                          "type": "string",
-                          "nullable": true,
-                          "description": "HMAC secret for proving ownership of the verification endpoint; null until generated. Never log or expose client-side."
                         }
                       },
                       "required": [
@@ -3985,10 +3878,7 @@
                         "networkIdentifier",
                         "createdAt",
                         "updatedAt",
-                        "veridianCredentialId",
-                        "verificationChallenge",
-                        "verificationChallengeGeneratedAt",
-                        "verificationSecret"
+                        "veridianCredentialId"
                       ]
                     }
                   },
@@ -4029,10 +3919,7 @@
                       },
                       "createdAt": "2025-01-15T12:00:00.000Z",
                       "updatedAt": "2025-01-20T08:30:00.000Z",
-                      "veridianCredentialId": null,
-                      "verificationChallenge": null,
-                      "verificationChallengeGeneratedAt": null,
-                      "verificationSecret": null
+                      "veridianCredentialId": null
                     }
                   }
                 }
