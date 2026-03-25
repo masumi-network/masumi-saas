@@ -65,15 +65,12 @@ describe("STRESS — Concurrent registrations (same user)", () => {
         failed.map((f) => f.error),
       );
     }
-    // BUG-005: Dispenser throttles ALL concurrent requests — 0/3 succeed under simultaneous load
-    // When bug is fixed (retry/queue added), change this to: expect(successful.length).toBeGreaterThanOrEqual(1)
-    if (successful.length === 0) {
-      console.warn(
-        "BUG-005 CONFIRMED: 0/3 concurrent registrations succeeded — dispenser throttles all parallel requests, no retry logic exists",
-      );
-    } else {
-      expect(agentIds.length).toBe(uniqueIds.size); // no duplicate IDs
-    }
+    // BUG-005: Dispenser throttles concurrent requests — some may fail with 400 (expected/known)
+    // A 500 means a server crash — that must never happen regardless of dispenser state
+    const serverCrashes = results.filter((r) => r.status === 500);
+    expect(serverCrashes.length).toBe(0); // no 500s allowed — dispenser failures return 400, not 500
+    // All successful IDs must be unique (no duplicate wallets)
+    expect(agentIds.length).toBe(uniqueIds.size);
   }, 90_000);
 
   it("5 simultaneous registrations — no server crash (no 500)", async () => {

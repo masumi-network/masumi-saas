@@ -13,10 +13,9 @@ export const TEST_PASSWORD = "Admin@12345";
 export class CookieJar {
   private cookies: Map<string, string> = new Map();
 
-  ingest(setCookieHeader: string | null) {
-    if (!setCookieHeader) return;
-    for (const part of setCookieHeader.split(/,(?=[^ ])/)) {
-      const [pair] = part.trim().split(";");
+  ingestAll(cookies: string[]) {
+    for (const cookie of cookies) {
+      const [pair] = cookie.trim().split(";");
       if (!pair) continue;
       const eq = pair.indexOf("=");
       if (eq === -1) continue;
@@ -58,7 +57,12 @@ export async function request(
   };
 
   const res = await fetch(`${BASE_URL}${path}`, opts);
-  jar?.ingest(res.headers.get("set-cookie"));
+  if (jar)
+    jar.ingestAll(
+      res.headers.getSetCookie?.() ??
+        res.headers.get("set-cookie")?.split(/,(?=[^ ])/) ??
+        [],
+    );
 
   let parsed: unknown;
   const ct = res.headers.get("content-type") ?? "";
