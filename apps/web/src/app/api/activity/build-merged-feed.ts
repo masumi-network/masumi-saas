@@ -58,19 +58,19 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   if (anyEvent) return;
 
   const [k1, k2] = userIdToAdvisoryLockKeys(userId);
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
-    const recheck = await tx.agentActivityEvent.findFirst({
-      where: { agentId: { in: agentIds } },
-      select: { id: true },
-    });
-    if (recheck) return;
-    for (const agent of agents) {
-      const stateEventType = registrationStateToEventType(
-        agent.registrationState,
-      );
-      if (stateEventType) {
-        try {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+      const recheck = await tx.agentActivityEvent.findFirst({
+        where: { agentId: { in: agentIds } },
+        select: { id: true },
+      });
+      if (recheck) return;
+      for (const agent of agents) {
+        const stateEventType = registrationStateToEventType(
+          agent.registrationState,
+        );
+        if (stateEventType) {
           await tx.agentActivityEvent.create({
             data: {
               agentId: agent.id,
@@ -80,12 +80,8 @@ async function maybeBackfillAgentLifecycleEvents(params: {
               networkIdentifier: agent.networkIdentifier,
             },
           });
-        } catch (err) {
-          console.error("[Activity] Backfill create failed:", agent.id, err);
         }
-      }
-      if (agent.verificationStatus === "VERIFIED") {
-        try {
+        if (agent.verificationStatus === "VERIFIED") {
           await tx.agentActivityEvent.create({
             data: {
               agentId: agent.id,
@@ -95,12 +91,12 @@ async function maybeBackfillAgentLifecycleEvents(params: {
               networkIdentifier: agent.networkIdentifier,
             },
           });
-        } catch (err) {
-          console.error("[Activity] Backfill verified failed:", agent.id, err);
         }
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error("[Activity] Backfill transaction failed:", userId, err);
+  }
 }
 
 function registrationStateToEventType(
