@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import prisma from "@masumi/database/client";
 import { unstable_cache } from "next/cache";
 
@@ -18,8 +20,88 @@ export const ACTIVITY_MERGED_FEED_LIMIT = 200;
  */
 const MERGED_FEED_CACHE_REVALIDATE_SECONDS = 12;
 
-/** Serialize lifecycle backfill per user so concurrent requests don't create duplicate events. */
-const backfillLocks = new Map<string, Promise<void>>();
+/** Stable int32 pair for Postgres advisory lock (cross-instance, unlike in-memory Maps). */
+function userIdToAdvisoryLockKeys(userId: string): [number, number] {
+  const buf = createHash("sha256").update(userId, "utf8").digest();
+  return [buf.readInt32BE(0), buf.readInt32BE(4)];
+}
+
+/**
+ * One-time seed of lifecycle rows when the user has agents but no events yet.
+ * Runs **outside** `unstable_cache` (writes must not run inside the Data Cache) and uses
+ * `pg_advisory_xact_lock` so serverless concurrency does not double-insert.
+ */
+async function maybeBackfillAgentLifecycleEvents(params: {
+  userId: string;
+  network: NetworkQuery;
+}): Promise<void> {
+  const { userId, network } = params;
+  const agents = await prisma.agent.findMany({
+    where: {
+      userId,
+      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+    },
+    select: {
+      id: true,
+      name: true,
+      networkIdentifier: true,
+      registrationState: true,
+      verificationStatus: true,
+    },
+  });
+  if (agents.length === 0) return;
+  const agentIds = agents.map((a) => a.id);
+  const anyEvent = await prisma.agentActivityEvent.findFirst({
+    where: { agentId: { in: agentIds } },
+    select: { id: true },
+  });
+  if (anyEvent) return;
+
+  const [k1, k2] = userIdToAdvisoryLockKeys(userId);
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+    const recheck = await tx.agentActivityEvent.findFirst({
+      where: { agentId: { in: agentIds } },
+      select: { id: true },
+    });
+    if (recheck) return;
+    for (const agent of agents) {
+      const stateEventType = registrationStateToEventType(
+        agent.registrationState,
+      );
+      if (stateEventType) {
+        try {
+          await tx.agentActivityEvent.create({
+            data: {
+              agentId: agent.id,
+              userId,
+              type: stateEventType,
+              agentNameSnapshot: agent.name,
+              networkIdentifier: agent.networkIdentifier,
+            },
+          });
+        } catch (err) {
+          console.error("[Activity] Backfill create failed:", agent.id, err);
+        }
+      }
+      if (agent.verificationStatus === "VERIFIED") {
+        try {
+          await tx.agentActivityEvent.create({
+            data: {
+              agentId: agent.id,
+              userId,
+              type: "AgentVerified",
+              agentNameSnapshot: agent.name,
+              networkIdentifier: agent.networkIdentifier,
+            },
+          });
+        } catch (err) {
+          console.error("[Activity] Backfill verified failed:", agent.id, err);
+        }
+      }
+    }
+  });
+}
 
 function registrationStateToEventType(
   state: string,
@@ -114,92 +196,9 @@ async function buildActivityMergedFeedUncached({
         include: { agent: { select: { id: true, name: true } } },
       }),
     ]);
-    let events = [...eventsForAgents, ...orphanEvents]
+    const events = [...eventsForAgents, ...orphanEvents]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, ACTIVITY_MERGED_FEED_LIMIT);
-
-    if (events.length === 0 && agents.length > 0) {
-      const lockKey = userId;
-      const runBackfill = async () => {
-        const recheck = await prisma.agentActivityEvent.findMany({
-          where: { agentId: { in: agentIds } },
-          take: 1,
-        });
-        if (recheck.length > 0) return;
-        for (const agent of agents) {
-          const stateEventType = registrationStateToEventType(
-            agent.registrationState,
-          );
-          if (stateEventType) {
-            try {
-              await prisma.agentActivityEvent.create({
-                data: {
-                  agentId: agent.id,
-                  userId,
-                  type: stateEventType,
-                  agentNameSnapshot: agent.name,
-                  networkIdentifier: agent.networkIdentifier,
-                },
-              });
-            } catch (err) {
-              console.error(
-                "[Activity] Backfill create failed:",
-                agent.id,
-                err,
-              );
-            }
-          }
-          if (agent.verificationStatus === "VERIFIED") {
-            try {
-              await prisma.agentActivityEvent.create({
-                data: {
-                  agentId: agent.id,
-                  userId,
-                  type: "AgentVerified",
-                  agentNameSnapshot: agent.name,
-                  networkIdentifier: agent.networkIdentifier,
-                },
-              });
-            } catch (err) {
-              console.error(
-                "[Activity] Backfill verified failed:",
-                agent.id,
-                err,
-              );
-            }
-          }
-        }
-      };
-      let lockPromise = backfillLocks.get(lockKey);
-      if (!lockPromise) {
-        lockPromise = runBackfill().finally(() => {
-          backfillLocks.delete(lockKey);
-        });
-        backfillLocks.set(lockKey, lockPromise);
-      }
-      await lockPromise;
-      const [refetchForAgents, refetchOrphans] = await Promise.all([
-        prisma.agentActivityEvent.findMany({
-          where: { agentId: { in: agentIds } },
-          orderBy: { createdAt: "desc" },
-          take: ACTIVITY_MERGED_FEED_LIMIT,
-          include: { agent: { select: { id: true, name: true } } },
-        }),
-        prisma.agentActivityEvent.findMany({
-          where: {
-            userId,
-            agentId: null,
-            OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
-          },
-          orderBy: { createdAt: "desc" },
-          take: ACTIVITY_MERGED_FEED_LIMIT,
-          include: { agent: { select: { id: true, name: true } } },
-        }),
-      ]);
-      events = [...refetchForAgents, ...refetchOrphans]
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .slice(0, ACTIVITY_MERGED_FEED_LIMIT);
-    }
 
     lifecycleItems = events.map((e) => ({
       kind: "lifecycle" as const,
@@ -376,9 +375,17 @@ const fetchActivityMergedFeedCached = unstable_cache(
  * Cached merged feed for GET /api/activity. Pagination cursors slice the same snapshot
  * within the revalidate window so "load more" does not repeat payment-node fetches.
  */
-export function getActivityMergedFeedCached(
+export async function getActivityMergedFeedCached(
   params: BuildMergedFeedParams,
 ): Promise<ActivityMergedFeedResult> {
+  const needLifecycle =
+    params.validFilter === "all" || params.validFilter === "lifecycle";
+  if (needLifecycle) {
+    await maybeBackfillAgentLifecycleEvents({
+      userId: params.userId,
+      network: params.network,
+    });
+  }
   const cacheSegment = params.lastUpdate ?? "__full__";
   return fetchActivityMergedFeedCached(
     params.userId,
