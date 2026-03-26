@@ -79,3 +79,56 @@ export function formatEarningsAsUsd(
     .join(", ");
   return usdCents > 0 ? `${usdFormatted} + ${rest}` : rest;
 }
+
+/** How to interpret dashboard chart `amount` and `total` (payment-node withdrawn income). */
+export type DashboardEarningsAmountUnit = "USD" | "ADA";
+
+/**
+ * Split payment-node income `Units` into USDM/tUSDM (as USD float) and ADA (from lovelace).
+ * Unknown units are ignored for the dashboard aggregate.
+ */
+export function splitIncomeUnitsStablecoinUsdAndAda(
+  units: Array<{ unit: string; amount: number }>,
+  network: Network,
+): { usd: number; ada: number } {
+  const stableUnit = USDM[network].unit;
+  const decimals = USDM[network].decimals;
+  let usd = 0;
+  let ada = 0;
+  for (const u of units) {
+    if (u.unit === stableUnit) {
+      usd += Number(u.amount) / 10 ** decimals;
+    } else if (u.unit === "" || u.unit === "lovelace") {
+      ada += Number(u.amount) / 1_000_000;
+    }
+  }
+  return { usd, ada };
+}
+
+/** Choose USD when any stablecoin income exists in the period; else ADA if only lovelace; else USD for empty. */
+export function dashboardEarningsUnitFromTotals(totals: {
+  usd: number;
+  ada: number;
+}): DashboardEarningsAmountUnit {
+  if (totals.usd > 0) return "USD";
+  if (totals.ada > 0) return "ADA";
+  return "USD";
+}
+
+export function formatDashboardEarningsTotal(
+  value: number,
+  unit: DashboardEarningsAmountUnit,
+): string {
+  if (unit === "USD") {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+  return `${value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6,
+  })} ADA`;
+}

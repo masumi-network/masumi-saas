@@ -1,6 +1,6 @@
 "use client";
 
-import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import {
+  type DashboardEarningsAmountUnit,
+  formatDashboardEarningsTotal,
+} from "@/lib/payment-node/format";
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
@@ -73,21 +77,14 @@ function buildEarningsChartPaths(earnings: EarningsPoint[]): {
   return { areaPath, linePath };
 }
 
-function formatRevenue(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
   const { network } = usePaymentNetwork();
   const [period, setPeriod] = useState<TimePeriod>("7d");
   const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
   const [total, setTotal] = useState(0);
+  const [amountUnit, setAmountUnit] =
+    useState<DashboardEarningsAmountUnit>("USD");
   const [previousTotal, setPreviousTotal] = useState<number | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,16 +101,19 @@ export function DashboardRevenueCard() {
         setError(json.error ?? "Failed to load earnings");
         setEarnings([]);
         setTotal(0);
+        setAmountUnit("USD");
         setPreviousTotal(undefined);
         return;
       }
       setEarnings(json.data.earnings ?? []);
       setTotal(json.data.total ?? 0);
+      setAmountUnit(json.data.amountUnit ?? "USD");
       setPreviousTotal(json.data.previousTotal);
     } catch {
       setError("Failed to load earnings");
       setEarnings([]);
       setTotal(0);
+      setAmountUnit("USD");
       setPreviousTotal(undefined);
     } finally {
       setIsLoading(false);
@@ -128,11 +128,15 @@ export function DashboardRevenueCard() {
     <Card
       className="group relative overflow-hidden rounded-xl border-l-4 border-l-primary pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
       role="group"
-      aria-label={`${t("earnings")}: ${formatRevenue(total)}`}
+      aria-label={`${t("earnings")}: ${formatDashboardEarningsTotal(total, amountUnit)}`}
     >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
         <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground flex items-center gap-2">
-          <DollarSign className="h-4 w-4 shrink-0" />
+          {amountUnit === "USD" ? (
+            <DollarSign className="h-4 w-4 shrink-0" />
+          ) : (
+            <Coins className="h-4 w-4 shrink-0" />
+          )}
           {t("earnings")}
         </CardTitle>
         <Select
@@ -207,12 +211,12 @@ export function DashboardRevenueCard() {
           <p className="mb-1 text-sm text-destructive">{error}</p>
         ) : isLoading ? (
           <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative animate-pulse">
-            {formatRevenue(0)}
+            {formatDashboardEarningsTotal(0, amountUnit)}
           </p>
         ) : (
           <div className="mb-1 flex flex-wrap items-baseline gap-2">
             <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
-              {formatRevenue(total)}
+              {formatDashboardEarningsTotal(total, amountUnit)}
             </p>
             {previousTotal !== undefined &&
               previousTotal > 0 &&

@@ -5073,6 +5073,15 @@
             "required": false,
             "name": "period",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
           }
         ],
         "responses": {
@@ -5113,13 +5122,21 @@
                         "total": {
                           "type": "number"
                         },
+                        "amountUnit": {
+                          "type": "string",
+                          "enum": [
+                            "USD",
+                            "ADA"
+                          ]
+                        },
                         "previousTotal": {
                           "type": "number"
                         }
                       },
                       "required": [
                         "earnings",
-                        "total"
+                        "total",
+                        "amountUnit"
                       ]
                     }
                   },
@@ -5137,6 +5154,7 @@
                         }
                       ],
                       "total": 12.5,
+                      "amountUnit": "USD",
                       "previousTotal": 10
                     }
                   }

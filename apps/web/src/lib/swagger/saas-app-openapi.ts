@@ -609,6 +609,8 @@ const userEarningsSuccessSchema = z
     data: z.object({
       earnings: z.array(z.object({ date: z.string(), amount: z.number() })),
       total: z.number(),
+      /** `USD` when USDM/tUSDM withdrawn income exists in the period; otherwise `ADA`. */
+      amountUnit: z.enum(["USD", "ADA"]),
       previousTotal: z.number().optional(),
     }),
   })
@@ -618,6 +620,7 @@ const userEarningsSuccessSchema = z
       data: {
         earnings: [{ date: "2025-01-15", amount: 12.5 }],
         total: 12.5,
+        amountUnit: "USD",
         previousTotal: 10,
       },
     },

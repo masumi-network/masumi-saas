@@ -86,6 +86,7 @@ export {
   credentialReconcileQuerySchema,
   credentialStatusQuerySchema,
   dashboardOverviewQuerySchema,
+  type EarningsPeriod,
   earningsQuerySchema,
   parseNetwork,
 } from "./api-query";

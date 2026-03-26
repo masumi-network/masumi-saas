@@ -300,7 +300,7 @@
           "balance": "Balance",
           "balanceDescription": "Available funds",
           "earnings": "Earnings",
-          "earningsDescription": "Total revenue from your agents",
+          "earningsDescription": "Withdrawn seller income from your payment node for this network (USDM as USD, or ADA when no stablecoin in range)",
           "viewAnalytics": "View analytics",
           "viewActivity": "View activity",
           "viewAllTransactions": "View all transactions",

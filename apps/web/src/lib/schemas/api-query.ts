@@ -29,6 +29,11 @@ export type AgentEarningsPeriod = z.infer<typeof agentEarningsPeriodSchema>;
 /** GET /api/earnings query. */
 export const earningsQuerySchema = z.object({
   period: z.string().optional().default("7d").pipe(earningsPeriodEnum),
+  network: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => parseNetwork(v)),
 });
 
 /** GET /api/agents/[agentId]/earnings query. */
