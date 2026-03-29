@@ -323,6 +323,7 @@
           "newTransactionsDescription": "New payment and purchase activity",
           "newTransactionsCardAria": "View activity, {count} new transactions",
           "viewAll": "View all",
+          "percentValue": "{value}%",
           "vsPreviousPeriod": "vs prev. period"
         },
         "networkHint": "Data for {network}.",
@@ -397,6 +398,18 @@
       "title": "Withdraw",
       "description": "Withdraw your earnings to your preferred payout method.",
       "comingSoon": "Withdrawals are coming soon."
+    },
+    "Earnings": {
+      "title": "Earnings",
+      "description": "Seller income from your payment node for the selected network. Hover the chart for daily amounts.",
+      "chartTitle": "Earnings over time",
+      "chartHint": "Daily totals for the selected period. Values match your dashboard earnings card (USDM as USD, or ADA when no stablecoin applies).",
+      "totalLabel": "Period total",
+      "noData": "No earnings data for this period.",
+      "loadError": "Failed to load earnings. Please try again.",
+      "periodLabel": "Earnings period",
+      "goToWithdraw": "Withdraw",
+      "withdrawTeaser": "Withdraw opens in a dialog on this page. Payout methods and settlement are not available yet."
     },
     "Analytics": {
       "title": "Analytics",
@@ -479,6 +492,7 @@
         "dashboard": "Dashboard",
         "agents": "Agents",
         "activity": "Activity",
+        "earnings": "Earnings",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -699,6 +713,7 @@
         "dashboard": "Dashboard",
         "agents": "Agents",
         "activity": "Activity",
+        "earnings": "Earnings",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",

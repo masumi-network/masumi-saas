@@ -5,6 +5,7 @@ import {
   BookOpen,
   Bot,
   Building2,
+  CircleDollarSign,
   Code,
   ExternalLink,
   History,
@@ -54,6 +55,12 @@ const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/ai-agents", icon: Bot },
   { key: "activity", href: "/activity", icon: Activity },
+  {
+    key: "earnings",
+    href: "/earnings",
+    icon: CircleDollarSign,
+    searchKeywords: ["revenue", "income", "payout", "withdraw", "chart"],
+  },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },
   {

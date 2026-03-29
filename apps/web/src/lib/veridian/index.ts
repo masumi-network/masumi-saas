@@ -13,6 +13,7 @@ export {
   getIssuerOobi,
   issueCredential,
   resolveOobi,
+  revokeIssuedCredential,
   verifyKeriSignature,
 } from "./client";
 
@@ -25,6 +26,7 @@ export {
 } from "./utils";
 
 // Types
+export type { RevokeIssuedCredentialResult } from "./client";
 export type {
   Credential,
   CredentialServerResponse,

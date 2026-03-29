@@ -281,6 +281,70 @@ export async function issueCredential(
   }
 }
 
+export type RevokeIssuedCredentialResult =
+  | { status: "revoked" }
+  | { status: "already_revoked" }
+  | { status: "not_found" }
+  | { status: "error"; message: string };
+
+/**
+ * Revoke an issued ACDC on the Veridian credential server (POST /revokeCredential).
+ * Caller must pass the holder AID the credential was issued to.
+ */
+export async function revokeIssuedCredential(
+  credentialId: string,
+  holderAid: string,
+): Promise<RevokeIssuedCredentialResult> {
+  if (!credentialId?.trim() || !holderAid?.trim()) {
+    return { status: "error", message: "Missing credentialId or holder AID" };
+  }
+
+  const credentialServerUrl = getCredentialServerUrl();
+  const url = `${credentialServerUrl}/revokeCredential`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        credentialId: credentialId.trim(),
+        holder: holderAid.trim(),
+      }),
+    });
+
+    const bodyText = await response.text();
+    let parsed: { success?: boolean; data?: string } = {};
+    try {
+      parsed = JSON.parse(bodyText) as { success?: boolean; data?: string };
+    } catch {
+      // non-JSON body
+    }
+
+    if (response.ok && parsed.success) {
+      return { status: "revoked" };
+    }
+    if (response.status === 409) {
+      return { status: "already_revoked" };
+    }
+    if (response.status === 404) {
+      return { status: "not_found" };
+    }
+
+    return {
+      status: "error",
+      message:
+        (typeof parsed.data === "string" && parsed.data) ||
+        `${response.status} ${response.statusText}`,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown revoke error";
+    return { status: "error", message };
+  }
+}
+
 /**
  * Get the KERIA URL (connect URL, not boot URL)
  * @returns The KERIA base URL (should be the connect URL on port 3901, not the boot URL on port 3903)

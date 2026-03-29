@@ -4,6 +4,7 @@ import {
   Activity,
   Bot,
   Building2,
+  CircleDollarSign,
   Code,
   Key,
   LayoutDashboard,
@@ -56,6 +57,12 @@ export default function MenuItems() {
       href: "/activity",
       label: t("activity"),
       Icon: Activity,
+    },
+    {
+      key: "earnings",
+      href: "/earnings",
+      label: t("earnings"),
+      Icon: CircleDollarSign,
     },
     {
       key: "organizations",

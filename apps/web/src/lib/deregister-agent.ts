@@ -4,6 +4,7 @@ import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+import { revokeVeridianCredentialsAfterDeregister } from "@/lib/revoke-agent-veridian-credentials";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -87,6 +88,8 @@ export async function deregisterAgentForUser(
     });
 
     await recordAgentActivityEvent(agentId, "DeregistrationRequested");
+
+    await revokeVeridianCredentialsAfterDeregister(agentId);
 
     return { success: true };
   } catch (error) {
