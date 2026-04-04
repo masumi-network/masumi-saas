@@ -30,37 +30,66 @@ import {
 import { EarningsChart } from "./earnings-chart";
 import { EarningsWithdrawDialog } from "./earnings-withdraw-dialog";
 
-const WITHDRAW_QUERY = "action=withdraw";
+const EARNINGS_PERIOD_STORAGE_KEY = "masumi_earnings_period";
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
 type EarningsPoint = { date: string; amount: number };
 
+function getValidPeriod(value: string | null): TimePeriod | null {
+  if (value === "24h" || value === "7d" || value === "30d" || value === "all") {
+    return value;
+  }
+  return null;
+}
+
+function persistPeriodToStorage(period: TimePeriod) {
+  try {
+    localStorage.setItem(EARNINGS_PERIOD_STORAGE_KEY, period);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 export function EarningsPageContent() {
   const t = useTranslations("App.Earnings");
   const tDash = useTranslations("App.Home.Dashboard.stats");
-  const tDashHint = useTranslations("App.Home.Dashboard");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { network } = usePaymentNetwork();
 
-  const withdrawHref = useMemo(
-    () =>
-      pathname === "/earnings"
-        ? `?${WITHDRAW_QUERY}`
-        : `/earnings?${WITHDRAW_QUERY}`,
-    [pathname],
-  );
+  const [period, setPeriod] = useState<TimePeriod>(() => {
+    const fromUrl = getValidPeriod(searchParams.get("period"));
+    return fromUrl ?? "7d";
+  });
+  const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
+  const [total, setTotal] = useState(0);
+  const [amountUnit, setAmountUnit] =
+    useState<DashboardEarningsAmountUnit>("USD");
+  const [previousTotal, setPreviousTotal] = useState<number | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const withdrawHref = useMemo(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("period", period);
+    next.set("action", "withdraw");
+    const q = next.toString();
+    return pathname === "/earnings" ? `?${q}` : `/earnings?${q}`;
+  }, [pathname, period, searchParams]);
 
   const withdrawOpen = searchParams.get("action") === "withdraw";
 
   const closeWithdrawDialog = useCallback(() => {
     const next = new URLSearchParams(searchParams.toString());
     next.delete("action");
+    if (!getValidPeriod(next.get("period"))) {
+      next.set("period", period);
+    }
     const q = next.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams]);
+  }, [pathname, period, router, searchParams]);
 
   const onWithdrawOpenChange = useCallback(
     (open: boolean) => {
@@ -70,15 +99,6 @@ export function EarningsPageContent() {
     },
     [closeWithdrawDialog],
   );
-
-  const [period, setPeriod] = useState<TimePeriod>("7d");
-  const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
-  const [total, setTotal] = useState(0);
-  const [amountUnit, setAmountUnit] =
-    useState<DashboardEarningsAmountUnit>("USD");
-  const [previousTotal, setPreviousTotal] = useState<number | undefined>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchEarnings = useCallback(async () => {
     setIsLoading(true);
@@ -112,6 +132,47 @@ export function EarningsPageContent() {
   }, [period, network, t]);
 
   useEffect(() => {
+    const urlPeriod = getValidPeriod(searchParams.get("period"));
+    if (urlPeriod) {
+      persistPeriodToStorage(urlPeriod);
+      setPeriod((prev) => (prev === urlPeriod ? prev : urlPeriod));
+      return;
+    }
+
+    let stored: TimePeriod | null = null;
+    try {
+      stored = getValidPeriod(
+        localStorage.getItem(EARNINGS_PERIOD_STORAGE_KEY),
+      );
+    } catch {
+      /* ignore */
+    }
+    if (stored) {
+      setPeriod((prev) => (prev === stored ? prev : stored));
+      const next = new URLSearchParams(searchParams.toString());
+      next.set("period", stored);
+      router.replace(
+        next.toString() ? `${pathname}?${next.toString()}` : pathname,
+        { scroll: false },
+      );
+    }
+  }, [pathname, router, searchParams]);
+
+  const onPeriodChange = useCallback(
+    (p: TimePeriod) => {
+      setPeriod(p);
+      persistPeriodToStorage(p);
+      const next = new URLSearchParams(searchParams.toString());
+      next.set("period", p);
+      router.replace(
+        next.toString() ? `${pathname}?${next.toString()}` : pathname,
+        { scroll: false },
+      );
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
     fetchEarnings();
   }, [fetchEarnings]);
 
@@ -127,14 +188,11 @@ export function EarningsPageContent() {
           <p className="text-muted-foreground max-w-prose text-sm leading-6">
             {t("description")}
           </p>
-          <p className="text-muted-foreground text-xs">
-            {tDashHint("networkHint", { network })}
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select
             value={period}
-            onValueChange={(v) => setPeriod(v as TimePeriod)}
+            onValueChange={(v) => onPeriodChange(v as TimePeriod)}
           >
             <SelectTrigger className="w-[140px]" aria-label={t("periodLabel")}>
               <SelectValue />

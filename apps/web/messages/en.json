@@ -401,7 +401,7 @@
     },
     "Earnings": {
       "title": "Earnings",
-      "description": "Seller income from your payment node for the selected network. Hover the chart for daily amounts.",
+      "description": "Seller income from your payment node for the selected network.",
       "chartTitle": "Earnings over time",
       "chartHint": "Daily totals for the selected period. Values match your dashboard earnings card (USDM as USD, or ADA when no stablecoin applies).",
       "totalLabel": "Period total",
