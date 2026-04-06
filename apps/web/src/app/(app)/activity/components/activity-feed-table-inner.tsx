@@ -37,6 +37,13 @@ import { ActivityTransactionDetailsDialog } from "./activity-transaction-details
 
 const EMPTY_CELL = "\u2014";
 
+function activityFeedItemDedupeKey(it: ActivityFeedItem): string {
+  if (it.kind === "lifecycle") {
+    return `lifecycle:${it.id}`;
+  }
+  return `transaction:${it.type}:${it.id}`;
+}
+
 function activityDateMatchesSearch(iso: string, q: string): boolean {
   const haystack =
     `${formatRelativeDate(iso)} ${formatDate(iso)}`.toLowerCase();
@@ -142,7 +149,7 @@ export function ActivityFeedTableInner({
     const flat = pages.flatMap((p) => p.items);
     const seen = new Set<string>();
     return flat.filter((it) => {
-      const key = `${it.kind}:${it.id}`;
+      const key = activityFeedItemDedupeKey(it);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
