@@ -74,8 +74,14 @@ export const deleteAccountFormDataSchema = zfd.formData(deleteAccountSchema);
 
 export type { ActivityFeedFilter } from "./activity";
 export type { ActivityQueryInput, ParsedActivityQuery } from "./activity";
+export type { ActivityPaginationFromLimit } from "./activity";
 export {
+  ACTIVITY_PAGE_SIZE_DEFAULT,
+  ACTIVITY_PAGE_SIZE_MAX,
+  ACTIVITY_PAGE_SIZE_MIN,
+  activityApiSearchParamsSchema,
   activityFeedFilterSchema,
+  activityPaginationFromLimitParamSchema,
   activityQueryInputSchema,
   parseActivityQueryInput,
 } from "./activity";

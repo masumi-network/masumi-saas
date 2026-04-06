@@ -4,7 +4,7 @@ import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
-import { parseNetwork } from "@/lib/schemas/api-query";
+import { activityTransactionQuerySchema } from "@/lib/schemas/api-query";
 
 /**
  * GET /api/activity/transaction?id=&type=payment|purchase&network=
@@ -15,17 +15,15 @@ export async function GET(request: NextRequest) {
     const { user } = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    const { searchParams } = request.nextUrl;
-    const id = searchParams.get("id")?.trim();
-    const typeRaw = searchParams.get("type")?.trim().toLowerCase();
-    const network = parseNetwork(searchParams.get("network"));
-
-    if (!id || (typeRaw !== "payment" && typeRaw !== "purchase")) {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const parsedQuery = activityTransactionQuerySchema.safeParse(query);
+    if (!parsedQuery.success) {
       return NextResponse.json(
         { success: false, error: "Missing or invalid id or type" },
         { status: 400 },
       );
     }
+    const { id, type: typeRaw, network } = parsedQuery.data;
 
     const client = await getPaymentNodeClientForUser(user.id);
     if (!client) {

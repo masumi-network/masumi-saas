@@ -4728,6 +4728,27 @@
             "description": "ISO timestamp for incremental sync; invalid or empty values are ignored.",
             "name": "lastUpdate",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Page size when paginating with `cursor`. If omitted or empty, returns the first chunk (server max). When set: integer clamped between 1 and 50; non-numeric values default to 20.",
+              "example": "20"
+            },
+            "required": false,
+            "description": "Page size when paginating with `cursor`. If omitted or empty, returns the first chunk (server max). When set: integer clamped between 1 and 50; non-numeric values default to 20.",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Opaque cursor from the previous response (`nextCursor`). A stale cursor yields HTTP 410."
+            },
+            "required": false,
+            "description": "Opaque cursor from the previous response (`nextCursor`). A stale cursor yields HTTP 410.",
+            "name": "cursor",
+            "in": "query"
           }
         ],
         "responses": {

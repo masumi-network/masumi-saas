@@ -7,7 +7,8 @@ import {
 } from "@/lib/activity-cursor";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
-  activityQueryInputSchema,
+  activityApiSearchParamsSchema,
+  activityPaginationFromLimitParamSchema,
   parseActivityQueryInput,
 } from "@/lib/schemas/activity";
 import type { ActivityFeedItem } from "@/lib/types/activity";
@@ -25,13 +26,20 @@ export async function GET(request: NextRequest) {
     const { user } = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    const { searchParams } = request.nextUrl;
-    const queryRaw = activityQueryInputSchema.parse({
-      filter: searchParams.get("filter") ?? undefined,
-      network: searchParams.get("network"),
-      summary: searchParams.get("summary") ?? undefined,
-      lastUpdate: searchParams.get("lastUpdate") ?? undefined,
-    });
+    const qpResult = activityApiSearchParamsSchema.safeParse(
+      request.nextUrl.searchParams,
+    );
+    if (!qpResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: qpResult.error.issues.map((i) => i.message).join("; "),
+        },
+        { status: 400 },
+      );
+    }
+    const qp = qpResult.data;
+    const { limit: limitRaw, cursor: cursorParam, ...queryRaw } = qp;
     const query = parseActivityQueryInput(queryRaw);
     const validFilter = query.filter;
     const network = query.network;
@@ -65,10 +73,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const limitRaw = searchParams.get("limit");
-    const usePagination = limitRaw != null && limitRaw !== "";
+    const paginationResult =
+      activityPaginationFromLimitParamSchema.safeParse(limitRaw);
+    if (!paginationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: paginationResult.error.issues.map((i) => i.message).join("; "),
+        },
+        { status: 400 },
+      );
+    }
+    const pagination = paginationResult.data;
 
-    if (!usePagination) {
+    if (!pagination.usePagination) {
       const items = merged.slice(0, ACTIVITY_MERGED_FEED_LIMIT);
       const data: { items: ActivityFeedItem[]; lastUpdate?: string } = {
         items,
@@ -81,8 +99,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const pageLimit = Math.min(50, Math.max(1, parseInt(limitRaw, 10) || 20));
-    const cursorParam = searchParams.get("cursor");
+    const { pageLimit } = pagination;
     let start = 0;
     if (cursorParam) {
       const c = decodeActivityCursor(cursorParam);

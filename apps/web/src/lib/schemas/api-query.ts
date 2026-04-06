@@ -59,6 +59,29 @@ export const agentCountsQuerySchema = z.object({
     .transform((v) => parseNetwork(v)),
 });
 
+/** GET /api/activity/transaction — single payment or purchase by id. */
+export const activityTransactionQuerySchema = z.object({
+  id: z.preprocess(
+    (v) =>
+      v === null || v === undefined || v === "" ? undefined : String(v).trim(),
+    z.string().min(1, "Missing or invalid id or type"),
+  ),
+  type: z.preprocess(
+    (v) =>
+      v === null || v === undefined || v === ""
+        ? undefined
+        : String(v).trim().toLowerCase(),
+    z.enum(["payment", "purchase"], {
+      message: "Missing or invalid id or type",
+    }),
+  ),
+  network: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => parseNetwork(v)),
+});
+
 const requiredString = (msg: string) =>
   z
     .string({

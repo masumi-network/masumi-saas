@@ -206,50 +206,60 @@ async function buildActivityMergedFeedUncached({
     }));
   }
 
-  const useDiff = Boolean(lastUpdate);
+  /** Non-empty client watermark → payment-node diff endpoints (polling); otherwise full list. */
+  const transactionWatermark =
+    lastUpdate !== undefined && lastUpdate.length > 0 ? lastUpdate : null;
   const needTransactions = validFilter !== "lifecycle";
 
   let transactionItems: ActivityFeedItem[] = [];
   let transactionLastUpdate: string | undefined;
-  if (needTransactions) {
+
+  if (!needTransactions) {
+    // Lifecycle-only filter: merged feed is DB lifecycle events only (no payment-node I/O).
+  } else {
     try {
       const client = await getPaymentNodeClientForUser(userId);
-      if (client) {
+      if (!client) {
+        // No payment-node client for this user yet — transaction rows stay empty; lifecycle still merges below.
+      } else {
         const smartContractAddress =
           await getSmartContractAddressForConfiguredSource(client, userId);
         const agentIdentifiers = new Set(
           agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
         );
-        if (smartContractAddress && agentIdentifiers.size > 0) {
+        if (!smartContractAddress || agentIdentifiers.size === 0) {
+          // Cannot list or attribute on-chain txs without a resolved contract and agent registry ids.
+        } else {
           const listLimit = 100;
           const diffLimit = 100;
-          const [paymentsRes, purchasesRes] = useDiff
-            ? await Promise.all([
-                client.listPaymentDiff({
-                  network,
-                  filterSmartContractAddress: smartContractAddress,
-                  lastUpdate: lastUpdate!,
-                  limit: diffLimit,
-                }),
-                client.listPurchaseDiff({
-                  network,
-                  filterSmartContractAddress: smartContractAddress,
-                  lastUpdate: lastUpdate!,
-                  limit: diffLimit,
-                }),
-              ])
-            : await Promise.all([
-                client.listPayments({
-                  network,
-                  filterSmartContractAddress: smartContractAddress,
-                  limit: listLimit,
-                }),
-                client.listPurchases({
-                  network,
-                  filterSmartContractAddress: smartContractAddress,
-                  limit: listLimit,
-                }),
-              ]);
+          const [paymentsRes, purchasesRes] =
+            transactionWatermark !== null
+              ? await Promise.all([
+                  client.listPaymentDiff({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    lastUpdate: transactionWatermark,
+                    limit: diffLimit,
+                  }),
+                  client.listPurchaseDiff({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    lastUpdate: transactionWatermark,
+                    limit: diffLimit,
+                  }),
+                ])
+              : await Promise.all([
+                  client.listPayments({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    limit: listLimit,
+                  }),
+                  client.listPurchases({
+                    network,
+                    filterSmartContractAddress: smartContractAddress,
+                    limit: listLimit,
+                  }),
+                ]);
           const payments = (paymentsRes.Payments ?? []).filter(
             (p: PaymentOrPurchaseItem) =>
               p.agentIdentifier

@@ -10,6 +10,12 @@ import {
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
 
+/**
+ * Must match `getPaymentIncome({ timeZone })`. Bucket keys in `DailyIncome` are calendar days in this zone
+ * (payment node uses spacetime with this IANA id); the chart axis must use the same interpretation.
+ */
+const EARNINGS_PAYMENT_INCOME_TIMEZONE = "Etc/UTC";
+
 export type EarningsDataPoint = {
   date: string;
   amount: number;
@@ -37,13 +43,35 @@ function dailyIncomeDayKey(d: {
   return `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
 }
 
-function enumerateInclusiveDaysUTC(
-  startDate: string,
-  endDate: string,
-): string[] {
+function utcCalendarTodayYmd(now: Date): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/** Calendar arithmetic in UTC (matches {@link EARNINGS_PAYMENT_INCOME_TIMEZONE} when it is `Etc/UTC`). */
+function addUtcCalendarDays(ymd: string, deltaDays: number): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const ms = Date.UTC(y, m - 1, d) + deltaDays * 86_400_000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+/**
+ * Calendar day (YYYY-MM-DD) for an instant in the same timezone passed to the payment-node income API,
+ * so chart labels align with `DailyIncome` bucket keys.
+ */
+function ymdInIncomeTimeZone(isoTimestamp: string, timeZone: string): string {
+  const d = new Date(isoTimestamp);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+function enumerateInclusiveDaysYmd(startYmd: string, endYmd: string): string[] {
   const out: string[] = [];
-  const cur = new Date(`${startDate}T12:00:00.000Z`);
-  const end = new Date(`${endDate}T12:00:00.000Z`);
+  const cur = new Date(`${startYmd}T12:00:00.000Z`);
+  const end = new Date(`${endYmd}T12:00:00.000Z`);
   while (cur <= end) {
     out.push(cur.toISOString().slice(0, 10));
     cur.setUTCDate(cur.getUTCDate() + 1);
@@ -55,8 +83,7 @@ function getDashboardPeriodWindows(period: EarningsPeriod): {
   current: { startDate: string; endDate: string };
   previous: { startDate: string; endDate: string } | null;
 } {
-  const end = new Date();
-  const endStr = end.toISOString().slice(0, 10);
+  const endStr = utcCalendarTodayYmd(new Date());
 
   if (period === "all") {
     return {
@@ -65,21 +92,10 @@ function getDashboardPeriodWindows(period: EarningsPeriod): {
     };
   }
 
-  let days = 7;
-  if (period === "24h") days = 1;
-  else if (period === "7d") days = 7;
-  else if (period === "30d") days = 30;
-
-  const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - days);
-  const startStr = start.toISOString().slice(0, 10);
-
-  const prevEnd = new Date(start);
-  prevEnd.setUTCDate(prevEnd.getUTCDate() - 1);
-  const prevEndStr = prevEnd.toISOString().slice(0, 10);
-  const prevStart = new Date(prevEnd);
-  prevStart.setUTCDate(prevStart.getUTCDate() - days);
-  const prevStartStr = prevStart.toISOString().slice(0, 10);
+  const spanDays = period === "24h" ? 1 : period === "30d" ? 30 : 7;
+  const startStr = addUtcCalendarDays(endStr, -spanDays);
+  const prevEndStr = addUtcCalendarDays(startStr, -1);
+  const prevStartStr = addUtcCalendarDays(prevEndStr, -spanDays);
 
   return {
     current: { startDate: startStr, endDate: endStr },
@@ -138,7 +154,7 @@ export async function GET(request: Request) {
         agentIdentifier: null,
         startDate: current.startDate,
         endDate: current.endDate,
-        timeZone: "Etc/UTC",
+        timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
       }),
       previous
         ? client.getPaymentIncome({
@@ -146,7 +162,7 @@ export async function GET(request: Request) {
             agentIdentifier: null,
             startDate: previous.startDate,
             endDate: previous.endDate,
-            timeZone: "Etc/UTC",
+            timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
           })
         : Promise.resolve(null),
     ]);
@@ -170,8 +186,16 @@ export async function GET(request: Request) {
       dayAmount.set(key, prev + add);
     }
 
-    const days = enumerateInclusiveDaysUTC(current.startDate, current.endDate);
-    const earnings: EarningsDataPoint[] = days.map((date) => ({
+    const chartStartYmd = ymdInIncomeTimeZone(
+      currentIncome.periodStart,
+      EARNINGS_PAYMENT_INCOME_TIMEZONE,
+    );
+    const chartEndYmd = ymdInIncomeTimeZone(
+      currentIncome.periodEnd,
+      EARNINGS_PAYMENT_INCOME_TIMEZONE,
+    );
+    const chartDays = enumerateInclusiveDaysYmd(chartStartYmd, chartEndYmd);
+    const earnings: EarningsDataPoint[] = chartDays.map((date) => ({
       date,
       amount: dayAmount.get(date) ?? 0,
     }));

@@ -1,30 +1,17 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
 
-type SessionPayload = {
-  id?: string;
-  token?: string;
-};
-
-function getSessionPayload(session: unknown): SessionPayload | null {
-  if (!session || typeof session !== "object") return null;
-  if (!("session" in session)) return null;
-  const inner = (session as { session: unknown }).session;
-  if (!inner || typeof inner !== "object") return null;
-  const s = inner as SessionPayload;
-  return s;
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const { user, session } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
-    const sess = getSessionPayload(session);
+    const sess = getBetterAuthInnerSession(authContext.session);
     const token = sess?.token;
     const isApiKeyAuth =
       typeof token === "string" &&
@@ -32,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     if (isApiKeyAuth && typeof sess?.id === "string") {
       const keyRow = await prisma.apikey.findFirst({
-        where: { id: sess.id, userId: user.id },
+        where: { id: sess.id, userId: authContext.user.id },
         select: {
           id: true,
           name: true,
@@ -55,7 +42,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           authMethod: "apiKey" as const,
-          userId: user.id,
+          userId: authContext.user.id,
           key: {
             id: keyRow.id,
             name: keyRow.name,
@@ -73,7 +60,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         authMethod: "session" as const,
-        userId: user.id,
+        userId: authContext.user.id,
       },
     });
   } catch (error) {

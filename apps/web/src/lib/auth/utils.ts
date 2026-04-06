@@ -10,6 +10,22 @@ import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
 import type { SessionWithOrganization } from "./session-types";
 
+/** Full session object from Better Auth after a successful lookup. */
+export type AuthSessionFull = NonNullable<
+  Awaited<ReturnType<typeof auth.api.getSession>>
+>;
+
+/**
+ * Single return shape for {@link getAuthenticatedOrThrow}: headers, guaranteed user + session,
+ * and active org id when the organization plugin is enabled.
+ */
+export type AuthenticatedApiContext = {
+  headers: Headers;
+  session: AuthSessionFull;
+  user: NonNullable<AuthSessionFull["user"]>;
+  activeOrganizationId: string | null;
+};
+
 /** Thrown when the request has no valid session or API key. Use for 401 responses in API routes. */
 export class UnauthorizedError extends Error {
   constructor() {
@@ -114,7 +130,7 @@ export interface GetAuthenticatedOptions {
 export async function getAuthenticatedOrThrow(
   requestOrOptions?: Request | GetAuthenticatedOptions,
   options?: GetAuthenticatedOptions,
-) {
+): Promise<AuthenticatedApiContext> {
   const request =
     requestOrOptions instanceof Request ? requestOrOptions : undefined;
   const opts =
