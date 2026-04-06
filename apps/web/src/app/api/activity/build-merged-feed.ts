@@ -338,13 +338,13 @@ async function loadActivityTransactionFeedPart(params: {
               limit: listLimit,
             }),
           ]);
-    const payments = (paymentsRes.Payments ?? []).filter(
-      (p: PaymentOrPurchaseItem) =>
-        p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
+    const allPaymentsRaw = paymentsRes.Payments ?? [];
+    const allPurchasesRaw = purchasesRes.Purchases ?? [];
+    const payments = allPaymentsRaw.filter((p: PaymentOrPurchaseItem) =>
+      p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
     );
-    const purchases = (purchasesRes.Purchases ?? []).filter(
-      (p: PaymentOrPurchaseItem) =>
-        p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
+    const purchases = allPurchasesRaw.filter((p: PaymentOrPurchaseItem) =>
+      p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
     );
     const toItem = (
       p: PaymentOrPurchaseItem,
@@ -381,7 +381,8 @@ async function loadActivityTransactionFeedPart(params: {
       ...payments.map((p: PaymentOrPurchaseItem) => toItem(p, "payment")),
       ...purchases.map((p: PaymentOrPurchaseItem) => toItem(p, "purchase")),
     ];
-    const lastChangedFields = [...payments, ...purchases]
+    /** Max change time over the full API payload (not agent-filtered) so diff `lastUpdate` advances. */
+    const watermarkTimestamps = [...allPaymentsRaw, ...allPurchasesRaw]
       .map((p: PaymentOrPurchaseItem) =>
         optionalPaymentTimestamp(
           p.nextActionOrOnChainStateOrResultLastChangedAt ??
@@ -391,8 +392,8 @@ async function loadActivityTransactionFeedPart(params: {
       )
       .filter((s) => s.length > 0);
     transactionLastUpdate =
-      lastChangedFields.length > 0
-        ? lastChangedFields.reduce((a, b) => (a > b ? a : b))
+      watermarkTimestamps.length > 0
+        ? watermarkTimestamps.reduce((a, b) => (a > b ? a : b))
         : lastUpdate;
   } catch (txError) {
     console.error("[Activity] Payment node / transactions error:", txError);
