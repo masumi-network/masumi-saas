@@ -151,9 +151,37 @@ type ActivityDbSnapshot = {
   lifecycleItems: ActivityFeedItem[];
 };
 
-function paymentOrPurchaseTimestamp(value: string | Date | undefined): string {
+/** For optional timestamps (e.g. max last-changed); empty when missing or unparseable. */
+function optionalPaymentTimestamp(value: string | Date | undefined): string {
   if (value === undefined) return "";
-  return typeof value === "string" ? value : value.toISOString();
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    const t = Date.parse(trimmed);
+    return Number.isFinite(t) ? new Date(t).toISOString() : "";
+  }
+  const ms = value.getTime();
+  return Number.isFinite(ms) ? value.toISOString() : "";
+}
+
+/**
+ * Always returns a parseable ISO string for `ActivityFeedItem.date` (sort, cursors, relative time).
+ * Falls back to epoch when the API omits or sends invalid dates.
+ */
+function activityTransactionFeedItemDate(p: {
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}): string {
+  for (const value of [p.createdAt, p.updatedAt]) {
+    const iso = optionalPaymentTimestamp(value);
+    if (iso.length > 0) return iso;
+  }
+  return new Date(0).toISOString();
+}
+
+function activityFeedDateSortMs(iso: string): number {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? t : 0;
 }
 
 /** Prisma-only: agents + lifecycle rows shaped as feed items (ISO date strings). */
@@ -324,7 +352,7 @@ async function loadActivityTransactionFeedPart(params: {
       return {
         kind: "transaction",
         id: p.id,
-        date: paymentOrPurchaseTimestamp(p.createdAt),
+        date: activityTransactionFeedItemDate(p),
         type,
         agentId: agent?.id ?? null,
         agentName: agent?.name ?? null,
@@ -339,7 +367,7 @@ async function loadActivityTransactionFeedPart(params: {
     ];
     const lastChangedFields = [...payments, ...purchases]
       .map((p: PaymentOrPurchaseItem) =>
-        paymentOrPurchaseTimestamp(
+        optionalPaymentTimestamp(
           p.nextActionOrOnChainStateOrResultLastChangedAt ??
             p.updatedAt ??
             p.createdAt,
@@ -388,7 +416,7 @@ function mergeFilterSortActivityFeed(params: {
     });
   }
   merged.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    (a, b) => activityFeedDateSortMs(b.date) - activityFeedDateSortMs(a.date),
   );
   return merged;
 }
