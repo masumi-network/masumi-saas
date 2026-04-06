@@ -353,27 +353,35 @@ async function buildActivityMergedFeedUncached({
   return { merged, transactionLastUpdate };
 }
 
+/** Single argument for `unstable_cache` so the serialized invocation key always embeds `userId`. */
+type MergedFeedCacheInput = {
+  userId: string;
+  network: NetworkQuery;
+  validFilter: ActivityFeedFilter;
+  /** `lastUpdate ?? "__full__"` — distinguishes full list vs payment-node diff window. */
+  cacheSegment: string;
+};
+
 /**
  * One module-level cached function (do not wrap `unstable_cache` per request — that
- * creates a new cache wrapper each time and breaks dedupe). Args are primitives so the
- * Data Cache key is stable; `cacheSegment` is `lastUpdate ?? "__full__"`.
+ * creates a new cache wrapper each time and breaks dedupe).
+ *
+ * Next.js forms the full Data Cache key from these `keyParts` **plus**
+ * `JSON.stringify(arguments)` for each call (see `next/dist/server/web/spec-extension/unstable-cache`).
+ * Passing `userId` inside this object ensures entries cannot be shared across users.
  */
 const fetchActivityMergedFeedCached = unstable_cache(
-  async (
-    userId: string,
-    network: NetworkQuery,
-    validFilter: ActivityFeedFilter,
-    cacheSegment: string,
-  ): Promise<ActivityMergedFeedResult> => {
-    const lastUpdate = cacheSegment === "__full__" ? undefined : cacheSegment;
+  async (input: MergedFeedCacheInput): Promise<ActivityMergedFeedResult> => {
+    const lastUpdate =
+      input.cacheSegment === "__full__" ? undefined : input.cacheSegment;
     return buildActivityMergedFeedUncached({
-      userId,
-      network,
-      validFilter,
+      userId: input.userId,
+      network: input.network,
+      validFilter: input.validFilter,
       lastUpdate,
     });
   },
-  ["api-activity-merged-feed", "v1"],
+  ["api-activity-merged-feed", "v2"],
   { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
 );
 
@@ -393,10 +401,10 @@ export async function getActivityMergedFeedCached(
     });
   }
   const cacheSegment = params.lastUpdate ?? "__full__";
-  return fetchActivityMergedFeedCached(
-    params.userId,
-    params.network,
-    params.validFilter,
+  return fetchActivityMergedFeedCached({
+    userId: params.userId,
+    network: params.network,
+    validFilter: params.validFilter,
     cacheSegment,
-  );
+  });
 }
