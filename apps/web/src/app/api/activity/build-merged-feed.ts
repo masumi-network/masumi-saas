@@ -14,10 +14,7 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 /** Max items merged for the feed (lifecycle + payments/purchases) before response. */
 export const ACTIVITY_MERGED_FEED_LIMIT = 200;
 
-/**
- * Short TTL so paginated "load more" reuses one merged snapshot without repeating
- * payment-node list calls on every cursor request. Trade-off: feed can lag briefly.
- */
+/** Short TTL for the Prisma-only activity snapshot (agents + lifecycle rows). */
 const MERGED_FEED_CACHE_REVALIDATE_SECONDS = 12;
 
 /** Stable int32 pair for Postgres advisory lock (cross-instance, unlike in-memory Maps). */
@@ -140,13 +137,32 @@ type BuildMergedFeedParams = {
   lastUpdate: string | undefined;
 };
 
-async function buildActivityMergedFeedUncached({
-  userId,
-  network,
-  validFilter,
-  lastUpdate,
-}: BuildMergedFeedParams): Promise<ActivityMergedFeedResult> {
-  /** Selected network plus legacy rows with no network (pre-migration / incomplete data). */
+type ActivityFeedAgentRow = {
+  id: string;
+  name: string;
+  agentIdentifier: string | null;
+  networkIdentifier: string | null;
+  registrationState: string;
+  verificationStatus: string | null;
+};
+
+type ActivityDbSnapshot = {
+  agents: ActivityFeedAgentRow[];
+  lifecycleItems: ActivityFeedItem[];
+};
+
+function paymentOrPurchaseTimestamp(value: string | Date | undefined): string {
+  if (value === undefined) return "";
+  return typeof value === "string" ? value : value.toISOString();
+}
+
+/** Prisma-only: agents + lifecycle rows shaped as feed items (ISO date strings). */
+async function loadActivityDbSnapshot(params: {
+  userId: string;
+  network: NetworkQuery;
+  validFilter: ActivityFeedFilter;
+}): Promise<ActivityDbSnapshot> {
+  const { userId, network, validFilter } = params;
   const agents = await prisma.agent.findMany({
     where: {
       userId,
@@ -162,14 +178,7 @@ async function buildActivityMergedFeedUncached({
     },
   });
 
-  const agentByIdentifier = new Map(
-    agents
-      .filter((a) => a.agentIdentifier)
-      .map((a) => [a.agentIdentifier!, a] as const),
-  );
-
   const needLifecycle = validFilter === "all" || validFilter === "lifecycle";
-
   let lifecycleItems: ActivityFeedItem[] = [];
 
   if (needLifecycle) {
@@ -206,122 +215,154 @@ async function buildActivityMergedFeedUncached({
     }));
   }
 
-  /** Non-empty client watermark → payment-node diff endpoints (polling); otherwise full list. */
+  return { agents, lifecycleItems };
+}
+
+/** Payment-node list + map to feed items. Runs outside `unstable_cache` (lazy key provisioning, external API). */
+async function loadActivityTransactionFeedPart(params: {
+  userId: string;
+  network: NetworkQuery;
+  validFilter: ActivityFeedFilter;
+  lastUpdate: string | undefined;
+  agents: ActivityFeedAgentRow[];
+  agentByIdentifier: Map<string, ActivityFeedAgentRow>;
+}): Promise<
+  Pick<ActivityMergedFeedResult, "transactionLastUpdate"> & {
+    transactionItems: ActivityFeedItem[];
+  }
+> {
+  const {
+    userId,
+    network,
+    validFilter,
+    lastUpdate,
+    agents,
+    agentByIdentifier,
+  } = params;
+
+  if (validFilter === "lifecycle") {
+    return { transactionItems: [], transactionLastUpdate: undefined };
+  }
+
   const transactionWatermark =
     lastUpdate !== undefined && lastUpdate.length > 0 ? lastUpdate : null;
-  const needTransactions = validFilter !== "lifecycle";
 
   let transactionItems: ActivityFeedItem[] = [];
   let transactionLastUpdate: string | undefined;
 
-  if (!needTransactions) {
-    // Lifecycle-only filter: merged feed is DB lifecycle events only (no payment-node I/O).
-  } else {
-    try {
-      const client = await getPaymentNodeClientForUser(userId);
-      if (!client) {
-        // No payment-node client for this user yet — transaction rows stay empty; lifecycle still merges below.
-      } else {
-        const smartContractAddress =
-          await getSmartContractAddressForConfiguredSource(client, userId);
-        const agentIdentifiers = new Set(
-          agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
-        );
-        if (!smartContractAddress || agentIdentifiers.size === 0) {
-          // Cannot list or attribute on-chain txs without a resolved contract and agent registry ids.
-        } else {
-          const listLimit = 100;
-          const diffLimit = 100;
-          const [paymentsRes, purchasesRes] =
-            transactionWatermark !== null
-              ? await Promise.all([
-                  client.listPaymentDiff({
-                    network,
-                    filterSmartContractAddress: smartContractAddress,
-                    lastUpdate: transactionWatermark,
-                    limit: diffLimit,
-                  }),
-                  client.listPurchaseDiff({
-                    network,
-                    filterSmartContractAddress: smartContractAddress,
-                    lastUpdate: transactionWatermark,
-                    limit: diffLimit,
-                  }),
-                ])
-              : await Promise.all([
-                  client.listPayments({
-                    network,
-                    filterSmartContractAddress: smartContractAddress,
-                    limit: listLimit,
-                  }),
-                  client.listPurchases({
-                    network,
-                    filterSmartContractAddress: smartContractAddress,
-                    limit: listLimit,
-                  }),
-                ]);
-          const payments = (paymentsRes.Payments ?? []).filter(
-            (p: PaymentOrPurchaseItem) =>
-              p.agentIdentifier
-                ? agentIdentifiers.has(p.agentIdentifier)
-                : false,
-          );
-          const purchases = (purchasesRes.Purchases ?? []).filter(
-            (p: PaymentOrPurchaseItem) =>
-              p.agentIdentifier
-                ? agentIdentifiers.has(p.agentIdentifier)
-                : false,
-          );
-          const toItem = (
-            p: PaymentOrPurchaseItem,
-            type: "payment" | "purchase",
-          ): ActivityFeedItem => {
-            const agent = p.agentIdentifier
-              ? agentByIdentifier.get(p.agentIdentifier)
-              : null;
-            const status =
-              p.onChainState ??
-              (
-                p as PaymentOrPurchaseItem & {
-                  NextAction?: { requestedAction?: string };
-                }
-              ).NextAction?.requestedAction ??
-              "—";
-            return {
-              kind: "transaction",
-              id: p.id,
-              date: p.createdAt,
-              type,
-              agentId: agent?.id ?? null,
-              agentName: agent?.name ?? null,
-              amount: formatRequestedAmount(p.RequestedFunds),
-              status: String(status),
-              txHash: p.CurrentTransaction?.txHash ?? null,
-            };
-          };
-          transactionItems = [
-            ...payments.map((p: PaymentOrPurchaseItem) => toItem(p, "payment")),
-            ...purchases.map((p: PaymentOrPurchaseItem) =>
-              toItem(p, "purchase"),
-            ),
-          ];
-          const lastChangedFields = [...payments, ...purchases].map(
-            (p: PaymentOrPurchaseItem) =>
-              p.nextActionOrOnChainStateOrResultLastChangedAt ??
-              p.updatedAt ??
-              p.createdAt,
-          );
-          transactionLastUpdate =
-            lastChangedFields.length > 0
-              ? lastChangedFields.reduce((a, b) => (a > b ? a : b))
-              : lastUpdate;
-        }
-      }
-    } catch (txError) {
-      console.error("[Activity] Payment node / transactions error:", txError);
+  try {
+    const client = await getPaymentNodeClientForUser(userId);
+    if (!client) {
+      return { transactionItems, transactionLastUpdate };
     }
+    const smartContractAddress =
+      await getSmartContractAddressForConfiguredSource(client, userId);
+    const agentIdentifiers = new Set(
+      agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
+    );
+    if (!smartContractAddress || agentIdentifiers.size === 0) {
+      return { transactionItems, transactionLastUpdate };
+    }
+
+    const listLimit = 100;
+    const diffLimit = 100;
+    const [paymentsRes, purchasesRes] =
+      transactionWatermark !== null
+        ? await Promise.all([
+            client.listPaymentDiff({
+              network,
+              filterSmartContractAddress: smartContractAddress,
+              lastUpdate: transactionWatermark,
+              limit: diffLimit,
+            }),
+            client.listPurchaseDiff({
+              network,
+              filterSmartContractAddress: smartContractAddress,
+              lastUpdate: transactionWatermark,
+              limit: diffLimit,
+            }),
+          ])
+        : await Promise.all([
+            client.listPayments({
+              network,
+              filterSmartContractAddress: smartContractAddress,
+              limit: listLimit,
+            }),
+            client.listPurchases({
+              network,
+              filterSmartContractAddress: smartContractAddress,
+              limit: listLimit,
+            }),
+          ]);
+    const payments = (paymentsRes.Payments ?? []).filter(
+      (p: PaymentOrPurchaseItem) =>
+        p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
+    );
+    const purchases = (purchasesRes.Purchases ?? []).filter(
+      (p: PaymentOrPurchaseItem) =>
+        p.agentIdentifier ? agentIdentifiers.has(p.agentIdentifier) : false,
+    );
+    const toItem = (
+      p: PaymentOrPurchaseItem,
+      type: "payment" | "purchase",
+    ): ActivityFeedItem => {
+      const agent = p.agentIdentifier
+        ? agentByIdentifier.get(p.agentIdentifier)
+        : null;
+      const status =
+        p.onChainState ??
+        (
+          p as PaymentOrPurchaseItem & {
+            NextAction?: { requestedAction?: string };
+          }
+        ).NextAction?.requestedAction ??
+        "—";
+      const fundsForAmount =
+        type === "purchase" && p.PaidFunds?.length
+          ? p.PaidFunds
+          : p.RequestedFunds;
+      return {
+        kind: "transaction",
+        id: p.id,
+        date: paymentOrPurchaseTimestamp(p.createdAt),
+        type,
+        agentId: agent?.id ?? null,
+        agentName: agent?.name ?? null,
+        amount: formatRequestedAmount(fundsForAmount),
+        status: String(status),
+        txHash: p.CurrentTransaction?.txHash ?? null,
+      };
+    };
+    transactionItems = [
+      ...payments.map((p: PaymentOrPurchaseItem) => toItem(p, "payment")),
+      ...purchases.map((p: PaymentOrPurchaseItem) => toItem(p, "purchase")),
+    ];
+    const lastChangedFields = [...payments, ...purchases]
+      .map((p: PaymentOrPurchaseItem) =>
+        paymentOrPurchaseTimestamp(
+          p.nextActionOrOnChainStateOrResultLastChangedAt ??
+            p.updatedAt ??
+            p.createdAt,
+        ),
+      )
+      .filter((s) => s.length > 0);
+    transactionLastUpdate =
+      lastChangedFields.length > 0
+        ? lastChangedFields.reduce((a, b) => (a > b ? a : b))
+        : lastUpdate;
+  } catch (txError) {
+    console.error("[Activity] Payment node / transactions error:", txError);
   }
 
+  return { transactionItems, transactionLastUpdate };
+}
+
+function mergeFilterSortActivityFeed(params: {
+  lifecycleItems: ActivityFeedItem[];
+  transactionItems: ActivityFeedItem[];
+  validFilter: ActivityFeedFilter;
+}): ActivityFeedItem[] {
+  const { lifecycleItems, transactionItems, validFilter } = params;
   let merged: ActivityFeedItem[] = [...lifecycleItems, ...transactionItems];
   if (validFilter === "lifecycle") {
     merged = merged.filter((i) => i.kind === "lifecycle");
@@ -349,45 +390,35 @@ async function buildActivityMergedFeedUncached({
   merged.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
-
-  return { merged, transactionLastUpdate };
+  return merged;
 }
 
-/** Single argument for `unstable_cache` so the serialized invocation key always embeds `userId`. */
-type MergedFeedCacheInput = {
+/** Input for DB-only cache (no `lastUpdate` — payment-node lists are always fresh). */
+type ActivityDbSnapshotCacheInput = {
   userId: string;
   network: NetworkQuery;
   validFilter: ActivityFeedFilter;
-  /** `lastUpdate ?? "__full__"` — distinguishes full list vs payment-node diff window. */
-  cacheSegment: string;
 };
 
 /**
- * One module-level cached function (do not wrap `unstable_cache` per request — that
- * creates a new cache wrapper each time and breaks dedupe).
- *
- * Next.js forms the full Data Cache key from these `keyParts` **plus**
- * `JSON.stringify(arguments)` for each call (see `next/dist/server/web/spec-extension/unstable-cache`).
- * Passing `userId` inside this object ensures entries cannot be shared across users.
+ * Cache only Prisma reads. Do not put payment-node calls inside `unstable_cache`: lazy API
+ * key provisioning and external fetches are side effects and must not run only on revalidate/miss.
  */
-const fetchActivityMergedFeedCached = unstable_cache(
-  async (input: MergedFeedCacheInput): Promise<ActivityMergedFeedResult> => {
-    const lastUpdate =
-      input.cacheSegment === "__full__" ? undefined : input.cacheSegment;
-    return buildActivityMergedFeedUncached({
+const fetchActivityDbSnapshotCached = unstable_cache(
+  async (input: ActivityDbSnapshotCacheInput): Promise<ActivityDbSnapshot> => {
+    return loadActivityDbSnapshot({
       userId: input.userId,
       network: input.network,
       validFilter: input.validFilter,
-      lastUpdate,
     });
   },
-  ["api-activity-merged-feed", "v2"],
+  ["api-activity-db-snapshot", "v1"],
   { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
 );
 
 /**
- * Cached merged feed for GET /api/activity. Pagination cursors slice the same snapshot
- * within the revalidate window so "load more" does not repeat payment-node fetches.
+ * Merged feed for GET /api/activity. DB snapshot is Data-cached briefly; payment-node lists
+ * run every request so cursors and `lastUpdate` stay consistent.
  */
 export async function getActivityMergedFeedCached(
   params: BuildMergedFeedParams,
@@ -400,11 +431,34 @@ export async function getActivityMergedFeedCached(
       network: params.network,
     });
   }
-  const cacheSegment = params.lastUpdate ?? "__full__";
-  return fetchActivityMergedFeedCached({
+
+  const { agents, lifecycleItems } = await fetchActivityDbSnapshotCached({
     userId: params.userId,
     network: params.network,
     validFilter: params.validFilter,
-    cacheSegment,
   });
+
+  const agentByIdentifier = new Map(
+    agents
+      .filter((a) => a.agentIdentifier)
+      .map((a) => [a.agentIdentifier!, a] as const),
+  );
+
+  const { transactionItems, transactionLastUpdate } =
+    await loadActivityTransactionFeedPart({
+      userId: params.userId,
+      network: params.network,
+      validFilter: params.validFilter,
+      lastUpdate: params.lastUpdate,
+      agents,
+      agentByIdentifier,
+    });
+
+  const merged = mergeFilterSortActivityFeed({
+    lifecycleItems,
+    transactionItems,
+    validFilter: params.validFilter,
+  });
+
+  return { merged, transactionLastUpdate };
 }
