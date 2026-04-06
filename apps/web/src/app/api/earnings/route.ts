@@ -27,7 +27,7 @@ export type EarningsApiResponse =
       data: {
         earnings: EarningsDataPoint[];
         total: number;
-        /** Whether `total` / chart `amount` are USD (USDM) or ADA (lovelace). */
+        /** Whether `total` / chart `amount` are USD (USDM / USDCx / tUSDM) or ADA (lovelace). */
         amountUnit: DashboardEarningsAmountUnit;
         /** Previous period total in the same `amountUnit` (omitted when `period=all`). */
         previousTotal?: number;
@@ -179,6 +179,11 @@ export async function GET(request: Request) {
     );
 
     const dayAmount = new Map<string, number>();
+    // TODO (masumi-payment-service): Fix per-day map keys in POST /payment/income — e.g. in
+    // `getDayNumberLocal` / `getMonthNumberLocal` (income + spending routes), `spacetime.format('{YYYY}-{MM}-{DD}')`
+    // is invalid in current spacetime and resolves to "--", so all payments collapse into one broken bucket while
+    // `TotalIncome` stays correct. Use a real calendar format such as `sp.format('iso-short')` for day keys and
+    // `iso-short`.slice(0, 7) for month keys. Until then, SaaS daily `earnings[]` may not sum to `total`.
     for (const row of currentIncome.DailyIncome) {
       const key = dailyIncomeDayKey(row);
       const prev = dayAmount.get(key) ?? 0;

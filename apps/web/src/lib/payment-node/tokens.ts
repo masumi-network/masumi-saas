@@ -25,3 +25,12 @@ export const USDM: Record<PaymentNodeNetwork, TokenConfig> = {
     decimals: 6,
   },
 };
+
+/** USDCx (Circle xReserve) — Mainnet only; aligned with masumi-payment-service `USDCX_CONFIG`. */
+export const USDCX_MAINNET: TokenConfig = {
+  policyId: "1f3aec8bfe7ea4fe14c5f121e2a92e301afe414147860d557cac7e34",
+  assetName: "5553444378",
+  unit: "1f3aec8bfe7ea4fe14c5f121e2a92e301afe414147860d557cac7e345553444378",
+  symbol: "USDCx",
+  decimals: 6,
+};

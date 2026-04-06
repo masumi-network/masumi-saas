@@ -468,6 +468,35 @@ input[type="number"] {
   animation: fadeInUp 0.3s ease-out forwards;
 }
 
+/* Dialog stack (nested confirmation, etc.) — aligned with masumi-payment-service frontend */
+:root {
+  --dialog-stack-duration: 280ms;
+  --dialog-stack-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dialog-content-stackable {
+  scale: 1;
+  opacity: 1;
+  filter: brightness(1);
+  transition:
+    scale var(--dialog-stack-duration) var(--dialog-stack-ease),
+    opacity var(--dialog-stack-duration) var(--dialog-stack-ease),
+    filter var(--dialog-stack-duration) var(--dialog-stack-ease);
+}
+
+.dialog-content-stackable.is-pushed-back {
+  scale: 0.96;
+  opacity: 0.4;
+  filter: brightness(0.7);
+  pointer-events: none;
+}
+
+.dialog-overlay-hidden {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* QR Code Container Styling for Veridian Wallet */
 #veridian-qr-container {
   div {

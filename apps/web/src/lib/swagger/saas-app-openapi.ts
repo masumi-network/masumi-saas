@@ -37,10 +37,10 @@ registry.registerComponent("securitySchemes", "apiKeyHeader", {
   in: "header",
   name: "x-api-key",
   description:
-    "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec).",
+    "Masumi SaaS API key from **API Keys** in the app. Also accepted: `Authorization: Bearer <key>` and header `token: <key>` (same name as the payment node uses) when the key starts with `mas_`.",
 });
 
-/** Documented auth for Try it out: `x-api-key` only. Browser session cookies still work same-origin but are not listed here. */
+/** Documented default for Try it out: `x-api-key`. Browser session cookies still work same-origin but are not listed here. */
 const security: SecurityRequirementObject[] = [{ apiKeyHeader: [] }];
 
 /** Public operations (no API key in Try it out). */

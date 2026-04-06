@@ -43,7 +43,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec)."
+        "description": "Masumi SaaS API key from **API Keys** in the app. Also accepted: `Authorization: Bearer <key>` and header `token: <key>` (same name as the payment node uses) when the key starts with `mas_`."
       }
     },
     "schemas": {},

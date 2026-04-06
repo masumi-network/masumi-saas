@@ -189,9 +189,17 @@ export const auth = betterAuth({
         const headers = ctx.request?.headers ?? ctx.headers;
         if (!headers) return null;
         const xApiKey = headers.get("x-api-key");
-        if (xApiKey) return xApiKey;
+        if (xApiKey) return xApiKey.trim();
         const auth = headers.get("authorization");
         if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
+        // Payment-node-style header: scripts often send `token` for mas_* keys; only treat as SaaS API key when prefixed.
+        const tokenHeader = headers.get("token");
+        if (
+          tokenHeader &&
+          tokenHeader.startsWith(authConfig.apiKey.defaultKeyPrefix)
+        ) {
+          return tokenHeader.trim();
+        }
         return null;
       },
     }),

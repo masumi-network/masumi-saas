@@ -1,6 +1,6 @@
 /** Shared payment-node display helpers used by activity, transactions, and earnings API routes. */
 
-import { USDM } from "@/lib/payment-node/tokens";
+import { USDCX_MAINNET, USDM } from "@/lib/payment-node/tokens";
 
 export type Network = "Mainnet" | "Preprod";
 
@@ -8,7 +8,7 @@ export function toNetwork(n: string | null): Network {
   return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
 }
 
-/** Format a single unit+amount; known stablecoins (USDM/tUSDM) use 6 decimals. */
+/** Format a single unit+amount; known stablecoins (USDM/tUSDM, Mainnet USDCx) use 6 decimals. */
 function formatOneUnitAmount(unit: string, amount: number | string): string {
   // BigInt() throws on fractional numbers; round when amount is from API (number)
   const amountStr =
@@ -27,6 +27,11 @@ function formatOneUnitAmount(unit: string, amount: number | string): string {
     const raw = Number(BigInt(amountStr));
     const value = raw / 10 ** USDM.Mainnet.decimals;
     return value.toFixed(2) + " " + USDM.Mainnet.symbol;
+  }
+  if (unit === USDCX_MAINNET.unit) {
+    const raw = Number(BigInt(amountStr));
+    const value = raw / 10 ** USDCX_MAINNET.decimals;
+    return value.toFixed(2) + " " + USDCX_MAINNET.symbol;
   }
   return `${amountStr} ${unit.slice(0, 8)}`;
 }
@@ -47,7 +52,7 @@ export function formatUnits(
   return units.map((u) => formatOneUnitAmount(u.unit, u.amount)).join(", ");
 }
 
-/** Format earnings as USD when units are USDM/tUSDM (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
+/** Format earnings as USD when units are USDM/tUSDM or Mainnet USDCx (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
 export function formatEarningsAsUsd(
   units: Array<{ unit: string; amount: number }>,
 ): string {
@@ -62,6 +67,10 @@ export function formatEarningsAsUsd(
     } else if (u.unit === USDM.Mainnet.unit) {
       usdCents += Math.round(
         Number(u.amount) / 10 ** (USDM.Mainnet.decimals - 2),
+      );
+    } else if (u.unit === USDCX_MAINNET.unit) {
+      usdCents += Math.round(
+        Number(u.amount) / 10 ** (USDCX_MAINNET.decimals - 2),
       );
     } else {
       other.push(u);
@@ -84,20 +93,26 @@ export function formatEarningsAsUsd(
 export type DashboardEarningsAmountUnit = "USD" | "ADA";
 
 /**
- * Split payment-node income `Units` into USDM/tUSDM (as USD float) and ADA (from lovelace).
- * Unknown units are ignored for the dashboard aggregate.
+ * Split payment-node income `Units` into USD-pegged stablecoins and ADA (from lovelace).
+ * Mainnet: USDM and USDCx; Preprod: tUSDM. Unknown units are ignored for the dashboard aggregate.
  */
 export function splitIncomeUnitsStablecoinUsdAndAda(
   units: Array<{ unit: string; amount: number }>,
   network: Network,
 ): { usd: number; ada: number } {
-  const stableUnit = USDM[network].unit;
-  const decimals = USDM[network].decimals;
+  const stableMatches =
+    network === "Mainnet"
+      ? [
+          { unit: USDM.Mainnet.unit, decimals: USDM.Mainnet.decimals },
+          { unit: USDCX_MAINNET.unit, decimals: USDCX_MAINNET.decimals },
+        ]
+      : [{ unit: USDM.Preprod.unit, decimals: USDM.Preprod.decimals }];
   let usd = 0;
   let ada = 0;
   for (const u of units) {
-    if (u.unit === stableUnit) {
-      usd += Number(u.amount) / 10 ** decimals;
+    const match = stableMatches.find((s) => s.unit === u.unit);
+    if (match) {
+      usd += Number(u.amount) / 10 ** match.decimals;
     } else if (u.unit === "" || u.unit === "lovelace") {
       ada += Number(u.amount) / 1_000_000;
     }

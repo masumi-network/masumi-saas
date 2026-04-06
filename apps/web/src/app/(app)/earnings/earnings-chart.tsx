@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -15,6 +15,17 @@ import type { DashboardEarningsAmountUnit } from "@/lib/payment-node/format";
 import { formatDashboardEarningsTotal } from "@/lib/payment-node/format";
 
 export type EarningsChartPoint = { date: string; amount: number };
+
+type ChartRow = EarningsChartPoint & { time: number };
+
+function toChartRows(data: EarningsChartPoint[]): ChartRow[] {
+  return [...data]
+    .map((d) => ({
+      ...d,
+      time: new Date(`${d.date}T12:00:00.000Z`).getTime(),
+    }))
+    .sort((a, b) => a.time - b.time);
+}
 
 type EarningsChartProps = {
   data: EarningsChartPoint[];
@@ -35,12 +46,13 @@ function formatAxisAmount(value: number, unit: DashboardEarningsAmountUnit) {
 export function EarningsChart({ data, amountUnit }: EarningsChartProps) {
   const baseId = useId().replace(/:/g, "");
   const fillId = `earnings-fill-${baseId}`;
+  const chartData = useMemo(() => toChartRows(data), [data]);
 
   return (
     <div className="h-[min(22rem,55vh)] w-full min-h-[240px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={data}
+          data={chartData}
           margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
         >
           <defs>
@@ -63,18 +75,20 @@ export function EarningsChart({ data, amountUnit }: EarningsChartProps) {
             vertical={false}
           />
           <XAxis
-            dataKey="date"
+            dataKey="time"
+            type="number"
+            scale="time"
+            domain={["dataMin", "dataMax"]}
             tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
             tickLine={false}
             axisLine={{ stroke: "hsl(var(--border))" }}
             minTickGap={28}
-            tickFormatter={(value: string) => {
-              const d = new Date(`${value}T12:00:00.000Z`);
-              return d.toLocaleDateString(undefined, {
+            tickFormatter={(value: number) =>
+              new Date(value).toLocaleDateString(undefined, {
                 month: "short",
                 day: "numeric",
-              });
-            }}
+              })
+            }
           />
           <YAxis
             tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
@@ -86,13 +100,18 @@ export function EarningsChart({ data, amountUnit }: EarningsChartProps) {
           <Tooltip
             cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1 }}
             content={({ active, payload, label }) => {
-              if (!active || !payload?.length || typeof label !== "string") {
-                return null;
-              }
+              if (!active || !payload?.length) return null;
               const raw = payload[0]?.value;
               const amount = typeof raw === "number" ? raw : Number(raw);
               if (Number.isNaN(amount)) return null;
-              const day = new Date(`${label}T12:00:00.000Z`);
+              const ts =
+                typeof label === "number"
+                  ? label
+                  : typeof label === "string"
+                    ? new Date(`${label}T12:00:00.000Z`).getTime()
+                    : NaN;
+              if (Number.isNaN(ts)) return null;
+              const day = new Date(ts);
               return (
                 <div className="rounded-lg border border-border bg-popover px-3 py-2 text-sm shadow-md">
                   <p className="text-muted-foreground text-xs">
@@ -117,7 +136,7 @@ export function EarningsChart({ data, amountUnit }: EarningsChartProps) {
             strokeWidth={2}
             fill={`url(#${fillId})`}
             fillOpacity={1}
-            isAnimationActive={data.length < 120}
+            isAnimationActive={chartData.length < 120}
           />
         </AreaChart>
       </ResponsiveContainer>

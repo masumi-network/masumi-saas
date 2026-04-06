@@ -1,17 +1,12 @@
 "use client";
 
-import {
-  ArrowRight,
-  Coins,
-  DollarSign,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import gridSvg from "@/assets/grid.svg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -21,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
@@ -31,6 +28,13 @@ import { EarningsChart } from "./earnings-chart";
 import { EarningsWithdrawDialog } from "./earnings-withdraw-dialog";
 
 const EARNINGS_PERIOD_STORAGE_KEY = "masumi_earnings_period";
+
+/** Placeholder USD figures until withdrawal balances are loaded from an API. */
+const PLACEHOLDER_WITHDRAW_USD = {
+  totalWithdrawn: 12_450.67,
+  availableForWithdrawals: 3_204.5,
+  pendingWithdrawals: 156,
+} as const;
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
@@ -190,6 +194,9 @@ export function EarningsPageContent() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-sm whitespace-nowrap">
+            {t("periodPrefix")}
+          </span>
           <Select
             value={period}
             onValueChange={(v) => onPeriodChange(v as TimePeriod)}
@@ -204,48 +211,57 @@ export function EarningsPageContent() {
               <SelectItem value="all">{tDash("periodAll")}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" asChild>
-            <Link href={withdrawHref} scroll={false}>
-              {t("goToWithdraw")}
-              <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-            </Link>
-          </Button>
         </div>
       </div>
 
       {error ? (
         <p className="text-destructive text-sm">{error}</p>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,280px)]">
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b border-border/60 bg-masumi-gradient pb-4">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+          <Card className="order-2 overflow-hidden gap-0 py-0 lg:order-1">
+            <CardHeader className="rounded-t-xl border-b border-border/50 bg-masumi-gradient pt-6 pb-3 gap-1.5">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 {amountUnit === "USD" ? (
-                  <DollarSign className="text-primary h-5 w-5 shrink-0" />
+                  <DollarSign className="text-primary h-6 w-6 p-0.5 shrink-0 border-2 border-primary rounded-full" />
                 ) : (
-                  <Coins className="text-primary h-5 w-5 shrink-0" />
+                  <Coins className="text-primary h-6 w-6 p-0.5 shrink-0 border-2 border-primary rounded-full" />
                 )}
                 {t("chartTitle")}
               </CardTitle>
-              <p className="text-muted-foreground text-xs">{t("chartHint")}</p>
             </CardHeader>
-            <CardContent className="pt-6">
-              {isLoading ? (
-                <div
-                  className="bg-muted/30 flex h-[min(22rem,55vh)] min-h-[240px] w-full animate-pulse rounded-md"
-                  aria-hidden
-                />
-              ) : earnings.length === 0 ? (
-                <p className="text-muted-foreground py-12 text-center text-sm">
-                  {t("noData")}
-                </p>
-              ) : (
-                <EarningsChart data={earnings} amountUnit={amountUnit} />
-              )}
+            <CardContent className="relative overflow-hidden pt-6">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-35 animate-grid-glide"
+                aria-hidden
+                style={{
+                  backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
+                  backgroundRepeat: "repeat",
+                  backgroundSize: "auto",
+                  backgroundPosition: "center",
+                }}
+              />
+              <div className="relative z-10">
+                {isLoading ? (
+                  <div
+                    className="bg-muted/30 flex h-[min(22rem,55vh)] min-h-[240px] w-full animate-pulse rounded-md"
+                    aria-hidden
+                  />
+                ) : !EARNINGS_TIME_SERIES_CHART_ENABLED ? (
+                  <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center px-4 py-12 text-center text-sm leading-6">
+                    {t("chartPaused")}
+                  </p>
+                ) : earnings.length === 0 ? (
+                  <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center py-12 text-center text-sm">
+                    {t("noData")}
+                  </p>
+                ) : (
+                  <EarningsChart data={earnings} amountUnit={amountUnit} />
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
+          <div className="order-1 space-y-4 lg:order-2">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
@@ -294,16 +310,50 @@ export function EarningsPageContent() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-dashed">
-              <CardContent className="pt-6">
-                <p className="text-muted-foreground text-sm">
-                  {t("withdrawTeaser")}
-                </p>
-                <Button
-                  className="mt-4 w-full sm:w-auto"
-                  asChild
-                  variant="secondary"
-                >
+            <Card>
+              <CardHeader className="pb-0">
+                <CardTitle className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                  {t("withdrawCardTitle")}
+                </CardTitle>
+              </CardHeader>
+              <Separator className="-my-2" />
+              <CardContent className="space-y-4 pt-0">
+                <dl className="space-y-4">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                    <dt className="text-muted-foreground text-xs font-medium">
+                      {t("totalWithdrawnLabel")}
+                    </dt>
+                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
+                      {formatDashboardEarningsTotal(
+                        PLACEHOLDER_WITHDRAW_USD.totalWithdrawn,
+                        "USD",
+                      )}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                    <dt className="text-muted-foreground text-xs font-medium">
+                      {t("availableForWithdrawalsLabel")}
+                    </dt>
+                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
+                      {formatDashboardEarningsTotal(
+                        PLACEHOLDER_WITHDRAW_USD.availableForWithdrawals,
+                        "USD",
+                      )}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                    <dt className="text-muted-foreground text-xs font-medium">
+                      {t("pendingWithdrawalsLabel")}
+                    </dt>
+                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
+                      {formatDashboardEarningsTotal(
+                        PLACEHOLDER_WITHDRAW_USD.pendingWithdrawals,
+                        "USD",
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+                <Button className="w-full" asChild variant="primary">
                   <Link href={withdrawHref} scroll={false}>
                     {t("goToWithdraw")}
                   </Link>

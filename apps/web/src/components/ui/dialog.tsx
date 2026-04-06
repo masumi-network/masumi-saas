@@ -33,13 +33,18 @@ function DialogClose({
 
 function DialogOverlay({
   className,
+  hideOverlay,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DialogPrimitive.Overlay> & {
+  /** Transparent overlay for stacked dialogs (avoids double blur); matches masumi-payment-service. */
+  hideOverlay?: boolean;
+}) {
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-background/50 backdrop-blur-lg md:bg-auto",
+        hideOverlay && "dialog-overlay-hidden",
         className,
       )}
       {...props}
@@ -52,21 +57,31 @@ function DialogContent({
   children,
   showCloseButton = true,
   closeButtonClassName,
+  isPushedBack,
+  hideOverlay,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
   /** Override close button position (e.g. for p-0 dialogs with custom headers) */
   closeButtonClassName?: string;
+  /**
+   * When true, panel scales down / dims (stacked child dialog open).
+   * Pass `false` when no child is open so transition hooks still apply — same pattern as masumi-payment-service.
+   */
+  isPushedBack?: boolean;
+  hideOverlay?: boolean;
 }) {
   const t = useTranslations("Components.Dialog");
 
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay hideOverlay={hideOverlay} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
           "bg-background max-h-[90vh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg",
+          isPushedBack !== undefined && "dialog-content-stackable",
+          isPushedBack && "is-pushed-back",
           className,
         )}
         {...props}
@@ -76,7 +91,7 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             className={cn(
-              "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+              "ring-offset-background focus:ring-ring absolute top-4 right-4 z-10 flex size-9 items-center justify-center rounded-md border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
               closeButtonClassName,
             )}
           >
