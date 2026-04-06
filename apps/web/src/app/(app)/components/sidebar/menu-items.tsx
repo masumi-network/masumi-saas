@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  ArrowDownToLine,
   Bot,
   Building2,
   CircleDollarSign,
@@ -63,6 +64,12 @@ export default function MenuItems() {
       href: "/earnings",
       label: t("earnings"),
       Icon: CircleDollarSign,
+    },
+    {
+      key: "withdrawals",
+      href: "/withdrawals",
+      label: t("withdrawals"),
+      Icon: ArrowDownToLine,
     },
     {
       key: "organizations",

@@ -35,6 +35,15 @@ export const RegistrationState = {
 export type RegistrationState =
   (typeof RegistrationState)[keyof typeof RegistrationState];
 
+export const WithdrawalStatus = {
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+} as const;
+
+export type WithdrawalStatus =
+  (typeof WithdrawalStatus)[keyof typeof WithdrawalStatus];
+
 export const AgentActivityEventType = {
   RegistrationInitiated: "RegistrationInitiated",
   RegistrationConfirmed: "RegistrationConfirmed",

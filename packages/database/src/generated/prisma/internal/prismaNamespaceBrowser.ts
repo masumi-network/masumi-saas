@@ -66,6 +66,7 @@ export const ModelName = {
   Apikey: "Apikey",
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
+  Withdrawal: "Withdrawal",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
@@ -278,6 +279,23 @@ export const KycVerificationScalarFieldEnum = {
 
 export type KycVerificationScalarFieldEnum =
   (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
+
+export const WithdrawalScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  status: "status",
+  amountUsd: "amountUsd",
+  network: "network",
+  payoutAddress: "payoutAddress",
+  destinationLabel: "destinationLabel",
+  failureReason: "failureReason",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  completedAt: "completedAt",
+} as const;
+
+export type WithdrawalScalarFieldEnum =
+  (typeof WithdrawalScalarFieldEnum)[keyof typeof WithdrawalScalarFieldEnum];
 
 export const AgentScalarFieldEnum = {
   id: "id",

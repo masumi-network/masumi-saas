@@ -1,8 +1,12 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient, RegistrationState } from "./generated/prisma/client.js";
+import {
+  PrismaClient,
+  RegistrationState,
+  WithdrawalStatus,
+} from "./generated/prisma/client.js";
 
-export { RegistrationState };
+export { RegistrationState, WithdrawalStatus };
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 

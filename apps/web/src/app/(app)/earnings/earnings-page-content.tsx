@@ -353,11 +353,18 @@ export function EarningsPageContent() {
                     </dd>
                   </div>
                 </dl>
-                <Button className="w-full" asChild variant="primary">
-                  <Link href={withdrawHref} scroll={false}>
-                    {t("goToWithdraw")}
-                  </Link>
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button className="w-full" asChild variant="primary">
+                    <Link href={withdrawHref} scroll={false}>
+                      {t("goToWithdraw")}
+                    </Link>
+                  </Button>
+                  <Button className="w-full" asChild variant="outline">
+                    <Link href="/withdrawals">
+                      {t("viewWithdrawalsHistory")}
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

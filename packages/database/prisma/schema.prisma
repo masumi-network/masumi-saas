@@ -44,6 +44,7 @@ model User {
   createdOrgApiKeys OrgApiKey[]
   kycSubmissions    KycSubmission[]
   walletCaches      WalletCache[]
+  withdrawals       Withdrawal[]
 
   // Payment node: API key for this user (encrypted, server-side only; created on signup)
   paymentNodeApiKeyEncrypted String?
@@ -269,6 +270,34 @@ enum RegistrationState {
   DeregistrationInitiated
   DeregistrationConfirmed
   DeregistrationFailed
+}
+
+enum WithdrawalStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+/// User-initiated earnings withdrawal request (tracked in SaaS DB; settlement may be async).
+model Withdrawal {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status           WithdrawalStatus @default(PENDING)
+  amountUsd        Decimal          @db.Decimal(18, 2)
+  /// Payment network label (e.g. Preprod, Mainnet) or human-readable network name from the client.
+  network          String
+  payoutAddress    String
+  destinationLabel String?
+  failureReason    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  completedAt      DateTime?
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("withdrawal")
 }
 
 model Agent {

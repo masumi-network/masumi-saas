@@ -1,8 +1,9 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleHelp, RefreshCw } from "lucide-react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import {
   Fragment,
   useCallback,
@@ -11,12 +12,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { type Resolver, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import adaIcon from "@/assets/ada.png";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -47,10 +50,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { withdrawalApiClient } from "@/lib/api/withdrawal.client";
 import { validateCardanoAddress } from "@/lib/cardano/validate-cardano-address";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { formatDashboardEarningsTotal } from "@/lib/payment-node/format";
+import type { WithdrawalDto } from "@/lib/types/withdrawal";
+
+import { WithdrawalDetailsDialog } from "../withdrawals/withdrawal-details-dialog";
 
 /**
  * Withdraw UX: Preprod implements payment method (wallet only) + withdrawal details.
@@ -83,6 +90,8 @@ type WithdrawFormValues = {
   paymentMethod: typeof PREPROD_PAYMENT_METHOD_WALLET;
   walletChain: typeof WITHDRAW_WALLET_CHAIN_CARDANO_PREPROD;
   walletAddress: string;
+  /** When true, persist payout details server-side after a successful withdrawal (wired when API exists). */
+  savePayoutDetailsAfterWithdraw: boolean;
 };
 
 type EarningsWithdrawDialogProps = {
@@ -129,6 +138,7 @@ function createWithdrawFormSchema(
           }
         }),
       walletAddress: z.string().trim().min(1, messages.walletAddressRequired),
+      savePayoutDetailsAfterWithdraw: z.boolean(),
     })
     .superRefine((data, ctx) => {
       const val = data.amountUsd;
@@ -171,9 +181,30 @@ export function EarningsWithdrawDialog({
 }: EarningsWithdrawDialogProps) {
   const t = useTranslations("App.Withdraw");
   const tDialog = useTranslations("Components.Dialog");
+  const formatter = useFormatter();
+  const queryClient = useQueryClient();
   const { network } = usePaymentNetwork();
 
   const isPreprod = network === "Preprod";
+
+  const [detailsWithdrawal, setDetailsWithdrawal] =
+    useState<WithdrawalDto | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const { data: pendingWithdrawal } = useQuery({
+    queryKey: ["withdrawals", "pending-banner"],
+    queryFn: async () => {
+      const result = await withdrawalApiClient.list({
+        status: "PENDING",
+        limit: 1,
+      });
+      if (!result.success || !result.data) {
+        return null;
+      }
+      return result.data.withdrawals[0] ?? null;
+    },
+    enabled: open,
+  });
 
   // TODO(masumi-saas): Replace with withdrawable balance for `network` from payment node / backend API.
   const availableToWithdrawUsd = 0;
@@ -208,6 +239,7 @@ export function EarningsWithdrawDialog({
       paymentMethod: PREPROD_PAYMENT_METHOD_WALLET,
       walletChain: WITHDRAW_WALLET_CHAIN_CARDANO_PREPROD,
       walletAddress: "",
+      savePayoutDetailsAfterWithdraw: false,
     },
   });
 
@@ -231,6 +263,7 @@ export function EarningsWithdrawDialog({
         paymentMethod: PREPROD_PAYMENT_METHOD_WALLET,
         walletChain: WITHDRAW_WALLET_CHAIN_CARDANO_PREPROD,
         walletAddress: "",
+        savePayoutDetailsAfterWithdraw: false,
       });
     }
     wasOpenRef.current = open;
@@ -262,6 +295,7 @@ export function EarningsWithdrawDialog({
       paymentMethod: PREPROD_PAYMENT_METHOD_WALLET,
       walletChain: WITHDRAW_WALLET_CHAIN_CARDANO_PREPROD,
       walletAddress: "",
+      savePayoutDetailsAfterWithdraw: false,
     });
   }, [form]);
 
@@ -304,11 +338,37 @@ export function EarningsWithdrawDialog({
   }, []);
 
   const onWithdrawSubmit = useCallback(
-    (_values: WithdrawFormValues) => {
-      toast.info(t("preprodWithdrawUnsupported"));
+    async (values: WithdrawFormValues) => {
+      if (values.savePayoutDetailsAfterWithdraw) {
+        // TODO(masumi-saas): After successful withdrawal API, persist payout details for this user.
+      }
+      const result = await withdrawalApiClient.create({
+        amountUsd: values.amountUsd as number,
+        network,
+        payoutAddress: values.walletAddress.trim(),
+        destinationLabel: t("chainCardanoPreprod"),
+      });
+      if (!result.success) {
+        if (result.error === "pending_exists") {
+          toast.error(t("withdrawalPendingAlready"));
+        } else {
+          toast.error(t("withdrawalCreateError"));
+        }
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
+      toast.success(t("withdrawalRecorded"));
     },
-    [t],
+    [network, queryClient, t],
   );
+
+  const openPendingDetails = useCallback(() => {
+    if (!pendingWithdrawal) {
+      return;
+    }
+    setDetailsWithdrawal(pendingWithdrawal);
+    setDetailsOpen(true);
+  }, [pendingWithdrawal]);
 
   return (
     <Fragment>
@@ -331,6 +391,40 @@ export function EarningsWithdrawDialog({
               onSubmit={form.handleSubmit(onWithdrawSubmit)}
             >
               <div className="flex-1 space-y-4 overflow-y-auto p-6">
+                {isPreprod && pendingWithdrawal ? (
+                  <Alert className="border-amber-500/60 bg-amber-500/10 dark:border-amber-500/40 dark:bg-amber-950/25">
+                    <AlertTitle className="text-amber-950 dark:text-amber-100">
+                      {t("pendingWithdrawalBannerTitle")}
+                    </AlertTitle>
+                    <AlertDescription className="text-amber-950/90 dark:text-amber-100/90">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm">
+                          {t("pendingWithdrawalBannerBody", {
+                            relativeTime: formatter.relativeTime(
+                              new Date(pendingWithdrawal.createdAt),
+                            ),
+                            absoluteTime: formatter.dateTime(
+                              new Date(pendingWithdrawal.createdAt),
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              },
+                            ),
+                          })}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 border-amber-700/50 bg-background/80 dark:border-amber-400/40"
+                          onClick={openPendingDetails}
+                        >
+                          {t("pendingWithdrawalView")}
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
                 {!isPreprod && (
                   <div className="flex w-full min-w-0 items-start justify-between gap-3">
                     <DialogDescription className="text-muted-foreground flex-1 text-sm">
@@ -586,6 +680,32 @@ export function EarningsWithdrawDialog({
                           </FormItem>
                         )}
                       />
+                      <FormField
+                        control={form.control}
+                        name="savePayoutDetailsAfterWithdraw"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start gap-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                id="earnings-withdraw-save-payout-details"
+                                checked={field.value}
+                                onCheckedChange={(checked) =>
+                                  field.onChange(checked === true)
+                                }
+                                onBlur={field.onBlur}
+                              />
+                            </FormControl>
+                            <div className="grid gap-1.5 leading-snug">
+                              <FormLabel
+                                htmlFor="earnings-withdraw-save-payout-details"
+                                className="text-muted-foreground cursor-pointer font-normal"
+                              >
+                                {t("savePayoutDetailsAfterWithdrawal")}
+                              </FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -603,7 +723,11 @@ export function EarningsWithdrawDialog({
                   {tDialog("close")}
                 </Button>
                 {isPreprod && (
-                  <Button type="submit" variant="primary">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={form.formState.isSubmitting}
+                  >
                     {t("submitWithdraw")}
                   </Button>
                 )}
@@ -650,6 +774,16 @@ export function EarningsWithdrawDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <WithdrawalDetailsDialog
+        open={detailsOpen}
+        onOpenChange={(next) => {
+          setDetailsOpen(next);
+          if (!next) {
+            setDetailsWithdrawal(null);
+          }
+        }}
+        withdrawal={detailsWithdrawal}
+      />
     </Fragment>
   );
 }
