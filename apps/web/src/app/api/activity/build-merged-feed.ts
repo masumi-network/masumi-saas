@@ -48,22 +48,38 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   });
   if (agents.length === 0) return;
   const agentIds = agents.map((a) => a.id);
-  const anyEvent = await prisma.agentActivityEvent.findFirst({
+  const agentsWithEvents = await prisma.agentActivityEvent.groupBy({
+    by: ["agentId"],
     where: { agentId: { in: agentIds } },
-    select: { id: true },
+    _count: { _all: true },
   });
-  if (anyEvent) return;
+  const agentIdsThatHaveEvents = new Set(
+    agentsWithEvents
+      .map((row) => row.agentId)
+      .filter((id): id is string => id != null),
+  );
+  const agentsToBackfill = agents.filter(
+    (a) => !agentIdsThatHaveEvents.has(a.id),
+  );
+  if (agentsToBackfill.length === 0) return;
 
   const [k1, k2] = userIdToAdvisoryLockKeys(userId);
   try {
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
-      const recheck = await tx.agentActivityEvent.findFirst({
-        where: { agentId: { in: agentIds } },
-        select: { id: true },
+      const backfillIds = agentsToBackfill.map((a) => a.id);
+      const recheckRows = await tx.agentActivityEvent.groupBy({
+        by: ["agentId"],
+        where: { agentId: { in: backfillIds } },
+        _count: { _all: true },
       });
-      if (recheck) return;
-      for (const agent of agents) {
+      const idsWithEventsNow = new Set(
+        recheckRows
+          .map((row) => row.agentId)
+          .filter((id): id is string => id != null),
+      );
+      for (const agent of agentsToBackfill) {
+        if (idsWithEventsNow.has(agent.id)) continue;
         const stateEventType = registrationStateToEventType(
           agent.registrationState,
         );
