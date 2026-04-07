@@ -28,6 +28,10 @@
     "admin:promote": "pnpm --filter @masumi/database admin:promote",
     "admin:demote": "pnpm --filter @masumi/database admin:demote",
     "admin:list": "pnpm --filter @masumi/database admin:list",
+    "test": "pnpm --filter web test",
+    "test:smoke": "pnpm --filter web test:smoke",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "test:stress": "pnpm --filter web test:stress",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -36,12 +40,12 @@
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "eslint-plugin-unused-imports": "4.3.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
+    "husky": "9.1.7",
+    "lint-staged": "16.2.7",
     "prettier": "3.7.3",
     "typescript-eslint": "8.48.0"
   },
   "dependencies": {
-    "@sumsub/websdk": "^2.6.1"
+    "@sumsub/websdk": "2.6.1"
   }
 }
