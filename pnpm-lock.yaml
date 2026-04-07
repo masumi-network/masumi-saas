@@ -150,7 +150,7 @@ importers:
         specifier: 0.555.0
         version: 0.555.0(react@19.2.0)
       lz-string:
-        specifier: ^1.5.0
+        specifier: 1.5.0
         version: 1.5.0
       masumi-schema-validator-component:
         specifier: 1.2.0
