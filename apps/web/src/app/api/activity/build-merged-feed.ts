@@ -449,17 +449,28 @@ type ActivityDbSnapshotCacheInput = {
  * Cache only Prisma reads. Do not put payment-node calls inside `unstable_cache`: lazy API
  * key provisioning and external fetches are side effects and must not run only on revalidate/miss.
  */
-const fetchActivityDbSnapshotCached = unstable_cache(
-  async (input: ActivityDbSnapshotCacheInput): Promise<ActivityDbSnapshot> => {
-    return loadActivityDbSnapshot({
-      userId: input.userId,
-      network: input.network,
-      validFilter: input.validFilter,
-    });
-  },
-  ["api-activity-db-snapshot", "v1"],
-  { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
-);
+async function fetchActivityDbSnapshotCached(
+  input: ActivityDbSnapshotCacheInput,
+): Promise<ActivityDbSnapshot> {
+  const cachedLoader = unstable_cache(
+    async (): Promise<ActivityDbSnapshot> => {
+      return loadActivityDbSnapshot({
+        userId: input.userId,
+        network: input.network,
+        validFilter: input.validFilter,
+      });
+    },
+    [
+      "api-activity-db-snapshot",
+      "v1",
+      input.userId,
+      input.network,
+      input.validFilter,
+    ],
+    { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
+  );
+  return cachedLoader();
+}
 
 /**
  * Merged feed for GET /api/activity. DB snapshot is Data-cached briefly; payment-node lists
