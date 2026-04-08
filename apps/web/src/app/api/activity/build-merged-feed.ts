@@ -30,17 +30,24 @@ function backfillGuardKey(userId: string, network: NetworkQuery): string {
 }
 
 /**
- * Drop expired cooldowns, then evict oldest insertions until at most
- * {@link BACKFILL_GUARD_MAP_MAX_ENTRIES} remain (Map iteration order ≈ LRU).
+ * Drop expired cooldowns, then evict entries with the **earliest** `until` until at most
+ * {@link BACKFILL_GUARD_MAP_MAX_ENTRIES} remain — minimizes extra backfill work vs insertion-order eviction.
  */
 function pruneBackfillGuardMap(now: number): void {
   for (const [k, until] of backfillGuardSkipUntilMs) {
     if (until <= now) backfillGuardSkipUntilMs.delete(k);
   }
   while (backfillGuardSkipUntilMs.size > BACKFILL_GUARD_MAP_MAX_ENTRIES) {
-    const next = backfillGuardSkipUntilMs.keys().next();
-    if (next.done) break;
-    backfillGuardSkipUntilMs.delete(next.value);
+    let evictKey: string | undefined;
+    let earliestUntil = Infinity;
+    for (const [k, until] of backfillGuardSkipUntilMs) {
+      if (until < earliestUntil) {
+        earliestUntil = until;
+        evictKey = k;
+      }
+    }
+    if (evictKey === undefined) break;
+    backfillGuardSkipUntilMs.delete(evictKey);
   }
 }
 
@@ -339,9 +346,16 @@ function pruneActivityDbSnapshotCache(now: number): void {
   while (
     activityDbSnapshotCache.size > ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES
   ) {
-    const next = activityDbSnapshotCache.keys().next();
-    if (next.done) break;
-    activityDbSnapshotCache.delete(next.value);
+    let evictKey: string | undefined;
+    let earliestExpires = Infinity;
+    for (const [k, v] of activityDbSnapshotCache) {
+      if (v.expiresAt < earliestExpires) {
+        earliestExpires = v.expiresAt;
+        evictKey = k;
+      }
+    }
+    if (evictKey === undefined) break;
+    activityDbSnapshotCache.delete(evictKey);
   }
 }
 
