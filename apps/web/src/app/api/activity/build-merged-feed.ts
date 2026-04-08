@@ -493,7 +493,8 @@ function mergeFilterSortActivityFeed(params: {
   } else if (validFilter === "refundRequests") {
     merged = merged.filter((i) => {
       if (i.kind !== "transaction") return false;
-      return i.status === "RefundRequested";
+      const statusNorm = i.status.toLowerCase().replace(/\s+/g, "");
+      return statusNorm.includes("refundrequested");
     });
   } else if (validFilter === "disputes") {
     merged = merged.filter((i) => {

@@ -51,9 +51,14 @@ function filterTransactions(
   } else if (filterType === "purchases") {
     filtered = filtered.filter((t) => t.type === "purchase");
   } else if (filterType === "refundRequests") {
-    filtered = filtered.filter((t) => t.status === "RefundRequested");
+    filtered = filtered.filter((t) => {
+      const statusNorm = t.status.toLowerCase().replace(/\s+/g, "");
+      return statusNorm.includes("refundrequested");
+    });
   } else if (filterType === "disputes") {
-    filtered = filtered.filter((t) => t.status === "Disputed");
+    filtered = filtered.filter((t) =>
+      t.status.toLowerCase().includes("dispute"),
+    );
   }
 
   if (query) {
