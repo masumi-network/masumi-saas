@@ -297,50 +297,60 @@ export function ActivityFeedTableInner({
                         </TableRow>
                       );
                     }
-                    if (item.kind !== "transaction") {
-                      return null;
+                    if (item.kind === "transaction") {
+                      const {
+                        id,
+                        type,
+                        agentName,
+                        agentId,
+                        txHash,
+                        amount,
+                        status,
+                        date,
+                      } = item;
+                      return (
+                        <TableRow
+                          key={rowKey}
+                          className={cn(
+                            "cursor-pointer",
+                            "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
+                          )}
+                          style={rowStyle}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTransactionDetails({
+                              id,
+                              type,
+                              agentName,
+                              agentId,
+                            });
+                          }}
+                        >
+                          <TableCell>
+                            <span className="inline-flex items-center gap-1.5 text-sm capitalize">
+                              <Receipt className="size-4 text-muted-foreground" />
+                              {type}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm text-muted-foreground">
+                            {txHash
+                              ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}`
+                              : EMPTY_CELL}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {agentName ?? EMPTY_CELL}
+                          </TableCell>
+                          <TableCell>{amount}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {status.replace(/([A-Z])/g, " $1").trim()}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {formatRelativeDate(date)}
+                          </TableCell>
+                        </TableRow>
+                      );
                     }
-                    return (
-                      <TableRow
-                        key={rowKey}
-                        className={cn(
-                          "cursor-pointer",
-                          "hover:bg-muted/50 animate-table-row-in transition-[background-color,opacity] duration-150",
-                        )}
-                        style={rowStyle}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTransactionDetails({
-                            id: item.id,
-                            type: item.type,
-                            agentName: item.agentName,
-                            agentId: item.agentId,
-                          });
-                        }}
-                      >
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 text-sm capitalize">
-                            <Receipt className="size-4 text-muted-foreground" />
-                            {item.type}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">
-                          {item.txHash
-                            ? `${item.txHash.slice(0, 8)}...${item.txHash.slice(-8)}`
-                            : EMPTY_CELL}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {item.agentName ?? EMPTY_CELL}
-                        </TableCell>
-                        <TableCell>{item.amount}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {item.status.replace(/([A-Z])/g, " $1").trim()}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {formatRelativeDate(item.date)}
-                        </TableCell>
-                      </TableRow>
-                    );
+                    return null;
                   })}
             </TableBody>
           </Table>
