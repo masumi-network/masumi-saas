@@ -17,6 +17,33 @@ export const ACTIVITY_MERGED_FEED_LIMIT = 200;
 /** Short TTL for the Prisma-only activity snapshot (agents + lifecycle rows). */
 const MERGED_FEED_CACHE_REVALIDATE_SECONDS = 12;
 
+/**
+ * Skip repeated Prisma guard queries after a no-op or successful seed. Per Node process only
+ * (serverless-friendly); worst case backfill runs again after this window when a new agent appears.
+ */
+const BACKFILL_GUARD_COOLDOWN_MS = 60_000;
+const backfillGuardSkipUntilMs = new Map<string, number>();
+
+function backfillGuardKey(userId: string, network: NetworkQuery): string {
+  return `${userId}:${network}`;
+}
+
+function markBackfillGuardCooldown(
+  userId: string,
+  network: NetworkQuery,
+): void {
+  const now = Date.now();
+  if (backfillGuardSkipUntilMs.size > 256) {
+    for (const [k, until] of backfillGuardSkipUntilMs) {
+      if (until <= now) backfillGuardSkipUntilMs.delete(k);
+    }
+  }
+  backfillGuardSkipUntilMs.set(
+    backfillGuardKey(userId, network),
+    now + BACKFILL_GUARD_COOLDOWN_MS,
+  );
+}
+
 /** Stable int32 pair for Postgres advisory lock (cross-instance, unlike in-memory Maps). */
 function userIdToAdvisoryLockKeys(userId: string): [number, number] {
   const buf = createHash("sha256").update(userId, "utf8").digest();
@@ -33,6 +60,11 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   network: NetworkQuery;
 }): Promise<void> {
   const { userId, network } = params;
+  const skipUntil = backfillGuardSkipUntilMs.get(
+    backfillGuardKey(userId, network),
+  );
+  if (skipUntil !== undefined && Date.now() < skipUntil) return;
+
   const agents = await prisma.agent.findMany({
     where: {
       userId,
@@ -46,7 +78,10 @@ async function maybeBackfillAgentLifecycleEvents(params: {
       verificationStatus: true,
     },
   });
-  if (agents.length === 0) return;
+  if (agents.length === 0) {
+    markBackfillGuardCooldown(userId, network);
+    return;
+  }
   const agentIds = agents.map((a) => a.id);
   const agentsWithEvents = await prisma.agentActivityEvent.groupBy({
     by: ["agentId"],
@@ -61,7 +96,10 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   const agentsToBackfill = agents.filter(
     (a) => !agentIdsThatHaveEvents.has(a.id),
   );
-  if (agentsToBackfill.length === 0) return;
+  if (agentsToBackfill.length === 0) {
+    markBackfillGuardCooldown(userId, network);
+    return;
+  }
 
   const [k1, k2] = userIdToAdvisoryLockKeys(userId);
   try {
@@ -107,6 +145,7 @@ async function maybeBackfillAgentLifecycleEvents(params: {
         }
       }
     });
+    markBackfillGuardCooldown(userId, network);
   } catch (err) {
     console.error("[Activity] Backfill transaction failed:", userId, err);
   }
