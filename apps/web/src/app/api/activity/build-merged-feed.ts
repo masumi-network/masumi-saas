@@ -386,11 +386,12 @@ async function loadActivityDbSnapshotCached(
     network,
     validFilter,
   });
+  const afterLoad = Date.now();
   activityDbSnapshotCache.set(key, {
     snapshot,
-    expiresAt: now + ACTIVITY_DB_SNAPSHOT_TTL_MS,
+    expiresAt: afterLoad + ACTIVITY_DB_SNAPSHOT_TTL_MS,
   });
-  pruneActivityDbSnapshotCache(Date.now());
+  pruneActivityDbSnapshotCache(afterLoad);
   return snapshot;
 }
 
