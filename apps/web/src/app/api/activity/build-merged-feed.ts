@@ -30,22 +30,36 @@ function backfillGuardKey(userId: string, network: NetworkQuery): string {
 }
 
 /**
- * Drop expired cooldowns, then if over cap remove the **earliest-`until`** entries in one batch
- * (sort once — avoids O(n) scans per eviction in a tight loop).
+ * Drop entries with `expiresAt(value) <= now`, then if `size > maxEntries` remove the
+ * earliest-expiring keys in one batch. Shared by in-process TTL maps in this module.
  */
-function pruneBackfillGuardMap(now: number): void {
-  for (const [k, until] of backfillGuardSkipUntilMs) {
-    if (until <= now) backfillGuardSkipUntilMs.delete(k);
+function pruneTtlBoundedMap<K, V>(
+  map: Map<K, V>,
+  now: number,
+  maxEntries: number,
+  expiresAt: (value: V) => number,
+): void {
+  for (const [k, v] of map) {
+    if (expiresAt(v) <= now) map.delete(k);
   }
-  const excess = backfillGuardSkipUntilMs.size - BACKFILL_GUARD_MAP_MAX_ENTRIES;
+  const excess = map.size - maxEntries;
   if (excess <= 0) return;
-
-  const ranked = [...backfillGuardSkipUntilMs.entries()].sort(
-    (a, b) => a[1] - b[1],
+  const ranked = [...map.entries()].sort(
+    (a, b) => expiresAt(a[1]) - expiresAt(b[1]),
   );
   for (let i = 0; i < excess; i++) {
-    backfillGuardSkipUntilMs.delete(ranked[i][0]);
+    const pair = ranked[i];
+    if (pair !== undefined) map.delete(pair[0]);
   }
+}
+
+function pruneBackfillGuardMap(now: number): void {
+  pruneTtlBoundedMap(
+    backfillGuardSkipUntilMs,
+    now,
+    BACKFILL_GUARD_MAP_MAX_ENTRIES,
+    (until) => until,
+  );
 }
 
 function markBackfillGuardCooldown(
@@ -337,19 +351,12 @@ function activityDbSnapshotCacheKey(
 }
 
 function pruneActivityDbSnapshotCache(now: number): void {
-  for (const [k, v] of activityDbSnapshotCache) {
-    if (v.expiresAt <= now) activityDbSnapshotCache.delete(k);
-  }
-  const excess =
-    activityDbSnapshotCache.size - ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES;
-  if (excess <= 0) return;
-
-  const ranked = [...activityDbSnapshotCache.entries()].sort(
-    (a, b) => a[1].expiresAt - b[1].expiresAt,
+  pruneTtlBoundedMap(
+    activityDbSnapshotCache,
+    now,
+    ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES,
+    (entry) => entry.expiresAt,
   );
-  for (let i = 0; i < excess; i++) {
-    activityDbSnapshotCache.delete(ranked[i][0]);
-  }
 }
 
 function invalidateActivityDbSnapshotForUserNetwork(
