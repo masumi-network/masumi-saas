@@ -49,12 +49,14 @@ const noSecurity: SecurityRequirementObject[] = [];
 /** Same validation as `POST /api/agents` — documented shape + Try-it-out example. */
 const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
   description:
-    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`).',
+    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). **collectionAddress** must be a Shelley receive address for the same network as the request (`addr_test1…` on Preprod, `addr1…` on Mainnet); it is stored on the payment node selling wallet as revenue collection.',
   example: {
     name: "Research assistant",
     description: "Helps with literature review",
     extendedDescription: "",
     apiUrl: "https://agent.example.com/mip",
+    collectionAddress:
+      "addr_test1qr7pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rq2ymhl3",
     tags: "research, nlp",
     icon: "bot",
     pricing: {

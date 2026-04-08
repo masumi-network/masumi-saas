@@ -8,6 +8,14 @@ export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
 export const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Admin@12345";
 
+/** Valid Preprod Shelley receive address (Mesh) for POST /api/agents tests. */
+export const TEST_PREPROD_COLLECTION_ADDRESS =
+  "addr_test1qr7pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rq2ymhl3";
+
+/** Valid Mainnet Shelley receive address for network-mismatch tests. */
+export const TEST_MAINNET_COLLECTION_ADDRESS =
+  "addr1q87pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rqfjxhnw";
+
 // ─── Cookie jar ─────────────────────────────────────────────────────────────
 
 export class CookieJar {
@@ -116,6 +124,7 @@ export async function createAgent(
         name: uniqueAgentName(),
         description: "Automated test agent",
         apiUrl: "https://example.com/test-agent",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "test,automated",
         ...overrides,
       },

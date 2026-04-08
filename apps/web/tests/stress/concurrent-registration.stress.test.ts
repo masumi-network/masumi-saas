@@ -9,7 +9,14 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CookieJar, request, signIn, sleep, uniqueAgentName } from "../helpers";
+import {
+  CookieJar,
+  request,
+  signIn,
+  sleep,
+  TEST_PREPROD_COLLECTION_ADDRESS,
+  uniqueAgentName,
+} from "../helpers";
 
 let jar: CookieJar;
 
@@ -27,6 +34,7 @@ async function registerAgent(
     body: {
       name,
       apiUrl: "https://example.com/stress-agent",
+      collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
       tags: "stress,concurrent",
     },
   });

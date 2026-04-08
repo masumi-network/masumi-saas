@@ -36,6 +36,8 @@ export type RegisterAgentParams = {
   description: string | null;
   extendedDescription: string | null;
   apiUrl: string;
+  /** Shelley receive address for selling-wallet proceeds (Payment Service `collectionAddress`). */
+  sellingCollectionAddress: string;
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
@@ -172,7 +174,7 @@ async function registerAgentOnChainUntilDispenser(
       {
         walletMnemonic: sellingWallet.walletMnemonic,
         note: `Agent: ${params.name} (selling)`,
-        collectionAddress: null,
+        collectionAddress: params.sellingCollectionAddress,
       },
     ],
     AddPurchasingWallets: [

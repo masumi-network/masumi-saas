@@ -2,7 +2,7 @@
 
 import { CircleHelp, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,10 +36,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { validateCardanoAddress } from "@/lib/cardano/validate-cardano-address";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { AgentIconPicker } from "./agent-icon-picker";
+import { GenerateWalletDialog } from "./generate-wallet-dialog";
 
 const CURRENCY_SYMBOL = "$";
 
@@ -51,10 +55,15 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
+type RegisterAgentDialogInnerProps = RegisterAgentDialogProps & {
+  network: PaymentNodeNetwork;
+};
+
 type AgentFormFields = {
   name: string;
   description?: string;
   extendedDescription?: string;
+  collectionAddress: string;
   isFree: boolean;
   prices: Array<{ amount: string }>;
   tags?: string;
@@ -252,11 +261,12 @@ function PricingFields({
   );
 }
 
-export function RegisterAgentDialog({
+function RegisterAgentDialogInner({
   open,
   onClose,
   onSuccess,
-}: RegisterAgentDialogProps) {
+  network,
+}: RegisterAgentDialogInnerProps) {
   const t = useTranslations("App.Agents.Register");
   const { addPendingAgent } = useRegistrationCompletion();
 
@@ -270,6 +280,8 @@ export function RegisterAgentDialog({
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [generateWalletOpen, setGenerateWalletOpen] = useState(false);
+  const [generateWalletSessionId, setGenerateWalletSessionId] = useState(0);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -289,59 +301,85 @@ export function RegisterAgentDialog({
     }
   }, [open]);
 
-  const registerAgentSchema = z
-    .object({
-      name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
-      description: z
-        .string()
-        .max(250, t("descriptionMaxLength"))
-        .optional()
-        .or(z.literal("")),
-      extendedDescription: z
-        .string()
-        .max(5000, t("extendedDescriptionMaxLength"))
-        .optional()
-        .or(z.literal("")),
-      apiUrl: z
-        .string()
-        .url(t("apiUrlInvalid"))
+  const registerAgentSchema = useMemo(
+    () =>
+      z
+        .object({
+          name: z
+            .string()
+            .min(1, t("nameRequired"))
+            .max(250, t("nameMaxLength")),
+          description: z
+            .string()
+            .max(250, t("descriptionMaxLength"))
+            .optional()
+            .or(z.literal("")),
+          extendedDescription: z
+            .string()
+            .max(5000, t("extendedDescriptionMaxLength"))
+            .optional()
+            .or(z.literal("")),
+          apiUrl: z
+            .string()
+            .url(t("apiUrlInvalid"))
+            .refine(
+              (val) => val.startsWith("http://") || val.startsWith("https://"),
+              {
+                message: t("apiUrlProtocol"),
+              },
+            ),
+          collectionAddress: z
+            .string()
+            .min(1, t("collectionAddressRequired"))
+            .max(120, t("collectionAddressMaxLength")),
+          isFree: z.boolean(),
+          prices: z.array(z.object({ amount: z.string() })),
+          tags: z.string().optional(),
+          icon: z.string().max(2000).optional(),
+          termsOfUseUrl: z
+            .union([z.literal(""), z.string().url().max(250)])
+            .optional(),
+          privacyPolicyUrl: z
+            .union([z.literal(""), z.string().url().max(250)])
+            .optional(),
+          otherUrl: z
+            .union([z.literal(""), z.string().url().max(250)])
+            .optional(),
+          capabilityName: z.string().max(250).optional(),
+          capabilityVersion: z.string().max(250).optional(),
+          exampleOutputs: z
+            .array(
+              z.object({
+                name: z.string().max(60),
+                url: z.string(),
+                mimeType: z.string().max(60),
+              }),
+            )
+            .optional(),
+        })
         .refine(
-          (val) => val.startsWith("http://") || val.startsWith("https://"),
-          {
-            message: t("apiUrlProtocol"),
+          (data) => {
+            if (data.isFree) return true;
+            const filled = (data.prices ?? []).filter((p) => p.amount?.trim());
+            return filled.length > 0;
           },
-        ),
-      isFree: z.boolean(),
-      prices: z.array(z.object({ amount: z.string() })),
-      tags: z.string().optional(),
-      icon: z.string().max(2000).optional(),
-      termsOfUseUrl: z
-        .union([z.literal(""), z.string().url().max(250)])
-        .optional(),
-      privacyPolicyUrl: z
-        .union([z.literal(""), z.string().url().max(250)])
-        .optional(),
-      otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
-      capabilityName: z.string().max(250).optional(),
-      capabilityVersion: z.string().max(250).optional(),
-      exampleOutputs: z
-        .array(
-          z.object({
-            name: z.string().max(60),
-            url: z.string(),
-            mimeType: z.string().max(60),
-          }),
+          { message: t("priceAmountRequired"), path: ["prices"] },
         )
-        .optional(),
-    })
-    .refine(
-      (data) => {
-        if (data.isFree) return true;
-        const filled = (data.prices ?? []).filter((p) => p.amount?.trim());
-        return filled.length > 0;
-      },
-      { message: t("priceAmountRequired"), path: ["prices"] },
-    );
+        .superRefine((data, ctx) => {
+          const trimmed = data.collectionAddress.trim();
+          if (!validateCardanoAddress(trimmed, network).isValid) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                network === "Mainnet"
+                  ? t("collectionAddressInvalidMainnet")
+                  : t("collectionAddressInvalidPreprod"),
+              path: ["collectionAddress"],
+            });
+          }
+        }),
+    [network, t],
+  );
 
   const form = useForm<RegisterAgentFormType>({
     resolver: zodResolver(registerAgentSchema),
@@ -350,6 +388,7 @@ export function RegisterAgentDialog({
       description: "",
       extendedDescription: "",
       apiUrl: "",
+      collectionAddress: "",
       isFree: false,
       prices: [{ amount: "" }],
       tags: "",
@@ -389,6 +428,7 @@ export function RegisterAgentDialog({
       description: "",
       extendedDescription: "",
       apiUrl: "",
+      collectionAddress: "",
       isFree: false,
       prices: [{ amount: "" }],
       tags: "",
@@ -437,6 +477,7 @@ export function RegisterAgentDialog({
         description: data.description?.trim() ?? "",
         extendedDescription: data.extendedDescription?.trim() ?? "",
         apiUrl: data.apiUrl,
+        collectionAddress: data.collectionAddress.trim(),
         tags: tags.join(", "),
         icon: data.icon?.trim() ?? "",
         pricing:
@@ -528,6 +569,7 @@ export function RegisterAgentDialog({
         <DialogContent
           className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
           closeButtonClassName="top-8 right-4 -translate-y-1/2"
+          isPushedBack={generateWalletOpen || showCloseConfirm}
         >
           <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
             <DialogHeader>
@@ -657,6 +699,46 @@ export function RegisterAgentDialog({
                             className="h-11 font-mono text-sm"
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="collectionAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("collectionAddress")}</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder={
+                                network === "Mainnet"
+                                  ? t("collectionAddressPlaceholderMainnet")
+                                  : t("collectionAddressPlaceholderPreprod")
+                              }
+                              {...field}
+                              className="h-11 min-w-0 flex-1 font-mono text-sm"
+                              autoComplete="off"
+                              spellCheck={false}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11 shrink-0"
+                            onClick={() => {
+                              setGenerateWalletSessionId((s) => s + 1);
+                              setGenerateWalletOpen(true);
+                            }}
+                          >
+                            {t("generateWallet")}
+                          </Button>
+                        </div>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          {t("collectionAddressHint")}
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -869,6 +951,16 @@ export function RegisterAgentDialog({
           </Form>
         </DialogContent>
       </Dialog>
+      <GenerateWalletDialog
+        key={generateWalletSessionId}
+        open={generateWalletOpen}
+        onOpenChange={setGenerateWalletOpen}
+        network={network}
+        onUseAddress={(address) => {
+          form.setValue("collectionAddress", address, { shouldValidate: true });
+          void form.trigger("collectionAddress");
+        }}
+      />
       <ConfirmDialog
         open={showCloseConfirm}
         onOpenChange={(open) => {
@@ -889,5 +981,12 @@ export function RegisterAgentDialog({
         cancelText={t("cancel")}
       />
     </>
+  );
+}
+
+export function RegisterAgentDialog(props: RegisterAgentDialogProps) {
+  const { network } = usePaymentNetwork();
+  return (
+    <RegisterAgentDialogInner key={network} {...props} network={network} />
   );
 }

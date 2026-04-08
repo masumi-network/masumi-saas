@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 
-/**
- * Withdraw opens as a dialog on the earnings page (?action=withdraw).
- */
+/** Legacy route; earnings no longer uses an in-app withdraw flow. */
 export default function WithdrawPage() {
-  redirect("/earnings?action=withdraw");
+  redirect("/earnings");
 }

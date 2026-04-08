@@ -8,6 +8,7 @@ import {
 } from "@/lib/agent-registration";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { parseValidAgentCollectionAddress } from "@/lib/cardano/agent-collection-address";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
       description,
       extendedDescription,
       apiUrl,
+      collectionAddress,
       tags,
       icon,
       pricing,
@@ -195,6 +197,17 @@ export async function POST(request: NextRequest) {
     }
 
     const network = getNetworkFromRequest(request);
+    const collectionParsed = parseValidAgentCollectionAddress(
+      collectionAddress,
+      network,
+    );
+    if (!collectionParsed.ok) {
+      return NextResponse.json(
+        { success: false, error: collectionParsed.error },
+        { status: 400 },
+      );
+    }
+
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
 
     const params: RegisterAgentParams = {
@@ -204,6 +217,7 @@ export async function POST(request: NextRequest) {
         | string
         | null,
       apiUrl,
+      sellingCollectionAddress: collectionParsed.address,
       tags: tagsArray,
       icon: icon?.trim() || null,
       agentPricing,

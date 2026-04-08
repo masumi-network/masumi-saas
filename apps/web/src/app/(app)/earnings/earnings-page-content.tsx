@@ -1,13 +1,11 @@
 "use client";
 
 import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import gridSvg from "@/assets/grid.svg";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -16,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
@@ -25,16 +22,8 @@ import {
 } from "@/lib/payment-node/format";
 
 import { EarningsChart } from "./earnings-chart";
-import { EarningsWithdrawDialog } from "./earnings-withdraw-dialog";
 
 const EARNINGS_PERIOD_STORAGE_KEY = "masumi_earnings_period";
-
-/** Placeholder USD figures until withdrawal balances are loaded from an API. */
-const PLACEHOLDER_WITHDRAW_USD = {
-  totalWithdrawn: 12_450.67,
-  availableForWithdrawals: 3_204.5,
-  pendingWithdrawals: 156,
-} as const;
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
@@ -74,35 +63,6 @@ export function EarningsPageContent() {
   const [previousTotal, setPreviousTotal] = useState<number | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const withdrawHref = useMemo(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.set("period", period);
-    next.set("action", "withdraw");
-    const q = next.toString();
-    return pathname === "/earnings" ? `?${q}` : `/earnings?${q}`;
-  }, [pathname, period, searchParams]);
-
-  const withdrawOpen = searchParams.get("action") === "withdraw";
-
-  const closeWithdrawDialog = useCallback(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("action");
-    if (!getValidPeriod(next.get("period"))) {
-      next.set("period", period);
-    }
-    const q = next.toString();
-    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [pathname, period, router, searchParams]);
-
-  const onWithdrawOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        closeWithdrawDialog();
-      }
-    },
-    [closeWithdrawDialog],
-  );
 
   const fetchEarnings = useCallback(async () => {
     setIsLoading(true);
@@ -182,10 +142,6 @@ export function EarningsPageContent() {
 
   return (
     <div className="space-y-8">
-      <EarningsWithdrawDialog
-        open={withdrawOpen}
-        onOpenChange={onWithdrawOpenChange}
-      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
@@ -308,63 +264,6 @@ export function EarningsPageContent() {
                 <p className="text-muted-foreground mt-2 text-xs">
                   {tDash("earningsDescription")}
                 </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-0">
-                <CardTitle className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                  {t("withdrawCardTitle")}
-                </CardTitle>
-              </CardHeader>
-              <Separator className="-my-2" />
-              <CardContent className="space-y-4 pt-0">
-                <dl className="space-y-4">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                    <dt className="text-muted-foreground text-xs font-medium">
-                      {t("totalWithdrawnLabel")}
-                    </dt>
-                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
-                      {formatDashboardEarningsTotal(
-                        PLACEHOLDER_WITHDRAW_USD.totalWithdrawn,
-                        "USD",
-                      )}
-                    </dd>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                    <dt className="text-muted-foreground text-xs font-medium">
-                      {t("availableForWithdrawalsLabel")}
-                    </dt>
-                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
-                      {formatDashboardEarningsTotal(
-                        PLACEHOLDER_WITHDRAW_USD.availableForWithdrawals,
-                        "USD",
-                      )}
-                    </dd>
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                    <dt className="text-muted-foreground text-xs font-medium">
-                      {t("pendingWithdrawalsLabel")}
-                    </dt>
-                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight sm:text-right">
-                      {formatDashboardEarningsTotal(
-                        PLACEHOLDER_WITHDRAW_USD.pendingWithdrawals,
-                        "USD",
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-                <div className="flex flex-col gap-2">
-                  <Button className="w-full" asChild variant="primary">
-                    <Link href={withdrawHref} scroll={false}>
-                      {t("goToWithdraw")}
-                    </Link>
-                  </Button>
-                  <Button className="w-full" asChild variant="outline">
-                    <Link href="/withdrawals">
-                      {t("viewWithdrawalsHistory")}
-                    </Link>
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </div>

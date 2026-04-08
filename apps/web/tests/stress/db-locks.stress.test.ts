@@ -16,6 +16,7 @@ import {
   signIn,
   TEST_EMAIL,
   TEST_PASSWORD,
+  TEST_PREPROD_COLLECTION_ADDRESS,
 } from "../helpers";
 
 let jar: CookieJar;
@@ -119,6 +120,7 @@ describe("STRESS — Pagination consistency under mutation", () => {
       body: {
         name: `Pagination-Race-${Date.now()}`,
         apiUrl: "https://example.com/paginate",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "pagination,stress",
       },
     });

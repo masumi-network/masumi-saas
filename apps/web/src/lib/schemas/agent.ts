@@ -52,6 +52,11 @@ export const registerAgentBodySchema = z.object({
     .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
       message: "API URL must start with http:// or https://",
     }),
+  /** Shelley receive address for completed-sale proceeds; must match request network. */
+  collectionAddress: z
+    .string()
+    .min(1, "Collection address is required")
+    .max(120, "Collection address is too long"),
   tags: z.string().optional(),
   icon: z.string().max(2000).optional(),
   pricing: z
@@ -123,6 +128,10 @@ const registerAgentFormBaseSchema = z.object({
     .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
       message: "API URL must start with http:// or https://",
     }),
+  collectionAddress: z
+    .string()
+    .min(1, "Collection address is required")
+    .max(120, "Collection address is too long"),
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
   /** "Free" | "Fixed" */

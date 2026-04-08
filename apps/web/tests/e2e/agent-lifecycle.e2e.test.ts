@@ -16,6 +16,7 @@ import {
   pollCompleteRegistration,
   request,
   signIn,
+  TEST_PREPROD_COLLECTION_ADDRESS,
 } from "../helpers";
 
 let jar: CookieJar;
@@ -33,6 +34,7 @@ describe("E2E — Agent Registration Flow", () => {
         name: `E2E-Reg-${Date.now()}`,
         description: "E2E lifecycle test",
         apiUrl: "https://example.com/agent",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "e2e,lifecycle",
       },
     });

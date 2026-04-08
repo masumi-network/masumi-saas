@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  ArrowDownToLine,
   BookOpen,
   Bot,
   Building2,
@@ -60,13 +59,7 @@ const navigationItems: NavigationItem[] = [
     key: "earnings",
     href: "/earnings",
     icon: CircleDollarSign,
-    searchKeywords: ["revenue", "income", "payout", "withdraw", "chart"],
-  },
-  {
-    key: "withdrawals",
-    href: "/withdrawals",
-    icon: ArrowDownToLine,
-    searchKeywords: ["withdrawal", "payout", "pending", "transfer"],
+    searchKeywords: ["revenue", "income", "payout", "chart"],
   },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },

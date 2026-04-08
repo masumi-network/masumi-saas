@@ -1,6 +1,13 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { CookieJar, createAgent, request, signIn } from "../helpers";
+import {
+  CookieJar,
+  createAgent,
+  request,
+  signIn,
+  TEST_MAINNET_COLLECTION_ADDRESS,
+  TEST_PREPROD_COLLECTION_ADDRESS,
+} from "../helpers";
 
 let jar: CookieJar;
 
@@ -17,7 +24,12 @@ describe("SMOKE — Agent access control", () => {
   it("POST /api/agents without auth → 401", async () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
-      body: { name: "x", apiUrl: "https://x.com", tags: "t" },
+      body: {
+        name: "x",
+        apiUrl: "https://x.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(401);
   });
@@ -38,7 +50,11 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
       jar,
-      body: { apiUrl: "https://example.com", tags: "t" },
+      body: {
+        apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(400);
     const b = res.body as Record<string, unknown>;
@@ -50,7 +66,12 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
       jar,
-      body: { name: "Test", apiUrl: "not-a-url", tags: "t" },
+      body: {
+        name: "Test",
+        apiUrl: "not-a-url",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(400);
   });
@@ -59,7 +80,12 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
       jar,
-      body: { name: "Test", apiUrl: "ftp://example.com", tags: "t" },
+      body: {
+        name: "Test",
+        apiUrl: "ftp://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(400);
   });
@@ -68,7 +94,12 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
       jar,
-      body: { name: "Test", apiUrl: "https://example.com", tags: "" },
+      body: {
+        name: "Test",
+        apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "",
+      },
     });
     expect(res.status).toBe(400);
     const b = res.body as Record<string, unknown>;
@@ -79,7 +110,12 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Preprod", {
       method: "POST",
       jar,
-      body: { name: "a".repeat(251), apiUrl: "https://example.com", tags: "t" },
+      body: {
+        name: "a".repeat(251),
+        apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(400);
   });
@@ -92,6 +128,7 @@ describe("SMOKE — Agent input validation", () => {
         name: "Test",
         description: "d".repeat(251),
         apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "t",
       },
     });
@@ -106,6 +143,7 @@ describe("SMOKE — Agent input validation", () => {
         name: "Test",
         extendedDescription: "x".repeat(5001),
         apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "t",
       },
     });
@@ -116,7 +154,12 @@ describe("SMOKE — Agent input validation", () => {
     const res = await request("/api/agents?network=Mainnet", {
       method: "POST",
       jar,
-      body: { name: "Test", apiUrl: "https://example.com", tags: "t" },
+      body: {
+        name: "Test",
+        apiUrl: "https://example.com",
+        collectionAddress: TEST_MAINNET_COLLECTION_ADDRESS,
+        tags: "t",
+      },
     });
     expect(res.status).toBe(400);
   });
@@ -128,11 +171,28 @@ describe("SMOKE — Agent input validation", () => {
       body: {
         name: "Test",
         apiUrl: "https://example.com",
+        collectionAddress: TEST_PREPROD_COLLECTION_ADDRESS,
         tags: "t",
         pricing: { pricingType: "INVALID" },
       },
     });
     expect(res.status).toBe(400);
+  });
+
+  it("mainnet-format collection on Preprod request → 400", async () => {
+    const res = await request("/api/agents?network=Preprod", {
+      method: "POST",
+      jar,
+      body: {
+        name: "Test",
+        apiUrl: "https://example.com",
+        collectionAddress: TEST_MAINNET_COLLECTION_ADDRESS,
+        tags: "t",
+      },
+    });
+    expect(res.status).toBe(400);
+    const b = res.body as Record<string, unknown>;
+    expect(String(b.error)).toMatch(/addr_test1|Preprod/i);
   });
 });
 
