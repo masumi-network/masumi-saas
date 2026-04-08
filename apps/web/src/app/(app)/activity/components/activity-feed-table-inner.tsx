@@ -130,8 +130,17 @@ export function ActivityFeedTableInner({
   /** Local aliases: RQ infinite result + TS narrows `data` to `never` if used inside deps as `activityQuery.data`. */
   const queryError = activityQuery.error;
 
+  const staleCursorResetAtMsRef = useRef(0);
+
+  useEffect(() => {
+    staleCursorResetAtMsRef.current = 0;
+  }, [activityQueryKey]);
+
   useEffect(() => {
     if (!(queryError instanceof StaleCursorError)) return;
+    const now = Date.now();
+    if (now - staleCursorResetAtMsRef.current < 1_500) return;
+    staleCursorResetAtMsRef.current = now;
     void queryClient.resetQueries({ queryKey: activityQueryKey });
   }, [activityQueryKey, queryClient, queryError]);
 

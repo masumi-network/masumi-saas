@@ -74,6 +74,10 @@ export function useActivityFeedInfiniteQuery(
         ? lastPage.nextCursor
         : undefined,
     staleTime: 25_000,
-    refetchInterval: 25_000,
+    /** Stale cursor must recover via `resetQueries` in the table — no RQ retries for that error. */
+    retry: (failureCount, err) =>
+      err instanceof StaleCursorError ? false : failureCount < 3,
+    refetchInterval: (query) =>
+      query.state.error instanceof StaleCursorError ? false : 25_000,
   });
 }
