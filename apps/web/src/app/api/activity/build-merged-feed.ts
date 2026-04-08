@@ -14,8 +14,13 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 export const ACTIVITY_MERGED_FEED_LIMIT = 200;
 
 /**
- * Skip repeated Prisma guard queries after a no-op or successful seed. Per Node process only
- * (serverless-friendly); worst case backfill runs again after this window when a new agent appears.
+ * Best-effort throttle for backfill Prisma work (skip repeated guard queries after no-op/seed).
+ *
+ * - **Process-local:** Cooldowns apply only inside this Node isolate. They disappear on cold start and
+ *   are not shared across horizontal replicas; duplicate inserts are still prevented by
+ *   `pg_advisory_xact_lock` on the transactional backfill path.
+ * - **Warm multi-tenant instances:** The map holds one expiry timestamp per `userId:network` until
+ *   TTL or cap eviction—not secret data, and unrelated tenants do not read each other's entries.
  */
 const BACKFILL_GUARD_COOLDOWN_MS = 60_000;
 /** Hard cap so long-lived Node processes cannot grow this map without bound. */
@@ -96,7 +101,7 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   const skipUntil = backfillGuardSkipUntilMs.get(
     backfillGuardKey(userId, network),
   );
-  if (skipUntil !== undefined && Date.now() < skipUntil) return;
+  if (skipUntil !== undefined && now < skipUntil) return;
 
   const agents = await prisma.agent.findMany({
     where: {
