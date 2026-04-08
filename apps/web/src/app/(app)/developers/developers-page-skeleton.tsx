@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading placeholder for {@link DevelopersPageClient} (tabs + main panel).
- * Matches payment-service Developers layout: two tabs (Schema Validator, OpenAPI).
+ * Three tabs: OpenAPI, Schema Validator, Testing — widths approximate label length to limit CLS.
  */
 export function DevelopersPageSkeleton() {
   return (
@@ -13,8 +13,9 @@ export function DevelopersPageSkeleton() {
     >
       <div className="w-full min-w-0 -mx-px">
         <div className="flex gap-6 border-b border-border pb-4">
-          <Skeleton className="h-5 w-36 rounded-none bg-muted sm:w-40" />
-          <Skeleton className="h-5 w-20 rounded-none bg-muted sm:w-24" />
+          <Skeleton className="h-5 w-24 rounded-none bg-muted sm:w-28" />
+          <Skeleton className="h-5 w-40 rounded-none bg-muted sm:w-44" />
+          <Skeleton className="h-5 w-16 rounded-none bg-muted sm:w-20" />
         </div>
       </div>
       <div className="min-w-0 space-y-4 pt-0">
