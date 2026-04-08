@@ -27,8 +27,8 @@ function backfillGuardKey(userId: string, network: NetworkQuery): string {
 }
 
 /**
- * Drop entries with `expiresAt(value) <= now`, then if `size > maxEntries` remove the
- * earliest-expiring keys in one batch. Shared by in-process TTL maps in this module.
+ * Drop entries with `expiresAt(value) <= now`, then if `size > maxEntries` repeatedly
+ * delete the minimum-expiry entry (O(n) per deletion, no sort allocation — typical excess is 1).
  */
 function pruneTtlBoundedMap<K, V>(
   map: Map<K, V>,
@@ -39,14 +39,18 @@ function pruneTtlBoundedMap<K, V>(
   for (const [k, v] of map) {
     if (expiresAt(v) <= now) map.delete(k);
   }
-  const excess = map.size - maxEntries;
-  if (excess <= 0) return;
-  const ranked = [...map.entries()].sort(
-    (a, b) => expiresAt(a[1]) - expiresAt(b[1]),
-  );
-  for (let i = 0; i < excess; i++) {
-    const pair = ranked[i];
-    if (pair !== undefined) map.delete(pair[0]);
+  while (map.size > maxEntries) {
+    let evictKey: K | undefined;
+    let minExp = Infinity;
+    for (const [k, v] of map) {
+      const e = expiresAt(v);
+      if (e < minExp) {
+        minExp = e;
+        evictKey = k;
+      }
+    }
+    if (evictKey === undefined) break;
+    map.delete(evictKey);
   }
 }
 
