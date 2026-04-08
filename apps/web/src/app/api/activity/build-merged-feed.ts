@@ -30,24 +30,21 @@ function backfillGuardKey(userId: string, network: NetworkQuery): string {
 }
 
 /**
- * Drop expired cooldowns, then evict entries with the **earliest** `until` until at most
- * {@link BACKFILL_GUARD_MAP_MAX_ENTRIES} remain — minimizes extra backfill work vs insertion-order eviction.
+ * Drop expired cooldowns, then if over cap remove the **earliest-`until`** entries in one batch
+ * (sort once — avoids O(n) scans per eviction in a tight loop).
  */
 function pruneBackfillGuardMap(now: number): void {
   for (const [k, until] of backfillGuardSkipUntilMs) {
     if (until <= now) backfillGuardSkipUntilMs.delete(k);
   }
-  while (backfillGuardSkipUntilMs.size > BACKFILL_GUARD_MAP_MAX_ENTRIES) {
-    let evictKey: string | undefined;
-    let earliestUntil = Infinity;
-    for (const [k, until] of backfillGuardSkipUntilMs) {
-      if (until < earliestUntil) {
-        earliestUntil = until;
-        evictKey = k;
-      }
-    }
-    if (evictKey === undefined) break;
-    backfillGuardSkipUntilMs.delete(evictKey);
+  const excess = backfillGuardSkipUntilMs.size - BACKFILL_GUARD_MAP_MAX_ENTRIES;
+  if (excess <= 0) return;
+
+  const ranked = [...backfillGuardSkipUntilMs.entries()].sort(
+    (a, b) => a[1] - b[1],
+  );
+  for (let i = 0; i < excess; i++) {
+    backfillGuardSkipUntilMs.delete(ranked[i][0]);
   }
 }
 
@@ -343,19 +340,15 @@ function pruneActivityDbSnapshotCache(now: number): void {
   for (const [k, v] of activityDbSnapshotCache) {
     if (v.expiresAt <= now) activityDbSnapshotCache.delete(k);
   }
-  while (
-    activityDbSnapshotCache.size > ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES
-  ) {
-    let evictKey: string | undefined;
-    let earliestExpires = Infinity;
-    for (const [k, v] of activityDbSnapshotCache) {
-      if (v.expiresAt < earliestExpires) {
-        earliestExpires = v.expiresAt;
-        evictKey = k;
-      }
-    }
-    if (evictKey === undefined) break;
-    activityDbSnapshotCache.delete(evictKey);
+  const excess =
+    activityDbSnapshotCache.size - ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES;
+  if (excess <= 0) return;
+
+  const ranked = [...activityDbSnapshotCache.entries()].sort(
+    (a, b) => a[1].expiresAt - b[1].expiresAt,
+  );
+  for (let i = 0; i < excess; i++) {
+    activityDbSnapshotCache.delete(ranked[i][0]);
   }
 }
 
