@@ -13,9 +13,6 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 /** Max items merged for the feed (lifecycle + payments/purchases) before response. */
 export const ACTIVITY_MERGED_FEED_LIMIT = 200;
 
-/** Short TTL for the Prisma-only activity snapshot (agents + lifecycle rows). */
-const MERGED_FEED_CACHE_REVALIDATE_SECONDS = 12;
-
 /**
  * Skip repeated Prisma guard queries after a no-op or successful seed. Per Node process only
  * (serverless-friendly); worst case backfill runs again after this window when a new agent appears.
@@ -177,7 +174,6 @@ async function maybeBackfillAgentLifecycleEvents(params: {
         }
       }
     });
-    invalidateActivityDbSnapshotForUserNetwork(userId, network);
     markBackfillGuardCooldown(userId, network);
   } catch (err) {
     console.error("[Activity] Backfill transaction failed:", userId, err);
@@ -332,67 +328,6 @@ async function loadActivityDbSnapshot(params: {
   }
 
   return { agents, lifecycleItems };
-}
-
-const ACTIVITY_DB_SNAPSHOT_TTL_MS = MERGED_FEED_CACHE_REVALIDATE_SECONDS * 1000;
-/** In-process only — avoids Next Data Cache / shared Redis holding per-user activity data. */
-const ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES = 512;
-const activityDbSnapshotCache = new Map<
-  string,
-  { snapshot: ActivityDbSnapshot; expiresAt: number }
->();
-
-function activityDbSnapshotCacheKey(
-  userId: string,
-  network: NetworkQuery,
-  validFilter: ActivityFeedFilter,
-): string {
-  return `${userId}\0${network}\0${validFilter}`;
-}
-
-function pruneActivityDbSnapshotCache(now: number): void {
-  pruneTtlBoundedMap(
-    activityDbSnapshotCache,
-    now,
-    ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES,
-    (entry) => entry.expiresAt,
-  );
-}
-
-function invalidateActivityDbSnapshotForUserNetwork(
-  userId: string,
-  network: NetworkQuery,
-): void {
-  const prefix = `${userId}\0${network}\0`;
-  for (const k of activityDbSnapshotCache.keys()) {
-    if (k.startsWith(prefix)) activityDbSnapshotCache.delete(k);
-  }
-}
-
-async function loadActivityDbSnapshotCached(
-  userId: string,
-  network: NetworkQuery,
-  validFilter: ActivityFeedFilter,
-): Promise<ActivityDbSnapshot> {
-  const now = Date.now();
-  pruneActivityDbSnapshotCache(now);
-  const key = activityDbSnapshotCacheKey(userId, network, validFilter);
-  const hit = activityDbSnapshotCache.get(key);
-  if (hit !== undefined && hit.expiresAt > now) {
-    return hit.snapshot;
-  }
-  const snapshot = await loadActivityDbSnapshot({
-    userId,
-    network,
-    validFilter,
-  });
-  const afterLoad = Date.now();
-  activityDbSnapshotCache.set(key, {
-    snapshot,
-    expiresAt: afterLoad + ACTIVITY_DB_SNAPSHOT_TTL_MS,
-  });
-  pruneActivityDbSnapshotCache(afterLoad);
-  return snapshot;
 }
 
 /** Payment-node list + map to feed items. Runs every request (lazy key provisioning, external API). */
@@ -573,8 +508,9 @@ function mergeFilterSortActivityFeed(params: {
 }
 
 /**
- * Merged feed for GET /api/activity. DB snapshot is briefly cached in-process; payment-node lists
- * run every request so cursors and `lastUpdate` stay consistent.
+ * Merged feed for GET /api/activity. Prisma snapshot reads run every request (no in-process snapshot
+ * cache — avoids multi-tenant memory pressure and post-mutation staleness). Payment-node lists run
+ * every request so cursors and `lastUpdate` stay consistent.
  */
 export async function getActivityMergedFeedCached(
   params: BuildMergedFeedParams,
@@ -588,11 +524,11 @@ export async function getActivityMergedFeedCached(
     });
   }
 
-  const { agents, lifecycleItems } = await loadActivityDbSnapshotCached(
-    params.userId,
-    params.network,
-    params.validFilter,
-  );
+  const { agents, lifecycleItems } = await loadActivityDbSnapshot({
+    userId: params.userId,
+    network: params.network,
+    validFilter: params.validFilter,
+  });
 
   const agentByIdentifier = new Map(
     agents
