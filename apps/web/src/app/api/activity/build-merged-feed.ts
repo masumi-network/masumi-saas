@@ -527,6 +527,7 @@ async function loadActivityTransactionFeedPart(params: {
   return { transactionItems, transactionLastUpdate };
 }
 
+/** Merge lifecycle + transactions, filter, sort by date desc, then cap at {@link ACTIVITY_MERGED_FEED_LIMIT}. */
 function mergeFilterSortActivityFeed(params: {
   lifecycleItems: ActivityFeedItem[];
   transactionItems: ActivityFeedItem[];
@@ -560,7 +561,7 @@ function mergeFilterSortActivityFeed(params: {
   merged.sort(
     (a, b) => activityFeedDateSortMs(b.date) - activityFeedDateSortMs(a.date),
   );
-  return merged;
+  return merged.slice(0, ACTIVITY_MERGED_FEED_LIMIT);
 }
 
 /**
