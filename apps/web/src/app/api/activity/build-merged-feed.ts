@@ -22,10 +22,27 @@ const MERGED_FEED_CACHE_REVALIDATE_SECONDS = 12;
  * (serverless-friendly); worst case backfill runs again after this window when a new agent appears.
  */
 const BACKFILL_GUARD_COOLDOWN_MS = 60_000;
+/** Hard cap so long-lived Node processes cannot grow this map without bound. */
+const BACKFILL_GUARD_MAP_MAX_ENTRIES = 256;
 const backfillGuardSkipUntilMs = new Map<string, number>();
 
 function backfillGuardKey(userId: string, network: NetworkQuery): string {
   return `${userId}:${network}`;
+}
+
+/**
+ * Drop expired cooldowns, then evict oldest insertions until at most
+ * {@link BACKFILL_GUARD_MAP_MAX_ENTRIES} remain (Map iteration order ≈ LRU).
+ */
+function pruneBackfillGuardMap(now: number): void {
+  for (const [k, until] of backfillGuardSkipUntilMs) {
+    if (until <= now) backfillGuardSkipUntilMs.delete(k);
+  }
+  while (backfillGuardSkipUntilMs.size > BACKFILL_GUARD_MAP_MAX_ENTRIES) {
+    const next = backfillGuardSkipUntilMs.keys().next();
+    if (next.done) break;
+    backfillGuardSkipUntilMs.delete(next.value);
+  }
 }
 
 function markBackfillGuardCooldown(
@@ -33,15 +50,11 @@ function markBackfillGuardCooldown(
   network: NetworkQuery,
 ): void {
   const now = Date.now();
-  if (backfillGuardSkipUntilMs.size > 256) {
-    for (const [k, until] of backfillGuardSkipUntilMs) {
-      if (until <= now) backfillGuardSkipUntilMs.delete(k);
-    }
-  }
   backfillGuardSkipUntilMs.set(
     backfillGuardKey(userId, network),
     now + BACKFILL_GUARD_COOLDOWN_MS,
   );
+  pruneBackfillGuardMap(now);
 }
 
 /** Stable int32 pair for Postgres advisory lock (cross-instance, unlike in-memory Maps). */
@@ -60,6 +73,8 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   network: NetworkQuery;
 }): Promise<void> {
   const { userId, network } = params;
+  const now = Date.now();
+  pruneBackfillGuardMap(now);
   const skipUntil = backfillGuardSkipUntilMs.get(
     backfillGuardKey(userId, network),
   );
