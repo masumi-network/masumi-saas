@@ -301,6 +301,21 @@ async function loadActivityDbSnapshot(params: {
   return { agents, lifecycleItems };
 }
 
+/**
+ * Module-scoped Data Cache for Prisma-only snapshot. Arguments are part of the cache key (see Next
+ * `unstable_cache`); do not instantiate `unstable_cache` inside a per-request function.
+ */
+const loadActivityDbSnapshotCached = unstable_cache(
+  async (
+    userId: string,
+    network: NetworkQuery,
+    validFilter: ActivityFeedFilter,
+  ): Promise<ActivityDbSnapshot> =>
+    loadActivityDbSnapshot({ userId, network, validFilter }),
+  ["api-activity-db-snapshot", "v1"],
+  { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
+);
+
 /** Payment-node list + map to feed items. Runs outside `unstable_cache` (lazy key provisioning, external API). */
 async function loadActivityTransactionFeedPart(params: {
   userId: string;
@@ -477,40 +492,6 @@ function mergeFilterSortActivityFeed(params: {
   return merged;
 }
 
-/** Input for DB-only cache (no `lastUpdate` — payment-node lists are always fresh). */
-type ActivityDbSnapshotCacheInput = {
-  userId: string;
-  network: NetworkQuery;
-  validFilter: ActivityFeedFilter;
-};
-
-/**
- * Cache only Prisma reads. Do not put payment-node calls inside `unstable_cache`: lazy API
- * key provisioning and external fetches are side effects and must not run only on revalidate/miss.
- */
-async function fetchActivityDbSnapshotCached(
-  input: ActivityDbSnapshotCacheInput,
-): Promise<ActivityDbSnapshot> {
-  const cachedLoader = unstable_cache(
-    async (): Promise<ActivityDbSnapshot> => {
-      return loadActivityDbSnapshot({
-        userId: input.userId,
-        network: input.network,
-        validFilter: input.validFilter,
-      });
-    },
-    [
-      "api-activity-db-snapshot",
-      "v1",
-      input.userId,
-      input.network,
-      input.validFilter,
-    ],
-    { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
-  );
-  return cachedLoader();
-}
-
 /**
  * Merged feed for GET /api/activity. DB snapshot is Data-cached briefly; payment-node lists
  * run every request so cursors and `lastUpdate` stay consistent.
@@ -527,11 +508,11 @@ export async function getActivityMergedFeedCached(
     });
   }
 
-  const { agents, lifecycleItems } = await fetchActivityDbSnapshotCached({
-    userId: params.userId,
-    network: params.network,
-    validFilter: params.validFilter,
-  });
+  const { agents, lifecycleItems } = await loadActivityDbSnapshotCached(
+    params.userId,
+    params.network,
+    params.validFilter,
+  );
 
   const agentByIdentifier = new Map(
     agents
