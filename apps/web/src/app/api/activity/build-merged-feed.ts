@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 
 import prisma from "@masumi/database/client";
-import { unstable_cache } from "next/cache";
 
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
@@ -65,7 +64,7 @@ function userIdToAdvisoryLockKeys(userId: string): [number, number] {
 
 /**
  * One-time seed of lifecycle rows when the user has agents but no events yet.
- * Runs **outside** `unstable_cache` (writes must not run inside the Data Cache) and uses
+ * Runs **outside** the DB snapshot cache (writes must not be skipped by a stale cached read) and uses
  * `pg_advisory_xact_lock` so serverless concurrency does not double-insert.
  */
 async function maybeBackfillAgentLifecycleEvents(params: {
@@ -160,6 +159,7 @@ async function maybeBackfillAgentLifecycleEvents(params: {
         }
       }
     });
+    invalidateActivityDbSnapshotForUserNetwork(userId, network);
     markBackfillGuardCooldown(userId, network);
   } catch (err) {
     console.error("[Activity] Backfill transaction failed:", userId, err);
@@ -316,22 +316,71 @@ async function loadActivityDbSnapshot(params: {
   return { agents, lifecycleItems };
 }
 
-/**
- * Module-scoped Data Cache for Prisma-only snapshot. Arguments are part of the cache key (see Next
- * `unstable_cache`); do not instantiate `unstable_cache` inside a per-request function.
- */
-const loadActivityDbSnapshotCached = unstable_cache(
-  async (
-    userId: string,
-    network: NetworkQuery,
-    validFilter: ActivityFeedFilter,
-  ): Promise<ActivityDbSnapshot> =>
-    loadActivityDbSnapshot({ userId, network, validFilter }),
-  ["api-activity-db-snapshot", "v1"],
-  { revalidate: MERGED_FEED_CACHE_REVALIDATE_SECONDS },
-);
+const ACTIVITY_DB_SNAPSHOT_TTL_MS = MERGED_FEED_CACHE_REVALIDATE_SECONDS * 1000;
+/** In-process only — avoids Next Data Cache / shared Redis holding per-user activity data. */
+const ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES = 512;
+const activityDbSnapshotCache = new Map<
+  string,
+  { snapshot: ActivityDbSnapshot; expiresAt: number }
+>();
 
-/** Payment-node list + map to feed items. Runs outside `unstable_cache` (lazy key provisioning, external API). */
+function activityDbSnapshotCacheKey(
+  userId: string,
+  network: NetworkQuery,
+  validFilter: ActivityFeedFilter,
+): string {
+  return `${userId}\0${network}\0${validFilter}`;
+}
+
+function pruneActivityDbSnapshotCache(now: number): void {
+  for (const [k, v] of activityDbSnapshotCache) {
+    if (v.expiresAt <= now) activityDbSnapshotCache.delete(k);
+  }
+  while (
+    activityDbSnapshotCache.size > ACTIVITY_DB_SNAPSHOT_CACHE_MAX_ENTRIES
+  ) {
+    const next = activityDbSnapshotCache.keys().next();
+    if (next.done) break;
+    activityDbSnapshotCache.delete(next.value);
+  }
+}
+
+function invalidateActivityDbSnapshotForUserNetwork(
+  userId: string,
+  network: NetworkQuery,
+): void {
+  const prefix = `${userId}\0${network}\0`;
+  for (const k of activityDbSnapshotCache.keys()) {
+    if (k.startsWith(prefix)) activityDbSnapshotCache.delete(k);
+  }
+}
+
+async function loadActivityDbSnapshotCached(
+  userId: string,
+  network: NetworkQuery,
+  validFilter: ActivityFeedFilter,
+): Promise<ActivityDbSnapshot> {
+  const now = Date.now();
+  pruneActivityDbSnapshotCache(now);
+  const key = activityDbSnapshotCacheKey(userId, network, validFilter);
+  const hit = activityDbSnapshotCache.get(key);
+  if (hit !== undefined && hit.expiresAt > now) {
+    return hit.snapshot;
+  }
+  const snapshot = await loadActivityDbSnapshot({
+    userId,
+    network,
+    validFilter,
+  });
+  activityDbSnapshotCache.set(key, {
+    snapshot,
+    expiresAt: now + ACTIVITY_DB_SNAPSHOT_TTL_MS,
+  });
+  pruneActivityDbSnapshotCache(Date.now());
+  return snapshot;
+}
+
+/** Payment-node list + map to feed items. Runs every request (lazy key provisioning, external API). */
 async function loadActivityTransactionFeedPart(params: {
   userId: string;
   network: NetworkQuery;
@@ -508,7 +557,7 @@ function mergeFilterSortActivityFeed(params: {
 }
 
 /**
- * Merged feed for GET /api/activity. DB snapshot is Data-cached briefly; payment-node lists
+ * Merged feed for GET /api/activity. DB snapshot is briefly cached in-process; payment-node lists
  * run every request so cursors and `lastUpdate` stay consistent.
  */
 export async function getActivityMergedFeedCached(
