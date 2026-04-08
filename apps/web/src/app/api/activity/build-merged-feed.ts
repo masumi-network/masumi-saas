@@ -514,8 +514,8 @@ async function loadActivityTransactionFeedPart(params: {
       ...payments.map((p: PaymentOrPurchaseItem) => toItem(p, "payment")),
       ...purchases.map((p: PaymentOrPurchaseItem) => toItem(p, "purchase")),
     ];
-    /** Max change time over the full API payload (not agent-filtered) so diff `lastUpdate` advances. */
-    const watermarkTimestamps = [...allPaymentsRaw, ...allPurchasesRaw]
+    /** Max change time over **agent-filtered** rows only so diff `lastUpdate` never skips visible items. */
+    const watermarkTimestamps = [...payments, ...purchases]
       .map((p: PaymentOrPurchaseItem) =>
         optionalPaymentTimestamp(
           p.nextActionOrOnChainStateOrResultLastChangedAt ??
