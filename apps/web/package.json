@@ -22,7 +22,17 @@
     "test:smoke": "vitest run tests/smoke",
     "test:e2e": "vitest run tests/e2e",
     "test:stress": "vitest run tests/stress",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:translations": "python3 ../../scripts/generate-translations.py",
+    "generate:translations:de": "python3 ../../scripts/generate-translations.py --locale de",
+    "generate:translations:ja": "python3 ../../scripts/generate-translations.py --locale ja",
+    "generate:translations:fr": "python3 ../../scripts/generate-translations.py --locale fr",
+    "generate:translations:es": "python3 ../../scripts/generate-translations.py --locale es",
+    "i18n:audit:de": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/de.json",
+    "i18n:audit:ja": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/ja.json",
+    "i18n:audit:fr": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/fr.json",
+    "i18n:audit:es": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/es.json",
+    "i18n:audit": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "8.4.0",
