@@ -9,6 +9,7 @@ import type { z } from "zod";
 import type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
+  AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
   DeregisterAgentInput,
@@ -35,12 +36,14 @@ import {
   paymentIncomeOutputSchema,
   registryEntrySchema,
   registryListResponseSchema,
+  registryWalletResponseSchema,
   walletStatusSchema,
 } from "./schemas";
 
 export type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
+  AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
   DeregisterAgentInput,
@@ -236,6 +239,30 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         return registryEntrySchema.parse(json.data);
       }
       return null;
+    },
+
+    /** Get registered agent metadata for a wallet (READ). */
+    async getRegisteredAgentsByWallet(params: {
+      walletVkey: string;
+      network: PaymentNodeNetwork;
+      smartContractAddress?: string;
+    }): Promise<{ Assets: AgentMetadata[] }> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry/wallet`,
+        {
+          method: "GET",
+          query: {
+            walletVkey: params.walletVkey,
+            network: params.network,
+            ...(params.smartContractAddress && {
+              smartContractAddress: params.smartContractAddress,
+            }),
+          },
+        },
+        registryWalletResponseSchema,
+      );
     },
 
     /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */

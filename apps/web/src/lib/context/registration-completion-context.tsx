@@ -22,8 +22,8 @@ import { useNotifications } from "@/lib/context/notifications-context";
 const POLL_INTERVAL_MS = 5_000;
 /** Delay before first tick after adding a pending agent so dispenser UTXOs can land. */
 const FIRST_TICK_DELAY_MS = 2_000;
-/** Stop polling an agent after this many attempts (~3 min at 5s interval). */
-const MAX_POLL_ATTEMPTS = 36;
+/** Stop polling an agent after this many attempts (~10 min at 5s interval). */
+const MAX_POLL_ATTEMPTS = 120;
 const EVENT_AGENT_REGISTRATION_COMPLETE = "agent-registration-complete";
 const PENDING_STORAGE_KEY_PREFIX = "masumi-pending-registration-ids";
 const RETRY_COUNTS_STORAGE_KEY_PREFIX = "masumi-pending-registration-retries";
