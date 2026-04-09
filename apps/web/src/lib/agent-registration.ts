@@ -65,6 +65,8 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
+  /** Payment source contract used for registry ops (deregister must match). */
+  smartContractAddress?: string;
   lastRegisterAttemptAt?: string;
   registrationPayload?: {
     exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -323,6 +325,9 @@ async function registerAgentOnChainUntilDispenser(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
+        ...(paymentSource.smartContractAddress && {
+          smartContractAddress: paymentSource.smartContractAddress,
+        }),
         registrationPayload,
       },
     },

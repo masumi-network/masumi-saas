@@ -128,6 +128,9 @@ importers:
       better-auth-localization:
         specifier: 2.2.2
         version: 2.2.2(better-auth@1.4.4(next@16.0.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+      canonical-json:
+        specifier: ^0.4.0
+        version: 0.4.0
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -146,6 +149,9 @@ importers:
       lucide-react:
         specifier: 0.555.0
         version: 0.555.0(react@19.2.0)
+      lz-string:
+        specifier: 1.5.0
+        version: 1.5.0
       masumi-schema-validator-component:
         specifier: 1.2.0
         version: 1.2.0(monaco-editor@0.55.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(tailwindcss@4.1.18)
@@ -5830,6 +5836,14 @@ packages:
         integrity: sha512-JF9ptu1vP2coz98+5051jZ4PwQgd2ni8A+gYSN7EA7dPKIMf0pDlSUxhdmVOaV3/fYK5uWBkgSXJaRLr4+3A6g==,
       }
 
+  canonical-json@0.4.0:
+    resolution:
+      {
+        integrity: sha512-tjdV5Z1ZYX7JfotmcutLzAiwzw0XiViJB9smqVM7sIoOp+IdqRZcnqfFLzHdb9/baDzkNI0ECfLoMt+EBOYx4A==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
+
   cborg@4.5.8:
     resolution:
       {
@@ -8765,6 +8779,13 @@ packages:
       }
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lz-string@1.5.0:
+    resolution:
+      {
+        integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==,
+      }
+    hasBin: true
 
   magic-string@0.30.21:
     resolution:
@@ -16429,6 +16450,8 @@ snapshots:
 
   caniuse-lite@1.0.30001761: {}
 
+  canonical-json@0.4.0: {}
+
   cborg@4.5.8: {}
 
   ccount@2.0.1: {}
@@ -18332,6 +18355,8 @@ snapshots:
   lucide-react@0.555.0(react@19.2.0):
     dependencies:
       react: 19.2.0
+
+  lz-string@1.5.0: {}
 
   magic-string@0.30.21:
     dependencies:

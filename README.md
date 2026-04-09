@@ -71,7 +71,12 @@ The **v1** namespace exposes read-only, rate-limited endpoints for agent discove
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/v1/agents`      | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
 | `GET /api/v1/agents/[id]` | Get a single agent by ID.                                                                                                     |
-| `GET /api/v1/openapi`     | OpenAPI 3.0 spec for the public API.                                                                                          |
+
+OpenAPI JSON for this surface: **`GET /api/v1/openapi`** (Swagger UI: **`/docs/openapi`**).
+
+**Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, allow-listed `/api/v1/*` proxy paths, etc. — not the public catalog above.
+
+**Documentation:** header **Documentation** opens **[docs.masumi.network](https://docs.masumi.network/)**. **`/docs`** redirects there with **307** (temporary) so browsers/CDNs do not cache a permanent hop if the external docs URL changes. **Developers** (signed-in) → **`/developers`**: **Schema Validator** and **OpenAPI**; OpenAPI iframe is **`/docs/saas-openapi`**. **Public** discovery: **`/docs/openapi`**. Old paths **`/docs/api`** and **`/docs/saas-api`** **308** to **`/docs/saas-openapi`**.
 
 Example:
 
@@ -81,7 +86,7 @@ curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 
 ### Payment Node Proxy (authenticated)
 
-The **v1** namespace proxies **only exact paths** listed in code (no prefix/root wildcards). New payment-node routes stay **403** until added to that set. Use SaaS auth (session or API key); the user's payment node key is used server-side. Anything not literally in `ALLOWED_PROXY_PATHS` (including paths containing `..`) gets **403** before `fetch`.
+The **v1** namespace proxies **only exact paths** listed in code (no prefix/root wildcards). New payment-node routes stay **403** until added to that set. Use app authentication (session or API key); the user's payment node key is used server-side. Anything not literally in `ALLOWED_PROXY_PATHS` (including paths containing `..`) gets **403** before `fetch`.
 
 | Path                               | Description                                 |
 | ---------------------------------- | ------------------------------------------- |
@@ -94,6 +99,14 @@ The **v1** namespace proxies **only exact paths** listed in code (no prefix/root
 | …                                  | See `ALLOWED_PROXY_PATHS` in the route file |
 
 Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_PATHS`).
+
+**Regenerate checked-in OpenAPI JSON** (same workflow as masumi-payment-service `pnpm run swagger-json`): from the monorepo root run `pnpm --filter web run swagger-json` (alias: `swagger:generate`). Writes:
+
+- `apps/web/src/lib/swagger/openapi-docs.json` — public v1 discovery spec (`generator.ts`)
+- `apps/web/src/lib/swagger/openapi-platform-docs.json` — platform HTTP API spec (`saas-app-openapi.ts`)
+- `apps/web/public/openapi.json` — copy of the v1 spec for static hosting
+
+`GET /api/v1/openapi` and `GET /api/openapi` still build the spec at request time; commit the JSON when you change the Zod registries so diffs are reviewable.
 
 To regenerate the payment node client: `pnpm --filter web run payment-node:generate` (fetches latest OpenAPI from `https://payment.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `PAYMENT_NODE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run payment-node:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run payment-node:generate:local`.
 
@@ -194,7 +207,6 @@ masumi-saas/
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
    - **PAYMENT_NODE_ENCRYPTION_KEY**: Encryption key for storing per-user payment node API keys (min 32 chars)
      - Generate with: `openssl rand -base64 32`
-   - **PAYMENT_NODE_OPTIONAL** _(optional)_: Set to `1` to allow startup without payment node config
    - **PAYMENT_NODE_STRICT_STARTUP** _(optional)_: Set to `1` to throw on startup if payment node is unreachable
 
 3. **Configure Sumsub Webhook** (required for automatic KYC status updates):

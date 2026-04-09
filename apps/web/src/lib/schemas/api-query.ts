@@ -29,6 +29,11 @@ export type AgentEarningsPeriod = z.infer<typeof agentEarningsPeriodSchema>;
 /** GET /api/earnings query. */
 export const earningsQuerySchema = z.object({
   period: z.string().optional().default("7d").pipe(earningsPeriodEnum),
+  network: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => parseNetwork(v)),
 });
 
 /** GET /api/agents/[agentId]/earnings query. */
@@ -47,6 +52,29 @@ export const dashboardOverviewQuerySchema = z.object({
 
 /** GET /api/agents/counts query. */
 export const agentCountsQuerySchema = z.object({
+  network: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((v) => parseNetwork(v)),
+});
+
+/** GET /api/activity/transaction — single payment or purchase by id. */
+export const activityTransactionQuerySchema = z.object({
+  id: z.preprocess(
+    (v) =>
+      v === null || v === undefined || v === "" ? undefined : String(v).trim(),
+    z.string().min(1, "Missing or invalid id or type"),
+  ),
+  type: z.preprocess(
+    (v) =>
+      v === null || v === undefined || v === ""
+        ? undefined
+        : String(v).trim().toLowerCase(),
+    z.enum(["payment", "purchase"], {
+      message: "Missing or invalid id or type",
+    }),
+  ),
   network: z
     .string()
     .optional()

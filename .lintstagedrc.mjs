@@ -34,8 +34,24 @@ function lintTs(filenames) {
   return commands;
 }
 
+/** Must match generator output byte-for-byte (see verify-openapi-json-sync.ts). */
+function isGeneratedOpenApiJsonFile(f) {
+  const n = f.replace(/\\/g, "/");
+  return (
+    n.endsWith("/apps/web/public/openapi.json") ||
+    n.endsWith("/apps/web/src/lib/swagger/openapi-docs.json") ||
+    n.endsWith("/apps/web/src/lib/swagger/openapi-platform-docs.json")
+  );
+}
+
+function formatJson(filenames) {
+  const rest = filenames.filter((f) => !isGeneratedOpenApiJsonFile(f));
+  if (rest.length === 0) return [];
+  return [`prettier --write ${rest.join(" ")}`];
+}
+
 export default {
   "**/*.{ts,tsx}": lintTs,
-  "**/*.json": ["prettier --write"],
+  "**/*.json": formatJson,
   "**/*.{js,jsx,mjs,cjs,md,yml,yaml}": ["prettier --write"],
 };

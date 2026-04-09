@@ -300,7 +300,7 @@
           "balance": "Balance",
           "balanceDescription": "Available funds",
           "earnings": "Earnings",
-          "earningsDescription": "Total revenue from your agents",
+          "earningsDescription": "Withdrawn seller income from your payment node for this network (USDM as USD, or ADA when no stablecoin in range)",
           "viewAnalytics": "View analytics",
           "viewActivity": "View activity",
           "viewAllTransactions": "View all transactions",
@@ -434,7 +434,44 @@
       "searchShortcut": "F",
       "noSearchResults": "No results match your search.",
       "refresh": "Refresh",
-      "downloadCsv": "Download CSV"
+      "downloadCsv": "Download CSV",
+      "transactionDetails": {
+        "title": "Transaction details",
+        "loadError": "Could not load this transaction",
+        "tryAgain": "Try again",
+        "transactionId": "Transaction ID",
+        "network": "Network",
+        "blockchainIdentifier": "Blockchain identifier",
+        "agentName": "Agent name",
+        "agentIdentifier": "Agent identifier",
+        "notAvailable": "Not available",
+        "type": "Type",
+        "created": "Created",
+        "onChainSection": "On-chain state",
+        "nextAction": "Next action:",
+        "amountSection": "Amount",
+        "txHash": "Transaction hash",
+        "noTxHash": "No transaction hash yet",
+        "timeSection": "Timing",
+        "lastUpdated": "Last updated",
+        "submitResultBy": "Submit result by",
+        "unlockTime": "Unlock time",
+        "payBy": "Pay by",
+        "externalDisputeUnlock": "External dispute unlock",
+        "lastChecked": "Last checked on-chain",
+        "hashesSection": "MIP-004 hashes",
+        "inputHash": "Input hash",
+        "resultHash": "Result hash",
+        "errorSection": "Error",
+        "errorType": "Type:",
+        "errorNote": "Note:",
+        "viewAgent": "View agent",
+        "refreshDetail": "Refresh",
+        "close": "Close"
+      },
+      "loadMore": "Load more",
+      "loadMoreLoading": "Loading…",
+      "endOfResults": "End of results"
     },
     "Sidebar": {
       "network": "Network",
@@ -469,10 +506,8 @@
       "revokeError": "Failed to revoke API key",
       "neverUsed": "Never",
       "usageTitle": "Using your API key",
-      "usageDescription": "Use this key to authenticate with the Masumi API from a CLI, MCP, or script. Send it in the request header:",
-      "usageHeader": "Authorization: Bearer YOUR_API_KEY",
-      "usageAlt": "Or use the header:",
-      "usageAltHeader": "x-api-key: YOUR_API_KEY",
+      "usageDescription": "Use this key from a CLI, MCP, or script. Send it in the request header:",
+      "usageHeader": "x-api-key: YOUR_API_KEY",
       "refresh": "Refresh",
       "actions": "Actions",
       "emptyDescription": "No API keys yet",
@@ -669,6 +704,7 @@
         "wallets": "Wallets",
         "paymentMethods": "Payment Methods",
         "apiKeys": "API Keys",
+        "developers": "Developers & API docs",
         "account": "Account",
         "documentation": "Documentation",
         "support": "Support",
@@ -1309,9 +1345,158 @@
     "returnHome": "Return to Dashboard",
     "signIn": "Sign In"
   },
+  "DocsHub": {
+    "saasOpenApiPageTitle": "Masumi SaaS API",
+    "saasOpenApiPageDescription": "Interactive API docs for Masumi SaaS.",
+    "openApiPageTitle": "Public discovery",
+    "openApiPageDescription": "Interactive API docs for public agent discovery."
+  },
   "Developers": {
     "title": "Developers",
-    "description": "Developer tools and API documentation",
-    "comingSoon": "Developer tools and documentation coming soon."
+    "metaDescription": "Interactive OpenAPI docs for the Masumi SaaS API, plus schema tools. Use the OpenAPI tab to explore endpoints and try requests with your API key.",
+    "description": "Interactive OpenAPI docs for the Masumi SaaS API, plus schema tools. Use the OpenAPI tab to explore endpoints and try requests with your <apikey>API Key</apikey>.",
+    "tabs": {
+      "schemaValidator": "Schema Validator",
+      "openApi": "OpenAPI",
+      "testing": "Testing"
+    },
+    "openApiEmbed": {
+      "swaggerIntro": "Interactive API documentation powered by <swaggerui>Swagger UI</swaggerui>.",
+      "openInNewTab": "Open in new tab",
+      "iframeTitle": "Masumi SaaS API"
+    },
+    "testing": {
+      "cards": {
+        "comingSoon": "Coming soon",
+        "testPayment": {
+          "title": "Test payment",
+          "description": "Create a single test payment to simulate a seller-side payment request via the Masumi SaaS API proxy."
+        },
+        "testPurchase": {
+          "title": "Test purchase",
+          "description": "Create a single test purchase to simulate a buyer-side purchase request."
+        },
+        "fullCycle": {
+          "title": "Full payment cycle",
+          "description": "Run a complete payment-to-purchase cycle in one step for end-to-end testing."
+        }
+      },
+      "dialog": {
+        "title": "Create test payment",
+        "description": "Creates a payment request through your configured payment node (same as POST /api/v1/payment with session or API key).",
+        "cancel": "Cancel",
+        "submit": "Create payment",
+        "creating": "Creating…",
+        "successToast": "Test payment created",
+        "createdPaymentSectionTitle": "Created payment",
+        "errors": {
+          "generic": "Failed to create payment",
+          "emptyResponse": "Invalid response from server — no data returned",
+          "requestFailed": "Request failed ({status})"
+        }
+      },
+      "purchaseDialog": {
+        "title": "Create test purchase",
+        "description": "Creates a purchase through your payment node (POST /api/v1/purchase). Paste the JSON from a test payment response to pre-fill fields, or enter them manually.",
+        "pasteLabel": "Paste create-payment response (JSON)",
+        "pastePlaceholder": "Paste the payment JSON (raw object or nested under a data key)",
+        "applyPaste": "Apply pasted JSON",
+        "pasteSuccess": "Fields updated from pasted payment",
+        "pasteError": "Could not read payment JSON. Paste the response body from Create test payment.",
+        "agentFromPaste": "From pasted JSON",
+        "blockchainIdentifierLabel": "Blockchain identifier",
+        "sellerVkeyLabel": "Seller verification key",
+        "payByTimeLabel": "Pay by time (unix ms)",
+        "submitResultTimeLabel": "Submit result time (unix ms)",
+        "unlockTimeLabel": "Unlock time (unix ms)",
+        "externalDisputeUnlockTimeLabel": "External dispute unlock (unix ms)",
+        "createdSectionTitle": "Created purchase",
+        "cancel": "Cancel",
+        "submit": "Create purchase",
+        "creating": "Creating…",
+        "successToast": "Test purchase created",
+        "errors": {
+          "generic": "Failed to create purchase",
+          "emptyResponse": "Invalid response from server — no data returned",
+          "requestFailed": "Request failed ({status})",
+          "blockchainIdentifier": "Blockchain identifier is required",
+          "sellerVkey": "Seller verification key is required",
+          "inputHashLength": "Input hash must be 64 characters",
+          "inputHashHex": "Must be valid hex",
+          "agentIdentifier": "Agent identifier must be at least 57 characters",
+          "identifierMin": "Minimum 14 characters",
+          "identifierMax": "Maximum 26 characters",
+          "identifierHex": "Must be valid hex",
+          "timeRequired": "Required (numeric unix time in milliseconds)"
+        }
+      },
+      "fullCycleDialog": {
+        "title": "Full payment cycle",
+        "intro": "Creates a payment, then automatically creates the matching purchase using the payment response (same flow as the payment service testing UI).",
+        "stepPayment": "Payment",
+        "stepPurchase": "Purchase",
+        "done": "Done",
+        "cancel": "Cancel",
+        "start": "Start full cycle",
+        "close": "Close",
+        "creatingPayment": "Creating payment…",
+        "creatingPurchase": "Creating purchase…",
+        "paymentSectionTitle": "Payment",
+        "purchaseSuccessTitle": "Purchase created",
+        "purchaseFailedTitle": "Purchase failed",
+        "successPaymentToast": "Payment created",
+        "successPurchaseToast": "Full cycle complete — purchase created",
+        "errors": {
+          "paymentGeneric": "Failed to create payment",
+          "paymentRequestFailed": "Payment request failed ({status})",
+          "emptyPaymentResponse": "Invalid payment response — no data returned",
+          "missingSellerOrTimes": "Payment response is missing seller key or pay-by time. Ensure the payment was created successfully.",
+          "purchaseGeneric": "Failed to create purchase",
+          "purchaseRequestFailed": "Purchase request failed ({status})",
+          "emptyPurchaseResponse": "Invalid purchase response — no data returned"
+        }
+      },
+      "form": {
+        "agentLabel": "Agent",
+        "loadingAgents": "Loading agents…",
+        "noPaidAgents": "No paid agents available",
+        "selectAgent": "Select a paid agent",
+        "freeAgentsHint": "No paid agents available. Free agents cannot be used with the payment flow.",
+        "purchaserIdLabel": "Purchaser identifier",
+        "purchaserIdPlaceholder": "14–26 character hex string",
+        "regenerate": "Regenerate",
+        "mip004Blurb": "Input hashed per <link>MIP-004</link> — SHA-256(identifier + \";\" + JCS(input_data))",
+        "loadPreset": "Load preset…",
+        "inputDataLabel": "Input data",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
+        "inputHashLabel": "Input hash",
+        "inputHashPlaceholder": "Generated from input data",
+        "metadataLabel": "Metadata (optional)",
+        "metadataPlaceholder": "Optional metadata for the payment",
+        "presets": {
+          "textPrompt": "Text prompt",
+          "emailAnalysis": "Email analysis",
+          "documentProcessing": "Document processing",
+          "multiFieldForm": "Multi-field form"
+        },
+        "required": "*",
+        "errors": {
+          "agentIdentifier": "Agent identifier required",
+          "inputHashLength": "Input hash must be 64 characters",
+          "inputHashHex": "Must be valid hex",
+          "identifierMin": "Minimum 14 characters",
+          "identifierMax": "Maximum 26 characters",
+          "identifierHex": "Must be valid hex",
+          "inputDataObject": "Input data must be a JSON object",
+          "invalidJson": "Invalid JSON"
+        }
+      },
+      "curlViewer": {
+        "curlTitle": "cURL",
+        "response": "Response",
+        "badgeError": "Error",
+        "badgeOk": "OK"
+      }
+    }
   }
 }

@@ -176,7 +176,7 @@ export const auth = betterAuth({
       adminUserIds: getBootstrapAdminIds(),
     }),
     apiKey({
-      defaultPrefix: "mas_",
+      defaultPrefix: authConfig.apiKey.defaultKeyPrefix,
       startingCharactersConfig: {
         shouldStore: true,
         charactersLength: 12,

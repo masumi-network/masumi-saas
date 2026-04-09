@@ -16,6 +16,8 @@ import type * as Prisma from "../internal/prismaNamespace.js";
  * Audit log of agent lifecycle events for the Activity feed.
  * Emitted when registration state changes, verification, deregister, or delete.
  * agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
+ * agentNameSnapshot preserves display name after agentId is cleared on delete.
+ * networkIdentifier scopes orphan events (agentId null) to Mainnet vs Preprod.
  */
 export type AgentActivityEventModel =
   runtime.Types.Result.DefaultSelection<Prisma.$AgentActivityEventPayload>;
@@ -30,6 +32,8 @@ export type AgentActivityEventMinAggregateOutputType = {
   id: string | null;
   userId: string | null;
   agentId: string | null;
+  agentNameSnapshot: string | null;
+  networkIdentifier: string | null;
   type: $Enums.AgentActivityEventType | null;
   createdAt: Date | null;
 };
@@ -38,6 +42,8 @@ export type AgentActivityEventMaxAggregateOutputType = {
   id: string | null;
   userId: string | null;
   agentId: string | null;
+  agentNameSnapshot: string | null;
+  networkIdentifier: string | null;
   type: $Enums.AgentActivityEventType | null;
   createdAt: Date | null;
 };
@@ -46,6 +52,8 @@ export type AgentActivityEventCountAggregateOutputType = {
   id: number;
   userId: number;
   agentId: number;
+  agentNameSnapshot: number;
+  networkIdentifier: number;
   type: number;
   createdAt: number;
   _all: number;
@@ -55,6 +63,8 @@ export type AgentActivityEventMinAggregateInputType = {
   id?: true;
   userId?: true;
   agentId?: true;
+  agentNameSnapshot?: true;
+  networkIdentifier?: true;
   type?: true;
   createdAt?: true;
 };
@@ -63,6 +73,8 @@ export type AgentActivityEventMaxAggregateInputType = {
   id?: true;
   userId?: true;
   agentId?: true;
+  agentNameSnapshot?: true;
+  networkIdentifier?: true;
   type?: true;
   createdAt?: true;
 };
@@ -71,6 +83,8 @@ export type AgentActivityEventCountAggregateInputType = {
   id?: true;
   userId?: true;
   agentId?: true;
+  agentNameSnapshot?: true;
+  networkIdentifier?: true;
   type?: true;
   createdAt?: true;
   _all?: true;
@@ -165,6 +179,8 @@ export type AgentActivityEventGroupByOutputType = {
   id: string;
   userId: string;
   agentId: string | null;
+  agentNameSnapshot: string | null;
+  networkIdentifier: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt: Date;
   _count: AgentActivityEventCountAggregateOutputType | null;
@@ -198,6 +214,14 @@ export type AgentActivityEventWhereInput = {
   id?: Prisma.StringFilter<"AgentActivityEvent"> | string;
   userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
   agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
+  agentNameSnapshot?:
+    | Prisma.StringNullableFilter<"AgentActivityEvent">
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.StringNullableFilter<"AgentActivityEvent">
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
     | $Enums.AgentActivityEventType;
@@ -213,6 +237,8 @@ export type AgentActivityEventOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  agentNameSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
@@ -231,6 +257,14 @@ export type AgentActivityEventWhereUniqueInput = Prisma.AtLeast<
       | Prisma.AgentActivityEventWhereInput[];
     userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
     agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
+    agentNameSnapshot?:
+      | Prisma.StringNullableFilter<"AgentActivityEvent">
+      | string
+      | null;
+    networkIdentifier?:
+      | Prisma.StringNullableFilter<"AgentActivityEvent">
+      | string
+      | null;
     type?:
       | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
       | $Enums.AgentActivityEventType;
@@ -248,6 +282,8 @@ export type AgentActivityEventOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  agentNameSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrderInput | Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   _count?: Prisma.AgentActivityEventCountOrderByAggregateInput;
@@ -269,6 +305,14 @@ export type AgentActivityEventScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"AgentActivityEvent">
     | string
     | null;
+  agentNameSnapshot?:
+    | Prisma.StringNullableWithAggregatesFilter<"AgentActivityEvent">
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.StringNullableWithAggregatesFilter<"AgentActivityEvent">
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeWithAggregatesFilter<"AgentActivityEvent">
     | $Enums.AgentActivityEventType;
@@ -280,6 +324,8 @@ export type AgentActivityEventScalarWhereWithAggregatesInput = {
 
 export type AgentActivityEventCreateInput = {
   id?: string;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentActivityEventsInput;
@@ -290,12 +336,22 @@ export type AgentActivityEventUncheckedCreateInput = {
   id?: string;
   userId: string;
   agentId?: string | null;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
 
 export type AgentActivityEventUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -308,6 +364,14 @@ export type AgentActivityEventUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -318,12 +382,22 @@ export type AgentActivityEventCreateManyInput = {
   id?: string;
   userId: string;
   agentId?: string | null;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
 
 export type AgentActivityEventUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -334,6 +408,14 @@ export type AgentActivityEventUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -354,6 +436,8 @@ export type AgentActivityEventCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
+  agentNameSnapshot?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
@@ -362,6 +446,8 @@ export type AgentActivityEventMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
+  agentNameSnapshot?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
@@ -370,6 +456,8 @@ export type AgentActivityEventMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
+  agentNameSnapshot?: Prisma.SortOrder;
+  networkIdentifier?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
@@ -600,6 +688,8 @@ export type EnumAgentActivityEventTypeFieldUpdateOperationsInput = {
 
 export type AgentActivityEventCreateWithoutUserInput = {
   id?: string;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
   agent?: Prisma.AgentCreateNestedOneWithoutActivityEventsInput;
@@ -608,6 +698,8 @@ export type AgentActivityEventCreateWithoutUserInput = {
 export type AgentActivityEventUncheckedCreateWithoutUserInput = {
   id?: string;
   agentId?: string | null;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -666,6 +758,14 @@ export type AgentActivityEventScalarWhereInput = {
   id?: Prisma.StringFilter<"AgentActivityEvent"> | string;
   userId?: Prisma.StringFilter<"AgentActivityEvent"> | string;
   agentId?: Prisma.StringNullableFilter<"AgentActivityEvent"> | string | null;
+  agentNameSnapshot?:
+    | Prisma.StringNullableFilter<"AgentActivityEvent">
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.StringNullableFilter<"AgentActivityEvent">
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFilter<"AgentActivityEvent">
     | $Enums.AgentActivityEventType;
@@ -674,6 +774,8 @@ export type AgentActivityEventScalarWhereInput = {
 
 export type AgentActivityEventCreateWithoutAgentInput = {
   id?: string;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentActivityEventsInput;
@@ -682,6 +784,8 @@ export type AgentActivityEventCreateWithoutAgentInput = {
 export type AgentActivityEventUncheckedCreateWithoutAgentInput = {
   id?: string;
   userId: string;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
@@ -732,12 +836,22 @@ export type AgentActivityEventUpdateManyWithWhereWithoutAgentInput = {
 export type AgentActivityEventCreateManyUserInput = {
   id?: string;
   agentId?: string | null;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
 
 export type AgentActivityEventUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -748,6 +862,14 @@ export type AgentActivityEventUpdateWithoutUserInput = {
 export type AgentActivityEventUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -757,6 +879,14 @@ export type AgentActivityEventUncheckedUpdateWithoutUserInput = {
 export type AgentActivityEventUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -766,12 +896,22 @@ export type AgentActivityEventUncheckedUpdateManyWithoutUserInput = {
 export type AgentActivityEventCreateManyAgentInput = {
   id?: string;
   userId: string;
+  agentNameSnapshot?: string | null;
+  networkIdentifier?: string | null;
   type: $Enums.AgentActivityEventType;
   createdAt?: Date | string;
 };
 
 export type AgentActivityEventUpdateWithoutAgentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -782,6 +922,14 @@ export type AgentActivityEventUpdateWithoutAgentInput = {
 export type AgentActivityEventUncheckedUpdateWithoutAgentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -791,6 +939,14 @@ export type AgentActivityEventUncheckedUpdateWithoutAgentInput = {
 export type AgentActivityEventUncheckedUpdateManyWithoutAgentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentNameSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   type?:
     | Prisma.EnumAgentActivityEventTypeFieldUpdateOperationsInput
     | $Enums.AgentActivityEventType;
@@ -805,6 +961,8 @@ export type AgentActivityEventSelect<
     id?: boolean;
     userId?: boolean;
     agentId?: boolean;
+    agentNameSnapshot?: boolean;
+    networkIdentifier?: boolean;
     type?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -821,6 +979,8 @@ export type AgentActivityEventSelectCreateManyAndReturn<
     id?: boolean;
     userId?: boolean;
     agentId?: boolean;
+    agentNameSnapshot?: boolean;
+    networkIdentifier?: boolean;
     type?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -837,6 +997,8 @@ export type AgentActivityEventSelectUpdateManyAndReturn<
     id?: boolean;
     userId?: boolean;
     agentId?: boolean;
+    agentNameSnapshot?: boolean;
+    networkIdentifier?: boolean;
     type?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -849,6 +1011,8 @@ export type AgentActivityEventSelectScalar = {
   id?: boolean;
   userId?: boolean;
   agentId?: boolean;
+  agentNameSnapshot?: boolean;
+  networkIdentifier?: boolean;
   type?: boolean;
   createdAt?: boolean;
 };
@@ -857,7 +1021,13 @@ export type AgentActivityEventOmit<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-  "id" | "userId" | "agentId" | "type" | "createdAt",
+  | "id"
+  | "userId"
+  | "agentId"
+  | "agentNameSnapshot"
+  | "networkIdentifier"
+  | "type"
+  | "createdAt",
   ExtArgs["result"]["agentActivityEvent"]
 >;
 export type AgentActivityEventInclude<
@@ -896,6 +1066,8 @@ export type $AgentActivityEventPayload<
       id: string;
       userId: string;
       agentId: string | null;
+      agentNameSnapshot: string | null;
+      networkIdentifier: string | null;
       type: $Enums.AgentActivityEventType;
       createdAt: Date;
     },
@@ -1542,6 +1714,8 @@ export interface AgentActivityEventFieldRefs {
   readonly id: Prisma.FieldRef<"AgentActivityEvent", "String">;
   readonly userId: Prisma.FieldRef<"AgentActivityEvent", "String">;
   readonly agentId: Prisma.FieldRef<"AgentActivityEvent", "String">;
+  readonly agentNameSnapshot: Prisma.FieldRef<"AgentActivityEvent", "String">;
+  readonly networkIdentifier: Prisma.FieldRef<"AgentActivityEvent", "String">;
   readonly type: Prisma.FieldRef<
     "AgentActivityEvent",
     "AgentActivityEventType"

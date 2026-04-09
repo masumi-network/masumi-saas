@@ -10,6 +10,22 @@ import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
 import type { SessionWithOrganization } from "./session-types";
 
+/** Full session object from Better Auth after a successful lookup. */
+export type AuthSessionFull = NonNullable<
+  Awaited<ReturnType<typeof auth.api.getSession>>
+>;
+
+/**
+ * Single return shape for {@link getAuthenticatedOrThrow}: headers, guaranteed user + session,
+ * and active org id when the organization plugin is enabled.
+ */
+export type AuthenticatedApiContext = {
+  headers: Headers;
+  session: AuthSessionFull;
+  user: NonNullable<AuthSessionFull["user"]>;
+  activeOrganizationId: string | null;
+};
+
 /** Thrown when the request has no valid session or API key. Use for 401 responses in API routes. */
 export class UnauthorizedError extends Error {
   constructor() {
@@ -104,7 +120,7 @@ export interface GetAuthenticatedOptions {
 /**
  * Returns the current user and session. Supports both:
  * - Session (cookie): browser requests with a logged-in session.
- * - API key: CLI/MCP/scripts send `Authorization: Bearer <key>` or `x-api-key: <key>`.
+ * - API key: prefer `x-api-key: <key>`; `Authorization: Bearer <key>` is still accepted for compatibility.
  * Throws UnauthorizedError when neither is valid. Use handleAuthError() in API route catch blocks to return 401.
  * When REQUIRE_EMAIL_VERIFICATION is true, throws EmailNotVerifiedError if user has not verified email (403).
  * Pass { requireEmailVerified: false } to skip the email check for flows like accept-invitation.
@@ -114,7 +130,7 @@ export interface GetAuthenticatedOptions {
 export async function getAuthenticatedOrThrow(
   requestOrOptions?: Request | GetAuthenticatedOptions,
   options?: GetAuthenticatedOptions,
-) {
+): Promise<AuthenticatedApiContext> {
   const request =
     requestOrOptions instanceof Request ? requestOrOptions : undefined;
   const opts =

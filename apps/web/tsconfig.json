@@ -22,6 +22,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/app/*": ["./src/app/(app)/*"],
+      "@/admin/*": ["./src/app/(admin)/admin/*"],
       "@/auth/*": ["./src/app/(auth)/*"],
       "@/api/*": ["./src/app/api/*"],
       "@/components/*": ["./src/components/*"],
@@ -46,4 +47,3 @@
   ],
   "exclude": ["node_modules"]
 }
-

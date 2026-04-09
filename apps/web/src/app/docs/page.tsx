@@ -1,23 +1,9 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import "swagger-ui-react/swagger-ui.css";
-import "@/../public/swagger-custom.css";
-
-import dynamic from "next/dynamic";
-
-const SwaggerUI = dynamic(() => import("swagger-ui-react"), { ssr: false });
-
-export default function DocsPage() {
-  return (
-    <>
-      <div style={{ minHeight: "100vh" }}>
-        <SwaggerUI
-          url="/api/v1/openapi"
-          persistAuthorization={true}
-          tryItOutEnabled={true}
-          displayRequestDuration={true}
-        />
-      </div>
-    </>
-  );
+/**
+ * External docs hub — route (not next.config redirect) so /docs/* app routes are not shadowed.
+ * `redirect()` → 307 temporary; see README (avoid 308 caching while the hub URL may change).
+ */
+export default function DocsIndexPage() {
+  redirect("https://docs.masumi.network/");
 }

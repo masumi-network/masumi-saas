@@ -51,15 +51,13 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
     queryFn: async (): Promise<{
       items: TransactionItem[];
       lastUpdate?: string;
-      usedLastUpdate: boolean;
     }> => {
       const sentLastUpdate = lastUpdateRef.current;
       const params = new URLSearchParams({ filter: "transactions", network });
       if (sentLastUpdate) params.set("lastUpdate", sentLastUpdate);
       const res = await fetch(`/api/activity?${params.toString()}`);
       const json = await res.json();
-      if (!json.success)
-        return { items: [], usedLastUpdate: Boolean(sentLastUpdate) };
+      if (!json.success) return { items: [] };
       const raw = (json.data?.items ?? []) as TransactionItem[];
       const items = raw.filter(
         (i) => i && typeof i.id === "string" && typeof i.date === "string",
@@ -69,7 +67,6 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
       return {
         items,
         lastUpdate: newLastUpdate,
-        usedLastUpdate: Boolean(sentLastUpdate),
       };
     },
     staleTime: REFETCH_INTERVAL_MS,
@@ -78,28 +75,17 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
   });
 
   const items = useMemo(() => data?.items ?? [], [data?.items]);
-  const usedLastUpdate = data?.usedLastUpdate ?? false;
 
   useEffect(() => {
     if (!trackVisit || !data) return;
-
-    if (usedLastUpdate) {
-      if (items.length > 0) {
-        const nextCount = getStoredCount() + items.length;
-        items.forEach((i) => seenIdsRef.current.add(i.id));
-        setStoredCount(nextCount);
-        queueMicrotask(() => setNewCount(nextCount));
-      }
-      return;
-    }
-
     if (items.length === 0) return;
 
     const lastVisit = getLastVisit();
+    const seen = seenIdsRef.current;
 
     if (!lastVisit) {
       setLastVisit(new Date().toISOString());
-      seenIdsRef.current = new Set(items.map((i) => i.id));
+      items.forEach((i) => seen.add(i.id));
       hasSeededSeenRef.current = true;
       setStoredCount(0);
       queueMicrotask(() => setNewCount(0));
@@ -107,7 +93,6 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
     }
 
     const lastVisitTime = new Date(lastVisit).getTime();
-    const seen = seenIdsRef.current;
 
     if (!hasSeededSeenRef.current) {
       const newOnes = items.filter(
@@ -123,6 +108,11 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
       return;
     }
 
+    /**
+     * Payment-node diff responses (when we send `lastUpdate`) include txs whose *state*
+     * changed, not necessarily transactions that are new since the user's last visit.
+     * Only count rows that are unseen and newer than `lastVisit` (same rules as the first poll).
+     */
     const newOnes = items.filter(
       (i) => !seen.has(i.id) && new Date(i.date).getTime() > lastVisitTime,
     );
@@ -133,7 +123,7 @@ export function useNewTransactionsCount(options?: { trackVisit?: boolean }) {
       newOnes.forEach((i) => seen.add(i.id));
     }
     items.forEach((i) => seen.add(i.id));
-  }, [trackVisit, data, items, usedLastUpdate]);
+  }, [trackVisit, data, items]);
 
   const markAllAsRead = useCallback(() => {
     if (!trackVisit) return;

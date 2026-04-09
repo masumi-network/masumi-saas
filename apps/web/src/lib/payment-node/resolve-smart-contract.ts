@@ -1,7 +1,9 @@
 /**
- * Resolve PAYMENT_NODE_PAYMENT_SOURCE_ID to smartContractAddress via payment node API.
- * Used when calling payment/get and purchase/get with filterSmartContractAddress.
- * Cache is per-user to avoid sharing one user's result with others or masking per-user access failures.
+ * Resolve smart contract address for the configured payment source:
+ * 1) PAYMENT_NODE_SMART_CONTRACT_ADDRESS when set
+ * 2) Else PAYMENT_NODE_PAYMENT_SOURCE_ID via GET /payment-source (cached per user)
+ *
+ * Used for payment/purchase filters and deregister fallback.
  */
 
 import type { PaymentNodeClient } from "@/lib/payment-node/client";
@@ -20,6 +22,9 @@ export async function getSmartContractAddressForConfiguredSource(
   client: PaymentNodeClient,
   userId: string,
 ): Promise<string | null> {
+  const fromEnv = paymentNodeConfig.tryGetSmartContractAddress();
+  if (fromEnv) return fromEnv;
+
   const paymentSourceId = paymentNodeConfig.getPaymentSourceId();
   const entry = cacheByUser.get(userId);
   if (entry?.paymentSourceId === paymentSourceId) return entry.address;

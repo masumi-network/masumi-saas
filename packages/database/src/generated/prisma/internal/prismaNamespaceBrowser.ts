@@ -246,6 +246,7 @@ export const ApikeyScalarFieldEnum = {
   remaining: "remaining",
   lastRequest: "lastRequest",
   expiresAt: "expiresAt",
+  permissions: "permissions",
   metadata: "metadata",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
@@ -309,6 +310,8 @@ export const AgentActivityEventScalarFieldEnum = {
   id: "id",
   userId: "userId",
   agentId: "agentId",
+  agentNameSnapshot: "agentNameSnapshot",
+  networkIdentifier: "networkIdentifier",
   type: "type",
   createdAt: "createdAt",
 } as const;

@@ -344,6 +344,7 @@ export type PaymentSourceWallet = z.infer<typeof paymentSourceWalletSchema>;
 export const addWalletToSourceOutputSchema = z.object({
   id: z.string(),
   network: paymentNodeNetworkSchema.optional(),
+  /** Returned by PATCH /payment-source-extended; pass through to deregister when set. */
   smartContractAddress: z.string().optional(),
   SellingWallets: z.array(paymentSourceWalletSchema),
   PurchasingWallets: z.array(paymentSourceWalletSchema),

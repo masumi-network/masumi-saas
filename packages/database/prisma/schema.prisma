@@ -216,6 +216,7 @@ model Apikey {
   remaining           Int?
   lastRequest         DateTime?
   expiresAt           DateTime?
+  permissions         String? // Better Auth apiKey plugin (v1.4+)
   metadata            String?   // Better Auth apiKey plugin (enableMetadata: true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -322,19 +323,24 @@ model Agent {
 /// Audit log of agent lifecycle events for the Activity feed.
 /// Emitted when registration state changes, verification, deregister, or delete.
 /// agentId is optional so AgentDeleted events survive when the agent row is removed (onDelete: SetNull).
+/// agentNameSnapshot preserves display name after agentId is cleared on delete.
+/// networkIdentifier scopes orphan events (agentId null) to Mainnet vs Preprod.
 model AgentActivityEvent {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agentId   String?
-  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
-  type      AgentActivityEventType
-  createdAt DateTime @default(now())
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId             String?
+  agent               Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentNameSnapshot   String?
+  networkIdentifier   String?
+  type                AgentActivityEventType
+  createdAt           DateTime @default(now())
 
   @@index([userId])
   @@index([agentId])
   @@index([createdAt])
   @@index([type])
+  @@index([networkIdentifier])
   @@map("agent_activity_event")
 }
 

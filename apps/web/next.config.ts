@@ -10,6 +10,18 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/docs/saas-api",
+        destination: "/docs/saas-openapi",
+        permanent: true,
+      },
+      {
+        source: "/docs/api",
+        destination: "/docs/saas-openapi",
+        permanent: true,
+      },
+      // /docs is handled by app/docs/page.tsx so local routes (e.g. /docs/saas-openapi)
+      // are never shadowed by a config redirect; trailing slash normalizes to the same page.
       { source: "/agents", destination: "/ai-agents", permanent: true },
       {
         source: "/agents/:path*",

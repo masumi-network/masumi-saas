@@ -83,3 +83,141 @@ export function isPaymentNodeConfigured(): boolean {
     return false;
   }
 }
+
+function paymentNodeHealthTimeoutMs(): number {
+  const raw = process.env.PAYMENT_NODE_HEALTH_TIMEOUT_MS;
+  const parsed =
+    raw != null && raw !== "" ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5_000;
+}
+
+/**
+ * Payment service health GET target (no auth).
+ * - Default: append `health` to `PAYMENT_NODE_BASE_URL` using the same base
+ *   normalization as `client.ts` (`new URL('health', base + '/')`), i.e. Masumi
+ *   payment service `GET /api/v1/health` when the base is `…/api/v1`.
+ * - Optional `PAYMENT_NODE_HEALTH_URL`: full URL when a reverse proxy exposes
+ *   liveness only at origin `/health` (or any non-default path).
+ */
+function paymentNodeLivenessRequestUrl(baseUrl: string): string {
+  const override = process.env.PAYMENT_NODE_HEALTH_URL?.trim();
+  if (override) return override;
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return new URL("health", base).toString();
+}
+
+/**
+ * GET payment node health — no auth (public liveness).
+ * Lighter than {@link checkPaymentNodeHealth} (no admin registry call).
+ */
+export async function checkPaymentNodeLiveness(): Promise<PaymentNodeHealthResult> {
+  let baseUrl: string;
+  try {
+    baseUrl = paymentNodeConfig.getBaseUrl();
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Payment node config missing";
+    return {
+      ok: false,
+      configMissing: true,
+      error: message,
+    };
+  }
+
+  const url = paymentNodeLivenessRequestUrl(baseUrl);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    paymentNodeHealthTimeoutMs(),
+  );
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+
+    const contentType = res.headers.get("content-type") ?? "";
+    const text = await res.text();
+    const trimmed = text.trim();
+
+    let json: { status?: string; data?: { status?: string } };
+    if (!trimmed) {
+      console.error("[payment-node] health: empty response body", {
+        url,
+        status: res.status,
+        contentType,
+      });
+      return {
+        ok: false,
+        unreachable: true,
+        error: "Payment node /health returned an empty body",
+      };
+    }
+
+    try {
+      json = JSON.parse(trimmed) as {
+        status?: string;
+        data?: { status?: string };
+      };
+    } catch (parseErr) {
+      const preview = trimmed.slice(0, 200);
+      const isLikelyHtml = /^\s*</.test(trimmed);
+      console.error("[payment-node] health: response is not valid JSON", {
+        url,
+        status: res.status,
+        contentType,
+        bodyPreview: preview,
+        isLikelyHtml,
+        parseError:
+          parseErr instanceof Error ? parseErr.message : String(parseErr),
+      });
+      return {
+        ok: false,
+        unreachable: true,
+        error: isLikelyHtml
+          ? "Payment node /health returned HTML or non-JSON (check base URL and reverse proxy)"
+          : "Payment node /health returned invalid JSON",
+      };
+    }
+
+    if (res.ok && json?.status === "success" && json?.data?.status === "ok") {
+      return { ok: true };
+    }
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        unreachable: true,
+        error: `Payment node health returned HTTP ${res.status}`,
+      };
+    }
+
+    return {
+      ok: false,
+      unreachable: true,
+      error: "Unexpected payment node health response body",
+    };
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    if (err.name === "AbortError") {
+      return {
+        ok: false,
+        unreachable: true,
+        error: "Payment node health check timed out",
+      };
+    }
+    console.error("[payment-node] health: request failed", {
+      url,
+      message: err.message,
+    });
+    return {
+      ok: false,
+      unreachable: true,
+      error: err.message || "Payment node unreachable",
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}

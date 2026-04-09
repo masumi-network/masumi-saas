@@ -5,6 +5,7 @@ import {
   BookOpen,
   Bot,
   Building2,
+  Code,
   ExternalLink,
   History,
   Key,
@@ -45,6 +46,8 @@ interface NavigationItem {
   key: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Extra filter tokens for cmdk; keep `value` as `key` for stable selection identity. */
+  searchKeywords?: string[];
 }
 
 const navigationItems: NavigationItem[] = [
@@ -53,11 +56,31 @@ const navigationItems: NavigationItem[] = [
   { key: "activity", href: "/activity", icon: Activity },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },
+  {
+    key: "developers",
+    href: "/developers",
+    icon: Code,
+    searchKeywords: [
+      "openapi",
+      "api",
+      "documentation",
+      "swagger",
+      "rest",
+      "http",
+      "masumi",
+      "saas",
+      "developers",
+    ],
+  },
   { key: "account", href: "/account", icon: User },
 ];
 
 const quickActions: NavigationItem[] = [
-  { key: "documentation", href: "https://docs.masumi.network", icon: BookOpen },
+  {
+    key: "documentation",
+    href: "https://docs.masumi.network/",
+    icon: BookOpen,
+  },
   {
     key: "support",
     href: "https://www.masumi.network/contact",
@@ -177,6 +200,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             <CommandItem
               key={item.key}
               value={item.key}
+              keywords={item.searchKeywords}
               onSelect={() => handleSelect(item.href)}
             >
               <item.icon className="mr-2 h-4 w-4" />

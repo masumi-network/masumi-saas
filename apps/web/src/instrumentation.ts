@@ -18,21 +18,14 @@ export async function register() {
   }
 }
 
-/** Payment node: require config (unless optional); optionally validate health and API key at startup. */
+/** Payment node: require config; optionally validate health and API key at startup. */
 async function validatePaymentNodeAtStartup() {
-  if (
-    process.env.PAYMENT_NODE_OPTIONAL === "1" ||
-    process.env.PAYMENT_NODE_OPTIONAL === "true"
-  ) {
-    return;
-  }
-
   const { checkPaymentNodeHealth, isPaymentNodeConfigured } =
     await import("./lib/payment-node/health");
 
   if (!isPaymentNodeConfigured()) {
     const msg =
-      "Payment node config missing: set PAYMENT_NODE_BASE_URL, PAYMENT_NODE_ADMIN_API_KEY, and PAYMENT_NODE_PAYMENT_SOURCE_ID. Set PAYMENT_NODE_OPTIONAL=1 to allow startup without it.";
+      "Payment node config missing: set PAYMENT_NODE_BASE_URL, PAYMENT_NODE_ADMIN_API_KEY, and PAYMENT_NODE_PAYMENT_SOURCE_ID.";
     console.error(`[payment-node] ${msg}`);
     throw new Error(msg);
   }
