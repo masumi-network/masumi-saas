@@ -4,7 +4,6 @@ import { useId, useMemo } from "react";
 import {
   Area,
   AreaChart,
-  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -69,11 +68,6 @@ export function EarningsChart({ data, amountUnit }: EarningsChartProps) {
               />
             </linearGradient>
           </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            className="stroke-border/60"
-            vertical={false}
-          />
           <XAxis
             dataKey="time"
             type="number"

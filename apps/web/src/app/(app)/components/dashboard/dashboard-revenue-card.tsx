@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
@@ -22,68 +21,10 @@ import {
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
-type EarningsPoint = { date: string; amount: number };
-
-const CHART_WIDTH = 100;
-const CHART_HEIGHT = 40;
-const PADDING = 2;
-
-function buildEarningsChartPaths(earnings: EarningsPoint[]): {
-  areaPath: string;
-  linePath: string;
-} {
-  if (earnings.length === 0) {
-    const flatY = CHART_HEIGHT - PADDING;
-    return {
-      areaPath: `M 0 ${flatY} L ${CHART_WIDTH} ${flatY} L ${CHART_WIDTH} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`,
-      linePath: `M 0 ${flatY} L ${CHART_WIDTH} ${flatY}`,
-    };
-  }
-
-  const amounts = earnings.map((p) => p.amount);
-  const minAmount = Math.min(...amounts);
-  const maxAmount = Math.max(...amounts);
-  const range = maxAmount - minAmount || 1;
-  const n = earnings.length;
-  const stepX =
-    n > 1 ? (CHART_WIDTH - 2 * PADDING) / (n - 1) : CHART_WIDTH - 2 * PADDING;
-
-  const points: { x: number; y: number }[] = earnings.map((p, i) => {
-    const x = PADDING + i * stepX;
-    const y =
-      CHART_HEIGHT -
-      PADDING -
-      ((p.amount - minAmount) / range) * (CHART_HEIGHT - 2 * PADDING);
-    return { x, y };
-  });
-
-  const lineParts: string[] = [];
-  for (let i = 0; i < points.length; i++) {
-    const { x, y } = points[i];
-    lineParts.push(i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`);
-  }
-  let linePath = lineParts.join(" ");
-
-  if (n === 1) {
-    const { y } = points[0];
-    linePath = `M ${PADDING} ${y} L ${CHART_WIDTH - PADDING} ${y}`;
-  }
-
-  const lastX = points[points.length - 1].x;
-  const lastY = points[points.length - 1].y;
-  const areaPath =
-    n === 1
-      ? `M ${PADDING} ${lastY} L ${CHART_WIDTH - PADDING} ${lastY} L ${CHART_WIDTH - PADDING} ${CHART_HEIGHT} L ${PADDING} ${CHART_HEIGHT} Z`
-      : `${linePath} L ${lastX} ${CHART_HEIGHT} L ${PADDING} ${CHART_HEIGHT} Z`;
-
-  return { areaPath, linePath };
-}
-
 export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
   const { network } = usePaymentNetwork();
   const [period, setPeriod] = useState<TimePeriod>("7d");
-  const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
   const [total, setTotal] = useState(0);
   const [amountUnit, setAmountUnit] =
     useState<DashboardEarningsAmountUnit>("USD");
@@ -101,19 +42,16 @@ export function DashboardRevenueCard() {
       const json = await res.json();
       if (!json.success) {
         setError(json.error ?? "Failed to load earnings");
-        setEarnings([]);
         setTotal(0);
         setAmountUnit("USD");
         setPreviousTotal(undefined);
         return;
       }
-      setEarnings(json.data.earnings ?? []);
       setTotal(json.data.total ?? 0);
       setAmountUnit(json.data.amountUnit ?? "USD");
       setPreviousTotal(json.data.previousTotal);
     } catch {
       setError("Failed to load earnings");
-      setEarnings([]);
       setTotal(0);
       setAmountUnit("USD");
       setPreviousTotal(undefined);
@@ -162,64 +100,7 @@ export function DashboardRevenueCard() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="relative">
-          {/* Line chart from earnings array — gated until payment node DailyIncome keys are fixed (see /api/earnings TODO). */}
-          {EARNINGS_TIME_SERIES_CHART_ENABLED &&
-            !isLoading &&
-            earnings.length > 0 && (
-              <div
-                className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
-                aria-hidden
-              >
-                <svg
-                  viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-                  preserveAspectRatio="none"
-                  className="w-full h-full opacity-60"
-                >
-                  <defs>
-                    <linearGradient
-                      id="earnings-chart-gradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity="0.4"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity="0"
-                      />
-                    </linearGradient>
-                  </defs>
-                  {(() => {
-                    const { areaPath, linePath } =
-                      buildEarningsChartPaths(earnings);
-                    return (
-                      <>
-                        <path
-                          d={areaPath}
-                          fill="url(#earnings-chart-gradient)"
-                        />
-                        <path
-                          d={linePath}
-                          fill="none"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="0.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </>
-                    );
-                  })()}
-                </svg>
-              </div>
-            )}
-
+        <CardContent>
           {error ? (
             <p className="mb-1 text-sm text-destructive">{error}</p>
           ) : isLoading ? (

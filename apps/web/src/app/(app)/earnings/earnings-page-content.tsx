@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
-import gridSvg from "@/assets/grid.svg";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -185,35 +184,23 @@ export function EarningsPageContent() {
                 {t("chartTitle")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative overflow-hidden pt-6">
-              <div
-                className="pointer-events-none absolute inset-0 opacity-35 animate-grid-glide"
-                aria-hidden
-                style={{
-                  backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
-                  backgroundRepeat: "repeat",
-                  backgroundSize: "auto",
-                  backgroundPosition: "center",
-                }}
-              />
-              <div className="relative z-10">
-                {isLoading ? (
-                  <div
-                    className="bg-muted/30 flex h-[min(22rem,55vh)] min-h-[240px] w-full animate-pulse rounded-md"
-                    aria-hidden
-                  />
-                ) : !EARNINGS_TIME_SERIES_CHART_ENABLED ? (
-                  <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center px-4 py-12 text-center text-sm leading-6">
-                    {t("chartPaused")}
-                  </p>
-                ) : earnings.length === 0 ? (
-                  <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center py-12 text-center text-sm">
-                    {t("noData")}
-                  </p>
-                ) : (
-                  <EarningsChart data={earnings} amountUnit={amountUnit} />
-                )}
-              </div>
+            <CardContent className="pt-6">
+              {isLoading ? (
+                <div
+                  className="bg-muted/30 flex h-[min(22rem,55vh)] min-h-[240px] w-full animate-pulse rounded-md"
+                  aria-hidden
+                />
+              ) : !EARNINGS_TIME_SERIES_CHART_ENABLED ? (
+                <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center px-4 py-12 text-center text-sm leading-6">
+                  {t("chartPaused")}
+                </p>
+              ) : earnings.length === 0 ? (
+                <p className="text-muted-foreground flex min-h-[min(22rem,55vh)] items-center justify-center py-12 text-center text-sm">
+                  {t("noData")}
+                </p>
+              ) : (
+                <EarningsChart data={earnings} amountUnit={amountUnit} />
+              )}
             </CardContent>
           </Card>
 
