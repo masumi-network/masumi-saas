@@ -21,7 +21,8 @@ import { USDM } from "@/lib/payment-node/tokens";
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
-const REGISTER_AGENT_HTTP_TIMEOUT_MS = 25_000;
+const REGISTER_AGENT_HTTP_TIMEOUT_MS = 60_000;
+const REGISTER_AGENT_RETRY_COOLDOWN_MS = 2 * 60_000;
 
 export type AgentPricing =
   | { pricingType: "Free" }
@@ -66,6 +67,7 @@ type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
+  lastRegisterAttemptAt?: string;
   registrationPayload?: {
     exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
     capabilityName: string;
@@ -80,6 +82,22 @@ type RegistrationPayloadStored = {
     agentPricing: AgentPricing;
   };
 };
+
+function isWalletAddressCompatibleWithNetwork(
+  address: string,
+  network: PaymentNodeNetwork,
+): boolean {
+  if (network === "Preprod") return address.startsWith("addr_test");
+  if (network === "Mainnet") return address.startsWith("addr1");
+  return true;
+}
+
+function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
+  if (!lastRegisterAttemptAt) return false;
+  const ms = Date.parse(lastRegisterAttemptAt);
+  if (Number.isNaN(ms)) return false;
+  return Date.now() - ms < REGISTER_AGENT_RETRY_COOLDOWN_MS;
+}
 
 /**
  * Fast path: create agent, wallets, ref, fund via dispenser; return agentId immediately.
@@ -165,6 +183,31 @@ async function registerAgentOnChainUntilDispenser(
       },
     ],
   });
+
+  if (paymentSource.network && paymentSource.network !== network) {
+    console.error("[Payment Node] Payment source network mismatch:", {
+      paymentSourceId,
+      expectedNetwork: network,
+      actualNetwork: paymentSource.network,
+    });
+    return {
+      success: false,
+      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but agent registration is using ${network}. Update PAYMENT_NODE_PAYMENT_SOURCE_ID to a ${network} payment source.`,
+    };
+  }
+
+  if (
+    !isWalletAddressCompatibleWithNetwork(sellingWallet.walletAddress, network)
+  ) {
+    console.error("[Payment Node] Generated selling wallet network mismatch:", {
+      walletAddress: sellingWallet.walletAddress,
+      expectedNetwork: network,
+    });
+    return {
+      success: false,
+      error: `Generated selling wallet address does not match ${network}. Please verify the payment node wallet configuration and try again.`,
+    };
+  }
 
   const sellingWalletId =
     paymentSource.SellingWallets.find(
@@ -412,8 +455,64 @@ export async function completeOnChainRegistration(
       const existing = await tx.agent.findUniqueOrThrow({
         where: { id: agent.id },
       });
-      return { agent: existing, eventType: null };
+      return { agent: existing, eventType: null, pending: false };
     }
+    const existingMeta = (ref.metadata as Record<string, unknown> | null) ?? {};
+
+    const { Assets: walletAssets } =
+      await userClient.getRegisteredAgentsByWallet({
+        walletVkey: sellingWalletVkey,
+        network,
+      });
+    const walletMatch =
+      walletAssets.find(
+        (asset) => asset.Metadata.apiBaseUrl === agent.apiUrl,
+      ) ??
+      walletAssets.find((asset) => asset.Metadata.name === agent.name) ??
+      walletAssets[0] ??
+      null;
+    if (walletMatch) {
+      await tx.agentReference.update({
+        where: { agentId: agent.id },
+        data: {
+          status: "ACTIVE",
+          registeredAt: new Date(),
+          metadata: {
+            ...existingMeta,
+            agentIdentifier: walletMatch.agentIdentifier,
+          },
+        },
+      });
+      await tx.agent.update({
+        where: { id: agent.id },
+        data: {
+          registrationState: "RegistrationConfirmed",
+          agentIdentifier: walletMatch.agentIdentifier,
+        },
+      });
+      const updated = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return {
+        agent: updated,
+        eventType: "RegistrationConfirmed" as const,
+        pending: false,
+      };
+    }
+
+    if (
+      shouldDeferRegisterRetry(
+        typeof meta.lastRegisterAttemptAt === "string"
+          ? meta.lastRegisterAttemptAt
+          : undefined,
+      )
+    ) {
+      const existing = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { agent: existing, eventType: null, pending: true };
+    }
+
     const registerPromise = userClient.registerAgent({
       network,
       sellingWalletVkey,
@@ -455,8 +554,6 @@ export async function completeOnChainRegistration(
         registerPromise,
         timeoutPromise,
       ]);
-      const existingMeta =
-        (ref.metadata as Record<string, unknown> | null) ?? {};
       await tx.agentReference.update({
         where: { agentId: agent.id },
         data: {
@@ -487,11 +584,43 @@ export async function completeOnChainRegistration(
       const updated = await tx.agent.findUniqueOrThrow({
         where: { id: agent.id },
       });
-      return { agent: updated, eventType };
+      return { agent: updated, eventType, pending: false };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("Network and Address combination not supported")) {
+        throw new Error(
+          `Payment source and wallet network mismatch. Registration is using ${network}. Check that PAYMENT_NODE_PAYMENT_SOURCE_ID points to a ${network} payment source.`,
+        );
+      }
+      if (message.includes("Registration request timed out")) {
+        await tx.agentReference.update({
+          where: { agentId: agent.id },
+          data: {
+            metadata: {
+              ...existingMeta,
+              lastRegisterAttemptAt: new Date().toISOString(),
+            },
+          },
+        });
+        await tx.agent.update({
+          where: { id: agent.id },
+          data: {
+            registrationState: "RegistrationInitiated",
+          },
+        });
+        const updated = await tx.agent.findUniqueOrThrow({
+          where: { id: agent.id },
+        });
+        return { agent: updated, eventType: null, pending: true };
+      }
+      throw error;
     } finally {
       clearTimeout(timeoutId!);
     }
   });
+  if (updatedAgent.pending) {
+    return { status: "pending" };
+  }
   if (updatedAgent.eventType) {
     await recordAgentActivityEvent(agent.id, updatedAgent.eventType);
   }

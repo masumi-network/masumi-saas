@@ -38,10 +38,27 @@ const agentPricingFixedSchema = z.object({
 const agentPricingFreeSchema = z.object({
   pricingType: z.literal("Free"),
 });
+const agentPricingUnknownSchema = z
+  .object({
+    pricingType: z.string().optional(),
+  })
+  .passthrough();
 const agentPricingSchema = z.union([
   agentPricingFreeSchema,
   agentPricingFixedSchema,
+  agentPricingUnknownSchema,
 ]);
+
+export const agentMetadataSchema = z.object({
+  policyId: z.string(),
+  assetName: z.string(),
+  agentIdentifier: z.string(),
+  Metadata: z.object({
+    name: z.string().optional(),
+    apiBaseUrl: z.string().optional(),
+  }),
+});
+export type AgentMetadata = z.infer<typeof agentMetadataSchema>;
 
 // ─── Registry ───────────────────────────────────────────────────────────────
 
@@ -118,6 +135,13 @@ export type DeregisterAgentInput = z.infer<typeof deregisterAgentInputSchema>;
 export const registryListResponseSchema = z.object({
   Assets: z.array(registryEntrySchema),
 });
+
+export const registryWalletResponseSchema = z.object({
+  Assets: z.array(agentMetadataSchema),
+});
+export type RegistryWalletResponse = z.infer<
+  typeof registryWalletResponseSchema
+>;
 
 // ─── Payment source ─────────────────────────────────────────────────────────
 
@@ -319,6 +343,7 @@ export type PaymentSourceWallet = z.infer<typeof paymentSourceWalletSchema>;
 
 export const addWalletToSourceOutputSchema = z.object({
   id: z.string(),
+  network: paymentNodeNetworkSchema.optional(),
   /** Returned by PATCH /payment-source-extended; pass through to deregister when set. */
   smartContractAddress: z.string().optional(),
   SellingWallets: z.array(paymentSourceWalletSchema),
