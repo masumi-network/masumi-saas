@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { fetchEarningsForPeriod } from "@/lib/earnings/fetch-earnings-client";
 import {
   type DashboardEarningsAmountUnit,
   earningsPercentChangeMagnitude,
@@ -37,25 +38,17 @@ export function DashboardRevenueCard() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/earnings?period=${period}&network=${network}`,
-      );
-      const json = await res.json();
-      if (!json.success) {
-        setError(json.error ?? "Failed to load earnings");
+      const result = await fetchEarningsForPeriod(period, network);
+      if (!result.ok) {
+        setError(result.error);
         setTotal(0);
         setAmountUnit("USD");
         setPreviousTotal(undefined);
         return;
       }
-      setTotal(json.data.total ?? 0);
-      setAmountUnit(json.data.amountUnit ?? "USD");
-      setPreviousTotal(json.data.previousTotal);
-    } catch {
-      setError("Failed to load earnings");
-      setTotal(0);
-      setAmountUnit("USD");
-      setPreviousTotal(undefined);
+      setTotal(result.total);
+      setAmountUnit(result.amountUnit);
+      setPreviousTotal(result.previousTotal);
     } finally {
       setIsLoading(false);
     }

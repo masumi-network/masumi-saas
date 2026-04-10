@@ -14,6 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import {
+  type EarningsChartPoint,
+  fetchEarningsForPeriod,
+} from "@/lib/earnings/fetch-earnings-client";
 import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
   type DashboardEarningsAmountUnit,
@@ -26,8 +30,6 @@ import { EarningsChart } from "./earnings-chart";
 const EARNINGS_PERIOD_STORAGE_KEY = "masumi_earnings_period";
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
-
-type EarningsPoint = { date: string; amount: number };
 
 function getValidPeriod(value: string | null): TimePeriod | null {
   if (value === "24h" || value === "7d" || value === "30d" || value === "all") {
@@ -56,7 +58,7 @@ export function EarningsPageContent() {
     const fromUrl = getValidPeriod(searchParams.get("period"));
     return fromUrl ?? "7d";
   });
-  const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
+  const [earnings, setEarnings] = useState<EarningsChartPoint[]>([]);
   const [total, setTotal] = useState(0);
   const [amountUnit, setAmountUnit] =
     useState<DashboardEarningsAmountUnit>("USD");
@@ -68,28 +70,21 @@ export function EarningsPageContent() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/earnings?period=${period}&network=${network}`,
-      );
-      const json = await res.json();
-      if (!json.success) {
-        setError(json.error ?? t("loadError"));
+      const result = await fetchEarningsForPeriod(period, network, {
+        genericErrorMessage: t("loadError"),
+      });
+      if (!result.ok) {
+        setError(result.error);
         setEarnings([]);
         setTotal(0);
         setAmountUnit("USD");
         setPreviousTotal(undefined);
         return;
       }
-      setEarnings(json.data.earnings ?? []);
-      setTotal(json.data.total ?? 0);
-      setAmountUnit(json.data.amountUnit ?? "USD");
-      setPreviousTotal(json.data.previousTotal);
-    } catch {
-      setError(t("loadError"));
-      setEarnings([]);
-      setTotal(0);
-      setAmountUnit("USD");
-      setPreviousTotal(undefined);
+      setEarnings(result.earnings);
+      setTotal(result.total);
+      setAmountUnit(result.amountUnit);
+      setPreviousTotal(result.previousTotal);
     } finally {
       setIsLoading(false);
     }

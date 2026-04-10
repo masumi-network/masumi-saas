@@ -12,6 +12,12 @@ const WALLET_GENERATE_MAX_PER_WINDOW = parseInt(
   10,
 );
 
+/** Prevent caching of responses (success may include a wallet mnemonic). */
+const NO_STORE_JSON_HEADERS = {
+  "Cache-Control": "private, no-store, must-revalidate",
+  Pragma: "no-cache",
+} as const;
+
 function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   const fromQuery = request.nextUrl.searchParams.get("network");
   const fromCookie = request.cookies.get("payment_network")?.value;
@@ -39,6 +45,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
+            ...NO_STORE_JSON_HEADERS,
             "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
             "X-RateLimit-Limit": String(rl.limit),
             "X-RateLimit-Remaining": String(rl.remaining),
@@ -61,27 +68,30 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Payment service is not configured. Try again later.",
         },
-        { status: 503 },
+        { status: 503, headers: NO_STORE_JSON_HEADERS },
       );
     }
 
     const client = createPaymentNodeClient(baseUrl, adminKey);
     const wallet = await client.generateWallet(network);
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        walletAddress: wallet.walletAddress,
-        walletMnemonic: wallet.walletMnemonic,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          walletAddress: wallet.walletAddress,
+          walletMnemonic: wallet.walletMnemonic,
+        },
       },
-    });
+      { headers: NO_STORE_JSON_HEADERS },
+    );
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("[wallet/generate] failed", error);
     return NextResponse.json(
       { success: false, error: "Failed to generate wallet" },
-      { status: 500 },
+      { status: 500, headers: NO_STORE_JSON_HEADERS },
     );
   }
 }
