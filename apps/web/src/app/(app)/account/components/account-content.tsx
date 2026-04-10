@@ -1,9 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { OrganizationSelect } from "@/components/organization-select";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
+import type { Locale } from "@/i18n/config";
 import { auth } from "@/lib/auth/auth";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
@@ -42,6 +45,7 @@ export function AccountContent({
   userProfileCard,
 }: AccountContentProps) {
   const t = useTranslations("App.Account");
+  const locale = useLocale() as Locale;
 
   const hasCredentialAccount = accounts.some(
     (account) => account.providerId === "credential",
@@ -60,6 +64,16 @@ export function AccountContent({
       </div>
 
       <div className="mx-auto max-w-3xl space-y-8">
+        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <p className="min-w-0 shrink truncate pr-2 text-sm font-medium leading-none">
+            {t("languageAndAppearance")}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <LocaleSwitcher currentLocale={locale} />
+          </div>
+        </div>
+
         {userProfileCard}
 
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">

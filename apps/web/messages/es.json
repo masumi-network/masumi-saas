@@ -1121,6 +1121,7 @@
         "resendError": "No se pudo enviar el correo electrónico de verificación. Por favor inténtalo de nuevo."
       },
       "activeWorkspace": "Espacio de trabajo activo:",
+      "languageAndAppearance": "Idioma y apariencia",
       "Name": {
         "title": "Cambiar nombre",
         "description": "Actualice su nombre para mostrar.",

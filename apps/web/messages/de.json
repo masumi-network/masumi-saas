@@ -1121,6 +1121,7 @@
         "resendError": "Bestätigungs-E-Mail konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
       },
       "activeWorkspace": "Aktiver Arbeitsbereich:",
+      "languageAndAppearance": "Sprache & Darstellung",
       "Name": {
         "title": "Namen ändern",
         "description": "Aktualisieren Sie Ihren Anzeigenamen.",

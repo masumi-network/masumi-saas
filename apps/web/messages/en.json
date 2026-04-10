@@ -1156,6 +1156,7 @@
         "resendError": "Failed to send verification email. Please try again."
       },
       "activeWorkspace": "Active workspace:",
+      "languageAndAppearance": "Language & appearance",
       "Name": {
         "title": "Change Name",
         "description": "Update your display name.",

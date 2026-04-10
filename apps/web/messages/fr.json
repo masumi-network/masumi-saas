@@ -1121,6 +1121,7 @@
         "resendError": "Échec de l'envoi de l'e-mail de vérification. Veuillez réessayer."
       },
       "activeWorkspace": "Espace de travail actif :",
+      "languageAndAppearance": "Langue et apparence",
       "Name": {
         "title": "Changer le nom",
         "description": "Mettez à jour votre nom d'affichage.",
