@@ -17,6 +17,7 @@ import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
   type DashboardEarningsAmountUnit,
+  earningsPercentChangeMagnitude,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
 
@@ -239,10 +240,9 @@ export function EarningsPageContent() {
                             <TrendingDown className="h-3.5 w-3.5" />
                           )}
                           {tDash("percentValue", {
-                            value: Math.abs(
-                              Math.round(
-                                ((total - previousTotal) / previousTotal) * 100,
-                              ),
+                            value: earningsPercentChangeMagnitude(
+                              total,
+                              previousTotal,
                             ),
                           })}{" "}
                           {tDash("vsPreviousPeriod")}

@@ -16,6 +16,7 @@ import {
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
   type DashboardEarningsAmountUnit,
+  earningsPercentChangeMagnitude,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
 
@@ -127,12 +128,12 @@ export function DashboardRevenueCard() {
                     ) : (
                       <TrendingDown className="h-3.5 w-3.5" />
                     )}
-                    {Math.abs(
-                      Math.round(
-                        ((total - previousTotal) / previousTotal) * 100,
+                    {t("percentValue", {
+                      value: earningsPercentChangeMagnitude(
+                        total,
+                        previousTotal,
                       ),
-                    )}
-                    {"% "}
+                    })}{" "}
                     {t("vsPreviousPeriod")}
                   </span>
                 )}

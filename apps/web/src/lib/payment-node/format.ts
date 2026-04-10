@@ -147,3 +147,14 @@ export function formatDashboardEarningsTotal(
     maximumFractionDigits: 6,
   })} ADA`;
 }
+
+/**
+ * Absolute integer % change vs a previous total (dashboard + earnings “vs prev. period”).
+ * Caller must only use when `previous > 0` (same guards as the UI).
+ */
+export function earningsPercentChangeMagnitude(
+  current: number,
+  previous: number,
+): number {
+  return Math.abs(Math.round(((current - previous) / previous) * 100));
+}
