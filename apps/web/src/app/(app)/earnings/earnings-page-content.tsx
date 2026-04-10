@@ -3,7 +3,7 @@
 import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -94,7 +94,9 @@ export function EarningsPageContent() {
     }
   }, [period, network, t]);
 
-  useEffect(() => {
+  // useLayoutEffect so period matches URL/storage before useEffect(fetch) runs,
+  // avoiding a redundant fetch with the default "7d" when localStorage has another value.
+  useLayoutEffect(() => {
     const urlPeriod = getValidPeriod(searchParams.get("period"));
     if (urlPeriod) {
       persistPeriodToStorage(urlPeriod);
