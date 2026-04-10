@@ -5,11 +5,16 @@ import { defaultLocale, Locale, locales } from "./config";
 
 const messageLoaders: Record<Locale, () => Promise<{ default: IntlMessages }>> =
   {
-    en: () => import("../../messages/en.json"),
-    de: () => import("../../messages/de.json"),
-    ja: () => import("../../messages/ja.json"),
-    fr: () => import("../../messages/fr.json"),
-    es: () => import("../../messages/es.json"),
+    en: () =>
+      import("../../messages/en.json") as Promise<{ default: IntlMessages }>,
+    de: () =>
+      import("../../messages/de.json") as Promise<{ default: IntlMessages }>,
+    ja: () =>
+      import("../../messages/ja.json") as Promise<{ default: IntlMessages }>,
+    fr: () =>
+      import("../../messages/fr.json") as Promise<{ default: IntlMessages }>,
+    es: () =>
+      import("../../messages/es.json") as Promise<{ default: IntlMessages }>,
   };
 
 export default getRequestConfig(async () => {
