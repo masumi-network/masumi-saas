@@ -14,7 +14,8 @@ export function parseValidAgentCollectionAddress(
   if (!trimmed) {
     return { ok: false, error: "Collection address is required." };
   }
-  if (!validateCardanoAddress(trimmed, network).isValid) {
+  const validated = validateCardanoAddress(trimmed, network);
+  if (!validated.isValid) {
     return {
       ok: false,
       error:
@@ -23,5 +24,5 @@ export function parseValidAgentCollectionAddress(
           : "Invalid Cardano Preprod address. Use a Shelley receive address starting with addr_test1.",
     };
   }
-  return { ok: true, address: trimmed };
+  return { ok: true, address: validated.normalizedAddress };
 }

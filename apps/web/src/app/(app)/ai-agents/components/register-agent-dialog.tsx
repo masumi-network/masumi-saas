@@ -472,12 +472,21 @@ function RegisterAgentDialogInner({
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
 
+      const collectionTrimmed = data.collectionAddress.trim();
+      const collectionValidated = validateCardanoAddress(
+        collectionTrimmed,
+        network,
+      );
+      const collectionAddressForApi = collectionValidated.isValid
+        ? collectionValidated.normalizedAddress
+        : collectionTrimmed;
+
       const body = {
         name: data.name,
         description: data.description?.trim() ?? "",
         extendedDescription: data.extendedDescription?.trim() ?? "",
         apiUrl: data.apiUrl,
-        collectionAddress: data.collectionAddress.trim(),
+        collectionAddress: collectionAddressForApi,
         tags: tags.join(", "),
         icon: data.icon?.trim() ?? "",
         pricing:
@@ -957,7 +966,13 @@ function RegisterAgentDialogInner({
         onOpenChange={setGenerateWalletOpen}
         network={network}
         onUseAddress={(address) => {
-          form.setValue("collectionAddress", address, { shouldValidate: true });
+          const trimmed = address.trim();
+          const v = validateCardanoAddress(trimmed, network);
+          form.setValue(
+            "collectionAddress",
+            v.isValid ? v.normalizedAddress : trimmed,
+            { shouldValidate: true },
+          );
           void form.trigger("collectionAddress");
         }}
       />
