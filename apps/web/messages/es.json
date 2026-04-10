@@ -296,7 +296,7 @@
           "registeredAgentsDescription": "Agentes registrados",
           "agentsDescription": "Agentes de IA registrados",
           "verified": "verificado",
-          "agentsVerifiedCount": "(<0› verificado)",
+          "agentsVerifiedCount": "({count} verificados)",
           "balance": "Balance",
           "balanceDescription": "Fondos disponibles",
           "earnings": "Ganancias",
@@ -524,7 +524,7 @@
         "switchTo": "Cambiar a esta organización"
       },
       "Dashboard": {
-        "memberCount": "{count, plural, one {# member} otro {# members}}",
+        "memberCount": "{count, plural, one {# miembro} other {# miembros}}",
         "kybStatus": {
           "PENDING": "KYB pendiente",
           "REVIEW": "KYB en revisión",
@@ -799,7 +799,7 @@
         "reviewValue": "REVISAR"
       },
       "table": {
-        "tagCount": "{count, plural, one {# tag} otro {# tags}}",
+        "tagCount": "{count, plural, one {# etiqueta} other {# etiquetas}}",
         "noTags": "—",
         "noAgentId": "—",
         "name": "Nombre",
@@ -933,12 +933,12 @@
         "deleteError": "No se pudo eliminar el agente",
         "deleteConfirmTitle": "Eliminar agente",
         "deleteConfirmDescription": "¿Estás seguro de que deseas eliminar {name}? Esta acción no se puede deshacer.",
-        "deleteConfirmTypeToConfirm": "Escriba <bold><0›</bold> para confirmar",
+        "deleteConfirmTypeToConfirm": "Escriba <bold>{name}</bold> para confirmar",
         "deleteConfirmPlaceholder": "Nombre del agente",
         "cancel": "Cancelar",
         "networkMismatch": {
           "title": "Cambiar de red",
-          "description": "Este agente está en <strong><0›</strong>, pero tú estás actualmente en <strong><1›</strong>. Cambie de red para ver este agente.",
+          "description": "Este agente está en <strong>{agentNetwork}</strong>, pero ahora estás en <strong>{currentNetwork}</strong>. Cambia de red para ver este agente.",
           "confirm": "Cambiar a {network}",
           "back": "Volver"
         },
@@ -1223,7 +1223,7 @@
     },
     "LogoutModal": {
       "title": "¿Realmente quieres cerrar sesión?",
-      "description": "Cerrar sesión \"<0›\" de Masumi.",
+      "description": "Cerrar sesión de \"{email}\" en Masumi.",
       "logout": "Finalizar la sesión",
       "cancel": "Cancelar",
       "success": "Cerró sesión exitosamente",
@@ -1313,7 +1313,150 @@
   },
   "Developers": {
     "title": "Desarrolladores",
-    "description": "Herramientas de desarrollo y documentación API",
-    "comingSoon": "Próximamente herramientas y documentación para desarrolladores."
+    "metaDescription": "Documentación OpenAPI interactiva para la API de Masumi SaaS, además de herramientas de esquema. Usa la pestaña OpenAPI para explorar endpoints y probar solicitudes con tu clave API.",
+    "description": "Documentación OpenAPI interactiva para la API de Masumi SaaS, además de herramientas de esquema. Usa la pestaña OpenAPI para explorar endpoints y probar solicitudes con tu <apikey>clave API</apikey>.",
+    "tabs": {
+      "schemaValidator": "Validador de esquema",
+      "openApi": "OpenAPI",
+      "testing": "Pruebas"
+    },
+    "openApiEmbed": {
+      "swaggerIntro": "Documentación API interactiva con <swaggerui>Swagger UI</swaggerui>.",
+      "openInNewTab": "Abrir en nueva pestaña",
+      "iframeTitle": "API Masumi SaaS"
+    },
+    "testing": {
+      "cards": {
+        "comingSoon": "Próximamente",
+        "testPayment": {
+          "title": "Probar pago",
+          "description": "Crea un pago de prueba para simular una solicitud de pago del lado del vendedor mediante el proxy de la API de Masumi SaaS."
+        },
+        "testPurchase": {
+          "title": "Probar compra",
+          "description": "Crea una compra de prueba para simular una solicitud de compra del lado del comprador."
+        },
+        "fullCycle": {
+          "title": "Ciclo de pago completo",
+          "description": "Ejecuta un ciclo completo de pago a compra en un paso para pruebas de extremo a extremo."
+        }
+      },
+      "dialog": {
+        "title": "Crear pago de prueba",
+        "description": "Crea una solicitud de pago a través de tu nodo de pago configurado (igual que POST /api/v1/payment con sesión o clave API).",
+        "cancel": "Cancelar",
+        "submit": "Crear pago",
+        "creating": "Creando…",
+        "successToast": "Pago de prueba creado",
+        "createdPaymentSectionTitle": "Pago creado",
+        "errors": {
+          "generic": "Failed to create payment",
+          "emptyResponse": "Invalid response from server — no data returned",
+          "requestFailed": "Request failed ({status})"
+        }
+      },
+      "purchaseDialog": {
+        "title": "Crear compra de prueba",
+        "description": "Crea una compra a través de tu nodo de pago (POST /api/v1/purchase). Pega el JSON de la respuesta de un pago de prueba para rellenar campos, o introdúcelos manualmente.",
+        "pasteLabel": "Pegar respuesta de crear pago (JSON)",
+        "pastePlaceholder": "Pega el JSON del pago (objeto o anidado bajo una clave data)",
+        "applyPaste": "Aplicar pegado",
+        "pasteSuccess": "Campos actualizados desde el JSON pegado",
+        "pasteError": "No se pudo leer el JSON del pago. Pega el cuerpo de la respuesta de Crear pago de prueba.",
+        "agentFromPaste": "Desde JSON pegado",
+        "blockchainIdentifierLabel": "Identificador de blockchain",
+        "sellerVkeyLabel": "Clave de verificación del vendedor",
+        "payByTimeLabel": "Pagar antes de (unix ms)",
+        "submitResultTimeLabel": "Enviar resultado (unix ms)",
+        "unlockTimeLabel": "Desbloquear (unix ms)",
+        "externalDisputeUnlockTimeLabel": "Desbloqueo de disputa externa (unix ms)",
+        "createdSectionTitle": "Compra creada",
+        "cancel": "Cancelar",
+        "submit": "Crear compra",
+        "creating": "Creando…",
+        "successToast": "Compra de prueba creada",
+        "errors": {
+          "generic": "Failed to create purchase",
+          "emptyResponse": "Invalid response from server — no data returned",
+          "requestFailed": "Request failed ({status})",
+          "blockchainIdentifier": "Blockchain identifier is required",
+          "sellerVkey": "Seller verification key is required",
+          "inputHashLength": "Input hash must be 64 characters",
+          "inputHashHex": "Must be valid hex",
+          "agentIdentifier": "Agent identifier must be at least 57 characters",
+          "identifierMin": "Minimum 14 characters",
+          "identifierMax": "Maximum 26 characters",
+          "identifierHex": "Must be valid hex",
+          "timeRequired": "Required (numeric unix time in milliseconds)"
+        }
+      },
+      "fullCycleDialog": {
+        "title": "Ciclo de pago completo",
+        "intro": "Crea un pago y luego la compra correspondiente automáticamente (mismo flujo que la UI de pruebas del servicio de pago).",
+        "stepPayment": "Pago",
+        "stepPurchase": "Compra",
+        "done": "Hecho",
+        "cancel": "Cancelar",
+        "start": "Iniciar ciclo completo",
+        "close": "Cerrar",
+        "creatingPayment": "Creando pago…",
+        "creatingPurchase": "Creando compra…",
+        "paymentSectionTitle": "Pago",
+        "purchaseSuccessTitle": "Compra creada",
+        "purchaseFailedTitle": "Compra fallida",
+        "successPaymentToast": "Pago creado",
+        "successPurchaseToast": "Ciclo completo: compra creada",
+        "errors": {
+          "paymentGeneric": "Failed to create payment",
+          "paymentRequestFailed": "Payment request failed ({status})",
+          "emptyPaymentResponse": "Invalid payment response — no data returned",
+          "missingSellerOrTimes": "Payment response is missing seller key or pay-by time. Ensure the payment was created successfully.",
+          "purchaseGeneric": "Failed to create purchase",
+          "purchaseRequestFailed": "Purchase request failed ({status})",
+          "emptyPurchaseResponse": "Invalid purchase response — no data returned"
+        }
+      },
+      "form": {
+        "agentLabel": "Agente",
+        "loadingAgents": "Cargando agentes…",
+        "noPaidAgents": "No hay agentes de pago disponibles",
+        "selectAgent": "Selecciona un agente de pago",
+        "freeAgentsHint": "No hay agentes de pago. Los agentes gratuitos no pueden usarse en el flujo de pago.",
+        "purchaserIdLabel": "Identificador del comprador",
+        "purchaserIdPlaceholder": "Hex de 14–26 caracteres",
+        "regenerate": "Regenerar",
+        "mip004Blurb": "Entrada hasheada según <link>MIP-004</link> — SHA-256(identificador + \";\" + JCS(input_data))",
+        "loadPreset": "Cargar preset…",
+        "inputDataLabel": "Datos de entrada",
+        "inputDataPlaceholder": "'{'\"clave\": \"valor\"'}'",
+        "inputHashLabel": "Hash de entrada",
+        "inputHashPlaceholder": "Generado desde datos de entrada",
+        "metadataLabel": "Metadatos (opcional)",
+        "metadataPlaceholder": "Metadatos opcionales para el pago",
+        "presets": {
+          "textPrompt": "Prompt de texto",
+          "emailAnalysis": "Análisis de correo",
+          "documentProcessing": "Procesamiento de documentos",
+          "multiFieldForm": "Formulario multi-campo"
+        },
+        "required": "*",
+        "errors": {
+          "agentIdentifier": "Agent identifier required",
+          "inputHashLength": "Input hash must be 64 characters",
+          "inputHashHex": "Must be valid hex",
+          "identifierMin": "Minimum 14 characters",
+          "identifierMax": "Maximum 26 characters",
+          "identifierHex": "Must be valid hex",
+          "inputDataObject": "Input data must be a JSON object",
+          "invalidJson": "Invalid JSON"
+        }
+      },
+      "curlViewer": {
+        "curlTitle": "cURL",
+        "response": "Respuesta",
+        "badgeError": "Error",
+        "badgeOk": "OK"
+      }
+    }
   }
 }
