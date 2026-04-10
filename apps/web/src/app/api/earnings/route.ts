@@ -1,6 +1,13 @@
+import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
+import { agentHasPaymentIncomeData } from "@/lib/agents/agent-earnings-eligibility";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  mergeDailyIncomeByDay,
+  mergeIncomeUnitRows,
+} from "@/lib/earnings/aggregate-dashboard-payment-income";
+import type { PaymentNodeClient } from "@/lib/payment-node/client";
 import {
   type DashboardEarningsAmountUnit,
   dashboardEarningsUnitFromTotals,
@@ -8,11 +15,14 @@ import {
   splitIncomeUnitsStablecoinUsdAndAda,
 } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import type { PaymentIncomeOutput } from "@/lib/payment-node/schemas";
 import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
 
 /**
  * Must match `getPaymentIncome({ timeZone })`. Bucket keys in `DailyIncome` are calendar days in this zone
  * (payment node uses spacetime with this IANA id); the chart axis must use the same interpretation.
+ *
+ * Dashboard totals are **per user agent** (not `agentIdentifier: null`), see `docs/dashboard-earnings.md`.
  */
 const EARNINGS_PAYMENT_INCOME_TIMEZONE = "Etc/UTC";
 
@@ -52,20 +62,6 @@ function addUtcCalendarDays(ymd: string, deltaDays: number): string {
   const [y, m, d] = ymd.split("-").map(Number);
   const ms = Date.UTC(y, m - 1, d) + deltaDays * 86_400_000;
   return new Date(ms).toISOString().slice(0, 10);
-}
-
-/**
- * Calendar day (YYYY-MM-DD) for an instant in the same timezone passed to the payment-node income API,
- * so chart labels align with `DailyIncome` bucket keys.
- */
-function ymdInIncomeTimeZone(isoTimestamp: string, timeZone: string): string {
-  const d = new Date(isoTimestamp);
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
 }
 
 function enumerateInclusiveDaysYmd(startYmd: string, endYmd: string): string[] {
@@ -134,8 +130,8 @@ export async function GET(request: Request) {
     }
     const { period, network } = queryResult.data;
 
-    const client = await getPaymentNodeClientForUser(user.id);
-    if (!client) {
+    const paymentNodeClient = await getPaymentNodeClientForUser(user.id);
+    if (!paymentNodeClient) {
       return NextResponse.json({
         success: true,
         data: {
@@ -148,62 +144,101 @@ export async function GET(request: Request) {
 
     const { current, previous } = getDashboardPeriodWindows(period);
 
-    const [currentIncome, previousIncome] = await Promise.all([
-      client.getPaymentIncome({
+    const userAgents = await prisma.agent.findMany({
+      where: {
+        userId: user.id,
+        OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+      },
+      select: {
+        id: true,
+        agentIdentifier: true,
+        registrationState: true,
+      },
+    });
+    const eligibleAgents = userAgents.filter(agentHasPaymentIncomeData);
+
+    const incomeRangeParams = (range: { startDate: string; endDate: string }) =>
+      ({
         network,
-        agentIdentifier: null,
-        startDate: current.startDate,
-        endDate: current.endDate,
+        startDate: range.startDate,
+        endDate: range.endDate,
         timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
-      }),
+      }) as const;
+
+    async function fetchIncomeForEligible(
+      range: { startDate: string; endDate: string },
+      nodeClient: PaymentNodeClient,
+    ): Promise<PaymentIncomeOutput[]> {
+      if (eligibleAgents.length === 0) return [];
+      const settled = await Promise.allSettled(
+        eligibleAgents.map((a) =>
+          nodeClient.getPaymentIncome({
+            ...incomeRangeParams(range),
+            agentIdentifier: a.agentIdentifier!,
+          }),
+        ),
+      );
+      const ok: PaymentIncomeOutput[] = [];
+      for (let i = 0; i < settled.length; i++) {
+        const r = settled[i]!;
+        if (r.status === "fulfilled") {
+          ok.push(r.value);
+        } else {
+          console.error(
+            "[api/earnings] getPaymentIncome failed for agent",
+            eligibleAgents[i]!.id,
+            r.reason,
+          );
+        }
+      }
+      return ok;
+    }
+
+    const [currentIncomes, previousIncomes] = await Promise.all([
+      fetchIncomeForEligible(current, paymentNodeClient),
       previous
-        ? client.getPaymentIncome({
-            network,
-            agentIdentifier: null,
-            startDate: previous.startDate,
-            endDate: previous.endDate,
-            timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
-          })
-        : Promise.resolve(null),
+        ? fetchIncomeForEligible(previous, paymentNodeClient)
+        : Promise.resolve([]),
     ]);
 
+    const mergedCurrentUnits = mergeIncomeUnitRows(
+      currentIncomes.map((i) => i.TotalIncome.Units),
+    );
     const totalsCurrent = splitIncomeUnitsStablecoinUsdAndAda(
-      currentIncome.TotalIncome.Units,
+      mergedCurrentUnits,
       network,
     );
     const amountUnit = dashboardEarningsUnitFromTotals(totalsCurrent);
     const total = primaryAmountFromUnits(
-      currentIncome.TotalIncome.Units,
+      mergedCurrentUnits,
       network,
       amountUnit,
     );
 
-    const dayAmount = new Map<string, number>();
-    for (const row of currentIncome.DailyIncome) {
-      const key = dailyIncomeDayKey(row);
-      const prev = dayAmount.get(key) ?? 0;
-      const add = primaryAmountFromUnits(row.Units, network, amountUnit);
-      dayAmount.set(key, prev + add);
-    }
-
-    const chartStartYmd = ymdInIncomeTimeZone(
-      currentIncome.periodStart,
-      EARNINGS_PAYMENT_INCOME_TIMEZONE,
+    const dayMergedUnits = mergeDailyIncomeByDay(
+      currentIncomes,
+      dailyIncomeDayKey,
     );
-    const chartEndYmd = ymdInIncomeTimeZone(
-      currentIncome.periodEnd,
-      EARNINGS_PAYMENT_INCOME_TIMEZONE,
+    const chartDays = enumerateInclusiveDaysYmd(
+      current.startDate,
+      current.endDate,
     );
-    const chartDays = enumerateInclusiveDaysYmd(chartStartYmd, chartEndYmd);
     const earnings: EarningsDataPoint[] = chartDays.map((date) => ({
       date,
-      amount: dayAmount.get(date) ?? 0,
+      amount: primaryAmountFromUnits(
+        dayMergedUnits.get(date) ?? [],
+        network,
+        amountUnit,
+      ),
     }));
 
     let previousTotal: number | undefined;
-    if (previousIncome) {
+    if (previous && previousIncomes.length > 0) {
+      const mergedPreviousUnits = mergeIncomeUnitRows(
+        previousIncomes.map((i) => i.TotalIncome.Units),
+      );
       previousTotal = primaryAmountFromUnits(
-        previousIncome.TotalIncome.Units,
+        mergedPreviousUnits,
         network,
         amountUnit,
       );

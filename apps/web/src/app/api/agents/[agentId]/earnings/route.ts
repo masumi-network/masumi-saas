@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { agentHasPaymentIncomeData } from "@/lib/agents/agent-earnings-eligibility";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
@@ -60,20 +61,7 @@ export async function GET(
       );
     }
 
-    // Agents must have been on-chain to have earnings. Exclude: not yet registered
-    // (RegistrationRequested, RegistrationInitiated) or failed (RegistrationFailed).
-    // Include: RegistrationConfirmed and all deregistration states (they have
-    // historical earnings even while/after deregistering).
-    const statesWithEarnings = new Set([
-      "RegistrationConfirmed",
-      "DeregistrationRequested",
-      "DeregistrationInitiated",
-      "DeregistrationConfirmed",
-      "DeregistrationFailed",
-    ]);
-    const hasEarningsData =
-      !!agent.agentIdentifier &&
-      statesWithEarnings.has(agent.registrationState);
+    const hasEarningsData = agentHasPaymentIncomeData(agent);
     if (!hasEarningsData) {
       return NextResponse.json({
         success: true,
