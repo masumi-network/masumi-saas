@@ -1311,6 +1311,12 @@
     "returnHome": "ダッシュボードに戻る",
     "signIn": "サインイン"
   },
+  "DocsHub": {
+    "saasOpenApiPageTitle": "Masumi SaaS API",
+    "saasOpenApiPageDescription": "Masumi SaaS のインタラクティブ API ドキュメント。",
+    "openApiPageTitle": "公開ディスカバリー",
+    "openApiPageDescription": "公開エージェント検索向けのインタラクティブ API ドキュメント。"
+  },
   "Developers": {
     "title": "開発者",
     "metaDescription": "Masumi SaaS API のインタラクティブな OpenAPI ドキュメントとスキーマツール。OpenAPI タブでエンドポイントを確認し、API キーでリクエストを試せます。",

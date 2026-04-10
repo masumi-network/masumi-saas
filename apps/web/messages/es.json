@@ -1311,6 +1311,12 @@
     "returnHome": "Volver al panel",
     "signIn": "Iniciar sesión"
   },
+  "DocsHub": {
+    "saasOpenApiPageTitle": "Masumi SaaS API",
+    "saasOpenApiPageDescription": "Documentación interactiva de la API de Masumi SaaS.",
+    "openApiPageTitle": "Descubrimiento público",
+    "openApiPageDescription": "Documentación interactiva de la API para el descubrimiento público de agentes."
+  },
   "Developers": {
     "title": "Desarrolladores",
     "metaDescription": "Documentación OpenAPI interactiva para la API de Masumi SaaS, además de herramientas de esquema. Usa la pestaña OpenAPI para explorar endpoints y probar solicitudes con tu clave API.",
@@ -1350,9 +1356,9 @@
         "successToast": "Pago de prueba creado",
         "createdPaymentSectionTitle": "Pago creado",
         "errors": {
-          "generic": "Failed to create payment",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})"
+          "generic": "No se pudo crear el pago",
+          "emptyResponse": "Respuesta inválida del servidor: no se devolvieron datos",
+          "requestFailed": "La solicitud falló ({status})"
         }
       },
       "purchaseDialog": {
@@ -1376,18 +1382,18 @@
         "creating": "Creando…",
         "successToast": "Compra de prueba creada",
         "errors": {
-          "generic": "Failed to create purchase",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})",
-          "blockchainIdentifier": "Blockchain identifier is required",
-          "sellerVkey": "Seller verification key is required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "agentIdentifier": "Agent identifier must be at least 57 characters",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "timeRequired": "Required (numeric unix time in milliseconds)"
+          "generic": "No se pudo crear la compra",
+          "emptyResponse": "Respuesta inválida del servidor: no se devolvieron datos",
+          "requestFailed": "La solicitud falló ({status})",
+          "blockchainIdentifier": "El identificador de blockchain es obligatorio",
+          "sellerVkey": "La clave de verificación del vendedor es obligatoria",
+          "inputHashLength": "El hash de entrada debe tener 64 caracteres",
+          "inputHashHex": "Debe ser hexadecimal válido",
+          "agentIdentifier": "El identificador del agente debe tener al menos 57 caracteres",
+          "identifierMin": "Mínimo 14 caracteres",
+          "identifierMax": "Máximo 26 caracteres",
+          "identifierHex": "Debe ser hexadecimal válido",
+          "timeRequired": "Obligatorio (tiempo unix numérico en milisegundos)"
         }
       },
       "fullCycleDialog": {
@@ -1407,13 +1413,13 @@
         "successPaymentToast": "Pago creado",
         "successPurchaseToast": "Ciclo completo: compra creada",
         "errors": {
-          "paymentGeneric": "Failed to create payment",
-          "paymentRequestFailed": "Payment request failed ({status})",
-          "emptyPaymentResponse": "Invalid payment response — no data returned",
-          "missingSellerOrTimes": "Payment response is missing seller key or pay-by time. Ensure the payment was created successfully.",
-          "purchaseGeneric": "Failed to create purchase",
-          "purchaseRequestFailed": "Purchase request failed ({status})",
-          "emptyPurchaseResponse": "Invalid purchase response — no data returned"
+          "paymentGeneric": "No se pudo crear el pago",
+          "paymentRequestFailed": "La solicitud de pago falló ({status})",
+          "emptyPaymentResponse": "Respuesta de pago inválida: no se devolvieron datos",
+          "missingSellerOrTimes": "Falta la clave del vendedor o el tiempo límite de pago en la respuesta. Asegúrate de que el pago se creó correctamente.",
+          "purchaseGeneric": "No se pudo crear la compra",
+          "purchaseRequestFailed": "La solicitud de compra falló ({status})",
+          "emptyPurchaseResponse": "Respuesta de compra inválida: no se devolvieron datos"
         }
       },
       "form": {
@@ -1441,14 +1447,14 @@
         },
         "required": "*",
         "errors": {
-          "agentIdentifier": "Agent identifier required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "inputDataObject": "Input data must be a JSON object",
-          "invalidJson": "Invalid JSON"
+          "agentIdentifier": "El identificador del agente es obligatorio",
+          "inputHashLength": "El hash de entrada debe tener 64 caracteres",
+          "inputHashHex": "Debe ser hexadecimal válido",
+          "identifierMin": "Mínimo 14 caracteres",
+          "identifierMax": "Máximo 26 caracteres",
+          "identifierHex": "Debe ser hexadecimal válido",
+          "inputDataObject": "Los datos de entrada deben ser un objeto JSON",
+          "invalidJson": "JSON no válido"
         }
       },
       "curlViewer": {

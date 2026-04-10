@@ -1311,6 +1311,12 @@
     "returnHome": "Retour au tableau de bord",
     "signIn": "Se connecter"
   },
+  "DocsHub": {
+    "saasOpenApiPageTitle": "Masumi SaaS API",
+    "saasOpenApiPageDescription": "Documentation API interactive pour Masumi SaaS.",
+    "openApiPageTitle": "Découverte publique",
+    "openApiPageDescription": "Documentation API interactive pour la découverte publique d'agents."
+  },
   "Developers": {
     "title": "Développeurs",
     "metaDescription": "Documentation OpenAPI interactive pour l’API Masumi SaaS, plus des outils de schéma. Utilisez l’onglet OpenAPI pour explorer les points de terminaison et tester avec votre clé API.",
