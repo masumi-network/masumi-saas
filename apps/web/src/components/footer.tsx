@@ -1,9 +1,11 @@
-import { Languages } from "lucide-react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
+"use client";
 
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 interface FooterProps {
@@ -24,6 +26,7 @@ interface FooterSectionsProps {
 
 export function FooterSections({ className }: FooterSectionsProps) {
   const t = useTranslations("Footer");
+  const locale = useLocale() as Locale;
 
   return (
     <div
@@ -34,16 +37,7 @@ export function FooterSections({ className }: FooterSectionsProps) {
     >
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled
-          title="Language selection coming soon"
-          aria-label="Language (coming soon)"
-        >
-          <Languages className="h-3 w-3" />
-          <span className="text-xs sm:text-sm tracking-tight">{"English"}</span>
-        </Button>
+        <LocaleSwitcher currentLocale={locale} />
       </div>
       <div className="flex flex-wrap items-center flex-1 justify-end gap-4">
         <Link

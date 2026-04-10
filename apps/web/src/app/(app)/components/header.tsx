@@ -5,21 +5,18 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import type { Locale } from "@/i18n/config";
 
 import { NotificationsDialog } from "./notifications-dialog";
 import { SearchDialog } from "./search-dialog";
 
 interface HeaderProps {
   className?: string;
-  currentLocale: Locale;
 }
 
-export default function Header({ className, currentLocale }: HeaderProps) {
+export default function Header({ className }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
   const t = useTranslations("App.Header");
@@ -72,7 +69,6 @@ export default function Header({ className, currentLocale }: HeaderProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <LocaleSwitcher currentLocale={currentLocale} />
               <Button
                 variant="outline"
                 size="sm"

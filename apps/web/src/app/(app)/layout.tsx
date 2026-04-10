@@ -1,11 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getMessages } from "next-intl/server";
 
 import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import type { Locale } from "@/i18n/config";
 import { getAuthContext } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
 import { NotificationsProvider } from "@/lib/context/notifications-context";
@@ -42,7 +41,6 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const initialPaymentNetwork = getInitialPaymentNetwork(cookieStore);
   const messages = await getMessages();
-  const locale = await getLocale();
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -56,7 +54,7 @@ export default async function AppLayout({
               >
                 <Sidebar session={authContext.session} />
                 <div className="flex min-w-0 flex-1 flex-col min-h-0">
-                  <Header currentLocale={locale as Locale} />
+                  <Header />
                   <div className="flex-1 min-h-0 overflow-y-auto">
                     <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
                       {authConfig.emailAndPassword.requireEmailVerification &&

@@ -3,7 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Locale, locales } from "@/i18n/config";
+import { cn } from "@/lib/utils";
 
 const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
@@ -15,13 +23,22 @@ const LOCALE_LABELS: Record<Locale, string> = {
 
 interface LocaleSwitcherProps {
   currentLocale: Locale;
+  className?: string;
 }
 
-export function LocaleSwitcher({ currentLocale }: LocaleSwitcherProps) {
+/**
+ * Locale switcher using the same shadcn {@link Select} pattern as
+ * {@link OrganizationSelect} (account page workspace switcher).
+ */
+export function LocaleSwitcher({
+  currentLocale,
+  className,
+}: LocaleSwitcherProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   async function switchLocale(locale: Locale) {
+    if (locale === currentLocale) return;
     try {
       const response = await fetch("/api/locale", {
         method: "POST",
@@ -36,17 +53,29 @@ export function LocaleSwitcher({ currentLocale }: LocaleSwitcherProps) {
   }
 
   return (
-    <select
+    <Select
       value={currentLocale}
-      onChange={(e) => switchLocale(e.target.value as Locale)}
+      onValueChange={(v) => void switchLocale(v as Locale)}
       disabled={isPending}
-      aria-label="Language"
     >
-      {locales.map((code) => (
-        <option key={code} value={code}>
-          {LOCALE_LABELS[code]}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger
+        aria-label="Language"
+        className={cn(
+          "h-8 w-fit max-w-64 flex items-center gap-2 [&>svg]:shrink-0",
+          className,
+        )}
+      >
+        <div className="min-w-0 flex-1 overflow-hidden [&_span]:block [&_span]:truncate [&_span]:min-w-0">
+          <SelectValue className="text-sm" />
+        </div>
+      </SelectTrigger>
+      <SelectContent align="end">
+        {locales.map((code) => (
+          <SelectItem key={code} value={code}>
+            {LOCALE_LABELS[code]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
