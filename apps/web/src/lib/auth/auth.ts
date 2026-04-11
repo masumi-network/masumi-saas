@@ -136,8 +136,7 @@ export const auth = betterAuth({
           HtmlBody: await reactVerificationEmail({
             name: user.name || "User",
             verificationLink: url,
-            logoUrl:
-              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            logoUrl: emailConfig.brandLogoUrl,
             translations: {
               preview: msg.preview,
               title: msg.title,
@@ -240,6 +239,7 @@ export const auth = betterAuth({
             HtmlBody: await reactMagicLinkEmail({
               name,
               magicLink: url,
+              logoUrl: emailConfig.brandLogoUrl,
               translations: {
                 preview: msg.preview,
                 title: msg.title,
@@ -362,8 +362,7 @@ export const auth = betterAuth({
             organizationName: orgName,
             inviterName: data.inviter.user.name || data.inviter.user.email,
             role: roleName,
-            logoUrl:
-              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            logoUrl: emailConfig.brandLogoUrl,
             translations: {
               preview: replaceOrganization(msg.preview),
               title: replaceOrganization(msg.title),
