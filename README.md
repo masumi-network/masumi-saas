@@ -52,6 +52,38 @@ Authenticated routes require either:
 
 Unauthenticated requests receive `401 Unauthorized` with `{"success":false,"error":"Unauthorized"}`.
 
+### OIDC / SpacetimeDB Authentication
+
+Masumi SaaS can also act as an OIDC issuer for external apps and SpacetimeDB:
+
+- **Discovery**: `GET /.well-known/openid-configuration`
+- **OAuth metadata**: `GET /.well-known/oauth-authorization-server`
+- **JWKS**: `GET /jwks`
+- **OIDC auth endpoints**: `/api/auth/oauth2/*`
+- **CLI device verification UI**: `/device`
+
+Trusted first-party client IDs default to:
+
+- `masumi-spacetime-web`
+- `masumi-spacetime-cli`
+
+SpacetimeDB reducers should validate:
+
+- `iss === <your public issuer>`
+- `aud` contains one of the trusted client IDs above
+
+For browser/CLI flows that authenticate directly against Better Auth (cookie, bearer session token, or device flow), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. Request body:
+
+```json
+{ "client": "web" }
+```
+
+or
+
+```json
+{ "client": "cli" }
+```
+
 ### Authenticated routes (session or API key)
 
 | Path                          | Description                                           |
@@ -181,6 +213,18 @@ masumi-saas/
    - **BETTER_AUTH_URL**: Your application's base URL
      - For local development: `http://localhost:3000`
 
+   - **OIDC_PUBLIC_ISSUER_URL** _(optional)_: Public OIDC issuer URL
+     - Defaults to `BETTER_AUTH_URL`
+
+   - **OIDC_WEB_CLIENT_ID** / **OIDC_WEB_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the external webapp
+     - Local default redirect: `http://localhost:3001/auth/callback`
+
+   - **OIDC_CLI_CLIENT_ID** / **OIDC_CLI_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the CLI
+     - Local default redirect: `http://127.0.0.1:43110/callback`
+
+   - **OIDC_DEVICE_VERIFICATION_URI** _(optional)_: Device flow verification page path or absolute URL
+     - Defaults to `/device`
+
    - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
      - Falls back to request headers if not set
 
@@ -293,6 +337,9 @@ After promoting, admins can sign in at `/admin/signin`.
 - **Magic link**: Passwordless sign-in link; new email addresses receive a short Privacy Policy consent line in the email body (existing accounts do not). Display names default from the email local part when no name is provided.
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
 - **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
+- **Bearer Plugin**: Session-token authentication for cross-domain clients and device flows
+- **OIDC Provider**: Public issuer metadata, JWKS, trusted first-party public clients, and JWT-signed `id_token`s for SpacetimeDB
+- **Device Authorization**: CLI login with `/device/code`, `/device/token`, `/device`, and `/device/approve`
 - **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages
 

@@ -7,7 +7,11 @@ import { nextCookies } from "better-auth/next-js";
 import {
   admin,
   apiKey,
+  bearer,
+  deviceAuthorization,
+  jwt,
   magicLink,
+  oidcProvider,
   organization,
   twoFactor,
 } from "better-auth/plugins";
@@ -18,6 +22,12 @@ import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import {
+  getPublicOidcMetadata,
+  getTrustedOidcClients,
+  getTrustedOidcOrigins,
+  oidcEnvConfig,
+} from "@/lib/config/oidc.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
@@ -28,6 +38,7 @@ import { reactVerificationEmail } from "@/lib/email/verification";
 import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 export const auth = betterAuth({
+  disabledPaths: ["/token"],
   appName: "Masumi",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -36,8 +47,10 @@ export const auth = betterAuth({
   baseURL: authEnvConfig.baseUrl,
   trustedOrigins: [
     authEnvConfig.baseUrl,
+    oidcEnvConfig.issuer,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    ...getTrustedOidcOrigins(),
   ],
   emailAndPassword: {
     enabled: true,
@@ -195,6 +208,31 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    jwt({
+      jwt: {
+        issuer: oidcEnvConfig.issuer,
+      },
+    }),
+    oidcProvider({
+      loginPage: "/signin",
+      useJWTPlugin: true,
+      requirePKCE: true,
+      trustedClients: getTrustedOidcClients(),
+      metadata: getPublicOidcMetadata(),
+      getAdditionalUserInfoClaim: async (user, scopes) => {
+        if (!scopes.includes("profile")) return {};
+
+        return {
+          picture: user.image || undefined,
+        };
+      },
+    }),
+    deviceAuthorization({
+      verificationUri: oidcEnvConfig.deviceVerificationUri,
+      validateClient: async (clientId) =>
+        clientId === oidcEnvConfig.cli.clientId,
+    }),
+    bearer(),
     magicLink({
       expiresIn: authConfig.magicLink.expiresIn,
       rateLimit: authConfig.magicLink.rateLimit,
@@ -297,8 +335,10 @@ export const auth = betterAuth({
         if (!headers) return null;
         const xApiKey = headers.get("x-api-key");
         if (xApiKey) return xApiKey;
-        const auth = headers.get("authorization");
-        if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
+        const authHeader = headers.get("authorization");
+        if (!authHeader?.startsWith("Bearer ")) return null;
+        const token = authHeader.slice(7).trim();
+        if (token.startsWith(authConfig.apiKey.defaultKeyPrefix)) return token;
         return null;
       },
     }),

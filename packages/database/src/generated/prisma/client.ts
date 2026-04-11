@@ -95,6 +95,31 @@ export type Invitation = Prisma.InvitationModel;
  */
 export type Apikey = Prisma.ApikeyModel;
 /**
+ * Model OauthApplication
+ *
+ */
+export type OauthApplication = Prisma.OauthApplicationModel;
+/**
+ * Model OauthAccessToken
+ *
+ */
+export type OauthAccessToken = Prisma.OauthAccessTokenModel;
+/**
+ * Model OauthConsent
+ *
+ */
+export type OauthConsent = Prisma.OauthConsentModel;
+/**
+ * Model DeviceCode
+ *
+ */
+export type DeviceCode = Prisma.DeviceCodeModel;
+/**
+ * Model Jwks
+ *
+ */
+export type Jwks = Prisma.JwksModel;
+/**
  * Model RateLimit
  *
  */

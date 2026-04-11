@@ -305,6 +305,9 @@ export type UserWhereInput = {
   members?: Prisma.MemberListRelationFilter;
   invitations?: Prisma.InvitationListRelationFilter;
   apikeys?: Prisma.ApikeyListRelationFilter;
+  oauthApplications?: Prisma.OauthApplicationListRelationFilter;
+  oauthAccessTokens?: Prisma.OauthAccessTokenListRelationFilter;
+  oauthConsents?: Prisma.OauthConsentListRelationFilter;
   agents?: Prisma.AgentListRelationFilter;
   agentActivityEvents?: Prisma.AgentActivityEventListRelationFilter;
   veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
@@ -346,6 +349,9 @@ export type UserOrderByWithRelationInput = {
   members?: Prisma.MemberOrderByRelationAggregateInput;
   invitations?: Prisma.InvitationOrderByRelationAggregateInput;
   apikeys?: Prisma.ApikeyOrderByRelationAggregateInput;
+  oauthApplications?: Prisma.OauthApplicationOrderByRelationAggregateInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenOrderByRelationAggregateInput;
+  oauthConsents?: Prisma.OauthConsentOrderByRelationAggregateInput;
   agents?: Prisma.AgentOrderByRelationAggregateInput;
   agentActivityEvents?: Prisma.AgentActivityEventOrderByRelationAggregateInput;
   veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput;
@@ -388,6 +394,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     members?: Prisma.MemberListRelationFilter;
     invitations?: Prisma.InvitationListRelationFilter;
     apikeys?: Prisma.ApikeyListRelationFilter;
+    oauthApplications?: Prisma.OauthApplicationListRelationFilter;
+    oauthAccessTokens?: Prisma.OauthAccessTokenListRelationFilter;
+    oauthConsents?: Prisma.OauthConsentListRelationFilter;
     agents?: Prisma.AgentListRelationFilter;
     agentActivityEvents?: Prisma.AgentActivityEventListRelationFilter;
     veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
@@ -497,6 +506,9 @@ export type UserCreateInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -532,6 +544,9 @@ export type UserUncheckedCreateInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -575,6 +590,9 @@ export type UserUpdateInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -623,6 +641,9 @@ export type UserUncheckedUpdateInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -972,6 +993,88 @@ export type UserUpdateOneRequiredWithoutApikeysNestedInput = {
   >;
 };
 
+export type UserCreateNestedOneWithoutOauthApplicationsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedCreateWithoutOauthApplicationsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthApplicationsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutOauthApplicationsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedCreateWithoutOauthApplicationsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthApplicationsInput;
+  upsert?: Prisma.UserUpsertWithoutOauthApplicationsInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutOauthApplicationsInput,
+      Prisma.UserUpdateWithoutOauthApplicationsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutOauthApplicationsInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutOauthAccessTokensInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedCreateWithoutOauthAccessTokensInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthAccessTokensInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneWithoutOauthAccessTokensNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedCreateWithoutOauthAccessTokensInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthAccessTokensInput;
+  upsert?: Prisma.UserUpsertWithoutOauthAccessTokensInput;
+  disconnect?: Prisma.UserWhereInput | boolean;
+  delete?: Prisma.UserWhereInput | boolean;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutOauthAccessTokensInput,
+      Prisma.UserUpdateWithoutOauthAccessTokensInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutOauthAccessTokensInput
+  >;
+};
+
+export type UserCreateNestedOneWithoutOauthConsentsInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedCreateWithoutOauthConsentsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthConsentsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutOauthConsentsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedCreateWithoutOauthConsentsInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutOauthConsentsInput;
+  upsert?: Prisma.UserUpsertWithoutOauthConsentsInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutOauthConsentsInput,
+      Prisma.UserUpdateWithoutOauthConsentsInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutOauthConsentsInput
+  >;
+};
+
 export type UserCreateNestedOneWithoutKycVerificationInput = {
   create?: Prisma.XOR<
     Prisma.UserCreateWithoutKycVerificationInput,
@@ -1212,6 +1315,9 @@ export type UserCreateWithoutTwoFactorInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1246,6 +1352,9 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1316,6 +1425,9 @@ export type UserUpdateWithoutTwoFactorInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1363,6 +1475,9 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1394,6 +1509,9 @@ export type UserCreateWithoutSessionsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1428,6 +1546,9 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1498,6 +1619,9 @@ export type UserUpdateWithoutSessionsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1545,6 +1669,9 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1577,6 +1704,9 @@ export type UserCreateWithoutAccountsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1611,6 +1741,9 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1681,6 +1814,9 @@ export type UserUpdateWithoutAccountsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1728,6 +1864,9 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1760,6 +1899,9 @@ export type UserCreateWithoutMembersInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1794,6 +1936,9 @@ export type UserUncheckedCreateWithoutMembersInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1864,6 +2009,9 @@ export type UserUpdateWithoutMembersInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1911,6 +2059,9 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1943,6 +2094,9 @@ export type UserCreateWithoutInvitationsInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1977,6 +2131,9 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2047,6 +2204,9 @@ export type UserUpdateWithoutInvitationsInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2094,6 +2254,9 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2126,6 +2289,9 @@ export type UserCreateWithoutApikeysInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2160,6 +2326,9 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2230,6 +2399,9 @@ export type UserUpdateWithoutApikeysInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2277,6 +2449,594 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutOauthApplicationsInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
+  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutOauthApplicationsInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutOauthApplicationsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedCreateWithoutOauthApplicationsInput
+  >;
+};
+
+export type UserUpsertWithoutOauthApplicationsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedUpdateWithoutOauthApplicationsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedCreateWithoutOauthApplicationsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutOauthApplicationsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthApplicationsInput,
+    Prisma.UserUncheckedUpdateWithoutOauthApplicationsInput
+  >;
+};
+
+export type UserUpdateWithoutOauthApplicationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
+  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutOauthApplicationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutOauthAccessTokensInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
+  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutOauthAccessTokensInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutOauthAccessTokensInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedCreateWithoutOauthAccessTokensInput
+  >;
+};
+
+export type UserUpsertWithoutOauthAccessTokensInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedUpdateWithoutOauthAccessTokensInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedCreateWithoutOauthAccessTokensInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutOauthAccessTokensInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthAccessTokensInput,
+    Prisma.UserUncheckedUpdateWithoutOauthAccessTokensInput
+  >;
+};
+
+export type UserUpdateWithoutOauthAccessTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
+  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutOauthAccessTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutOauthConsentsInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
+  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutOauthConsentsInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutOauthConsentsInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedCreateWithoutOauthConsentsInput
+  >;
+};
+
+export type UserUpsertWithoutOauthConsentsInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedUpdateWithoutOauthConsentsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedCreateWithoutOauthConsentsInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutOauthConsentsInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutOauthConsentsInput,
+    Prisma.UserUncheckedUpdateWithoutOauthConsentsInput
+  >;
+};
+
+export type UserUpdateWithoutOauthConsentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
+  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutOauthConsentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2310,6 +3070,9 @@ export type UserCreateWithoutKycVerificationInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2343,6 +3106,9 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2414,6 +3180,9 @@ export type UserUpdateWithoutKycVerificationInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2457,6 +3226,9 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2490,6 +3262,9 @@ export type UserCreateWithoutAgentsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -2524,6 +3299,9 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -2594,6 +3372,9 @@ export type UserUpdateWithoutAgentsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -2641,6 +3422,9 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -2673,6 +3457,9 @@ export type UserCreateWithoutAgentActivityEventsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -2707,6 +3494,9 @@ export type UserUncheckedCreateWithoutAgentActivityEventsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -2777,6 +3567,9 @@ export type UserUpdateWithoutAgentActivityEventsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -2824,6 +3617,9 @@ export type UserUncheckedUpdateWithoutAgentActivityEventsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -2856,6 +3652,9 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2890,6 +3689,9 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2960,6 +3762,9 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3007,6 +3812,9 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3039,6 +3847,9 @@ export type UserCreateWithoutKycSubmissionsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -3073,6 +3884,9 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -3143,6 +3957,9 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3190,6 +4007,9 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3222,6 +4042,9 @@ export type UserCreateWithoutWalletCachesInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -3256,6 +4079,9 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -3326,6 +4152,9 @@ export type UserUpdateWithoutWalletCachesInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3373,6 +4202,9 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3405,6 +4237,9 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -3439,6 +4274,9 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
   apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -3509,6 +4347,9 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -3556,6 +4397,9 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
   apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -3574,6 +4418,9 @@ export type UserCountOutputType = {
   members: number;
   invitations: number;
   apikeys: number;
+  oauthApplications: number;
+  oauthAccessTokens: number;
+  oauthConsents: number;
   agents: number;
   agentActivityEvents: number;
   veridianCredentials: number;
@@ -3591,6 +4438,9 @@ export type UserCountOutputTypeSelect<
   members?: boolean | UserCountOutputTypeCountMembersArgs;
   invitations?: boolean | UserCountOutputTypeCountInvitationsArgs;
   apikeys?: boolean | UserCountOutputTypeCountApikeysArgs;
+  oauthApplications?: boolean | UserCountOutputTypeCountOauthApplicationsArgs;
+  oauthAccessTokens?: boolean | UserCountOutputTypeCountOauthAccessTokensArgs;
+  oauthConsents?: boolean | UserCountOutputTypeCountOauthConsentsArgs;
   agents?: boolean | UserCountOutputTypeCountAgentsArgs;
   agentActivityEvents?:
     | boolean
@@ -3664,6 +4514,36 @@ export type UserCountOutputTypeCountApikeysArgs<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   where?: Prisma.ApikeyWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountOauthApplicationsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.OauthApplicationWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountOauthAccessTokensArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.OauthAccessTokenWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountOauthConsentsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.OauthConsentWhereInput;
 };
 
 /**
@@ -3755,6 +4635,9 @@ export type UserSelect<
     members?: boolean | Prisma.User$membersArgs<ExtArgs>;
     invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
     apikeys?: boolean | Prisma.User$apikeysArgs<ExtArgs>;
+    oauthApplications?: boolean | Prisma.User$oauthApplicationsArgs<ExtArgs>;
+    oauthAccessTokens?: boolean | Prisma.User$oauthAccessTokensArgs<ExtArgs>;
+    oauthConsents?: boolean | Prisma.User$oauthConsentsArgs<ExtArgs>;
     agents?: boolean | Prisma.User$agentsArgs<ExtArgs>;
     agentActivityEvents?:
       | boolean
@@ -3886,6 +4769,9 @@ export type UserInclude<
   members?: boolean | Prisma.User$membersArgs<ExtArgs>;
   invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>;
   apikeys?: boolean | Prisma.User$apikeysArgs<ExtArgs>;
+  oauthApplications?: boolean | Prisma.User$oauthApplicationsArgs<ExtArgs>;
+  oauthAccessTokens?: boolean | Prisma.User$oauthAccessTokensArgs<ExtArgs>;
+  oauthConsents?: boolean | Prisma.User$oauthConsentsArgs<ExtArgs>;
   agents?: boolean | Prisma.User$agentsArgs<ExtArgs>;
   agentActivityEvents?: boolean | Prisma.User$agentActivityEventsArgs<ExtArgs>;
   veridianCredentials?: boolean | Prisma.User$veridianCredentialsArgs<ExtArgs>;
@@ -3920,6 +4806,9 @@ export type $UserPayload<
     members: Prisma.$MemberPayload<ExtArgs>[];
     invitations: Prisma.$InvitationPayload<ExtArgs>[];
     apikeys: Prisma.$ApikeyPayload<ExtArgs>[];
+    oauthApplications: Prisma.$OauthApplicationPayload<ExtArgs>[];
+    oauthAccessTokens: Prisma.$OauthAccessTokenPayload<ExtArgs>[];
+    oauthConsents: Prisma.$OauthConsentPayload<ExtArgs>[];
     agents: Prisma.$AgentPayload<ExtArgs>[];
     agentActivityEvents: Prisma.$AgentActivityEventPayload<ExtArgs>[];
     veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[];
@@ -4549,6 +5438,39 @@ export interface Prisma__UserClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$ApikeyPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  oauthApplications<T extends Prisma.User$oauthApplicationsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$oauthApplicationsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$OauthApplicationPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  oauthAccessTokens<T extends Prisma.User$oauthAccessTokensArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$oauthAccessTokensArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$OauthAccessTokenPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  oauthConsents<T extends Prisma.User$oauthConsentsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.User$oauthConsentsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$OauthConsentPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -5305,6 +6227,99 @@ export type User$apikeysArgs<
   take?: number;
   skip?: number;
   distinct?: Prisma.ApikeyScalarFieldEnum | Prisma.ApikeyScalarFieldEnum[];
+};
+
+/**
+ * User.oauthApplications
+ */
+export type User$oauthApplicationsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the OauthApplication
+   */
+  select?: Prisma.OauthApplicationSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the OauthApplication
+   */
+  omit?: Prisma.OauthApplicationOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OauthApplicationInclude<ExtArgs> | null;
+  where?: Prisma.OauthApplicationWhereInput;
+  orderBy?:
+    | Prisma.OauthApplicationOrderByWithRelationInput
+    | Prisma.OauthApplicationOrderByWithRelationInput[];
+  cursor?: Prisma.OauthApplicationWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.OauthApplicationScalarFieldEnum
+    | Prisma.OauthApplicationScalarFieldEnum[];
+};
+
+/**
+ * User.oauthAccessTokens
+ */
+export type User$oauthAccessTokensArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the OauthAccessToken
+   */
+  select?: Prisma.OauthAccessTokenSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the OauthAccessToken
+   */
+  omit?: Prisma.OauthAccessTokenOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OauthAccessTokenInclude<ExtArgs> | null;
+  where?: Prisma.OauthAccessTokenWhereInput;
+  orderBy?:
+    | Prisma.OauthAccessTokenOrderByWithRelationInput
+    | Prisma.OauthAccessTokenOrderByWithRelationInput[];
+  cursor?: Prisma.OauthAccessTokenWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.OauthAccessTokenScalarFieldEnum
+    | Prisma.OauthAccessTokenScalarFieldEnum[];
+};
+
+/**
+ * User.oauthConsents
+ */
+export type User$oauthConsentsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the OauthConsent
+   */
+  select?: Prisma.OauthConsentSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the OauthConsent
+   */
+  omit?: Prisma.OauthConsentOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OauthConsentInclude<ExtArgs> | null;
+  where?: Prisma.OauthConsentWhereInput;
+  orderBy?:
+    | Prisma.OauthConsentOrderByWithRelationInput
+    | Prisma.OauthConsentOrderByWithRelationInput[];
+  cursor?: Prisma.OauthConsentWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.OauthConsentScalarFieldEnum
+    | Prisma.OauthConsentScalarFieldEnum[];
 };
 
 /**

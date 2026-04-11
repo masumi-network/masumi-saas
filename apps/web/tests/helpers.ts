@@ -7,6 +7,8 @@ export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 
 export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
 export const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Admin@12345";
+export const TEST_SIGNUP_PASSWORD =
+  process.env.TEST_SIGNUP_PASSWORD ?? "Str0ngPass!123";
 
 // ─── Cookie jar ─────────────────────────────────────────────────────────────
 
@@ -93,6 +95,33 @@ export async function signIn(
     );
   }
   return jar;
+}
+
+export async function signUpAndSignIn(
+  overrides: {
+    name?: string;
+    email?: string;
+    password?: string;
+  } = {},
+): Promise<{ jar: CookieJar; email: string; password: string }> {
+  const jar = new CookieJar();
+  const email = overrides.email ?? `oidc-smoke-${Date.now()}@example.com`;
+  const password = overrides.password ?? TEST_SIGNUP_PASSWORD;
+  const name = overrides.name ?? "OIDC Smoke";
+
+  const res = await request("/api/auth/sign-up/email", {
+    method: "POST",
+    jar,
+    body: { name, email, password },
+  });
+
+  if (res.status !== 200) {
+    throw new Error(
+      `Sign-up failed: ${res.status} ${JSON.stringify(res.body)}`,
+    );
+  }
+
+  return { jar, email, password };
 }
 
 // ─── Agent helpers ────────────────────────────────────────────────────────────

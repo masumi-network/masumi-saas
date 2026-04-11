@@ -30,7 +30,8 @@ export function corsHeaders(
   return {
     "Access-Control-Allow-Origin": allowed && origin ? origin : "",
     "Access-Control-Allow-Methods": formatAllowedMethods(methods),
-    "Access-Control-Allow-Headers": "Content-Type, Accept",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Accept, Authorization, x-api-key",
     "Access-Control-Max-Age": "86400",
     ...(allowed ? { Vary: "Origin" } : {}),
   };

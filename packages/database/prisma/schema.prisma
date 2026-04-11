@@ -25,6 +25,9 @@ model User {
   members             Member[]
   invitations         Invitation[]
   apikeys             Apikey[]
+  oauthApplications   OauthApplication[]
+  oauthAccessTokens   OauthAccessToken[]
+  oauthConsents       OauthConsent[]
   agents              Agent[]
   agentActivityEvents AgentActivityEvent[]
   veridianCredentials VeridianCredential[]
@@ -222,6 +225,85 @@ model Apikey {
   updatedAt           DateTime  @updatedAt
 
   @@map("apikey")
+}
+
+model OauthApplication {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  clientSecret String?
+  type         String
+  name         String
+  icon         String?
+  metadata     String?  @db.Text
+  redirectUrls String   @db.Text
+  disabled     Boolean  @default(false)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("oauthApplication")
+}
+
+model OauthAccessToken {
+  id                    String   @id @default(cuid())
+  accessToken           String   @unique
+  refreshToken          String   @unique
+  accessTokenExpiresAt  DateTime
+  refreshTokenExpiresAt DateTime
+  clientId              String
+  userId                String?
+  user                  User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes                String   @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauthAccessToken")
+}
+
+model OauthConsent {
+  id           String   @id @default(cuid())
+  clientId     String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes       String   @db.Text
+  consentGiven Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauthConsent")
+}
+
+model DeviceCode {
+  id              String   @id @default(cuid())
+  deviceCode      String   @unique
+  userCode        String   @unique
+  userId          String?
+  expiresAt       DateTime
+  status          String
+  lastPolledAt    DateTime?
+  pollingInterval Int?
+  clientId        String?
+  scope           String?
+
+  @@index([userId])
+  @@index([clientId])
+  @@map("deviceCode")
+}
+
+model Jwks {
+  id         String   @id @default(cuid())
+  publicKey  String   @db.Text
+  privateKey String   @db.Text
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
+
+  @@map("jwks")
 }
 
 model RateLimit {
