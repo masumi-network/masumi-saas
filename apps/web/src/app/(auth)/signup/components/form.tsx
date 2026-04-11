@@ -6,8 +6,8 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   type FieldPath,
-  type UseFormReturn,
   useForm,
+  type UseFormReturn,
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
@@ -33,8 +33,8 @@ import {
 import { zodResolver } from "@/lib/form-zod-resolver";
 import {
   type MagicLinkSignUpInput,
-  type SignUpInput,
   magicLinkSignUpSchema,
+  type SignUpInput,
   signUpSchema,
 } from "@/lib/schemas";
 
