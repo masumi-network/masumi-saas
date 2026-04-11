@@ -4,12 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import {
-  type FieldPath,
-  useForm,
-  type UseFormReturn,
-  useWatch,
-} from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
@@ -43,15 +38,6 @@ interface SignUpFormProps {
 }
 
 type SignUpMethod = "password" | "magic-link";
-type SignUpBaseFields = {
-  name: string;
-  email: string;
-  termsAccepted: boolean;
-};
-type PasswordSignUpFields = SignUpBaseFields & {
-  password: string;
-  confirmPassword: string;
-};
 
 const PRIVACY_POLICY_URL =
   "https://www.house-of-communication.com/de/en/footer/privacy-policy.html";
@@ -76,135 +62,6 @@ function createFormData(values: Record<string, string | boolean>) {
   }
 
   return formData;
-}
-
-function NameField<TFieldValues extends SignUpBaseFields>({
-  form,
-  label,
-}: {
-  form: UseFormReturn<TFieldValues>;
-  label: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={"name" as FieldPath<TFieldValues>}
-      render={({ field }) => (
-        <FormItem className="w-full">
-          <FormLabel className="sr-only">{label}</FormLabel>
-          <FormControl>
-            <Input
-              type="text"
-              placeholder={label}
-              autoComplete="name"
-              className="bg-background"
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-function EmailField<TFieldValues extends SignUpBaseFields>({
-  form,
-  label,
-}: {
-  form: UseFormReturn<TFieldValues>;
-  label: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={"email" as FieldPath<TFieldValues>}
-      render={({ field }) => (
-        <FormItem className="w-full">
-          <FormLabel className="sr-only">{label}</FormLabel>
-          <FormControl>
-            <Input
-              type="email"
-              placeholder={label}
-              autoComplete="email"
-              className="bg-background"
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-function PasswordField<TFieldValues extends PasswordSignUpFields>({
-  form,
-  name,
-  placeholder,
-}: {
-  form: UseFormReturn<TFieldValues>;
-  name: "password" | "confirmPassword";
-  placeholder: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name as FieldPath<TFieldValues>}
-      render={({ field }) => (
-        <FormItem className="w-full">
-          <FormLabel className="sr-only">{placeholder}</FormLabel>
-          <FormControl>
-            <Input
-              type="password"
-              placeholder={placeholder}
-              autoComplete="new-password"
-              className="bg-background"
-              {...field}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-function TermsAcceptedField<TFieldValues extends SignUpBaseFields>({
-  form,
-  termsLabel,
-  privacyPolicyLabel,
-}: {
-  form: UseFormReturn<TFieldValues>;
-  termsLabel: string;
-  privacyPolicyLabel: string;
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={"termsAccepted" as FieldPath<TFieldValues>}
-      render={({ field }) => (
-        <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
-          <FormControl>
-            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-          </FormControl>
-          <div className="space-y-1 leading-none">
-            <FormLabel className="text-sm font-normal">
-              {termsLabel}{" "}
-              <Link
-                href={PRIVACY_POLICY_URL}
-                target="_blank"
-                className="underline hover:text-foreground"
-              >
-                {privacyPolicyLabel}
-              </Link>
-            </FormLabel>
-          </div>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
 }
 
 export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
@@ -242,13 +99,15 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
     try {
       const result = await signUpAction(createFormData(data));
 
-      if (result?.error) {
+      if ("error" in result) {
         const errorMessage = result.errorKey
           ? tErrors(result.errorKey)
           : result.error;
         toast.error(errorMessage);
-        setIsPasswordLoading(false);
-      } else if (result?.success) {
+        return;
+      }
+
+      if ("success" in result && result.success) {
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
           : t("success");
@@ -262,6 +121,7 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
       );
+    } finally {
       setIsPasswordLoading(false);
     }
   }
@@ -271,24 +131,26 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
     try {
       const result = await requestMagicLinkSignUpAction(createFormData(data));
 
-      if (result?.error) {
+      if ("error" in result) {
         const errorMessage = result.errorKey
           ? tErrors(result.errorKey)
           : result.error;
         toast.error(errorMessage);
-        setIsMagicLinkLoading(false);
-      } else if (result?.success) {
+        return;
+      }
+
+      if ("success" in result && result.success) {
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
           : t("magicLinkSuccess");
         toast.success(successMessage);
         setMagicLinkEmail(result.email ?? data.email);
-        setIsMagicLinkLoading(false);
       }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
       );
+    } finally {
       setIsMagicLinkLoading(false);
     }
   }
@@ -356,22 +218,112 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
               onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
               className="flex flex-col items-center gap-2 w-full"
             >
-              <NameField form={passwordForm} label={t("name")} />
-              <EmailField form={passwordForm} label={t("email")} />
-              <PasswordField
-                form={passwordForm}
+              <FormField
+                control={passwordForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">{t("name")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t("name")}
+                        autoComplete="name"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">{t("email")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder={t("email")}
+                        autoComplete="email"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
                 name="password"
-                placeholder={t("password")}
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">{t("password")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={t("password")}
+                        autoComplete="new-password"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <PasswordField
-                form={passwordForm}
+              <FormField
+                control={passwordForm.control}
                 name="confirmPassword"
-                placeholder={t("confirmPassword")}
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">
+                      {t("confirmPassword")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={t("confirmPassword")}
+                        autoComplete="new-password"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <TermsAcceptedField
-                form={passwordForm}
-                termsLabel={t("termsAccepted")}
-                privacyPolicyLabel={t("privacyPolicy")}
+              <FormField
+                control={passwordForm.control}
+                name="termsAccepted"
+                render={({ field }) => (
+                  <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) =>
+                          field.onChange(checked === true)
+                        }
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        {t("termsAccepted")}{" "}
+                        <Link
+                          href={PRIVACY_POLICY_URL}
+                          target="_blank"
+                          className="underline hover:text-foreground"
+                        >
+                          {t("privacyPolicy")}
+                        </Link>
+                      </FormLabel>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
               <div className="flex gap-4 items-center w-full mt-4">
@@ -404,12 +356,72 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
                 {t("magicLinkDescription")}
               </p>
 
-              <NameField form={magicLinkForm} label={t("name")} />
-              <EmailField form={magicLinkForm} label={t("email")} />
-              <TermsAcceptedField
-                form={magicLinkForm}
-                termsLabel={t("termsAccepted")}
-                privacyPolicyLabel={t("privacyPolicy")}
+              <FormField
+                control={magicLinkForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">{t("name")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t("name")}
+                        autoComplete="name"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={magicLinkForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel className="sr-only">{t("email")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder={t("email")}
+                        autoComplete="email"
+                        className="bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={magicLinkForm.control}
+                name="termsAccepted"
+                render={({ field }) => (
+                  <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) =>
+                          field.onChange(checked === true)
+                        }
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        {t("termsAccepted")}{" "}
+                        <Link
+                          href={PRIVACY_POLICY_URL}
+                          target="_blank"
+                          className="underline hover:text-foreground"
+                        >
+                          {t("privacyPolicy")}
+                        </Link>
+                      </FormLabel>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
               <div className="flex gap-4 items-center w-full mt-4">

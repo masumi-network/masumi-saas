@@ -35,10 +35,15 @@ export const authConfig = {
   magicLink: {
     expiresIn:
       parseInt(process.env.MAGIC_LINK_EXPIRES_IN_MINUTES || "15", 10) * 60,
-    allowedAttempts: parseInt(
-      process.env.MAGIC_LINK_ALLOWED_ATTEMPTS || "3",
-      10,
-    ),
+    rateLimit: {
+      window: parseInt(process.env.MAGIC_LINK_RATE_LIMIT_WINDOW || "60", 10),
+      max: parseInt(
+        process.env.MAGIC_LINK_RATE_LIMIT_MAX ||
+          process.env.MAGIC_LINK_ALLOWED_ATTEMPTS ||
+          "3",
+        10,
+      ),
+    },
   },
   apiKey: {
     /** Must match better-auth `apiKey({ defaultPrefix })` — used to detect API-key sessions vs cookies. */

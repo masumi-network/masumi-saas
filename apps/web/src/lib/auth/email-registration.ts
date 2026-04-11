@@ -62,11 +62,8 @@ export async function requestMagicLinkRegistration({
         name,
         callbackURL: callbackUrl,
         newUserCallbackURL: callbackUrl,
-        metadata: {
-          name,
-        },
       },
-      headers,
+      headers: headers ?? new Headers(),
     });
 
     return {

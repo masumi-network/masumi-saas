@@ -186,12 +186,19 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       expiresIn: authConfig.magicLink.expiresIn,
-      allowedAttempts: authConfig.magicLink.allowedAttempts,
-      sendMagicLink: async ({ email, url, metadata }) => {
-        const name =
-          typeof metadata?.name === "string" && metadata.name.trim().length > 0
-            ? metadata.name.trim()
-            : "User";
+      rateLimit: authConfig.magicLink.rateLimit,
+      sendMagicLink: async ({ email, url }, ctx) => {
+        const requestedName =
+          typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
+            ? ctx.body.name.trim()
+            : null;
+        const existingUser = requestedName
+          ? null
+          : await prisma.user.findUnique({
+              where: { email },
+              select: { name: true },
+            });
+        const name = requestedName || existingUser?.name || "User";
 
         if (!postmarkClient) {
           if (process.env.NODE_ENV === "development") {
