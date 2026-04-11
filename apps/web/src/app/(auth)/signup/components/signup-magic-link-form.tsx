@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { requestMagicLinkSignUpAction } from "@/lib/actions/auth.action";
+import { objectToFormData } from "@/lib/form-data";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import {
   type MagicLinkSignUpInput,
@@ -33,14 +34,6 @@ const defaultValues: MagicLinkSignUpInput = {
   email: "",
   termsAccepted: false,
 };
-
-function createFormData(values: Record<string, string | boolean>) {
-  const formData = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    formData.append(key, typeof value === "boolean" ? String(value) : value);
-  }
-  return formData;
-}
 
 export type SignupMagicLinkFormHandle = {
   getValues: () => MagicLinkSignUpInput;
@@ -88,7 +81,7 @@ export const SignupMagicLinkForm = forwardRef<
   async function onSubmit(data: MagicLinkSignUpInput) {
     setIsLoading(true);
     try {
-      const result = await requestMagicLinkSignUpAction(createFormData(data));
+      const result = await requestMagicLinkSignUpAction(objectToFormData(data));
 
       if ("error" in result) {
         const errorMessage = result.errorKey
@@ -120,7 +113,7 @@ export const SignupMagicLinkForm = forwardRef<
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col items-center gap-2 w-full"
       >
-        <p className="w-full text-sm text-muted-foreground">
+        <p className="mx-auto w-full max-w-md text-center text-sm text-muted-foreground">
           {t("magicLinkDescription")}
         </p>
 

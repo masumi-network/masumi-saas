@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signUpAction } from "@/lib/actions/auth.action";
+import { objectToFormData } from "@/lib/form-data";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignUpInput, signUpSchema } from "@/lib/schemas";
 
@@ -33,14 +34,6 @@ const defaultValues: SignUpInput = {
   confirmPassword: "",
   termsAccepted: false,
 };
-
-function createFormData(values: Record<string, string | boolean>) {
-  const formData = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    formData.append(key, typeof value === "boolean" ? String(value) : value);
-  }
-  return formData;
-}
 
 export type SignupPasswordFormHandle = {
   getValues: () => SignUpInput;
@@ -88,7 +81,7 @@ export const SignupPasswordForm = forwardRef<
   async function onSubmit(data: SignUpInput) {
     setIsLoading(true);
     try {
-      const result = await signUpAction(createFormData(data));
+      const result = await signUpAction(objectToFormData(data));
 
       if ("error" in result) {
         const errorMessage = result.errorKey

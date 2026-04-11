@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInAction } from "@/lib/actions/auth.action";
+import { objectToFormData } from "@/lib/form-data";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignInInput, signInSchema } from "@/lib/schemas";
 
@@ -25,14 +26,6 @@ const defaultValues: SignInInput = {
   email: "",
   password: "",
 };
-
-function createFormData(values: Record<string, string>) {
-  const formData = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    formData.append(key, value);
-  }
-  return formData;
-}
 
 export type SigninPasswordFormHandle = {
   getValues: () => SignInInput;
@@ -75,7 +68,7 @@ export const SigninPasswordForm = forwardRef<
   async function onSubmit(data: SignInInput) {
     setIsLoading(true);
     try {
-      const result = await signInAction(createFormData(data));
+      const result = await signInAction(objectToFormData(data));
 
       if ("error" in result) {
         toast.error(result.errorKey ? tErrors(result.errorKey) : result.error);

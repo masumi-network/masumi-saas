@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { requestMagicLinkSignInAction } from "@/lib/actions/auth.action";
+import { objectToFormData } from "@/lib/form-data";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import {
   type MagicLinkSignInInput,
@@ -26,14 +27,6 @@ import {
 const defaultValues: MagicLinkSignInInput = {
   email: "",
 };
-
-function createFormData(values: Record<string, string>) {
-  const formData = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    formData.append(key, value);
-  }
-  return formData;
-}
 
 export type SigninMagicLinkFormHandle = {
   getValues: () => MagicLinkSignInInput;
@@ -81,7 +74,7 @@ export const SigninMagicLinkForm = forwardRef<
     setIsLoading(true);
     try {
       const result = await requestMagicLinkSignInAction(
-        createFormData(data),
+        objectToFormData(data),
         safeCallbackUrl,
       );
 
@@ -112,7 +105,7 @@ export const SigninMagicLinkForm = forwardRef<
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col items-center gap-2 w-full"
       >
-        <p className="w-full text-sm text-muted-foreground">
+        <p className="mx-auto w-full max-w-md text-center text-sm text-muted-foreground">
           {t("magicLinkDescription")}
         </p>
 
