@@ -43,6 +43,13 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
+type FormRequestOptions = {
+  method?: string;
+  body?: Record<string, string>;
+  jar?: CookieJar;
+  headers?: Record<string, string>;
+};
+
 export async function request(
   path: string,
   { method = "GET", body, jar, headers = {} }: RequestOptions = {},
@@ -56,6 +63,41 @@ export async function request(
       ...headers,
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  };
+
+  const res = await fetch(`${BASE_URL}${path}`, opts);
+  if (jar)
+    jar.ingestAll(
+      res.headers.getSetCookie?.() ??
+        res.headers.get("set-cookie")?.split(/,(?=[^ ])/) ??
+        [],
+    );
+
+  let parsed: unknown;
+  const ct = res.headers.get("content-type") ?? "";
+  try {
+    parsed = ct.includes("json") ? await res.json() : await res.text();
+  } catch {
+    parsed = null;
+  }
+
+  return { status: res.status, body: parsed, headers: res.headers };
+}
+
+export async function requestForm(
+  path: string,
+  { method = "POST", body = {}, jar, headers = {} }: FormRequestOptions = {},
+): Promise<{ status: number; body: unknown; headers: Headers }> {
+  const opts: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      Origin: BASE_URL,
+      ...(jar ? { Cookie: jar.header() } : {}),
+      ...headers,
+    },
+    body: new URLSearchParams(body).toString(),
   };
 
   const res = await fetch(`${BASE_URL}${path}`, opts);

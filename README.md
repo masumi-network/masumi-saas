@@ -56,11 +56,16 @@ Unauthenticated requests receive `401 Unauthorized` with `{"success":false,"erro
 
 Masumi SaaS can also act as an OIDC issuer for external apps and SpacetimeDB:
 
+Detailed handoff doc for the external webapp repo:
+
+- [docs/external-webapp-oidc-integration.md](/Users/sandro/GitHub/masumi-saas/docs/external-webapp-oidc-integration.md)
+
 - **Discovery**: `GET /.well-known/openid-configuration`
 - **OAuth metadata**: `GET /.well-known/oauth-authorization-server`
 - **JWKS**: `GET /jwks`
 - **OIDC auth endpoints**: `/api/auth/oauth2/*`
 - **CLI device verification UI**: `/device`
+- **Device authorization endpoint**: `POST /api/auth/device/code`
 
 Trusted first-party client IDs default to:
 
@@ -72,7 +77,7 @@ SpacetimeDB reducers should validate:
 - `iss === <your public issuer>`
 - `aud` contains one of the trusted client IDs above
 
-For browser/CLI flows that authenticate directly against Better Auth (cookie, bearer session token, or device flow), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. Request body:
+For browser flows that authenticate directly against Better Auth (cookie or bearer session token), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
 
 ```json
 { "client": "web" }
@@ -83,6 +88,8 @@ or
 ```json
 { "client": "cli" }
 ```
+
+For CLI sign-in, request a device code from `POST /api/auth/device/code`, approve it via `/device` / `/device/approve`, and poll the standard token endpoint `POST /api/auth/oauth2/token` with `grant_type=urn:ietf:params:oauth:grant-type:device_code` to receive the OIDC token set (`access_token`, `id_token`, optional `refresh_token`) directly. The legacy alias `POST /api/auth/device/token` remains supported for compatibility, but new clients should use `/api/auth/oauth2/token`.
 
 ### Authenticated routes (session or API key)
 
@@ -219,10 +226,10 @@ masumi-saas/
    - **OIDC_WEB_CLIENT_ID** / **OIDC_WEB_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the external webapp
      - Local default redirect: `http://localhost:3001/auth/callback`
 
-   - **OIDC_CLI_CLIENT_ID** / **OIDC_CLI_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the CLI
+   - **OIDC_CLI_CLIENT_ID** / **OIDC_CLI_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the CLI device flow
      - Local default redirect: `http://127.0.0.1:43110/callback`
 
-   - **OIDC_DEVICE_VERIFICATION_URI** _(optional)_: Device flow verification page path or absolute URL
+   - **OIDC_DEVICE_VERIFICATION_URI** _(optional)_: OIDC device flow verification page path or absolute URL
      - Defaults to `/device`
 
    - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
@@ -339,7 +346,7 @@ After promoting, admins can sign in at `/admin/signin`.
 - **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
 - **Bearer Plugin**: Session-token authentication for cross-domain clients and device flows
 - **OIDC Provider**: Public issuer metadata, JWKS, trusted first-party public clients, and JWT-signed `id_token`s for SpacetimeDB
-- **Device Authorization**: CLI login with `/device/code`, `/device/token`, `/device`, and `/device/approve`
+- **Device Authorization**: CLI login with `/api/auth/device/code`, `/api/auth/oauth2/token`, `/device`, and `/device/approve`; token polling returns OIDC tokens directly, and the legacy `/api/auth/device/token` alias remains available
 - **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages
 

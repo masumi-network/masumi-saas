@@ -161,7 +161,6 @@ export function getPublicAuthorizationServerMetadata() {
   return {
     ...getPublicOidcMetadata(),
     device_authorization_endpoint: `${oidcEnvConfig.issuer}/api/auth/device/code`,
-    device_token_endpoint: `${oidcEnvConfig.issuer}/api/auth/device/token`,
     grant_types_supported: [
       "authorization_code",
       "refresh_token",
