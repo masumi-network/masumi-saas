@@ -1,45 +1,17 @@
 import { auth } from "@/lib/auth/auth";
-
-function isInfrastructureError(message: string) {
-  return (
-    message.includes("denied access") ||
-    message.includes("database") ||
-    message.includes("connection") ||
-    message.includes("not available")
-  );
-}
-
-function createUnexpectedErrorResult() {
-  return {
-    error: "An unexpected error occurred",
-    errorKey: "UnexpectedError" as const,
-  };
-}
+import { classifyAuthError } from "@/lib/auth/error-results";
 
 function getMagicLinkErrorResult(error: unknown) {
-  if (!(error instanceof Error)) {
-    return createUnexpectedErrorResult();
-  }
-
-  const errorMessage = error.message.toLowerCase();
-  if (isInfrastructureError(errorMessage)) {
-    return {
-      error:
-        "Database connection error. Please check your database configuration.",
-      errorKey: "DatabaseError" as const,
-    };
-  }
-  if (
-    errorMessage.includes("magic link") ||
-    errorMessage.includes("failed to send")
-  ) {
-    return {
-      error: "Failed to send magic link",
-      errorKey: "MagicLinkRequestFailed" as const,
-    };
-  }
-
-  return createUnexpectedErrorResult();
+  return classifyAuthError(error, [
+    {
+      matches: (message) =>
+        message.includes("magic link") || message.includes("failed to send"),
+      result: {
+        error: "Failed to send magic link",
+        errorKey: "MagicLinkRequestFailed" as const,
+      },
+    },
+  ]);
 }
 
 interface RequestMagicLinkRegistrationParams {

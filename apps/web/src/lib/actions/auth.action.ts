@@ -6,6 +6,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
+import {
+  classifyAuthError,
+  createUnexpectedErrorResult,
+  isInfrastructureError,
+} from "@/lib/auth/error-results";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
@@ -27,47 +32,19 @@ export async function signOutAction() {
   redirect("/signin");
 }
 
-function isInfrastructureError(message: string) {
-  return (
-    message.includes("denied access") ||
-    message.includes("database") ||
-    message.includes("connection") ||
-    message.includes("not available")
-  );
-}
-
-function createUnexpectedErrorResult() {
-  return {
-    error: "An unexpected error occurred",
-    errorKey: "UnexpectedError" as const,
-  };
-}
-
 function getSignUpErrorResult(error: unknown) {
-  if (!(error instanceof Error)) {
-    return createUnexpectedErrorResult();
-  }
-
-  const errorMessage = error.message.toLowerCase();
-  if (isInfrastructureError(errorMessage)) {
-    return {
-      error:
-        "Database connection error. Please check your database configuration.",
-      errorKey: "DatabaseError" as const,
-    };
-  }
-  if (
-    errorMessage.includes("unique") ||
-    errorMessage.includes("duplicate") ||
-    errorMessage.includes("already exists")
-  ) {
-    return {
-      error: "An account with this email already exists",
-      errorKey: "AccountExists" as const,
-    };
-  }
-
-  return createUnexpectedErrorResult();
+  return classifyAuthError(error, [
+    {
+      matches: (message) =>
+        message.includes("unique") ||
+        message.includes("duplicate") ||
+        message.includes("already exists"),
+      result: {
+        error: "An account with this email already exists",
+        errorKey: "AccountExists" as const,
+      },
+    },
+  ]);
 }
 
 export async function signInAction(formData: FormData) {

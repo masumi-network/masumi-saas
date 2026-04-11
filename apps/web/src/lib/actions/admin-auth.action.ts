@@ -3,6 +3,7 @@
 import prisma from "@masumi/database/client";
 
 import { auth } from "@/lib/auth/auth";
+import { classifyAuthError } from "@/lib/auth/error-results";
 import { isAdminUser } from "@/lib/auth/utils";
 import { signInFormDataSchema } from "@/lib/schemas";
 
@@ -67,41 +68,19 @@ export async function adminSignInAction(formData: FormData) {
     // User is authenticated AND admin - success
     return { success: true, resultKey: "AdminSignInSuccess" };
   } catch (error) {
-    if (error instanceof Error) {
-      const errorMessage = error.message.toLowerCase();
-      if (
-        errorMessage.includes("denied access") ||
-        errorMessage.includes("database") ||
-        errorMessage.includes("connection") ||
-        errorMessage.includes("not available")
-      ) {
-        return {
-          error:
-            "Database connection error. Please check your database configuration.",
-          errorKey: "DatabaseError",
-        };
-      }
-      if (
-        errorMessage.includes("invalid") ||
-        errorMessage.includes("password") ||
-        errorMessage.includes("email") ||
-        errorMessage.includes("credentials") ||
-        errorMessage.includes("banned")
-      ) {
-        return {
+    return classifyAuthError(error, [
+      {
+        matches: (message) =>
+          message.includes("invalid") ||
+          message.includes("password") ||
+          message.includes("email") ||
+          message.includes("credentials") ||
+          message.includes("banned"),
+        result: {
           error: "Invalid email or password",
-          errorKey: "InvalidCredentials",
-        };
-      }
-      // M3 FIX: Don't leak raw error.message to client
-      return {
-        error: "An unexpected error occurred",
-        errorKey: "UnexpectedError",
-      };
-    }
-    return {
-      error: "An unexpected error occurred",
-      errorKey: "UnexpectedError",
-    };
+          errorKey: "InvalidCredentials" as const,
+        },
+      },
+    ]);
   }
 }
