@@ -3,6 +3,40 @@ import { describe, expect, it } from "vitest";
 import { CookieJar, request, signIn } from "../helpers";
 
 describe("SMOKE — Auth", () => {
+  it("registers via public email route → 202 + accepted payload", async () => {
+    const email = `register-${Date.now()}@example.com`;
+    const res = await request("/api/register/email", {
+      method: "POST",
+      body: {
+        name: "Smoke Test",
+        email,
+        termsAccepted: true,
+        callbackUrl: "/",
+      },
+    });
+
+    expect(res.status).toBe(202);
+    const b = res.body as Record<string, unknown>;
+    expect(b.success).toBe(true);
+    expect(b.resultKey).toBe("MagicLinkSent");
+    expect(b.email).toBe(email);
+  });
+
+  it("rejects registration via public email route when terms are missing → 400", async () => {
+    const res = await request("/api/register/email", {
+      method: "POST",
+      body: {
+        name: "Smoke Test",
+        email: `register-missing-terms-${Date.now()}@example.com`,
+        termsAccepted: false,
+      },
+    });
+
+    expect(res.status).toBe(400);
+    const b = res.body as Record<string, unknown>;
+    expect(b.success).toBe(false);
+  });
+
   it("signs in with valid credentials → 200 + user object", async () => {
     const jar = new CookieJar();
     const res = await request("/api/auth/sign-in/email", {

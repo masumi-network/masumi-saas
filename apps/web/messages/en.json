@@ -15,12 +15,14 @@
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
       "AccountCreationFailed": "Failed to create account",
+      "MagicLinkRequestFailed": "Failed to send magic link",
       "TwoFactorRequired": "Two-factor verification required",
       "InvalidTwoFactorCode": "Invalid verification code. Please try again."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",
       "SignUpSuccess": "Account created successfully!",
+      "MagicLinkSent": "Magic link sent. Check your email.",
       "PasswordResetSent": "If an account exists with this email, you will receive a password reset link."
     },
     "Social": {
@@ -34,11 +36,23 @@
       "continueWithMicrosoft": "Continue with Microsoft",
       "email": "Email",
       "password": "Password",
+      "magicLinkDescription": "Enter your email and we’ll send you a one-time sign-in link.",
+      "magicLinkSubmit": "Email me a magic link",
+      "magicLinkSubmitting": "Sending link...",
+      "magicLinkSuccess": "Check your email for your magic link.",
       "submit": "Login",
       "submitting": "Validating...",
+      "usePassword": "Use password instead",
+      "useMagicLink": "Use magic link instead (recommended)",
       "noAccount": "Don't have an account?",
+      "login": "Login",
       "register": "Register",
       "forgotPassword": "Forgot password?",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We sent a magic link to {email}. Open it to sign in to your dashboard.",
+        "tryAnother": "Use another email"
+      },
       "success": "Logged in successfully!"
     },
     "SignUp": {
@@ -50,10 +64,21 @@
       "confirmPassword": "Confirm Password",
       "submit": "Register",
       "submitting": "Registering...",
+      "magicLinkDescription": "Skip the password for now and we’ll email you a one-time sign-in link.",
+      "magicLinkSubmit": "Email me a magic link",
+      "magicLinkSubmitting": "Sending link...",
+      "magicLinkSuccess": "Check your email for your magic link.",
+      "usePassword": "Use password instead",
+      "useMagicLink": "Use magic link instead (recommended)",
       "termsAccepted": "I agree to the",
       "privacyPolicy": "Privacy Policy",
       "hasAccount": "Already have an account?",
       "login": "Login",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
+        "tryAnother": "Use another email"
+      },
       "success": "Account created successfully!"
     },
     "ForgotPassword": {
@@ -1301,6 +1326,18 @@
       "button": "Verify email",
       "linkText": "Or copy and paste this link into your browser:",
       "footer": "If you didn't create an account, you can safely ignore this email."
+    },
+    "MagicLink": {
+      "preview": "Your Masumi magic link",
+      "title": "Sign in to Masumi",
+      "greeting": "Hello {name},",
+      "message": "Click the button below to continue to Masumi. This secure link expires soon and can only be used a limited number of times.",
+      "consentBefore": "If this is your first time here, using this link to access Masumi means you agree to our ",
+      "consentPrivacyLabel": "Privacy Policy",
+      "consentAfter": ".",
+      "button": "Open Masumi",
+      "linkText": "Or copy and paste this link into your browser:",
+      "footer": "If you didn't request this email, you can safely ignore it."
     },
     "Invitation": {
       "preview": "You've been invited to join {organization} on Masumi",

@@ -13,6 +13,10 @@
   ],
   "tags": [
     {
+      "name": "Auth",
+      "description": "Public registration and authentication bootstrap flows"
+    },
+    {
       "name": "System",
       "description": "Health and availability"
     },
@@ -50,6 +54,172 @@
     "parameters": {}
   },
   "paths": {
+    "/register/email": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register with email",
+        "description": "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "Ada Lovelace"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "ada@example.com"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean"
+                  },
+                  "callbackUrl": {
+                    "type": "string",
+                    "example": "/",
+                    "description": "Optional same-origin path to open after the magic link is used."
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "termsAccepted"
+                ],
+                "example": {
+                  "name": "Ada Lovelace",
+                  "email": "ada@example.com",
+                  "termsAccepted": true,
+                  "callbackUrl": "/"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Magic link accepted for delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "resultKey": {
+                      "type": "string",
+                      "enum": [
+                        "MagicLinkSent"
+                      ]
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "resultKey",
+                    "email"
+                  ],
+                  "example": {
+                    "success": true,
+                    "resultKey": "MagicLinkSent",
+                    "email": "ada@example.com"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many registration requests from this client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Registration email could not be queued or sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [

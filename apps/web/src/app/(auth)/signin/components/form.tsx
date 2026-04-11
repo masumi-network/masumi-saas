@@ -1,32 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { signInAction } from "@/lib/actions/auth.action";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
-import { zodResolver } from "@/lib/form-zod-resolver";
-import { type SignInInput, signInSchema } from "@/lib/schemas";
+import type { MagicLinkSignInInput, SignInInput } from "@/lib/schemas";
+
+import {
+  SigninMagicLinkForm,
+  type SigninMagicLinkFormHandle,
+} from "./signin-magic-link-form";
+import {
+  SigninPasswordForm,
+  type SigninPasswordFormHandle,
+} from "./signin-password-form";
 
 interface SignInFormProps {
   oauthProviders?: ("google" | "github" | "microsoft")[];
-  /** After sign-in, redirect here (e.g. from accept-invitation link). Must be a path on our origin. */
   callbackUrl?: string;
 }
 
@@ -35,52 +28,62 @@ export default function SignInForm({
   callbackUrl,
 }: SignInFormProps) {
   const t = useTranslations("Auth.SignIn");
-  const tErrors = useTranslations("Auth.Errors");
-  const tResults = useTranslations("Auth.Results");
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
+  const [usePassword, setUsePassword] = useState(false);
+  const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
+  const [seedPassword, setSeedPassword] = useState<Partial<SignInInput> | null>(
+    null,
+  );
+  const [seedMagic, setSeedMagic] =
+    useState<Partial<MagicLinkSignInInput> | null>(null);
+  const [magicFormKey, setMagicFormKey] = useState(0);
 
-  const form = useForm<SignInInput>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+  const passwordRef = useRef<SigninPasswordFormHandle>(null);
+  const magicRef = useRef<SigninMagicLinkFormHandle>(null);
 
-  async function onSubmit(data: SignInInput) {
-    setIsLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("email", data.email);
-      formData.append("password", data.password);
+  function showPasswordFields() {
+    const v = magicRef.current?.getValues();
+    setSeedPassword(v ? { email: v.email, password: "" } : null);
+    setUsePassword(true);
+  }
 
-      const result = await signInAction(formData);
+  function hidePasswordFields() {
+    const v = passwordRef.current?.getValues();
+    setSeedMagic(v ? { email: v.email } : null);
+    setUsePassword(false);
+  }
 
-      if (result?.error) {
-        const errorMessage = result.errorKey
-          ? tErrors(result.errorKey)
-          : result.error;
-        toast.error(errorMessage);
-        setIsLoading(false);
-      } else if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
-        router.push("/2fa");
-      } else if (result?.success) {
-        const successMessage = result.resultKey
-          ? tResults(result.resultKey)
-          : t("success");
-        toast.success(successMessage);
-        router.push(sanitizeCallbackUrl(callbackUrl) ?? "/");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        return;
-      }
-      toast.error(
-        error instanceof Error ? error.message : "An unexpected error occurred",
-      );
-      setIsLoading(false);
-    }
+  if (magicLinkEmail) {
+    return (
+      <div className="w-full max-w-form space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-light tracking-tight mb-4">
+            {t("checkEmail.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
+            {t("checkEmail.description", { email: magicLinkEmail })}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setMagicLinkEmail(null);
+              setUsePassword(false);
+              setSeedMagic(null);
+              setMagicFormKey((k) => k + 1);
+            }}
+          >
+            {t("checkEmail.tryAnother")}
+          </Button>
+          <Button variant="primary" asChild>
+            <Link href="/signin">{t("login")}</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,87 +100,53 @@ export default function SignInForm({
       {oauthProviders.length > 0 && (
         <SocialAuthButtons
           providers={oauthProviders}
-          callbackURL={sanitizeCallbackUrl(callbackUrl)}
+          callbackURL={safeCallbackUrl}
         />
       )}
 
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col items-center gap-2 w-full"
-        >
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">{t("email")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder={t("email")}
-                    autoComplete="email"
-                    className="bg-background"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      {usePassword ? (
+        <SigninPasswordForm
+          ref={passwordRef}
+          seedFromMagicLink={seedPassword}
+          safeCallbackUrl={safeCallbackUrl}
+        />
+      ) : (
+        <SigninMagicLinkForm
+          key={magicFormKey}
+          ref={magicRef}
+          seedFromPassword={seedMagic}
+          safeCallbackUrl={safeCallbackUrl}
+          onMagicLinkSent={(email) => setMagicLinkEmail(email)}
+        />
+      )}
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">{t("password")}</FormLabel>
-                <FormControl>
-                  <div className="flex gap-4 items-center w-full">
-                    <Input
-                      type="password"
-                      placeholder={t("password")}
-                      autoComplete="current-password"
-                      className="flex-1 bg-background"
-                      {...field}
-                    />
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={isLoading}
-                      size="lg"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Spinner size={16} className="mr-2" />
-                          {t("submitting")}
-                        </>
-                      ) : (
-                        t("submit")
-                      )}
-                    </Button>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </form>
-      </Form>
-
-      <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between w-full">
-        <p className="text-center text-sm text-muted-foreground">
-          {t("noAccount")}{" "}
-          <Link href="/signup" className="underline hover:text-foreground">
-            {t("register")}
-          </Link>
-        </p>
-        <Link
-          href="/forgot-password"
-          className="text-sm text-muted-foreground hover:underline"
+      <div className="flex flex-col gap-3 w-full">
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto justify-start px-0"
+          onClick={usePassword ? hidePasswordFields : showPasswordFields}
         >
-          {t("forgotPassword")}
-        </Link>
+          {usePassword ? t("useMagicLink") : t("usePassword")}
+        </Button>
+
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between w-full">
+          <p className="text-center text-sm text-muted-foreground">
+            {t("noAccount")}{" "}
+            <Link href="/signup" className="underline hover:text-foreground">
+              {t("register")}
+            </Link>
+          </p>
+          {usePassword && (
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              {t("forgotPassword")}
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

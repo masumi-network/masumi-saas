@@ -16,13 +16,20 @@ function isOriginAllowed(origin: string | null): boolean {
   return false;
 }
 
-export function corsHeaders(request?: NextRequest): HeadersInit {
+function formatAllowedMethods(methods?: readonly string[]) {
+  return (methods ?? ["GET", "OPTIONS"]).join(", ");
+}
+
+export function corsHeaders(
+  request?: NextRequest,
+  methods?: readonly string[],
+): HeadersInit {
   const origin = request?.headers.get("origin") ?? null;
   const allowed = isOriginAllowed(origin);
 
   return {
     "Access-Control-Allow-Origin": allowed && origin ? origin : "",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": formatAllowedMethods(methods),
     "Access-Control-Allow-Headers": "Content-Type, Accept",
     "Access-Control-Max-Age": "86400",
     ...(allowed ? { Vary: "Origin" } : {}),
@@ -31,18 +38,20 @@ export function corsHeaders(request?: NextRequest): HeadersInit {
 
 export function handleCorsPreflightResponse(
   request?: NextRequest,
+  methods?: readonly string[],
 ): NextResponse {
   return new NextResponse(null, {
     status: 204,
-    headers: corsHeaders(request),
+    headers: corsHeaders(request, methods),
   });
 }
 
 export function addCorsHeaders(
   response: NextResponse,
   request?: NextRequest,
+  methods?: readonly string[],
 ): NextResponse {
-  for (const [key, value] of Object.entries(corsHeaders(request))) {
+  for (const [key, value] of Object.entries(corsHeaders(request, methods))) {
     response.headers.set(key, value);
   }
   return response;

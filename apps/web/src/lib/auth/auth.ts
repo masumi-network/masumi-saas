@@ -4,18 +4,28 @@ import prisma from "@masumi/database/client";
 import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
+import {
+  admin,
+  apiKey,
+  magicLink,
+  organization,
+  twoFactor,
+} from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { headers } from "next/headers";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
+import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { reactInvitationEmail } from "@/lib/email/invitation";
+import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
+import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 export const auth = betterAuth({
   appName: "Masumi",
@@ -48,11 +58,11 @@ export const auth = betterAuth({
         } else {
           console.error(
             "Postmark not configured. Password reset email failed.",
-            {
-              to: user.email,
-              resetLink: url,
-            },
+            { to: user.email },
           );
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send password reset email. Please try again.",
+          });
         }
         return;
       }
@@ -100,18 +110,14 @@ export const auth = betterAuth({
           console.log(
             "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
           );
-        } else {
-          console.error("Postmark not configured. Email verification failed.", {
-            to: user.email,
-            verificationLink: url,
-          });
+          return;
         }
-        if (isResend) {
-          throw new APIError("INTERNAL_SERVER_ERROR", {
-            message: "Failed to send verification email. Please try again.",
-          });
-        }
-        return;
+        console.error("Postmark not configured. Email verification failed.", {
+          to: user.email,
+        });
+        throw new APIError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send verification email. Please try again.",
+        });
       }
 
       const headersList = await headers();
@@ -127,8 +133,7 @@ export const auth = betterAuth({
           HtmlBody: await reactVerificationEmail({
             name: user.name || "User",
             verificationLink: url,
-            logoUrl:
-              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            logoUrl: emailConfig.brandLogoUrl,
             translations: {
               preview: msg.preview,
               title: msg.title,
@@ -166,7 +171,109 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          if (!user.name?.trim()) {
+            try {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { name: displayNameFromEmail(user.email) },
+              });
+            } catch (error) {
+              console.error(
+                "[auth] Failed to backfill display name for new user",
+                user.id,
+                error,
+              );
+            }
+          }
+          await createPaymentNodeKeyForUser(user.id);
+        },
+      },
+    },
+  },
   plugins: [
+    magicLink({
+      expiresIn: authConfig.magicLink.expiresIn,
+      rateLimit: authConfig.magicLink.rateLimit,
+      sendMagicLink: async ({ email, url }, ctx) => {
+        const requestedName =
+          typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
+            ? ctx.body.name.trim()
+            : null;
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          select: { name: true },
+        });
+        const name =
+          existingUser?.name?.trim() ||
+          requestedName ||
+          displayNameFromEmail(email);
+
+        if (!postmarkClient) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("\n[DEV] Magic link email (Postmark not configured)");
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(`To: ${email}`);
+            console.log(`Magic Link: ${url}`);
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(
+              "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+            );
+            return;
+          }
+          console.error("Postmark not configured. Magic link email failed.", {
+            to: email,
+          });
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send magic link. Please try again.",
+          });
+        }
+
+        const headersList = await headers();
+        const locale = parseAcceptLanguage(headersList.get("accept-language"));
+        const msg = getEmailMessages(locale).MagicLink;
+
+        try {
+          await postmarkClient.sendEmail({
+            From: emailConfig.postmarkFromEmail,
+            To: email,
+            Tag: "magic-link",
+            Subject: msg.preview,
+            HtmlBody: await reactMagicLinkEmail({
+              name,
+              magicLink: url,
+              logoUrl: emailConfig.brandLogoUrl,
+              includePrivacyConsent: !existingUser,
+              privacyPolicyUrl: PRIVACY_POLICY_URL,
+              translations: {
+                preview: msg.preview,
+                title: msg.title,
+                greeting: msg.greeting,
+                message: msg.message,
+                consentBefore: msg.consentBefore,
+                consentPrivacyLabel: msg.consentPrivacyLabel,
+                consentAfter: msg.consentAfter,
+                button: msg.button,
+                linkText: msg.linkText,
+                footer: msg.footer,
+              },
+            }),
+            MessageStream: "outbound",
+          });
+        } catch (err) {
+          console.error("[Postmark] Magic link email failed:", err);
+          if (process.env.NODE_ENV === "development") {
+            console.log("[DEV] Magic link (Postmark failed):", url);
+          }
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send magic link. Please try again.",
+          });
+        }
+      },
+    }),
     twoFactor({
       issuer: "Masumi",
       skipVerificationOnEnable: false,
@@ -233,13 +340,15 @@ export const auth = betterAuth({
             console.log(
               "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
             );
-          } else {
-            console.error("Postmark not configured. Invitation email failed.", {
-              to: data.email,
-              inviteLink,
-            });
+            return;
           }
-          return;
+          console.error("Postmark not configured. Invitation email failed.", {
+            to: data.email,
+            organizationId: data.organization.id,
+          });
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send invitation email. Please try again.",
+          });
         }
 
         const headersList = await headers();
@@ -266,8 +375,7 @@ export const auth = betterAuth({
             organizationName: orgName,
             inviterName: data.inviter.user.name || data.inviter.user.email,
             role: roleName,
-            logoUrl:
-              "https://avatars.githubusercontent.com/u/194367856?s=200&v=4",
+            logoUrl: emailConfig.brandLogoUrl,
             translations: {
               preview: replaceOrganization(msg.preview),
               title: replaceOrganization(msg.title),
