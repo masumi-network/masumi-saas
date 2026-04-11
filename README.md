@@ -190,6 +190,10 @@ masumi-saas/
    - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
      - If not set, emails are logged to console in development
 
+   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the logo image shown at the top of transactional emails (verification, magic link, org invitations, etc.). Defaults to a Masumi GitHub avatar URL if unset.
+
+   - **NEXT_PUBLIC_PRIVACY_POLICY_URL** _(optional)_: Privacy policy URL used by signup forms (checkbox link) and the consent line in magic-link emails when the address is not yet registered. Defaults to the House of Communication policy URL if unset.
+
    - **NEXT_PUBLIC_SENTRY_DSN** / **SENTRY_AUTH_TOKEN** / **SENTRY_PROJECT**: Sentry config (optional)
 
    - **SUMSUB_APP_TOKEN** / **SUMSUB_SECRET_KEY**: Sumsub credentials (optional, for KYC/KYB)
@@ -286,6 +290,7 @@ After promoting, admins can sign in at `/admin/signin`.
 ## Better Auth Features
 
 - **Email/Password Authentication**: Sign up and sign in with email and password
+- **Magic link**: Passwordless sign-in link; new email addresses receive a short Privacy Policy consent line in the email body (existing accounts do not). Display names default from the email local part when no name is provided.
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
 - **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
 - **Two-Factor Authentication**: TOTP-based 2FA support
