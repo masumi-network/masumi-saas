@@ -58,11 +58,11 @@ export const auth = betterAuth({
         } else {
           console.error(
             "Postmark not configured. Password reset email failed.",
-            {
-              to: user.email,
-              resetLink: url,
-            },
+            { to: user.email },
           );
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send password reset email. Please try again.",
+          });
         }
         return;
       }
@@ -110,18 +110,14 @@ export const auth = betterAuth({
           console.log(
             "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
           );
-        } else {
-          console.error("Postmark not configured. Email verification failed.", {
-            to: user.email,
-            verificationLink: url,
-          });
+          return;
         }
-        if (isResend) {
-          throw new APIError("INTERNAL_SERVER_ERROR", {
-            message: "Failed to send verification email. Please try again.",
-          });
-        }
-        return;
+        console.error("Postmark not configured. Email verification failed.", {
+          to: user.email,
+        });
+        throw new APIError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send verification email. Please try again.",
+        });
       }
 
       const headersList = await headers();
@@ -226,13 +222,14 @@ export const auth = betterAuth({
             console.log(
               "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
             );
-          } else {
-            console.error("Postmark not configured. Magic link email failed.", {
-              to: email,
-              magicLink: url,
-            });
+            return;
           }
-          return;
+          console.error("Postmark not configured. Magic link email failed.", {
+            to: email,
+          });
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send magic link. Please try again.",
+          });
         }
 
         const headersList = await headers();
@@ -343,13 +340,15 @@ export const auth = betterAuth({
             console.log(
               "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
             );
-          } else {
-            console.error("Postmark not configured. Invitation email failed.", {
-              to: data.email,
-              inviteLink,
-            });
+            return;
           }
-          return;
+          console.error("Postmark not configured. Invitation email failed.", {
+            to: data.email,
+            organizationId: data.organization.id,
+          });
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send invitation email. Please try again.",
+          });
         }
 
         const headersList = await headers();
