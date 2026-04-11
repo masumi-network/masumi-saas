@@ -79,7 +79,7 @@ export default function SignInForm({
             {t("checkEmail.tryAnother")}
           </Button>
           <Button variant="primary" asChild>
-            <Link href="/signup">{t("register")}</Link>
+            <Link href="/signin">{t("login")}</Link>
           </Button>
         </div>
       </div>

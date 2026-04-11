@@ -14,7 +14,6 @@
       "DatabaseError": "Database connection error. Please check your database configuration.",
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
-      "AccountNotFound": "No account found for this email",
       "AccountCreationFailed": "Failed to create account",
       "MagicLinkRequestFailed": "Failed to send magic link",
       "TwoFactorRequired": "Two-factor verification required",
@@ -46,6 +45,7 @@
       "usePassword": "Use password instead",
       "useMagicLink": "Use magic link instead (recommended)",
       "noAccount": "Don't have an account?",
+      "login": "Login",
       "register": "Register",
       "forgotPassword": "Forgot password?",
       "checkEmail": {

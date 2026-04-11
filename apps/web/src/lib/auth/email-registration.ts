@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth/auth";
+import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { classifyAuthError } from "@/lib/auth/error-results";
 
 function getMagicLinkErrorResult(error: unknown) {
@@ -27,11 +28,16 @@ export async function requestMagicLinkRegistration({
   callbackUrl,
   headers,
 }: RequestMagicLinkRegistrationParams) {
+  const resolvedName =
+    typeof name === "string" && name.trim().length > 0
+      ? name.trim()
+      : displayNameFromEmail(email);
+
   try {
     await auth.api.signInMagicLink({
       body: {
         email,
-        ...(name ? { name } : {}),
+        name: resolvedName,
         callbackURL: callbackUrl,
         newUserCallbackURL: callbackUrl,
       },

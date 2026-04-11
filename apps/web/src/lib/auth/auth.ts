@@ -15,6 +15,7 @@ import { localization } from "better-auth-localization";
 import { headers } from "next/headers";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
+import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
 import { reactInvitationEmail } from "@/lib/email/invitation";
@@ -178,6 +179,12 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          if (!user.name?.trim()) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { name: displayNameFromEmail(user.email) },
+            });
+          }
           await createPaymentNodeKeyForUser(user.id);
         },
       },
@@ -192,13 +199,14 @@ export const auth = betterAuth({
           typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
             ? ctx.body.name.trim()
             : null;
-        const existingUser = requestedName
-          ? null
-          : await prisma.user.findUnique({
-              where: { email },
-              select: { name: true },
-            });
-        const name = requestedName || existingUser?.name || "User";
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          select: { name: true },
+        });
+        const name =
+          existingUser?.name?.trim() ||
+          requestedName ||
+          displayNameFromEmail(email);
 
         if (!postmarkClient) {
           if (process.env.NODE_ENV === "development") {

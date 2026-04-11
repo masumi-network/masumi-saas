@@ -209,18 +209,6 @@ export async function requestMagicLinkSignInAction(
     };
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: validation.data.email },
-    select: { id: true },
-  });
-
-  if (!existingUser) {
-    return {
-      error: "No account found for this email",
-      errorKey: "AccountNotFound" as const,
-    };
-  }
-
   const headersList = await getRequestHeaders();
   return await requestMagicLinkRegistration({
     email: validation.data.email,
