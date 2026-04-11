@@ -32,6 +32,14 @@ export const authConfig = {
   emailAndPassword: {
     requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === "true",
   },
+  magicLink: {
+    expiresIn:
+      parseInt(process.env.MAGIC_LINK_EXPIRES_IN_MINUTES || "15", 10) * 60,
+    allowedAttempts: parseInt(
+      process.env.MAGIC_LINK_ALLOWED_ATTEMPTS || "3",
+      10,
+    ),
+  },
   apiKey: {
     /** Must match better-auth `apiKey({ defaultPrefix })` — used to detect API-key sessions vs cookies. */
     defaultKeyPrefix: "mas_",

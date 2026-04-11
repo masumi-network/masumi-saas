@@ -24,6 +24,10 @@ import {
   dashboardOverviewQuerySchema,
   earningsQuerySchema,
 } from "@/lib/schemas/api-query";
+import {
+  registerByEmailApiBodySchema,
+  registerByEmailApiSuccessSchema,
+} from "@/lib/schemas/auth-api";
 
 import { z } from "./zod-openapi";
 
@@ -766,6 +770,44 @@ const apiKeyStatusKeySchema = z
 // ── System ─────────────────────────────────────────────────────────────────
 
 registry.registerPath({
+  method: "post",
+  path: "/register/email",
+  tags: ["Auth"],
+  summary: "Register with email",
+  description:
+    "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+  security: noSecurity,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: registerByEmailApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    202: okWithSchema(
+      "Magic link accepted for delivery",
+      registerByEmailApiSuccessSchema,
+    ),
+    400: {
+      description: "Invalid request body",
+      content: { "application/json": { schema: errBody } },
+    },
+    429: {
+      description: "Too many registration requests from this client",
+      content: { "application/json": { schema: errBody } },
+    },
+    500: {
+      description: "Registration email could not be queued or sent",
+      content: { "application/json": { schema: errBody } },
+    },
+  },
+});
+
+registry.registerPath({
   method: "get",
   path: "/health",
   tags: ["System"],
@@ -1119,6 +1161,10 @@ export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
     },
     servers: [{ url: "/api", description: "This app" }],
     tags: [
+      {
+        name: "Auth",
+        description: "Public registration and authentication bootstrap flows",
+      },
       { name: "System", description: "Health and availability" },
       { name: "API keys", description: "Masumi SaaS API key introspection" },
       { name: "Agents", description: "Your agents" },

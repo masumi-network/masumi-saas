@@ -15,12 +15,14 @@
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
       "AccountCreationFailed": "Failed to create account",
+      "MagicLinkRequestFailed": "Failed to send magic link",
       "TwoFactorRequired": "Two-factor verification required",
       "InvalidTwoFactorCode": "Invalid verification code. Please try again."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",
       "SignUpSuccess": "Account created successfully!",
+      "MagicLinkSent": "Magic link sent. Check your email.",
       "PasswordResetSent": "If an account exists with this email, you will receive a password reset link."
     },
     "Social": {
@@ -44,16 +46,29 @@
     "SignUp": {
       "title": "Register",
       "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "methods": {
+        "password": "Password",
+        "magicLink": "Magic link"
+      },
       "name": "Name",
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm Password",
       "submit": "Register",
       "submitting": "Registering...",
+      "magicLinkDescription": "Skip the password for now and we’ll email you a one-time sign-in link.",
+      "magicLinkSubmit": "Email me a magic link",
+      "magicLinkSubmitting": "Sending link...",
+      "magicLinkSuccess": "Check your email for your magic link.",
       "termsAccepted": "I agree to the",
       "privacyPolicy": "Privacy Policy",
       "hasAccount": "Already have an account?",
       "login": "Login",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
+        "tryAnother": "Use another email"
+      },
       "success": "Account created successfully!"
     },
     "ForgotPassword": {
@@ -1301,6 +1316,15 @@
       "button": "Verify email",
       "linkText": "Or copy and paste this link into your browser:",
       "footer": "If you didn't create an account, you can safely ignore this email."
+    },
+    "MagicLink": {
+      "preview": "Your Masumi magic link",
+      "title": "Sign in to Masumi",
+      "greeting": "Hello {name},",
+      "message": "Click the button below to continue to Masumi. This secure link expires soon and can only be used a limited number of times.",
+      "button": "Open Masumi",
+      "linkText": "Or copy and paste this link into your browser:",
+      "footer": "If you didn't request this email, you can safely ignore it."
     },
     "Invitation": {
       "preview": "You've been invited to join {organization} on Masumi",

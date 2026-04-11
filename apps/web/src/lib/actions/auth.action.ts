@@ -2,15 +2,15 @@
 
 import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
-import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
+import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
-import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 import {
   changePasswordFormDataSchema,
   deleteAccountFormDataSchema,
-  signInSchema,
+  magicLinkSignUpFormDataSchema,
+  signInFormDataSchema,
   signUpFormDataSchema,
   updateNameFormDataSchema,
 } from "@/lib/schemas";
@@ -25,8 +25,51 @@ export async function signOutAction() {
   redirect("/signin");
 }
 
+function isInfrastructureError(message: string) {
+  return (
+    message.includes("denied access") ||
+    message.includes("database") ||
+    message.includes("connection") ||
+    message.includes("not available")
+  );
+}
+
+function createUnexpectedErrorResult() {
+  return {
+    error: "An unexpected error occurred",
+    errorKey: "UnexpectedError" as const,
+  };
+}
+
+function getSignUpErrorResult(error: unknown) {
+  if (!(error instanceof Error)) {
+    return createUnexpectedErrorResult();
+  }
+
+  const errorMessage = error.message.toLowerCase();
+  if (isInfrastructureError(errorMessage)) {
+    return {
+      error:
+        "Database connection error. Please check your database configuration.",
+      errorKey: "DatabaseError" as const,
+    };
+  }
+  if (
+    errorMessage.includes("unique") ||
+    errorMessage.includes("duplicate") ||
+    errorMessage.includes("already exists")
+  ) {
+    return {
+      error: "An account with this email already exists",
+      errorKey: "AccountExists" as const,
+    };
+  }
+
+  return createUnexpectedErrorResult();
+}
+
 export async function signInAction(formData: FormData) {
-  const validation = zfd.formData(signInSchema).safeParse(formData);
+  const validation = signInFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
@@ -89,12 +132,7 @@ export async function signInAction(formData: FormData) {
     }
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
-      if (
-        errorMessage.includes("denied access") ||
-        errorMessage.includes("database") ||
-        errorMessage.includes("connection") ||
-        errorMessage.includes("not available")
-      ) {
+      if (isInfrastructureError(errorMessage)) {
         return {
           error:
             "Database connection error. Please check your database configuration.",
@@ -121,15 +159,9 @@ export async function signInAction(formData: FormData) {
           errorKey: "InvalidCredentials",
         };
       }
-      return {
-        error: error.message,
-        errorKey: "UnexpectedError",
-      };
+      return createUnexpectedErrorResult();
     }
-    return {
-      error: "An unexpected error occurred",
-      errorKey: "UnexpectedError",
-    };
+    return createUnexpectedErrorResult();
   }
 }
 
@@ -158,48 +190,32 @@ export async function signUpAction(formData: FormData) {
       };
     }
 
-    await createPaymentNodeKeyForUser(result.user.id);
-
     return {
       success: true,
       resultKey: "SignUpSuccess",
     };
   } catch (error) {
     console.error("[signUpAction] error:", error);
-    if (error instanceof Error) {
-      const errorMessage = error.message.toLowerCase();
-      if (
-        errorMessage.includes("denied access") ||
-        errorMessage.includes("database") ||
-        errorMessage.includes("connection") ||
-        errorMessage.includes("not available")
-      ) {
-        return {
-          error:
-            "Database connection error. Please check your database configuration.",
-          errorKey: "DatabaseError",
-        };
-      }
-      if (
-        errorMessage.includes("unique") ||
-        errorMessage.includes("duplicate") ||
-        errorMessage.includes("already exists")
-      ) {
-        return {
-          error: "An account with this email already exists",
-          errorKey: "AccountExists",
-        };
-      }
-      return {
-        error: error.message,
-        errorKey: "UnexpectedError",
-      };
-    }
+    return getSignUpErrorResult(error);
+  }
+}
+
+export async function requestMagicLinkSignUpAction(formData: FormData) {
+  const validation = magicLinkSignUpFormDataSchema.safeParse(formData);
+  if (!validation.success) {
     return {
-      error: "An unexpected error occurred",
-      errorKey: "UnexpectedError",
+      error: convertZodError(validation.error),
+      errorKey: "InvalidInput",
     };
   }
+
+  const headersList = await getRequestHeaders();
+  return await requestMagicLinkRegistration({
+    email: validation.data.email,
+    name: validation.data.name,
+    callbackUrl: "/",
+    headers: new Headers(headersList),
+  });
 }
 
 export async function updateUserNameAction(formData: FormData) {

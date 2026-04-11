@@ -1,14 +1,13 @@
 "use server";
 
 import prisma from "@masumi/database/client";
-import { zfd } from "zod-form-data";
 
 import { auth } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/utils";
-import { signInSchema } from "@/lib/schemas";
+import { signInFormDataSchema } from "@/lib/schemas";
 
 export async function adminSignInAction(formData: FormData) {
-  const validation = zfd.formData(signInSchema).safeParse(formData);
+  const validation = signInFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",

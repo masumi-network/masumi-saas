@@ -4,7 +4,13 @@ import prisma from "@masumi/database/client";
 import { APIError, betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin, apiKey, organization, twoFactor } from "better-auth/plugins";
+import {
+  admin,
+  apiKey,
+  magicLink,
+  organization,
+  twoFactor,
+} from "better-auth/plugins";
 import { localization } from "better-auth-localization";
 import { headers } from "next/headers";
 
@@ -12,10 +18,12 @@ import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
 import { reactInvitationEmail } from "@/lib/email/invitation";
+import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
+import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 export const auth = betterAuth({
   appName: "Masumi",
@@ -166,7 +174,80 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await createPaymentNodeKeyForUser(user.id);
+        },
+      },
+    },
+  },
   plugins: [
+    magicLink({
+      expiresIn: authConfig.magicLink.expiresIn,
+      allowedAttempts: authConfig.magicLink.allowedAttempts,
+      sendMagicLink: async ({ email, url, metadata }) => {
+        const name =
+          typeof metadata?.name === "string" && metadata.name.trim().length > 0
+            ? metadata.name.trim()
+            : "User";
+
+        if (!postmarkClient) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("\n[DEV] Magic link email (Postmark not configured)");
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(`To: ${email}`);
+            console.log(`Magic Link: ${url}`);
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            console.log(
+              "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+            );
+          } else {
+            console.error("Postmark not configured. Magic link email failed.", {
+              to: email,
+              magicLink: url,
+            });
+          }
+          return;
+        }
+
+        const headersList = await headers();
+        const locale = parseAcceptLanguage(headersList.get("accept-language"));
+        const msg = getEmailMessages(locale).MagicLink;
+
+        try {
+          await postmarkClient.sendEmail({
+            From: emailConfig.postmarkFromEmail,
+            To: email,
+            Tag: "magic-link",
+            Subject: msg.preview,
+            HtmlBody: await reactMagicLinkEmail({
+              name,
+              magicLink: url,
+              translations: {
+                preview: msg.preview,
+                title: msg.title,
+                greeting: msg.greeting,
+                message: msg.message,
+                button: msg.button,
+                linkText: msg.linkText,
+                footer: msg.footer,
+              },
+            }),
+            MessageStream: "outbound",
+          });
+        } catch (err) {
+          console.error("[Postmark] Magic link email failed:", err);
+          if (process.env.NODE_ENV === "development") {
+            console.log("[DEV] Magic link (Postmark failed):", url);
+          }
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send magic link. Please try again.",
+          });
+        }
+      },
+    }),
     twoFactor({
       issuer: "Masumi",
       skipVerificationOnEnable: false,

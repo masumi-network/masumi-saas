@@ -14,7 +14,7 @@ type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 /**
  * Add more locales by importing and adding to this map.
- * Each messages/{locale}.json must have an "Email" key with ResetPassword, Verification, Invitation.
+ * Each messages/{locale}.json must have an "Email" key with ResetPassword, Verification, MagicLink, Invitation.
  */
 const messagesByLocale: Record<string, EmailMessages> = {
   en: (en as { Email: EmailMessages }).Email,
