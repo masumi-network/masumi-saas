@@ -44,7 +44,7 @@ function getMagicLinkErrorResult(error: unknown) {
 
 interface RequestMagicLinkRegistrationParams {
   email: string;
-  name: string;
+  name?: string;
   callbackUrl: string;
   headers?: Headers;
 }
@@ -59,7 +59,7 @@ export async function requestMagicLinkRegistration({
     await auth.api.signInMagicLink({
       body: {
         email,
-        name,
+        ...(name ? { name } : {}),
         callbackURL: callbackUrl,
         newUserCallbackURL: callbackUrl,
       },

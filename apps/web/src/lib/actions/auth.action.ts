@@ -4,11 +4,13 @@ import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/auth";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
   deleteAccountFormDataSchema,
+  magicLinkSignInFormDataSchema,
   magicLinkSignUpFormDataSchema,
   signInFormDataSchema,
   signUpFormDataSchema,
@@ -214,6 +216,38 @@ export async function requestMagicLinkSignUpAction(formData: FormData) {
     email: validation.data.email,
     name: validation.data.name,
     callbackUrl: "/",
+    headers: new Headers(headersList),
+  });
+}
+
+export async function requestMagicLinkSignInAction(
+  formData: FormData,
+  callbackUrl?: string,
+) {
+  const validation = magicLinkSignInFormDataSchema.safeParse(formData);
+  if (!validation.success) {
+    return {
+      error: convertZodError(validation.error),
+      errorKey: "InvalidInput" as const,
+    };
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: validation.data.email },
+    select: { id: true },
+  });
+
+  if (!existingUser) {
+    return {
+      error: "No account found for this email",
+      errorKey: "AccountNotFound" as const,
+    };
+  }
+
+  const headersList = await getRequestHeaders();
+  return await requestMagicLinkRegistration({
+    email: validation.data.email,
+    callbackUrl: sanitizeCallbackUrl(callbackUrl) ?? "/",
     headers: new Headers(headersList),
   });
 }
