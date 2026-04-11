@@ -8,10 +8,10 @@ import {
   Html,
   Link,
   Preview,
+  render,
   Section,
   Tailwind,
   Text,
-  render,
 } from "@react-email/components";
 
 interface MagicLinkEmailProps {

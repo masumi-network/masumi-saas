@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import type { FieldPath, UseFormReturn } from "react-hook-form";
-import { useForm, useWatch } from "react-hook-form";
+import {
+  type FieldPath,
+  type UseFormReturn,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
