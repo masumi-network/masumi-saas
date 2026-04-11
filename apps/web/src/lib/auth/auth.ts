@@ -18,6 +18,7 @@ import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -179,10 +180,18 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           if (!user.name?.trim()) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { name: displayNameFromEmail(user.email) },
-            });
+            try {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { name: displayNameFromEmail(user.email) },
+              });
+            } catch (error) {
+              console.error(
+                "[auth] Failed to backfill display name for new user",
+                user.id,
+                error,
+              );
+            }
           }
           await createPaymentNodeKeyForUser(user.id);
         },
@@ -240,11 +249,16 @@ export const auth = betterAuth({
               name,
               magicLink: url,
               logoUrl: emailConfig.brandLogoUrl,
+              includePrivacyConsent: !existingUser,
+              privacyPolicyUrl: PRIVACY_POLICY_URL,
               translations: {
                 preview: msg.preview,
                 title: msg.title,
                 greeting: msg.greeting,
                 message: msg.message,
+                consentBefore: msg.consentBefore,
+                consentPrivacyLabel: msg.consentPrivacyLabel,
+                consentAfter: msg.consentAfter,
                 button: msg.button,
                 linkText: msg.linkText,
                 footer: msg.footer,

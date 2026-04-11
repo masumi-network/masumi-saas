@@ -1332,6 +1332,9 @@
       "title": "Sign in to Masumi",
       "greeting": "Hello {name},",
       "message": "Click the button below to continue to Masumi. This secure link expires soon and can only be used a limited number of times.",
+      "consentBefore": "If this is your first time here, using this link to access Masumi means you agree to our ",
+      "consentPrivacyLabel": "Privacy Policy",
+      "consentAfter": ".",
       "button": "Open Masumi",
       "linkText": "Or copy and paste this link into your browser:",
       "footer": "If you didn't request this email, you can safely ignore it."

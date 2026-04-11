@@ -20,12 +20,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signUpAction } from "@/lib/actions/auth.action";
+import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { objectToFormData } from "@/lib/form-data";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { type SignUpInput, signUpSchema } from "@/lib/schemas";
-
-const PRIVACY_POLICY_URL =
-  "https://www.house-of-communication.com/de/en/footer/privacy-policy.html";
 
 const defaultValues: SignUpInput = {
   name: "",
