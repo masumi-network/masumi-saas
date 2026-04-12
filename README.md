@@ -76,6 +76,9 @@ SpacetimeDB reducers should validate:
 
 - `iss === <your public issuer>`
 - `aud` contains one of the trusted client IDs above
+- signature against Masumi JWKS, which now publishes `ES256` keys for SpacetimeDB compatibility
+
+If you are upgrading from an older local setup that issued `EdDSA` tokens, clear or recreate the auth database so Better Auth generates a fresh `ES256` JWK. Better Auth will otherwise continue reusing the latest stored signing key.
 
 For browser flows that authenticate directly against Better Auth (cookie or bearer session token), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
 

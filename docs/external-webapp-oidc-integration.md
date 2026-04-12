@@ -38,6 +38,7 @@ Important behavior:
 - The token endpoint accepts the device-code grant at `POST /api/auth/oauth2/token`.
 - The legacy alias `POST /api/auth/device/token` still works, but new clients should use `/api/auth/oauth2/token`.
 - SpacetimeDB should use the `id_token`, not the `access_token`.
+- Masumi signs `id_token`s with `ES256` and exposes matching EC keys at `GET /jwks`.
 
 ## Values The Other Repo Needs
 
@@ -93,6 +94,11 @@ Important claims in the `id_token`:
 - `email_verified`
 - `name`
 - `picture`
+
+Important header behavior:
+
+- `alg`: `ES256`
+- `kid`: current Masumi JWKS key ID
 
 Important consequence:
 
@@ -202,6 +208,8 @@ SpacetimeDB must validate:
 - audience matches the trusted client ID for the caller
 - token is not expired
 - signature verifies against Masumi JWKS
+
+If you are upgrading a local Masumi issuer from an older `EdDSA` setup, clear the local auth DB or at least the `jwks` table before retesting. Better Auth reuses the latest stored signing key until it is rotated or removed.
 
 For the external webapp, that means the SpacetimeDB trust configuration should accept:
 

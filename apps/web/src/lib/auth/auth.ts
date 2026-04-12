@@ -26,6 +26,7 @@ import {
   getPublicOidcMetadata,
   getTrustedOidcClients,
   getTrustedOidcOrigins,
+  OIDC_ID_TOKEN_SIGNING_ALG,
   oidcEnvConfig,
 } from "@/lib/config/oidc.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
@@ -211,6 +212,11 @@ export const auth = betterAuth({
     jwt({
       jwt: {
         issuer: oidcEnvConfig.issuer,
+      },
+      jwks: {
+        keyPairConfig: {
+          alg: OIDC_ID_TOKEN_SIGNING_ALG,
+        },
       },
     }),
     oidcProvider({

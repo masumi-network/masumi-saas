@@ -24,6 +24,9 @@ export const OIDC_SUPPORTED_SCOPES = [
   "offline_access",
 ];
 
+// SpacetimeDB rejects Better Auth's default EdDSA tokens in local testing.
+export const OIDC_ID_TOKEN_SIGNING_ALG = "ES256" as const;
+
 const OIDC_SUPPORTED_CLAIMS = [
   "sub",
   "iss",
@@ -146,7 +149,7 @@ export function getPublicOidcMetadata(): Partial<OIDCMetadata> {
       "urn:mace:incommon:iap:bronze",
     ],
     subject_types_supported: ["public"] as ["public"],
-    id_token_signing_alg_values_supported: ["EdDSA", "none"],
+    id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG, "none"],
     token_endpoint_auth_methods_supported: [
       "client_secret_basic",
       "client_secret_post",

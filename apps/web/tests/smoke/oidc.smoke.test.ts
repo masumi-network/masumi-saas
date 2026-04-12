@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { request, requestForm, signUpAndSignIn } from "../helpers";
 
+function decodeJwtHeader(token: string): Record<string, unknown> {
+  const [header] = token.split(".");
+  if (!header) {
+    throw new Error("JWT header missing");
+  }
+
+  return JSON.parse(
+    Buffer.from(header, "base64url").toString("utf8"),
+  ) as Record<string, unknown>;
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> {
   const [, payload] = token.split(".");
   if (!payload) {
@@ -27,6 +38,7 @@ describe("SMOKE — OIDC discovery", () => {
       "http://localhost:2999/api/auth/oauth2/token",
     );
     expect(body.jwks_uri).toBe("http://localhost:2999/jwks");
+    expect(body.id_token_signing_alg_values_supported).toContain("ES256");
   });
 
   it("GET /.well-known/oauth-authorization-server returns OAuth metadata", async () => {
@@ -48,6 +60,10 @@ describe("SMOKE — OIDC discovery", () => {
 
     const body = res.body as Record<string, unknown>;
     expect(Array.isArray(body.keys)).toBe(true);
+
+    const [firstKey] = body.keys as Array<Record<string, unknown>>;
+    expect(firstKey?.alg).toBe("ES256");
+    expect(firstKey?.kty).toBe("EC");
   });
 
   it("GET /.well-known/oauth-authorization-server advertises the device-code grant", async () => {
@@ -137,7 +153,9 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(typeof token.access_token).toBe("string");
     expect(typeof token.id_token).toBe("string");
 
+    const header = decodeJwtHeader(token.id_token as string);
     const payload = decodeJwtPayload(token.id_token as string);
+    expect(header.alg).toBe("ES256");
     expect(payload.iss).toBe("http://localhost:2999");
     expect(payload.sub).toBeDefined();
     expect(payload.aud).toBe("masumi-spacetime-web");
@@ -199,7 +217,9 @@ describe("SMOKE — OIDC device flow", () => {
     expect(typeof token.id_token).toBe("string");
     expect(token.token_type).toBe("Bearer");
 
+    const header = decodeJwtHeader(token.id_token as string);
     const payload = decodeJwtPayload(token.id_token as string);
+    expect(header.alg).toBe("ES256");
     expect(payload.iss).toBe("http://localhost:2999");
     expect(payload.aud).toBe("masumi-spacetime-cli");
     expect(payload.sub).toBeDefined();
