@@ -229,12 +229,12 @@ export async function getAgentAction(agentId: string) {
   }
 }
 
-export async function deleteAgentAction(agentId: string) {
+export async function deleteAgentAction(agentId: string, userId?: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const resolvedUserId = userId ?? (await getAuthenticatedOrThrow()).user.id;
 
     const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
+      where: { id: agentId, userId: resolvedUserId },
       include: { agentReference: true },
     });
 

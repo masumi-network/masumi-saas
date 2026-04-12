@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
@@ -39,13 +40,13 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
+      where: { id: agentId, userId: authContext.user.id },
       select: { agentIdentifier: true, networkIdentifier: true },
     });
 
@@ -55,6 +56,11 @@ export async function GET(
         { status: 404 },
       );
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (!agent.agentIdentifier) {
       return NextResponse.json({
@@ -63,7 +69,7 @@ export async function GET(
       });
     }
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
       return NextResponse.json({
         success: true,
@@ -72,7 +78,10 @@ export async function GET(
     }
 
     const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(client, user.id);
+      await getSmartContractAddressForConfiguredSource(
+        client,
+        authContext.user.id,
+      );
     if (!smartContractAddress) {
       return NextResponse.json({
         success: true,

@@ -10,6 +10,7 @@ It is written for the separate webapp repo so the implementation there can be do
 - The external webapp is a public OIDC client.
 - The external webapp should use Authorization Code + PKCE.
 - The webapp should use the returned `id_token` when connecting to SpacetimeDB.
+- The webapp should use the returned `access_token` when calling Masumi SaaS APIs.
 - SpacetimeDB should trust the Masumi issuer and validate `iss`, `aud`, and expiry.
 - The CLI also uses the same issuer, but through the device flow.
 
@@ -38,7 +39,10 @@ Important behavior:
 - The token endpoint accepts the device-code grant at `POST /api/auth/oauth2/token`.
 - The legacy alias `POST /api/auth/device/token` still works, but new clients should use `/api/auth/oauth2/token`.
 - SpacetimeDB should use the `id_token`, not the `access_token`.
+- Masumi SaaS APIs should use the `access_token`, not the `id_token`.
 - Masumi signs `id_token`s with `ES256` and exposes matching EC keys at `GET /jwks`.
+- Refresh-token exchanges also return a fresh `id_token`, so changed claims such as `email_verified` are reflected after refresh.
+- API scopes are granted as `requested ∩ stored user grants ∩ client allowlist`.
 
 ## Values The Other Repo Needs
 
@@ -68,7 +72,8 @@ For the external webapp, the recommended flow is:
 3. Exchange the code at the Masumi token endpoint.
 4. Store the token set in the webapp auth layer.
 5. Use the `id_token` for SpacetimeDB.
-6. Refresh tokens before expiry.
+6. Use the `access_token` for scoped Masumi SaaS API calls.
+7. Refresh tokens before expiry.
 
 Do not use cookie-protected SaaS app routes from the external webapp.
 
@@ -79,8 +84,16 @@ Do not use the bridge endpoint as the primary login strategy for the external we
 Current token expectations:
 
 - `id_token` is the identity token that SpacetimeDB should receive
-- `access_token` is reserved for future resource API usage
+- `access_token` is the bearer token that Masumi SaaS APIs should receive
 - `refresh_token` should be used to renew the token set when available
+
+Current Masumi API scopes:
+
+- `agents:read:preprod`, `agents:write:preprod`, `agents:read:mainnet`, `agents:write:mainnet`
+- `credentials:read:preprod`, `credentials:write:preprod`, `credentials:read:mainnet`, `credentials:write:mainnet`
+- `activity:read:preprod`, `activity:read:mainnet`
+- `earnings:read:preprod`, `earnings:read:mainnet`
+- `dashboard:read:preprod`, `dashboard:read:mainnet`
 
 Important claims in the `id_token`:
 
@@ -186,6 +199,8 @@ grant_type=refresh_token
 client_id=masumi-spacetime-web
 refresh_token=...
 ```
+
+The refresh response includes a newly issued `id_token` in addition to the rotated `access_token` / `refresh_token`.
 
 ## SpacetimeDB Integration
 

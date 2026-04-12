@@ -94,7 +94,28 @@ or
 
 For CLI sign-in, request a device code from `POST /api/auth/device/code`, approve it via `/device` / `/device/approve`, and poll the standard token endpoint `POST /api/auth/oauth2/token` with `grant_type=urn:ietf:params:oauth:grant-type:device_code` to receive the OIDC token set (`access_token`, `id_token`, optional `refresh_token`) directly. The legacy alias `POST /api/auth/device/token` remains supported for compatibility, but new clients should use `/api/auth/oauth2/token`.
 
-### Authenticated routes (session or API key)
+Refresh-token exchanges also return a fresh `id_token`, so claims such as `email_verified` can change on refresh without requiring a full re-login.
+
+For external OIDC clients, Masumi SaaS also accepts `Authorization: Bearer <access_token>` on the scoped API routes. Standard identity scopes remain:
+
+- `openid`
+- `profile`
+- `email`
+- `offline_access`
+
+Current Masumi API permission scopes are:
+
+- `agents:read:preprod`, `agents:write:preprod`, `agents:read:mainnet`, `agents:write:mainnet`
+- `credentials:read:preprod`, `credentials:write:preprod`, `credentials:read:mainnet`, `credentials:write:mainnet`
+- `activity:read:preprod`, `activity:read:mainnet`
+- `earnings:read:preprod`, `earnings:read:mainnet`
+- `dashboard:read:preprod`, `dashboard:read:mainnet`
+
+Granted API scopes in an issued `access_token` are:
+
+`requested scopes ∩ stored user grants ∩ client allowlist`
+
+### Authenticated routes (session, API key, or scoped OIDC access token)
 
 | Path                          | Description                                           |
 | ----------------------------- | ----------------------------------------------------- |

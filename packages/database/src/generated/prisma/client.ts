@@ -110,6 +110,11 @@ export type OauthAccessToken = Prisma.OauthAccessTokenModel;
  */
 export type OauthConsent = Prisma.OauthConsentModel;
 /**
+ * Model OidcUserGrant
+ *
+ */
+export type OidcUserGrant = Prisma.OidcUserGrantModel;
+/**
  * Model DeviceCode
  *
  */

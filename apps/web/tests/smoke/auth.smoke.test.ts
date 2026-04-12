@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CookieJar, request, signIn } from "../helpers";
+import prisma from "../prisma-client";
 
 describe("SMOKE — Auth", () => {
   it("registers via public email route → 202 + accepted payload", async () => {
@@ -20,6 +21,14 @@ describe("SMOKE — Auth", () => {
     expect(b.success).toBe(true);
     expect(b.resultKey).toBe("MagicLinkSent");
     expect(b.email).toBe(email);
+
+    const otpRecord = await prisma.verification.findFirst({
+      where: {
+        identifier: `sign-in-otp-${email.toLowerCase()}`,
+      },
+    });
+    expect(otpRecord).not.toBeNull();
+    expect(otpRecord?.value).toMatch(/^\d{6}:0$/);
   });
 
   it("rejects registration via public email route when terms are missing → 400", async () => {

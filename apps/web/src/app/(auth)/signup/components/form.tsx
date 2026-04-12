@@ -10,6 +10,7 @@ import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignUpInput, SignUpInput } from "@/lib/schemas";
 
+import { MagicLinkCodePanel } from "../../components/magic-link-code-panel";
 import {
   SignupMagicLinkForm,
   type SignupMagicLinkFormHandle,
@@ -30,6 +31,8 @@ export default function SignUpForm({
 }: SignUpFormProps) {
   const t = useTranslations("Auth.SignUp");
   const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
+  const isOidcFlow =
+    safeCallbackUrl?.startsWith("/api/auth/oauth2/authorize") ?? false;
   const [usePassword, setUsePassword] = useState(false);
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [seedPassword, setSeedPassword] = useState<Partial<SignUpInput> | null>(
@@ -70,9 +73,19 @@ export default function SignUpForm({
             {t("checkEmail.title")}
           </h1>
           <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            {t("checkEmail.description", { email: magicLinkEmail })}
+            {t(
+              isOidcFlow
+                ? "checkEmail.oidcDescription"
+                : "checkEmail.description",
+              { email: magicLinkEmail },
+            )}
           </p>
         </div>
+
+        <MagicLinkCodePanel
+          email={magicLinkEmail}
+          callbackUrl={safeCallbackUrl}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button
@@ -86,11 +99,6 @@ export default function SignUpForm({
             }}
           >
             {t("checkEmail.tryAnother")}
-          </Button>
-          <Button variant="primary" asChild>
-            <Link href={buildAuthPageHref("/signin", safeCallbackUrl)}>
-              {t("login")}
-            </Link>
           </Button>
         </div>
       </div>

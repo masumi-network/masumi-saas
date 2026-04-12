@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 const bodySchema = z.object({
@@ -38,19 +39,24 @@ async function handleChallengeRequest(
   regenerate: boolean,
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
     const agent = await prisma.agent.findFirst({
       where: {
         id: agentId,
-        userId: user.id,
+        userId: authContext.user.id,
       },
     });
 
     if (!agent) {
       return apiError("Agent not found", 404);
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (agent.registrationState !== "RegistrationConfirmed") {
       return apiError(

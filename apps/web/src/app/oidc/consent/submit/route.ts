@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getAuthErrorDetails } from "@/lib/auth/error-results";
 
 function buildConsentPageUrl(
@@ -12,6 +13,7 @@ function buildConsentPageUrl(
   const consentCode = formData.get("consentCode");
   const clientId = formData.get("clientId");
   const scope = formData.get("scope");
+  const continueUrl = formData.get("continueUrl");
 
   if (typeof consentCode === "string" && consentCode.trim().length > 0) {
     url.searchParams.set("consent_code", consentCode);
@@ -21,6 +23,12 @@ function buildConsentPageUrl(
   }
   if (typeof scope === "string" && scope.trim().length > 0) {
     url.searchParams.set("scope", scope);
+  }
+  if (typeof continueUrl === "string") {
+    const safeContinueUrl = sanitizeCallbackUrl(continueUrl);
+    if (safeContinueUrl) {
+      url.searchParams.set("continueUrl", safeContinueUrl);
+    }
   }
   if (error) {
     url.searchParams.set("error", error);
@@ -39,6 +47,34 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (accept) {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+      });
+
+      if (!session?.user) {
+        return NextResponse.redirect(
+          buildConsentPageUrl(
+            request,
+            formData,
+            "Sign in again to continue the OIDC flow.",
+          ),
+          303,
+        );
+      }
+
+      if (session.user.emailVerified !== true) {
+        return NextResponse.redirect(
+          buildConsentPageUrl(
+            request,
+            formData,
+            "Verify your email before continuing.",
+          ),
+          303,
+        );
+      }
+    }
+
     const result = await auth.api.oAuthConsent({
       headers: request.headers,
       body: {

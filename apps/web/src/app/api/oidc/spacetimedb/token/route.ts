@@ -43,7 +43,19 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+
+    if (authContext.user.emailVerified !== true) {
+      return jsonWithCors(
+        request,
+        {
+          success: false,
+          error: "access_denied",
+          error_description: "email_verification_required",
+        },
+        { status: 403 },
+      );
+    }
 
     const parsed = requestSchema.safeParse(
       await request.json().catch(() => ({})),

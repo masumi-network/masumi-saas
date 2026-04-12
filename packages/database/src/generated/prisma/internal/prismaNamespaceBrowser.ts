@@ -67,6 +67,7 @@ export const ModelName = {
   OauthApplication: "OauthApplication",
   OauthAccessToken: "OauthAccessToken",
   OauthConsent: "OauthConsent",
+  OidcUserGrant: "OidcUserGrant",
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
@@ -306,6 +307,18 @@ export const OauthConsentScalarFieldEnum = {
 
 export type OauthConsentScalarFieldEnum =
   (typeof OauthConsentScalarFieldEnum)[keyof typeof OauthConsentScalarFieldEnum];
+
+export const OidcUserGrantScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  clientId: "clientId",
+  scopes: "scopes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OidcUserGrantScalarFieldEnum =
+  (typeof OidcUserGrantScalarFieldEnum)[keyof typeof OidcUserGrantScalarFieldEnum];
 
 export const DeviceCodeScalarFieldEnum = {
   id: "id",

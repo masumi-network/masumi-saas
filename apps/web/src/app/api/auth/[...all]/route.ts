@@ -1,3 +1,4 @@
+import prisma from "@masumi/database/client";
 import { toNextJsHandler } from "better-auth/next-js";
 
 import { auth } from "@/lib/auth/auth";
@@ -6,7 +7,13 @@ import {
   OIDC_NO_STORE_HEADERS,
   OidcTokenExchangeError,
 } from "@/lib/auth/oidc-flow";
-import { OIDC_SUPPORTED_SCOPES, oidcEnvConfig } from "@/lib/config/oidc.config";
+import { createIdTokenForRefreshToken } from "@/lib/auth/oidc-id-token";
+import { filterRequestedOidcScopes } from "@/lib/auth/oidc-user-grants";
+import { oidcEnvConfig, resolveOidcClientKey } from "@/lib/config/oidc.config";
+import {
+  OIDC_STANDARD_SCOPES,
+  serializeScopeList,
+} from "@/lib/config/oidc-scopes.config";
 
 const authHandler = toNextJsHandler(auth);
 
@@ -15,9 +22,35 @@ const DEVICE_TOKEN_PATH = "/api/auth/device/token";
 const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
+const REFRESH_TOKEN_GRANT = "refresh_token";
+const OIDC_EMAIL_VERIFICATION_REQUIRED = "email_verification_required";
+const OIDC_ACCESS_DENIED = "access_denied";
+
+async function getSessionForHeaders(requestHeaders: Headers) {
+  return auth.api.getSession({
+    headers: requestHeaders,
+  });
+}
 
 function getPathname(request: Request): string {
   return new URL(request.url).pathname;
+}
+
+function isNonInteractiveOidcRequest(request: Request): boolean {
+  const secFetchMode = request.headers.get("sec-fetch-mode");
+  if (secFetchMode === "cors") {
+    return true;
+  }
+
+  const accept = request.headers.get("accept") ?? "";
+  return accept.includes("application/json");
+}
+
+function getAuthorizeClientId(request: Request): string | null {
+  const url = new URL(request.url);
+  return url.pathname === OAUTH_AUTHORIZE_PATH
+    ? url.searchParams.get("client_id")
+    : null;
 }
 
 function hasContentType(request: Request, value: string): boolean {
@@ -52,6 +85,10 @@ function createConsentPromptedAuthorizeRequest(
     return null;
   }
 
+  if (isNonInteractiveOidcRequest(request)) {
+    return null;
+  }
+
   const prompt = url.searchParams.get("prompt");
   if (prompt?.split(" ").includes("none")) {
     return null;
@@ -63,6 +100,227 @@ function createConsentPromptedAuthorizeRequest(
 
   url.searchParams.set("prompt", prompt ? `${prompt} consent` : "consent");
   return new Request(url, request);
+}
+
+async function createGrantedScopeAuthorizeRequest(
+  request: Request,
+): Promise<Request> {
+  const url = new URL(request.url);
+  if (url.pathname !== OAUTH_AUTHORIZE_PATH) {
+    return request;
+  }
+
+  const clientId = url.searchParams.get("client_id");
+  if (!clientId || !resolveOidcClientKey(clientId)) {
+    return request;
+  }
+
+  const session = await getSessionForHeaders(request.headers);
+  const filteredScopes = await filterRequestedOidcScopes({
+    clientId,
+    requestedScopes: url.searchParams.get("scope") ?? "openid",
+    userId: session?.user?.id,
+  });
+
+  url.searchParams.set("scope", serializeScopeList(filteredScopes));
+  return new Request(url, request);
+}
+
+function createOidcContinueUrl(request: Request): string {
+  const url = new URL(request.url);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function appendOidcErrorToRedirectUri(
+  redirectUri: string,
+  error: string,
+  errorDescription: string,
+): string {
+  const url = new URL(redirectUri);
+  url.searchParams.set("error", error);
+  url.searchParams.set("error_description", errorDescription);
+  return url.toString();
+}
+
+function createOidcErrorResponse(
+  request: Request,
+  error: string,
+  errorDescription: string,
+  status = 403,
+): Response {
+  const url = new URL(request.url);
+  const redirectUri = url.searchParams.get("redirect_uri");
+
+  if (!isNonInteractiveOidcRequest(request) && redirectUri) {
+    return Response.redirect(
+      appendOidcErrorToRedirectUri(redirectUri, error, errorDescription),
+      302,
+    );
+  }
+
+  return Response.json(
+    {
+      error,
+      error_description: errorDescription,
+    },
+    {
+      status,
+      headers: OIDC_NO_STORE_HEADERS,
+    },
+  );
+}
+
+async function createUnverifiedOidcAuthorizeResponse(
+  request: Request,
+): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (url.pathname !== OAUTH_AUTHORIZE_PATH) {
+    return null;
+  }
+
+  const clientId = url.searchParams.get("client_id");
+  if (
+    clientId !== oidcEnvConfig.web.clientId &&
+    clientId !== oidcEnvConfig.cli.clientId
+  ) {
+    return null;
+  }
+
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+  if (!session?.user || session.user.emailVerified === true) {
+    return null;
+  }
+
+  if (
+    clientId === oidcEnvConfig.web.clientId &&
+    !isNonInteractiveOidcRequest(request)
+  ) {
+    return null;
+  }
+
+  return createOidcErrorResponse(
+    request,
+    OIDC_ACCESS_DENIED,
+    OIDC_EMAIL_VERIFICATION_REQUIRED,
+  );
+}
+
+async function ensureHeadlessWebConsent(request: Request): Promise<void> {
+  const url = new URL(request.url);
+  if (
+    url.pathname !== OAUTH_AUTHORIZE_PATH ||
+    url.searchParams.get("client_id") !== oidcEnvConfig.web.clientId ||
+    !isNonInteractiveOidcRequest(request)
+  ) {
+    return;
+  }
+
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+  if (!session?.user || session.user.emailVerified !== true) {
+    return;
+  }
+
+  const scopes = url.searchParams.get("scope")?.trim() || "openid";
+  const existingConsent = await prisma.oauthConsent.findFirst({
+    where: {
+      userId: session.user.id,
+      clientId: oidcEnvConfig.web.clientId,
+    },
+    select: { id: true },
+  });
+
+  if (existingConsent) {
+    await prisma.oauthConsent.update({
+      where: { id: existingConsent.id },
+      data: {
+        scopes,
+        consentGiven: true,
+      },
+    });
+    return;
+  }
+
+  await prisma.oauthConsent.create({
+    data: {
+      userId: session.user.id,
+      clientId: oidcEnvConfig.web.clientId,
+      scopes,
+      consentGiven: true,
+    },
+  });
+}
+
+async function appendContinueUrlToConsentRedirect(
+  request: Request,
+  response: Response,
+): Promise<Response> {
+  const url = new URL(request.url);
+  if (
+    url.pathname !== OAUTH_AUTHORIZE_PATH ||
+    url.searchParams.get("client_id") !== oidcEnvConfig.web.clientId ||
+    isNonInteractiveOidcRequest(request)
+  ) {
+    return response;
+  }
+
+  const continueUrl = createOidcContinueUrl(request);
+  const location = response.headers.get("location");
+
+  if (location) {
+    const redirectUrl = new URL(location, request.url);
+    if (redirectUrl.pathname !== "/oidc/consent") {
+      return response;
+    }
+
+    redirectUrl.searchParams.set("continueUrl", continueUrl);
+    const headers = new Headers(response.headers);
+    headers.set("location", redirectUrl.toString());
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return response;
+  }
+
+  const body =
+    ((await response
+      .clone()
+      .json()
+      .catch(() => null)) as Record<string, unknown> | null) ?? null;
+
+  if (!body || body.redirect !== true || typeof body.url !== "string") {
+    return response;
+  }
+
+  const redirectUrl = new URL(body.url, request.url);
+  if (redirectUrl.pathname !== "/oidc/consent") {
+    return response;
+  }
+
+  redirectUrl.searchParams.set("continueUrl", continueUrl);
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+
+  return Response.json(
+    {
+      ...body,
+      url: redirectUrl.toString(),
+    },
+    {
+      status: response.status,
+      headers,
+    },
+  );
 }
 
 function createSessionAuthHeaders(
@@ -112,6 +370,41 @@ async function readBodyFields(
   return null;
 }
 
+async function createScopedDeviceCodeRequest(
+  request: Request,
+  body: Record<string, string>,
+): Promise<Request> {
+  const clientId = body.client_id;
+  const bodyWithScopedValue = { ...body };
+
+  if (resolveOidcClientKey(clientId)) {
+    const filteredScopes = await filterRequestedOidcScopes({
+      clientId,
+      requestedScopes: body.scope ?? "openid",
+    });
+    bodyWithScopedValue.scope = serializeScopeList(filteredScopes);
+  }
+
+  return createJsonRequest(request, request.url, bodyWithScopedValue);
+}
+
+async function getRequestedDeviceScopes(
+  deviceCode: string | undefined,
+): Promise<string[]> {
+  if (!deviceCode) {
+    return [...OIDC_STANDARD_SCOPES];
+  }
+
+  const record = await prisma.deviceCode.findUnique({
+    where: { deviceCode },
+    select: { scope: true },
+  });
+
+  return record?.scope?.trim()
+    ? record.scope.split(" ").filter(Boolean)
+    : [...OIDC_STANDARD_SCOPES];
+}
+
 async function exchangeDeviceGrantForOidcToken(
   request: Request,
   body: Record<string, string>,
@@ -152,11 +445,20 @@ async function exchangeDeviceGrantForOidcToken(
   }
 
   try {
+    const session = await getSessionForHeaders(
+      createSessionAuthHeaders(request, sessionToken),
+    );
+    const scopes = await filterRequestedOidcScopes({
+      clientId: body.client_id ?? oidcEnvConfig.cli.clientId,
+      requestedScopes: await getRequestedDeviceScopes(body.device_code),
+      userId: session?.user?.id,
+    });
+
     const exchange = await exchangeAuthForOidcTokenSet({
       requestUrl: request.url,
       clientKey: "cli",
       authHeaders: createSessionAuthHeaders(request, sessionToken),
-      scopes: OIDC_SUPPORTED_SCOPES,
+      scopes: scopes.length > 0 ? scopes : [...OIDC_STANDARD_SCOPES],
     });
 
     return Response.json(exchange.token, {
@@ -164,6 +466,20 @@ async function exchangeDeviceGrantForOidcToken(
     });
   } catch (error) {
     if (error instanceof OidcTokenExchangeError) {
+      const details =
+        error.details && typeof error.details === "object"
+          ? (error.details as Record<string, unknown>)
+          : null;
+      if (
+        details?.error === OIDC_ACCESS_DENIED &&
+        details?.error_description === OIDC_EMAIL_VERIFICATION_REQUIRED
+      ) {
+        return Response.json(details, {
+          status: 403,
+          headers: OIDC_NO_STORE_HEADERS,
+        });
+      }
+
       return Response.json(
         {
           error: error.status >= 500 ? "server_error" : "invalid_grant",
@@ -190,13 +506,82 @@ async function exchangeDeviceGrantForOidcToken(
   }
 }
 
-export async function GET(request: Request): Promise<Response> {
-  const consentRequest = createConsentPromptedAuthorizeRequest(request);
-  if (consentRequest) {
-    return authHandler.GET(consentRequest);
+async function exchangeRefreshGrantForOidcToken(
+  request: Request,
+): Promise<Response> {
+  const refreshResponse = await authHandler.POST(request);
+  if (!refreshResponse.ok) {
+    return refreshResponse;
   }
 
-  return authHandler.GET(request);
+  const refreshBody =
+    ((await refreshResponse.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null) ?? null;
+
+  if (!refreshBody) {
+    return refreshResponse;
+  }
+
+  if (typeof refreshBody.id_token === "string") {
+    return Response.json(refreshBody, {
+      status: refreshResponse.status,
+      headers: new Headers(refreshResponse.headers),
+    });
+  }
+
+  const refreshToken =
+    typeof refreshBody.refresh_token === "string"
+      ? refreshBody.refresh_token
+      : null;
+
+  if (!refreshToken) {
+    return Response.json(refreshBody, {
+      status: refreshResponse.status,
+      headers: new Headers(refreshResponse.headers),
+    });
+  }
+
+  try {
+    const idToken = await createIdTokenForRefreshToken(refreshToken);
+    if (idToken) {
+      refreshBody.id_token = idToken;
+    } else {
+      console.warn(
+        "[OIDC refresh grant] No refreshed id_token could be generated",
+      );
+    }
+  } catch (error) {
+    console.error(
+      "[OIDC refresh grant] Failed to mint refreshed id_token",
+      error,
+    );
+  }
+
+  const headers = new Headers(refreshResponse.headers);
+  headers.delete("content-length");
+
+  return Response.json(refreshBody, {
+    status: refreshResponse.status,
+    headers,
+  });
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const promptAwareRequest =
+    createConsentPromptedAuthorizeRequest(request) ?? request;
+  const authorizeRequest =
+    await createGrantedScopeAuthorizeRequest(promptAwareRequest);
+  const unverifiedResponse =
+    await createUnverifiedOidcAuthorizeResponse(authorizeRequest);
+  if (unverifiedResponse) {
+    return unverifiedResponse;
+  }
+
+  await ensureHeadlessWebConsent(authorizeRequest);
+  const response = await authHandler.GET(authorizeRequest);
+  return appendContinueUrlToConsentRedirect(authorizeRequest, response);
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -208,7 +593,9 @@ export async function POST(request: Request): Promise<Response> {
   ) {
     const body = await readBodyFields(request);
     if (body) {
-      return authHandler.POST(createJsonRequest(request, request.url, body));
+      return authHandler.POST(
+        await createScopedDeviceCodeRequest(request, body),
+      );
     }
   }
 
@@ -216,6 +603,12 @@ export async function POST(request: Request): Promise<Response> {
     const body = await readBodyFields(request);
     if (body?.grant_type === DEVICE_CODE_GRANT) {
       return exchangeDeviceGrantForOidcToken(request, body);
+    }
+    if (
+      pathname === OAUTH_TOKEN_PATH &&
+      body?.grant_type === REFRESH_TOKEN_GRANT
+    ) {
+      return exchangeRefreshGrantForOidcToken(request);
     }
   }
 

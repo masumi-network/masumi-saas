@@ -425,6 +425,7 @@ export const ModelName = {
   OauthApplication: "OauthApplication",
   OauthAccessToken: "OauthAccessToken",
   OauthConsent: "OauthConsent",
+  OidcUserGrant: "OidcUserGrant",
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
@@ -472,6 +473,7 @@ export type TypeMap<
       | "oauthApplication"
       | "oauthAccessToken"
       | "oauthConsent"
+      | "oidcUserGrant"
       | "deviceCode"
       | "jwks"
       | "rateLimit"
@@ -1471,6 +1473,82 @@ export type TypeMap<
           args: Prisma.OauthConsentCountArgs<ExtArgs>;
           result:
             | runtime.Types.Utils.Optional<Prisma.OauthConsentCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    OidcUserGrant: {
+      payload: Prisma.$OidcUserGrantPayload<ExtArgs>;
+      fields: Prisma.OidcUserGrantFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.OidcUserGrantFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.OidcUserGrantFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        findFirst: {
+          args: Prisma.OidcUserGrantFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.OidcUserGrantFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        findMany: {
+          args: Prisma.OidcUserGrantFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>[];
+        };
+        create: {
+          args: Prisma.OidcUserGrantCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        createMany: {
+          args: Prisma.OidcUserGrantCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.OidcUserGrantCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>[];
+        };
+        delete: {
+          args: Prisma.OidcUserGrantDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        update: {
+          args: Prisma.OidcUserGrantUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        deleteMany: {
+          args: Prisma.OidcUserGrantDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.OidcUserGrantUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.OidcUserGrantUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>[];
+        };
+        upsert: {
+          args: Prisma.OidcUserGrantUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OidcUserGrantPayload>;
+        };
+        aggregate: {
+          args: Prisma.OidcUserGrantAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOidcUserGrant>;
+        };
+        groupBy: {
+          args: Prisma.OidcUserGrantGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.OidcUserGrantGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.OidcUserGrantCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.OidcUserGrantCountAggregateOutputType>
             | number;
         };
       };
@@ -2636,6 +2714,18 @@ export const OauthConsentScalarFieldEnum = {
 export type OauthConsentScalarFieldEnum =
   (typeof OauthConsentScalarFieldEnum)[keyof typeof OauthConsentScalarFieldEnum];
 
+export const OidcUserGrantScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  clientId: "clientId",
+  scopes: "scopes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OidcUserGrantScalarFieldEnum =
+  (typeof OidcUserGrantScalarFieldEnum)[keyof typeof OidcUserGrantScalarFieldEnum];
+
 export const DeviceCodeScalarFieldEnum = {
   id: "id",
   deviceCode: "deviceCode",
@@ -3173,6 +3263,7 @@ export type GlobalOmitConfig = {
   oauthApplication?: Prisma.OauthApplicationOmit;
   oauthAccessToken?: Prisma.OauthAccessTokenOmit;
   oauthConsent?: Prisma.OauthConsentOmit;
+  oidcUserGrant?: Prisma.OidcUserGrantOmit;
   deviceCode?: Prisma.DeviceCodeOmit;
   jwks?: Prisma.JwksOmit;
   rateLimit?: Prisma.RateLimitOmit;

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/auth";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { classifyAuthError } from "@/lib/auth/error-results";
+import { buildMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 
 function getMagicLinkErrorResult(error: unknown) {
   return classifyAuthError(error, [
@@ -33,13 +34,15 @@ export async function requestMagicLinkRegistration({
       ? name.trim()
       : displayNameFromEmail(email);
 
+  const magicLinkCallbackUrl = buildMagicLinkCallbackUrl(callbackUrl);
+
   try {
     await auth.api.signInMagicLink({
       body: {
         email,
         name: resolvedName,
-        callbackURL: callbackUrl,
-        newUserCallbackURL: callbackUrl,
+        callbackURL: magicLinkCallbackUrl,
+        newUserCallbackURL: magicLinkCallbackUrl,
       },
       headers: headers ?? new Headers(),
     });

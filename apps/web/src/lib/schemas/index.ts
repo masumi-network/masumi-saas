@@ -47,6 +47,11 @@ export const magicLinkSignInSchema = z.object({
 export const magicLinkSignInFormDataSchema = zfd.formData(
   magicLinkSignInSchema,
 );
+export const magicLinkCodeSchema = z.object({
+  email: emailSchema,
+  otp: z.string().min(1, "Verification code is required"),
+});
+export const magicLinkCodeFormDataSchema = zfd.formData(magicLinkCodeSchema);
 
 export const signUpSchema = withMatchingPasswords(
   baseSignUpSchema.extend({
@@ -58,6 +63,7 @@ export const signUpSchema = withMatchingPasswords(
 
 export type SignInInput = z.infer<typeof signInSchema>;
 export type MagicLinkSignInInput = z.infer<typeof magicLinkSignInSchema>;
+export type MagicLinkCodeInput = z.infer<typeof magicLinkCodeSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export const magicLinkSignUpSchema = baseSignUpSchema.extend({
   termsAccepted: acceptedTermsSchema,

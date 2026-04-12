@@ -5,6 +5,7 @@ import {
   decodeActivityCursor,
   encodeActivityCursor,
 } from "@/lib/activity-cursor";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   activityApiSearchParamsSchema,
@@ -23,7 +24,7 @@ export type { ActivityFeedItem };
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const qpResult = activityApiSearchParamsSchema.safeParse(
@@ -43,10 +44,15 @@ export async function GET(request: NextRequest) {
     const query = parseActivityQueryInput(queryRaw);
     const validFilter = query.filter;
     const network = query.network;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "activity",
+      action: "read",
+      network,
+    });
 
     const { merged, transactionLastUpdate } = await getActivityMergedFeedCached(
       {
-        userId: user.id,
+        userId: authContext.user.id,
         network,
         validFilter,
         lastUpdate: query.lastUpdate,

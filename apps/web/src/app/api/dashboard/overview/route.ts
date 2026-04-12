@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { dashboardOverviewQuerySchema } from "@/lib/schemas";
 import { getDashboardOverview } from "@/lib/services/dashboard.service";
@@ -11,7 +12,7 @@ export type DashboardOverviewApiResponse =
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -28,8 +29,13 @@ export async function GET(request: NextRequest) {
       );
     }
     const network = queryResult.data.network;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "dashboard",
+      action: "read",
+      network,
+    });
 
-    const data = await getDashboardOverview(user.id, network);
+    const data = await getDashboardOverview(authContext.user.id, network);
     return NextResponse.json({ success: true, data });
   } catch (error) {
     const authResponse = handleAuthError(error);

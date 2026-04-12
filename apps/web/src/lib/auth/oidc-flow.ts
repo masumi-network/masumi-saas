@@ -1,10 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import {
-  getTrustedOidcClient,
-  type OidcClientKey,
-  oidcEnvConfig,
-} from "@/lib/config/oidc.config";
+import { getTrustedOidcClient, oidcEnvConfig } from "@/lib/config/oidc.config";
+import type { OidcClientKey } from "@/lib/config/oidc-scopes.config";
 
 const FORWARDED_AUTH_HEADERS = [
   "authorization",

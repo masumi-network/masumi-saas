@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
@@ -12,7 +13,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user } = authContext;
 
     const queryResult = credentialReconcileQuerySchema.safeParse({
       agentId: request.nextUrl.searchParams.get("agentId"),
@@ -29,12 +31,17 @@ export async function GET(request: NextRequest) {
     // Verify the agent belongs to this user
     const agent = await prisma.agent.findFirst({
       where: { id: agentId, userId: user.id },
-      select: { id: true, agentIdentifier: true },
+      select: { id: true, agentIdentifier: true, networkIdentifier: true },
     });
 
     if (!agent) {
       return apiError("Agent not found", 404);
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     const pendingCredentials = await prisma.veridianCredential.findMany({
       where: { agentId, userId: user.id, status: "PENDING" },

@@ -28,6 +28,7 @@ model User {
   oauthApplications   OauthApplication[]
   oauthAccessTokens   OauthAccessToken[]
   oauthConsents       OauthConsent[]
+  oidcUserGrants      OidcUserGrant[]
   agents              Agent[]
   agentActivityEvents AgentActivityEvent[]
   veridianCredentials VeridianCredential[]
@@ -277,6 +278,21 @@ model OauthConsent {
   @@index([clientId])
   @@index([userId])
   @@map("oauthConsent")
+}
+
+model OidcUserGrant {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId  String
+  scopes    String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clientId])
+  @@index([clientId])
+  @@index([userId])
+  @@map("oidcUserGrant")
 }
 
 model DeviceCode {

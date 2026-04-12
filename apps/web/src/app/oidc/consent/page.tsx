@@ -11,8 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { switchAccountAction } from "@/lib/actions/auth.action";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
+
+import { EmailVerificationPanel } from "./components/email-verification-panel";
 
 export const metadata: Metadata = {
   title: "Masumi - OIDC Authorization",
@@ -21,14 +25,15 @@ export const metadata: Metadata = {
 
 const PAGE_COPY = {
   protocolBadge: "OIDC",
-  titlePrefix: "Continue as",
+  titlePrefix: "Authorize as",
   description:
-    "wants to use your Masumi account for sign-in and SpacetimeDB access. Confirm to continue without logging in again.",
+    "wants to use your Masumi account for sign-in and SpacetimeDB access. Confirm to authorize without logging in again.",
   accountLabel: "Account",
   scopesLabel: "Requested scopes",
   defaultScope: "openid",
   cancel: "Cancel",
-  continue: "Continue",
+  switchAccount: "Switch account",
+  continue: "Authorize",
 } as const;
 
 interface OidcConsentPageProps {
@@ -36,6 +41,7 @@ interface OidcConsentPageProps {
     consent_code?: string;
     client_id?: string;
     scope?: string;
+    continueUrl?: string;
     error?: string;
   }>;
 }
@@ -64,6 +70,7 @@ function buildConsentCallbackUrl(searchParams: {
   consent_code?: string;
   client_id?: string;
   scope?: string;
+  continueUrl?: string;
 }): string {
   const params = new URLSearchParams();
   if (searchParams.consent_code) {
@@ -74,6 +81,10 @@ function buildConsentCallbackUrl(searchParams: {
   }
   if (searchParams.scope) {
     params.set("scope", searchParams.scope);
+  }
+  const safeContinueUrl = sanitizeCallbackUrl(searchParams.continueUrl);
+  if (safeContinueUrl) {
+    params.set("continueUrl", safeContinueUrl);
   }
 
   const query = params.toString();
@@ -100,6 +111,14 @@ export default async function OidcConsentPage({
   const clientLabel = getClientLabel(resolvedSearchParams.client_id);
   const scopes = normalizeScopes(resolvedSearchParams.scope);
   const errorMessage = resolvedSearchParams.error?.trim();
+  const continueUrl = sanitizeCallbackUrl(resolvedSearchParams.continueUrl);
+  const emailVerified = session.user.emailVerified === true;
+  const switchAccountCallbackUrl =
+    continueUrl ?? buildConsentCallbackUrl(resolvedSearchParams);
+  const switchAccount = switchAccountAction.bind(
+    null,
+    switchAccountCallbackUrl,
+  );
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
@@ -145,31 +164,61 @@ export default async function OidcConsentPage({
               )}
             </div>
           </div>
+          {!emailVerified ? (
+            <EmailVerificationPanel
+              email={session.user.email}
+              continueUrl={continueUrl}
+            />
+          ) : null}
         </CardContent>
         <CardFooter>
-          <form
-            action="/oidc/consent/submit"
-            method="post"
-            className="flex w-full flex-col gap-3 sm:flex-row"
-          >
-            <input type="hidden" name="consentCode" value={consentCode} />
-            <input
-              type="hidden"
-              name="clientId"
-              value={resolvedSearchParams.client_id ?? ""}
-            />
-            <input
-              type="hidden"
-              name="scope"
-              value={resolvedSearchParams.scope ?? ""}
-            />
-            <Button type="submit" name="accept" value="false" variant="outline">
-              {PAGE_COPY.cancel}
-            </Button>
-            <Button type="submit" name="accept" value="true" variant="primary">
-              {PAGE_COPY.continue}
-            </Button>
-          </form>
+          <div className="flex w-full flex-col gap-3">
+            <form
+              action="/oidc/consent/submit"
+              method="post"
+              className="flex w-full flex-col gap-3 sm:flex-row"
+            >
+              <input type="hidden" name="consentCode" value={consentCode} />
+              <input
+                type="hidden"
+                name="clientId"
+                value={resolvedSearchParams.client_id ?? ""}
+              />
+              <input
+                type="hidden"
+                name="scope"
+                value={resolvedSearchParams.scope ?? ""}
+              />
+              <input
+                type="hidden"
+                name="continueUrl"
+                value={continueUrl ?? ""}
+              />
+              <Button
+                type="submit"
+                name="accept"
+                value="false"
+                variant="outline"
+              >
+                {PAGE_COPY.cancel}
+              </Button>
+              {emailVerified ? (
+                <Button
+                  type="submit"
+                  name="accept"
+                  value="true"
+                  variant="primary"
+                >
+                  {PAGE_COPY.continue}
+                </Button>
+              ) : null}
+            </form>
+            <form action={switchAccount} className="w-full">
+              <Button type="submit" variant="ghost" className="w-full">
+                {PAGE_COPY.switchAccount}
+              </Button>
+            </form>
+          </div>
         </CardFooter>
       </Card>
     </main>

@@ -16,6 +16,7 @@ import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
   deleteAccountFormDataSchema,
+  magicLinkCodeFormDataSchema,
   magicLinkSignInFormDataSchema,
   magicLinkSignUpFormDataSchema,
   signInFormDataSchema,
@@ -64,6 +65,16 @@ export async function signOutAction() {
   redirect("/signin");
 }
 
+export async function switchAccountAction(callbackUrl?: string) {
+  const headersList = await getRequestHeaders();
+  await auth.api.signOut({
+    headers: headersList,
+  });
+
+  const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
+  redirect(`/signin?callbackUrl=${encodeURIComponent(redirectTo)}`);
+}
+
 function getSignUpErrorResult(error: unknown) {
   return classifyAuthError(error, [
     {
@@ -74,6 +85,38 @@ function getSignUpErrorResult(error: unknown) {
       result: {
         error: "An account with this email already exists",
         errorKey: "AccountExists" as const,
+      },
+    },
+  ]);
+}
+
+function getMagicLinkCodeErrorResult(error: unknown) {
+  return classifyAuthError(error, [
+    {
+      matches: (message) =>
+        message.includes("too many attempts") ||
+        message.includes("too many failed attempts"),
+      result: {
+        error: "Too many failed attempts. Request a new email.",
+        errorKey: "TooManyMagicLinkCodeAttempts" as const,
+      },
+    },
+    {
+      matches: (message) =>
+        message.includes("expired") || message.includes("otp expired"),
+      result: {
+        error: "Sign-in code expired. Request a new email.",
+        errorKey: "ExpiredMagicLinkCode" as const,
+      },
+    },
+    {
+      matches: (message) =>
+        message.includes("invalid otp") ||
+        message.includes("invalid code") ||
+        message.includes("invalid_otp"),
+      result: {
+        error: "Invalid sign-in code.",
+        errorKey: "InvalidMagicLinkCode" as const,
       },
     },
   ]);
@@ -220,12 +263,20 @@ export async function signUpAction(formData: FormData, callbackUrl?: string) {
 
   try {
     const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
+    const verificationCallbackURL = redirectTo.startsWith(
+      "/api/auth/oauth2/authorize",
+    )
+      ? redirectTo
+      : undefined;
     const requestHeaders = stripOidcTransientCookies(await getRequestHeaders());
     const result = await auth.api.signUpEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
         name: validation.data.name,
+        ...(verificationCallbackURL
+          ? { callbackURL: verificationCallbackURL }
+          : {}),
       },
       headers: requestHeaders,
     });
@@ -304,6 +355,59 @@ export async function requestMagicLinkSignInAction(
     callbackUrl: sanitizeCallbackUrl(callbackUrl) ?? "/",
     headers: new Headers(headersList),
   });
+}
+
+export async function signInMagicLinkCodeAction(
+  formData: FormData,
+  callbackUrl?: string,
+) {
+  const validation = magicLinkCodeFormDataSchema.safeParse(formData);
+  if (!validation.success) {
+    return {
+      error: convertZodError(validation.error),
+      errorKey: "InvalidInput" as const,
+    };
+  }
+
+  try {
+    const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
+    const requestHeaders = stripOidcTransientCookies(await getRequestHeaders());
+    const result = await auth.api.signInEmailOTP({
+      body: {
+        email: validation.data.email,
+        otp: validation.data.otp.trim(),
+      },
+      headers: requestHeaders,
+    });
+
+    if (!result.user) {
+      return {
+        error: "Invalid sign-in code.",
+        errorKey: "InvalidMagicLinkCode" as const,
+      };
+    }
+
+    return {
+      success: true,
+      resultKey: "SignInSuccess" as const,
+      redirectTo,
+    };
+  } catch (error) {
+    const details = getAuthErrorDetails(error);
+    console.error(
+      "[signInMagicLinkCodeAction] error",
+      {
+        callbackUrl,
+        redirectTo: sanitizeCallbackUrl(callbackUrl) ?? "/",
+        status: details.status,
+        messages: details.messages,
+        body: details.body,
+      },
+      error,
+    );
+
+    return getMagicLinkCodeErrorResult(error);
+  }
 }
 
 export async function updateUserNameAction(formData: FormData) {

@@ -18,6 +18,7 @@ import {
 interface MagicLinkEmailProps {
   name: string;
   magicLink: string;
+  magicCode?: string;
   logoUrl?: string;
   /** When true, show first-time consent line linking to the privacy policy. */
   includePrivacyConsent?: boolean;
@@ -31,6 +32,9 @@ interface MagicLinkEmailProps {
     consentPrivacyLabel: string;
     consentAfter: string;
     button: string;
+    codeLabel: string;
+    codeExpiry: string;
+    codeHelp: string;
     linkText: string;
     footer: string;
   };
@@ -39,6 +43,7 @@ interface MagicLinkEmailProps {
 export const MagicLinkEmail = ({
   name,
   magicLink,
+  magicCode,
   logoUrl,
   includePrivacyConsent,
   privacyPolicyUrl,
@@ -72,6 +77,24 @@ export const MagicLinkEmail = ({
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}
             </Text>
+            {magicCode ? (
+              <Section className="my-[32px] rounded border border-solid border-[#eaeaea] bg-[#fafafa] px-[16px] py-[20px] text-center">
+                <Text className="m-0 text-[12px] uppercase tracking-[0.2em] text-[#666666]">
+                  {translations.codeLabel}
+                </Text>
+                <Text className="m-0 mt-[12px] text-[32px] font-semibold tracking-[0.35em] text-black">
+                  {magicCode}
+                </Text>
+                <Text className="m-0 mt-[12px] text-[14px] leading-[24px] text-[#666666]">
+                  {translations.codeExpiry}
+                </Text>
+              </Section>
+            ) : null}
+            {magicCode ? (
+              <Text className="text-[14px] leading-[24px] text-black">
+                {translations.codeHelp}
+              </Text>
+            ) : null}
             {includePrivacyConsent && privacyPolicyUrl ? (
               <Text className="text-[13px] leading-[22px] text-[#444444] mt-[16px]">
                 {translations.consentBefore}

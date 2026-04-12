@@ -7,6 +7,7 @@ import {
   startAgentRegistration,
 } from "@/lib/agent-registration";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
 import {
@@ -16,7 +17,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -45,6 +46,11 @@ export async function GET(request: NextRequest) {
     } = queryValidation.data;
 
     const network = getNetworkFromRequest(request);
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network,
+    });
 
     const searchTrimmed = search?.trim();
 
@@ -100,7 +106,7 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const baseWhere = {
-      userId: user.id,
+      userId: authContext.user.id,
       ...verificationFilter,
       ...registrationFilter,
       networkIdentifier: network,
@@ -149,8 +155,8 @@ function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, activeOrganizationId } =
-      await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user, activeOrganizationId } = authContext;
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
@@ -195,6 +201,11 @@ export async function POST(request: NextRequest) {
     }
 
     const network = getNetworkFromRequest(request);
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network,
+    });
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
 
     const params: RegisterAgentParams = {

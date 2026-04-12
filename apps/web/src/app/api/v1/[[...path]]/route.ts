@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
@@ -82,9 +83,14 @@ async function proxyRequest(
   method: string,
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
+    rejectOidcAccessTokenAuth(
+      authContext,
+      "OIDC access tokens are not supported for the payment-node proxy",
+    );
+    const { user } = authContext;
 
     const { path: pathParam } = await params;
     const path = (pathParam ?? []).join("/");

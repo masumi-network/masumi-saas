@@ -1,8 +1,11 @@
 import type { OIDCMetadata } from "better-auth/plugins/oidc-provider";
 
 import { authEnvConfig } from "@/lib/config/auth.config";
-
-export type OidcClientKey = "web" | "cli";
+import {
+  getAllowedApiScopesForClient,
+  OIDC_SUPPORTED_SCOPES,
+  type OidcClientKey,
+} from "@/lib/config/oidc-scopes.config";
 
 type TrustedOidcClient = {
   clientId: string;
@@ -16,13 +19,6 @@ type TrustedOidcClient = {
 
 const DEFAULT_WEB_REDIRECT_URLS = ["http://localhost:3002/auth/callback"];
 const DEFAULT_CLI_REDIRECT_URLS = ["http://127.0.0.1:43110/callback"];
-
-export const OIDC_SUPPORTED_SCOPES = [
-  "openid",
-  "profile",
-  "email",
-  "offline_access",
-];
 
 // SpacetimeDB rejects Better Auth's default EdDSA tokens in local testing.
 export const OIDC_ID_TOKEN_SIGNING_ALG = "ES256" as const;
@@ -110,6 +106,7 @@ export function getTrustedOidcClient(client: OidcClientKey): TrustedOidcClient {
       firstParty: true,
       spacetime: true,
       client,
+      allowedScopes: getAllowedApiScopesForClient(client),
     },
   };
 }
@@ -170,4 +167,22 @@ export function getPublicAuthorizationServerMetadata() {
       "urn:ietf:params:oauth:grant-type:device_code",
     ],
   };
+}
+
+export function resolveOidcClientKey(
+  clientId: string | null | undefined,
+): OidcClientKey | null {
+  if (!clientId) {
+    return null;
+  }
+
+  if (clientId === oidcEnvConfig.web.clientId) {
+    return "web";
+  }
+
+  if (clientId === oidcEnvConfig.cli.clientId) {
+    return "cli";
+  }
+
+  return null;
 }

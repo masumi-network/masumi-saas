@@ -18,6 +18,7 @@ import {
 interface VerificationEmailProps {
   name: string;
   verificationLink: string;
+  verificationCode?: string;
   logoUrl?: string;
   translations: {
     preview: string;
@@ -26,6 +27,9 @@ interface VerificationEmailProps {
     message: string;
     button: string;
     linkText: string;
+    codeLabel?: string;
+    codeExpiry?: string;
+    codeHelp?: string;
     footer: string;
   };
 }
@@ -33,6 +37,7 @@ interface VerificationEmailProps {
 export const VerificationEmail = ({
   name,
   verificationLink,
+  verificationCode,
   logoUrl,
   translations,
 }: VerificationEmailProps) => {
@@ -64,6 +69,26 @@ export const VerificationEmail = ({
             <Text className="text-[14px] leading-[24px] text-black">
               {translations.message}
             </Text>
+            {verificationCode ? (
+              <Section className="my-[32px] rounded border border-solid border-[#eaeaea] bg-[#fafafa] px-[16px] py-[20px] text-center">
+                <Text className="m-0 text-[12px] uppercase tracking-[0.2em] text-[#666666]">
+                  {translations.codeLabel ?? "Verification code"}
+                </Text>
+                <Text className="m-0 mt-[12px] text-[32px] font-semibold tracking-[0.35em] text-black">
+                  {verificationCode}
+                </Text>
+                {translations.codeExpiry ? (
+                  <Text className="m-0 mt-[12px] text-[14px] leading-[24px] text-[#666666]">
+                    {translations.codeExpiry}
+                  </Text>
+                ) : null}
+              </Section>
+            ) : null}
+            {verificationCode && translations.codeHelp ? (
+              <Text className="text-[14px] leading-[24px] text-black">
+                {translations.codeHelp}
+              </Text>
+            ) : null}
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button
                 className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"

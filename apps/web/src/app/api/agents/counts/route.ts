@@ -1,12 +1,13 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { agentCountsQuerySchema } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -23,8 +24,16 @@ export async function GET(request: NextRequest) {
       );
     }
     const network = queryResult.data.network;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network,
+    });
 
-    const baseWhere = { userId: user.id, networkIdentifier: network };
+    const baseWhere = {
+      userId: authContext.user.id,
+      networkIdentifier: network,
+    };
 
     const [all, registered, deregistered, pending, failed, verified] =
       await Promise.all([
