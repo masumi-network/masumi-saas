@@ -98,6 +98,17 @@ function parseSignedJsonCookieValue(
   }
 }
 
+function hasOidcContinuationHints(searchParams: AuthPageSearchParams): boolean {
+  return (
+    getFirstValue(searchParams.client_id) !== undefined ||
+    getFirstValue(searchParams.code) !== undefined ||
+    getFirstValue(searchParams.state) !== undefined ||
+    getFirstValue(searchParams.prompt) !== undefined ||
+    getFirstValue(searchParams.redirect_uri) !== undefined ||
+    getFirstValue(searchParams.response_type) !== undefined
+  );
+}
+
 export function resolveAuthPageCallbackUrl(
   searchParams: AuthPageSearchParams,
   oidcLoginPromptCookieValue?: string,
@@ -106,6 +117,10 @@ export function resolveAuthPageCallbackUrl(
     resolveAuthPageCallbackUrlFromParams(searchParams);
   if (callbackUrlFromParams) {
     return callbackUrlFromParams;
+  }
+
+  if (!hasOidcContinuationHints(searchParams)) {
+    return undefined;
   }
 
   const oidcPromptParams = parseSignedJsonCookieValue(

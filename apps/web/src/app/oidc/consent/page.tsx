@@ -11,8 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { auth } from "@/lib/auth/auth";
-import { getRequestHeaders, getSession } from "@/lib/auth/utils";
+import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
 
 export const metadata: Metadata = {
@@ -37,6 +36,7 @@ interface OidcConsentPageProps {
     consent_code?: string;
     client_id?: string;
     scope?: string;
+    error?: string;
   }>;
 }
 
@@ -99,28 +99,7 @@ export default async function OidcConsentPage({
 
   const clientLabel = getClientLabel(resolvedSearchParams.client_id);
   const scopes = normalizeScopes(resolvedSearchParams.scope);
-
-  async function handleConsent(formData: FormData) {
-    "use server";
-
-    const consentCode = formData.get("consentCode");
-    const accept = formData.get("accept") === "true";
-
-    if (typeof consentCode !== "string" || consentCode.trim().length === 0) {
-      redirect("/");
-    }
-
-    const headersList = await getRequestHeaders();
-    const result = await auth.api.oAuthConsent({
-      headers: headersList,
-      body: {
-        accept,
-        consent_code: consentCode,
-      },
-    });
-
-    redirect(result.redirectURI);
-  }
+  const errorMessage = resolvedSearchParams.error?.trim();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
@@ -138,6 +117,11 @@ export default async function OidcConsentPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {errorMessage ? (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {errorMessage}
+            </div>
+          ) : null}
           <div className="space-y-2">
             <p className="text-sm font-medium">{PAGE_COPY.accountLabel}</p>
             <p className="text-sm text-muted-foreground">
@@ -164,10 +148,21 @@ export default async function OidcConsentPage({
         </CardContent>
         <CardFooter>
           <form
-            action={handleConsent}
+            action="/oidc/consent/submit"
+            method="post"
             className="flex w-full flex-col gap-3 sm:flex-row"
           >
             <input type="hidden" name="consentCode" value={consentCode} />
+            <input
+              type="hidden"
+              name="clientId"
+              value={resolvedSearchParams.client_id ?? ""}
+            />
+            <input
+              type="hidden"
+              name="scope"
+              value={resolvedSearchParams.scope ?? ""}
+            />
             <Button type="submit" name="accept" value="false" variant="outline">
               {PAGE_COPY.cancel}
             </Button>

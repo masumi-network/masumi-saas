@@ -32,7 +32,7 @@ describe("SMOKE — auth page callback URL resolution", () => {
     );
   });
 
-  it("reconstructs Better Auth OIDC login prompts from the signed cookie payload", () => {
+  it("reconstructs Better Auth OIDC login prompts from the signed cookie payload when the page already has OIDC continuation hints", () => {
     const cookiePayload = encodeURIComponent(
       JSON.stringify({
         response_type: "code",
@@ -47,8 +47,37 @@ describe("SMOKE — auth page callback URL resolution", () => {
       }),
     );
 
-    expect(resolveAuthPageCallbackUrl({}, `${cookiePayload}.signature`)).toBe(
+    expect(
+      resolveAuthPageCallbackUrl(
+        {
+          client_id: "masumi-spacetime-web",
+          code: "resume-code",
+          state: "resume-state",
+        },
+        `${cookiePayload}.signature`,
+      ),
+    ).toBe(
       "/api/auth/oauth2/authorize?response_type=code&client_id=masumi-spacetime-web&redirect_uri=http%3A%2F%2Flocalhost%3A5174%2Fauth%2Fcallback&scope=openid+profile+email+offline_access&state=state-456&nonce=nonce-456&code_challenge=challenge-456&code_challenge_method=S256&prompt=consent",
+    );
+  });
+
+  it("ignores the OIDC cookie for a plain sign-in page in another tab", () => {
+    const cookiePayload = encodeURIComponent(
+      JSON.stringify({
+        response_type: "code",
+        client_id: "masumi-spacetime-web",
+        redirect_uri: "http://localhost:5174/auth/callback",
+        scope: "openid profile email offline_access",
+        state: "state-789",
+        nonce: "nonce-789",
+        code_challenge: "challenge-789",
+        code_challenge_method: "S256",
+        prompt: "consent",
+      }),
+    );
+
+    expect(resolveAuthPageCallbackUrl({}, `${cookiePayload}.signature`)).toBe(
+      undefined,
     );
   });
 

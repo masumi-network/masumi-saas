@@ -25,6 +25,37 @@ import {
 
 import { convertZodError } from "../utils/convert-zod-error";
 
+const OIDC_TRANSIENT_COOKIE_NAMES = new Set([
+  "oidc_login_prompt",
+  "oidc_consent_prompt",
+]);
+
+function stripOidcTransientCookies(headers: Headers): Headers {
+  const sanitizedHeaders = new Headers(headers);
+  const rawCookieHeader = sanitizedHeaders.get("cookie");
+
+  if (!rawCookieHeader) {
+    return sanitizedHeaders;
+  }
+
+  const filteredCookies = rawCookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter(Boolean)
+    .filter((cookie) => {
+      const [name] = cookie.split("=", 1);
+      return name && !OIDC_TRANSIENT_COOKIE_NAMES.has(name);
+    });
+
+  if (filteredCookies.length === 0) {
+    sanitizedHeaders.delete("cookie");
+    return sanitizedHeaders;
+  }
+
+  sanitizedHeaders.set("cookie", filteredCookies.join("; "));
+  return sanitizedHeaders;
+}
+
 export async function signOutAction() {
   const headersList = await getRequestHeaders();
   await auth.api.signOut({
@@ -59,13 +90,13 @@ export async function signInAction(formData: FormData, callbackUrl?: string) {
 
   try {
     const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
+    const requestHeaders = stripOidcTransientCookies(await getRequestHeaders());
     const result = await auth.api.signInEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
-        callbackURL: redirectTo,
       },
-      headers: await getRequestHeaders(),
+      headers: requestHeaders,
     });
 
     if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
@@ -189,13 +220,14 @@ export async function signUpAction(formData: FormData, callbackUrl?: string) {
 
   try {
     const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
+    const requestHeaders = stripOidcTransientCookies(await getRequestHeaders());
     const result = await auth.api.signUpEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
         name: validation.data.name,
-        callbackURL: redirectTo,
       },
+      headers: requestHeaders,
     });
 
     if (!result.user) {
