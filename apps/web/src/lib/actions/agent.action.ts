@@ -21,7 +21,7 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
-/** Returns agent IDs for the current user that need on-chain registration completion
+/** Returns agent IDs for the current user that still need on-chain registration work
  *  (stuck after tab close). Used to recover polling on next app load. */
 export async function getPendingRegistrationAgentIdsAction(): Promise<
   string[]
@@ -35,9 +35,6 @@ export async function getPendingRegistrationAgentIdsAction(): Promise<
         userId: user.id,
         registrationState: {
           in: ["RegistrationRequested", "RegistrationInitiated"],
-        },
-        agentReference: {
-          externalId: null,
         },
       },
       select: { id: true },

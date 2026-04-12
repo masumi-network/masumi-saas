@@ -86,12 +86,17 @@ export const registryEntrySchema = z.object({
   SmartContractWallet: z
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .optional(),
+  RecipientWallet: z
+    .object({ walletVkey: z.string(), walletAddress: z.string() })
+    .nullable()
+    .optional(),
 });
 export type RegistryEntry = z.infer<typeof registryEntrySchema>;
 
 export const registerAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
   sellingWalletVkey: z.string(),
+  recipientWalletAddress: z.string().optional(),
   name: z.string(),
   apiBaseUrl: z.string(),
   description: z.string(),

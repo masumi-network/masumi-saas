@@ -12,6 +12,8 @@ import {
   OpenAPIRegistry,
 } from "@asteasolutions/zod-to-openapi";
 
+import { injectProxyRoutesIntoOpenApiDocument } from "@/lib/v1-proxy/manifest";
+
 import { activityQueryInputSchema } from "@/lib/schemas/activity";
 import {
   agentsListQuerySchema,
@@ -1065,7 +1067,7 @@ registry.registerPath({
     ),
     202: {
       description:
-        "Registration still pending (e.g. wallet funding); poll again shortly.",
+        "Registration still pending (e.g. registry submission or blockchain confirmation); poll again shortly.",
       content: {
         "application/json": { schema: completeRegistrationPendingSchema },
       },
@@ -1148,30 +1150,30 @@ export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
   if (cachedSaaSAppOpenAPISpec !== undefined) {
     return cachedSaaSAppOpenAPISpec;
   }
-  cachedSaaSAppOpenAPISpec = new OpenApiGeneratorV3(
-    registry.definitions,
-  ).generateDocument({
-    openapi: "3.0.0",
-    info: {
-      version: "1.0.0",
-      title: "Masumi SaaS API",
-      description: [
-        "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
-      ].join("\n"),
-    },
-    servers: [{ url: "/api", description: "This app" }],
-    tags: [
-      {
-        name: "Auth",
-        description: "Public registration and authentication bootstrap flows",
+  cachedSaaSAppOpenAPISpec = injectProxyRoutesIntoOpenApiDocument(
+    new OpenApiGeneratorV3(registry.definitions).generateDocument({
+      openapi: "3.0.0",
+      info: {
+        version: "1.0.0",
+        title: "Masumi SaaS API",
+        description: [
+          "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
+        ].join("\n"),
       },
-      { name: "System", description: "Health and availability" },
-      { name: "API keys", description: "Masumi SaaS API key introspection" },
-      { name: "Agents", description: "Your agents" },
-      { name: "Dashboard", description: "Overview and account data" },
-      { name: "Activity", description: "What happened across your agents" },
-      { name: "Earnings", description: "Earnings and payouts" },
-    ],
-  });
+      servers: [{ url: "/api", description: "This app" }],
+      tags: [
+        {
+          name: "Auth",
+          description: "Public registration and authentication bootstrap flows",
+        },
+        { name: "System", description: "Health and availability" },
+        { name: "API keys", description: "Masumi SaaS API key introspection" },
+        { name: "Agents", description: "Your agents" },
+        { name: "Dashboard", description: "Overview and account data" },
+        { name: "Activity", description: "What happened across your agents" },
+        { name: "Earnings", description: "Earnings and payouts" },
+      ],
+    }),
+  );
   return cachedSaaSAppOpenAPISpec;
 }

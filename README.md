@@ -147,21 +147,27 @@ Example:
 curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 ```
 
-### Payment Node Proxy (authenticated)
+### External Service Proxy (authenticated)
 
-The **v1** namespace proxies **only exact paths** listed in code (no prefix/root wildcards). New payment-node routes stay **403** until added to that set. Use app authentication (session or API key); the user's payment node key is used server-side. Anything not literally in `ALLOWED_PROXY_PATHS` (including paths containing `..`) gets **403** before `fetch`.
+The authenticated **v1** namespace proxies a curated set of routes to external Masumi services. Route exposure is generated from checked-in upstream OpenAPI specs and matched on **method + normalized path**. New upstream routes stay **403** until added to the safe manifest. Use app authentication (session or API key); SaaS forwards either the user's payment-service token or a shared registry-service token server-side. Paths containing traversal or malformed segments are rejected before `fetch`.
 
-| Path                               | Description                                 |
-| ---------------------------------- | ------------------------------------------- |
-| `GET/POST /api/v1/purchase`        | Create or list purchases                    |
-| `GET/POST /api/v1/payment`         | Create or list payments                     |
-| `GET/POST /api/v1/registry`        | Register agents, list registry, deregister  |
-| `GET /api/v1/api-key-status`       | API key status                              |
-| `GET /api/v1/payment-source`       | List payment sources                        |
-| `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                    |
-| …                                  | See `ALLOWED_PROXY_PATHS` in the route file |
+| Path                                         | Description                                 |
+| -------------------------------------------- | ------------------------------------------- |
+| `GET/POST /api/v1/purchase`                  | Create or list purchases                    |
+| `GET/POST /api/v1/payment`                   | Create or list payments                     |
+| `GET/POST /api/v1/registry`                  | Register agents, list registry, deregister  |
+| `POST /api/v1/registry-entry`                | Query registry-service agent lookup entries |
+| `POST /api/v1/registry-diff`                 | Query registry-service diffs                |
+| `GET /api/v1/payment-information`            | Payment information for one agent           |
+| `GET /api/v1/capability`                     | Registry-service capability lookup          |
+| `POST /api/v1/inbox-agent-registration`      | Inbox agent registration lookup             |
+| `POST /api/v1/inbox-agent-registration-diff` | Inbox registration diffs                    |
+| `GET /api/v1/api-key-status`                 | API key status                              |
+| `GET /api/v1/payment-source`                 | List payment sources                        |
+| `GET/POST/DELETE /api/v1/webhooks`           | Webhooks                                    |
+| …                                            | See the generated proxy manifest            |
 
-Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_PATHS`).
+Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` + `apps/web/src/lib/v1-proxy/manifest.ts`.
 
 **Regenerate checked-in OpenAPI JSON** (same workflow as masumi-payment-service `pnpm run swagger-json`): from the monorepo root run `pnpm --filter web run swagger-json` (alias: `swagger:generate`). Writes:
 
@@ -172,6 +178,8 @@ Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_P
 `GET /api/v1/openapi` and `GET /api/openapi` still build the spec at request time; commit the JSON when you change the Zod registries so diffs are reviewable.
 
 To regenerate the payment node client: `pnpm --filter web run payment-node:generate` (fetches latest OpenAPI from `https://payment.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `PAYMENT_NODE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run payment-node:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run payment-node:generate:local`.
+
+To regenerate the registry service client: `pnpm --filter web run registry-service:generate` (fetches latest OpenAPI from `https://registry.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `REGISTRY_SERVICE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run registry-service:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run registry-service:generate:local`.
 
 ## Project Structure
 
@@ -285,9 +293,16 @@ masumi-saas/
    - **PAYMENT_NODE_ADMIN_API_KEY**: Admin API key for the payment node (server-side only, never exposed to client)
      - Used to generate wallets and create per-user API keys
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
+   - **PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_PREPROD** / **PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_MAINNET**: Comma-separated managed selling wallet addresses on that payment source used to fund agent registration transactions
    - **PAYMENT_NODE_ENCRYPTION_KEY**: Encryption key for storing per-user payment node API keys (min 32 chars)
      - Generate with: `openssl rand -base64 32`
    - **PAYMENT_NODE_STRICT_STARTUP** _(optional)_: Set to `1` to throw on startup if payment node is unreachable
+   - **REGISTRY_SERVICE_BASE_URL**: Base URL of the Masumi registry service API, including the version path
+     - e.g. `https://registry.masumi.network/api/v1`
+   - **REGISTRY_SERVICE_API_KEY**: Shared server-side API key for safe registry lookup and discovery proxy routes
+     - Used for `/api/v1/registry-entry`, capability lookup, inbox registration lookup, and similar read-only registry routes
+   - **REGISTRY_SERVICE_OPENAPI_URL** _(optional)_: Override URL for fetching the registry service OpenAPI document during type generation
+     - Defaults to `https://registry.masumi.network/api-docs`
 
 3. **Configure Sumsub Webhook** (required for automatic KYC status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks

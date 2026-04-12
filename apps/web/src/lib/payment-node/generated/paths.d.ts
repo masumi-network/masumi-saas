@@ -5615,6 +5615,8 @@ export interface paths {
             network: "Preprod" | "Mainnet";
             /** @description The payment key of a specific wallet used for the registration */
             sellingWalletVkey: string;
+            /** @description Optional managed hot wallet address on the same payment source that should receive the minted registry NFT. If omitted, the minting wallet receives it. */
+            recipientWalletAddress?: string;
             /** @description List of example outputs from the agent */
             ExampleOutputs: {
               /** @description Name of the example output */

@@ -1,8 +1,7 @@
 /**
- * Payment node API proxy.
- * Exact path allowlist only — if `path` is not in the set, 403 (no fetch).
- * When the payment node adds routes, add strings here — keep in sync with
- * scripts/specs/payment-node-openapi.json (omit admin/sensitive paths).
+ * Authenticated `/api/v1/*` passthrough proxy.
+ * Routes are generated from checked-in upstream OpenAPI specs and mapped to either
+ * the Masumi payment service or the Masumi registry service.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,43 +10,13 @@ import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
-
-/** Full path under /api/v1 (no leading slash). Must match exactly. */
-const ALLOWED_PROXY_PATHS = new Set<string>([
-  "api-key-status",
-  "health",
-  "invoice/monthly",
-  "invoice/monthly/missing",
-  "payment",
-  "payment-source",
-  "payment/authorize-refund",
-  "payment/count",
-  "payment/diff",
-  "payment/diff/next-action",
-  "payment/diff/onchain-state-or-result",
-  "payment/error-state-recovery",
-  "payment/income",
-  "payment/resolve-blockchain-identifier",
-  "payment/submit-result",
-  "purchase",
-  "purchase/cancel-refund-request",
-  "purchase/count",
-  "purchase/diff",
-  "purchase/diff/next-action",
-  "purchase/diff/onchain-state-or-result",
-  "purchase/error-state-recovery",
-  "purchase/request-refund",
-  "purchase/resolve-blockchain-identifier",
-  "purchase/spending",
-  "registry",
-  "registry/agent-identifier",
-  "registry/count",
-  "registry/deregister",
-  "registry/diff",
-  "signature/sign/create-invoice/monthly",
-  "signature/verify/reveal-data",
-  "webhooks",
-]);
+import { registryServiceConfig } from "@/lib/registry-service";
+import {
+  type ProxyOperationMethod,
+  type ProxyRouteDescriptor,
+  getProxyRouteDescriptor,
+} from "@/lib/v1-proxy/manifest";
+import { normalizeProxyPathSegments } from "@/lib/v1-proxy/path";
 
 export async function GET(
   request: NextRequest,
@@ -80,7 +49,7 @@ export async function DELETE(
 async function proxyRequest(
   request: NextRequest,
   params: Promise<{ path?: string[] }>,
-  method: string,
+  method: ProxyOperationMethod,
 ) {
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
@@ -88,36 +57,47 @@ async function proxyRequest(
     });
     rejectOidcAccessTokenAuth(
       authContext,
-      "OIDC access tokens are not supported for the payment-node proxy",
+      "OIDC access tokens are not supported for the /api/v1 proxy",
     );
     const { user } = authContext;
 
     const { path: pathParam } = await params;
-    const path = (pathParam ?? []).join("/");
-    if (!ALLOWED_PROXY_PATHS.has(path)) {
+    const normalizedPath = normalizeProxyPathSegments(pathParam);
+    if (!normalizedPath.ok) {
       return NextResponse.json(
         { success: false, error: "Forbidden" },
         { status: 403 },
       );
     }
 
-    const token = await getPaymentNodeApiKeyTokenForUser(user.id);
-    if (!token) {
+    const route = getProxyRouteDescriptor(
+      method,
+      normalizedPath.normalizedPath,
+    );
+    if (!route) {
       return NextResponse.json(
-        { success: false, error: "Payment node not configured for user" },
+        { success: false, error: "Forbidden" },
         { status: 403 },
       );
     }
-    const baseUrl = paymentNodeConfig.getBaseUrl();
-    const targetUrl = `${baseUrl}/${path}${request.nextUrl.search}`;
 
-    // Only headers the payment node needs — do not forward arbitrary client headers.
+    const upstreamRequest = await getUpstreamRequest(route, user.id);
+    if (!upstreamRequest.ok) {
+      return NextResponse.json(
+        { success: false, error: upstreamRequest.error },
+        { status: upstreamRequest.status },
+      );
+    }
+
     const headers = new Headers();
-    headers.set("token", token);
-    headers.set("Content-Type", "application/json");
+    headers.set("token", upstreamRequest.token);
+    headers.set(
+      "Content-Type",
+      request.headers.get("content-type") ?? "application/json",
+    );
 
     let body: string | undefined;
-    if (method !== "GET" && method !== "HEAD") {
+    if (method !== "GET") {
       try {
         body = await request.text();
       } catch {
@@ -125,11 +105,14 @@ async function proxyRequest(
       }
     }
 
-    const res = await fetch(targetUrl, {
-      method,
-      headers,
-      body: body || undefined,
-    });
+    const res = await fetch(
+      `${upstreamRequest.baseUrl}${route.upstreamPath}${request.nextUrl.search}`,
+      {
+        method,
+        headers,
+        body: body || undefined,
+      },
+    );
 
     const responseBody = await res.text();
     let json: unknown;
@@ -153,10 +136,56 @@ async function proxyRequest(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
-    console.error("[Payment Node Proxy]", error);
+    console.error("[External Service Proxy]", error);
     return NextResponse.json(
       { success: false, error: "Proxy request failed" },
       { status: 500 },
     );
+  }
+}
+
+async function getUpstreamRequest(
+  route: ProxyRouteDescriptor,
+  userId: string,
+): Promise<
+  | { ok: true; baseUrl: string; token: string }
+  | { ok: false; status: number; error: string }
+> {
+  if (route.authMode === "payment-user-token") {
+    const token = await getPaymentNodeApiKeyTokenForUser(userId);
+    if (!token) {
+      return {
+        ok: false,
+        status: 403,
+        error: "Payment node not configured for user",
+      };
+    }
+    try {
+      return {
+        ok: true,
+        baseUrl: paymentNodeConfig.getBaseUrl(),
+        token,
+      };
+    } catch {
+      return {
+        ok: false,
+        status: 503,
+        error: "Payment service is not configured",
+      };
+    }
+  }
+
+  try {
+    return {
+      ok: true,
+      baseUrl: registryServiceConfig.getBaseUrl(),
+      token: registryServiceConfig.getApiKey(),
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      error: "Registry service is not configured",
+    };
   }
 }
