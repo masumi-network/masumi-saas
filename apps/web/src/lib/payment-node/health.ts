@@ -20,6 +20,40 @@ export type PaymentNodeHealthResult = {
 
 const NETWORK_FOR_CHECK: PaymentNodeNetwork = "Preprod";
 
+function normalizeUrl(value: string): URL | null {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function appOriginsForPaymentNodeChecks(): string[] {
+  const candidates = [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ].filter((value): value is string => Boolean(value?.trim()));
+
+  return candidates
+    .map((value) => normalizeUrl(value))
+    .filter((value): value is URL => value !== null)
+    .map((value) => value.origin);
+}
+
+export function isSelfReferentialPaymentNodeBaseUrl(baseUrl: string): boolean {
+  const parsedBaseUrl = normalizeUrl(baseUrl);
+  if (!parsedBaseUrl) {
+    return false;
+  }
+
+  const normalizedPath = parsedBaseUrl.pathname.replace(/\/+$/, "");
+  if (normalizedPath !== "/api/v1") {
+    return false;
+  }
+
+  return appOriginsForPaymentNodeChecks().includes(parsedBaseUrl.origin);
+}
+
 /**
  * Validates that payment node env is set and optionally checks reachability and API key.
  * Does not throw; returns a result object.

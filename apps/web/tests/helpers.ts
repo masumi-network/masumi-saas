@@ -3,7 +3,7 @@
  * All tests run against the real running server at BASE_URL.
  */
 
-export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
+export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:2999";
 
 export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
 export const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Admin@12345";

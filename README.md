@@ -218,13 +218,13 @@ masumi-saas/
      - Generate one with: `openssl rand -base64 32`
 
    - **BETTER_AUTH_URL**: Your application's base URL
-     - For local development: `http://localhost:3000`
+     - For local development: `http://localhost:2999`
 
    - **OIDC_PUBLIC_ISSUER_URL** _(optional)_: Public OIDC issuer URL
      - Defaults to `BETTER_AUTH_URL`
 
    - **OIDC_WEB_CLIENT_ID** / **OIDC_WEB_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the external webapp
-     - Local default redirect: `http://localhost:3001/auth/callback`
+     - Local default redirect: `http://localhost:3002/auth/callback` (avoids clashing with this app on port 2999)
 
    - **OIDC_CLI_CLIENT_ID** / **OIDC_CLI_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the CLI device flow
      - Local default redirect: `http://127.0.0.1:43110/callback`
@@ -256,7 +256,8 @@ masumi-saas/
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification credentials
 
    - **PAYMENT_NODE_BASE_URL**: Base URL of the Masumi payment node API, including the version path
-     - e.g. `https://payment.masumi.network/api/v1` or `http://localhost:3001/api/v1`
+     - e.g. `https://payment.masumi.network/api/v1`
+     - local app-only dev may use `http://localhost:2999/api/v1`; startup validation now skips that self-proxy so boot does not hang
    - **PAYMENT_NODE_ADMIN_API_KEY**: Admin API key for the payment node (server-side only, never exposed to client)
      - Used to generate wallets and create per-user API keys
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets

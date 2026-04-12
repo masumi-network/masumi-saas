@@ -15,7 +15,7 @@ if (
 }
 
 export const authEnvConfig = {
-  baseUrl: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseUrl: process.env.BETTER_AUTH_URL || "http://localhost:2999",
   secret: process.env.BETTER_AUTH_SECRET!,
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&

@@ -48,8 +48,8 @@ export const auth = betterAuth({
   trustedOrigins: [
     authEnvConfig.baseUrl,
     oidcEnvConfig.issuer,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:2999",
+    "http://127.0.0.1:2999",
     ...getTrustedOidcOrigins(),
   ],
   emailAndPassword: {
@@ -215,6 +215,7 @@ export const auth = betterAuth({
     }),
     oidcProvider({
       loginPage: "/signin",
+      consentPage: "/oidc/consent",
       useJWTPlugin: true,
       requirePKCE: true,
       trustedClients: getTrustedOidcClients(),

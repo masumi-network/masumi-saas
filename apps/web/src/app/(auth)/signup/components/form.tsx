@@ -6,6 +6,8 @@ import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
+import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignUpInput, SignUpInput } from "@/lib/schemas";
 
 import {
@@ -19,10 +21,15 @@ import {
 
 interface SignUpFormProps {
   oauthProviders?: ("google" | "github" | "microsoft")[];
+  callbackUrl?: string;
 }
 
-export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
+export default function SignUpForm({
+  oauthProviders = [],
+  callbackUrl,
+}: SignUpFormProps) {
   const t = useTranslations("Auth.SignUp");
+  const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
   const [usePassword, setUsePassword] = useState(false);
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [seedPassword, setSeedPassword] = useState<Partial<SignUpInput> | null>(
@@ -81,7 +88,9 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
             {t("checkEmail.tryAnother")}
           </Button>
           <Button variant="primary" asChild>
-            <Link href="/signin">{t("login")}</Link>
+            <Link href={buildAuthPageHref("/signin", safeCallbackUrl)}>
+              {t("login")}
+            </Link>
           </Button>
         </div>
       </div>
@@ -100,19 +109,24 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} />
+        <SocialAuthButtons
+          providers={oauthProviders}
+          callbackURL={safeCallbackUrl}
+        />
       )}
 
       {usePassword ? (
         <SignupPasswordForm
           ref={passwordRef}
           seedFromMagicLink={seedPassword}
+          safeCallbackUrl={safeCallbackUrl}
         />
       ) : (
         <SignupMagicLinkForm
           key={magicFormKey}
           ref={magicRef}
           seedFromPassword={seedMagic}
+          safeCallbackUrl={safeCallbackUrl}
           onMagicLinkSent={(email) => setMagicLinkEmail(email)}
         />
       )}
@@ -130,7 +144,10 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
 
         <p className="text-center text-sm text-muted-foreground">
           {t("hasAccount")}{" "}
-          <Link href="/signin" className="underline hover:text-foreground">
+          <Link
+            href={buildAuthPageHref("/signin", safeCallbackUrl)}
+            className="underline hover:text-foreground"
+          >
             {t("login")}
           </Link>
         </p>

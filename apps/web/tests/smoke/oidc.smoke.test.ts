@@ -21,12 +21,12 @@ describe("SMOKE — OIDC discovery", () => {
     const body = res.body as Record<string, unknown>;
     expect(body.issuer).toBeDefined();
     expect(body.authorization_endpoint).toBe(
-      "http://localhost:3000/api/auth/oauth2/authorize",
+      "http://localhost:2999/api/auth/oauth2/authorize",
     );
     expect(body.token_endpoint).toBe(
-      "http://localhost:3000/api/auth/oauth2/token",
+      "http://localhost:2999/api/auth/oauth2/token",
     );
-    expect(body.jwks_uri).toBe("http://localhost:3000/jwks");
+    expect(body.jwks_uri).toBe("http://localhost:2999/jwks");
   });
 
   it("GET /.well-known/oauth-authorization-server returns OAuth metadata", async () => {
@@ -35,10 +35,10 @@ describe("SMOKE — OIDC discovery", () => {
 
     const body = res.body as Record<string, unknown>;
     expect(body.authorization_endpoint).toBe(
-      "http://localhost:3000/api/auth/oauth2/authorize",
+      "http://localhost:2999/api/auth/oauth2/authorize",
     );
     expect(body.token_endpoint).toBe(
-      "http://localhost:3000/api/auth/oauth2/token",
+      "http://localhost:2999/api/auth/oauth2/token",
     );
   });
 
@@ -56,10 +56,10 @@ describe("SMOKE — OIDC discovery", () => {
 
     const body = res.body as Record<string, unknown>;
     expect(body.device_authorization_endpoint).toBe(
-      "http://localhost:3000/api/auth/device/code",
+      "http://localhost:2999/api/auth/device/code",
     );
     expect(body.token_endpoint).toBe(
-      "http://localhost:3000/api/auth/oauth2/token",
+      "http://localhost:2999/api/auth/oauth2/token",
     );
     expect(body.grant_types_supported).toContain(
       "urn:ietf:params:oauth:grant-type:device_code",
@@ -72,7 +72,7 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     const res = await request("/api/oidc/spacetimedb/token", {
       method: "OPTIONS",
       headers: {
-        Origin: "http://localhost:3001",
+        Origin: "http://localhost:3002",
         "Access-Control-Request-Method": "POST",
         "Access-Control-Request-Headers": "content-type",
       },
@@ -80,7 +80,7 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
 
     expect(res.status).toBe(204);
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "http://localhost:3001",
+      "http://localhost:3002",
     );
     expect(res.headers.get("access-control-allow-credentials")).toBe("true");
   });
@@ -90,13 +90,13 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
       method: "POST",
       body: { client: "web" },
       headers: {
-        Origin: "http://localhost:3001",
+        Origin: "http://localhost:3002",
       },
     });
 
     expect(res.status).toBe(401);
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "http://localhost:3001",
+      "http://localhost:3002",
     );
     expect(res.headers.get("access-control-allow-credentials")).toBe("true");
   });
@@ -108,13 +108,13 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
       jar,
       body: { client: "invalid-client" },
       headers: {
-        Origin: "http://localhost:3001",
+        Origin: "http://localhost:3002",
       },
     });
 
     expect(res.status).toBe(400);
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "http://localhost:3001",
+      "http://localhost:3002",
     );
     expect(res.headers.get("access-control-allow-credentials")).toBe("true");
   });
@@ -138,7 +138,7 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(typeof token.id_token).toBe("string");
 
     const payload = decodeJwtPayload(token.id_token as string);
-    expect(payload.iss).toBe("http://localhost:3000");
+    expect(payload.iss).toBe("http://localhost:2999");
     expect(payload.sub).toBeDefined();
     expect(payload.aud).toBe("masumi-spacetime-web");
   });
@@ -158,9 +158,9 @@ describe("SMOKE — OIDC device flow", () => {
     const body = res.body as Record<string, unknown>;
     expect(typeof body.device_code).toBe("string");
     expect(typeof body.user_code).toBe("string");
-    expect(body.verification_uri).toBe("http://localhost:3000/device");
+    expect(body.verification_uri).toBe("http://localhost:2999/device");
     expect(body.verification_uri_complete).toBe(
-      `http://localhost:3000/device?user_code=${body.user_code}`,
+      `http://localhost:2999/device?user_code=${body.user_code}`,
     );
   });
 
@@ -200,7 +200,7 @@ describe("SMOKE — OIDC device flow", () => {
     expect(token.token_type).toBe("Bearer");
 
     const payload = decodeJwtPayload(token.id_token as string);
-    expect(payload.iss).toBe("http://localhost:3000");
+    expect(payload.iss).toBe("http://localhost:2999");
     expect(payload.aud).toBe("masumi-spacetime-cli");
     expect(payload.sub).toBeDefined();
   });

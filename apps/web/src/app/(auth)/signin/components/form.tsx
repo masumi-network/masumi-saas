@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
+import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignInInput, SignInInput } from "@/lib/schemas";
 
@@ -79,7 +80,9 @@ export default function SignInForm({
             {t("checkEmail.tryAnother")}
           </Button>
           <Button variant="primary" asChild>
-            <Link href="/signin">{t("login")}</Link>
+            <Link href={buildAuthPageHref("/signin", safeCallbackUrl)}>
+              {t("login")}
+            </Link>
           </Button>
         </div>
       </div>
@@ -134,7 +137,10 @@ export default function SignInForm({
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between w-full">
           <p className="text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
-            <Link href="/signup" className="underline hover:text-foreground">
+            <Link
+              href={buildAuthPageHref("/signup", safeCallbackUrl)}
+              className="underline hover:text-foreground"
+            >
               {t("register")}
             </Link>
           </p>

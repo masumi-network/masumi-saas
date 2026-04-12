@@ -6,12 +6,13 @@ import {
   OIDC_NO_STORE_HEADERS,
   OidcTokenExchangeError,
 } from "@/lib/auth/oidc-flow";
-import { OIDC_SUPPORTED_SCOPES } from "@/lib/config/oidc.config";
+import { OIDC_SUPPORTED_SCOPES, oidcEnvConfig } from "@/lib/config/oidc.config";
 
 const authHandler = toNextJsHandler(auth);
 
 const DEVICE_CODE_PATH = "/api/auth/device/code";
 const DEVICE_TOKEN_PATH = "/api/auth/device/token";
+const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
@@ -37,6 +38,31 @@ function createJsonRequest(
     headers,
     body: JSON.stringify(body),
   });
+}
+
+function createConsentPromptedAuthorizeRequest(
+  request: Request,
+): Request | null {
+  const url = new URL(request.url);
+  if (url.pathname !== OAUTH_AUTHORIZE_PATH) {
+    return null;
+  }
+
+  if (url.searchParams.get("client_id") !== oidcEnvConfig.web.clientId) {
+    return null;
+  }
+
+  const prompt = url.searchParams.get("prompt");
+  if (prompt?.split(" ").includes("none")) {
+    return null;
+  }
+
+  if (prompt?.split(" ").includes("consent")) {
+    return null;
+  }
+
+  url.searchParams.set("prompt", prompt ? `${prompt} consent` : "consent");
+  return new Request(url, request);
 }
 
 function createSessionAuthHeaders(
@@ -164,7 +190,14 @@ async function exchangeDeviceGrantForOidcToken(
   }
 }
 
-export const GET = authHandler.GET;
+export async function GET(request: Request): Promise<Response> {
+  const consentRequest = createConsentPromptedAuthorizeRequest(request);
+  if (consentRequest) {
+    return authHandler.GET(consentRequest);
+  }
+
+  return authHandler.GET(request);
+}
 
 export async function POST(request: Request): Promise<Response> {
   const pathname = getPathname(request);

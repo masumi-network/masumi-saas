@@ -1,5 +1,6 @@
 "use client";
 
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -64,9 +65,8 @@ export default function AdminSignInForm() {
         setIsLoading(false);
       }
     } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        // Next.js redirect - don't reset loading
-        return;
+      if (isRedirectError(error)) {
+        throw error;
       }
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",

@@ -36,7 +36,7 @@ export async function getDashboardOverviewAction(
 
     // In production, header-derived host (x-forwarded-host, host) is spoofable.
     // Only use API call when we have a trusted configured URL.
-    const hasConfiguredUrl = appConfig.appUrl !== "http://localhost:3000";
+    const hasConfiguredUrl = appConfig.appUrl !== "http://localhost:2999";
     const isDev = process.env.NODE_ENV === "development";
     if (!isDev && !hasConfiguredUrl) {
       return {
@@ -69,12 +69,12 @@ export async function getDashboardOverviewAction(
 }
 
 function resolveBaseUrl(headersList: Headers): string {
-  if (appConfig.appUrl !== "http://localhost:3000") return appConfig.appUrl;
+  if (appConfig.appUrl !== "http://localhost:2999") return appConfig.appUrl;
 
   const host =
     headersList.get("x-forwarded-host") ??
     headersList.get("host") ??
-    "localhost:3000";
+    "localhost:2999";
   const proto = headersList.get("x-forwarded-proto") ?? "http";
   return `${proto}://${host}`;
 }
@@ -86,7 +86,7 @@ function isAllowedOrigin(url: string): boolean {
     if (process.env.NODE_ENV === "development") {
       if (host === "localhost" || host === "127.0.0.1") return true;
     }
-    if (appConfig.appUrl !== "http://localhost:3000") {
+    if (appConfig.appUrl !== "http://localhost:2999") {
       const appHost = new URL(appConfig.appUrl).hostname.toLowerCase();
       return host === appHost;
     }

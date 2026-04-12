@@ -1,5 +1,5 @@
 const APP_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+  process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:2999";
 
 /**
  * Returns a safe same-origin path for redirects, or undefined if invalid.

@@ -10,11 +10,11 @@ type TrustedOidcClient = {
   type: "public";
   redirectUrls: string[];
   disabled: false;
-  skipConsent: true;
+  skipConsent: boolean;
   metadata: Record<string, unknown>;
 };
 
-const DEFAULT_WEB_REDIRECT_URLS = ["http://localhost:3001/auth/callback"];
+const DEFAULT_WEB_REDIRECT_URLS = ["http://localhost:3002/auth/callback"];
 const DEFAULT_CLI_REDIRECT_URLS = ["http://127.0.0.1:43110/callback"];
 
 export const OIDC_SUPPORTED_SCOPES = [
@@ -102,7 +102,7 @@ export function getTrustedOidcClient(client: OidcClientKey): TrustedOidcClient {
     type: "public",
     redirectUrls: [...config.redirectUrls],
     disabled: false,
-    skipConsent: true,
+    skipConsent: client === "cli",
     metadata: {
       firstParty: true,
       spacetime: true,

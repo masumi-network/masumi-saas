@@ -40,13 +40,17 @@ export type SignupMagicLinkFormHandle = {
 
 export type SignupMagicLinkFormProps = {
   seedFromPassword?: Partial<MagicLinkSignUpInput> | null;
+  safeCallbackUrl?: string;
   onMagicLinkSent: (email: string) => void;
 };
 
 export const SignupMagicLinkForm = forwardRef<
   SignupMagicLinkFormHandle,
   SignupMagicLinkFormProps
->(function SignupMagicLinkForm({ seedFromPassword, onMagicLinkSent }, ref) {
+>(function SignupMagicLinkForm(
+  { seedFromPassword, safeCallbackUrl, onMagicLinkSent },
+  ref,
+) {
   const t = useTranslations("Auth.SignUp");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
@@ -79,7 +83,10 @@ export const SignupMagicLinkForm = forwardRef<
   async function onSubmit(data: MagicLinkSignUpInput) {
     setIsLoading(true);
     try {
-      const result = await requestMagicLinkSignUpAction(objectToFormData(data));
+      const result = await requestMagicLinkSignUpAction(
+        objectToFormData(data),
+        safeCallbackUrl,
+      );
 
       if ("error" in result) {
         const errorMessage = result.errorKey

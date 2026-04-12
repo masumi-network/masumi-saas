@@ -9,6 +9,7 @@ import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
 import {
   classifyAuthError,
   createUnexpectedErrorResult,
+  getAuthErrorDetails,
   isInfrastructureError,
 } from "@/lib/auth/error-results";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
@@ -47,7 +48,7 @@ function getSignUpErrorResult(error: unknown) {
   ]);
 }
 
-export async function signInAction(formData: FormData) {
+export async function signInAction(formData: FormData, callbackUrl?: string) {
   const validation = signInFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
@@ -57,13 +58,14 @@ export async function signInAction(formData: FormData) {
   }
 
   try {
-    const headersList = await getRequestHeaders();
+    const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
     const result = await auth.api.signInEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
+        callbackURL: redirectTo,
       },
-      headers: headersList,
+      headers: await getRequestHeaders(),
     });
 
     if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
@@ -80,24 +82,55 @@ export async function signInAction(formData: FormData) {
       };
     }
 
+    console.info("[signInAction] success", {
+      userId: result.user.id,
+      redirectTo,
+      oidcAuthorizeFlow: redirectTo.startsWith("/api/auth/oauth2/authorize"),
+    });
+
     return {
       success: true,
       resultKey: "SignInSuccess",
+      redirectTo,
     };
   } catch (error) {
-    const err = error as Error & { status?: number; statusCode?: number };
-    const status = err.status ?? err.statusCode;
+    const details = getAuthErrorDetails(error);
+    console.error(
+      "[signInAction] error",
+      {
+        callbackUrl,
+        redirectTo: sanitizeCallbackUrl(callbackUrl) ?? "/",
+        status: details.status,
+        messages: details.messages,
+        body: details.body,
+      },
+      error,
+    );
+    const status = details.status;
+    const errorMessage = details.message;
+
+    if (status === 401) {
+      if (errorMessage.includes("failed to create session")) {
+        return createUnexpectedErrorResult();
+      }
+
+      return {
+        error: "Invalid email or password",
+        errorKey: "InvalidCredentials",
+      };
+    }
+
     if (status === 403) {
-      const msg = (error instanceof Error ? error.message : "").toLowerCase();
-      if (msg.includes("banned") || msg.includes("ban")) {
+      if (errorMessage.includes("banned") || errorMessage.includes("ban")) {
         return {
           error: "Your account has been suspended.",
           errorKey: "AccountBanned",
         };
       }
       if (
-        msg.includes("email verification") ||
-        msg.includes("verify your email")
+        errorMessage.includes("email verification") ||
+        errorMessage.includes("verify your email") ||
+        errorMessage.includes("email not verified")
       ) {
         return {
           error: "Your email address must be verified.",
@@ -109,42 +142,43 @@ export async function signInAction(formData: FormData) {
         errorKey: "AccessDenied",
       };
     }
-    if (error instanceof Error) {
-      const errorMessage = error.message.toLowerCase();
-      if (isInfrastructureError(errorMessage)) {
-        return {
-          error:
-            "Database connection error. Please check your database configuration.",
-          errorKey: "DatabaseError",
-        };
-      }
-      if (
-        errorMessage.includes("email verification") ||
-        errorMessage.includes("verify your email")
-      ) {
-        return {
-          error: "Your email address must be verified.",
-          errorKey: "EmailVerificationRequired",
-        };
-      }
-      if (
-        errorMessage.includes("invalid") ||
-        errorMessage.includes("password") ||
-        errorMessage.includes("credentials") ||
-        errorMessage.includes("email")
-      ) {
-        return {
-          error: "Invalid email or password",
-          errorKey: "InvalidCredentials",
-        };
-      }
-      return createUnexpectedErrorResult();
+
+    if (isInfrastructureError(errorMessage)) {
+      return {
+        error:
+          "Database connection error. Please check your database configuration.",
+        errorKey: "DatabaseError",
+      };
     }
+
+    if (
+      errorMessage.includes("email verification") ||
+      errorMessage.includes("verify your email") ||
+      errorMessage.includes("email not verified")
+    ) {
+      return {
+        error: "Your email address must be verified.",
+        errorKey: "EmailVerificationRequired",
+      };
+    }
+
+    if (
+      errorMessage.includes("invalid") ||
+      errorMessage.includes("password") ||
+      errorMessage.includes("credentials") ||
+      errorMessage.includes("email")
+    ) {
+      return {
+        error: "Invalid email or password",
+        errorKey: "InvalidCredentials",
+      };
+    }
+
     return createUnexpectedErrorResult();
   }
 }
 
-export async function signUpAction(formData: FormData) {
+export async function signUpAction(formData: FormData, callbackUrl?: string) {
   const validation = signUpFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
@@ -154,11 +188,13 @@ export async function signUpAction(formData: FormData) {
   }
 
   try {
+    const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
     const result = await auth.api.signUpEmail({
       body: {
         email: validation.data.email,
         password: validation.data.password,
         name: validation.data.name,
+        callbackURL: redirectTo,
       },
     });
 
@@ -169,17 +205,38 @@ export async function signUpAction(formData: FormData) {
       };
     }
 
+    console.info("[signUpAction] success", {
+      userId: result.user.id,
+      redirectTo,
+      oidcAuthorizeFlow: redirectTo.startsWith("/api/auth/oauth2/authorize"),
+    });
+
     return {
       success: true,
       resultKey: "SignUpSuccess",
+      redirectTo,
     };
   } catch (error) {
-    console.error("[signUpAction] error:", error);
+    const details = getAuthErrorDetails(error);
+    console.error(
+      "[signUpAction] error",
+      {
+        callbackUrl,
+        redirectTo: sanitizeCallbackUrl(callbackUrl) ?? "/",
+        status: details.status,
+        messages: details.messages,
+        body: details.body,
+      },
+      error,
+    );
     return getSignUpErrorResult(error);
   }
 }
 
-export async function requestMagicLinkSignUpAction(formData: FormData) {
+export async function requestMagicLinkSignUpAction(
+  formData: FormData,
+  callbackUrl?: string,
+) {
   const validation = magicLinkSignUpFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
@@ -192,7 +249,7 @@ export async function requestMagicLinkSignUpAction(formData: FormData) {
   return await requestMagicLinkRegistration({
     email: validation.data.email,
     name: validation.data.name,
-    callbackUrl: "/",
+    callbackUrl: sanitizeCallbackUrl(callbackUrl) ?? "/",
     headers: new Headers(headersList),
   });
 }
