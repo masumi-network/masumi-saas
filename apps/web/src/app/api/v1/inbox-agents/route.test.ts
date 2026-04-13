@@ -155,8 +155,8 @@ describe("/api/v1/inbox-agents", () => {
     });
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
-      sellingWalletVkey: "managed_vkey",
-      recipientWalletAddress: "addr_test1funding",
+      sellingWalletVkey: "funding_vkey",
+      recipientWalletAddress: "addr_test1managed",
       name: "Support inbox",
       description: "Routes support requests",
       agentSlug: "support-inbox",

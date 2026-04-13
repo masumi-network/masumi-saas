@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
 import {
+  getGroupedOidcApiPermissionItems,
   getOidcScopeDisplayItems,
   isOidcApiScope,
   isOidcStandardScope,
@@ -145,8 +147,10 @@ export default async function OidcConsentPage({
     grantedApiScopeSet.has(scope),
   );
   const identityScopeItems = getOidcScopeDisplayItems(requestedIdentityScopes);
-  const newApiScopeItems = getOidcScopeDisplayItems(newlyRequestedApiScopes);
-  const existingApiScopeItems = getOidcScopeDisplayItems(
+  const newApiPermissionGroups = getGroupedOidcApiPermissionItems(
+    newlyRequestedApiScopes,
+  );
+  const existingApiPermissionGroups = getGroupedOidcApiPermissionItems(
     alreadyGrantedApiScopes,
   );
   const switchAccountCallbackUrl =
@@ -209,28 +213,10 @@ export default async function OidcConsentPage({
             <p className="text-sm text-muted-foreground">
               {PAGE_COPY.newPermissionsDescription}
             </p>
-            {newApiScopeItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {PAGE_COPY.noNewPermissions}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {newApiScopeItems.map((scopeItem) => (
-                  <div
-                    key={scopeItem.scope}
-                    className="rounded-md border bg-background px-3 py-3"
-                  >
-                    <div className="text-sm font-medium">{scopeItem.label}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {scopeItem.scope}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {scopeItem.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <OidcPermissionSummary
+              emptyLabel={PAGE_COPY.noNewPermissions}
+              groups={newApiPermissionGroups}
+            />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">
@@ -239,28 +225,11 @@ export default async function OidcConsentPage({
             <p className="text-sm text-muted-foreground">
               {PAGE_COPY.grantedPermissionsDescription}
             </p>
-            {existingApiScopeItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {PAGE_COPY.noGrantedPermissions}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {existingApiScopeItems.map((scopeItem) => (
-                  <div
-                    key={scopeItem.scope}
-                    className="rounded-md border px-3 py-3"
-                  >
-                    <div className="text-sm font-medium">{scopeItem.label}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {scopeItem.scope}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {scopeItem.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <OidcPermissionSummary
+              emptyLabel={PAGE_COPY.noGrantedPermissions}
+              groups={existingApiPermissionGroups}
+              surfaceClassName="rounded-md border px-3 py-3"
+            />
           </div>
           {!emailVerified ? (
             <EmailVerificationPanel

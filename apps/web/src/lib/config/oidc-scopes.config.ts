@@ -194,9 +194,33 @@ export const OIDC_API_SCOPES = OIDC_API_SCOPE_GROUPS.flatMap((group) =>
 ) as string[];
 
 export type OidcApiScope = (typeof OIDC_API_SCOPES)[number];
+export type OidcPermissionNetworkKey = "preprod" | "mainnet";
+export type OidcGroupedApiPermissionNetwork = {
+  key: OidcPermissionNetworkKey;
+  label: "Preprod" | "Mainnet";
+  scope: string;
+  description: string;
+};
+export type OidcGroupedApiPermission = {
+  key: string;
+  label: string;
+  networks: OidcGroupedApiPermissionNetwork[];
+};
+export type OidcGroupedApiPermissionCatalogGroup = {
+  key: string;
+  label: string;
+  permissions: OidcGroupedApiPermission[];
+};
 
 const OIDC_STANDARD_SCOPE_SET = new Set<string>(OIDC_STANDARD_SCOPES);
 const OIDC_API_SCOPE_SET = new Set<string>(OIDC_API_SCOPES);
+const OIDC_NETWORK_LABELS: Record<
+  OidcPermissionNetworkKey,
+  "Preprod" | "Mainnet"
+> = {
+  preprod: "Preprod",
+  mainnet: "Mainnet",
+};
 
 export const OIDC_CLIENT_ALLOWED_API_SCOPES: Record<OidcClientKey, string[]> = {
   web: [...OIDC_API_SCOPES],
@@ -290,6 +314,88 @@ export function getOidcApiScopeCatalog() {
     label: group.label,
     scopes: group.scopes.map((scope) => ({ ...scope })),
   }));
+}
+
+function parseGroupedApiScopeDescriptor(scope: string) {
+  const [resource, action, network] = scope.split(":");
+  if (
+    !resource ||
+    (action !== "read" && action !== "write") ||
+    (network !== "preprod" && network !== "mainnet")
+  ) {
+    return null;
+  }
+
+  return {
+    resource,
+    action,
+    network,
+  } as const;
+}
+
+function stripNetworkSuffix(label: string): string {
+  return label.replace(/\s+\((Preprod|Mainnet)\)$/, "");
+}
+
+export function getGroupedOidcApiScopeCatalog(): OidcGroupedApiPermissionCatalogGroup[] {
+  return OIDC_API_SCOPE_GROUPS.map((group) => {
+    const permissions = new Map<string, OidcGroupedApiPermission>();
+
+    for (const scopeDescriptor of group.scopes) {
+      const parsed = parseGroupedApiScopeDescriptor(scopeDescriptor.scope);
+      if (!parsed) {
+        continue;
+      }
+
+      const key = `${parsed.resource}:${parsed.action}`;
+      const existingPermission = permissions.get(key);
+      const networkItem: OidcGroupedApiPermissionNetwork = {
+        key: parsed.network,
+        label: OIDC_NETWORK_LABELS[parsed.network],
+        scope: scopeDescriptor.scope,
+        description: scopeDescriptor.description,
+      };
+
+      if (existingPermission) {
+        existingPermission.networks.push(networkItem);
+        continue;
+      }
+
+      permissions.set(key, {
+        key,
+        label: stripNetworkSuffix(scopeDescriptor.label),
+        networks: [networkItem],
+      });
+    }
+
+    return {
+      key: group.key,
+      label: group.label,
+      permissions: Array.from(permissions.values()),
+    };
+  });
+}
+
+export function getGroupedOidcApiPermissionItems(
+  scopes: Iterable<string> | string,
+): OidcGroupedApiPermissionCatalogGroup[] {
+  const selectedScopeSet = new Set(
+    normalizeScopeList(scopes).filter((scope) => isOidcApiScope(scope)),
+  );
+
+  return getGroupedOidcApiScopeCatalog()
+    .map((group) => ({
+      ...group,
+      permissions: group.permissions
+        .map((permission) => ({
+          ...permission,
+          networks: permission.networks.filter((network) =>
+            selectedScopeSet.has(network.scope),
+          ),
+        }))
+        .filter((permission) => permission.networks.length > 0),
+    }))
+    .filter((group) => group.permissions.length > 0);
 }
 
 export function getOidcScopeDisplayItems(scopes: Iterable<string> | string) {

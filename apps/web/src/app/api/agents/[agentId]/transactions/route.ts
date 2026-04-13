@@ -1,6 +1,6 @@
-import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
@@ -45,9 +45,9 @@ export async function GET(
     });
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: authContext.user.id },
-      select: { agentIdentifier: true, networkIdentifier: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {

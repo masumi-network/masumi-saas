@@ -691,11 +691,12 @@ describe("SMOKE — OIDC API scopes", () => {
     });
 
     expect(consentFlow.consentHtml).toContain("New API permissions requested");
-    expect(consentFlow.consentHtml).toContain("Manage inbox agents (Preprod)");
+    expect(consentFlow.consentHtml).toContain("Manage inbox agents");
+    expect(consentFlow.consentHtml).toContain("Preprod");
     expect(consentFlow.consentHtml).toContain(
       "Already granted API permissions",
     );
-    expect(consentFlow.consentHtml).toContain("Read agents (Preprod)");
+    expect(consentFlow.consentHtml).toContain("Read agents");
 
     const result = await submitInteractiveWebConsent({
       jar,
@@ -908,9 +909,8 @@ describe("SMOKE — OIDC device flow", () => {
     expect(String(approvalPageRes.body)).toContain(
       "New API permissions requested",
     );
-    expect(String(approvalPageRes.body)).toContain(
-      "Manage inbox agents (Preprod)",
-    );
+    expect(String(approvalPageRes.body)).toContain("Manage inbox agents");
+    expect(String(approvalPageRes.body)).toContain("Preprod");
 
     const approveRes = await request("/api/auth/device/approve", {
       method: "POST",

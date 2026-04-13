@@ -94,7 +94,7 @@ const verifyAgentOpenApiBodySchema = verifyAgentBodySchema.openapi({
 const registerInboxAgentOpenApiBodySchema =
   registerInboxAgentBodySchema.openapi({
     description:
-      "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the required registration and funding wallets are selected automatically before forwarding to the payment service.",
+      "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the server automatically overrides wallet selection so a configured funding wallet pays while the newly created managed inbox wallet receives the registration asset.",
     example: {
       name: "Support inbox",
       description: "Routes support requests into the Masumi inbox registry",
@@ -1309,7 +1309,7 @@ registry.registerPath({
   tags: ["Inbox agents"],
   summary: "Register inbox agent",
   description:
-    "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug and automatically provisions the managed registration and funding wallets before forwarding.",
+    "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
   security,
   request: {
     body: {

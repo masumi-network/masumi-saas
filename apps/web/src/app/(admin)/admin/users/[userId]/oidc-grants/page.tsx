@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { OidcPermissionCheckboxGroups } from "@/components/oidc/oidc-permission-checkbox-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import { getAdminAuthContext } from "@/lib/auth/utils";
 import { oidcEnvConfig } from "@/lib/config/oidc.config";
 import {
   getAllowedApiScopesForClient,
-  getOidcApiScopeCatalog,
+  getGroupedOidcApiScopeCatalog,
   type OidcClientKey,
 } from "@/lib/config/oidc-scopes.config";
 
@@ -90,7 +91,7 @@ export default async function AdminOidcGrantsPage({
   }
 
   const t = await getTranslations("Admin.OidcGrants");
-  const catalog = getOidcApiScopeCatalog();
+  const catalog = getGroupedOidcApiScopeCatalog();
   const grantMap = await getUserOidcGrantMap(user.id);
   const resolvedSearchParams = await searchParams;
 
@@ -254,40 +255,10 @@ export default async function AdminOidcGrantsPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {catalog.map((group) => (
-                    <div key={group.key} className="space-y-3">
-                      <div>
-                        <h2 className="text-sm font-medium">{group.label}</h2>
-                      </div>
-                      <div className="space-y-3">
-                        {group.scopes.map((scope) => (
-                          <label
-                            key={scope.scope}
-                            className="flex items-start gap-3 rounded-lg border p-3"
-                          >
-                            <input
-                              type="checkbox"
-                              name="scopes"
-                              value={scope.scope}
-                              defaultChecked={selectedScopes.has(scope.scope)}
-                              className="mt-1 h-4 w-4 accent-primary"
-                            />
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium">
-                                {scope.label}
-                              </div>
-                              <div className="font-mono text-xs text-muted-foreground">
-                                {scope.scope}
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {scope.description}
-                              </p>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                  <OidcPermissionCheckboxGroups
+                    groups={catalog}
+                    selectedScopes={Array.from(selectedScopes)}
+                  />
                 </CardContent>
                 <CardFooter className="justify-end">
                   <Button type="submit">{t("saveButton")}</Button>

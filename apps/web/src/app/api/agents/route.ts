@@ -6,6 +6,7 @@ import {
   type RegisterAgentParams,
   startAgentRegistration,
 } from "@/lib/agent-registration";
+import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
@@ -18,6 +19,66 @@ import {
   agentsListQuerySchema,
   registerAgentBodySchema,
 } from "@/lib/schemas/agent";
+
+function matchesAgentSearch(
+  agent: {
+    name: string;
+    description: string | null;
+    extendedDescription: string | null;
+    apiUrl: string;
+    tags: string[];
+  },
+  search?: string,
+): boolean {
+  const query = search?.trim().toLowerCase();
+  if (!query) return true;
+
+  return (
+    agent.name.toLowerCase().includes(query) ||
+    agent.description?.toLowerCase().includes(query) === true ||
+    agent.extendedDescription?.toLowerCase().includes(query) === true ||
+    agent.apiUrl.toLowerCase().includes(query) ||
+    agent.tags.some((tag) => tag.toLowerCase().includes(query))
+  );
+}
+
+function matchesVerificationFilter(
+  agent: { verificationStatus: string | null },
+  options: {
+    verificationStatus?: string | null;
+    unverified?: boolean;
+  },
+): boolean {
+  if (options.unverified) {
+    return agent.verificationStatus !== "VERIFIED";
+  }
+  if (options.verificationStatus) {
+    return agent.verificationStatus === options.verificationStatus;
+  }
+  return true;
+}
+
+function matchesRegistrationFilter(
+  agent: { registrationState: string },
+  options: {
+    registrationState?: string;
+    registrationStateIn?: string | null;
+  },
+): boolean {
+  if (options.registrationStateIn) {
+    const states = options.registrationStateIn
+      .split(",")
+      .map((state) => state.trim())
+      .filter(Boolean);
+    if (states.length > 0) {
+      return states.includes(agent.registrationState);
+    }
+  }
+  if (options.registrationState) {
+    return agent.registrationState === options.registrationState;
+  }
+  return true;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,88 +117,49 @@ export async function GET(request: NextRequest) {
       network,
     });
 
-    const searchTrimmed = search?.trim();
-
-    const verificationFilter = unverified
-      ? { verificationStatus: { not: "VERIFIED" as const } }
-      : verificationStatus
-        ? { verificationStatus }
-        : {};
-
-    const validStates = Object.values(RegistrationState) as string[];
-    const registrationFilter = (() => {
-      if (registrationStateIn) {
-        const states = registrationStateIn
+    const validStates = new Set(Object.values(RegistrationState) as string[]);
+    const normalizedRegistrationStateIn = registrationStateIn
+      ? registrationStateIn
           .split(",")
-          .map((s) => s.trim())
-          .filter((s) => validStates.includes(s)) as RegistrationState[];
-        if (states.length > 0) return { registrationState: { in: states } };
-      }
-      if (registrationState && validStates.includes(registrationState)) {
-        return { registrationState: registrationState as RegistrationState };
-      }
-      return {};
-    })();
-
-    const searchFilter =
-      searchTrimmed && searchTrimmed.length > 0
-        ? {
-            OR: [
-              {
-                name: { contains: searchTrimmed, mode: "insensitive" as const },
-              },
-              {
-                description: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                extendedDescription: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                apiUrl: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              { tags: { hasSome: [searchTrimmed] } },
-            ],
-          }
+          .map((state) => state.trim())
+          .filter((state) => validStates.has(state))
+          .join(",")
+      : null;
+    const normalizedRegistrationState =
+      registrationState && validStates.has(registrationState)
+        ? registrationState
         : undefined;
 
-    const baseWhere = {
+    const walletOwnedAgents = await listWalletOwnedAgentsForUser({
       userId: authContext.user.id,
-      ...verificationFilter,
-      ...registrationFilter,
-      networkIdentifier: network,
-    };
-
-    const finalWhere =
-      searchFilter !== undefined
-        ? { AND: [baseWhere, searchFilter] }
-        : baseWhere;
-
-    const agents = await prisma.agent.findMany({
-      where: finalWhere,
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: take + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      network,
     });
 
-    const hasMore = agents.length > take;
-    const page = hasMore ? agents.slice(0, take) : agents;
+    const filteredAgents = walletOwnedAgents.filter(
+      (agent) =>
+        matchesVerificationFilter(agent, {
+          verificationStatus,
+          unverified,
+        }) &&
+        matchesRegistrationFilter(agent, {
+          registrationState: normalizedRegistrationState,
+          registrationStateIn: normalizedRegistrationStateIn,
+        }) &&
+        matchesAgentSearch(agent, search),
+    );
+
+    const startIndex = cursor
+      ? filteredAgents.findIndex((agent) => agent.id === cursor) + 1
+      : 0;
+    const safeStartIndex = startIndex > 0 ? startIndex : 0;
+    const page = filteredAgents.slice(safeStartIndex, safeStartIndex + take);
+    const hasMore = safeStartIndex + take < filteredAgents.length;
     const nextCursor =
-      hasMore && page.length > 0 ? page[page.length - 1]!.id : null;
+      hasMore && page.length > 0 ? (page[page.length - 1]?.id ?? null) : null;
 
     return NextResponse.json({
       success: true,
-      data: page,
+      data: page.map(({ agentReference: _agentReference, ...agent }) => agent),
       nextCursor,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
-import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { agentCountsQuerySchema } from "@/lib/schemas";
@@ -30,49 +30,31 @@ export async function GET(request: NextRequest) {
       network,
     });
 
-    const baseWhere = {
+    const agents = await listWalletOwnedAgentsForUser({
       userId: authContext.user.id,
-      networkIdentifier: network,
-    };
+      network,
+    });
 
-    const [all, registered, deregistered, pending, failed, verified] =
-      await Promise.all([
-        prisma.agent.count({ where: baseWhere }),
-        prisma.agent.count({
-          where: {
-            ...baseWhere,
-            registrationState: "RegistrationConfirmed",
-          },
-        }),
-        prisma.agent.count({
-          where: {
-            ...baseWhere,
-            registrationState: "DeregistrationConfirmed",
-          },
-        }),
-        prisma.agent.count({
-          where: {
-            ...baseWhere,
-            registrationState: {
-              in: ["RegistrationRequested", "DeregistrationRequested"],
-            },
-          },
-        }),
-        prisma.agent.count({
-          where: {
-            ...baseWhere,
-            registrationState: {
-              in: ["RegistrationFailed", "DeregistrationFailed"],
-            },
-          },
-        }),
-        prisma.agent.count({
-          where: {
-            ...baseWhere,
-            verificationStatus: "VERIFIED",
-          },
-        }),
-      ]);
+    const all = agents.length;
+    const registered = agents.filter(
+      (agent) => agent.registrationState === "RegistrationConfirmed",
+    ).length;
+    const deregistered = agents.filter(
+      (agent) => agent.registrationState === "DeregistrationConfirmed",
+    ).length;
+    const pending = agents.filter((agent) =>
+      ["RegistrationRequested", "DeregistrationRequested"].includes(
+        agent.registrationState,
+      ),
+    ).length;
+    const failed = agents.filter((agent) =>
+      ["RegistrationFailed", "DeregistrationFailed"].includes(
+        agent.registrationState,
+      ),
+    ).length;
+    const verified = agents.filter(
+      (agent) => agent.verificationStatus === "VERIFIED",
+    ).length;
 
     return NextResponse.json({
       success: true,

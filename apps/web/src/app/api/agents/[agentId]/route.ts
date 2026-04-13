@@ -1,6 +1,6 @@
-import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { deleteAgentAction } from "@/lib/actions/agent.action";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -16,12 +16,9 @@ export async function GET(
     });
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: authContext.user.id,
-      },
-      include: { agentReference: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
@@ -63,15 +60,9 @@ export async function DELETE(
   try {
     const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: authContext.user.id,
-      },
-      select: {
-        id: true,
-        networkIdentifier: true,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
     if (!agent) {
       return NextResponse.json(

@@ -10,6 +10,7 @@ const startAgentRegistrationMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const shapeAgentWithMergedMetadataMock = vi.fn();
 const agentFindFirstMock = vi.fn();
+const listWalletOwnedAgentsForUserMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
   default: {
@@ -37,6 +38,10 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 vi.mock("@/lib/agent-registration", () => ({
   buildAgentPricing: buildAgentPricingMock,
   startAgentRegistration: startAgentRegistrationMock,
+}));
+
+vi.mock("@/lib/agents/wallet-ownership", () => ({
+  listWalletOwnedAgentsForUser: listWalletOwnedAgentsForUserMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -72,7 +77,18 @@ vi.mock("@/lib/schemas/agent", () => {
     .strict();
 
   return {
-    agentsListQuerySchema: z.object({}).passthrough(),
+    agentsListQuerySchema: z.object({
+      verificationStatus: z.string().optional(),
+      unverified: z
+        .union([z.boolean(), z.string()])
+        .optional()
+        .transform((value) => value === true || value === "true"),
+      cursor: z.string().optional(),
+      take: z.coerce.number().optional().default(20),
+      registrationState: z.string().optional(),
+      registrationStateIn: z.string().optional(),
+      search: z.string().optional(),
+    }),
     registerAgentBodySchema,
   };
 });
@@ -105,6 +121,7 @@ describe("/api/agents POST", () => {
       success: true,
       agentId: "agent-1",
     });
+    listWalletOwnedAgentsForUserMock.mockResolvedValue([]);
     agentFindFirstMock.mockResolvedValue({
       id: "agent-1",
       name: "Research assistant",
@@ -147,6 +164,61 @@ describe("/api/agents POST", () => {
       },
     });
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists only wallet-owned agents for the selected network", async () => {
+    const GET = (await import("./route")).GET;
+    listWalletOwnedAgentsForUserMock.mockResolvedValue([
+      {
+        id: "agent-1",
+        name: "Visible confirmed agent",
+        description: "shown",
+        extendedDescription: null,
+        apiUrl: "https://visible.example.com",
+        tags: ["wallet"],
+        verificationStatus: "VERIFIED",
+        registrationState: "RegistrationConfirmed",
+        networkIdentifier: "Preprod",
+        agentReference: { externalId: "ext-1" },
+      },
+      {
+        id: "agent-2",
+        name: "Hidden pending agent",
+        description: "shown if search matches",
+        extendedDescription: null,
+        apiUrl: "https://hidden.example.com",
+        tags: ["other"],
+        verificationStatus: "PENDING",
+        registrationState: "RegistrationFailed",
+        networkIdentifier: "Preprod",
+        agentReference: { externalId: "ext-2" },
+      },
+    ]);
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod&registrationState=RegistrationConfirmed&search=visible",
+      {
+        method: "GET",
+      },
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(listWalletOwnedAgentsForUserMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      network: "Preprod",
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      data: [
+        expect.objectContaining({
+          id: "agent-1",
+          name: "Visible confirmed agent",
+        }),
+      ],
+      nextCursor: null,
+    });
   });
 
   it("returns 402 and does not start registration when credits are insufficient", async () => {

@@ -6,6 +6,7 @@ import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
 import {
+  getGroupedOidcApiPermissionItems,
   getOidcScopeDisplayItems,
   isOidcApiScope,
   isOidcStandardScope,
@@ -72,12 +73,12 @@ export default async function DeviceApprovalPage({
   const identityScopeItems = getOidcScopeDisplayItems(
     scopes.filter((scope) => isOidcStandardScope(scope)),
   );
-  const newApiScopeItems = getOidcScopeDisplayItems(
+  const newApiPermissionGroups = getGroupedOidcApiPermissionItems(
     scopes.filter(
       (scope) => isOidcApiScope(scope) && !grantedApiScopeSet.has(scope),
     ),
   );
-  const existingApiScopeItems = getOidcScopeDisplayItems(
+  const existingApiPermissionGroups = getGroupedOidcApiPermissionItems(
     scopes.filter(
       (scope) => isOidcApiScope(scope) && grantedApiScopeSet.has(scope),
     ),
@@ -91,8 +92,8 @@ export default async function DeviceApprovalPage({
       switchAccountCallbackUrl={`/device/approve?user_code=${normalizedUserCode}`}
       clientLabel={clientLabel}
       identityScopeItems={identityScopeItems}
-      newApiScopeItems={newApiScopeItems}
-      existingApiScopeItems={existingApiScopeItems}
+      newApiPermissionGroups={newApiPermissionGroups}
+      existingApiPermissionGroups={existingApiPermissionGroups}
     />
   );
 }

@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
 
     const created = await client.registerInboxAgent({
       network,
-      sellingWalletVkey: managedRegistration.sellingWallet.walletVkey,
-      recipientWalletAddress: managedRegistration.fundingWallet.walletAddress,
+      sellingWalletVkey: managedRegistration.fundingWallet.walletVkey,
+      recipientWalletAddress: managedRegistration.sellingWallet.walletAddress,
       name: validation.data.name.trim(),
       description: validation.data.description?.trim() || undefined,
       agentSlug: canonicalSlug,

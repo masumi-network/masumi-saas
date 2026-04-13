@@ -1,7 +1,7 @@
-import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
@@ -12,15 +12,9 @@ export async function POST(
   try {
     const authContext = await getAuthenticatedOrThrow(_request);
     const { agentId } = await params;
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: authContext.user.id,
-      },
-      select: {
-        id: true,
-        networkIdentifier: true,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
     if (!agent) {
       return NextResponse.json(

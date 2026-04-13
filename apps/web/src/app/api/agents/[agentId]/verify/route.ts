@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { verifyAgentBodySchema } from "@/lib/schemas/agent";
@@ -37,14 +38,9 @@ export async function POST(
 
     const { aid, schemaSaid } = validation.data;
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: authContext.user.id,
-      },
-      include: {
-        veridianCredentials: true,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {

@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { OidcGroupedApiPermissionCatalogGroup } from "@/lib/config/oidc-scopes.config";
 
 type DeviceApprovalCardProps = {
   userCode: string;
@@ -19,18 +21,8 @@ type DeviceApprovalCardProps = {
     description: string;
     type: "standard" | "api" | "unknown";
   }>;
-  newApiScopeItems: Array<{
-    scope: string;
-    label: string;
-    description: string;
-    type: "standard" | "api" | "unknown";
-  }>;
-  existingApiScopeItems: Array<{
-    scope: string;
-    label: string;
-    description: string;
-    type: "standard" | "api" | "unknown";
-  }>;
+  newApiPermissionGroups: OidcGroupedApiPermissionCatalogGroup[];
+  existingApiPermissionGroups: OidcGroupedApiPermissionCatalogGroup[];
 };
 
 type ApprovalState = "idle" | "approved" | "denied";
@@ -71,8 +63,8 @@ export function DeviceApprovalCard({
   switchAccountCallbackUrl,
   clientLabel,
   identityScopeItems,
-  newApiScopeItems,
-  existingApiScopeItems,
+  newApiPermissionGroups,
+  existingApiPermissionGroups,
 }: DeviceApprovalCardProps) {
   const [status, setStatus] = useState<ApprovalState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -187,30 +179,10 @@ export function DeviceApprovalCard({
             <p className="text-sm text-muted-foreground">
               {copy.newPermissionsDescription}
             </p>
-            {newApiScopeItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {copy.noNewPermissions}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {newApiScopeItems.map((scopeItem) => (
-                  <div
-                    key={scopeItem.scope}
-                    className="rounded-lg border bg-background p-3"
-                  >
-                    <div className="text-sm font-medium">{scopeItem.label}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {scopeItem.scope}
-                    </div>
-                    {scopeItem.description ? (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {scopeItem.description}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
+            <OidcPermissionSummary
+              emptyLabel={copy.noNewPermissions}
+              groups={newApiPermissionGroups}
+            />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">
@@ -219,27 +191,11 @@ export function DeviceApprovalCard({
             <p className="text-sm text-muted-foreground">
               {copy.existingPermissionsDescription}
             </p>
-            {existingApiScopeItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {copy.noExistingPermissions}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {existingApiScopeItems.map((scopeItem) => (
-                  <div key={scopeItem.scope} className="rounded-lg border p-3">
-                    <div className="text-sm font-medium">{scopeItem.label}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {scopeItem.scope}
-                    </div>
-                    {scopeItem.description ? (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {scopeItem.description}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
+            <OidcPermissionSummary
+              emptyLabel={copy.noExistingPermissions}
+              groups={existingApiPermissionGroups}
+              surfaceClassName="rounded-lg border p-3"
+            />
           </div>
           {status === "approved" ? (
             <>
