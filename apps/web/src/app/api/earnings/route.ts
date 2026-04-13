@@ -82,8 +82,9 @@ export type EarningsApiResponse =
         /** Previous period total in the same `amountUnit` (omitted when `period=all`). */
         previousTotal?: number;
         /**
-         * True when a previous window exists and we had agents to query, but every
-         * previous-period `getPaymentIncome` call failed — do not treat missing `previousTotal` as “no prior income”.
+         * True when a previous window exists and we had agents to query, but we could not
+         * load income for **every** agent in that window (all calls failed, or some failed).
+         * Omit `previousTotal` in this case — a partial sum would mislead “vs previous” %.
          */
         previousComparisonUnavailable?: boolean;
       };
@@ -289,21 +290,10 @@ export async function GET(request: Request) {
     let previousComparisonUnavailable = false;
 
     if (previous && eligibleAgents.length > 0) {
-      if (
-        previousIncomes.length > 0 &&
-        previousIncomes.length < eligibleAgents.length
-      ) {
-        console.warn(
-          "[api/earnings] previous period income: partial agent fetch failures",
-          {
-            userId: user.id,
-            ok: previousIncomes.length,
-            expected: eligibleAgents.length,
-          },
-        );
-      }
+      const expectedPrevious = eligibleAgents.length;
+      const gotPrevious = previousIncomes.length;
 
-      if (previousIncomes.length > 0) {
+      if (gotPrevious === expectedPrevious && gotPrevious > 0) {
         const mergedPreviousUnits = mergeIncomeUnitRows(
           previousIncomes.map((i) => i.TotalIncome.Units),
         );
@@ -312,12 +302,23 @@ export async function GET(request: Request) {
           network,
           amountUnit,
         );
-      } else {
+      } else if (gotPrevious === 0) {
         console.warn(
           "[api/earnings] previous period income: all agent fetch failures",
           {
             userId: user.id,
             agentCount: eligibleAgents.length,
+          },
+        );
+        previousComparisonUnavailable = true;
+      } else {
+        // Some agents failed: a partial sum would inflate/deflate "vs previous" %.
+        console.warn(
+          "[api/earnings] previous period income: partial agent fetch failures",
+          {
+            userId: user.id,
+            ok: gotPrevious,
+            expected: expectedPrevious,
           },
         );
         previousComparisonUnavailable = true;

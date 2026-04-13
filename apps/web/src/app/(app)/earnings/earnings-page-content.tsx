@@ -143,19 +143,16 @@ export function EarningsPageContent() {
   }, [searchParams]);
 
   /**
-   * If the URL omits `period`, restore once from localStorage and mirror into the URL.
-   * Split from the effect above so we do not depend on `searchParams` while also calling
-   * `router.replace` (which updates `searchParams` and would otherwise retrigger the same effect).
+   * If the URL omits a valid `period`, restore from localStorage and mirror into the URL.
+   *
+   * Split from the effect above so URL→state runs on every `searchParams` change, while this
+   * block only calls `router.replace` when there is no valid period. After replace, the URL
+   * contains `period` and the early return prevents a loop — no one-shot ref needed (those refs
+   * could skip re-mirroring if `?period` is removed later).
    */
-  const mirroredStorageToUrlRef = useRef(false);
   useLayoutEffect(() => {
-    if (mirroredStorageToUrlRef.current) return;
-
     const urlPeriod = getValidPeriod(searchParams.get("period"));
-    if (urlPeriod) {
-      mirroredStorageToUrlRef.current = true;
-      return;
-    }
+    if (urlPeriod) return;
 
     let stored: TimePeriod | null = null;
     try {
@@ -165,18 +162,20 @@ export function EarningsPageContent() {
     } catch {
       /* ignore */
     }
-
-    mirroredStorageToUrlRef.current = true;
-
     if (!stored) return;
 
-    setPeriod((prev) => (prev === stored ? prev : stored));
     const next = new URLSearchParams(searchParams.toString());
     next.set("period", stored);
-    router.replace(
-      next.toString() ? `${pathname}?${next.toString()}` : pathname,
-      { scroll: false },
-    );
+    const href =
+      next.toString() === "" ? pathname : `${pathname}?${next.toString()}`;
+    const current =
+      searchParams.toString() === ""
+        ? pathname
+        : `${pathname}?${searchParams.toString()}`;
+    if (href === current) return;
+
+    setPeriod((prev) => (prev === stored ? prev : stored));
+    router.replace(href, { scroll: false });
   }, [pathname, router, searchParams]);
 
   const onPeriodChange = useCallback(

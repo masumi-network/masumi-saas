@@ -30,10 +30,15 @@ export function validateCardanoAddress(
     return { isValid: false };
   }
 
+  // Try trimmed input before forcing lowercase — some stacks accept only one casing path.
   try {
-    deserializeAddress(normalized);
-    return { isValid: true, normalizedAddress: normalized };
+    deserializeAddress(trimmed);
   } catch {
-    return { isValid: false };
+    try {
+      deserializeAddress(normalized);
+    } catch {
+      return { isValid: false };
+    }
   }
+  return { isValid: true, normalizedAddress: normalized };
 }
