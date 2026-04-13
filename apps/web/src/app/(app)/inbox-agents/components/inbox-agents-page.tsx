@@ -3,7 +3,7 @@
 import { ExternalLink, Search, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -111,6 +111,7 @@ const INBOX_PAGE_TEXT = {
   metadataVersionPrefix: "v",
   middleDot: "\u00b7",
   loadingPage: "Loading page...",
+  searchShortcut: "F",
   detail: {
     inboxSlug: "Inbox slug:",
     description: "Description",
@@ -657,6 +658,8 @@ export function InboxAgentsPage() {
   const [activeTab, setActiveTab] = useState<InboxTabKey>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<InboxAgent | null>(null);
   const [state, setState] = useState<CursorPageState<InboxAgent>>(
     createCursorPageState(),
@@ -705,6 +708,27 @@ export function InboxAgentsPage() {
       error: null,
     });
   }, [fetchPage]);
+
+  useEffect(() => {
+    if (activeSection !== "manage") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key?.toLowerCase() !== "f") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeSection]);
 
   useEffect(() => {
     if (activeSection !== "manage") return;
@@ -782,23 +806,15 @@ export function InboxAgentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {INBOX_PAGE_TEXT.title}
-          </h1>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {activeSection === "manage"
-              ? INBOX_PAGE_TEXT.manageDescription(network)
-              : INBOX_PAGE_TEXT.discoveryDescription(network)}
-          </p>
-        </div>
-        {activeSection === "manage" && (
-          <RefreshButton
-            onRefresh={() => void loadFirstPage()}
-            isRefreshing={state.isLoading || state.isPageLoading}
-          />
-        )}
+      <div className="space-y-2">
+        <h1 className="text-2xl font-light tracking-tight">
+          {INBOX_PAGE_TEXT.title}
+        </h1>
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          {activeSection === "manage"
+            ? INBOX_PAGE_TEXT.manageDescription(network)
+            : INBOX_PAGE_TEXT.discoveryDescription(network)}
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -818,20 +834,39 @@ export function InboxAgentsPage() {
               onTabChange={(tab) => setActiveTab(tab as InboxTabKey)}
             />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative w-full max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="flex min-w-0 items-center justify-between gap-4">
+              <div
+                onClick={() => searchInputRef.current?.focus()}
+                className="relative flex min-w-0 flex-1 max-w-md cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+              >
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <Input
+                  ref={searchInputRef}
+                  type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
                   placeholder="Search by name, slug, identifier, wallet, or state..."
-                  className="pl-10"
+                  className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
                 />
+                {!isSearchFocused && (
+                  <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
+                    {INBOX_PAGE_TEXT.searchShortcut}
+                  </kbd>
+                )}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {state.isPageLoading
-                  ? INBOX_PAGE_TEXT.loadingPage
-                  : `Page ${state.currentPage}`}
+              <div className="flex shrink-0 items-center gap-3">
+                <RefreshButton
+                  onRefresh={() => void loadFirstPage()}
+                  isRefreshing={state.isLoading || state.isPageLoading}
+                  size="md"
+                />
+                <div className="whitespace-nowrap text-sm text-muted-foreground">
+                  {state.isPageLoading
+                    ? INBOX_PAGE_TEXT.loadingPage
+                    : `Page ${state.currentPage}`}
+                </div>
               </div>
             </div>
 

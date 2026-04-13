@@ -320,7 +320,7 @@ export function AgentsContent() {
         />
 
         {activeSection === "manage" ? (
-          <>
+          <div className="space-y-4 rounded-2xl border border-border/80 bg-background/95 p-4 sm:p-6">
             <Tabs
               tabs={tabs}
               activeTab={activeTab}
@@ -425,7 +425,7 @@ export function AgentsContent() {
                 )}
               </>
             )}
-          </>
+          </div>
         ) : (
           <AgentsDiscovery />
         )}
