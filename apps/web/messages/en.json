@@ -485,7 +485,9 @@
       "noData": "No earnings data for this period.",
       "loadError": "Failed to load earnings. Please try again.",
       "periodLabel": "Earnings period",
-      "periodPrefix": "Period:"
+      "periodPrefix": "Period:",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…"
     },
     "Analytics": {
       "title": "Analytics",

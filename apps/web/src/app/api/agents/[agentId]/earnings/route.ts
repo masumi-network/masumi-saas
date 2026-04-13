@@ -25,7 +25,7 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
       start.setDate(start.getDate() - 30);
       break;
     case "all":
-      start.setFullYear(2020, 0, 1);
+      start.setFullYear(2024, 11, 1);
       break;
     default:
       start.setDate(start.getDate() - 7);

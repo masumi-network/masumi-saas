@@ -1,11 +1,24 @@
 "use client";
 
-import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Coins,
+  DollarSign,
+  RefreshCw,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -24,6 +37,7 @@ import {
   earningsPercentChangeMagnitude,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
+import { cn } from "@/lib/utils";
 
 import { EarningsChart } from "./earnings-chart";
 
@@ -85,6 +99,13 @@ export function EarningsPageContent() {
       setTotal(result.total);
       setAmountUnit(result.amountUnit);
       setPreviousTotal(result.previousTotal);
+    } catch (err) {
+      console.error("[EarningsPageContent] fetchEarnings:", err);
+      setError(t("loadError"));
+      setEarnings([]);
+      setTotal(0);
+      setAmountUnit("USD");
+      setPreviousTotal(undefined);
     } finally {
       setIsLoading(false);
     }
@@ -208,6 +229,24 @@ export function EarningsPageContent() {
                 <CardTitle className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
                   {t("totalLabel")}
                 </CardTitle>
+                <CardAction>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={t("refresh")}
+                    title={isLoading ? t("refreshing") : t("refresh")}
+                    disabled={isLoading}
+                    onClick={() => void fetchEarnings()}
+                  >
+                    <RefreshCw
+                      className={cn("h-4 w-4", isLoading && "animate-spin")}
+                      style={
+                        isLoading ? { animationDuration: "1s" } : undefined
+                      }
+                    />
+                  </Button>
+                </CardAction>
               </CardHeader>
               <CardContent>
                 {isLoading ? (

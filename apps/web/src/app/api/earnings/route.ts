@@ -27,6 +27,9 @@ import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
  */
 const EARNINGS_PAYMENT_INCOME_TIMEZONE = "Etc/UTC";
 
+/** Inclusive start date (UTC calendar day) for `period=all` chart and totals. */
+const EARNINGS_ALL_TIME_START_YMD = "2024-12-01";
+
 /**
  * Caps concurrent payment-node `getPaymentIncome` calls so large agent lists do not
  * fan out into 2×n parallel requests (current + previous windows) or hit upstream limits.
@@ -119,7 +122,7 @@ function getDashboardPeriodWindows(period: EarningsPeriod): {
 
   if (period === "all") {
     return {
-      current: { startDate: "2020-01-01", endDate: endStr },
+      current: { startDate: EARNINGS_ALL_TIME_START_YMD, endDate: endStr },
       previous: null,
     };
   }
