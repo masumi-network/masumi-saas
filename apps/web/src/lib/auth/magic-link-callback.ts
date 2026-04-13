@@ -1,4 +1,4 @@
-import { sanitizeCallbackUrl } from "./callback-url";
+import { buildAbsoluteCallbackUrl, sanitizeCallbackUrl } from "./callback-url";
 
 const MAGIC_LINK_CONTINUE_PATH = "/magic-link/continue";
 const OIDC_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
@@ -30,12 +30,16 @@ export function buildMagicLinkCallbackUrl(
   const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl) ?? "/";
 
   if (!safeCallbackUrl.startsWith(OIDC_AUTHORIZE_PATH)) {
-    return safeCallbackUrl;
+    return buildAbsoluteCallbackUrl(safeCallbackUrl) ?? safeCallbackUrl;
   }
 
   const params = new URLSearchParams({
     flow: encodeMagicLinkContinuation(safeCallbackUrl),
   });
 
-  return `${MAGIC_LINK_CONTINUE_PATH}?${params.toString()}`;
+  return (
+    buildAbsoluteCallbackUrl(
+      `${MAGIC_LINK_CONTINUE_PATH}?${params.toString()}`,
+    ) ?? `${MAGIC_LINK_CONTINUE_PATH}?${params.toString()}`
+  );
 }
