@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { apiError } from "@/lib/api/error";
+import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { checkContactExists } from "@/lib/veridian";
 
@@ -11,7 +12,11 @@ const checkConnectionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "read",
+    });
 
     const body = await request.json().catch(() => ({}));
     const validation = checkConnectionSchema.safeParse(body);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
@@ -12,7 +13,7 @@ import { activityTransactionQuerySchema } from "@/lib/schemas/api-query";
  */
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const query = Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -24,8 +25,13 @@ export async function GET(request: NextRequest) {
       );
     }
     const { id, type: typeRaw, network } = parsedQuery.data;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "activity",
+      action: "read",
+      network,
+    });
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
       return NextResponse.json(
         { success: false, error: "Payment node is not configured" },
@@ -34,7 +40,10 @@ export async function GET(request: NextRequest) {
     }
 
     const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(client, user.id);
+      await getSmartContractAddressForConfiguredSource(
+        client,
+        authContext.user.id,
+      );
     if (!smartContractAddress) {
       return NextResponse.json(
         {

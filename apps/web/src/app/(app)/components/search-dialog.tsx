@@ -9,6 +9,7 @@ import {
   Code,
   ExternalLink,
   History,
+  Inbox,
   Key,
   LayoutDashboard,
   MessageSquare,
@@ -54,6 +55,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/ai-agents", icon: Bot },
+  { key: "inboxAgents", href: "/inbox-agents", icon: Inbox },
   { key: "activity", href: "/activity", icon: Activity },
   {
     key: "earnings",
@@ -183,7 +185,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         <CommandEmpty>{t("noResults")}</CommandEmpty>
         {agentResults.length > 0 && (
           <>
-            <CommandGroup heading={t("agents")}>
+            <CommandGroup
+              heading={t("agents")}
+              className="animate-list-item-in"
+              style={{ animationDelay: "0ms" }}
+            >
               {agentResults.map((agent) => (
                 <CommandItem
                   key={agent.id}
@@ -202,7 +208,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             <CommandSeparator />
           </>
         )}
-        <CommandGroup heading={t("navigation")}>
+        <CommandGroup
+          heading={t("navigation")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "50ms" }}
+        >
           {navigationItems.map((item) => (
             <CommandItem
               key={item.key}
@@ -216,7 +226,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           ))}
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading={t("quickActions")}>
+        <CommandGroup
+          heading={t("quickActions")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "100ms" }}
+        >
           {quickActions.map((item) => (
             <CommandItem
               key={item.key}
@@ -229,7 +243,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           ))}
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading={t("links")}>
+        <CommandGroup
+          heading={t("links")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "150ms" }}
+        >
           {externalLinks.map((item) => (
             <CommandItem
               key={item.key}

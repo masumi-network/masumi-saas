@@ -22,6 +22,14 @@ export const registryRequestStateSchema = z.enum([
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
 
+export const registryStatusFilterSchema = z.enum([
+  "Registered",
+  "Deregistered",
+  "Pending",
+  "Failed",
+]);
+export type RegistryStatusFilter = z.infer<typeof registryStatusFilterSchema>;
+
 const unitAmountSchema = z.object({
   unit: z.string(),
   amount: z.union([z.string(), z.number().transform(String)]),
@@ -86,12 +94,78 @@ export const registryEntrySchema = z.object({
   SmartContractWallet: z
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .optional(),
+  RecipientWallet: z
+    .object({ walletVkey: z.string(), walletAddress: z.string() })
+    .nullable()
+    .optional(),
 });
 export type RegistryEntry = z.infer<typeof registryEntrySchema>;
+
+const walletIdentitySchema = z.object({
+  walletVkey: z.string(),
+  walletAddress: z.string(),
+});
+
+const currentTransactionStatusSchema = z.enum([
+  "Pending",
+  "Confirmed",
+  "FailedViaTimeout",
+  "FailedViaManualReset",
+  "RolledBack",
+]);
+
+const paymentNodeCurrentTransactionSchema = z.object({
+  txHash: z.string().nullable(),
+  status: currentTransactionStatusSchema,
+  confirmations: z.number().nullable(),
+  fees: z.string().nullable(),
+  blockHeight: z.number().nullable(),
+  blockTime: z.number().nullable(),
+});
+
+const inboxAgentOnChainMetadataSchema = z.object({
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  agentSlug: z.string(),
+  metadataVersion: z.number(),
+});
+
+export const inboxAgentMetadataSchema = z.object({
+  policyId: z.string(),
+  assetName: z.string(),
+  agentIdentifier: z.string(),
+  Metadata: inboxAgentOnChainMetadataSchema,
+});
+export type InboxAgentMetadata = z.infer<typeof inboxAgentMetadataSchema>;
+
+export const inboxAgentIdentifierMetadataSchema = inboxAgentMetadataSchema;
+export type InboxAgentIdentifierMetadata = z.infer<
+  typeof inboxAgentIdentifierMetadataSchema
+>;
+
+export const registryInboxEntrySchema = z.object({
+  error: z.string().nullable(),
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  agentSlug: z.string(),
+  state: registryRequestStateSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastCheckedAt: z.string().nullable(),
+  agentIdentifier: z.string().nullable(),
+  metadataVersion: z.number(),
+  sendFundingLovelace: z.string().nullable(),
+  SmartContractWallet: walletIdentitySchema,
+  RecipientWallet: walletIdentitySchema.nullable(),
+  CurrentTransaction: paymentNodeCurrentTransactionSchema.nullable(),
+});
+export type RegistryInboxEntry = z.infer<typeof registryInboxEntrySchema>;
 
 export const registerAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
   sellingWalletVkey: z.string(),
+  recipientWalletAddress: z.string().optional(),
   name: z.string(),
   apiBaseUrl: z.string(),
   description: z.string(),
@@ -130,6 +204,28 @@ export const deregisterAgentInputSchema = z.object({
 });
 export type DeregisterAgentInput = z.infer<typeof deregisterAgentInputSchema>;
 
+export const registerInboxAgentInputSchema = z.object({
+  network: paymentNodeNetworkSchema,
+  sellingWalletVkey: z.string(),
+  recipientWalletAddress: z.string().optional(),
+  sendFundingLovelace: z.string().optional(),
+  name: z.string(),
+  description: z.string().optional(),
+  agentSlug: z.string(),
+});
+export type RegisterInboxAgentInput = z.infer<
+  typeof registerInboxAgentInputSchema
+>;
+
+export const deregisterInboxAgentInputSchema = z.object({
+  network: paymentNodeNetworkSchema,
+  agentIdentifier: z.string(),
+  smartContractAddress: z.string().optional(),
+});
+export type DeregisterInboxAgentInput = z.infer<
+  typeof deregisterInboxAgentInputSchema
+>;
+
 // ─── Registry list response ─────────────────────────────────────────────────
 
 export const registryListResponseSchema = z.object({
@@ -141,6 +237,27 @@ export const registryWalletResponseSchema = z.object({
 });
 export type RegistryWalletResponse = z.infer<
   typeof registryWalletResponseSchema
+>;
+
+export const registryInboxListResponseSchema = z.object({
+  Assets: z.array(registryInboxEntrySchema),
+});
+export type RegistryInboxListResponse = z.infer<
+  typeof registryInboxListResponseSchema
+>;
+
+export const registryInboxWalletResponseSchema = z.object({
+  Assets: z.array(inboxAgentMetadataSchema),
+});
+export type RegistryInboxWalletResponse = z.infer<
+  typeof registryInboxWalletResponseSchema
+>;
+
+export const registryInboxCountResponseSchema = z.object({
+  total: z.number(),
+});
+export type RegistryInboxCountResponse = z.infer<
+  typeof registryInboxCountResponseSchema
 >;
 
 // ─── Payment source ─────────────────────────────────────────────────────────
@@ -288,22 +405,47 @@ export type PaymentIncomeOutput = z.infer<typeof paymentIncomeOutputSchema>;
 
 export const createApiKeyInputSchema = z.object({
   permission: z.enum(["Read", "ReadAndPay", "Admin"]),
-  networkLimit: z.array(paymentNodeNetworkSchema),
+  NetworkLimit: z.array(paymentNodeNetworkSchema),
   usageLimited: z.enum(["true", "false"]),
   UsageCredits: z.array(unitAmountSchema),
+  walletScopeEnabled: z.enum(["true", "false"]).default("false"),
+  WalletScopeHotWalletIds: z.array(z.string()).default([]),
 });
 export type CreateApiKeyInput = z.infer<typeof createApiKeyInputSchema>;
 
-export const createApiKeyOutputSchema = z.object({
+export const paymentNodeApiKeySchema = z.object({
   id: z.string(),
   token: z.string(),
-  permission: z.string().optional(),
-  usageLimited: z.boolean().optional(),
-  networkLimit: z.array(paymentNodeNetworkSchema).optional().default([]),
-  RemainingUsageCredits: z.array(unitAmountSchema).optional().default([]),
-  status: z.string().optional(),
+  permission: z.enum(["Read", "ReadAndPay", "Admin"]),
+  canRead: z.boolean(),
+  canPay: z.boolean(),
+  canAdmin: z.boolean(),
+  usageLimited: z.boolean(),
+  NetworkLimit: z.array(paymentNodeNetworkSchema),
+  RemainingUsageCredits: z.array(unitAmountSchema),
+  status: z.string(),
+  walletScopeEnabled: z.boolean(),
+  WalletScopes: z.array(z.object({ hotWalletId: z.string() })),
 });
+export type PaymentNodeApiKey = z.infer<typeof paymentNodeApiKeySchema>;
+
+export const createApiKeyOutputSchema = paymentNodeApiKeySchema;
 export type CreateApiKeyOutput = z.infer<typeof createApiKeyOutputSchema>;
+
+export const updateApiKeyInputSchema = z.object({
+  id: z.string(),
+  token: z.string().optional(),
+  UsageCreditsToAddOrRemove: z.array(unitAmountSchema).optional(),
+  usageLimited: z.boolean().optional(),
+  status: z.enum(["Active", "Revoked"]).optional(),
+  NetworkLimit: z.array(paymentNodeNetworkSchema).optional(),
+  walletScopeEnabled: z.boolean().optional(),
+  WalletScopeHotWalletIds: z.array(z.string()).optional(),
+  canRead: z.boolean().optional(),
+  canPay: z.boolean().optional(),
+  canAdmin: z.boolean().optional(),
+});
+export type UpdateApiKeyInput = z.infer<typeof updateApiKeyInputSchema>;
 
 // ─── Wallets ───────────────────────────────────────────────────────────────
 

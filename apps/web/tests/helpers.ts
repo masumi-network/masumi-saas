@@ -3,10 +3,12 @@
  * All tests run against the real running server at BASE_URL.
  */
 
-export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
+export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:2999";
 
 export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
 export const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Admin@12345";
+export const TEST_SIGNUP_PASSWORD =
+  process.env.TEST_SIGNUP_PASSWORD ?? "Str0ngPass!123";
 
 /** Valid Preprod Shelley receive address (Mesh) for POST /api/agents tests. */
 export const TEST_PREPROD_COLLECTION_ADDRESS =
@@ -49,6 +51,13 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
+type FormRequestOptions = {
+  method?: string;
+  body?: Record<string, string>;
+  jar?: CookieJar;
+  headers?: Record<string, string>;
+};
+
 export async function request(
   path: string,
   { method = "GET", body, jar, headers = {} }: RequestOptions = {},
@@ -62,6 +71,41 @@ export async function request(
       ...headers,
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  };
+
+  const res = await fetch(`${BASE_URL}${path}`, opts);
+  if (jar)
+    jar.ingestAll(
+      res.headers.getSetCookie?.() ??
+        res.headers.get("set-cookie")?.split(/,(?=[^ ])/) ??
+        [],
+    );
+
+  let parsed: unknown;
+  const ct = res.headers.get("content-type") ?? "";
+  try {
+    parsed = ct.includes("json") ? await res.json() : await res.text();
+  } catch {
+    parsed = null;
+  }
+
+  return { status: res.status, body: parsed, headers: res.headers };
+}
+
+export async function requestForm(
+  path: string,
+  { method = "POST", body = {}, jar, headers = {} }: FormRequestOptions = {},
+): Promise<{ status: number; body: unknown; headers: Headers }> {
+  const opts: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      Origin: BASE_URL,
+      ...(jar ? { Cookie: jar.header() } : {}),
+      ...headers,
+    },
+    body: new URLSearchParams(body).toString(),
   };
 
   const res = await fetch(`${BASE_URL}${path}`, opts);
@@ -101,6 +145,33 @@ export async function signIn(
     );
   }
   return jar;
+}
+
+export async function signUpAndSignIn(
+  overrides: {
+    name?: string;
+    email?: string;
+    password?: string;
+  } = {},
+): Promise<{ jar: CookieJar; email: string; password: string }> {
+  const jar = new CookieJar();
+  const email = overrides.email ?? `oidc-smoke-${Date.now()}@example.com`;
+  const password = overrides.password ?? TEST_SIGNUP_PASSWORD;
+  const name = overrides.name ?? "OIDC Smoke";
+
+  const res = await request("/api/auth/sign-up/email", {
+    method: "POST",
+    jar,
+    body: { name, email, password },
+  });
+
+  if (res.status !== 200) {
+    throw new Error(
+      `Sign-up failed: ${res.status} ${JSON.stringify(res.body)}`,
+    );
+  }
+
+  return { jar, email, password };
 }
 
 // ─── Agent helpers ────────────────────────────────────────────────────────────

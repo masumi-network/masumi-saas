@@ -24,6 +24,15 @@ import {
   dashboardOverviewQuerySchema,
   earningsQuerySchema,
 } from "@/lib/schemas/api-query";
+import {
+  registerByEmailApiBodySchema,
+  registerByEmailApiSuccessSchema,
+} from "@/lib/schemas/auth-api";
+import {
+  inboxAgentsListQuerySchema,
+  registerInboxAgentBodySchema,
+} from "@/lib/schemas/inbox-agent";
+import { injectProxyRoutesIntoOpenApiDocument } from "@/lib/v1-proxy/manifest";
 
 import { z } from "./zod-openapi";
 
@@ -83,6 +92,17 @@ const verifyAgentOpenApiBodySchema = verifyAgentBodySchema.openapi({
     "Veridian **aid** (required). Optional **schemaSaid** to select a credential schema; defaults to the agent verification schema when omitted.",
   example: { aid: "EXAMPLE_AID", schemaSaid: "optional_schema_said" },
 });
+
+const registerInboxAgentOpenApiBodySchema =
+  registerInboxAgentBodySchema.openapi({
+    description:
+      "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the server automatically overrides wallet selection so a configured funding wallet pays while the newly created managed inbox wallet receives the registration asset.",
+    example: {
+      name: "Support inbox",
+      description: "Routes support requests into the Masumi inbox registry",
+      agentSlug: "support-inbox",
+    },
+  });
 
 const verificationChallengePostBodySchema = z
   .object({
@@ -227,6 +247,134 @@ const agentDetailSuccessSchema = z
 const agentDeletedSuccessSchema = z
   .object({ success: z.literal(true) })
   .openapi({ example: { success: true } });
+
+const inboxAgentStateSchema = z.enum([
+  "RegistrationRequested",
+  "RegistrationInitiated",
+  "RegistrationConfirmed",
+  "RegistrationFailed",
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+  "DeregistrationConfirmed",
+  "DeregistrationFailed",
+]);
+
+const inboxWalletIdentitySchema = z.object({
+  walletVkey: z.string(),
+  walletAddress: z.string(),
+});
+
+const inboxCurrentTransactionSchema = z.object({
+  txHash: z.string().nullable(),
+  status: z.enum([
+    "Pending",
+    "Confirmed",
+    "FailedViaTimeout",
+    "FailedViaManualReset",
+    "RolledBack",
+  ]),
+  confirmations: z.number().nullable(),
+  fees: z.string().nullable(),
+  blockHeight: z.number().nullable(),
+  blockTime: z.number().nullable(),
+});
+
+const inboxAgentItemSchema = z.object({
+  error: z.string().nullable(),
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  agentSlug: z.string(),
+  state: inboxAgentStateSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastCheckedAt: z.string().nullable(),
+  agentIdentifier: z.string().nullable(),
+  metadataVersion: z.number(),
+  sendFundingLovelace: z.string().nullable(),
+  SmartContractWallet: inboxWalletIdentitySchema,
+  RecipientWallet: inboxWalletIdentitySchema.nullable(),
+  CurrentTransaction: inboxCurrentTransactionSchema.nullable(),
+});
+
+const inboxAgentsListSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.array(inboxAgentItemSchema),
+    nextCursor: z.string().nullable(),
+  })
+  .openapi({
+    example: {
+      success: true,
+      nextCursor: "cm_inbox_2",
+      data: [
+        {
+          id: "cm_inbox_1",
+          name: "Support inbox",
+          description: "Routes support requests into the Masumi inbox registry",
+          agentSlug: "support-inbox",
+          state: "RegistrationConfirmed",
+          error: null,
+          createdAt: "2026-04-10T10:00:00.000Z",
+          updatedAt: "2026-04-10T10:10:00.000Z",
+          lastCheckedAt: "2026-04-10T10:12:00.000Z",
+          agentIdentifier: "policy.asset",
+          metadataVersion: 1,
+          sendFundingLovelace: null,
+          SmartContractWallet: {
+            walletVkey: "wallet_vkey_123",
+            walletAddress: "addr_test1mint...",
+          },
+          RecipientWallet: {
+            walletVkey: "wallet_vkey_456",
+            walletAddress: "addr_test1recipient...",
+          },
+          CurrentTransaction: {
+            txHash: "abc123",
+            status: "Confirmed",
+            confirmations: 12,
+            fees: "170000",
+            blockHeight: 123,
+            blockTime: 1_744_277_200,
+          },
+        },
+      ],
+    },
+  });
+
+const inboxAgentMutationSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: inboxAgentItemSchema,
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        id: "cm_inbox_1",
+        name: "Support inbox",
+        description: "Routes support requests into the Masumi inbox registry",
+        agentSlug: "support-inbox",
+        state: "RegistrationConfirmed",
+        error: null,
+        createdAt: "2026-04-10T10:00:00.000Z",
+        updatedAt: "2026-04-10T10:10:00.000Z",
+        lastCheckedAt: "2026-04-10T10:12:00.000Z",
+        agentIdentifier: "policy.asset",
+        metadataVersion: 1,
+        sendFundingLovelace: null,
+        SmartContractWallet: {
+          walletVkey: "wallet_vkey_123",
+          walletAddress: "addr_test1mint...",
+        },
+        RecipientWallet: {
+          walletVkey: "wallet_vkey_456",
+          walletAddress: "addr_test1recipient...",
+        },
+        CurrentTransaction: null,
+      },
+    },
+  });
 
 const agentCountsSuccessSchema = z
   .object({
@@ -633,6 +781,22 @@ const errBody = z.object({
   error: z.string(),
 });
 
+const insufficientCreditsSchema = z
+  .object({
+    success: z.literal(false),
+    error: z.literal("Insufficient credits"),
+    creditsRemaining: z.number(),
+    requiredCredits: z.literal(1),
+  })
+  .openapi({
+    example: {
+      success: false,
+      error: "Insufficient credits",
+      creditsRemaining: 0,
+      requiredCredits: 1,
+    },
+  });
+
 /**
  * Verify (and similar) 400 bodies: `details` may be a string[] (Zod issues) or a
  * credential-validation object — see `CredentialValidationResult` in Veridian types.
@@ -676,6 +840,11 @@ function okWithSchema(description: string, schema: z.ZodType) {
     content: { "application/json": { schema } },
   };
 }
+
+const insufficientCreditsResponse = {
+  description: "Insufficient credits",
+  content: { "application/json": { schema: insufficientCreditsSchema } },
+} as const;
 
 const healthSuccessDataSchema = z.object({
   status: z.literal("ok"),
@@ -765,7 +934,63 @@ const apiKeyStatusKeySchema = z
     },
   });
 
+const creditsBalanceSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      creditsRemaining: z.number(),
+      updatedAt: z.string(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        creditsRemaining: 1,
+        updatedAt: "2026-04-13T10:30:00.000Z",
+      },
+    },
+  });
+
 // ── System ─────────────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "post",
+  path: "/register/email",
+  tags: ["Auth"],
+  summary: "Register with email",
+  description:
+    "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+  security: noSecurity,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: registerByEmailApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    202: okWithSchema(
+      "Magic link accepted for delivery",
+      registerByEmailApiSuccessSchema,
+    ),
+    400: {
+      description: "Invalid request body",
+      content: { "application/json": { schema: errBody } },
+    },
+    429: {
+      description: "Too many registration requests from this client",
+      content: { "application/json": { schema: errBody } },
+    },
+    500: {
+      description: "Registration email could not be queued or sent",
+      content: { "application/json": { schema: errBody } },
+    },
+  },
+});
 
 registry.registerPath({
   method: "get",
@@ -816,6 +1041,20 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/credits",
+  tags: ["Credits"],
+  summary: "Get remaining credits",
+  description:
+    "Returns the authenticated user’s remaining write credits. New users start with 1 credit; existing users stay at 0 until credits are granted outside this v1 flow.",
+  security,
+  responses: {
+    200: okWithSchema("Current balance", creditsBalanceSuccessSchema),
+    ...stdResponses,
+  },
+});
+
 // ── Agents ─────────────────────────────────────────────────────────────────
 
 registry.registerPath({
@@ -854,6 +1093,7 @@ registry.registerPath({
   },
   responses: {
     200: okWithSchema("Registration started", startRegistrationSuccessSchema),
+    402: insufficientCreditsResponse,
     ...stdResponses,
   },
 });
@@ -1025,7 +1265,7 @@ registry.registerPath({
     ),
     202: {
       description:
-        "Registration still pending (e.g. wallet funding); poll again shortly.",
+        "Registration still pending (e.g. registry submission or blockchain confirmation); poll again shortly.",
       content: {
         "application/json": { schema: completeRegistrationPendingSchema },
       },
@@ -1042,6 +1282,99 @@ registry.registerPath({
   request: { params: z.object({ agentId }) },
   responses: {
     200: okWithSchema("Deregistered", agentDeletedSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+// ── Inbox agents ───────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/inbox-agents",
+  tags: ["Inbox agents"],
+  summary: "List inbox agents",
+  description:
+    "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+  security,
+  request: {
+    query: inboxAgentsListQuerySchema,
+  },
+  responses: {
+    200: okWithSchema("Inbox-agent list", inboxAgentsListSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/inbox-agents",
+  tags: ["Inbox agents"],
+  summary: "Register inbox agent",
+  description:
+    "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+  security,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registerInboxAgentOpenApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: okWithSchema(
+      "Inbox-agent registration created",
+      inboxAgentMutationSuccessSchema,
+    ),
+    402: insufficientCreditsResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/v1/inbox-agents/{inboxAgentId}",
+  tags: ["Inbox agents"],
+  summary: "Delete inbox agent",
+  description:
+    "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+  security,
+  request: {
+    params: z.object({
+      inboxAgentId: z.string().openapi({
+        description: "Inbox agent request ID (CUID)",
+        example: "cm_inbox_1",
+      }),
+    }),
+  },
+  responses: {
+    200: okWithSchema("Deleted", inboxAgentMutationSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/inbox-agents/{inboxAgentId}/deregister",
+  tags: ["Inbox agents"],
+  summary: "Deregister inbox agent",
+  description:
+    "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+  security,
+  request: {
+    params: z.object({
+      inboxAgentId: z.string().openapi({
+        description: "Inbox agent request ID (CUID)",
+        example: "cm_inbox_1",
+      }),
+    }),
+  },
+  responses: {
+    200: okWithSchema(
+      "Deregistration started",
+      inboxAgentMutationSuccessSchema,
+    ),
     ...stdResponses,
   },
 });
@@ -1108,26 +1441,30 @@ export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
   if (cachedSaaSAppOpenAPISpec !== undefined) {
     return cachedSaaSAppOpenAPISpec;
   }
-  cachedSaaSAppOpenAPISpec = new OpenApiGeneratorV3(
-    registry.definitions,
-  ).generateDocument({
-    openapi: "3.0.0",
-    info: {
-      version: "1.0.0",
-      title: "Masumi SaaS API",
-      description: [
-        "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
-      ].join("\n"),
-    },
-    servers: [{ url: "/api", description: "This app" }],
-    tags: [
-      { name: "System", description: "Health and availability" },
-      { name: "API keys", description: "Masumi SaaS API key introspection" },
-      { name: "Agents", description: "Your agents" },
-      { name: "Dashboard", description: "Overview and account data" },
-      { name: "Activity", description: "What happened across your agents" },
-      { name: "Earnings", description: "Earnings and payouts" },
-    ],
-  });
+  cachedSaaSAppOpenAPISpec = injectProxyRoutesIntoOpenApiDocument(
+    new OpenApiGeneratorV3(registry.definitions).generateDocument({
+      openapi: "3.0.0",
+      info: {
+        version: "1.0.0",
+        title: "Masumi SaaS API",
+        description: [
+          "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
+        ].join("\n"),
+      },
+      servers: [{ url: "/api", description: "This app" }],
+      tags: [
+        {
+          name: "Auth",
+          description: "Public registration and authentication bootstrap flows",
+        },
+        { name: "System", description: "Health and availability" },
+        { name: "API keys", description: "Masumi SaaS API key introspection" },
+        { name: "Agents", description: "Your agents" },
+        { name: "Dashboard", description: "Overview and account data" },
+        { name: "Activity", description: "What happened across your agents" },
+        { name: "Earnings", description: "Earnings and payouts" },
+      ],
+    }),
+  );
   return cachedSaaSAppOpenAPISpec;
 }

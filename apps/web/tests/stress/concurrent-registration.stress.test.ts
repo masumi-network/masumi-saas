@@ -70,14 +70,13 @@ describe("STRESS — Concurrent registrations (same user)", () => {
     if (successful.length < results.length) {
       const failed = results.filter((r) => r.status !== 200);
       console.warn(
-        `⚠️  ${failed.length}/${results.length} concurrent registrations failed — dispenser may throttle.`,
+        `⚠️  ${failed.length}/${results.length} concurrent registrations failed — payment-service or funding wallet may be unavailable.`,
         failed.map((f) => f.error),
       );
     }
-    // BUG-005: Dispenser throttles concurrent requests — some may fail with 400 (expected/known)
-    // A 500 means a server crash — that must never happen regardless of dispenser state
+    // A 500 means a server crash — that must never happen regardless of upstream availability.
     const serverCrashes = results.filter((r) => r.status === 500);
-    expect(serverCrashes.length).toBe(0); // no 500s allowed — dispenser failures return 400, not 500
+    expect(serverCrashes.length).toBe(0); // no 500s allowed — failures must stay graceful
     // All successful IDs must be unique (no duplicate wallets)
     expect(agentIds.length).toBe(uniqueIds.size);
   }, 90_000);
@@ -92,7 +91,7 @@ describe("STRESS — Concurrent registrations (same user)", () => {
     if (serverErrors.length > 0) {
       console.error("Server errors:", serverErrors);
     }
-    // No 500s — failures must be graceful 400s (dispenser throttle)
+    // No 500s — failures must be graceful request errors instead of server crashes.
     expect(serverErrors.length).toBe(0);
   }, 90_000);
 

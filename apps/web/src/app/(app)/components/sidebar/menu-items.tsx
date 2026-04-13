@@ -6,6 +6,7 @@ import {
   Building2,
   CircleDollarSign,
   Code,
+  Inbox,
   Key,
   LayoutDashboard,
   User,
@@ -51,6 +52,12 @@ export default function MenuItems() {
       href: "/ai-agents",
       label: t("agents"),
       Icon: Bot,
+    },
+    {
+      key: "inbox-agents",
+      href: "/inbox-agents",
+      label: t("inboxAgents"),
+      Icon: Inbox,
     },
     {
       key: "activity",

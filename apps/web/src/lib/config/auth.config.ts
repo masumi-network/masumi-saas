@@ -1,7 +1,21 @@
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+const magicLinkRateLimitMaxRaw =
+  process.env.MAGIC_LINK_RATE_LIMIT_MAX ??
+  process.env.MAGIC_LINK_ALLOWED_ATTEMPTS;
+
+if (
+  process.env.NODE_ENV === "development" &&
+  process.env.MAGIC_LINK_ALLOWED_ATTEMPTS !== undefined &&
+  process.env.MAGIC_LINK_RATE_LIMIT_MAX === undefined
+) {
+  console.warn(
+    "[auth config] MAGIC_LINK_ALLOWED_ATTEMPTS is deprecated; use MAGIC_LINK_RATE_LIMIT_MAX (rateLimit.max for magic-link routes).",
+  );
+}
+
 export const authEnvConfig = {
-  baseUrl: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseUrl: process.env.BETTER_AUTH_URL || "http://localhost:2999",
   secret: process.env.BETTER_AUTH_SECRET!,
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&
@@ -31,6 +45,14 @@ export const authEnvConfig = {
 export const authConfig = {
   emailAndPassword: {
     requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === "true",
+  },
+  magicLink: {
+    expiresIn:
+      parseInt(process.env.MAGIC_LINK_EXPIRES_IN_MINUTES || "15", 10) * 60,
+    rateLimit: {
+      window: parseInt(process.env.MAGIC_LINK_RATE_LIMIT_WINDOW || "60", 10),
+      max: parseInt(magicLinkRateLimitMaxRaw || "3", 10),
+    },
   },
   apiKey: {
     /** Must match better-auth `apiKey({ defaultPrefix })` — used to detect API-key sessions vs cookies. */

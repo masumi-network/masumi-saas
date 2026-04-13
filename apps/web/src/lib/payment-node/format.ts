@@ -1,6 +1,6 @@
 /** Shared payment-node display helpers used by activity, transactions, and earnings API routes. */
 
-import { USDCX_MAINNET, USDM } from "@/lib/payment-node/tokens";
+import { getKnownTokenByUnit, USDCX, USDM } from "./tokens";
 
 export type Network = "Mainnet" | "Preprod";
 
@@ -8,31 +8,38 @@ export function toNetwork(n: string | null): Network {
   return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
 }
 
-/** Format a single unit+amount; known stablecoins (USDM/tUSDM, Mainnet USDCx) use 6 decimals. */
-function formatOneUnitAmount(unit: string, amount: number | string): string {
+function formatDecimal(
+  value: number,
+  minimumFractionDigits: number,
+  maximumFractionDigits: number,
+): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(value);
+}
+
+/** Format a single unit+amount; known stablecoins use 6 decimals. */
+export function formatUnitAmount(
+  unit: string,
+  amount: number | string,
+): string {
   // BigInt() throws on fractional numbers; round when amount is from API (number)
   const amountStr =
     typeof amount === "number" ? String(Math.round(amount)) : String(amount);
-  if (unit === "") {
+  if (unit === "" || unit === "lovelace") {
     const lovelace = BigInt(amountStr);
     const ada = Number(lovelace) / 1_000_000;
-    return ada.toFixed(6) + " ADA";
+    return formatDecimal(ada, 0, 6) + " ADA";
   }
-  if (unit === USDM.Preprod.unit) {
+
+  const knownToken = getKnownTokenByUnit(unit);
+  if (knownToken) {
     const raw = Number(BigInt(amountStr));
-    const value = raw / 10 ** USDM.Preprod.decimals;
-    return value.toFixed(2) + " " + USDM.Preprod.symbol;
+    const value = raw / 10 ** knownToken.decimals;
+    return formatDecimal(value, 2, 2) + " " + knownToken.symbol;
   }
-  if (unit === USDM.Mainnet.unit) {
-    const raw = Number(BigInt(amountStr));
-    const value = raw / 10 ** USDM.Mainnet.decimals;
-    return value.toFixed(2) + " " + USDM.Mainnet.symbol;
-  }
-  if (unit === USDCX_MAINNET.unit) {
-    const raw = Number(BigInt(amountStr));
-    const value = raw / 10 ** USDCX_MAINNET.decimals;
-    return value.toFixed(2) + " " + USDCX_MAINNET.symbol;
-  }
+
   return `${amountStr} ${unit.slice(0, 8)}`;
 }
 
@@ -41,7 +48,7 @@ export function formatRequestedAmount(
 ): string {
   if (!requestedFunds?.length) return "—";
   const first = requestedFunds[0]!;
-  return formatOneUnitAmount(first.unit, first.amount);
+  return formatUnitAmount(first.unit, first.amount);
 }
 
 /** Format earnings-style units (amount as number); empty unit = ADA (lovelace). */
@@ -49,7 +56,7 @@ export function formatUnits(
   units: Array<{ unit: string; amount: number }>,
 ): string {
   if (!units.length) return "0";
-  return units.map((u) => formatOneUnitAmount(u.unit, u.amount)).join(", ");
+  return units.map((u) => formatUnitAmount(u.unit, u.amount)).join(", ");
 }
 
 /** Format earnings as USD when units are USDM/tUSDM or Mainnet USDCx (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
@@ -68,10 +75,8 @@ export function formatEarningsAsUsd(
       usdCents += Math.round(
         Number(u.amount) / 10 ** (USDM.Mainnet.decimals - 2),
       );
-    } else if (u.unit === USDCX_MAINNET.unit) {
-      usdCents += Math.round(
-        Number(u.amount) / 10 ** (USDCX_MAINNET.decimals - 2),
-      );
+    } else if (u.unit === USDCX.unit) {
+      usdCents += Math.round(Number(u.amount) / 10 ** (USDCX.decimals - 2));
     } else {
       other.push(u);
     }
@@ -83,9 +88,7 @@ export function formatEarningsAsUsd(
     maximumFractionDigits: 2,
   }).format(usdCents / 100);
   if (other.length === 0) return usdFormatted;
-  const rest = other
-    .map((u) => formatOneUnitAmount(u.unit, u.amount))
-    .join(", ");
+  const rest = other.map((u) => formatUnitAmount(u.unit, u.amount)).join(", ");
   return usdCents > 0 ? `${usdFormatted} + ${rest}` : rest;
 }
 
@@ -104,7 +107,7 @@ export function splitIncomeUnitsStablecoinUsdAndAda(
     network === "Mainnet"
       ? [
           { unit: USDM.Mainnet.unit, decimals: USDM.Mainnet.decimals },
-          { unit: USDCX_MAINNET.unit, decimals: USDCX_MAINNET.decimals },
+          { unit: USDCX.unit, decimals: USDCX.decimals },
         ]
       : [{ unit: USDM.Preprod.unit, decimals: USDM.Preprod.decimals }];
   let usd = 0;
@@ -146,15 +149,4 @@ export function formatDashboardEarningsTotal(
     minimumFractionDigits: 2,
     maximumFractionDigits: 6,
   })} ADA`;
-}
-
-/**
- * Absolute integer % change vs a previous total (dashboard + earnings “vs prev. period”).
- * Caller must only use when `previous > 0` (same guards as the UI).
- */
-export function earningsPercentChangeMagnitude(
-  current: number,
-  previous: number,
-): number {
-  return Math.abs(Math.round(((current - previous) / previous) * 100));
 }

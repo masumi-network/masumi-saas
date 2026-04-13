@@ -2,6 +2,8 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { verifyAgentBodySchema } from "@/lib/schemas/agent";
 import {
@@ -16,7 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
     // Parse and validate request body
@@ -36,14 +38,9 @@ export async function POST(
 
     const { aid, schemaSaid } = validation.data;
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
-      include: {
-        veridianCredentials: true,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
@@ -55,9 +52,14 @@ export async function POST(
         { status: 404 },
       );
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     const userWithKyc = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: authContext.user.id },
       include: {
         kycVerification: true,
       },
@@ -90,7 +92,7 @@ export async function POST(
     const existingCredential = await prisma.veridianCredential.findFirst({
       where: {
         agentId: agentId,
-        userId: user.id,
+        userId: authContext.user.id,
         aid: aid,
         status: "ISSUED",
       },

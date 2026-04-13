@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 export async function POST(
@@ -8,10 +10,28 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(_request);
+    const authContext = await getAuthenticatedOrThrow(_request);
     const { agentId } = await params;
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
+    });
+    if (!agent) {
+      return NextResponse.json(
+        { success: false, error: "Agent not found" },
+        { status: 404 },
+      );
+    }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
-    const result = await completeOnChainRegistration(agentId, user.id);
+    const result = await completeOnChainRegistration(
+      agentId,
+      authContext.user.id,
+    );
 
     if (result.status === "registered") {
       return NextResponse.json({

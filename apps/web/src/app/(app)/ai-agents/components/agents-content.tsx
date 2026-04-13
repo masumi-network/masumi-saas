@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search } from "lucide-react";
+import { Bot, Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -24,6 +24,7 @@ import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 
+import { AgentsDiscovery } from "./agents-discovery";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
@@ -43,6 +44,8 @@ const VALID_TABS = [
   "pending",
   "failed",
 ] as const;
+
+const VALID_SECTIONS = ["manage", "discovery"] as const;
 
 function getFiltersForTab(tab: string) {
   switch (tab) {
@@ -74,6 +77,12 @@ export function AgentsContent() {
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const sectionParam = searchParams.get("section");
+  const activeSection = VALID_SECTIONS.includes(
+    sectionParam as (typeof VALID_SECTIONS)[number],
+  )
+    ? (sectionParam as (typeof VALID_SECTIONS)[number])
+    : "manage";
   const tabParam = searchParams.get("tab");
   const activeTab = VALID_TABS.includes(tabParam as (typeof VALID_TABS)[number])
     ? (tabParam as (typeof VALID_TABS)[number])
@@ -87,6 +96,8 @@ export function AgentsContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   useEffect(() => {
+    if (activeSection !== "manage") return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key?.toLowerCase() !== "f") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -103,7 +114,7 @@ export function AgentsContent() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [activeSection]);
 
   const PAGE_SIZE = 10;
 
@@ -160,6 +171,8 @@ export function AgentsContent() {
   );
 
   useEffect(() => {
+    if (activeSection !== "manage") return;
+
     let cancelled = false;
     queueMicrotask(() => setIsLoading(true));
     startTransition(async () => {
@@ -183,10 +196,18 @@ export function AgentsContent() {
     return () => {
       cancelled = true;
     };
-  }, [fetchAgents, syncPendingAndRefetch, activeOrganizationId, network]);
+  }, [
+    activeSection,
+    fetchAgents,
+    syncPendingAndRefetch,
+    activeOrganizationId,
+    network,
+  ]);
 
   // Refetch when background registration completes (toast from provider).
   useEffect(() => {
+    if (activeSection !== "manage") return;
+
     const handler = () => {
       loadPage()
         .then((page) => {
@@ -202,7 +223,18 @@ export function AgentsContent() {
     window.addEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
     return () =>
       window.removeEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
-  }, [loadPage]);
+  }, [activeSection, loadPage]);
+
+  const handleSectionChange = (key: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (key === "manage") {
+      params.delete("section");
+    } else {
+      params.set("section", key);
+    }
+    const query = params.toString();
+    router.push(query ? `/ai-agents?${query}` : "/ai-agents");
+  };
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -211,7 +243,8 @@ export function AgentsContent() {
     } else {
       params.set("tab", key);
     }
-    router.push(`/ai-agents?${params.toString()}`);
+    const query = params.toString();
+    router.push(query ? `/ai-agents?${query}` : "/ai-agents");
   };
 
   const handleRegisterSuccess = () => {
@@ -262,6 +295,14 @@ export function AgentsContent() {
     [t],
   );
 
+  const sections = useMemo(
+    () => [
+      { name: t("sections.manage"), key: "manage" },
+      { name: t("sections.discovery"), key: "discovery" },
+    ],
+    [t],
+  );
+
   return (
     <>
       <div className="space-y-2">
@@ -272,104 +313,121 @@ export function AgentsContent() {
       </div>
 
       <div className="min-w-0 space-y-6">
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
+        <Tabs
+          tabs={sections}
+          activeTab={activeSection}
+          onTabChange={handleSectionChange}
+        />
 
-        <div className="flex items-center justify-between gap-4">
-          <div
-            onClick={() => searchInputRef.current?.focus()}
-            className="relative flex w-64 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-          >
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder={t("searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
-            />
-            {!isSearchFocused && (
-              <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
-                {t("searchShortcut")}
-              </kbd>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <RefreshButton
-              onRefresh={() => {
-                startTransition(async () => {
-                  const page = await loadPage();
-                  if (page) {
-                    setAgents(page.data);
-                    setNextCursor(page.nextCursor);
-                  }
-                });
-              }}
-              size="md"
-              isRefreshing={isPending}
-            />
-            <Button
-              onClick={() => setIsRegisterDialogOpen(true)}
-              size="icon"
-              className="md:hidden"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={() => setIsRegisterDialogOpen(true)}
-              className="hidden md:flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {t("registerAgent")}
-            </Button>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <AgentsTableSkeleton />
-        ) : (
+        {activeSection === "manage" ? (
           <>
-            <AgentsTable
-              agents={agents}
-              onAgentClick={(agent) => {
-                router.push(`/ai-agents/${agent.id}`);
-              }}
-              onDeleteSuccess={handleDeleteSuccess}
+            <Tabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
             />
 
-            {nextCursor && (
-              <div className="flex justify-center mb-10">
+            <div className="flex items-center justify-between gap-4">
+              <div
+                onClick={() => searchInputRef.current?.focus()}
+                className="relative flex w-64 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+              >
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder={t("searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+                />
+                {!isSearchFocused && (
+                  <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
+                    {t("searchShortcut")}
+                  </kbd>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <RefreshButton
+                  onRefresh={() => {
+                    startTransition(async () => {
+                      const page = await loadPage();
+                      if (page) {
+                        setAgents(page.data);
+                        setNextCursor(page.nextCursor);
+                      }
+                    });
+                  }}
+                  size="md"
+                  isRefreshing={isPending}
+                />
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
+                  onClick={() => setIsRegisterDialogOpen(true)}
+                  size="icon"
+                  className="md:hidden"
                 >
-                  {isLoadingMore ? <Spinner size={14} /> : t("loadMore")}
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setIsRegisterDialogOpen(true)}
+                  className="hidden md:flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("registerAgent")}
                 </Button>
               </div>
-            )}
+            </div>
 
-            {agents.length === 0 && (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {debouncedSearch
-                    ? t("noAgentsMatchingSearch")
-                    : activeTab === "registered"
-                      ? t("noRegisteredAgents")
-                      : activeTab === "pending"
-                        ? t("noPendingAgents")
-                        : activeTab === "failed"
-                          ? t("noFailedAgents")
-                          : activeTab === "verified"
-                            ? t("noVerifiedAgents")
-                            : t("noAgents")}
-                </p>
-              </div>
+            {isLoading ? (
+              <AgentsTableSkeleton />
+            ) : (
+              <>
+                <AgentsTable
+                  agents={agents}
+                  onAgentClick={(agent) => {
+                    router.push(`/ai-agents/${agent.id}`);
+                  }}
+                  onDeleteSuccess={handleDeleteSuccess}
+                />
+
+                {nextCursor && (
+                  <div className="flex justify-center mb-10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                    >
+                      {isLoadingMore ? <Spinner size={14} /> : t("loadMore")}
+                    </Button>
+                  </div>
+                )}
+
+                {agents.length === 0 && (
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
+                    <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
+                    <p className="text-muted-foreground text-sm">
+                      {debouncedSearch
+                        ? t("noAgentsMatchingSearch")
+                        : activeTab === "registered"
+                          ? t("noRegisteredAgents")
+                          : activeTab === "pending"
+                            ? t("noPendingAgents")
+                            : activeTab === "failed"
+                              ? t("noFailedAgents")
+                              : activeTab === "verified"
+                                ? t("noVerifiedAgents")
+                                : t("noAgents")}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
+        ) : (
+          <AgentsDiscovery />
         )}
       </div>
 

@@ -54,17 +54,18 @@ export function OrganizationsContent({
       </CardHeader>
       <CardContent>
         <ul className="space-y-3">
-          {organizations.map((org) => {
+          {organizations.map((org, index) => {
             const slugDisplay = `@${org.slug}`;
             const isActive = activeOrganization?.id === org.id;
 
             return (
-              <li key={org.id}>
-                <Link
-                  href={`/organizations/${org.slug}`}
-                  className="block transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center justify-between rounded-lg border p-4 hover:border-muted-foreground/30">
+              <li
+                key={org.id}
+                className="animate-list-item-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <Link href={`/organizations/${org.slug}`} className="block">
+                  <div className="flex items-center justify-between rounded-lg border p-4 transition-all duration-200 hover:border-muted-foreground/30 hover:bg-muted/50 hover:-translate-y-0.5 hover:shadow-sm">
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                         <Building2 className="h-5 w-5 text-muted-foreground" />

@@ -15,7 +15,7 @@ import {
   Text,
 } from "@react-email/components";
 
-const LOGO_URL = "https://avatars.githubusercontent.com/u/194367856?s=200&v=4";
+import { emailConfig } from "@/lib/config/email.config";
 
 interface AgentRegistrationCompleteEmailProps {
   userName: string;
@@ -49,7 +49,7 @@ export const AgentRegistrationCompleteEmail = ({
           <Container className="mx-auto my-[40px] max-w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]">
             <Section className="mb-[24px] text-center">
               <Img
-                src={LOGO_URL}
+                src={emailConfig.brandLogoUrl}
                 alt="Masumi"
                 width={48}
                 height={48}

@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
@@ -10,6 +11,10 @@ export async function GET(request: NextRequest) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
+    rejectOidcAccessTokenAuth(
+      authContext,
+      "OIDC access tokens are not supported for /api/api-key-status",
+    );
 
     const sess = getBetterAuthInnerSession(authContext.session);
     const token = sess?.token;

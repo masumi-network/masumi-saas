@@ -20,14 +20,26 @@ export async function register() {
 
 /** Payment node: require config; optionally validate health and API key at startup. */
 async function validatePaymentNodeAtStartup() {
-  const { checkPaymentNodeHealth, isPaymentNodeConfigured } =
-    await import("./lib/payment-node/health");
+  const {
+    checkPaymentNodeHealth,
+    isPaymentNodeConfigured,
+    isSelfReferentialPaymentNodeBaseUrl,
+  } = await import("./lib/payment-node/health");
+  const { paymentNodeConfig } = await import("./lib/payment-node/config");
 
   if (!isPaymentNodeConfigured()) {
     const msg =
       "Payment node config missing: set PAYMENT_NODE_BASE_URL, PAYMENT_NODE_ADMIN_API_KEY, and PAYMENT_NODE_PAYMENT_SOURCE_ID.";
     console.error(`[payment-node] ${msg}`);
     throw new Error(msg);
+  }
+
+  const baseUrl = paymentNodeConfig.getBaseUrl();
+  if (isSelfReferentialPaymentNodeBaseUrl(baseUrl)) {
+    console.warn(
+      `[payment-node] Skipping startup validation because PAYMENT_NODE_BASE_URL points to this app proxy (${baseUrl}).`,
+    );
+    return;
   }
 
   const result = await checkPaymentNodeHealth();

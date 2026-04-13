@@ -15,12 +15,17 @@
       "UnexpectedError": "An unexpected error occurred",
       "AccountExists": "An account with this email already exists",
       "AccountCreationFailed": "Failed to create account",
+      "MagicLinkRequestFailed": "Failed to send magic link",
       "TwoFactorRequired": "Two-factor verification required",
-      "InvalidTwoFactorCode": "Invalid verification code. Please try again."
+      "InvalidTwoFactorCode": "Invalid verification code. Please try again.",
+      "InvalidMagicLinkCode": "Invalid sign-in code.",
+      "ExpiredMagicLinkCode": "Sign-in code expired. Request a new email.",
+      "TooManyMagicLinkCodeAttempts": "Too many failed attempts. Request a new email."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",
       "SignUpSuccess": "Account created successfully!",
+      "MagicLinkSent": "Magic link sent. Check your email.",
       "PasswordResetSent": "If an account exists with this email, you will receive a password reset link."
     },
     "Social": {
@@ -34,11 +39,24 @@
       "continueWithMicrosoft": "Continue with Microsoft",
       "email": "Email",
       "password": "Password",
+      "magicLinkDescription": "Enter your email and we’ll send you a one-time sign-in link.",
+      "magicLinkSubmit": "Email me a magic link",
+      "magicLinkSubmitting": "Sending link...",
+      "magicLinkSuccess": "Check your email for your magic link.",
       "submit": "Login",
       "submitting": "Validating...",
+      "usePassword": "Use password instead",
+      "useMagicLink": "Use magic link instead (recommended)",
       "noAccount": "Don't have an account?",
+      "login": "Login",
       "register": "Register",
       "forgotPassword": "Forgot password?",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We sent a magic link to {email}. Open it to sign in to your dashboard.",
+        "oidcDescription": "We sent a magic link to {email}. Open it to continue signing in with your Masumi account.",
+        "tryAnother": "Use another email"
+      },
       "success": "Logged in successfully!"
     },
     "SignUp": {
@@ -50,11 +68,54 @@
       "confirmPassword": "Confirm Password",
       "submit": "Register",
       "submitting": "Registering...",
+      "magicLinkDescription": "Skip the password for now and we’ll email you a one-time sign-in link.",
+      "magicLinkSubmit": "Email me a magic link",
+      "magicLinkSubmitting": "Sending link...",
+      "magicLinkSuccess": "Check your email for your magic link.",
+      "usePassword": "Use password instead",
+      "useMagicLink": "Use magic link instead (recommended)",
       "termsAccepted": "I agree to the",
       "privacyPolicy": "Privacy Policy",
       "hasAccount": "Already have an account?",
       "login": "Login",
+      "checkEmail": {
+        "title": "Check your email",
+        "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
+        "oidcDescription": "We sent a magic link to {email}. Open it to finish signing up and continue with your Masumi account.",
+        "tryAnother": "Use another email"
+      },
       "success": "Account created successfully!"
+    },
+    "OidcVerifyEmail": {
+      "title": "Verify your email to continue",
+      "description": "Before this app can use your Masumi account, verify the email address below.",
+      "emailLabel": "Email address",
+      "codeLabel": "Email code",
+      "codePlaceholder": "000000",
+      "submit": "Verify email",
+      "submitting": "Verifying...",
+      "resendCode": "Send new code",
+      "resendLink": "Send verification link",
+      "resendIn": "Send new code in {seconds}s",
+      "resendCodeSuccess": "Verification code sent.",
+      "resendCodeError": "Failed to send verification code.",
+      "resendLinkSuccess": "Verification link sent.",
+      "resendLinkError": "Failed to send verification link.",
+      "verified": "Email verified. You can continue now.",
+      "invalidCode": "Invalid verification code.",
+      "expiredCode": "Verification code expired. Request a new one.",
+      "tooManyAttempts": "Too many failed attempts. Request a new code.",
+      "verifyRequired": "Verify your email before continuing.",
+      "genericError": "Failed to verify your email."
+    },
+    "MagicLinkCode": {
+      "title": "Verify with code",
+      "description": "Use the 6-digit code from the same email if you do not want to open the link.",
+      "codeLabel": "Sign-in code",
+      "codePlaceholder": "000000",
+      "submit": "Authorize with code",
+      "submitting": "Checking code...",
+      "success": "Code accepted. Authorizing..."
     },
     "ForgotPassword": {
       "title": "Reset Password",
@@ -201,7 +262,26 @@
       "loading": "Loading...",
       "errorLoadingUsers": "Failed to load users. Please try refreshing the page.",
       "errorDescription": "Something went wrong while loading the user data. This may be a temporary issue.",
-      "tryAgain": "Try again"
+      "tryAgain": "Try again",
+      "oidcGrants": "OIDC grants"
+    },
+    "OidcGrants": {
+      "title": "OIDC API Grants",
+      "description": "Control which API scopes this user can receive in OIDC access tokens.",
+      "badge": "Internal",
+      "verified": "Email verified",
+      "unverified": "Email unverified",
+      "backToUsers": "Back to users",
+      "saved": "OIDC grants updated.",
+      "alwaysIncludedTitle": "Always included",
+      "alwaysIncludedDescription": "These standard OIDC identity scopes are always available and are not managed here.",
+      "presetsTitle": "Quick presets",
+      "presetsDescription": "Apply the full first-party API grant set without checking every scope by hand.",
+      "grantAllWeb": "Grant all for web",
+      "grantAllCli": "Grant all for CLI",
+      "grantAllFirstParty": "Grant all first-party scopes",
+      "clientDescription": "Client ID: {clientId}",
+      "saveButton": "Save grants"
     },
     "Agents": {
       "title": "Agents",
@@ -486,6 +566,7 @@
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "inboxAgents": "Inbox agents",
         "activity": "Activity",
         "earnings": "Earnings",
         "analytics": "Analytics",
@@ -707,6 +788,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "inboxAgents": "Inbox agents",
         "activity": "Activity",
         "earnings": "Earnings",
         "analytics": "Analytics",
@@ -794,7 +876,7 @@
     },
     "Agents": {
       "title": "AI agents",
-      "description": "Manage your AI agents and their configurations.",
+      "description": "Manage your AI agents and discover registry listings.",
       "searchPlaceholder": "Search agents...",
       "searchShortcut": "F",
       "registerAgent": "Register Agent",
@@ -812,6 +894,72 @@
         "registered": "Registered",
         "pending": "Pending",
         "failed": "Failed"
+      },
+      "sections": {
+        "manage": "Manage",
+        "discovery": "Discovery"
+      },
+      "Discovery": {
+        "title": "Registry discovery",
+        "description": "Browse the latest healthy Masumi agents here. Verified inbox-agent discovery now lives under Inbox agents.",
+        "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
+        "inboxDescription": "Pending and verified agents returned by the inbox-agent discovery route.",
+        "views": {
+          "agents": "Agents",
+          "inbox": "Inbox"
+        },
+        "searchPlaceholder": "Look up agents, tags, capabilities, or IDs...",
+        "inboxSearchPlaceholder": "Look up inbox agents, slugs, policy IDs, or agent IDs...",
+        "resultsSummary": "{visibleCount, plural, one {# agent shown} other {# agents shown}} on this page",
+        "sortHint": "Sorted by newest updates first",
+        "page": "Page {page}",
+        "previous": "Previous",
+        "next": "Next",
+        "paginationPrevious": "Go to previous page",
+        "paginationNext": "Go to next page",
+        "paginationMore": "More pages",
+        "onlineOnly": "Online only",
+        "verifiedOnly": "Verified only",
+        "pendingAndVerified": "Pending + verified",
+        "updated": "Updated",
+        "verifiedUpdated": "Status updated",
+        "added": "Added",
+        "health": "Health",
+        "healthValue": "{uptimeCount}/{uptimeCheckCount} successful checks",
+        "publisher": "Publisher",
+        "capability": "Capability",
+        "paymentType": "Payment type",
+        "source": "Source",
+        "policyId": "Policy ID",
+        "inboxSlug": "Inbox slug",
+        "authorFallback": "Independent publisher",
+        "noCapability": "Capability not listed",
+        "noTags": "No tags",
+        "noPolicyId": "No policy ID",
+        "noSourceUrl": "No source URL",
+        "moreTags": "more",
+        "tagsLabel": "tags",
+        "inboxSource": "Masumi Inbox",
+        "metadataVersion": "Metadata v{version}",
+        "latestHealthy": "Latest healthy registry entry",
+        "verifiedInboxRegistration": "Latest verified inbox registration",
+        "viewDetails": "View details",
+        "openEndpoint": "Open endpoint",
+        "openSource": "Open source",
+        "empty": "No registry agents found yet.",
+        "emptySearch": "No discovered agents match your lookup on this page. Try a broader search or switch pages.",
+        "inboxEmpty": "No pending or verified inbox agents found yet.",
+        "inboxEmptySearch": "No pending or verified inbox agents match your lookup on this page. Try a broader search or switch pages.",
+        "error": "Failed to load discovery results. Please try again.",
+        "pricing": {
+          "free": "Free",
+          "dynamic": "Dynamic pricing",
+          "unavailable": "Pricing unavailable"
+        },
+        "payment": {
+          "cardano": "Cardano",
+          "none": "No on-chain payment"
+        }
       },
       "detailTabs": {
         "details": "Details",
@@ -1331,10 +1479,37 @@
       "preview": "Verify your Masumi email address",
       "title": "Verify your email address",
       "greeting": "Hello {name},",
-      "message": "Please verify your email address by clicking the button below.",
+      "message": "Please verify your email address by clicking the button below or entering the code shown here.",
       "button": "Verify email",
+      "codeLabel": "Verification code",
+      "codeExpiry": "This code expires in 5 minutes.",
+      "codeHelp": "You can enter this code in Masumi if you prefer verification by code.",
       "linkText": "Or copy and paste this link into your browser:",
       "footer": "If you didn't create an account, you can safely ignore this email."
+    },
+    "VerificationCode": {
+      "preview": "Your Masumi verification code",
+      "title": "Verify your email address",
+      "greeting": "Hello {name},",
+      "message": "Enter this code in Masumi to verify your email address and continue signing in.",
+      "codeLabel": "Verification code",
+      "expiry": "This code expires in 5 minutes.",
+      "footer": "If you didn't request this code, you can safely ignore this email."
+    },
+    "MagicLink": {
+      "preview": "Your Masumi magic link",
+      "title": "Sign in to Masumi",
+      "greeting": "Hello {name},",
+      "message": "Click the button below to continue to Masumi, or enter the code shown below.",
+      "consentBefore": "If this is your first time here, using this link to access Masumi means you agree to our ",
+      "consentPrivacyLabel": "Privacy Policy",
+      "consentAfter": ".",
+      "button": "Open Masumi",
+      "codeLabel": "Sign-in code",
+      "codeExpiry": "This code expires in 5 minutes.",
+      "codeHelp": "You can enter this code in Masumi if you prefer not to open the link.",
+      "linkText": "Or copy and paste this link into your browser:",
+      "footer": "If you didn't request this email, you can safely ignore it."
     },
     "Invitation": {
       "preview": "You've been invited to join {organization} on Masumi",

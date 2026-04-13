@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   getAgentVerificationSchemaSaid,
@@ -35,7 +36,8 @@ const issueCredentialSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user } = authContext;
 
     const body = await request.json().catch(() => ({}));
     const validation = issueCredentialSchema.safeParse(body);
@@ -100,6 +102,12 @@ export async function POST(request: NextRequest) {
         404,
       );
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "write",
+      network:
+        foundAgent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (foundAgent.registrationState !== "RegistrationConfirmed") {
       return apiError(

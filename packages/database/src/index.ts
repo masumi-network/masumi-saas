@@ -23,8 +23,10 @@
  */
 
 // Export model types from Prisma client (browser-safe — no Node.js dependencies).
-// Note: Session, Account, Verification, RateLimit are intentionally omitted —
-// they are internal Better Auth tables managed exclusively by the auth layer.
+// Note: Session, Account, Verification, RateLimit, OauthApplication,
+// OauthAccessToken, OauthConsent, DeviceCode, and Jwks are intentionally
+// omitted — they are internal Better Auth tables managed exclusively by the
+// auth layer.
 export type {
   Agent,
   AgentReference,

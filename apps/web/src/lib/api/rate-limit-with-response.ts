@@ -19,6 +19,7 @@ export async function checkRateLimitOrRespond(
   request: NextRequest,
   keyPrefix: string,
   rateOptions?: RateLimitOptionsInput,
+  corsMethods?: readonly string[],
 ): Promise<
   { response: NextResponse } | { allowed: true; rl: RateLimitResult }
 > {
@@ -40,7 +41,7 @@ export async function checkRateLimitOrRespond(
     );
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", "0");
-    return { response: addCorsHeaders(res, request) };
+    return { response: addCorsHeaders(res, request, corsMethods) };
   }
   return { allowed: true, rl };
 }

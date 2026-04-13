@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { credentialStatusQuerySchema } from "@/lib/schemas";
 import {
@@ -11,7 +12,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { id } = queryResult.data;
 
     const pendingCredential = await prisma.veridianCredential.findFirst({
-      where: { id, userId: user.id },
+      where: { id, userId: authContext.user.id },
     });
 
     if (!pendingCredential) {
@@ -54,9 +55,14 @@ export async function GET(request: NextRequest) {
     const agent = agentId
       ? await prisma.agent.findFirst({
           where: { id: agentId },
-          select: { agentIdentifier: true },
+          select: { agentIdentifier: true, networkIdentifier: true },
         })
       : null;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "read",
+      network: agent?.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     // Check Veridian for the accepted credential
     const credentials = await fetchContactCredentials(aid);

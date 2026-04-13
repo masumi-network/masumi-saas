@@ -29,11 +29,20 @@ export function CopyButton({ value, className }: CopyButtonProps) {
       onClick={handleCopy}
       className={cn("h-8 w-8", className)}
     >
-      {copied ? (
-        <Check className="h-4 w-4 text-green-500" />
-      ) : (
-        <Copy className="h-4 w-4" />
-      )}
+      <span className="relative flex items-center justify-center h-4 w-4">
+        <Copy
+          className={cn(
+            "h-4 w-4 absolute transition-all duration-200",
+            copied ? "scale-0 opacity-0" : "scale-100 opacity-100",
+          )}
+        />
+        <Check
+          className={cn(
+            "h-4 w-4 absolute text-green-500 transition-all duration-200",
+            copied ? "scale-100 opacity-100" : "scale-0 opacity-0",
+          )}
+        />
+      </span>
     </Button>
   );
 }

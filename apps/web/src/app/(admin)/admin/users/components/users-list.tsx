@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
@@ -414,14 +415,23 @@ export default function UsersList({
                           }).format(new Date(user.createdAt))}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant={user.banned ? "outline" : "destructive"}
-                            size="sm"
-                            onClick={() => handleBanClick(user)}
-                            disabled={isRowLoading || isCurrentUser}
-                          >
-                            {user.banned ? t("unban") : t("ban")}
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <Link
+                                href={`/admin/users/${user.id}/oidc-grants`}
+                              >
+                                {t("oidcGrants")}
+                              </Link>
+                            </Button>
+                            <Button
+                              variant={user.banned ? "outline" : "destructive"}
+                              size="sm"
+                              onClick={() => handleBanClick(user)}
+                              disabled={isRowLoading || isCurrentUser}
+                            >
+                              {user.banned ? t("unban") : t("ban")}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

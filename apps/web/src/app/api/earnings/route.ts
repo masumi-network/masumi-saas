@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { agentHasPaymentIncomeData } from "@/lib/agents/agent-earnings-eligibility";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   mergeDailyIncomeByDay,
@@ -110,9 +111,10 @@ function primaryAmountFromUnits(
 
 export async function GET(request: Request) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
+    const { user } = authContext;
 
     const { searchParams } = new URL(request.url);
     const queryResult = earningsQuerySchema.safeParse({
@@ -129,6 +131,11 @@ export async function GET(request: Request) {
       );
     }
     const { period, network } = queryResult.data;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "earnings",
+      action: "read",
+      network,
+    });
 
     const paymentNodeClient = await getPaymentNodeClientForUser(user.id);
     if (!paymentNodeClient) {
