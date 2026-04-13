@@ -87,6 +87,11 @@ export type EarningsApiResponse =
          * Omit `previousTotal` in this case — a partial sum would mislead “vs previous” %.
          */
         previousComparisonUnavailable?: boolean;
+        /**
+         * True when we had agents to query for the **current** window but at least one
+         * `getPaymentIncome` failed — `total` and `earnings` may be undercounts.
+         */
+        currentPeriodIncomeIncomplete?: boolean;
       };
     }
   | { success: false; error: string };
@@ -255,6 +260,31 @@ export async function GET(request: Request) {
       ? await fetchIncomeForEligible(previous, paymentNodeClient)
       : [];
 
+    const expectedCurrentAgents = eligibleAgents.length;
+    const gotCurrentAgents = currentIncomes.length;
+    let currentPeriodIncomeIncomplete = false;
+    if (expectedCurrentAgents > 0 && gotCurrentAgents < expectedCurrentAgents) {
+      currentPeriodIncomeIncomplete = true;
+      if (gotCurrentAgents === 0) {
+        console.warn(
+          "[api/earnings] current period income: all agent fetch failures",
+          {
+            userId: user.id,
+            agentCount: expectedCurrentAgents,
+          },
+        );
+      } else {
+        console.warn(
+          "[api/earnings] current period income: partial agent fetch failures",
+          {
+            userId: user.id,
+            ok: gotCurrentAgents,
+            expected: expectedCurrentAgents,
+          },
+        );
+      }
+    }
+
     const mergedCurrentUnits = mergeIncomeUnitRows(
       currentIncomes.map((i) => i.TotalIncome.Units),
     );
@@ -334,6 +364,9 @@ export async function GET(request: Request) {
         ...(previousTotal !== undefined ? { previousTotal } : {}),
         ...(previousComparisonUnavailable
           ? { previousComparisonUnavailable: true }
+          : {}),
+        ...(currentPeriodIncomeIncomplete
+          ? { currentPeriodIncomeIncomplete: true }
           : {}),
       },
     } satisfies EarningsApiResponse);

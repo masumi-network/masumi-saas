@@ -431,7 +431,6 @@ export const ModelName = {
   Jwks: "Jwks",
   RateLimit: "RateLimit",
   KycVerification: "KycVerification",
-  Withdrawal: "Withdrawal",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
@@ -481,7 +480,6 @@ export type TypeMap<
       | "jwks"
       | "rateLimit"
       | "kycVerification"
-      | "withdrawal"
       | "agent"
       | "agentActivityEvent"
       | "orgApiKey"
@@ -1937,82 +1935,6 @@ export type TypeMap<
         };
       };
     };
-    Withdrawal: {
-      payload: Prisma.$WithdrawalPayload<ExtArgs>;
-      fields: Prisma.WithdrawalFieldRefs;
-      operations: {
-        findUnique: {
-          args: Prisma.WithdrawalFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload> | null;
-        };
-        findUniqueOrThrow: {
-          args: Prisma.WithdrawalFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        findFirst: {
-          args: Prisma.WithdrawalFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload> | null;
-        };
-        findFirstOrThrow: {
-          args: Prisma.WithdrawalFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        findMany: {
-          args: Prisma.WithdrawalFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>[];
-        };
-        create: {
-          args: Prisma.WithdrawalCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        createMany: {
-          args: Prisma.WithdrawalCreateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        createManyAndReturn: {
-          args: Prisma.WithdrawalCreateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>[];
-        };
-        delete: {
-          args: Prisma.WithdrawalDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        update: {
-          args: Prisma.WithdrawalUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        deleteMany: {
-          args: Prisma.WithdrawalDeleteManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateMany: {
-          args: Prisma.WithdrawalUpdateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateManyAndReturn: {
-          args: Prisma.WithdrawalUpdateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>[];
-        };
-        upsert: {
-          args: Prisma.WithdrawalUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WithdrawalPayload>;
-        };
-        aggregate: {
-          args: Prisma.WithdrawalAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateWithdrawal>;
-        };
-        groupBy: {
-          args: Prisma.WithdrawalGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.WithdrawalGroupByOutputType>[];
-        };
-        count: {
-          args: Prisma.WithdrawalCountArgs<ExtArgs>;
-          result:
-            | runtime.Types.Utils.Optional<Prisma.WithdrawalCountAggregateOutputType>
-            | number;
-        };
-      };
-    };
     Agent: {
       payload: Prisma.$AgentPayload<ExtArgs>;
       fields: Prisma.AgentFieldRefs;
@@ -2948,23 +2870,6 @@ export const KycVerificationScalarFieldEnum = {
 export type KycVerificationScalarFieldEnum =
   (typeof KycVerificationScalarFieldEnum)[keyof typeof KycVerificationScalarFieldEnum];
 
-export const WithdrawalScalarFieldEnum = {
-  id: "id",
-  userId: "userId",
-  status: "status",
-  amountUsd: "amountUsd",
-  network: "network",
-  payoutAddress: "payoutAddress",
-  destinationLabel: "destinationLabel",
-  failureReason: "failureReason",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-  completedAt: "completedAt",
-} as const;
-
-export type WithdrawalScalarFieldEnum =
-  (typeof WithdrawalScalarFieldEnum)[keyof typeof WithdrawalScalarFieldEnum];
-
 export const AgentScalarFieldEnum = {
   id: "id",
   name: "name",
@@ -3258,36 +3163,6 @@ export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
- * Reference to a field of type 'WithdrawalStatus'
- */
-export type EnumWithdrawalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "WithdrawalStatus"
->;
-
-/**
- * Reference to a field of type 'WithdrawalStatus[]'
- */
-export type ListEnumWithdrawalStatusFieldRefInput<$PrismaModel> =
-  FieldRefInputType<$PrismaModel, "WithdrawalStatus[]">;
-
-/**
- * Reference to a field of type 'Decimal'
- */
-export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "Decimal"
->;
-
-/**
- * Reference to a field of type 'Decimal[]'
- */
-export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "Decimal[]"
->;
-
-/**
  * Reference to a field of type 'RegistrationState'
  */
 export type EnumRegistrationStateFieldRefInput<$PrismaModel> =
@@ -3487,7 +3362,6 @@ export type GlobalOmitConfig = {
   jwks?: Prisma.JwksOmit;
   rateLimit?: Prisma.RateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
-  withdrawal?: Prisma.WithdrawalOmit;
   agent?: Prisma.AgentOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;
   orgApiKey?: Prisma.OrgApiKeyOmit;

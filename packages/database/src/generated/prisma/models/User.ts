@@ -362,7 +362,6 @@ export type UserWhereInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
   kycSubmissions?: Prisma.KycSubmissionListRelationFilter;
   walletCaches?: Prisma.WalletCacheListRelationFilter;
-  withdrawals?: Prisma.WithdrawalListRelationFilter;
   twoFactor?: Prisma.XOR<
     Prisma.TwoFactorNullableScalarRelationFilter,
     Prisma.TwoFactorWhereInput
@@ -407,7 +406,6 @@ export type UserOrderByWithRelationInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyOrderByRelationAggregateInput;
   kycSubmissions?: Prisma.KycSubmissionOrderByRelationAggregateInput;
   walletCaches?: Prisma.WalletCacheOrderByRelationAggregateInput;
-  withdrawals?: Prisma.WithdrawalOrderByRelationAggregateInput;
   twoFactor?: Prisma.TwoFactorOrderByWithRelationInput;
 };
 
@@ -459,7 +457,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
     kycSubmissions?: Prisma.KycSubmissionListRelationFilter;
     walletCaches?: Prisma.WalletCacheListRelationFilter;
-    withdrawals?: Prisma.WithdrawalListRelationFilter;
     twoFactor?: Prisma.XOR<
       Prisma.TwoFactorNullableScalarRelationFilter,
       Prisma.TwoFactorWhereInput
@@ -576,7 +573,6 @@ export type UserCreateInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -617,7 +613,6 @@ export type UserUncheckedCreateInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -668,7 +663,6 @@ export type UserUpdateInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -722,7 +716,6 @@ export type UserUncheckedUpdateInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -1278,32 +1271,6 @@ export type UserUncheckedUpdateOneWithoutKycVerificationNestedInput = {
   >;
 };
 
-export type UserCreateNestedOneWithoutWithdrawalsInput = {
-  create?: Prisma.XOR<
-    Prisma.UserCreateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedCreateWithoutWithdrawalsInput
-  >;
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWithdrawalsInput;
-  connect?: Prisma.UserWhereUniqueInput;
-};
-
-export type UserUpdateOneRequiredWithoutWithdrawalsNestedInput = {
-  create?: Prisma.XOR<
-    Prisma.UserCreateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedCreateWithoutWithdrawalsInput
-  >;
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWithdrawalsInput;
-  upsert?: Prisma.UserUpsertWithoutWithdrawalsInput;
-  connect?: Prisma.UserWhereUniqueInput;
-  update?: Prisma.XOR<
-    Prisma.XOR<
-      Prisma.UserUpdateToOneWithWhereWithoutWithdrawalsInput,
-      Prisma.UserUpdateWithoutWithdrawalsInput
-    >,
-    Prisma.UserUncheckedUpdateWithoutWithdrawalsInput
-  >;
-};
-
 export type UserCreateNestedOneWithoutAgentsInput = {
   create?: Prisma.XOR<
     Prisma.UserCreateWithoutAgentsInput,
@@ -1501,7 +1468,6 @@ export type UserCreateWithoutTwoFactorInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
 };
 
 export type UserUncheckedCreateWithoutTwoFactorInput = {
@@ -1541,7 +1507,6 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
 };
 
 export type UserCreateOrConnectWithoutTwoFactorInput = {
@@ -1619,7 +1584,6 @@ export type UserUpdateWithoutTwoFactorInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
 };
 
 export type UserUncheckedUpdateWithoutTwoFactorInput = {
@@ -1672,7 +1636,6 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
 };
 
 export type UserCreateWithoutSessionsInput = {
@@ -1711,7 +1674,6 @@ export type UserCreateWithoutSessionsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -1751,7 +1713,6 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -1829,7 +1790,6 @@ export type UserUpdateWithoutSessionsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -1882,7 +1842,6 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -1922,7 +1881,6 @@ export type UserCreateWithoutAccountsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -1962,7 +1920,6 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -2040,7 +1997,6 @@ export type UserUpdateWithoutAccountsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -2093,7 +2049,6 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -2133,7 +2088,6 @@ export type UserCreateWithoutMembersInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -2173,7 +2127,6 @@ export type UserUncheckedCreateWithoutMembersInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -2251,7 +2204,6 @@ export type UserUpdateWithoutMembersInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -2304,7 +2256,6 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -2344,7 +2295,6 @@ export type UserCreateWithoutInvitationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -2384,7 +2334,6 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -2462,7 +2411,6 @@ export type UserUpdateWithoutInvitationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -2515,7 +2463,6 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -2555,7 +2502,6 @@ export type UserCreateWithoutApikeysInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -2595,7 +2541,6 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -2673,7 +2618,6 @@ export type UserUpdateWithoutApikeysInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -2726,7 +2670,6 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -2766,7 +2709,6 @@ export type UserCreateWithoutOauthApplicationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -2806,7 +2748,6 @@ export type UserUncheckedCreateWithoutOauthApplicationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -2884,7 +2825,6 @@ export type UserUpdateWithoutOauthApplicationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -2937,7 +2877,6 @@ export type UserUncheckedUpdateWithoutOauthApplicationsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -2977,7 +2916,6 @@ export type UserCreateWithoutOauthAccessTokensInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -3017,7 +2955,6 @@ export type UserUncheckedCreateWithoutOauthAccessTokensInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -3095,7 +3032,6 @@ export type UserUpdateWithoutOauthAccessTokensInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -3148,7 +3084,6 @@ export type UserUncheckedUpdateWithoutOauthAccessTokensInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -3188,7 +3123,6 @@ export type UserCreateWithoutOauthConsentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -3228,7 +3162,6 @@ export type UserUncheckedCreateWithoutOauthConsentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -3306,7 +3239,6 @@ export type UserUpdateWithoutOauthConsentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -3359,7 +3291,6 @@ export type UserUncheckedUpdateWithoutOauthConsentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -3399,7 +3330,6 @@ export type UserCreateWithoutOidcUserGrantsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -3439,7 +3369,6 @@ export type UserUncheckedCreateWithoutOidcUserGrantsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -3517,7 +3446,6 @@ export type UserUpdateWithoutOidcUserGrantsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -3570,7 +3498,6 @@ export type UserUncheckedUpdateWithoutOidcUserGrantsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -3610,7 +3537,6 @@ export type UserCreateWithoutCreditLedgerEntriesInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -3650,7 +3576,6 @@ export type UserUncheckedCreateWithoutCreditLedgerEntriesInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -3728,7 +3653,6 @@ export type UserUpdateWithoutCreditLedgerEntriesInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -3781,7 +3705,6 @@ export type UserUncheckedUpdateWithoutCreditLedgerEntriesInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -3821,7 +3744,6 @@ export type UserCreateWithoutKycVerificationInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -3861,7 +3783,6 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -3939,7 +3860,6 @@ export type UserUpdateWithoutKycVerificationInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -3961,218 +3881,6 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
     | string
     | null;
   twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  paymentNodeApiKeyEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  role?: Prisma.StringFieldUpdateOperationsInput | string;
-  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  banExpires?:
-    | Prisma.NullableDateTimeFieldUpdateOperationsInput
-    | Date
-    | string
-    | null;
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
-  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
-  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
-  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
-  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
-  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
-  oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
-  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
-  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
-  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
-  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
-};
-
-export type UserCreateWithoutWithdrawalsInput = {
-  id?: string;
-  name: string;
-  email: string;
-  emailVerified?: boolean;
-  creditsRemaining?: number;
-  image?: string | null;
-  imageHash?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  termsAccepted?: boolean;
-  marketingOptIn?: boolean;
-  onboardingCompleted?: boolean;
-  stripeCustomerId?: string | null;
-  twoFactorEnabled?: boolean;
-  paymentNodeApiKeyEncrypted?: string | null;
-  role?: string;
-  banned?: boolean;
-  banReason?: string | null;
-  banExpires?: Date | string | null;
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
-  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
-  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
-  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
-  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
-  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
-  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
-  oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
-  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
-  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
-  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
-  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
-  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
-  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
-};
-
-export type UserUncheckedCreateWithoutWithdrawalsInput = {
-  id?: string;
-  name: string;
-  email: string;
-  emailVerified?: boolean;
-  creditsRemaining?: number;
-  image?: string | null;
-  imageHash?: string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  termsAccepted?: boolean;
-  marketingOptIn?: boolean;
-  onboardingCompleted?: boolean;
-  stripeCustomerId?: string | null;
-  twoFactorEnabled?: boolean;
-  kycVerificationId?: string | null;
-  paymentNodeApiKeyEncrypted?: string | null;
-  role?: string;
-  banned?: boolean;
-  banReason?: string | null;
-  banExpires?: Date | string | null;
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
-  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
-  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
-  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
-  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
-  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
-  oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
-  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
-  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
-  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
-};
-
-export type UserCreateOrConnectWithoutWithdrawalsInput = {
-  where: Prisma.UserWhereUniqueInput;
-  create: Prisma.XOR<
-    Prisma.UserCreateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedCreateWithoutWithdrawalsInput
-  >;
-};
-
-export type UserUpsertWithoutWithdrawalsInput = {
-  update: Prisma.XOR<
-    Prisma.UserUpdateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedUpdateWithoutWithdrawalsInput
-  >;
-  create: Prisma.XOR<
-    Prisma.UserCreateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedCreateWithoutWithdrawalsInput
-  >;
-  where?: Prisma.UserWhereInput;
-};
-
-export type UserUpdateToOneWithWhereWithoutWithdrawalsInput = {
-  where?: Prisma.UserWhereInput;
-  data: Prisma.XOR<
-    Prisma.UserUpdateWithoutWithdrawalsInput,
-    Prisma.UserUncheckedUpdateWithoutWithdrawalsInput
-  >;
-};
-
-export type UserUpdateWithoutWithdrawalsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  email?: Prisma.StringFieldUpdateOperationsInput | string;
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  paymentNodeApiKeyEncrypted?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  role?: Prisma.StringFieldUpdateOperationsInput | string;
-  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  banExpires?:
-    | Prisma.NullableDateTimeFieldUpdateOperationsInput
-    | Date
-    | string
-    | null;
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
-  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
-  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
-  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
-  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
-  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
-  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
-  oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
-  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
-  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
-  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
-  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
-  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
-};
-
-export type UserUncheckedUpdateWithoutWithdrawalsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  name?: Prisma.StringFieldUpdateOperationsInput | string;
-  email?: Prisma.StringFieldUpdateOperationsInput | string;
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  stripeCustomerId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
-  kycVerificationId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
   paymentNodeApiKeyEncrypted?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -4240,7 +3948,6 @@ export type UserCreateWithoutAgentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -4280,7 +3987,6 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -4358,7 +4064,6 @@ export type UserUpdateWithoutAgentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -4411,7 +4116,6 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -4451,7 +4155,6 @@ export type UserCreateWithoutAgentActivityEventsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -4491,7 +4194,6 @@ export type UserUncheckedCreateWithoutAgentActivityEventsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -4569,7 +4271,6 @@ export type UserUpdateWithoutAgentActivityEventsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -4622,7 +4323,6 @@ export type UserUncheckedUpdateWithoutAgentActivityEventsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -4662,7 +4362,6 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -4702,7 +4401,6 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -4780,7 +4478,6 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -4833,7 +4530,6 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -4873,7 +4569,6 @@ export type UserCreateWithoutKycSubmissionsInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -4913,7 +4608,6 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -4991,7 +4685,6 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -5044,7 +4737,6 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -5084,7 +4776,6 @@ export type UserCreateWithoutWalletCachesInput = {
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -5124,7 +4815,6 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -5202,7 +4892,6 @@ export type UserUpdateWithoutWalletCachesInput = {
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -5255,7 +4944,6 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -5295,7 +4983,6 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
 };
 
@@ -5335,7 +5022,6 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
-  withdrawals?: Prisma.WithdrawalUncheckedCreateNestedManyWithoutUserInput;
   twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
 };
 
@@ -5413,7 +5099,6 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
 };
 
@@ -5466,7 +5151,6 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
-  withdrawals?: Prisma.WithdrawalUncheckedUpdateManyWithoutUserNestedInput;
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
@@ -5491,7 +5175,6 @@ export type UserCountOutputType = {
   createdOrgApiKeys: number;
   kycSubmissions: number;
   walletCaches: number;
-  withdrawals: number;
 };
 
 export type UserCountOutputTypeSelect<
@@ -5520,7 +5203,6 @@ export type UserCountOutputTypeSelect<
   createdOrgApiKeys?: boolean | UserCountOutputTypeCountCreatedOrgApiKeysArgs;
   kycSubmissions?: boolean | UserCountOutputTypeCountKycSubmissionsArgs;
   walletCaches?: boolean | UserCountOutputTypeCountWalletCachesArgs;
-  withdrawals?: boolean | UserCountOutputTypeCountWithdrawalsArgs;
 };
 
 /**
@@ -5696,16 +5378,6 @@ export type UserCountOutputTypeCountWalletCachesArgs<
   where?: Prisma.WalletCacheWhereInput;
 };
 
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountWithdrawalsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  where?: Prisma.WithdrawalWhereInput;
-};
-
 export type UserSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -5754,7 +5426,6 @@ export type UserSelect<
     createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>;
     kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>;
     walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>;
-    withdrawals?: boolean | Prisma.User$withdrawalsArgs<ExtArgs>;
     twoFactor?: boolean | Prisma.User$twoFactorArgs<ExtArgs>;
     _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
   },
@@ -5891,7 +5562,6 @@ export type UserInclude<
   createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>;
   kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>;
   walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>;
-  withdrawals?: boolean | Prisma.User$withdrawalsArgs<ExtArgs>;
   twoFactor?: boolean | Prisma.User$twoFactorArgs<ExtArgs>;
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 };
@@ -5931,7 +5601,6 @@ export type $UserPayload<
     createdOrgApiKeys: Prisma.$OrgApiKeyPayload<ExtArgs>[];
     kycSubmissions: Prisma.$KycSubmissionPayload<ExtArgs>[];
     walletCaches: Prisma.$WalletCachePayload<ExtArgs>[];
-    withdrawals: Prisma.$WithdrawalPayload<ExtArgs>[];
     twoFactor: Prisma.$TwoFactorPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
@@ -6695,17 +6364,6 @@ export interface Prisma__UserClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$WalletCachePayload<ExtArgs>,
-        T,
-        "findMany",
-        GlobalOmitOptions
-      >
-    | Null
-  >;
-  withdrawals<T extends Prisma.User$withdrawalsArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.User$withdrawalsArgs<ExtArgs>>,
-  ): Prisma.PrismaPromise<
-    | runtime.Types.Result.GetResult<
-        Prisma.$WithdrawalPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -7741,37 +7399,6 @@ export type User$walletCachesArgs<
   distinct?:
     | Prisma.WalletCacheScalarFieldEnum
     | Prisma.WalletCacheScalarFieldEnum[];
-};
-
-/**
- * User.withdrawals
- */
-export type User$withdrawalsArgs<
-  ExtArgs extends runtime.Types.Extensions.InternalArgs =
-    runtime.Types.Extensions.DefaultArgs,
-> = {
-  /**
-   * Select specific fields to fetch from the Withdrawal
-   */
-  select?: Prisma.WithdrawalSelect<ExtArgs> | null;
-  /**
-   * Omit specific fields from the Withdrawal
-   */
-  omit?: Prisma.WithdrawalOmit<ExtArgs> | null;
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.WithdrawalInclude<ExtArgs> | null;
-  where?: Prisma.WithdrawalWhereInput;
-  orderBy?:
-    | Prisma.WithdrawalOrderByWithRelationInput
-    | Prisma.WithdrawalOrderByWithRelationInput[];
-  cursor?: Prisma.WithdrawalWhereUniqueInput;
-  take?: number;
-  skip?: number;
-  distinct?:
-    | Prisma.WithdrawalScalarFieldEnum
-    | Prisma.WithdrawalScalarFieldEnum[];
 };
 
 /**

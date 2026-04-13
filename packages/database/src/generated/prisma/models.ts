@@ -26,7 +26,6 @@ export type * from "./models/DeviceCode.js";
 export type * from "./models/Jwks.js";
 export type * from "./models/RateLimit.js";
 export type * from "./models/KycVerification.js";
-export type * from "./models/Withdrawal.js";
 export type * from "./models/Agent.js";
 export type * from "./models/AgentActivityEvent.js";
 export type * from "./models/OrgApiKey.js";

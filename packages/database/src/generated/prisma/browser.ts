@@ -112,11 +112,6 @@ export type RateLimit = Prisma.RateLimitModel;
  */
 export type KycVerification = Prisma.KycVerificationModel;
 /**
- * Model Withdrawal
- * User-initiated earnings withdrawal request (tracked in SaaS DB; settlement may be async).
- */
-export type Withdrawal = Prisma.WithdrawalModel;
-/**
  * Model Agent
  *
  */

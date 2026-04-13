@@ -763,6 +763,7 @@ const userEarningsSuccessSchema = z
       amountUnit: z.enum(["USD", "ADA"]),
       previousTotal: z.number().optional(),
       previousComparisonUnavailable: z.boolean().optional(),
+      currentPeriodIncomeIncomplete: z.boolean().optional(),
     }),
   })
   .openapi({

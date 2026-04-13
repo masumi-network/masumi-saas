@@ -43,7 +43,6 @@ export type {
   User,
   VeridianCredential,
   WalletCache,
-  Withdrawal,
 } from "./generated/prisma/client.js";
 
 // Export enums as values (runtime constants, not just types).
@@ -55,5 +54,4 @@ export {
   VerificationStatus,
   WalletConnectionState,
   WalletType,
-  WithdrawalStatus,
 } from "./generated/prisma/client.js";

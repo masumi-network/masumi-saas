@@ -33,6 +33,8 @@ export function DashboardRevenueCard() {
   const [previousTotal, setPreviousTotal] = useState<number | undefined>();
   const [previousComparisonUnavailable, setPreviousComparisonUnavailable] =
     useState(false);
+  const [currentPeriodIncomeIncomplete, setCurrentPeriodIncomeIncomplete] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +45,7 @@ export function DashboardRevenueCard() {
     setIsLoading(true);
     setError(null);
     setPreviousComparisonUnavailable(false);
+    setCurrentPeriodIncomeIncomplete(false);
     try {
       const result = await fetchEarningsForPeriod(period, network, {
         genericErrorMessage: t("earningsLoadUnexpectedError"),
@@ -55,6 +58,7 @@ export function DashboardRevenueCard() {
         setAmountUnit("USD");
         setPreviousTotal(undefined);
         setPreviousComparisonUnavailable(false);
+        setCurrentPeriodIncomeIncomplete(false);
         return;
       }
       setTotal(result.total);
@@ -62,6 +66,9 @@ export function DashboardRevenueCard() {
       setPreviousTotal(result.previousTotal);
       setPreviousComparisonUnavailable(
         result.previousComparisonUnavailable ?? false,
+      );
+      setCurrentPeriodIncomeIncomplete(
+        result.currentPeriodIncomeIncomplete ?? false,
       );
     } catch (err) {
       if (seq !== fetchSeqRef.current) return;
@@ -71,6 +78,7 @@ export function DashboardRevenueCard() {
       setAmountUnit("USD");
       setPreviousTotal(undefined);
       setPreviousComparisonUnavailable(false);
+      setCurrentPeriodIncomeIncomplete(false);
     } finally {
       if (seq === fetchSeqRef.current) {
         setIsLoading(false);
@@ -164,6 +172,11 @@ export function DashboardRevenueCard() {
           <p className="mb-4 text-xs text-muted-foreground">
             {t("earningsDescription")}
           </p>
+          {currentPeriodIncomeIncomplete ? (
+            <p className="mb-4 text-xs text-muted-foreground">
+              {t("currentPeriodIncomeIncomplete")}
+            </p>
+          ) : null}
           {previousComparisonUnavailable ? (
             <p className="mb-4 text-xs text-muted-foreground">
               {t("previousComparisonUnavailable")}
