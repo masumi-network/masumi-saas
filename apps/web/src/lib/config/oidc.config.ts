@@ -1,11 +1,11 @@
 import type { OIDCMetadata } from "better-auth/plugins/oidc-provider";
 
-import { authEnvConfig } from "@/lib/config/auth.config";
+import { authEnvConfig } from "./auth.config";
 import {
   getAllowedApiScopesForClient,
   OIDC_SUPPORTED_SCOPES,
   type OidcClientKey,
-} from "@/lib/config/oidc-scopes.config";
+} from "./oidc-scopes.config";
 
 type TrustedOidcClient = {
   clientId: string;
