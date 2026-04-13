@@ -33,7 +33,11 @@ const EARNINGS_PAYMENT_INCOME_TIMEZONE = "Etc/UTC";
  */
 const PAYMENT_INCOME_AGENT_CONCURRENCY = 5;
 
-/** Like `Promise.allSettled`, but runs at most `concurrency` tasks at a time. */
+/**
+ * Like `Promise.allSettled`, but runs at most `concurrency` tasks at a time.
+ * Uses a stride partition (worker `slot` handles indices `slot, slot+W, …`) so there is no shared
+ * mutable index across workers — safe across async boundaries without relying on sync `++` ordering.
+ */
 async function allSettledWithConcurrencyLimit<T, R>(
   items: readonly T[],
   concurrency: number,
@@ -41,23 +45,20 @@ async function allSettledWithConcurrencyLimit<T, R>(
 ): Promise<PromiseSettledResult<R>[]> {
   if (items.length === 0) return [];
   const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(1, concurrency), items.length);
 
-  async function worker(): Promise<void> {
-    for (;;) {
-      const i = nextIndex++;
-      if (i >= items.length) return;
-      try {
-        const value = await fn(items[i]!, i);
-        results[i] = { status: "fulfilled", value };
-      } catch (reason) {
-        results[i] = { status: "rejected", reason };
+  await Promise.all(
+    Array.from({ length: workerCount }, async (_, slot) => {
+      for (let i = slot; i < items.length; i += workerCount) {
+        try {
+          const value = await fn(items[i]!, i);
+          results[i] = { status: "fulfilled", value };
+        } catch (reason) {
+          results[i] = { status: "rejected", reason };
+        }
       }
-    }
-  }
-
-  const workers = Math.min(Math.max(1, concurrency), items.length);
-  await Promise.all(Array.from({ length: workers }, () => worker()));
+    }),
+  );
   return results;
 }
 

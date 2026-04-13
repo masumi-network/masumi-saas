@@ -19,15 +19,6 @@ const collectionAddressRegistrationField = z
   .max(120, "Collection address is too long");
 
 /**
- * Edit / FormData updates: agents created before `collectionAddress` existed may omit it.
- * Empty string means unchanged or not yet set; non-empty values use the same bounds as registration.
- */
-const collectionAddressUpdateField = z.union([
-  z.literal(""),
-  collectionAddressRegistrationField,
-]);
-
-/**
  * Schema for agent.metadata JSON. Only allowed keys are accepted to prevent
  * metadata injection. Used when parsing stored metadata in API responses.
  */
@@ -119,7 +110,12 @@ export const verifyAgentBodySchema = z.object({
   schemaSaid: z.string().optional(),
 });
 
-/** Shared FormData fields (flat keys); `collectionAddress` differs between register vs edit. */
+/**
+ * Shared FormData fields (flat keys). Registration extends this with required `collectionAddress`.
+ * For an edit-via-FormData action later, extend the same object with
+ * `collectionAddress: z.union([z.literal(""), collectionAddressRegistrationField])` so legacy
+ * agents without a stored address can still submit updates.
+ */
 const registerAgentFormFieldsSchema = z.object({
   name: z
     .string()
@@ -163,22 +159,9 @@ const registerAgentFormBaseSchema = registerAgentFormFieldsSchema.extend({
   collectionAddress: collectionAddressRegistrationField,
 });
 
-/**
- * Form-based **edit** — `collectionAddress` optional so legacy agents without a stored address
- * can still update other fields.
- */
-const updateAgentFormBaseSchema = registerAgentFormFieldsSchema.extend({
-  collectionAddress: collectionAddressUpdateField,
-});
-
 /** FormData variant for server actions (new agent) */
 export const registerAgentFormDataSchema = zfd.formData(
   registerAgentFormBaseSchema,
-);
-
-/** FormData variant for server actions (edit existing agent) */
-export const updateAgentFormDataSchema = zfd.formData(
-  updateAgentFormBaseSchema,
 );
 
 /**

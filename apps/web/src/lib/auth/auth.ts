@@ -497,8 +497,9 @@ export const auth = betterAuth({
         }
         // Payment-node-style header: scripts often send `token` for mas_* keys; only treat as SaaS API key when prefixed.
         const tokenHeader = headers.get("token");
-        if (tokenHeader && tokenHeader.startsWith(apiKeyPrefix)) {
-          return tokenHeader.trim();
+        if (tokenHeader) {
+          const trimmed = tokenHeader.trim();
+          if (trimmed.startsWith(apiKeyPrefix)) return trimmed;
         }
         return null;
       },

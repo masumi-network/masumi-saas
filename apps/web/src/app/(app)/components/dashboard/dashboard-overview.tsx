@@ -72,23 +72,24 @@ export default async function DashboardOverview({
       <DashboardOrgContextBanner />
 
       {/* Stats grid - Revenue, Agents, Activity summary */}
-      <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
-        <div className="col-span-2 lg:col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
+      <div className="grid min-w-0 grid-cols-2 items-stretch gap-5 lg:grid-cols-3">
+        <div className="col-span-2 flex h-full min-h-0 flex-col lg:col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
           <DashboardRevenueCard />
         </div>
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
+        <div className="flex h-full min-h-0 flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
           <Link
             href="/ai-agents"
+            className="block h-full min-h-0"
             aria-label={t("stats.agentsCardAria", { count: agentCount })}
           >
-            <Card className="group h-full rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <Card className="group flex h-full min-h-0 flex-col rounded-xl border border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
               <CardHeader className="space-y-0 pb-2">
                 <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground transition-colors group-hover:underline flex items-center gap-2">
                   <Bot className="h-4 w-4 shrink-0" />
                   {t("stats.registeredAgents")}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-1 flex-col">
                 <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
                   {agentCount}
                 </p>
@@ -99,7 +100,7 @@ export default async function DashboardOverview({
             </Card>
           </Link>
         </div>
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-150">
+        <div className="flex h-full min-h-0 flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-150">
           <DashboardActivitySummaryCard />
         </div>
       </div>
