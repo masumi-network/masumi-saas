@@ -1,5 +1,7 @@
 const APP_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:2999";
+  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+  process.env.BETTER_AUTH_URL?.trim() ||
+  "http://localhost:2999";
 const OIDC_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 
 function isSafeOidcAuthorizeCallback(parsed: URL): boolean {
@@ -38,4 +40,12 @@ export function sanitizeCallbackUrl(
   if (!isSafeOidcAuthorizeCallback(parsed)) return undefined;
 
   return parsed.pathname + parsed.search + parsed.hash;
+}
+
+export function buildAbsoluteCallbackUrl(
+  url: string | undefined,
+): string | undefined {
+  const safePath = sanitizeCallbackUrl(url);
+  if (!safePath) return undefined;
+  return new URL(safePath, APP_ORIGIN).toString();
 }
