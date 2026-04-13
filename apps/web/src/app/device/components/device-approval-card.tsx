@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { EmailVerificationPanel } from "@/app/oidc/consent/components/email-verification-panel";
 import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OidcGroupedApiPermissionCatalogGroup } from "@/lib/config/oidc-scopes.config";
+
+import { EmailVerificationPanel } from "../../oidc/consent/components/email-verification-panel";
 
 type DeviceApprovalCardProps = {
   initialUserCode?: string | null;
