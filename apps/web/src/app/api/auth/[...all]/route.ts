@@ -95,13 +95,13 @@ function logOidcScopeResolution(
     reason: getScopeRemovalReasonLabel(item.reason),
   }));
 
-  console.info("[oidc scopes]", {
+  if (removedScopes.length === 0) {
+    return;
+  }
+
+  console.warn("[oidc scopes removed]", {
     flow,
     clientId,
-    requestedScopes: resolution.requestedScopes,
-    allowedScopes: resolution.allowedScopes,
-    storedGrantScopes: resolution.storedGrantScopes,
-    finalGrantedScopes: resolution.finalScopes,
     removedScopes,
     ...extra,
   });
