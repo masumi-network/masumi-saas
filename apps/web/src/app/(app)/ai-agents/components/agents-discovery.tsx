@@ -183,6 +183,23 @@ function matchesInboxLookup(
   return haystack.includes(query);
 }
 
+function getInboxRegistrationBadgeVariant(
+  status: InboxAgentRegistration["status"],
+) {
+  switch (status) {
+    case "Verified":
+      return "success" as const;
+    case "Pending":
+      return "secondary-muted" as const;
+    case "Invalid":
+      return "destructive" as const;
+    case "Deregistered":
+      return "outline-muted" as const;
+    default:
+      return "secondary" as const;
+  }
+}
+
 function DiscoverySkeleton() {
   return (
     <div className="space-y-3">
@@ -575,7 +592,13 @@ function InboxAgentDetailsDialog({
                 <DialogTitle className="text-xl">
                   {registration.name}
                 </DialogTitle>
-                <Badge variant="success">{registration.status}</Badge>
+                <Badge
+                  variant={getInboxRegistrationBadgeVariant(
+                    registration.status,
+                  )}
+                >
+                  {registration.status}
+                </Badge>
               </div>
               <DialogDescription className="leading-6">
                 {registration.description?.trim() || t("Details.noDescription")}
@@ -696,7 +719,11 @@ function InboxAgentListItem({
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
               {registration.name}
             </span>
-            <Badge variant="success">{registration.status}</Badge>
+            <Badge
+              variant={getInboxRegistrationBadgeVariant(registration.status)}
+            >
+              {registration.status}
+            </Badge>
           </div>
 
           <p className="line-clamp-1 text-sm text-muted-foreground">
@@ -800,7 +827,7 @@ export function AgentsDiscovery() {
         limit: PAGE_SIZE,
         cursorId,
         filter: {
-          status: ["Verified"],
+          status: ["Pending", "Verified"],
         },
       }),
     [network],
@@ -1020,7 +1047,7 @@ export function AgentsDiscovery() {
   const activeFilterLabel =
     activeTab === "agents"
       ? t("Discovery.onlineOnly")
-      : t("Discovery.verifiedOnly");
+      : t("Discovery.pendingAndVerified");
   const activeSearchPlaceholder =
     activeTab === "agents"
       ? t("Discovery.searchPlaceholder")

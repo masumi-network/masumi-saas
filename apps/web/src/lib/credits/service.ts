@@ -2,6 +2,8 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
+import { parseNetwork } from "../schemas/api-query";
+
 export const CREDIT_COST = 1;
 const INITIAL_CREDIT_GRANT = 1;
 
@@ -155,5 +157,26 @@ export async function consumeCreditOrThrow(params: {
       creditsRemaining: user.creditsRemaining,
       updatedAt: user.updatedAt,
     };
+  });
+}
+
+export async function consumeCreditIfRequired(params: {
+  userId: string;
+  reason: Exclude<CreditLedgerReason, "initial_grant">;
+  reference: string;
+  metadata?: CreditMetadata;
+  network?: string | null | undefined;
+}): Promise<CreditBalance> {
+  const effectiveNetwork = parseNetwork(params.network);
+
+  if (effectiveNetwork === "Preprod") {
+    return getCreditBalance(params.userId);
+  }
+
+  return consumeCreditOrThrow({
+    userId: params.userId,
+    reason: params.reason,
+    reference: params.reference,
+    metadata: params.metadata,
   });
 }

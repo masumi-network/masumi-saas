@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
-  consumeCreditOrThrow,
+  consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
 import {
   buildUpstreamHeaders,
+  getEffectivePaymentNetwork,
   readOptionalRequestBody,
   resolvePaymentUserTokenUpstream,
   toUpstreamResponse,
@@ -39,15 +40,17 @@ async function handleRequest(request: NextRequest, method: string) {
     }
 
     if (method !== "GET") {
-      await consumeCreditOrThrow({
+      const network = getEffectivePaymentNetwork(request);
+      await consumeCreditIfRequired({
         userId: authContext.user.id,
         reason: "payment_proxy_write",
         reference: createCreditReference("payment-proxy-write"),
+        network,
         metadata: {
           method,
           route: ROUTE_PATH,
           upstreamPath: UPSTREAM_PATH,
-          network: request.nextUrl.searchParams.get("network"),
+          network,
           authMethod: authContext.authMethod,
         },
       });

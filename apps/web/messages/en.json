@@ -888,7 +888,7 @@
         "title": "Registry discovery",
         "description": "Browse the latest healthy Masumi agents here. Verified inbox-agent discovery now lives under Inbox agents.",
         "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
-        "inboxDescription": "Verified agents returned by the inbox-agent discovery route.",
+        "inboxDescription": "Pending and verified agents returned by the inbox-agent discovery route.",
         "views": {
           "agents": "Agents",
           "inbox": "Inbox"
@@ -905,8 +905,9 @@
         "paginationMore": "More pages",
         "onlineOnly": "Online only",
         "verifiedOnly": "Verified only",
+        "pendingAndVerified": "Pending + verified",
         "updated": "Updated",
-        "verifiedUpdated": "Verified",
+        "verifiedUpdated": "Status updated",
         "added": "Added",
         "health": "Health",
         "healthValue": "{uptimeCount}/{uptimeCheckCount} successful checks",
@@ -932,8 +933,8 @@
         "openSource": "Open source",
         "empty": "No registry agents found yet.",
         "emptySearch": "No discovered agents match your lookup on this page. Try a broader search or switch pages.",
-        "inboxEmpty": "No verified inbox agents found yet.",
-        "inboxEmptySearch": "No verified inbox agents match your lookup on this page. Try a broader search or switch pages.",
+        "inboxEmpty": "No pending or verified inbox agents found yet.",
+        "inboxEmptySearch": "No pending or verified inbox agents match your lookup on this page. Try a broader search or switch pages.",
         "error": "Failed to load discovery results. Please try again.",
         "pricing": {
           "free": "Free",

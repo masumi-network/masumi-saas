@@ -119,56 +119,6 @@ const PAYMENT_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
   },
   {
     upstream: "payment",
-    upstreamPath: "/purchase",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/cancel-refund-request",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/count",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/diff",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/diff/next-action",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/diff/onchain-state-or-result",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/error-state-recovery",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/request-refund",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/resolve-blockchain-identifier",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/purchase/spending",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
     upstreamPath: "/registry",
     authMode: "payment-user-token",
   },

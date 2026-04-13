@@ -35,12 +35,12 @@ import {
 } from "@/components/ui/pagination";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   type InboxAgentRegistration,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatRelativeDate, getInitials } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
@@ -127,6 +127,23 @@ function matchesInboxLookup(
     .toLowerCase();
 
   return haystack.includes(query);
+}
+
+function getInboxRegistrationBadgeVariant(
+  status: InboxAgentRegistration["status"],
+) {
+  switch (status) {
+    case "Verified":
+      return "success" as const;
+    case "Pending":
+      return "secondary-muted" as const;
+    case "Invalid":
+      return "destructive" as const;
+    case "Deregistered":
+      return "outline-muted" as const;
+    default:
+      return "secondary" as const;
+  }
 }
 
 function DiscoverySkeleton() {
@@ -292,7 +309,13 @@ function InboxAgentDetailsDialog({
                 <DialogTitle className="text-xl">
                   {registration.name}
                 </DialogTitle>
-                <Badge variant="success">{registration.status}</Badge>
+                <Badge
+                  variant={getInboxRegistrationBadgeVariant(
+                    registration.status,
+                  )}
+                >
+                  {registration.status}
+                </Badge>
               </div>
               <DialogDescription className="leading-6">
                 {registration.description?.trim() || t("Details.noDescription")}
@@ -413,7 +436,11 @@ function InboxAgentListItem({
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
               {registration.name}
             </span>
-            <Badge variant="success">{registration.status}</Badge>
+            <Badge
+              variant={getInboxRegistrationBadgeVariant(registration.status)}
+            >
+              {registration.status}
+            </Badge>
           </div>
 
           <p className="line-clamp-1 text-sm text-muted-foreground">
@@ -490,7 +517,7 @@ export function InboxAgentsDiscovery() {
         limit: PAGE_SIZE,
         cursorId,
         filter: {
-          status: ["Verified"],
+          status: ["Pending", "Verified"],
         },
       }),
     [network],
@@ -617,7 +644,9 @@ export function InboxAgentsDiscovery() {
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="success">{t("Discovery.verifiedOnly")}</Badge>
+            <Badge variant="secondary-muted">
+              {t("Discovery.pendingAndVerified")}
+            </Badge>
             <span className="text-sm text-muted-foreground">
               {t("Discovery.inboxDescription")}
             </span>

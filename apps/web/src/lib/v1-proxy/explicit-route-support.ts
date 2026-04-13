@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
 import { registryServiceConfig } from "@/lib/registry-service";
+import { parseNetwork } from "@/lib/schemas/api-query";
 
 export type UpstreamResolution =
   | {
@@ -81,6 +82,15 @@ export async function readOptionalRequestBody(
   } catch {
     return undefined;
   }
+}
+
+export function getEffectivePaymentNetwork(
+  request: NextRequest,
+): "Mainnet" | "Preprod" {
+  return parseNetwork(
+    request.nextUrl.searchParams.get("network") ??
+      request.cookies.get("payment_network")?.value,
+  );
 }
 
 export async function toUpstreamResponse(response: Response) {

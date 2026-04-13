@@ -165,7 +165,14 @@ async function runTransaction<T>(
 
 vi.mock("@masumi/database/client", () => ({
   default: {
-    user: {},
+    user: {
+      findUniqueOrThrow: vi.fn(async ({ where, select }) => {
+        if (!store.current.user || where.id !== store.current.user.id) {
+          throw new Error("User not found");
+        }
+        return pickSelected(store.current.user, select);
+      }),
+    },
     creditLedgerEntry: {},
     $transaction: vi.fn(runTransaction),
   },
@@ -174,6 +181,7 @@ vi.mock("@masumi/database/client", () => ({
 const {
   CREDIT_COST,
   InsufficientCreditsError,
+  consumeCreditIfRequired,
   consumeCreditOrThrow,
   grantInitialCreditsIfNeeded,
 } = await import("./service");
@@ -229,6 +237,43 @@ describe("credit service", () => {
 
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(0);
+  });
+
+  it("skips debit entirely on Preprod", async () => {
+    store.current = createState(0);
+
+    const result = await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "agent_register",
+      reference: "agent-register:preprod",
+      network: "Preprod",
+      metadata: { network: "Preprod" },
+    });
+
+    expect(result.creditsRemaining).toBe(0);
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(0);
+  });
+
+  it("still debits on Mainnet", async () => {
+    store.current = createState(1);
+
+    const result = await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+      metadata: { network: "Mainnet" },
+    });
+
+    expect(result.creditsRemaining).toBe(0);
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(1);
+    expect(store.current.ledger[0]).toMatchObject({
+      delta: -CREDIT_COST,
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+    });
   });
 
   it("allows only one concurrent debit when one credit remains", async () => {

@@ -7,7 +7,7 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
-const consumeCreditOrThrowMock = vi.fn();
+const consumeCreditIfRequiredMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
@@ -27,7 +27,7 @@ vi.mock("@/lib/inbox-agents/server", () => ({
 }));
 
 vi.mock("@/lib/credits/service", () => ({
-  consumeCreditOrThrow: consumeCreditOrThrowMock,
+  consumeCreditIfRequired: consumeCreditIfRequiredMock,
   createCreditReference: () => "inbox-agent-register:test",
 }));
 
@@ -77,7 +77,7 @@ describe("/api/v1/inbox-agents", () => {
       authMethod: "session",
     });
     requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
-    consumeCreditOrThrowMock.mockResolvedValue({
+    consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
@@ -161,10 +161,11 @@ describe("/api/v1/inbox-agents", () => {
       description: "Routes support requests",
       agentSlug: "support-inbox",
     });
-    expect(consumeCreditOrThrowMock).toHaveBeenCalledWith({
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith({
       userId: "user-1",
       reason: "inbox_agent_register",
       reference: "inbox-agent-register:test",
+      network: "Preprod",
       metadata: {
         name: "Support inbox",
         agentSlug: "support-inbox",
@@ -199,7 +200,7 @@ describe("/api/v1/inbox-agents", () => {
   });
 
   it("returns 402 without external writes when credits are insufficient", async () => {
-    consumeCreditOrThrowMock.mockRejectedValue({
+    consumeCreditIfRequiredMock.mockRejectedValue({
       name: "InsufficientCreditsError",
       message: "Insufficient credits",
       creditsRemaining: 0,

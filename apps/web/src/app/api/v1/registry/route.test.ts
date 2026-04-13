@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const rejectOidcAccessTokenAuthMock = vi.fn();
-const consumeCreditOrThrowMock = vi.fn();
+const consumeCreditIfRequiredMock = vi.fn();
 const resolvePaymentUserTokenUpstreamMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -17,7 +17,7 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 }));
 
 vi.mock("@/lib/credits/service", () => ({
-  consumeCreditOrThrow: consumeCreditOrThrowMock,
+  consumeCreditIfRequired: consumeCreditIfRequiredMock,
   createCreditReference: () => "payment-proxy-write:test",
 }));
 
@@ -36,6 +36,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
       const body = await request.text();
       return body || undefined;
     },
+    getEffectivePaymentNetwork: () => "Preprod",
     resolvePaymentUserTokenUpstream: resolvePaymentUserTokenUpstreamMock,
     toUpstreamResponse: async (response: Response) => {
       const text = await response.text();
@@ -59,7 +60,7 @@ describe("/api/v1/registry", () => {
       authMethod: "session",
     });
     rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
-    consumeCreditOrThrowMock.mockResolvedValue({
+    consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
@@ -98,9 +99,10 @@ describe("/api/v1/registry", () => {
         body: JSON.stringify({ name: "Agent" }),
       }),
     );
-    expect(consumeCreditOrThrowMock).toHaveBeenCalledWith(
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith(
       expect.objectContaining({
         reason: "payment_proxy_write",
+        network: "Preprod",
         metadata: expect.objectContaining({
           route: "registry",
           upstreamPath: "/registry",

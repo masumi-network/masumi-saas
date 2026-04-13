@@ -7,7 +7,7 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const buildAgentPricingMock = vi.fn();
 const startAgentRegistrationMock = vi.fn();
-const consumeCreditOrThrowMock = vi.fn();
+const consumeCreditIfRequiredMock = vi.fn();
 const shapeAgentWithMergedMetadataMock = vi.fn();
 const agentFindFirstMock = vi.fn();
 
@@ -40,7 +40,7 @@ vi.mock("@/lib/agent-registration", () => ({
 }));
 
 vi.mock("@/lib/credits/service", () => ({
-  consumeCreditOrThrow: consumeCreditOrThrowMock,
+  consumeCreditIfRequired: consumeCreditIfRequiredMock,
   createCreditReference: () => "agent-register:test",
 }));
 
@@ -97,7 +97,7 @@ describe("/api/agents POST", () => {
       pricingType: "Fixed",
       prices: [{ amount: "5", currency: "USD" }],
     });
-    consumeCreditOrThrowMock.mockResolvedValue({
+    consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
@@ -134,10 +134,11 @@ describe("/api/agents POST", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    expect(consumeCreditOrThrowMock).toHaveBeenCalledWith({
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith({
       userId: "user-1",
       reason: "agent_register",
       reference: "agent-register:test",
+      network: "Preprod",
       metadata: {
         name: "Research assistant",
         apiUrl: "https://agent.example.com/mip",
@@ -149,7 +150,7 @@ describe("/api/agents POST", () => {
   });
 
   it("returns 402 and does not start registration when credits are insufficient", async () => {
-    consumeCreditOrThrowMock.mockRejectedValue({
+    consumeCreditIfRequiredMock.mockRejectedValue({
       name: "InsufficientCreditsError",
       message: "Insufficient credits",
       creditsRemaining: 0,
@@ -207,7 +208,7 @@ describe("/api/agents POST", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(400);
-    expect(consumeCreditOrThrowMock).not.toHaveBeenCalled();
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
     expect(startAgentRegistrationMock).not.toHaveBeenCalled();
   });
 });

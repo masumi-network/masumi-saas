@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const rejectOidcAccessTokenAuthMock = vi.fn();
-const consumeCreditOrThrowMock = vi.fn();
+const consumeCreditIfRequiredMock = vi.fn();
 const resolvePaymentUserTokenUpstreamMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -17,7 +17,7 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 }));
 
 vi.mock("@/lib/credits/service", () => ({
-  consumeCreditOrThrow: consumeCreditOrThrowMock,
+  consumeCreditIfRequired: consumeCreditIfRequiredMock,
   createCreditReference: () => "payment-proxy-write:test",
 }));
 
@@ -36,6 +36,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
       const body = await request.text();
       return body || undefined;
     },
+    getEffectivePaymentNetwork: () => "Preprod",
     resolvePaymentUserTokenUpstream: resolvePaymentUserTokenUpstreamMock,
     toUpstreamResponse: async (response: Response) => {
       const text = await response.text();
@@ -60,7 +61,7 @@ describe("/api/v1/payment", () => {
       authMethod: "session",
     });
     rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
-    consumeCreditOrThrowMock.mockResolvedValue({
+    consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
@@ -101,10 +102,11 @@ describe("/api/v1/payment", () => {
     );
     const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers;
     expect(headers.get("token")).toBe("payment-user-token");
-    expect(consumeCreditOrThrowMock).toHaveBeenCalledWith({
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith({
       userId: "user-1",
       reason: "payment_proxy_write",
       reference: "payment-proxy-write:test",
+      network: "Preprod",
       metadata: {
         method: "POST",
         route: "payment",
@@ -132,6 +134,6 @@ describe("/api/v1/payment", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
-    expect(consumeCreditOrThrowMock).not.toHaveBeenCalled();
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
   });
 });

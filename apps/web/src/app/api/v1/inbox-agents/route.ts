@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
-  consumeCreditOrThrow,
+  consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
 import { prepareManagedInboxRegistration } from "@/lib/inbox-agents/server";
@@ -132,10 +132,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await consumeCreditOrThrow({
+    await consumeCreditIfRequired({
       userId: authContext.user.id,
       reason: "inbox_agent_register",
       reference: createCreditReference("inbox-agent-register"),
+      network,
       metadata: {
         name: validation.data.name.trim(),
         agentSlug: canonicalSlug,

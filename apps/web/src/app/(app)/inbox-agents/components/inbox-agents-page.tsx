@@ -1,10 +1,9 @@
 "use client";
 
-import { ExternalLink, Plus, Search, Trash2, Unplug } from "lucide-react";
+import { ExternalLink, Search, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +29,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -40,20 +38,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
-  inboxAgentApiClient,
   type InboxAgent,
+  inboxAgentApiClient,
   type InboxAgentFilterStatus,
 } from "@/lib/api/inbox-agent.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import {
-  INBOX_AGENT_LIMITS,
-  normalizeInboxAgentSlug,
-} from "@/lib/inbox-agents/validation";
-import { zodResolver } from "@/lib/form-zod-resolver";
-import { registerInboxAgentBodySchema } from "@/lib/schemas/inbox-agent";
 import {
   cn,
   formatDate,
@@ -77,12 +68,6 @@ type CursorPageState<T> = {
   isLoading: boolean;
   isPageLoading: boolean;
   error: string | null;
-};
-
-type RegisterInboxAgentForm = {
-  name: string;
-  description?: string;
-  agentSlug: string;
 };
 
 function createCursorPageState<T>(): CursorPageState<T> {
@@ -331,171 +316,6 @@ function InboxAgentsPagination({
         </PaginationItem>
       </PaginationContent>
     </Pagination>
-  );
-}
-
-function RegisterInboxAgentDialog({
-  open,
-  onOpenChange,
-  onSuccess,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}) {
-  const { network } = usePaymentNetwork();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<RegisterInboxAgentForm>({
-    resolver: zodResolver(registerInboxAgentBodySchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      agentSlug: "",
-    },
-  });
-
-  const description = form.watch("description");
-
-  useEffect(() => {
-    if (!open) return;
-
-    form.reset({
-      name: "",
-      description: "",
-      agentSlug: "",
-    });
-  }, [form, network, open]);
-
-  const onSubmit = form.handleSubmit(async (values) => {
-    setIsSubmitting(true);
-    try {
-      const result = await inboxAgentApiClient.registerInboxAgent(
-        {
-          name: values.name,
-          description: values.description || undefined,
-          agentSlug: normalizeInboxAgentSlug(values.agentSlug),
-        },
-        { network },
-      );
-
-      if (!result.success) {
-        toast.error(result.error || "Failed to register inbox agent");
-        return;
-      }
-
-      toast.success("Inbox agent registration started");
-      onOpenChange(false);
-      onSuccess();
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader>
-          <DialogTitle>Register inbox agent</DialogTitle>
-          <DialogDescription>
-            Create a new inbox-agent registration for the active {network}{" "}
-            network.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form className="space-y-5" onSubmit={onSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
-            <Input
-              {...form.register("name")}
-              maxLength={INBOX_AGENT_LIMITS.name}
-              placeholder="Support inbox"
-            />
-            {form.formState.errors.name && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.name.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
-            <div className="relative">
-              <Textarea
-                {...form.register("description")}
-                rows={4}
-                maxLength={INBOX_AGENT_LIMITS.description}
-                placeholder="Describe what this inbox agent handles"
-                className="min-h-[112px] resize-none pr-16"
-              />
-              <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
-                {description?.length ?? 0}/{INBOX_AGENT_LIMITS.description}
-              </div>
-            </div>
-            {form.formState.errors.description && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.description.message}
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Inbox slug</label>
-              <Input
-                {...form.register("agentSlug")}
-                maxLength={INBOX_AGENT_LIMITS.slug}
-                placeholder="support-inbox"
-                onChange={(event) => {
-                  form.setValue(
-                    "agentSlug",
-                    normalizeInboxAgentSlug(event.target.value),
-                    { shouldValidate: true },
-                  );
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                Lowercase letters, numbers, and hyphens only.
-              </p>
-              {form.formState.errors.agentSlug && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.agentSlug.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-4">
-              <div className="text-sm font-medium">Managed wallet setup</div>
-              <p className="text-sm text-muted-foreground">
-                Masumi will create the required registration wallet and use your
-                configured funding wallet automatically on {network}.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Spinner className="mr-2" size={16} />
-                  Registering...
-                </>
-              ) : (
-                "Register inbox agent"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -755,7 +575,6 @@ export function InboxAgentsPage() {
   const [activeTab, setActiveTab] = useState<InboxTabKey>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<InboxAgent | null>(null);
   const [state, setState] = useState<CursorPageState<InboxAgent>>(
     createCursorPageState(),
@@ -881,21 +700,15 @@ export function InboxAgentsPage() {
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
             {activeSection === "manage"
-              ? `Register, inspect, deregister, and clean up inbox-agent registrations on ${network}.`
-              : `Browse the latest verified inbox agents published to the Masumi registry on ${network}.`}
+              ? `Inspect, deregister, and clean up inbox-agent registrations on ${network}.`
+              : `Browse the latest pending and verified inbox agents published to the Masumi registry on ${network}.`}
           </p>
         </div>
         {activeSection === "manage" && (
-          <div className="flex items-center gap-2">
-            <RefreshButton
-              onRefresh={() => void loadFirstPage()}
-              isRefreshing={state.isLoading || state.isPageLoading}
-            />
-            <Button variant="primary" onClick={() => setRegisterOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Register inbox agent
-            </Button>
-          </div>
+          <RefreshButton
+            onRefresh={() => void loadFirstPage()}
+            isRefreshing={state.isLoading || state.isPageLoading}
+          />
         )}
       </div>
 
@@ -944,8 +757,7 @@ export function InboxAgentsPage() {
                 <div className="mx-auto max-w-md space-y-2">
                   <p className="text-base font-medium">No inbox agents found</p>
                   <p className="text-sm text-muted-foreground">
-                    Try a broader search, switch tabs, or register a new inbox
-                    agent.
+                    Try a broader search or switch tabs.
                   </p>
                 </div>
               </div>
@@ -1063,14 +875,6 @@ export function InboxAgentsPage() {
           <InboxAgentsDiscovery />
         )}
       </div>
-
-      <RegisterInboxAgentDialog
-        open={registerOpen}
-        onOpenChange={setRegisterOpen}
-        onSuccess={() => {
-          void loadFirstPage();
-        }}
-      />
 
       <InboxAgentDetailsDialog
         agent={selectedAgent}
