@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { switchAccountAction } from "@/lib/actions/auth.action";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
@@ -161,133 +154,119 @@ export default async function OidcConsentPage({
   );
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{PAGE_COPY.protocolBadge}</Badge>
-            <Badge variant="outline">{clientLabel}</Badge>
-          </div>
-          <CardTitle>
-            {PAGE_COPY.titlePrefix} {session.user.email}
-          </CardTitle>
-          <CardDescription>
-            {clientLabel} {PAGE_COPY.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {errorMessage ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {errorMessage}
-            </div>
-          ) : null}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{PAGE_COPY.accountLabel}</p>
-            <p className="text-sm text-muted-foreground">
-              {session.user.name?.trim() || session.user.email}
-            </p>
-            <p className="break-all font-mono text-xs text-muted-foreground">
-              {session.user.email}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.identityScopesLabel}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {identityScopeItems.length === 0 ? (
-                <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
-              ) : (
-                identityScopeItems.map((scopeItem) => (
-                  <Badge key={scopeItem.scope} variant="outline">
-                    {scopeItem.label}
-                  </Badge>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.newPermissionsLabel}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {PAGE_COPY.newPermissionsDescription}
-            </p>
-            <OidcPermissionSummary
-              emptyLabel={PAGE_COPY.noNewPermissions}
-              groups={newApiPermissionGroups}
+    <AuthorizationRequestCard
+      protocolBadge={PAGE_COPY.protocolBadge}
+      clientLabel={clientLabel}
+      title={
+        <>
+          {PAGE_COPY.titlePrefix} {session.user.email}
+        </>
+      }
+      description={
+        <>
+          {clientLabel} {PAGE_COPY.description}
+        </>
+      }
+      footer={
+        <div className="flex w-full flex-col gap-3">
+          <form
+            action="/oidc/consent/submit"
+            method="post"
+            className="flex w-full flex-col gap-3 sm:flex-row"
+          >
+            <input type="hidden" name="consentCode" value={consentCode} />
+            <input
+              type="hidden"
+              name="clientId"
+              value={resolvedSearchParams.client_id ?? ""}
             />
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.grantedPermissionsLabel}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {PAGE_COPY.grantedPermissionsDescription}
-            </p>
-            <OidcPermissionSummary
-              emptyLabel={PAGE_COPY.noGrantedPermissions}
-              groups={existingApiPermissionGroups}
-              surfaceClassName="rounded-md border px-3 py-3"
+            <input
+              type="hidden"
+              name="scope"
+              value={resolvedSearchParams.scope ?? ""}
             />
-          </div>
-          {!emailVerified ? (
-            <EmailVerificationPanel
-              email={session.user.email}
-              continueUrl={continueUrl}
-            />
-          ) : null}
-        </CardContent>
-        <CardFooter>
-          <div className="flex w-full flex-col gap-3">
-            <form
-              action="/oidc/consent/submit"
-              method="post"
-              className="flex w-full flex-col gap-3 sm:flex-row"
-            >
-              <input type="hidden" name="consentCode" value={consentCode} />
-              <input
-                type="hidden"
-                name="clientId"
-                value={resolvedSearchParams.client_id ?? ""}
-              />
-              <input
-                type="hidden"
-                name="scope"
-                value={resolvedSearchParams.scope ?? ""}
-              />
-              <input
-                type="hidden"
-                name="continueUrl"
-                value={continueUrl ?? ""}
-              />
+            <input type="hidden" name="continueUrl" value={continueUrl ?? ""} />
+            <Button type="submit" name="accept" value="false" variant="outline">
+              {PAGE_COPY.cancel}
+            </Button>
+            {emailVerified ? (
               <Button
                 type="submit"
                 name="accept"
-                value="false"
-                variant="outline"
+                value="true"
+                variant="primary"
               >
-                {PAGE_COPY.cancel}
+                {PAGE_COPY.continue}
               </Button>
-              {emailVerified ? (
-                <Button
-                  type="submit"
-                  name="accept"
-                  value="true"
-                  variant="primary"
-                >
-                  {PAGE_COPY.continue}
-                </Button>
-              ) : null}
-            </form>
-            <form action={switchAccount} className="w-full">
-              <Button type="submit" variant="ghost" className="w-full">
-                {PAGE_COPY.switchAccount}
-              </Button>
-            </form>
+            ) : null}
+          </form>
+          <form action={switchAccount} className="w-full">
+            <Button type="submit" variant="ghost" className="w-full">
+              {PAGE_COPY.switchAccount}
+            </Button>
+          </form>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {errorMessage ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {errorMessage}
           </div>
-        </CardFooter>
-      </Card>
-    </main>
+        ) : null}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{PAGE_COPY.accountLabel}</p>
+          <p className="text-sm text-muted-foreground">
+            {session.user.name?.trim() || session.user.email}
+          </p>
+          <p className="break-all font-mono text-xs text-muted-foreground">
+            {session.user.email}
+          </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{PAGE_COPY.identityScopesLabel}</p>
+          <div className="flex flex-wrap gap-2">
+            {identityScopeItems.length === 0 ? (
+              <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
+            ) : (
+              identityScopeItems.map((scopeItem) => (
+                <Badge key={scopeItem.scope} variant="outline">
+                  {scopeItem.label}
+                </Badge>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <p className="text-sm font-medium">{PAGE_COPY.newPermissionsLabel}</p>
+          <p className="text-sm text-muted-foreground">
+            {PAGE_COPY.newPermissionsDescription}
+          </p>
+          <OidcPermissionSummary
+            emptyLabel={PAGE_COPY.noNewPermissions}
+            groups={newApiPermissionGroups}
+          />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">
+            {PAGE_COPY.grantedPermissionsLabel}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {PAGE_COPY.grantedPermissionsDescription}
+          </p>
+          <OidcPermissionSummary
+            emptyLabel={PAGE_COPY.noGrantedPermissions}
+            groups={existingApiPermissionGroups}
+            surfaceClassName="rounded-md border px-3 py-3"
+          />
+        </div>
+        {!emailVerified ? (
+          <EmailVerificationPanel
+            email={session.user.email}
+            continueUrl={continueUrl}
+          />
+        ) : null}
+      </div>
+    </AuthorizationRequestCard>
   );
 }

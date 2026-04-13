@@ -835,6 +835,53 @@ describe("SMOKE — OIDC device flow", () => {
     );
   });
 
+  it("device page shows an invalid-code error without requiring sign-in", async () => {
+    const devicePageRes = await request("/device?user_code=INVALID123", {
+      headers: {
+        Accept: "text/html",
+      },
+    });
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "Invalid device code. Check the code and try again.",
+    );
+  });
+
+  it("device page shows a timeout error for expired codes without requiring sign-in", async () => {
+    const deviceRes = await requestForm("/api/auth/device/code", {
+      body: {
+        client_id: "masumi-spacetime-cli",
+        scope: "openid profile offline_access",
+      },
+    });
+    expect(deviceRes.status).toBe(200);
+
+    const deviceBody = deviceRes.body as Record<string, unknown>;
+    await prisma.deviceCode.update({
+      where: {
+        userCode: String(deviceBody.user_code).replace(/-/g, ""),
+      },
+      data: {
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+
+    const devicePageRes = await request(
+      `/device?user_code=${encodeURIComponent(deviceBody.user_code as string)}`,
+      {
+        headers: {
+          Accept: "text/html",
+        },
+      },
+    );
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "This device code timed out. Start again from the CLI to get a new code.",
+    );
+  });
+
   it("approved device flow returns an OIDC token set from the standard token endpoint", async () => {
     const deviceRes = await requestForm("/api/auth/device/code", {
       body: {
