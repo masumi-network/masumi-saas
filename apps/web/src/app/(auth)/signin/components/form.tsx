@@ -6,9 +6,11 @@ import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
+import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignInInput, SignInInput } from "@/lib/schemas";
 
+import { MagicLinkCodePanel } from "../../components/magic-link-code-panel";
 import {
   SigninMagicLinkForm,
   type SigninMagicLinkFormHandle,
@@ -29,6 +31,8 @@ export default function SignInForm({
 }: SignInFormProps) {
   const t = useTranslations("Auth.SignIn");
   const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
+  const isOidcFlow =
+    safeCallbackUrl?.startsWith("/api/auth/oauth2/authorize") ?? false;
   const [usePassword, setUsePassword] = useState(false);
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [seedPassword, setSeedPassword] = useState<Partial<SignInInput> | null>(
@@ -55,15 +59,25 @@ export default function SignInForm({
 
   if (magicLinkEmail) {
     return (
-      <div className="w-full max-w-form space-y-6">
+      <div className="w-full max-w-form space-y-6 animate-page-in">
         <div className="text-center">
           <h1 className="text-4xl font-light tracking-tight mb-4">
             {t("checkEmail.title")}
           </h1>
           <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            {t("checkEmail.description", { email: magicLinkEmail })}
+            {t(
+              isOidcFlow
+                ? "checkEmail.oidcDescription"
+                : "checkEmail.description",
+              { email: magicLinkEmail },
+            )}
           </p>
         </div>
+
+        <MagicLinkCodePanel
+          email={magicLinkEmail}
+          callbackUrl={safeCallbackUrl}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button
@@ -78,16 +92,13 @@ export default function SignInForm({
           >
             {t("checkEmail.tryAnother")}
           </Button>
-          <Button variant="primary" asChild>
-            <Link href="/signin">{t("login")}</Link>
-          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
+    <div className="w-full max-w-form space-y-6 animate-page-in">
       <div className="text-center">
         <h1 className="text-4xl font-light tracking-tight mb-4">
           {t("title")}
@@ -134,7 +145,10 @@ export default function SignInForm({
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between w-full">
           <p className="text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
-            <Link href="/signup" className="underline hover:text-foreground">
+            <Link
+              href={buildAuthPageHref("/signup", safeCallbackUrl)}
+              className="underline hover:text-foreground"
+            >
               {t("register")}
             </Link>
           </p>

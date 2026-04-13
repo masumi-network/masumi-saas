@@ -6,8 +6,11 @@ import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
+import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignUpInput, SignUpInput } from "@/lib/schemas";
 
+import { MagicLinkCodePanel } from "../../components/magic-link-code-panel";
 import {
   SignupMagicLinkForm,
   type SignupMagicLinkFormHandle,
@@ -19,10 +22,17 @@ import {
 
 interface SignUpFormProps {
   oauthProviders?: ("google" | "github" | "microsoft")[];
+  callbackUrl?: string;
 }
 
-export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
+export default function SignUpForm({
+  oauthProviders = [],
+  callbackUrl,
+}: SignUpFormProps) {
   const t = useTranslations("Auth.SignUp");
+  const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
+  const isOidcFlow =
+    safeCallbackUrl?.startsWith("/api/auth/oauth2/authorize") ?? false;
   const [usePassword, setUsePassword] = useState(false);
   const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
   const [seedPassword, setSeedPassword] = useState<Partial<SignUpInput> | null>(
@@ -57,15 +67,25 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
 
   if (magicLinkEmail) {
     return (
-      <div className="w-full max-w-form space-y-6">
+      <div className="w-full max-w-form space-y-6 animate-page-in">
         <div className="text-center">
           <h1 className="text-4xl font-light tracking-tight mb-4">
             {t("checkEmail.title")}
           </h1>
           <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            {t("checkEmail.description", { email: magicLinkEmail })}
+            {t(
+              isOidcFlow
+                ? "checkEmail.oidcDescription"
+                : "checkEmail.description",
+              { email: magicLinkEmail },
+            )}
           </p>
         </div>
+
+        <MagicLinkCodePanel
+          email={magicLinkEmail}
+          callbackUrl={safeCallbackUrl}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button
@@ -80,16 +100,13 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
           >
             {t("checkEmail.tryAnother")}
           </Button>
-          <Button variant="primary" asChild>
-            <Link href="/signin">{t("login")}</Link>
-          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
+    <div className="w-full max-w-form space-y-6 animate-page-in">
       <div className="text-center">
         <h1 className="text-4xl font-light tracking-tight mb-4">
           {t("title")}
@@ -100,19 +117,24 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} />
+        <SocialAuthButtons
+          providers={oauthProviders}
+          callbackURL={safeCallbackUrl}
+        />
       )}
 
       {usePassword ? (
         <SignupPasswordForm
           ref={passwordRef}
           seedFromMagicLink={seedPassword}
+          safeCallbackUrl={safeCallbackUrl}
         />
       ) : (
         <SignupMagicLinkForm
           key={magicFormKey}
           ref={magicRef}
           seedFromPassword={seedMagic}
+          safeCallbackUrl={safeCallbackUrl}
           onMagicLinkSent={(email) => setMagicLinkEmail(email)}
         />
       )}
@@ -130,7 +152,10 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
 
         <p className="text-center text-sm text-muted-foreground">
           {t("hasAccount")}{" "}
-          <Link href="/signin" className="underline hover:text-foreground">
+          <Link
+            href={buildAuthPageHref("/signin", safeCallbackUrl)}
+            className="underline hover:text-foreground"
+          >
             {t("login")}
           </Link>
         </p>

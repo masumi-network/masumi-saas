@@ -5,6 +5,10 @@ import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import {
+  getWalletOwnedAgentForUser,
+  listWalletOwnedAgentsForUser,
+} from "@/lib/agents/wallet-ownership";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createPaymentNodeClient,
@@ -21,7 +25,7 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
-/** Returns agent IDs for the current user that need on-chain registration completion
+/** Returns agent IDs for the current user that still need on-chain registration work
  *  (stuck after tab close). Used to recover polling on next app load. */
 export async function getPendingRegistrationAgentIdsAction(): Promise<
   string[]
@@ -30,19 +34,23 @@ export async function getPendingRegistrationAgentIdsAction(): Promise<
     const { user } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
-    const agents = await prisma.agent.findMany({
-      where: {
+    const [preprodAgents, mainnetAgents] = await Promise.all([
+      listWalletOwnedAgentsForUser({
         userId: user.id,
-        registrationState: {
-          in: ["RegistrationRequested", "RegistrationInitiated"],
-        },
-        agentReference: {
-          externalId: null,
-        },
-      },
-      select: { id: true },
-    });
-    return agents.map((a) => a.id);
+        network: "Preprod",
+      }),
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Mainnet",
+      }),
+    ]);
+    return [...preprodAgents, ...mainnetAgents]
+      .filter((agent) =>
+        ["RegistrationRequested", "RegistrationInitiated"].includes(
+          agent.registrationState,
+        ),
+      )
+      .map((agent) => agent.id);
   } catch {
     return [];
   }
@@ -62,6 +70,13 @@ export async function completeRegistrationIfReadyAction(
 > {
   try {
     const { user } = await getAuthenticatedOrThrow();
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
+    });
+    if (!agent) {
+      return { status: "error", error: "Agent not found" };
+    }
     const result = await completeOnChainRegistration(agentId, user.id);
     if (result.status === "registered") {
       return { status: "registered", data: result.data };
@@ -93,25 +108,23 @@ export async function getAgentsAction(filters?: {
     const network = await getNetworkFromCookie();
 
     const verificationFilter = filters?.unverified
-      ? { verificationStatus: { not: "VERIFIED" as const } }
+      ? (agent: { verificationStatus: string | null }) =>
+          agent.verificationStatus !== "VERIFIED"
       : filters?.verificationStatus !== undefined
-        ? { verificationStatus: filters.verificationStatus ?? undefined }
-        : {};
+        ? (agent: { verificationStatus: string | null }) =>
+            agent.verificationStatus === filters.verificationStatus
+        : () => true;
 
-    const agents = await prisma.agent.findMany({
-      where: {
-        userId: user.id,
-        ...verificationFilter,
-        OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    const agents = await listWalletOwnedAgentsForUser({
+      userId: user.id,
+      network,
     });
 
     return {
       success: true as const,
-      data: agents,
+      data: agents
+        .filter(verificationFilter)
+        .map(({ agentReference: _agentReference, ...agent }) => agent),
     };
   } catch (error) {
     console.error("Failed to get agents:", error);
@@ -125,9 +138,9 @@ export async function getAgentsAction(filters?: {
 export async function syncAgentRegistrationStatusAction(agentId: string) {
   try {
     const { user } = await getAuthenticatedOrThrow();
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      include: { agentReference: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
     });
     if (!agent || !agent.agentReference?.externalId)
       return { success: true as const };
@@ -202,11 +215,9 @@ export async function getAgentAction(agentId: string) {
       requireEmailVerified: false,
     });
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
     });
 
     if (!agent) {
@@ -229,13 +240,13 @@ export async function getAgentAction(agentId: string) {
   }
 }
 
-export async function deleteAgentAction(agentId: string) {
+export async function deleteAgentAction(agentId: string, userId?: string) {
   try {
-    const { user } = await getAuthenticatedOrThrow();
+    const resolvedUserId = userId ?? (await getAuthenticatedOrThrow()).user.id;
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      include: { agentReference: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: resolvedUserId,
+      agentId,
     });
 
     if (!agent) {
@@ -310,11 +321,9 @@ export async function requestAgentVerificationAction(agentId: string) {
   try {
     const { user } = await getAuthenticatedOrThrow();
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
     });
 
     if (!agent) {

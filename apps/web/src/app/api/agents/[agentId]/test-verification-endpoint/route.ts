@@ -1,8 +1,9 @@
-import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 
 /**
@@ -14,19 +15,22 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
       return apiError("Agent not found", 404);
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (agent.registrationState !== "RegistrationConfirmed") {
       return apiError(

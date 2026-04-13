@@ -68,29 +68,54 @@ export const SigninPasswordForm = forwardRef<
   async function onSubmit(data: SignInInput) {
     setIsLoading(true);
     try {
-      const result = await signInAction(objectToFormData(data));
+      const result = await signInAction(
+        objectToFormData(data),
+        safeCallbackUrl,
+      );
 
-      if ("error" in result) {
+      if (result && "error" in result) {
+        console.error("[signin] Sign-in action returned error result", {
+          result,
+          safeCallbackUrl,
+        });
         toast.error(result.errorKey ? tErrors(result.errorKey) : result.error);
         return;
       }
 
-      if ("twoFactorRedirect" in result && result.twoFactorRedirect) {
+      if (result && "twoFactorRedirect" in result && result.twoFactorRedirect) {
+        console.info("[signin] Redirecting to 2FA", { safeCallbackUrl });
         router.push("/2fa");
         return;
       }
 
-      if ("success" in result && result.success) {
+      if (result && "success" in result && result.success) {
+        console.info("[signin] Redirecting after successful sign-in", {
+          redirectTo: result.redirectTo,
+          safeCallbackUrl,
+        });
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        router.push(safeCallbackUrl ?? "/");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        window.location.assign(result.redirectTo);
         return;
       }
+
+      const fallbackRedirectTo = safeCallbackUrl ?? "/";
+      console.warn(
+        "[signin] Unexpected sign-in action result, using fallback redirect",
+        {
+          result,
+          fallbackRedirectTo,
+        },
+      );
+      window.location.assign(fallbackRedirectTo);
+      return;
+    } catch (error) {
+      console.error("[signin] Password sign-in failed", {
+        safeCallbackUrl,
+        error,
+      });
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
       );

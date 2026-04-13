@@ -1,6 +1,7 @@
-import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
@@ -39,18 +40,14 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      select: {
-        agentIdentifier: true,
-        networkIdentifier: true,
-        registrationState: true,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
@@ -59,6 +56,11 @@ export async function GET(
         { status: 404 },
       );
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     // Agents must have been on-chain to have earnings. Exclude: not yet registered
     // (RegistrationRequested, RegistrationInitiated) or failed (RegistrationFailed).
@@ -103,7 +105,7 @@ export async function GET(
     }
     const period = queryResult.data.period;
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
       return NextResponse.json({
         success: true,

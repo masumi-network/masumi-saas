@@ -1,19 +1,27 @@
 import "server-only";
 
+import prisma from "@masumi/database/client";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
 
 import { authConfig } from "@/lib/config/auth.config";
+import { normalizeScopeList } from "@/lib/config/oidc-scopes.config";
+import { InsufficientCreditsError } from "@/lib/credits/service";
 
 import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
-import type { SessionWithOrganization } from "./session-types";
+import {
+  getBetterAuthInnerSession,
+  type SessionWithOrganization,
+} from "./session-types";
 
 /** Full session object from Better Auth after a successful lookup. */
 export type AuthSessionFull = NonNullable<
   Awaited<ReturnType<typeof auth.api.getSession>>
 >;
+
+export type ApiAuthMethod = "session" | "apiKey" | "oidcAccessToken";
 
 /**
  * Single return shape for {@link getAuthenticatedOrThrow}: headers, guaranteed user + session,
@@ -21,9 +29,12 @@ export type AuthSessionFull = NonNullable<
  */
 export type AuthenticatedApiContext = {
   headers: Headers;
-  session: AuthSessionFull;
+  session: AuthSessionFull | null;
   user: NonNullable<AuthSessionFull["user"]>;
   activeOrganizationId: string | null;
+  authMethod: ApiAuthMethod;
+  oidcClientId: string | null;
+  oidcScopes: string[];
 };
 
 /** Thrown when the request has no valid session or API key. Use for 401 responses in API routes. */
@@ -42,10 +53,79 @@ export class EmailNotVerifiedError extends Error {
   }
 }
 
+/** Thrown when an authenticated OIDC access token lacks the required scope. */
+export class ForbiddenError extends Error {
+  constructor(message = "Forbidden") {
+    super(message);
+    this.name = "ForbiddenError";
+  }
+}
+
 export interface AuthContext {
   isAuthenticated: boolean;
   userId: string | null;
   session: Awaited<ReturnType<typeof auth.api.getSession>> | null;
+}
+
+function getBearerToken(headers: Headers): string | null {
+  const authHeader = headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
+
+async function resolveOidcAccessTokenContext(
+  standardHeaders: Headers,
+): Promise<AuthenticatedApiContext | null> {
+  const bearerToken = getBearerToken(standardHeaders);
+  if (
+    !bearerToken ||
+    bearerToken.startsWith(authConfig.apiKey.defaultKeyPrefix)
+  ) {
+    return null;
+  }
+
+  const accessToken = await prisma.oauthAccessToken.findUnique({
+    where: { accessToken: bearerToken },
+    include: { user: true },
+  });
+
+  if (!accessToken?.user || accessToken.accessTokenExpiresAt <= new Date()) {
+    return null;
+  }
+
+  return {
+    headers: standardHeaders,
+    session: null,
+    user: accessToken.user as NonNullable<AuthSessionFull["user"]>,
+    activeOrganizationId: null,
+    authMethod: "oidcAccessToken",
+    oidcClientId: accessToken.clientId,
+    oidcScopes: normalizeScopeList(accessToken.scopes),
+  };
+}
+
+function buildSessionAuthContext(
+  standardHeaders: Headers,
+  session: AuthSessionFull,
+): AuthenticatedApiContext {
+  const innerSession = getBetterAuthInnerSession(session);
+  const isApiKeyAuth =
+    typeof innerSession?.token === "string" &&
+    innerSession.token.startsWith(authConfig.apiKey.defaultKeyPrefix);
+
+  return {
+    headers: standardHeaders,
+    user: session.user,
+    session,
+    activeOrganizationId: getActiveOrganizationId(session),
+    authMethod: isApiKeyAuth ? "apiKey" : "session",
+    oidcClientId: null,
+    oidcScopes: [],
+  };
 }
 
 export async function getRequestHeaders() {
@@ -84,23 +164,14 @@ export async function getAuthContextWithHeaders(): Promise<
     >;
   }
 > {
-  const headersList = await getRequestHeaders();
-  const standardHeaders =
-    headersList instanceof Headers ? headersList : new Headers(headersList);
-  const session = await auth.api.getSession({
-    headers: standardHeaders,
-  });
-
-  if (!session?.user) {
-    throw new UnauthorizedError();
-  }
+  const authContext = await getAuthenticatedOrThrow();
 
   return {
     isAuthenticated: true,
-    userId: session.user.id,
-    session,
-    headers: standardHeaders,
-    user: session.user,
+    userId: authContext.user.id,
+    session: authContext.session,
+    headers: authContext.headers,
+    user: authContext.user,
   };
 }
 
@@ -146,23 +217,23 @@ export async function getAuthenticatedOrThrow(
     headers: standardHeaders,
   });
 
-  if (!session?.user) {
+  const authContext =
+    session?.user != null
+      ? buildSessionAuthContext(standardHeaders, session)
+      : await resolveOidcAccessTokenContext(standardHeaders);
+
+  if (!authContext) {
     throw new UnauthorizedError();
   }
 
   const requireEmailVerified =
     opts?.requireEmailVerified ??
     authConfig.emailAndPassword.requireEmailVerification;
-  if (requireEmailVerified && session.user.emailVerified !== true) {
+  if (requireEmailVerified && authContext.user.emailVerified !== true) {
     throw new EmailNotVerifiedError();
   }
 
-  return {
-    headers: standardHeaders,
-    user: session.user,
-    session,
-    activeOrganizationId: getActiveOrganizationId(session),
-  };
+  return authContext;
 }
 
 /** Use in API route catch blocks: returns 401 for UnauthorizedError, 403 for EmailNotVerifiedError, otherwise null. */
@@ -177,6 +248,23 @@ export function handleAuthError(error: unknown): NextResponse | null {
     return NextResponse.json(
       { success: false, error: "Email verification required" },
       { status: 403 },
+    );
+  }
+  if (error instanceof ForbiddenError) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 403 },
+    );
+  }
+  if (error instanceof InsufficientCreditsError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+        creditsRemaining: error.creditsRemaining,
+        requiredCredits: error.requiredCredits,
+      },
+      { status: 402 },
     );
   }
   return null;

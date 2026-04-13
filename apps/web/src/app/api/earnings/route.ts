@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   type DashboardEarningsAmountUnit,
@@ -114,7 +115,7 @@ function primaryAmountFromUnits(
 
 export async function GET(request: Request) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -133,8 +134,13 @@ export async function GET(request: Request) {
       );
     }
     const { period, network } = queryResult.data;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "earnings",
+      action: "read",
+      network,
+    });
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
       return NextResponse.json({
         success: true,

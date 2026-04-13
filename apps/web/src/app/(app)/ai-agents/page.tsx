@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function AgentsPage() {
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 animate-page-in">
       <AgentsContent />
     </div>
   );

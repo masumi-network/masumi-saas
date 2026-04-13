@@ -3,6 +3,7 @@
 import {
   adminClient,
   apiKeyClient,
+  emailOTPClient,
   organizationClient,
   twoFactorClient,
 } from "better-auth/client/plugins";
@@ -12,6 +13,7 @@ export const authClient = createAuthClient({
   plugins: [
     organizationClient(),
     apiKeyClient(),
+    emailOTPClient(),
     adminClient(),
     twoFactorClient({
       onTwoFactorRedirect() {
@@ -33,3 +35,5 @@ export const {
   changeEmail,
   twoFactor,
 } = authClient;
+
+export const emailOtp = authClient.emailOtp;

@@ -169,18 +169,23 @@ export default async function DashboardOverview({
                     <Link
                       href={`/ai-agents/${agent.id}?from=dashboard`}
                       aria-label={t("agentLinkAria", { name: agent.name })}
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                      className="flex min-w-0 items-center justify-between gap-3 rounded-md border p-3 transition-all duration-200 hover:bg-muted/50 hover:-translate-y-px hover:shadow-sm"
                     >
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <p
-                          className="min-w-0 truncate text-sm font-medium"
-                          title={agent.name}
-                        >
-                          {agent.name}
-                        </p>
-                        {agent.verificationStatus === "VERIFIED" && (
-                          <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
-                        )}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                          <Bot className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <p
+                            className="min-w-0 truncate text-sm font-medium"
+                            title={agent.name}
+                          >
+                            {agent.name}
+                          </p>
+                          {agent.verificationStatus === "VERIFIED" && (
+                            <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
+                          )}
+                        </div>
                       </div>
                       <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
                         {formatPricingDisplay(agent.pricing)}
@@ -231,7 +236,7 @@ export default async function DashboardOverview({
                       animationDelay: `${Math.min(index, 9) * 40}ms`,
                     }}
                   >
-                    <div className="flex items-center justify-between rounded-md border p-3">
+                    <div className="flex items-center justify-between rounded-md border p-3 transition-all duration-200 hover:bg-muted/50 hover:-translate-y-px hover:shadow-sm">
                       <p className="font-medium">
                         {key.name || key.start || key.prefix || "API Key"}
                       </p>

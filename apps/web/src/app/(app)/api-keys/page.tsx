@@ -26,7 +26,7 @@ export default async function ApiKeysPage() {
   const result = await getApiKeysAction();
   if (!result.success) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 animate-page-in">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground text-sm leading-6">
@@ -39,7 +39,7 @@ export default async function ApiKeysPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-page-in">
       <div className="space-y-2">
         <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm leading-6">

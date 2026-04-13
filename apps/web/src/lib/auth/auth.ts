@@ -7,7 +7,12 @@ import { nextCookies } from "better-auth/next-js";
 import {
   admin,
   apiKey,
+  bearer,
+  deviceAuthorization,
+  emailOTP,
+  jwt,
   magicLink,
+  oidcProvider,
   organization,
   twoFactor,
 } from "better-auth/plugins";
@@ -18,16 +23,133 @@ import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
+import {
+  getPublicOidcMetadata,
+  getTrustedOidcClients,
+  getTrustedOidcOrigins,
+  OIDC_ID_TOKEN_SIGNING_ALG,
+  oidcEnvConfig,
+} from "@/lib/config/oidc.config";
+import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
+import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactResetPasswordEmail } from "@/lib/email/reset-password";
 import { reactVerificationEmail } from "@/lib/email/verification";
+import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
 import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
+const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
+const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
+
+function generateEmailVerificationCode(length = 6): string {
+  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+}
+
+type EmailOtpType = "email-verification" | "sign-in";
+
+function logDevCode(label: string, email: string, otp: string) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.log(`\n[DEV] ${label}`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log(`To: ${email}`);
+  console.log(`Verification Code: ${otp}`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+}
+
+async function createEmailOtp(
+  email: string,
+  type: EmailOtpType,
+): Promise<string> {
+  const identifier = `${type}-otp-${email.toLowerCase()}`;
+  const otp = generateEmailVerificationCode();
+
+  await prisma.verification.deleteMany({
+    where: {
+      identifier,
+    },
+  });
+
+  await prisma.verification.create({
+    data: {
+      id: crypto.randomUUID(),
+      identifier,
+      value: `${otp}:0`,
+      expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
+    },
+  });
+
+  return otp;
+}
+
+async function createEmailVerificationOtp(email: string): Promise<string> {
+  return await createEmailOtp(email, "email-verification");
+}
+
+async function createMagicLinkOtp(email: string): Promise<string> {
+  return await createEmailOtp(email, "sign-in");
+}
+
+async function sendVerificationOtpEmail({
+  email,
+  otp,
+}: {
+  email: string;
+  otp: string;
+}) {
+  if (process.env.NODE_ENV === "development") {
+    logDevCode("Email verification code", email, otp);
+    if (!postmarkClient) {
+      console.log(
+        "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
+      );
+      return;
+    }
+  }
+
+  if (!postmarkClient) {
+    console.error("Postmark not configured. Email verification OTP failed.", {
+      to: email,
+    });
+    throw new APIError("INTERNAL_SERVER_ERROR", {
+      message: "Failed to send verification code. Please try again.",
+    });
+  }
+
+  const headersList = await headers();
+  const locale = parseAcceptLanguage(headersList.get("accept-language"));
+  const msg = getEmailMessages(locale).VerificationCode;
+
+  await postmarkClient.sendEmail({
+    From: emailConfig.postmarkFromEmail,
+    To: email,
+    Tag: "verification-code",
+    Subject: msg.preview,
+    HtmlBody: await reactVerificationCodeEmail({
+      name: displayNameFromEmail(email),
+      otpCode: otp,
+      translations: {
+        preview: msg.preview,
+        title: msg.title,
+        greeting: msg.greeting,
+        message: msg.message,
+        codeLabel: msg.codeLabel,
+        expiry: msg.expiry,
+        footer: msg.footer,
+      },
+    }),
+    MessageStream: "outbound",
+  });
+}
+
 export const auth = betterAuth({
+  disabledPaths: ["/token"],
   appName: "Masumi",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -36,8 +158,10 @@ export const auth = betterAuth({
   baseURL: authEnvConfig.baseUrl,
   trustedOrigins: [
     authEnvConfig.baseUrl,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    oidcEnvConfig.issuer,
+    "http://localhost:2999",
+    "http://127.0.0.1:2999",
+    ...getTrustedOidcOrigins(),
   ],
   emailAndPassword: {
     enabled: true,
@@ -99,14 +223,19 @@ export const auth = betterAuth({
       const isResend =
         typeof request?.url === "string" &&
         request.url.includes("send-verification-email");
+      const verificationCode = await createEmailVerificationOtp(user.email);
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("\n[DEV] Email verification link");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log(`To: ${user.email}`);
+        console.log(`Verification Link: ${url}`);
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        logDevCode("Email verification code", user.email, verificationCode);
+      }
 
       if (!postmarkClient) {
         if (process.env.NODE_ENV === "development") {
-          console.log("\n[DEV] Email verification (Postmark not configured)");
-          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          console.log(`To: ${user.email}`);
-          console.log(`Verification Link: ${url}`);
-          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           console.log(
             "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
           );
@@ -133,6 +262,7 @@ export const auth = betterAuth({
           HtmlBody: await reactVerificationEmail({
             name: user.name || "User",
             verificationLink: url,
+            verificationCode,
             logoUrl: emailConfig.brandLogoUrl,
             translations: {
               preview: msg.preview,
@@ -140,6 +270,9 @@ export const auth = betterAuth({
               greeting: msg.greeting,
               message: msg.message,
               button: msg.button,
+              codeLabel: msg.codeLabel,
+              codeExpiry: msg.codeExpiry,
+              codeHelp: msg.codeHelp,
               linkText: msg.linkText,
               footer: msg.footer,
             },
@@ -189,12 +322,57 @@ export const auth = betterAuth({
               );
             }
           }
+          await grantInitialCreditsIfNeeded(user.id);
           await createPaymentNodeKeyForUser(user.id);
         },
       },
     },
   },
   plugins: [
+    jwt({
+      jwt: {
+        issuer: oidcEnvConfig.issuer,
+      },
+      jwks: {
+        keyPairConfig: {
+          alg: OIDC_ID_TOKEN_SIGNING_ALG,
+        },
+      },
+    }),
+    oidcProvider({
+      loginPage: "/signin",
+      consentPage: "/oidc/consent",
+      useJWTPlugin: true,
+      requirePKCE: true,
+      scopes: OIDC_API_SCOPES,
+      trustedClients: getTrustedOidcClients(),
+      metadata: getPublicOidcMetadata(),
+      getAdditionalUserInfoClaim: async (user, scopes) => {
+        if (!scopes.includes("profile")) return {};
+
+        return {
+          picture: user.image || undefined,
+        };
+      },
+    }),
+    deviceAuthorization({
+      verificationUri: oidcEnvConfig.deviceVerificationUri,
+      validateClient: async (clientId) =>
+        clientId === oidcEnvConfig.cli.clientId,
+    }),
+    emailOTP({
+      expiresIn: EMAIL_OTP_EXPIRES_IN_SECONDS,
+      otpLength: 6,
+      allowedAttempts: EMAIL_OTP_ALLOWED_ATTEMPTS,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type !== "email-verification") {
+          return;
+        }
+
+        await sendVerificationOtpEmail({ email, otp });
+      },
+    }),
+    bearer(),
     magicLink({
       expiresIn: authConfig.magicLink.expiresIn,
       rateLimit: authConfig.magicLink.rateLimit,
@@ -211,6 +389,7 @@ export const auth = betterAuth({
           existingUser?.name?.trim() ||
           requestedName ||
           displayNameFromEmail(email);
+        const magicCode = await createMagicLinkOtp(email);
 
         if (!postmarkClient) {
           if (process.env.NODE_ENV === "development") {
@@ -219,6 +398,7 @@ export const auth = betterAuth({
             console.log(`To: ${email}`);
             console.log(`Magic Link: ${url}`);
             console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            logDevCode("Magic link sign-in code", email, magicCode);
             console.log(
               "Tip: Set POSTMARK_SERVER_ID in your .env to send real emails\n",
             );
@@ -237,6 +417,10 @@ export const auth = betterAuth({
         const msg = getEmailMessages(locale).MagicLink;
 
         try {
+          if (process.env.NODE_ENV === "development") {
+            logDevCode("Magic link sign-in code", email, magicCode);
+          }
+
           await postmarkClient.sendEmail({
             From: emailConfig.postmarkFromEmail,
             To: email,
@@ -245,6 +429,7 @@ export const auth = betterAuth({
             HtmlBody: await reactMagicLinkEmail({
               name,
               magicLink: url,
+              magicCode,
               logoUrl: emailConfig.brandLogoUrl,
               includePrivacyConsent: !existingUser,
               privacyPolicyUrl: PRIVACY_POLICY_URL,
@@ -257,6 +442,9 @@ export const auth = betterAuth({
                 consentPrivacyLabel: msg.consentPrivacyLabel,
                 consentAfter: msg.consentAfter,
                 button: msg.button,
+                codeLabel: msg.codeLabel,
+                codeExpiry: msg.codeExpiry,
+                codeHelp: msg.codeHelp,
                 linkText: msg.linkText,
                 footer: msg.footer,
               },
@@ -297,8 +485,10 @@ export const auth = betterAuth({
         if (!headers) return null;
         const xApiKey = headers.get("x-api-key");
         if (xApiKey) return xApiKey;
-        const auth = headers.get("authorization");
-        if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
+        const authHeader = headers.get("authorization");
+        if (!authHeader?.startsWith("Bearer ")) return null;
+        const token = authHeader.slice(7).trim();
+        if (token.startsWith(authConfig.apiKey.defaultKeyPrefix)) return token;
         return null;
       },
     }),

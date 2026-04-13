@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import gridSvg from "@/assets/grid.svg";
@@ -13,8 +14,10 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }) {
   const authContext = await getAuthContext();
+  const cookieStore = await cookies();
+  const hasOidcLoginPrompt = cookieStore.has("oidc_login_prompt");
 
-  if (authContext.isAuthenticated) {
+  if (authContext.isAuthenticated && !hasOidcLoginPrompt) {
     redirect("/");
   }
 

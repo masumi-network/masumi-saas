@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import { Key, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
@@ -123,6 +123,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
 
         {filteredKeys.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
+            <Key className="mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground text-sm">
               {searchQuery.trim()
                 ? t("noKeysMatchingSearch")

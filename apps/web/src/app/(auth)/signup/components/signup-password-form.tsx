@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -39,16 +38,16 @@ export type SignupPasswordFormHandle = {
 
 export type SignupPasswordFormProps = {
   seedFromMagicLink?: Partial<SignUpInput> | null;
+  safeCallbackUrl?: string;
 };
 
 export const SignupPasswordForm = forwardRef<
   SignupPasswordFormHandle,
   SignupPasswordFormProps
->(function SignupPasswordForm({ seedFromMagicLink }, ref) {
+>(function SignupPasswordForm({ seedFromMagicLink, safeCallbackUrl }, ref) {
   const t = useTranslations("Auth.SignUp");
   const tErrors = useTranslations("Auth.Errors");
   const tResults = useTranslations("Auth.Results");
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignUpInput>({
@@ -79,9 +78,16 @@ export const SignupPasswordForm = forwardRef<
   async function onSubmit(data: SignUpInput) {
     setIsLoading(true);
     try {
-      const result = await signUpAction(objectToFormData(data));
+      const result = await signUpAction(
+        objectToFormData(data),
+        safeCallbackUrl,
+      );
 
-      if ("error" in result) {
+      if (result && "error" in result) {
+        console.error("[signup] Sign-up action returned error result", {
+          result,
+          safeCallbackUrl,
+        });
         const errorMessage = result.errorKey
           ? tErrors(result.errorKey)
           : result.error;
@@ -89,17 +95,34 @@ export const SignupPasswordForm = forwardRef<
         return;
       }
 
-      if ("success" in result && result.success) {
+      if (result && "success" in result && result.success) {
+        console.info("[signup] Redirecting after successful sign-up", {
+          redirectTo: result.redirectTo,
+          safeCallbackUrl,
+        });
         const successMessage = result.resultKey
           ? tResults(result.resultKey)
           : t("success");
         toast.success(successMessage);
-        router.push("/");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        window.location.assign(result.redirectTo);
         return;
       }
+
+      const fallbackRedirectTo = safeCallbackUrl ?? "/";
+      console.warn(
+        "[signup] Unexpected sign-up action result, using fallback redirect",
+        {
+          result,
+          fallbackRedirectTo,
+        },
+      );
+      window.location.assign(fallbackRedirectTo);
+      return;
+    } catch (error) {
+      console.error("[signup] Password sign-up failed", {
+        safeCallbackUrl,
+        error,
+      });
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
       );

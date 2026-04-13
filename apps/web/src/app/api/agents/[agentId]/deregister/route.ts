@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { deregisterAgentForUser } from "@/lib/deregister-agent";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
@@ -15,7 +17,8 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user } = authContext;
     const { agentId: rawAgentId } = await params;
     const agentIdResult = agentIdRouteParamSchema.safeParse(rawAgentId);
     if (!agentIdResult.success) {
@@ -31,6 +34,22 @@ export async function POST(
     }
     const agentId = agentIdResult.data;
     const networkFallback = networkFromRequest(request);
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
+    });
+    if (!agent) {
+      return NextResponse.json(
+        { success: false, error: "Agent not found" },
+        { status: 404 },
+      );
+    }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network:
+        agent.networkIdentifier === "Mainnet" ? "Mainnet" : networkFallback,
+    });
 
     const result = await deregisterAgentForUser(agentId, user.id, {
       networkFallback,

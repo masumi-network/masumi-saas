@@ -120,33 +120,64 @@ describe("SMOKE — Public API /api/v1/", () => {
       res.headers.get("ratelimit-limit") !== null;
     expect(hasRateLimit).toBe(true);
   });
+
+  it("public /api/v1/openapi stays limited to public discovery routes", async () => {
+    const res = await request("/api/v1/openapi");
+    expect(res.status).toBe(200);
+    const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/registry-entry"]).toBeUndefined();
+    expect(b.paths?.["/registry-diff"]).toBeUndefined();
+  });
 });
 
-describe("SMOKE — Payment node proxy /api/v1/", () => {
+describe("SMOKE — Authenticated /api/v1 proxy", () => {
   it("GET /api/v1/registry without auth → 401", async () => {
     const res = await request("/api/v1/registry?network=Preprod");
     expect(res.status).toBe(401);
   });
 
-  it("GET /api/v1/admin — not in allowlist → 403", async () => {
+  it("GET /api/v1/inbox-agents without auth → 401", async () => {
+    const res = await request("/api/v1/inbox-agents?network=Preprod");
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /api/v1/registry-entry without auth → 401", async () => {
+    const res = await request("/api/v1/registry-entry?network=Preprod", {
+      method: "POST",
+      body: { limit: 1, network: "Preprod" },
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("GET /api/v1/admin — not exposed → 404", async () => {
     const { CookieJar, signIn } = await import("../helpers");
     const jar = await signIn();
     const res = await request("/api/v1/admin", { jar });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
-  it("URL-encoded path traversal (%2e%2e) — proxy allowlist must block or Next.js must reject", async () => {
-    // %2e%2e = '..' URL-encoded — known bypass: Next.js decodes it and routes to /api/auth/get-session
-    // SECURITY BUG: currently returns 200 (null session body) — proxy allowlist does not catch encoded traversal
-    // This test locks in the current behavior so any change (fix or regression) is caught immediately
+  it("GET /api/v1/registry-source — registry admin path is not exposed → 404", async () => {
+    const { signIn } = await import("../helpers");
+    const jar = await signIn();
+    const res = await request("/api/v1/registry-source", { jar });
+    expect(res.status).toBe(404);
+  });
+
+  it("URL-encoded path traversal (%2e%2e) is not routable → 404", async () => {
     const res = await request("/api/v1/%2e%2e/auth/get-session");
-    // Known current behavior: Next.js decodes traversal and reaches the auth endpoint → 200 with null body
-    // If this suddenly returns 403/404 → traversal was fixed (update test to expect 403/404)
-    // If this returns 200 with a real user session → severity escalated (traversal now leaks session data)
-    expect([200, 403, 404]).toContain(res.status);
-    if (res.status === 200) {
-      // Safe only if session body is null (unauthenticated request returns null session)
-      expect(res.body).toBeNull();
-    }
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /api/openapi includes proxied registry lookup routes", async () => {
+    const res = await request("/api/openapi");
+    expect(res.status).toBe(200);
+    const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/v1/registry-entry"]).toBeDefined();
+    expect(b.paths?.["/v1/registry-diff"]).toBeDefined();
+    expect(b.paths?.["/v1/capability"]).toBeDefined();
+    expect(b.paths?.["/v1/registry-inbox"]).toBeUndefined();
+    expect(b.paths?.["/v1/inbox-agent-registration"]).toBeUndefined();
+    expect(b.paths?.["/v1/inbox-agents"]).toBeDefined();
+    expect(b.paths?.["/inbox-agents"]).toBeUndefined();
   });
 });

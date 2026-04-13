@@ -1,12 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-export async function proxy(_request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
+    "/api/v1/:path*",
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)
