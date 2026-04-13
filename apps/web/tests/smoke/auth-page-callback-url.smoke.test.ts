@@ -85,6 +85,43 @@ describe("SMOKE — auth page callback URL resolution", () => {
     expect(resolveAuthPageCallbackUrl({ foo: "bar" })).toBeUndefined();
   });
 
+  it("drops broken OIDC authorize callback URLs with error params", () => {
+    expect(
+      resolveAuthPageCallbackUrl({
+        callbackUrl:
+          "/api/auth/oauth2/authorize?error=invalid_client&error_description=client_id%20is%20required",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("ignores the OIDC cookie when the current auth page is already in an error state", () => {
+    const cookiePayload = encodeURIComponent(
+      JSON.stringify({
+        response_type: "code",
+        client_id: "masumi-spacetime-web",
+        redirect_uri: "http://localhost:5174/auth/callback",
+        scope: "openid profile email offline_access",
+        state: "state-error",
+        nonce: "nonce-error",
+        code_challenge: "challenge-error",
+        code_challenge_method: "S256",
+        prompt: "consent",
+      }),
+    );
+
+    expect(
+      resolveAuthPageCallbackUrl(
+        {
+          error: "invalid_client",
+          error_description: "client_id is required",
+          client_id: "masumi-spacetime-web",
+          state: "resume-state",
+        },
+        `${cookiePayload}.signature`,
+      ),
+    ).toBeUndefined();
+  });
+
   it("preserves callbackUrl when linking between auth pages", () => {
     expect(
       buildAuthPageHref(

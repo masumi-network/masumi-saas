@@ -99,6 +99,13 @@ function parseSignedJsonCookieValue(
 }
 
 function hasOidcContinuationHints(searchParams: AuthPageSearchParams): boolean {
+  if (
+    getFirstValue(searchParams.error) !== undefined ||
+    getFirstValue(searchParams.error_description) !== undefined
+  ) {
+    return false;
+  }
+
   return (
     getFirstValue(searchParams.client_id) !== undefined ||
     getFirstValue(searchParams.code) !== undefined ||

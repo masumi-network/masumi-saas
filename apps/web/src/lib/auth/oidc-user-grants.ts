@@ -11,6 +11,25 @@ import {
   serializeScopeList,
 } from "@/lib/config/oidc-scopes.config";
 
+type OidcRemovedScopeReason =
+  | "unsupported_scope"
+  | "not_allowed_for_client"
+  | "not_yet_granted";
+
+export type OidcRemovedScope = {
+  scope: string;
+  reason: OidcRemovedScopeReason;
+};
+
+export type OidcScopeResolution = {
+  clientKey: OidcClientKey | null;
+  requestedScopes: string[];
+  allowedScopes: string[];
+  storedGrantScopes: string[];
+  finalScopes: string[];
+  removedScopes: OidcRemovedScope[];
+};
+
 type OidcUserGrantDelegate = {
   findUnique: (
     ...args: unknown[]
@@ -65,6 +84,95 @@ function sanitizeGrantScopesForClient(
   );
 }
 
+export async function resolveOidcScopeGrantSet(options: {
+  clientId: string;
+  requestedScopes: Iterable<string> | string | null | undefined;
+  userId?: string | null;
+  enforceStoredGrants?: boolean;
+}): Promise<OidcScopeResolution> {
+  const requestedScopes = normalizeScopeList(options.requestedScopes);
+  const clientKey = resolveOidcClientKey(options.clientId);
+
+  if (!clientKey) {
+    const finalScopes = requestedScopes.filter((scope) =>
+      isOidcStandardScope(scope),
+    );
+
+    return {
+      clientKey: null,
+      requestedScopes,
+      allowedScopes: [],
+      storedGrantScopes: [],
+      finalScopes,
+      removedScopes: requestedScopes
+        .filter((scope) => !isOidcStandardScope(scope))
+        .map((scope) => ({
+          scope,
+          reason: "unsupported_scope" as const,
+        })),
+    };
+  }
+
+  const allowedScopes = getAllowedScopesForClient(clientKey);
+  const allowedScopeSet = new Set(allowedScopes);
+  const storedGrantScopes = options.userId
+    ? await getStoredOidcGrantScopes(options.userId, options.clientId)
+    : [];
+  const storedGrantScopeSet = new Set(storedGrantScopes);
+  const enforceStoredGrants = options.enforceStoredGrants === true;
+  const finalScopes: string[] = [];
+  const removedScopes: OidcRemovedScope[] = [];
+
+  for (const scope of requestedScopes) {
+    if (isOidcStandardScope(scope)) {
+      if (allowedScopeSet.has(scope)) {
+        finalScopes.push(scope);
+      } else {
+        removedScopes.push({
+          scope,
+          reason: "not_allowed_for_client",
+        });
+      }
+      continue;
+    }
+
+    if (!isOidcApiScope(scope)) {
+      removedScopes.push({
+        scope,
+        reason: "unsupported_scope",
+      });
+      continue;
+    }
+
+    if (!allowedScopeSet.has(scope)) {
+      removedScopes.push({
+        scope,
+        reason: "not_allowed_for_client",
+      });
+      continue;
+    }
+
+    if (enforceStoredGrants && !storedGrantScopeSet.has(scope)) {
+      removedScopes.push({
+        scope,
+        reason: "not_yet_granted",
+      });
+      continue;
+    }
+
+    finalScopes.push(scope);
+  }
+
+  return {
+    clientKey,
+    requestedScopes,
+    allowedScopes,
+    storedGrantScopes,
+    finalScopes,
+    removedScopes,
+  };
+}
+
 export async function getStoredOidcGrantScopes(
   userId: string,
   clientId: string,
@@ -111,38 +219,25 @@ export async function filterRequestedOidcScopes(options: {
   requestedScopes: Iterable<string> | string | null | undefined;
   userId?: string | null;
 }): Promise<string[]> {
-  const requestedScopes = normalizeScopeList(options.requestedScopes);
-  const clientKey = resolveOidcClientKey(options.clientId);
+  const resolution = await resolveOidcScopeGrantSet({
+    ...options,
+    enforceStoredGrants: true,
+  });
 
-  if (!clientKey) {
-    return requestedScopes.filter((scope) => isOidcStandardScope(scope));
-  }
+  return resolution.finalScopes;
+}
 
-  const allowedScopes = new Set(getAllowedScopesForClient(clientKey));
-  const standardScopes = requestedScopes.filter(
-    (scope) => isOidcStandardScope(scope) && allowedScopes.has(scope),
-  );
+export async function allowRequestedOidcScopesForConsent(options: {
+  clientId: string;
+  requestedScopes: Iterable<string> | string | null | undefined;
+  userId?: string | null;
+}): Promise<string[]> {
+  const resolution = await resolveOidcScopeGrantSet({
+    ...options,
+    enforceStoredGrants: false,
+  });
 
-  if (!options.userId) {
-    return standardScopes.concat(
-      requestedScopes.filter(
-        (scope) => isOidcApiScope(scope) && allowedScopes.has(scope),
-      ),
-    );
-  }
-
-  const storedGrantScopes = new Set(
-    await getStoredOidcGrantScopes(options.userId, options.clientId),
-  );
-
-  return standardScopes.concat(
-    requestedScopes.filter(
-      (scope) =>
-        isOidcApiScope(scope) &&
-        allowedScopes.has(scope) &&
-        storedGrantScopes.has(scope),
-    ),
-  );
+  return resolution.finalScopes;
 }
 
 export function serializeRequestedOidcScopes(
@@ -208,6 +303,30 @@ export async function setUserOidcGrantScopes(options: {
   });
 
   return sanitizedScopes;
+}
+
+export async function addUserOidcGrantScopes(options: {
+  userId: string;
+  clientId: string;
+  scopes: Iterable<string> | string | null | undefined;
+}): Promise<string[]> {
+  const existingScopes = await getStoredOidcGrantScopes(
+    options.userId,
+    options.clientId,
+  );
+  const requestedScopes = normalizeScopeList(options.scopes).filter((scope) =>
+    isOidcApiScope(scope),
+  );
+
+  if (requestedScopes.length === 0) {
+    return existingScopes;
+  }
+
+  return setUserOidcGrantScopes({
+    userId: options.userId,
+    clientId: options.clientId,
+    scopes: [...existingScopes, ...requestedScopes],
+  });
 }
 
 export async function getUserOidcGrantMap(

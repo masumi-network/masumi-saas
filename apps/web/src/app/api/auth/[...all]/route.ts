@@ -14,7 +14,11 @@ import {
   createIdTokenForRefreshToken,
   type OidcAccessTokenRecord,
 } from "@/lib/auth/oidc-id-token";
-import { filterRequestedOidcScopes } from "@/lib/auth/oidc-user-grants";
+import {
+  addUserOidcGrantScopes,
+  type OidcScopeResolution,
+  resolveOidcScopeGrantSet,
+} from "@/lib/auth/oidc-user-grants";
 import {
   getTrustedOidcClients,
   oidcEnvConfig,
@@ -28,6 +32,7 @@ import {
 const authHandler = toNextJsHandler(auth);
 
 const DEVICE_CODE_PATH = "/api/auth/device/code";
+const DEVICE_APPROVE_PATH = "/api/auth/device/approve";
 const DEVICE_TOKEN_PATH = "/api/auth/device/token";
 const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
@@ -56,6 +61,52 @@ type AuthorizationCodeVerificationRecord = {
   expiresAt: Date;
 };
 
+function getScopeRemovalReasonLabel(
+  reason: OidcScopeResolution["removedScopes"][number]["reason"],
+): string {
+  switch (reason) {
+    case "unsupported_scope":
+      return "scope is not part of the supported OIDC scope catalog";
+    case "not_allowed_for_client":
+      return "scope is not allowlisted for this client";
+    case "not_yet_granted":
+      return "scope has not been approved for this user yet";
+    default:
+      return reason;
+  }
+}
+
+function logOidcScopeResolution(
+  flow:
+    | "authorize-request"
+    | "authorization-code-token"
+    | "device-code-request"
+    | "device-token-exchange",
+  clientId: string,
+  resolution: OidcScopeResolution,
+  extra?: Record<string, unknown>,
+) {
+  if (!resolveOidcClientKey(clientId)) {
+    return;
+  }
+
+  const removedScopes = resolution.removedScopes.map((item) => ({
+    scope: item.scope,
+    reason: getScopeRemovalReasonLabel(item.reason),
+  }));
+
+  console.info("[oidc scopes]", {
+    flow,
+    clientId,
+    requestedScopes: resolution.requestedScopes,
+    allowedScopes: resolution.allowedScopes,
+    storedGrantScopes: resolution.storedGrantScopes,
+    finalGrantedScopes: resolution.finalScopes,
+    removedScopes,
+    ...extra,
+  });
+}
+
 async function getSessionForHeaders(requestHeaders: Headers) {
   return auth.api.getSession({
     headers: requestHeaders,
@@ -74,13 +125,6 @@ function isNonInteractiveOidcRequest(request: Request): boolean {
 
   const accept = request.headers.get("accept") ?? "";
   return accept.includes("application/json");
-}
-
-function getAuthorizeClientId(request: Request): string | null {
-  const url = new URL(request.url);
-  return url.pathname === OAUTH_AUTHORIZE_PATH
-    ? url.searchParams.get("client_id")
-    : null;
 }
 
 function hasContentType(request: Request, value: string): boolean {
@@ -411,7 +455,21 @@ async function exchangeAuthorizationCodeGrant(
   );
   const accessToken = randomBytes(32).toString("base64url");
   const refreshToken = randomBytes(32).toString("base64url");
-  const scopes = normalizeRequestedScopes(verificationValue.scope);
+  const scopeResolution = await resolveOidcScopeGrantSet({
+    clientId,
+    requestedScopes: normalizeRequestedScopes(verificationValue.scope),
+    userId: user.id,
+    enforceStoredGrants: true,
+  });
+  logOidcScopeResolution(
+    "authorization-code-token",
+    clientId,
+    scopeResolution,
+    {
+      userId: user.id,
+    },
+  );
+  const scopes = scopeResolution.finalScopes;
 
   const tokenRecord = (await prisma.oauthAccessToken.create({
     data: {
@@ -499,13 +557,20 @@ async function createGrantedScopeAuthorizeRequest(
   }
 
   const session = await getSessionForHeaders(request.headers);
-  const filteredScopes = await filterRequestedOidcScopes({
+  const scopeResolution = await resolveOidcScopeGrantSet({
     clientId,
     requestedScopes: url.searchParams.get("scope") ?? "openid",
     userId: session?.user?.id,
+    enforceStoredGrants: false,
+  });
+  logOidcScopeResolution("authorize-request", clientId, scopeResolution, {
+    userId: session?.user?.id ?? null,
   });
 
-  url.searchParams.set("scope", serializeScopeList(filteredScopes));
+  url.searchParams.set(
+    "scope",
+    serializeScopeList(scopeResolution.finalScopes),
+  );
   return new Request(url, request);
 }
 
@@ -761,11 +826,13 @@ async function createScopedDeviceCodeRequest(
   const bodyWithScopedValue = { ...body };
 
   if (resolveOidcClientKey(clientId)) {
-    const filteredScopes = await filterRequestedOidcScopes({
-      clientId,
+    const scopeResolution = await resolveOidcScopeGrantSet({
+      clientId: clientId!,
       requestedScopes: body.scope ?? "openid",
+      enforceStoredGrants: false,
     });
-    bodyWithScopedValue.scope = serializeScopeList(filteredScopes);
+    logOidcScopeResolution("device-code-request", clientId!, scopeResolution);
+    bodyWithScopedValue.scope = serializeScopeList(scopeResolution.finalScopes);
   }
 
   return createJsonRequest(request, request.url, bodyWithScopedValue);
@@ -788,10 +855,63 @@ async function getRequestedDeviceScopes(
     : [...OIDC_STANDARD_SCOPES];
 }
 
+async function getDeviceCodeExchangeRecord(deviceCode: string | undefined) {
+  if (!deviceCode) {
+    return null;
+  }
+
+  return prisma.deviceCode.findUnique({
+    where: { deviceCode },
+    select: {
+      clientId: true,
+      scope: true,
+      userId: true,
+    },
+  });
+}
+
+async function persistApprovedDeviceScopes(
+  request: Request,
+  userCode: string,
+): Promise<void> {
+  const session = await getSessionForHeaders(request.headers);
+  if (!session?.user?.id) {
+    return;
+  }
+
+  const normalizedUserCode = userCode.trim().replace(/-/g, "").toUpperCase();
+  const deviceCodeRecord = await prisma.deviceCode.findUnique({
+    where: { userCode: normalizedUserCode },
+    select: {
+      clientId: true,
+      scope: true,
+    },
+  });
+
+  if (!deviceCodeRecord?.clientId) {
+    return;
+  }
+
+  const updatedGrantScopes = await addUserOidcGrantScopes({
+    userId: session.user.id,
+    clientId: deviceCodeRecord.clientId,
+    scopes: deviceCodeRecord.scope ?? "",
+  });
+
+  console.info("[oidc grants] approved device scopes synced", {
+    flow: "device-approve",
+    clientId: deviceCodeRecord.clientId,
+    userId: session.user.id,
+    requestedScopes: normalizeRequestedScopes(deviceCodeRecord.scope ?? ""),
+    updatedGrantScopes,
+  });
+}
+
 async function exchangeDeviceGrantForOidcToken(
   request: Request,
   body: Record<string, string>,
 ): Promise<Response> {
+  const deviceCodeRecord = await getDeviceCodeExchangeRecord(body.device_code);
   const deviceTokenRequest = createJsonRequest(
     request,
     new URL(DEVICE_TOKEN_PATH, request.url).toString(),
@@ -831,11 +951,25 @@ async function exchangeDeviceGrantForOidcToken(
     const session = await getSessionForHeaders(
       createSessionAuthHeaders(request, sessionToken),
     );
-    const scopes = await filterRequestedOidcScopes({
-      clientId: body.client_id ?? oidcEnvConfig.cli.clientId,
-      requestedScopes: await getRequestedDeviceScopes(body.device_code),
-      userId: session?.user?.id,
+    const clientId =
+      body.client_id ??
+      deviceCodeRecord?.clientId ??
+      oidcEnvConfig.cli.clientId;
+    const resolvedUserId =
+      session?.user?.id ?? deviceCodeRecord?.userId ?? null;
+    const scopeResolution = await resolveOidcScopeGrantSet({
+      clientId,
+      requestedScopes:
+        deviceCodeRecord?.scope ??
+        (await getRequestedDeviceScopes(body.device_code)),
+      userId: resolvedUserId,
+      enforceStoredGrants: true,
     });
+    logOidcScopeResolution("device-token-exchange", clientId, scopeResolution, {
+      userId: resolvedUserId,
+      deviceCode: body.device_code ?? null,
+    });
+    const scopes = scopeResolution.finalScopes;
 
     const exchange = await exchangeAuthForOidcTokenSet({
       requestUrl: request.url,
@@ -980,6 +1114,17 @@ export async function POST(request: Request): Promise<Response> {
         await createScopedDeviceCodeRequest(request, body),
       );
     }
+  }
+
+  if (pathname === DEVICE_APPROVE_PATH) {
+    const body = await readBodyFields(request);
+    const response = await authHandler.POST(request);
+
+    if (response.ok && typeof body?.userCode === "string") {
+      await persistApprovedDeviceScopes(request, body.userCode);
+    }
+
+    return response;
   }
 
   if (pathname === DEVICE_TOKEN_PATH || pathname === OAUTH_TOKEN_PATH) {

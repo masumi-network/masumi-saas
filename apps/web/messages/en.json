@@ -275,6 +275,11 @@
       "saved": "OIDC grants updated.",
       "alwaysIncludedTitle": "Always included",
       "alwaysIncludedDescription": "These standard OIDC identity scopes are always available and are not managed here.",
+      "presetsTitle": "Quick presets",
+      "presetsDescription": "Apply the full first-party API grant set without checking every scope by hand.",
+      "grantAllWeb": "Grant all for web",
+      "grantAllCli": "Grant all for CLI",
+      "grantAllFirstParty": "Grant all first-party scopes",
       "clientDescription": "Client ID: {clientId}",
       "saveButton": "Save grants"
     },

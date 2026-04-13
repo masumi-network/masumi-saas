@@ -13,8 +13,14 @@ import {
 } from "@/components/ui/card";
 import { switchAccountAction } from "@/lib/actions/auth.action";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
+import {
+  getOidcScopeDisplayItems,
+  isOidcApiScope,
+  isOidcStandardScope,
+} from "@/lib/config/oidc-scopes.config";
 
 import { EmailVerificationPanel } from "./components/email-verification-panel";
 
@@ -29,7 +35,15 @@ const PAGE_COPY = {
   description:
     "wants to use your Masumi account for sign-in and SpacetimeDB access. Confirm to authorize without logging in again.",
   accountLabel: "Account",
-  scopesLabel: "Requested scopes",
+  identityScopesLabel: "Identity scopes",
+  newPermissionsLabel: "New API permissions requested",
+  newPermissionsDescription:
+    "This client is asking for additional API permissions it did not have before.",
+  grantedPermissionsLabel: "Already granted API permissions",
+  grantedPermissionsDescription:
+    "These API permissions are already approved for this client.",
+  noNewPermissions: "No additional API permissions are being requested.",
+  noGrantedPermissions: "No API permissions have been granted yet.",
   defaultScope: "openid",
   cancel: "Cancel",
   switchAccount: "Switch account",
@@ -113,6 +127,28 @@ export default async function OidcConsentPage({
   const errorMessage = resolvedSearchParams.error?.trim();
   const continueUrl = sanitizeCallbackUrl(resolvedSearchParams.continueUrl);
   const emailVerified = session.user.emailVerified === true;
+  const grantedApiScopes = resolvedSearchParams.client_id
+    ? await getStoredOidcGrantScopes(
+        session.user.id,
+        resolvedSearchParams.client_id,
+      )
+    : [];
+  const grantedApiScopeSet = new Set(grantedApiScopes);
+  const requestedIdentityScopes = scopes.filter((scope) =>
+    isOidcStandardScope(scope),
+  );
+  const requestedApiScopes = scopes.filter((scope) => isOidcApiScope(scope));
+  const newlyRequestedApiScopes = requestedApiScopes.filter(
+    (scope) => !grantedApiScopeSet.has(scope),
+  );
+  const alreadyGrantedApiScopes = requestedApiScopes.filter((scope) =>
+    grantedApiScopeSet.has(scope),
+  );
+  const identityScopeItems = getOidcScopeDisplayItems(requestedIdentityScopes);
+  const newApiScopeItems = getOidcScopeDisplayItems(newlyRequestedApiScopes);
+  const existingApiScopeItems = getOidcScopeDisplayItems(
+    alreadyGrantedApiScopes,
+  );
   const switchAccountCallbackUrl =
     continueUrl ?? buildConsentCallbackUrl(resolvedSearchParams);
   const switchAccount = switchAccountAction.bind(
@@ -151,18 +187,80 @@ export default async function OidcConsentPage({
             </p>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium">{PAGE_COPY.scopesLabel}</p>
+            <p className="text-sm font-medium">
+              {PAGE_COPY.identityScopesLabel}
+            </p>
             <div className="flex flex-wrap gap-2">
-              {scopes.length === 0 ? (
+              {identityScopeItems.length === 0 ? (
                 <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
               ) : (
-                scopes.map((scope) => (
-                  <Badge key={scope} variant="outline">
-                    {scope}
+                identityScopeItems.map((scopeItem) => (
+                  <Badge key={scopeItem.scope} variant="outline">
+                    {scopeItem.label}
                   </Badge>
                 ))
               )}
             </div>
+          </div>
+          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm font-medium">
+              {PAGE_COPY.newPermissionsLabel}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {PAGE_COPY.newPermissionsDescription}
+            </p>
+            {newApiScopeItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {PAGE_COPY.noNewPermissions}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {newApiScopeItems.map((scopeItem) => (
+                  <div
+                    key={scopeItem.scope}
+                    className="rounded-md border bg-background px-3 py-3"
+                  >
+                    <div className="text-sm font-medium">{scopeItem.label}</div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {scopeItem.scope}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {scopeItem.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              {PAGE_COPY.grantedPermissionsLabel}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {PAGE_COPY.grantedPermissionsDescription}
+            </p>
+            {existingApiScopeItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {PAGE_COPY.noGrantedPermissions}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {existingApiScopeItems.map((scopeItem) => (
+                  <div
+                    key={scopeItem.scope}
+                    className="rounded-md border px-3 py-3"
+                  >
+                    <div className="text-sm font-medium">{scopeItem.label}</div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {scopeItem.scope}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {scopeItem.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {!emailVerified ? (
             <EmailVerificationPanel

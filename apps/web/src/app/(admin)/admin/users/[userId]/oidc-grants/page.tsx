@@ -22,6 +22,7 @@ import {
 import { getAdminAuthContext } from "@/lib/auth/utils";
 import { oidcEnvConfig } from "@/lib/config/oidc.config";
 import {
+  getAllowedApiScopesForClient,
   getOidcApiScopeCatalog,
   type OidcClientKey,
 } from "@/lib/config/oidc-scopes.config";
@@ -119,6 +120,49 @@ export default async function AdminOidcGrantsPage({
     redirect(`/admin/users/${formUserId}/oidc-grants?saved=1`);
   }
 
+  async function applyGrantPreset(formData: FormData) {
+    "use server";
+
+    const adminContext = await getAdminAuthContext();
+    if (!adminContext.isAuthenticated || !adminContext.isAdmin) {
+      redirect("/admin/signin");
+    }
+
+    const formUserId = String(formData.get("userId") ?? "");
+    const preset = String(formData.get("preset") ?? "");
+
+    if (preset === "web") {
+      await setUserOidcGrantScopes({
+        userId: formUserId,
+        clientId: oidcEnvConfig.web.clientId,
+        scopes: getAllowedApiScopesForClient("web"),
+      });
+    } else if (preset === "cli") {
+      await setUserOidcGrantScopes({
+        userId: formUserId,
+        clientId: oidcEnvConfig.cli.clientId,
+        scopes: getAllowedApiScopesForClient("cli"),
+      });
+    } else if (preset === "all") {
+      await Promise.all([
+        setUserOidcGrantScopes({
+          userId: formUserId,
+          clientId: oidcEnvConfig.web.clientId,
+          scopes: getAllowedApiScopesForClient("web"),
+        }),
+        setUserOidcGrantScopes({
+          userId: formUserId,
+          clientId: oidcEnvConfig.cli.clientId,
+          scopes: getAllowedApiScopesForClient("cli"),
+        }),
+      ]);
+    }
+
+    revalidatePath("/admin/users");
+    revalidatePath(`/admin/users/${formUserId}/oidc-grants`);
+    redirect(`/admin/users/${formUserId}/oidc-grants?saved=1`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -160,6 +204,36 @@ export default async function AdminOidcGrantsPage({
                 {scope}
               </Badge>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("presetsTitle")}</CardTitle>
+          <CardDescription>{t("presetsDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <form action={applyGrantPreset}>
+              <input type="hidden" name="userId" value={user.id} />
+              <input type="hidden" name="preset" value="web" />
+              <Button type="submit" variant="outline">
+                {t("grantAllWeb")}
+              </Button>
+            </form>
+            <form action={applyGrantPreset}>
+              <input type="hidden" name="userId" value={user.id} />
+              <input type="hidden" name="preset" value="cli" />
+              <Button type="submit" variant="outline">
+                {t("grantAllCli")}
+              </Button>
+            </form>
+            <form action={applyGrantPreset}>
+              <input type="hidden" name="userId" value={user.id} />
+              <input type="hidden" name="preset" value="all" />
+              <Button type="submit">{t("grantAllFirstParty")}</Button>
+            </form>
           </div>
         </CardContent>
       </Card>

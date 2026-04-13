@@ -2,10 +2,13 @@ import prisma from "@masumi/database/client";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
 import {
   getOidcScopeDisplayItems,
+  isOidcApiScope,
+  isOidcStandardScope,
   normalizeScopeList,
 } from "@/lib/config/oidc-scopes.config";
 
@@ -62,7 +65,23 @@ export default async function DeviceApprovalPage({
     deviceCode.clientId ??
     "Masumi client";
   const scopes = normalizeScopeList(deviceCode.scope ?? "openid");
-  const scopeItems = getOidcScopeDisplayItems(scopes);
+  const grantedApiScopes = deviceCode.clientId
+    ? await getStoredOidcGrantScopes(session.user.id, deviceCode.clientId)
+    : [];
+  const grantedApiScopeSet = new Set(grantedApiScopes);
+  const identityScopeItems = getOidcScopeDisplayItems(
+    scopes.filter((scope) => isOidcStandardScope(scope)),
+  );
+  const newApiScopeItems = getOidcScopeDisplayItems(
+    scopes.filter(
+      (scope) => isOidcApiScope(scope) && !grantedApiScopeSet.has(scope),
+    ),
+  );
+  const existingApiScopeItems = getOidcScopeDisplayItems(
+    scopes.filter(
+      (scope) => isOidcApiScope(scope) && grantedApiScopeSet.has(scope),
+    ),
+  );
 
   return (
     <DeviceApprovalCard
@@ -71,8 +90,9 @@ export default async function DeviceApprovalPage({
       accountName={session.user.name ?? null}
       switchAccountCallbackUrl={`/device/approve?user_code=${normalizedUserCode}`}
       clientLabel={clientLabel}
-      scopes={scopes}
-      scopeItems={scopeItems}
+      identityScopeItems={identityScopeItems}
+      newApiScopeItems={newApiScopeItems}
+      existingApiScopeItems={existingApiScopeItems}
     />
   );
 }

@@ -1,5 +1,21 @@
 const APP_ORIGIN =
   process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:2999";
+const OIDC_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
+
+function isSafeOidcAuthorizeCallback(parsed: URL): boolean {
+  if (parsed.pathname !== OIDC_AUTHORIZE_PATH) {
+    return true;
+  }
+
+  if (
+    parsed.searchParams.has("error") ||
+    parsed.searchParams.has("error_description")
+  ) {
+    return false;
+  }
+
+  return Boolean(parsed.searchParams.get("client_id"));
+}
 
 /**
  * Returns a safe same-origin path for redirects, or undefined if invalid.
@@ -19,6 +35,7 @@ export function sanitizeCallbackUrl(
   }
 
   if (parsed.origin !== new URL(APP_ORIGIN).origin) return undefined;
+  if (!isSafeOidcAuthorizeCallback(parsed)) return undefined;
 
   return parsed.pathname + parsed.search + parsed.hash;
 }

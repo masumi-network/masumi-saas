@@ -30,6 +30,7 @@ import {
   OIDC_ID_TOKEN_SIGNING_ALG,
   oidcEnvConfig,
 } from "@/lib/config/oidc.config";
+import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
 import { reactInvitationEmail } from "@/lib/email/invitation";
@@ -343,6 +344,7 @@ export const auth = betterAuth({
       consentPage: "/oidc/consent",
       useJWTPlugin: true,
       requirePKCE: true,
+      scopes: OIDC_API_SCOPES,
       trustedClients: getTrustedOidcClients(),
       metadata: getPublicOidcMetadata(),
       getAdditionalUserInfoClaim: async (user, scopes) => {

@@ -1,8 +1,17 @@
+import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getAuthErrorDetails } from "@/lib/auth/error-results";
+import { addUserOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
+
+type ConsentVerificationValue = {
+  clientId?: unknown;
+  requireConsent?: unknown;
+  scope?: unknown;
+  userId?: unknown;
+};
 
 function buildConsentPageUrl(
   request: Request,
@@ -35,6 +44,17 @@ function buildConsentPageUrl(
   }
 
   return url;
+}
+
+function parseConsentVerificationValue(
+  value: string,
+): ConsentVerificationValue | null {
+  try {
+    const parsed = JSON.parse(value) as ConsentVerificationValue;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -73,6 +93,62 @@ export async function POST(request: Request) {
           303,
         );
       }
+
+      const verificationRecord = await prisma.verification.findFirst({
+        where: {
+          identifier: consentCode,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          value: true,
+        },
+      });
+
+      const verificationValue = verificationRecord
+        ? parseConsentVerificationValue(verificationRecord.value)
+        : null;
+
+      if (
+        !verificationValue ||
+        verificationValue.requireConsent !== true ||
+        typeof verificationValue.userId !== "string" ||
+        verificationValue.userId !== session.user.id ||
+        typeof verificationValue.clientId !== "string"
+      ) {
+        return NextResponse.redirect(
+          buildConsentPageUrl(
+            request,
+            formData,
+            "The OIDC consent request is no longer valid. Please try again.",
+          ),
+          303,
+        );
+      }
+
+      const updatedGrantScopes = await addUserOidcGrantScopes({
+        userId: session.user.id,
+        clientId: verificationValue.clientId,
+        scopes:
+          typeof verificationValue.scope === "string" ||
+          Array.isArray(verificationValue.scope)
+            ? verificationValue.scope
+            : "",
+      });
+
+      console.info("[oidc grants] approved consent scopes synced", {
+        flow: "web-consent-submit",
+        clientId: verificationValue.clientId,
+        userId: session.user.id,
+        requestedScopes:
+          typeof verificationValue.scope === "string"
+            ? verificationValue.scope.split(" ").filter(Boolean)
+            : Array.isArray(verificationValue.scope)
+              ? verificationValue.scope
+              : [],
+        updatedGrantScopes,
+      });
     }
 
     const result = await auth.api.oAuthConsent({

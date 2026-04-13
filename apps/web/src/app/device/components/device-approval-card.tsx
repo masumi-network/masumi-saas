@@ -13,8 +13,19 @@ type DeviceApprovalCardProps = {
   accountName: string | null;
   switchAccountCallbackUrl: string;
   clientLabel: string;
-  scopes: string[];
-  scopeItems: Array<{
+  identityScopeItems: Array<{
+    scope: string;
+    label: string;
+    description: string;
+    type: "standard" | "api" | "unknown";
+  }>;
+  newApiScopeItems: Array<{
+    scope: string;
+    label: string;
+    description: string;
+    type: "standard" | "api" | "unknown";
+  }>;
+  existingApiScopeItems: Array<{
     scope: string;
     label: string;
     description: string;
@@ -31,9 +42,16 @@ const copy = {
     "wants to use your Masumi account through the device authorization flow.",
   codeLabel: "Code:",
   accountLabel: "Authorizing as",
-  scopesLabel: "Requested scopes",
-  permissionsLabel: "Permissions",
+  scopesLabel: "Identity scopes",
+  newPermissionsLabel: "New API permissions requested",
+  newPermissionsDescription:
+    "This device login is asking for additional API permissions it did not have before.",
+  existingPermissionsLabel: "Already granted API permissions",
+  existingPermissionsDescription:
+    "These API permissions are already approved for this client.",
   defaultScope: "openid",
+  noNewPermissions: "No additional API permissions are being requested.",
+  noExistingPermissions: "No API permissions have been granted yet.",
   approved: "Device approved. You can return to your CLI.",
   denied: "Device request denied.",
   pending: "A CLI is requesting access to your Masumi account.",
@@ -52,8 +70,9 @@ export function DeviceApprovalCard({
   accountName,
   switchAccountCallbackUrl,
   clientLabel,
-  scopes,
-  scopeItems,
+  identityScopeItems,
+  newApiScopeItems,
+  existingApiScopeItems,
 }: DeviceApprovalCardProps) {
   const [status, setStatus] = useState<ApprovalState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -152,34 +171,75 @@ export function DeviceApprovalCard({
           <div className="space-y-2">
             <p className="text-sm font-medium">{copy.scopesLabel}</p>
             <div className="flex flex-wrap gap-2">
-              {scopes.length === 0 ? (
+              {identityScopeItems.length === 0 ? (
                 <Badge variant="outline">{copy.defaultScope}</Badge>
               ) : (
-                scopes.map((scope) => (
-                  <Badge key={scope} variant="outline">
-                    {scope}
+                identityScopeItems.map((scopeItem) => (
+                  <Badge key={scopeItem.scope} variant="outline">
+                    {scopeItem.label}
                   </Badge>
                 ))
               )}
             </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{copy.permissionsLabel}</p>
-            <div className="space-y-2">
-              {scopeItems.map((scopeItem) => (
-                <div key={scopeItem.scope} className="rounded-lg border p-3">
-                  <div className="text-sm font-medium">{scopeItem.label}</div>
-                  <div className="font-mono text-xs text-muted-foreground">
-                    {scopeItem.scope}
+          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm font-medium">{copy.newPermissionsLabel}</p>
+            <p className="text-sm text-muted-foreground">
+              {copy.newPermissionsDescription}
+            </p>
+            {newApiScopeItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {copy.noNewPermissions}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {newApiScopeItems.map((scopeItem) => (
+                  <div
+                    key={scopeItem.scope}
+                    className="rounded-lg border bg-background p-3"
+                  >
+                    <div className="text-sm font-medium">{scopeItem.label}</div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {scopeItem.scope}
+                    </div>
+                    {scopeItem.description ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {scopeItem.description}
+                      </p>
+                    ) : null}
                   </div>
-                  {scopeItem.description ? (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {scopeItem.description}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              {copy.existingPermissionsLabel}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {copy.existingPermissionsDescription}
+            </p>
+            {existingApiScopeItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {copy.noExistingPermissions}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {existingApiScopeItems.map((scopeItem) => (
+                  <div key={scopeItem.scope} className="rounded-lg border p-3">
+                    <div className="text-sm font-medium">{scopeItem.label}</div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {scopeItem.scope}
+                    </div>
+                    {scopeItem.description ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {scopeItem.description}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {status === "approved" ? (
             <>
