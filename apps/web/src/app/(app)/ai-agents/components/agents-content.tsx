@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search } from "lucide-react";
+import { Bot, Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -407,6 +407,7 @@ export function AgentsContent() {
 
                 {agents.length === 0 && (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
+                    <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
                     <p className="text-muted-foreground text-sm">
                       {debouncedSearch
                         ? t("noAgentsMatchingSearch")

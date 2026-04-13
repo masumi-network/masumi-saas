@@ -66,7 +66,10 @@ export function GetStartedCard({
       </CardHeader>
       <CardContent>
         <ul className="space-y-3">
-          <li className="flex items-center gap-3">
+          <li
+            className="flex items-center gap-3 animate-list-item-in"
+            style={{ animationDelay: "0ms" }}
+          >
             {user.emailVerified ? (
               <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
             ) : (
@@ -87,7 +90,10 @@ export function GetStartedCard({
               </Button>
             )}
           </li>
-          <li className="flex items-center gap-3">
+          <li
+            className="flex items-center gap-3 animate-list-item-in"
+            style={{ animationDelay: "60ms" }}
+          >
             {isKycCompleted ? (
               <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
             ) : (
@@ -110,7 +116,10 @@ export function GetStartedCard({
               </Button>
             )}
           </li>
-          <li className="flex items-center gap-3">
+          <li
+            className="flex items-center gap-3 animate-list-item-in"
+            style={{ animationDelay: "120ms" }}
+          >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
               {t("getStarted.step3")}
             </span>
@@ -119,7 +128,10 @@ export function GetStartedCard({
               <Link href="/organizations">{t("getStarted.doIt")}</Link>
             </Button>
           </li>
-          <li className="flex items-center gap-3">
+          <li
+            className="flex items-center gap-3 animate-list-item-in"
+            style={{ animationDelay: "180ms" }}
+          >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
               {t("getStarted.step4")}
             </span>

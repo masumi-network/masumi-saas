@@ -67,7 +67,7 @@ export default function SignUpForm({
 
   if (magicLinkEmail) {
     return (
-      <div className="w-full max-w-form space-y-6">
+      <div className="w-full max-w-form space-y-6 animate-page-in">
         <div className="text-center">
           <h1 className="text-4xl font-light tracking-tight mb-4">
             {t("checkEmail.title")}
@@ -106,7 +106,7 @@ export default function SignUpForm({
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
+    <div className="w-full max-w-form space-y-6 animate-page-in">
       <div className="text-center">
         <h1 className="text-4xl font-light tracking-tight mb-4">
           {t("title")}

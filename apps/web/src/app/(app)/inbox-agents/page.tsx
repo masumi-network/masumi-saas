@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function InboxAgentsRoute() {
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 animate-page-in">
       <InboxAgentsPage />
     </div>
   );

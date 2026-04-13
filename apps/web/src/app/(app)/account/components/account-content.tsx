@@ -48,7 +48,7 @@ export function AccountContent({
   );
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 animate-page-in">
       <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
         <div className="space-y-2 min-w-0">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>

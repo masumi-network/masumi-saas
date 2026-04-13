@@ -58,7 +58,7 @@ Masumi SaaS can also act as an OIDC issuer for external apps and SpacetimeDB:
 
 Detailed handoff doc for the external webapp repo:
 
-- [docs/external-webapp-oidc-integration.md](/Users/sandro/GitHub/masumi-saas/docs/external-webapp-oidc-integration.md)
+- [docs/external-webapp-oidc-integration.md](docs/external-webapp-oidc-integration.md)
 
 - **Discovery**: `GET /.well-known/openid-configuration`
 - **OAuth metadata**: `GET /.well-known/oauth-authorization-server`
