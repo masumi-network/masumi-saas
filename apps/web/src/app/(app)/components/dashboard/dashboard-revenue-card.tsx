@@ -3,7 +3,7 @@
 import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,34 +31,50 @@ export function DashboardRevenueCard() {
   const [amountUnit, setAmountUnit] =
     useState<DashboardEarningsAmountUnit>("USD");
   const [previousTotal, setPreviousTotal] = useState<number | undefined>();
+  const [previousComparisonUnavailable, setPreviousComparisonUnavailable] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchSeqRef = useRef(0);
+
   const fetchEarnings = useCallback(async () => {
+    const seq = ++fetchSeqRef.current;
     setIsLoading(true);
     setError(null);
+    setPreviousComparisonUnavailable(false);
     try {
       const result = await fetchEarningsForPeriod(period, network, {
         genericErrorMessage: t("earningsLoadUnexpectedError"),
       });
+      if (seq !== fetchSeqRef.current) return;
+
       if (!result.ok) {
         setError(result.error);
         setTotal(0);
         setAmountUnit("USD");
         setPreviousTotal(undefined);
+        setPreviousComparisonUnavailable(false);
         return;
       }
       setTotal(result.total);
       setAmountUnit(result.amountUnit);
       setPreviousTotal(result.previousTotal);
+      setPreviousComparisonUnavailable(
+        result.previousComparisonUnavailable ?? false,
+      );
     } catch (err) {
+      if (seq !== fetchSeqRef.current) return;
       console.error("[DashboardRevenueCard] fetchEarnings:", err);
       setError(t("earningsLoadUnexpectedError"));
       setTotal(0);
       setAmountUnit("USD");
       setPreviousTotal(undefined);
+      setPreviousComparisonUnavailable(false);
     } finally {
-      setIsLoading(false);
+      if (seq === fetchSeqRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [period, network, t]);
 
@@ -144,6 +160,11 @@ export function DashboardRevenueCard() {
           <p className="mb-4 text-xs text-muted-foreground">
             {t("earningsDescription")}
           </p>
+          {previousComparisonUnavailable ? (
+            <p className="mb-4 text-xs text-muted-foreground">
+              {t("previousComparisonUnavailable")}
+            </p>
+          ) : null}
         </CardContent>
       </div>
     </Card>

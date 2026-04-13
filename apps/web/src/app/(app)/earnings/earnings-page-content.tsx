@@ -83,37 +83,53 @@ export function EarningsPageContent() {
   const [amountUnit, setAmountUnit] =
     useState<DashboardEarningsAmountUnit>("USD");
   const [previousTotal, setPreviousTotal] = useState<number | undefined>();
+  const [previousComparisonUnavailable, setPreviousComparisonUnavailable] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchSeqRef = useRef(0);
+
   const fetchEarnings = useCallback(async () => {
+    const seq = ++fetchSeqRef.current;
     setIsLoading(true);
     setError(null);
+    setPreviousComparisonUnavailable(false);
     try {
       const result = await fetchEarningsForPeriod(period, network, {
         genericErrorMessage: t("loadError"),
       });
+      if (seq !== fetchSeqRef.current) return;
+
       if (!result.ok) {
         setError(result.error);
         setEarnings([]);
         setTotal(0);
         setAmountUnit("USD");
         setPreviousTotal(undefined);
+        setPreviousComparisonUnavailable(false);
         return;
       }
       setEarnings(result.earnings);
       setTotal(result.total);
       setAmountUnit(result.amountUnit);
       setPreviousTotal(result.previousTotal);
+      setPreviousComparisonUnavailable(
+        result.previousComparisonUnavailable ?? false,
+      );
     } catch (err) {
+      if (seq !== fetchSeqRef.current) return;
       console.error("[EarningsPageContent] fetchEarnings:", err);
       setError(t("loadError"));
       setEarnings([]);
       setTotal(0);
       setAmountUnit("USD");
       setPreviousTotal(undefined);
+      setPreviousComparisonUnavailable(false);
     } finally {
-      setIsLoading(false);
+      if (seq === fetchSeqRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [period, network, t]);
 
@@ -310,6 +326,11 @@ export function EarningsPageContent() {
                 <p className="text-muted-foreground mt-2 text-xs">
                   {tDash("earningsDescription")}
                 </p>
+                {previousComparisonUnavailable ? (
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    {t("previousComparisonUnavailable")}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           </div>

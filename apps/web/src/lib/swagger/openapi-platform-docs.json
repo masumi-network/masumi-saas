@@ -11037,6 +11037,9 @@
                         },
                         "previousTotal": {
                           "type": "number"
+                        },
+                        "previousComparisonUnavailable": {
+                          "type": "boolean"
                         }
                       },
                       "required": [

@@ -81,6 +81,11 @@ export type EarningsApiResponse =
         amountUnit: DashboardEarningsAmountUnit;
         /** Previous period total in the same `amountUnit` (omitted when `period=all`). */
         previousTotal?: number;
+        /**
+         * True when a previous window exists and we had agents to query, but every
+         * previous-period `getPaymentIncome` call failed — do not treat missing `previousTotal` as “no prior income”.
+         */
+        previousComparisonUnavailable?: boolean;
       };
     }
   | { success: false; error: string };
@@ -281,15 +286,42 @@ export async function GET(request: Request) {
     }));
 
     let previousTotal: number | undefined;
-    if (previous && previousIncomes.length > 0) {
-      const mergedPreviousUnits = mergeIncomeUnitRows(
-        previousIncomes.map((i) => i.TotalIncome.Units),
-      );
-      previousTotal = primaryAmountFromUnits(
-        mergedPreviousUnits,
-        network,
-        amountUnit,
-      );
+    let previousComparisonUnavailable = false;
+
+    if (previous && eligibleAgents.length > 0) {
+      if (
+        previousIncomes.length > 0 &&
+        previousIncomes.length < eligibleAgents.length
+      ) {
+        console.warn(
+          "[api/earnings] previous period income: partial agent fetch failures",
+          {
+            userId: user.id,
+            ok: previousIncomes.length,
+            expected: eligibleAgents.length,
+          },
+        );
+      }
+
+      if (previousIncomes.length > 0) {
+        const mergedPreviousUnits = mergeIncomeUnitRows(
+          previousIncomes.map((i) => i.TotalIncome.Units),
+        );
+        previousTotal = primaryAmountFromUnits(
+          mergedPreviousUnits,
+          network,
+          amountUnit,
+        );
+      } else {
+        console.warn(
+          "[api/earnings] previous period income: all agent fetch failures",
+          {
+            userId: user.id,
+            agentCount: eligibleAgents.length,
+          },
+        );
+        previousComparisonUnavailable = true;
+      }
     }
 
     return NextResponse.json({
@@ -299,6 +331,9 @@ export async function GET(request: Request) {
         total,
         amountUnit,
         ...(previousTotal !== undefined ? { previousTotal } : {}),
+        ...(previousComparisonUnavailable
+          ? { previousComparisonUnavailable: true }
+          : {}),
       },
     } satisfies EarningsApiResponse);
   } catch (error) {

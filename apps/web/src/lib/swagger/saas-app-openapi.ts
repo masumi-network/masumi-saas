@@ -762,6 +762,7 @@ const userEarningsSuccessSchema = z
       /** `USD` when USDM/tUSDM withdrawn income exists in the period; otherwise `ADA`. */
       amountUnit: z.enum(["USD", "ADA"]),
       previousTotal: z.number().optional(),
+      previousComparisonUnavailable: z.boolean().optional(),
     }),
   })
   .openapi({

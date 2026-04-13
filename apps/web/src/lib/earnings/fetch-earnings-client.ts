@@ -9,6 +9,7 @@ export type FetchEarningsForPeriodResult =
       total: number;
       amountUnit: DashboardEarningsAmountUnit;
       previousTotal?: number;
+      previousComparisonUnavailable?: boolean;
     }
   | { ok: false; error: string };
 
@@ -37,6 +38,7 @@ export async function fetchEarningsForPeriod(
         total?: number;
         amountUnit?: DashboardEarningsAmountUnit;
         previousTotal?: number;
+        previousComparisonUnavailable?: boolean;
       };
     };
 
@@ -54,6 +56,7 @@ export async function fetchEarningsForPeriod(
       total: json.data?.total ?? 0,
       amountUnit: json.data?.amountUnit ?? "USD",
       previousTotal: json.data?.previousTotal,
+      previousComparisonUnavailable: json.data?.previousComparisonUnavailable,
     };
   } catch {
     return { ok: false, error: fallback };

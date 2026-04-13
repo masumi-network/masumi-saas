@@ -406,7 +406,8 @@
           "viewAll": "View all",
           "percentValue": "{value}%",
           "vsPreviousPeriod": "vs prev. period",
-          "earningsLoadUnexpectedError": "Could not load earnings. Please try again."
+          "earningsLoadUnexpectedError": "Could not load earnings. Please try again.",
+          "previousComparisonUnavailable": "Prior-period comparison unavailable — we couldn’t load income for every agent for the previous window."
         },
         "networkHint": "Data for {network}.",
         "networkHintChange": "Change",
@@ -487,7 +488,8 @@
       "periodLabel": "Earnings period",
       "periodPrefix": "Period:",
       "refresh": "Refresh",
-      "refreshing": "Refreshing…"
+      "refreshing": "Refreshing…",
+      "previousComparisonUnavailable": "Prior-period comparison unavailable — we couldn’t load income for every agent for the previous window."
     },
     "Analytics": {
       "title": "Analytics",
