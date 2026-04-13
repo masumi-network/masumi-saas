@@ -115,6 +115,11 @@ export type OauthConsent = Prisma.OauthConsentModel;
  */
 export type OidcUserGrant = Prisma.OidcUserGrantModel;
 /**
+ * Model CreditLedgerEntry
+ *
+ */
+export type CreditLedgerEntry = Prisma.CreditLedgerEntryModel;
+/**
  * Model DeviceCode
  *
  */

@@ -68,6 +68,7 @@ export const ModelName = {
   OauthAccessToken: "OauthAccessToken",
   OauthConsent: "OauthConsent",
   OidcUserGrant: "OidcUserGrant",
+  CreditLedgerEntry: "CreditLedgerEntry",
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
@@ -103,6 +104,7 @@ export const UserScalarFieldEnum = {
   name: "name",
   email: "email",
   emailVerified: "emailVerified",
+  creditsRemaining: "creditsRemaining",
   image: "image",
   imageHash: "imageHash",
   createdAt: "createdAt",
@@ -319,6 +321,20 @@ export const OidcUserGrantScalarFieldEnum = {
 
 export type OidcUserGrantScalarFieldEnum =
   (typeof OidcUserGrantScalarFieldEnum)[keyof typeof OidcUserGrantScalarFieldEnum];
+
+export const CreditLedgerEntryScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  delta: "delta",
+  balanceAfter: "balanceAfter",
+  reason: "reason",
+  reference: "reference",
+  metadata: "metadata",
+  createdAt: "createdAt",
+} as const;
+
+export type CreditLedgerEntryScalarFieldEnum =
+  (typeof CreditLedgerEntryScalarFieldEnum)[keyof typeof CreditLedgerEntryScalarFieldEnum];
 
 export const DeviceCodeScalarFieldEnum = {
   id: "id",

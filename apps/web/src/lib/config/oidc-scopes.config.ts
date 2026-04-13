@@ -78,6 +78,36 @@ export const OIDC_API_SCOPE_GROUPS = [
     ],
   },
   {
+    key: "inbox-agents",
+    label: "Inbox agents",
+    scopes: [
+      {
+        scope: "inbox-agents:read:preprod",
+        label: "Read inbox agents (Preprod)",
+        description:
+          "View inbox-agent registrations, wallet choices, and details on Preprod.",
+      },
+      {
+        scope: "inbox-agents:write:preprod",
+        label: "Manage inbox agents (Preprod)",
+        description:
+          "Register, deregister, or delete inbox-agent registrations on Preprod.",
+      },
+      {
+        scope: "inbox-agents:read:mainnet",
+        label: "Read inbox agents (Mainnet)",
+        description:
+          "View inbox-agent registrations, wallet choices, and details on Mainnet.",
+      },
+      {
+        scope: "inbox-agents:write:mainnet",
+        label: "Manage inbox agents (Mainnet)",
+        description:
+          "Register, deregister, or delete inbox-agent registrations on Mainnet.",
+      },
+    ],
+  },
+  {
     key: "credentials",
     label: "Credentials",
     scopes: [
@@ -241,7 +271,13 @@ export function normalizeNetworkScopeSegment(
 }
 
 export function buildNetworkedOidcScope(
-  resource: "agents" | "credentials" | "activity" | "earnings" | "dashboard",
+  resource:
+    | "agents"
+    | "inbox-agents"
+    | "credentials"
+    | "activity"
+    | "earnings"
+    | "dashboard",
   action: "read" | "write",
   network: "Mainnet" | "Preprod" | "mainnet" | "preprod",
 ): string {

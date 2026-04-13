@@ -426,6 +426,7 @@ export const ModelName = {
   OauthAccessToken: "OauthAccessToken",
   OauthConsent: "OauthConsent",
   OidcUserGrant: "OidcUserGrant",
+  CreditLedgerEntry: "CreditLedgerEntry",
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
@@ -474,6 +475,7 @@ export type TypeMap<
       | "oauthAccessToken"
       | "oauthConsent"
       | "oidcUserGrant"
+      | "creditLedgerEntry"
       | "deviceCode"
       | "jwks"
       | "rateLimit"
@@ -1553,6 +1555,82 @@ export type TypeMap<
         };
       };
     };
+    CreditLedgerEntry: {
+      payload: Prisma.$CreditLedgerEntryPayload<ExtArgs>;
+      fields: Prisma.CreditLedgerEntryFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.CreditLedgerEntryFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.CreditLedgerEntryFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        findFirst: {
+          args: Prisma.CreditLedgerEntryFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.CreditLedgerEntryFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        findMany: {
+          args: Prisma.CreditLedgerEntryFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>[];
+        };
+        create: {
+          args: Prisma.CreditLedgerEntryCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        createMany: {
+          args: Prisma.CreditLedgerEntryCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.CreditLedgerEntryCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>[];
+        };
+        delete: {
+          args: Prisma.CreditLedgerEntryDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        update: {
+          args: Prisma.CreditLedgerEntryUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        deleteMany: {
+          args: Prisma.CreditLedgerEntryDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.CreditLedgerEntryUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.CreditLedgerEntryUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>[];
+        };
+        upsert: {
+          args: Prisma.CreditLedgerEntryUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditLedgerEntryPayload>;
+        };
+        aggregate: {
+          args: Prisma.CreditLedgerEntryAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCreditLedgerEntry>;
+        };
+        groupBy: {
+          args: Prisma.CreditLedgerEntryGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.CreditLedgerEntryGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.CreditLedgerEntryCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.CreditLedgerEntryCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     DeviceCode: {
       payload: Prisma.$DeviceCodePayload<ExtArgs>;
       fields: Prisma.DeviceCodeFieldRefs;
@@ -2509,6 +2587,7 @@ export const UserScalarFieldEnum = {
   name: "name",
   email: "email",
   emailVerified: "emailVerified",
+  creditsRemaining: "creditsRemaining",
   image: "image",
   imageHash: "imageHash",
   createdAt: "createdAt",
@@ -2725,6 +2804,20 @@ export const OidcUserGrantScalarFieldEnum = {
 
 export type OidcUserGrantScalarFieldEnum =
   (typeof OidcUserGrantScalarFieldEnum)[keyof typeof OidcUserGrantScalarFieldEnum];
+
+export const CreditLedgerEntryScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  delta: "delta",
+  balanceAfter: "balanceAfter",
+  reason: "reason",
+  reference: "reference",
+  metadata: "metadata",
+  createdAt: "createdAt",
+} as const;
+
+export type CreditLedgerEntryScalarFieldEnum =
+  (typeof CreditLedgerEntryScalarFieldEnum)[keyof typeof CreditLedgerEntryScalarFieldEnum];
 
 export const DeviceCodeScalarFieldEnum = {
   id: "id",
@@ -2994,6 +3087,22 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "Int"
+>;
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "Int[]"
+>;
+
+/**
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -3022,19 +3131,19 @@ export type ListEnumVerificationStatusFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "VerificationStatus[]">;
 
 /**
- * Reference to a field of type 'Int'
+ * Reference to a field of type 'Json'
  */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
-  "Int"
+  "Json"
 >;
 
 /**
- * Reference to a field of type 'Int[]'
+ * Reference to a field of type 'QueryMode'
  */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
-  "Int[]"
+  "QueryMode"
 >;
 
 /**
@@ -3064,22 +3173,6 @@ export type EnumRegistrationStateFieldRefInput<$PrismaModel> =
  */
 export type ListEnumRegistrationStateFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "RegistrationState[]">;
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "Json"
->;
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "QueryMode"
->;
 
 /**
  * Reference to a field of type 'AgentActivityEventType'
@@ -3264,6 +3357,7 @@ export type GlobalOmitConfig = {
   oauthAccessToken?: Prisma.OauthAccessTokenOmit;
   oauthConsent?: Prisma.OauthConsentOmit;
   oidcUserGrant?: Prisma.OidcUserGrantOmit;
+  creditLedgerEntry?: Prisma.CreditLedgerEntryOmit;
   deviceCode?: Prisma.DeviceCodeOmit;
   jwks?: Prisma.JwksOmit;
   rateLimit?: Prisma.RateLimitOmit;

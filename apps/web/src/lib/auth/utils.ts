@@ -7,6 +7,7 @@ import { cache } from "react";
 
 import { authConfig } from "@/lib/config/auth.config";
 import { normalizeScopeList } from "@/lib/config/oidc-scopes.config";
+import { InsufficientCreditsError } from "@/lib/credits/service";
 
 import { auth } from "./auth";
 import { getBootstrapAdminIds } from "./config";
@@ -253,6 +254,17 @@ export function handleAuthError(error: unknown): NextResponse | null {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 403 },
+    );
+  }
+  if (error instanceof InsufficientCreditsError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+        creditsRemaining: error.creditsRemaining,
+        requiredCredits: error.requiredCredits,
+      },
+      { status: 402 },
     );
   }
   return null;

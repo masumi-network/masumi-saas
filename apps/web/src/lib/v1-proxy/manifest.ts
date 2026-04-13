@@ -20,6 +20,7 @@ type ProxyRouteDefinition = {
   upstream: ProxyUpstream;
   upstreamPath: string;
   authMode: ProxyAuthMode;
+  methods?: readonly ProxyOperationMethod[];
 };
 
 export type ProxyRouteDescriptor = {
@@ -46,6 +47,9 @@ type MutableOpenApiDocumentLike = {
 };
 
 const OPERATION_METHODS = ["get", "post", "patch", "delete"] as const;
+const OPERATION_METHODS_UPPER = OPERATION_METHODS.map((method) =>
+  method.toUpperCase(),
+) as ProxyOperationMethod[];
 const COMPONENT_SECTIONS = [
   "schemas",
   "responses",
@@ -58,26 +62,6 @@ const COMPONENT_SECTIONS = [
 ] as const;
 
 const PAYMENT_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
-  {
-    upstream: "payment",
-    upstreamPath: "/api-key-status",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/health",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/invoice/monthly",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/invoice/monthly/missing",
-    authMode: "payment-user-token",
-  },
   {
     upstream: "payment",
     upstreamPath: "/payment",
@@ -208,21 +192,6 @@ const PAYMENT_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
     upstreamPath: "/registry/diff",
     authMode: "payment-user-token",
   },
-  {
-    upstream: "payment",
-    upstreamPath: "/signature/sign/create-invoice/monthly",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/signature/verify/reveal-data",
-    authMode: "payment-user-token",
-  },
-  {
-    upstream: "payment",
-    upstreamPath: "/webhooks",
-    authMode: "payment-user-token",
-  },
 ] as const;
 
 const REGISTRY_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
@@ -244,16 +213,6 @@ const REGISTRY_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
   {
     upstream: "registry",
     upstreamPath: "/capability/",
-    authMode: "registry-shared-token",
-  },
-  {
-    upstream: "registry",
-    upstreamPath: "/inbox-agent-registration/",
-    authMode: "registry-shared-token",
-  },
-  {
-    upstream: "registry",
-    upstreamPath: "/inbox-agent-registration-diff/",
     authMode: "registry-shared-token",
   },
 ] as const;
@@ -303,6 +262,12 @@ function getOpenApiOperation(
   return operation;
 }
 
+function toLowerProxyMethod(
+  method: ProxyOperationMethod,
+): ProxyOperationMethodLower {
+  return method.toLowerCase() as ProxyOperationMethodLower;
+}
+
 export function buildProxyRouteManifest(
   routeDefinitions: readonly ProxyRouteDefinition[],
   upstreamSpecs: Readonly<
@@ -315,10 +280,13 @@ export function buildProxyRouteManifest(
   for (const definition of routeDefinitions) {
     const spec = upstreamSpecs[definition.upstream];
     const normalizedPath = normalizeSpecPathToSaasPath(definition.upstreamPath);
+    const allowedMethods = (definition.methods ?? OPERATION_METHODS_UPPER).map(
+      toLowerProxyMethod,
+    );
 
     let supportedMethodCount = 0;
 
-    for (const method of OPERATION_METHODS) {
+    for (const method of allowedMethods) {
       const operation = spec.paths[definition.upstreamPath]?.[method];
       if (!operation) continue;
 
@@ -448,6 +416,26 @@ function buildProxyOperationDescription(
   return lines.join("\n\n");
 }
 
+function buildInsufficientCreditsResponse(): Record<string, unknown> {
+  return {
+    description: "Insufficient credits",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          required: ["success", "error", "creditsRemaining", "requiredCredits"],
+          properties: {
+            success: { type: "boolean", enum: [false] },
+            error: { type: "string", enum: ["Insufficient credits"] },
+            creditsRemaining: { type: "number" },
+            requiredCredits: { type: "number", enum: [1] },
+          },
+        },
+      },
+    },
+  };
+}
+
 export function injectProxyRoutesIntoOpenApiDocument<T>(baseDocument: T): T {
   const document = structuredClone(baseDocument) as T &
     MutableOpenApiDocumentLike;
@@ -471,6 +459,16 @@ export function injectProxyRoutesIntoOpenApiDocument<T>(baseDocument: T): T {
       descriptor,
       prefixedOperation,
     );
+    if (
+      descriptor.authMode === "payment-user-token" &&
+      descriptor.method !== "GET"
+    ) {
+      const responses = (prefixedOperation.responses ??= {}) as Record<
+        string,
+        unknown
+      >;
+      responses["402"] ??= buildInsufficientCreditsResponse();
+    }
 
     pathItem[descriptor.method.toLowerCase()] = prefixedOperation;
   }

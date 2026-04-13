@@ -42,7 +42,13 @@ export function requireAnyOidcApiScope(
 export function requireNetworkedOidcApiScope(
   authContext: AuthenticatedApiContext,
   options: {
-    resource: "agents" | "credentials" | "activity" | "earnings" | "dashboard";
+    resource:
+      | "agents"
+      | "inbox-agents"
+      | "credentials"
+      | "activity"
+      | "earnings"
+      | "dashboard";
     action: "read" | "write";
     network: "Mainnet" | "Preprod" | "mainnet" | "preprod";
   },
@@ -59,7 +65,13 @@ export function requireNetworkedOidcApiScope(
 export function requireAnyNetworkedOidcApiScope(
   authContext: AuthenticatedApiContext,
   options: {
-    resource: "agents" | "credentials" | "activity" | "earnings" | "dashboard";
+    resource:
+      | "agents"
+      | "inbox-agents"
+      | "credentials"
+      | "activity"
+      | "earnings"
+      | "dashboard";
     action: "read" | "write";
   },
 ): string | null {

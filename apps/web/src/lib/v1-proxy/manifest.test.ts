@@ -1,9 +1,14 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
   buildProxyRouteManifest,
   getProxyRouteDescriptor,
   injectProxyRoutesIntoOpenApiDocument,
+  proxyRouteDescriptors,
 } from "./manifest";
 
 describe("v1 proxy manifest", () => {
@@ -23,6 +28,10 @@ describe("v1 proxy manifest", () => {
       upstreamPath: "/payment",
       openapiPath: "/v1/payment",
     });
+    expect(getProxyRouteDescriptor("GET", "registry-inbox")).toBeUndefined();
+    expect(getProxyRouteDescriptor("POST", "inbox-agent-registration")).toBe(
+      undefined,
+    );
   });
 
   it("throws when a configured route is missing from the upstream spec", () => {
@@ -55,6 +64,14 @@ describe("v1 proxy manifest", () => {
 
     expect(registryPost?.security).toStrictEqual([{ apiKeyHeader: [] }]);
     expect(paymentPost?.security).toStrictEqual([{ apiKeyHeader: [] }]);
+    expect(paymentPost?.responses).toMatchObject({
+      402: {
+        description: "Insufficient credits",
+      },
+    });
+    expect((registryPost?.responses as Record<string, unknown>)?.["402"]).toBe(
+      undefined,
+    );
     expect(spec.components.schemas).toBeDefined();
     expect(
       Object.keys(spec.components.schemas ?? {}).some((name) =>
@@ -66,5 +83,41 @@ describe("v1 proxy manifest", () => {
         name.startsWith("PaymentProxy_"),
       ),
     ).toBe(true);
+    expect(spec.paths["/v1/registry-inbox"]).toBeUndefined();
+    expect(spec.paths["/v1/inbox-agent-registration"]).toBeUndefined();
+  });
+
+  it("keeps documented /api/v1 routes in sync with explicit route files", () => {
+    const apiV1Root = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../app/api/v1",
+    );
+    const routeMethods = new Map<string, Set<string>>();
+
+    for (const descriptor of proxyRouteDescriptors) {
+      const methods = routeMethods.get(descriptor.normalizedPath) ?? new Set();
+      methods.add(descriptor.method);
+      routeMethods.set(descriptor.normalizedPath, methods);
+    }
+
+    routeMethods.set("inbox-agents", new Set(["GET", "POST"]));
+    routeMethods.set("inbox-agents/[inboxAgentId]", new Set(["DELETE"]));
+    routeMethods.set(
+      "inbox-agents/[inboxAgentId]/deregister",
+      new Set(["POST"]),
+    );
+
+    for (const [normalizedPath, methods] of routeMethods.entries()) {
+      const routeFile = path.join(apiV1Root, normalizedPath, "route.ts");
+      expect(existsSync(routeFile), `${routeFile} should exist`).toBe(true);
+
+      const source = readFileSync(routeFile, "utf8");
+      for (const method of methods) {
+        expect(
+          source.includes(`export async function ${method}(`),
+          `${routeFile} should export ${method}`,
+        ).toBe(true);
+      }
+    }
   });
 });

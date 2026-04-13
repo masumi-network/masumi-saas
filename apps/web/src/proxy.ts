@@ -1,29 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import {
-  hasUnsafeEncodedProxyPath,
-  normalizeProxyPathname,
-} from "@/lib/v1-proxy/path";
-
 export async function proxy(request: NextRequest) {
-  if (hasUnsafeEncodedProxyPath(request.url)) {
-    return NextResponse.json(
-      { success: false, error: "Forbidden" },
-      { status: 403 },
-    );
-  }
-
-  if (request.nextUrl.pathname.startsWith("/api/v1/")) {
-    const normalizedPath = normalizeProxyPathname(request.nextUrl.pathname);
-    if (!normalizedPath.ok) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
-    }
-  }
-
   return NextResponse.next();
 }
 

@@ -8,6 +8,7 @@ import {
   Code,
   ExternalLink,
   History,
+  Inbox,
   Key,
   LayoutDashboard,
   MessageSquare,
@@ -53,6 +54,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { key: "dashboard", href: "/", icon: LayoutDashboard },
   { key: "agents", href: "/ai-agents", icon: Bot },
+  { key: "inboxAgents", href: "/inbox-agents", icon: Inbox },
   { key: "activity", href: "/activity", icon: Activity },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },

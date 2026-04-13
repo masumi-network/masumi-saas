@@ -1,0 +1,1088 @@
+"use client";
+
+import { ExternalLink, Plus, Search, Trash2, Unplug } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CopyButton } from "@/components/ui/copy-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+  inboxAgentApiClient,
+  type InboxAgent,
+  type InboxAgentFilterStatus,
+} from "@/lib/api/inbox-agent.client";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import {
+  INBOX_AGENT_LIMITS,
+  normalizeInboxAgentSlug,
+} from "@/lib/inbox-agents/validation";
+import { zodResolver } from "@/lib/form-zod-resolver";
+import { registerInboxAgentBodySchema } from "@/lib/schemas/inbox-agent";
+import {
+  cn,
+  formatDate,
+  formatRelativeDate,
+  shortenAddress,
+} from "@/lib/utils";
+
+import { InboxAgentsDiscovery } from "./inbox-agents-discovery";
+
+const PAGE_SIZE = 10;
+const MAX_VISIBLE_PAGES = 5;
+const VALID_SECTIONS = ["manage", "discovery"] as const;
+
+type InboxTabKey = "all" | "registered" | "deregistered" | "pending" | "failed";
+type InboxSection = (typeof VALID_SECTIONS)[number];
+
+type CursorPageState<T> = {
+  pages: T[][];
+  nextCursors: Array<string | null>;
+  currentPage: number;
+  isLoading: boolean;
+  isPageLoading: boolean;
+  error: string | null;
+};
+
+type RegisterInboxAgentForm = {
+  name: string;
+  description?: string;
+  agentSlug: string;
+};
+
+function createCursorPageState<T>(): CursorPageState<T> {
+  return {
+    pages: [],
+    nextCursors: [],
+    currentPage: 1,
+    isLoading: true,
+    isPageLoading: false,
+    error: null,
+  };
+}
+
+function getCurrentPageItems<T>(state: CursorPageState<T>): T[] {
+  return state.pages[state.currentPage - 1] ?? [];
+}
+
+function getKnownTotalPages<T>(state: CursorPageState<T>): number {
+  if (state.pages.length === 0) return 1;
+  return state.pages.length + (state.nextCursors.at(-1) ? 1 : 0);
+}
+
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> {
+  const pages: Array<number | "ellipsis"> = [];
+
+  if (totalPages <= MAX_VISIBLE_PAGES) {
+    for (let page = 1; page <= totalPages; page += 1) pages.push(page);
+    return pages;
+  }
+
+  if (currentPage <= 3) {
+    for (let page = 1; page <= 4; page += 1) pages.push(page);
+    pages.push("ellipsis");
+    pages.push(totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    pages.push(1);
+    pages.push("ellipsis");
+    for (let page = totalPages - 3; page <= totalPages; page += 1) {
+      pages.push(page);
+    }
+  } else {
+    pages.push(1);
+    pages.push("ellipsis");
+    for (let page = currentPage - 1; page <= currentPage + 1; page += 1) {
+      pages.push(page);
+    }
+    pages.push("ellipsis");
+    pages.push(totalPages);
+  }
+
+  return pages;
+}
+
+function getFilterForTab(tab: InboxTabKey): InboxAgentFilterStatus | undefined {
+  switch (tab) {
+    case "registered":
+      return "Registered";
+    case "deregistered":
+      return "Deregistered";
+    case "pending":
+      return "Pending";
+    case "failed":
+      return "Failed";
+    default:
+      return undefined;
+  }
+}
+
+function formatInboxAgentStatus(state: InboxAgent["state"]): string {
+  switch (state) {
+    case "RegistrationRequested":
+      return "Pending";
+    case "RegistrationInitiated":
+      return "Registering";
+    case "RegistrationConfirmed":
+      return "Registered";
+    case "RegistrationFailed":
+      return "Registration failed";
+    case "DeregistrationRequested":
+      return "Pending";
+    case "DeregistrationInitiated":
+      return "Deregistering";
+    case "DeregistrationConfirmed":
+      return "Deregistered";
+    case "DeregistrationFailed":
+      return "Deregistration failed";
+    default:
+      return state;
+  }
+}
+
+function getInboxAgentBadgeVariant(state: InboxAgent["state"]) {
+  if (state === "RegistrationConfirmed") return "success" as const;
+  if (state === "RegistrationFailed" || state === "DeregistrationFailed") {
+    return "destructive" as const;
+  }
+  if (state === "DeregistrationConfirmed") return "outline-muted" as const;
+  return "secondary-muted" as const;
+}
+
+function CopyableValue({
+  value,
+  monospace = false,
+}: {
+  value: string;
+  monospace?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={cn(
+          "min-w-0 flex-1 break-all text-sm",
+          monospace && "font-mono text-xs",
+        )}
+      >
+        {value}
+      </span>
+      <CopyButton value={value} className="h-8 w-8 shrink-0" />
+    </div>
+  );
+}
+
+function DetailField({
+  label,
+  children,
+  fullWidth = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={cn("space-y-2", fullWidth && "sm:col-span-2")}>
+      <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="rounded-lg border border-border/70 bg-muted/30 px-3 py-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function InboxAgentsSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/80">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <TableHead key={index}>
+                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <TableRow key={index}>
+              {Array.from({ length: 6 }).map((__, cellIndex) => (
+                <TableCell key={cellIndex}>
+                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function InboxAgentsPagination({
+  currentPage,
+  totalPages,
+  isLoading,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const pages = getPageNumbers(currentPage, totalPages);
+
+  return (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            text="Previous"
+            ariaLabel="Go to previous page"
+            onClick={() => {
+              if (!isLoading && currentPage > 1) {
+                onPageChange(currentPage - 1);
+              }
+            }}
+            aria-disabled={isLoading || currentPage === 1}
+            className={
+              isLoading || currentPage === 1
+                ? "pointer-events-none opacity-50"
+                : ""
+            }
+          />
+        </PaginationItem>
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <PaginationItem key={`ellipsis-${index}`}>
+              <PaginationEllipsis srText="More pages" />
+            </PaginationItem>
+          ) : (
+            <PaginationItem key={page}>
+              <PaginationLink
+                onClick={() => {
+                  if (!isLoading) onPageChange(page);
+                }}
+                isActive={currentPage === page}
+                disabled={isLoading}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ),
+        )}
+        <PaginationItem>
+          <PaginationNext
+            text="Next"
+            ariaLabel="Go to next page"
+            onClick={() => {
+              if (!isLoading && currentPage < totalPages) {
+                onPageChange(currentPage + 1);
+              }
+            }}
+            aria-disabled={isLoading || currentPage === totalPages}
+            className={
+              isLoading || currentPage === totalPages
+                ? "pointer-events-none opacity-50"
+                : ""
+            }
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+}
+
+function RegisterInboxAgentDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const { network } = usePaymentNetwork();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<RegisterInboxAgentForm>({
+    resolver: zodResolver(registerInboxAgentBodySchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      agentSlug: "",
+    },
+  });
+
+  const description = form.watch("description");
+
+  useEffect(() => {
+    if (!open) return;
+
+    form.reset({
+      name: "",
+      description: "",
+      agentSlug: "",
+    });
+  }, [form, network, open]);
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    setIsSubmitting(true);
+    try {
+      const result = await inboxAgentApiClient.registerInboxAgent(
+        {
+          name: values.name,
+          description: values.description || undefined,
+          agentSlug: normalizeInboxAgentSlug(values.agentSlug),
+        },
+        { network },
+      );
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to register inbox agent");
+        return;
+      }
+
+      toast.success("Inbox agent registration started");
+      onOpenChange(false);
+      onSuccess();
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>Register inbox agent</DialogTitle>
+          <DialogDescription>
+            Create a new inbox-agent registration for the active {network}{" "}
+            network.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form className="space-y-5" onSubmit={onSubmit}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              {...form.register("name")}
+              maxLength={INBOX_AGENT_LIMITS.name}
+              placeholder="Support inbox"
+            />
+            {form.formState.errors.name && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Description</label>
+            <div className="relative">
+              <Textarea
+                {...form.register("description")}
+                rows={4}
+                maxLength={INBOX_AGENT_LIMITS.description}
+                placeholder="Describe what this inbox agent handles"
+                className="min-h-[112px] resize-none pr-16"
+              />
+              <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
+                {description?.length ?? 0}/{INBOX_AGENT_LIMITS.description}
+              </div>
+            </div>
+            {form.formState.errors.description && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.description.message}
+              </p>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Inbox slug</label>
+              <Input
+                {...form.register("agentSlug")}
+                maxLength={INBOX_AGENT_LIMITS.slug}
+                placeholder="support-inbox"
+                onChange={(event) => {
+                  form.setValue(
+                    "agentSlug",
+                    normalizeInboxAgentSlug(event.target.value),
+                    { shouldValidate: true },
+                  );
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Lowercase letters, numbers, and hyphens only.
+              </p>
+              {form.formState.errors.agentSlug && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.agentSlug.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-4">
+              <div className="text-sm font-medium">Managed wallet setup</div>
+              <p className="text-sm text-muted-foreground">
+                Masumi will create the required registration wallet and use your
+                configured funding wallet automatically on {network}.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner className="mr-2" size={16} />
+                  Registering...
+                </>
+              ) : (
+                "Register inbox agent"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InboxAgentDetailsDialog({
+  agent,
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  agent: InboxAgent | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const { network } = usePaymentNetwork();
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const actionLabel = useMemo(() => {
+    if (!agent) return null;
+    if (agent.state === "RegistrationConfirmed") return "Deregister";
+    if (
+      agent.state === "RegistrationFailed" ||
+      agent.state === "DeregistrationConfirmed"
+    ) {
+      return "Delete";
+    }
+    return null;
+  }, [agent]);
+
+  const holdingWallet =
+    agent?.RecipientWallet ?? agent?.SmartContractWallet ?? null;
+
+  const handleAction = useCallback(async () => {
+    if (!agent || !actionLabel) return;
+
+    setIsActionLoading(true);
+    try {
+      const result =
+        actionLabel === "Delete"
+          ? await inboxAgentApiClient.deleteInboxAgent(agent.id, { network })
+          : await inboxAgentApiClient.deregisterInboxAgent(agent.id, {
+              network,
+            });
+
+      if (!result.success) {
+        toast.error(
+          result.error || `Failed to ${actionLabel.toLowerCase()} inbox agent`,
+        );
+        return;
+      }
+
+      toast.success(
+        actionLabel === "Delete"
+          ? "Inbox agent deleted"
+          : "Inbox agent deregistration started",
+      );
+      setConfirmOpen(false);
+      onOpenChange(false);
+      onSuccess();
+    } finally {
+      setIsActionLoading(false);
+    }
+  }, [actionLabel, agent, network, onOpenChange, onSuccess]);
+
+  if (!agent) return null;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[720px]">
+          <DialogHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <DialogTitle>{agent.name}</DialogTitle>
+                <DialogDescription className="mt-2">
+                  Inbox slug:{" "}
+                  <span className="font-mono">{agent.agentSlug}</span>
+                </DialogDescription>
+              </div>
+              <Badge variant={getInboxAgentBadgeVariant(agent.state)}>
+                {formatInboxAgentStatus(agent.state)}
+              </Badge>
+            </div>
+          </DialogHeader>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DetailField label="Description" fullWidth>
+              <p className="text-sm text-muted-foreground">
+                {agent.description || "No description provided."}
+              </p>
+            </DetailField>
+
+            <DetailField label="Agent identifier">
+              {agent.agentIdentifier ? (
+                <CopyableValue monospace value={agent.agentIdentifier} />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  No on-chain identifier yet.
+                </span>
+              )}
+            </DetailField>
+
+            <DetailField label="Metadata version">
+              <span className="text-sm">v{agent.metadataVersion}</span>
+            </DetailField>
+
+            <DetailField label="Created">
+              <span className="text-sm">
+                {formatDate(agent.createdAt)} ·{" "}
+                {formatRelativeDate(agent.createdAt)}
+              </span>
+            </DetailField>
+
+            <DetailField label="Updated">
+              <span className="text-sm">
+                {formatDate(agent.updatedAt)} ·{" "}
+                {formatRelativeDate(agent.updatedAt)}
+              </span>
+            </DetailField>
+
+            <DetailField label="Last checked">
+              <span className="text-sm">
+                {agent.lastCheckedAt
+                  ? `${formatDate(agent.lastCheckedAt)} · ${formatRelativeDate(agent.lastCheckedAt)}`
+                  : "Not checked yet"}
+              </span>
+            </DetailField>
+
+            <DetailField label="Registration wallet">
+              <CopyableValue
+                monospace
+                value={agent.SmartContractWallet.walletAddress}
+              />
+            </DetailField>
+
+            <DetailField label="Funding wallet">
+              {holdingWallet ? (
+                <CopyableValue monospace value={holdingWallet.walletAddress} />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  Uses the registration wallet
+                </span>
+              )}
+            </DetailField>
+
+            <DetailField label="Current transaction" fullWidth>
+              {agent.CurrentTransaction ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline-muted">
+                      {agent.CurrentTransaction.status}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {agent.CurrentTransaction.confirmations != null
+                        ? `${agent.CurrentTransaction.confirmations} confirmations`
+                        : "Awaiting confirmation"}
+                    </span>
+                  </div>
+                  {agent.CurrentTransaction.txHash ? (
+                    <CopyableValue
+                      monospace
+                      value={agent.CurrentTransaction.txHash}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">
+                      No transaction hash yet.
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  No active transaction.
+                </span>
+              )}
+            </DetailField>
+
+            {agent.error ? (
+              <DetailField label="Failure" fullWidth>
+                <p className="text-sm text-destructive">{agent.error}</p>
+              </DetailField>
+            ) : null}
+          </div>
+
+          <DialogFooter className="justify-between gap-2 sm:justify-between">
+            <div className="flex items-center gap-2">
+              {agent.agentIdentifier ? (
+                <Button
+                  variant="outline"
+                  asChild
+                  className="inline-flex items-center gap-2"
+                >
+                  <Link
+                    href={`/api/registry-discovery/inbox-agent-identifier?agentIdentifier=${encodeURIComponent(agent.agentIdentifier)}&network=${network}`}
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Raw lookup
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              {actionLabel ? (
+                <Button
+                  variant={actionLabel === "Delete" ? "destructive" : "outline"}
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  {actionLabel === "Delete" ? (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Unplug className="mr-2 h-4 w-4" />
+                  )}
+                  {actionLabel}
+                </Button>
+              ) : null}
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={() => {
+          void handleAction();
+        }}
+        title={
+          actionLabel === "Delete"
+            ? "Delete inbox agent"
+            : "Deregister inbox agent"
+        }
+        description={
+          actionLabel === "Delete"
+            ? `Delete ${agent.name}? This removes the registration record from your inbox-agent list.`
+            : `Deregister ${agent.name}? This starts the on-chain deregistration flow.`
+        }
+        confirmText={actionLabel ?? "Confirm"}
+        variant={actionLabel === "Delete" ? "destructive" : "default"}
+        isLoading={isActionLoading}
+      />
+    </>
+  );
+}
+
+export function InboxAgentsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { network } = usePaymentNetwork();
+  const sectionParam = searchParams.get("section");
+  const activeSection = VALID_SECTIONS.includes(sectionParam as InboxSection)
+    ? (sectionParam as InboxSection)
+    : "manage";
+  const [activeTab, setActiveTab] = useState<InboxTabKey>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<InboxAgent | null>(null);
+  const [state, setState] = useState<CursorPageState<InboxAgent>>(
+    createCursorPageState(),
+  );
+
+  const fetchPage = useCallback(
+    async (cursorId?: string) =>
+      inboxAgentApiClient.getInboxAgents(
+        {
+          filterStatus: getFilterForTab(activeTab),
+          search: debouncedSearch || undefined,
+        },
+        {
+          cursorId,
+          take: PAGE_SIZE,
+          network,
+        },
+      ),
+    [activeTab, debouncedSearch, network],
+  );
+
+  const loadFirstPage = useCallback(async () => {
+    setState((current) => ({
+      ...current,
+      isLoading: true,
+      error: null,
+      currentPage: 1,
+    }));
+
+    const result = await fetchPage();
+    if (!result.success) {
+      setState({
+        ...createCursorPageState(),
+        isLoading: false,
+        error: result.error,
+      });
+      return;
+    }
+
+    setState({
+      pages: [result.data],
+      nextCursors: [result.nextCursor],
+      currentPage: 1,
+      isLoading: false,
+      isPageLoading: false,
+      error: null,
+    });
+  }, [fetchPage]);
+
+  useEffect(() => {
+    if (activeSection !== "manage") return;
+    void loadFirstPage();
+  }, [activeSection, loadFirstPage]);
+
+  const handlePageChange = useCallback(
+    async (page: number) => {
+      const totalPages = getKnownTotalPages(state);
+      if (page < 1 || page > totalPages) return;
+
+      if (page <= state.pages.length) {
+        setState((current) => ({ ...current, currentPage: page }));
+        return;
+      }
+
+      const cursor = state.nextCursors[state.pages.length - 1];
+      if (!cursor) return;
+
+      setState((current) => ({ ...current, isPageLoading: true, error: null }));
+      const result = await fetchPage(cursor);
+      if (!result.success) {
+        setState((current) => ({
+          ...current,
+          isPageLoading: false,
+          error: result.error,
+        }));
+        return;
+      }
+
+      setState((current) => ({
+        pages: [...current.pages, result.data],
+        nextCursors: [...current.nextCursors, result.nextCursor],
+        currentPage: page,
+        isLoading: false,
+        isPageLoading: false,
+        error: null,
+      }));
+    },
+    [fetchPage, state],
+  );
+
+  const tabs = [
+    { name: "All", key: "all" },
+    { name: "Registered", key: "registered" },
+    { name: "Deregistered", key: "deregistered" },
+    { name: "Pending", key: "pending" },
+    { name: "Failed", key: "failed" },
+  ];
+  const sections = [
+    { name: "Manage", key: "manage" },
+    { name: "Discovery", key: "discovery" },
+  ];
+
+  const handleSectionChange = (section: InboxSection) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (section === "manage") {
+      params.delete("section");
+    } else {
+      params.set("section", section);
+    }
+    const query = params.toString();
+    router.push(query ? `/inbox-agents?${query}` : "/inbox-agents");
+  };
+
+  const currentItems = getCurrentPageItems(state);
+  const totalPages = getKnownTotalPages(state);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Inbox agents
+          </h1>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            {activeSection === "manage"
+              ? `Register, inspect, deregister, and clean up inbox-agent registrations on ${network}.`
+              : `Browse the latest verified inbox agents published to the Masumi registry on ${network}.`}
+          </p>
+        </div>
+        {activeSection === "manage" && (
+          <div className="flex items-center gap-2">
+            <RefreshButton
+              onRefresh={() => void loadFirstPage()}
+              isRefreshing={state.isLoading || state.isPageLoading}
+            />
+            <Button variant="primary" onClick={() => setRegisterOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Register inbox agent
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <Tabs
+          tabs={sections}
+          activeTab={activeSection}
+          onTabChange={(section) =>
+            handleSectionChange(section as InboxSection)
+          }
+        />
+
+        {activeSection === "manage" ? (
+          <div className="space-y-4 rounded-2xl border border-border/80 bg-background/95 p-4 sm:p-6">
+            <Tabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as InboxTabKey)}
+            />
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full max-w-md">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by name, slug, identifier, wallet, or state..."
+                  className="pl-10"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {state.isPageLoading
+                  ? "Loading page..."
+                  : `Page ${state.currentPage}`}
+              </div>
+            </div>
+
+            {state.isLoading ? (
+              <InboxAgentsSkeleton />
+            ) : state.error ? (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-5 text-sm text-destructive">
+                {state.error}
+              </div>
+            ) : currentItems.length === 0 ? (
+              <div className="rounded-xl border border-dashed px-6 py-14 text-center">
+                <div className="mx-auto max-w-md space-y-2">
+                  <p className="text-base font-medium">No inbox agents found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Try a broader search, switch tabs, or register a new inbox
+                    agent.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-xl border border-border/80">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Added</TableHead>
+                        <TableHead>Inbox slug</TableHead>
+                        <TableHead>Agent ID</TableHead>
+                        <TableHead>Wallets</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentItems.map((agent) => {
+                        const holdingWallet =
+                          agent.RecipientWallet ?? agent.SmartContractWallet;
+
+                        return (
+                          <TableRow
+                            key={agent.id}
+                            className="cursor-pointer"
+                            onClick={() => setSelectedAgent(agent)}
+                          >
+                            <TableCell className="max-w-56">
+                              <div className="space-y-1">
+                                <div className="font-medium">{agent.name}</div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  {agent.description || "No description"}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {formatRelativeDate(agent.createdAt)}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {agent.agentSlug}
+                            </TableCell>
+                            <TableCell className="max-w-44">
+                              {agent.agentIdentifier ? (
+                                <div
+                                  className="flex items-center gap-2"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  <span className="truncate font-mono text-xs">
+                                    {shortenAddress(agent.agentIdentifier, 8)}
+                                  </span>
+                                  <CopyButton
+                                    value={agent.agentIdentifier}
+                                    className="h-8 w-8 shrink-0"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              <div>
+                                Reg:{" "}
+                                {shortenAddress(
+                                  agent.SmartContractWallet.walletAddress,
+                                  8,
+                                )}
+                              </div>
+                              <div>
+                                Fund:{" "}
+                                {shortenAddress(holdingWallet.walletAddress, 8)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={getInboxAgentBadgeVariant(agent.state)}
+                              >
+                                {formatInboxAgentStatus(agent.state)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedAgent(agent);
+                                }}
+                              >
+                                Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <InboxAgentsPagination
+                  currentPage={state.currentPage}
+                  totalPages={totalPages}
+                  isLoading={state.isPageLoading}
+                  onPageChange={(page) => {
+                    void handlePageChange(page);
+                  }}
+                />
+              </>
+            )}
+          </div>
+        ) : (
+          <InboxAgentsDiscovery />
+        )}
+      </div>
+
+      <RegisterInboxAgentDialog
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+        onSuccess={() => {
+          void loadFirstPage();
+        }}
+      />
+
+      <InboxAgentDetailsDialog
+        agent={selectedAgent}
+        open={selectedAgent != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAgent(null);
+        }}
+        onSuccess={() => {
+          setSelectedAgent(null);
+          void loadFirstPage();
+        }}
+      />
+    </div>
+  );
+}

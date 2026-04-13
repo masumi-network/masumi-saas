@@ -24,6 +24,9 @@ vi.mock("@/lib/email/send-registration-failed", () => ({
 
 vi.mock("@/lib/payment-node", () => ({
   createPaymentNodeClient: vi.fn(),
+}));
+
+vi.mock("./payment-node/config", () => ({
   paymentNodeConfig: {
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
   },
@@ -40,10 +43,10 @@ vi.mock("@/lib/payment-node/tokens", () => ({
   },
 }));
 
-const {
-  resolveRegistrationFundingWallet,
-  shouldCheckRecipientWalletForRegisteredAssets,
-} = await import("./agent-registration");
+const { shouldCheckRecipientWalletForRegisteredAssets } =
+  await import("./agent-registration");
+const { resolveRegistrationFundingWallet } =
+  await import("./payment-node/registration-wallets");
 
 describe("resolveRegistrationFundingWallet", () => {
   beforeEach(() => {

@@ -15,6 +15,7 @@ model User {
   name          String
   email         String
   emailVerified Boolean  @default(false)
+  creditsRemaining Int   @default(0)
   image         String?
   imageHash     String?
   createdAt     DateTime @default(now())
@@ -29,6 +30,7 @@ model User {
   oauthAccessTokens   OauthAccessToken[]
   oauthConsents       OauthConsent[]
   oidcUserGrants      OidcUserGrant[]
+  creditLedgerEntries CreditLedgerEntry[]
   agents              Agent[]
   agentActivityEvents AgentActivityEvent[]
   veridianCredentials VeridianCredential[]
@@ -293,6 +295,22 @@ model OidcUserGrant {
   @@index([clientId])
   @@index([userId])
   @@map("oidcUserGrant")
+}
+
+model CreditLedgerEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta        Int
+  balanceAfter Int
+  reason       String
+  reference    String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, reason, reference])
+  @@index([userId, createdAt])
+  @@map("credit_ledger_entry")
 }
 
 model DeviceCode {

@@ -13,15 +13,22 @@ import type {
   CreateApiKeyInput,
   CreateApiKeyOutput,
   DeregisterAgentInput,
+  DeregisterInboxAgentInput,
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  InboxAgentIdentifierMetadata,
+  InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
   PaymentIncomeOutput,
   PaymentNodeNetwork,
+  RegisterInboxAgentInput,
   RegisterAgentInput,
+  RegistryInboxCountResponse,
+  RegistryInboxEntry,
   RegistryEntry,
+  RegistryStatusFilter,
   WalletStatus,
 } from "./schemas";
 import {
@@ -30,10 +37,16 @@ import {
   generatedWalletSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
+  inboxAgentIdentifierMetadataSchema,
+  inboxAgentMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
+  registryInboxCountResponseSchema,
+  registryInboxEntrySchema,
+  registryInboxListResponseSchema,
+  registryInboxWalletResponseSchema,
   registryEntrySchema,
   registryListResponseSchema,
   registryWalletResponseSchema,
@@ -47,9 +60,12 @@ export type {
   CreateApiKeyInput,
   CreateApiKeyOutput,
   DeregisterAgentInput,
+  DeregisterInboxAgentInput,
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  InboxAgentIdentifierMetadata,
+  InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
   PaymentIncomeOutput,
@@ -57,9 +73,13 @@ export type {
   PaymentOrPurchaseItem,
   PaymentSourceInfo,
   PaymentSourceWallet,
+  RegisterInboxAgentInput,
   RegisterAgentInput,
+  RegistryInboxCountResponse,
+  RegistryInboxEntry,
   RegistryEntry,
   RegistryRequestState,
+  RegistryStatusFilter,
   Utxo,
   UtxoAmount,
   WalletStatus,
@@ -156,6 +176,38 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       );
     },
 
+    /** Register an inbox agent (pay-authenticated). Use user's API key. */
+    async registerInboxAgent(
+      body: RegisterInboxAgentInput,
+    ): Promise<RegistryInboxEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox`,
+        {
+          method: "POST",
+          body,
+        },
+        registryInboxEntrySchema,
+      );
+    },
+
+    /** Deregister an inbox agent (pay-authenticated). Use user's API key. */
+    async deregisterInboxAgent(
+      body: DeregisterInboxAgentInput,
+    ): Promise<RegistryInboxEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox/deregister`,
+        {
+          method: "POST",
+          body,
+        },
+        registryInboxEntrySchema,
+      );
+    },
+
     /** Permanently delete a registry entry from the payment node DB (admin only).
      *  Only valid for RegistrationFailed or DeregistrationConfirmed entries. */
     async deleteRegistryEntry(id: string): Promise<RegistryEntry> {
@@ -168,6 +220,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: { id },
         },
         registryEntrySchema,
+      );
+    },
+
+    /** Permanently delete an inbox registry entry from the payment node DB (admin only). */
+    async deleteRegistryInboxEntry(id: string): Promise<RegistryInboxEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox`,
+        {
+          method: "DELETE",
+          body: { id },
+        },
+        registryInboxEntrySchema,
       );
     },
 
@@ -188,6 +254,37 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         registryListResponseSchema,
+      );
+    },
+
+    /** List inbox registry requests (pay-authenticated). Use user's API key. */
+    async getRegistryInbox(params: {
+      network: PaymentNodeNetwork;
+      limit?: number;
+      cursorId?: string;
+      filterSmartContractAddress?: string | null;
+      filterStatus?: RegistryStatusFilter;
+      searchQuery?: string;
+    }): Promise<{ Assets: RegistryInboxEntry[] }> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox`,
+        {
+          method: "GET",
+          query: {
+            network: params.network,
+            ...(params.limit != null && { limit: String(params.limit) }),
+            ...(params.cursorId && { cursorId: params.cursorId }),
+            ...(params.filterSmartContractAddress != null &&
+              params.filterSmartContractAddress !== "" && {
+                filterSmartContractAddress: params.filterSmartContractAddress,
+              }),
+            ...(params.filterStatus && { filterStatus: params.filterStatus }),
+            ...(params.searchQuery && { searchQuery: params.searchQuery }),
+          },
+        },
+        registryInboxListResponseSchema,
       );
     },
 
@@ -218,6 +315,29 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       return null;
     },
 
+    /** Get single inbox registry entry by id (pay-authenticated). Use user's API key. */
+    async getRegistryInboxById(params: {
+      id: string;
+      network: PaymentNodeNetwork;
+    }): Promise<RegistryInboxEntry | null> {
+      const MAX_PAGES = 20;
+      let cursorId: string | undefined;
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const { Assets } = await this.getRegistryInbox({
+          network: params.network,
+          cursorId,
+          limit: 100,
+        });
+        const match = Assets.find((asset) => asset.id === params.id);
+        if (match) return match;
+        if (Assets.length === 0) return null;
+        const nextCursor = Assets[Assets.length - 1]!.id;
+        if (nextCursor === cursorId) return null;
+        cursorId = nextCursor;
+      }
+      return null;
+    },
+
     /** Get registry by agent identifier (pay-authenticated). */
     async getRegistryByAgentIdentifier(params: {
       agentIdentifier: string;
@@ -237,6 +357,29 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {
         return registryEntrySchema.parse(json.data);
+      }
+      return null;
+    },
+
+    /** Get inbox registry by agent identifier (pay-authenticated). */
+    async getRegistryInboxByAgentIdentifier(params: {
+      agentIdentifier: string;
+      network: PaymentNodeNetwork;
+    }): Promise<InboxAgentIdentifierMetadata | null> {
+      const res = await fetch(
+        `${base}/registry-inbox/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
+        {
+          headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+        },
+      );
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error((json as { error?: string }).error ?? res.statusText);
+      }
+      const json = (await res.json()) as PaymentNodeResponse<unknown>;
+      if (json.status === "success" && "data" in json && json.data != null) {
+        return inboxAgentIdentifierMetadataSchema.parse(json.data);
       }
       return null;
     },
@@ -262,6 +405,84 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         registryWalletResponseSchema,
+      );
+    },
+
+    /** Get inbox registry metadata for a wallet (READ). */
+    async getInboxAgentsByWallet(params: {
+      walletVkey: string;
+      network: PaymentNodeNetwork;
+      smartContractAddress?: string;
+    }): Promise<{ Assets: InboxAgentMetadata[] }> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox/wallet`,
+        {
+          method: "GET",
+          query: {
+            walletVkey: params.walletVkey,
+            network: params.network,
+            ...(params.smartContractAddress && {
+              smartContractAddress: params.smartContractAddress,
+            }),
+          },
+        },
+        registryInboxWalletResponseSchema,
+      );
+    },
+
+    /** List inbox registry changes since lastUpdate (diff). */
+    async listRegistryInboxDiff(params: {
+      network: PaymentNodeNetwork;
+      lastUpdate?: string;
+      limit?: number;
+      cursorId?: string;
+      filterSmartContractAddress?: string | null;
+    }): Promise<{ Assets: RegistryInboxEntry[] }> {
+      const query: Record<string, string> = {
+        network: params.network,
+        ...(params.lastUpdate && { lastUpdate: params.lastUpdate }),
+        ...(params.limit != null && { limit: String(params.limit) }),
+        ...(params.cursorId && { cursorId: params.cursorId }),
+        ...(params.filterSmartContractAddress != null &&
+          params.filterSmartContractAddress !== "" && {
+            filterSmartContractAddress: params.filterSmartContractAddress,
+          }),
+      };
+
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox/diff`,
+        {
+          method: "GET",
+          query,
+        },
+        registryInboxListResponseSchema,
+      );
+    },
+
+    /** Count inbox registry requests. */
+    async getRegistryInboxCount(params: {
+      network: PaymentNodeNetwork;
+      filterSmartContractAddress?: string | null;
+    }): Promise<RegistryInboxCountResponse> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry-inbox/count`,
+        {
+          method: "GET",
+          query: {
+            network: params.network,
+            ...(params.filterSmartContractAddress != null &&
+              params.filterSmartContractAddress !== "" && {
+                filterSmartContractAddress: params.filterSmartContractAddress,
+              }),
+          },
+        },
+        registryInboxCountResponseSchema,
       );
     },
 

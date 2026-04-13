@@ -31,6 +31,7 @@ import {
   oidcEnvConfig,
 } from "@/lib/config/oidc.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
+import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -320,6 +321,7 @@ export const auth = betterAuth({
               );
             }
           }
+          await grantInitialCreditsIfNeeded(user.id);
           await createPaymentNodeKeyForUser(user.id);
         },
       },

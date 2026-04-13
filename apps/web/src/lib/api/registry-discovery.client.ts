@@ -90,6 +90,7 @@ async function readJsonSafely(response: Response) {
 
 class RegistryDiscoveryClient {
   private baseUrl = "/api/v1";
+  private internalInboxBaseUrl = "/api/registry-discovery";
 
   private async postCollection<T extends { id: string }>(
     endpoint: string,
@@ -149,11 +150,50 @@ class RegistryDiscoveryClient {
   async getInboxAgentRegistrations(
     body: InboxAgentRegistrationRequest,
   ): Promise<PaginatedDiscoveryResult<InboxAgentRegistration>> {
-    return this.postCollection<InboxAgentRegistration>(
-      "/inbox-agent-registration",
-      body,
-      "registrations",
-    );
+    try {
+      const response = await fetch(
+        `${this.internalInboxBaseUrl}/inbox-agent-registrations`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        },
+      );
+
+      const payload = await readJsonSafely(response);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: getErrorMessage(payload, response.status),
+        };
+      }
+
+      const items = extractList<InboxAgentRegistration>(
+        payload,
+        "registrations",
+      );
+
+      return {
+        success: true,
+        data: {
+          items,
+          nextCursor:
+            items.length === (body.limit ?? 10)
+              ? (items.at(-1)?.id ?? null)
+              : null,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Network error occurred",
+      };
+    }
   }
 }
 

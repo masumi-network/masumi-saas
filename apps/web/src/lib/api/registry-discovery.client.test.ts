@@ -56,7 +56,7 @@ describe("registryDiscoveryClient", () => {
     });
   });
 
-  it("wraps the inbox-agent-registration route", async () => {
+  it("wraps the internal inbox-agent-registration route", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -86,7 +86,7 @@ describe("registryDiscoveryClient", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/inbox-agent-registration",
+      "/api/registry-discovery/inbox-agent-registrations",
       expect.objectContaining({
         method: "POST",
         credentials: "include",

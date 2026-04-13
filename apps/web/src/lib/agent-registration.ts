@@ -16,6 +16,10 @@ import {
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  isWalletAddressCompatibleWithNetwork,
+  resolveRegistrationFundingWallet,
+} from "./payment-node/registration-wallets";
 import { USDM } from "@/lib/payment-node/tokens";
 
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
@@ -86,15 +90,6 @@ type RegistrationPayloadStored = {
   };
 };
 
-function isWalletAddressCompatibleWithNetwork(
-  address: string,
-  network: PaymentNodeNetwork,
-): boolean {
-  if (network === "Preprod") return address.startsWith("addr_test");
-  if (network === "Mainnet") return address.startsWith("addr1");
-  return true;
-}
-
 function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   if (!lastRegisterAttemptAt) return false;
   const ms = Date.parse(lastRegisterAttemptAt);
@@ -116,44 +111,6 @@ function shouldTreatWalletRegistryLookupAsPending(message: string): boolean {
     normalized.startsWith("404: stake address not found") ||
     normalized.includes("requested component has not been found")
   );
-}
-
-export function resolveRegistrationFundingWallet(params: {
-  network: PaymentNodeNetwork;
-  paymentSourceId: string;
-  sellingWallets: PaymentSourceWallet[];
-}): { wallet: PaymentSourceWallet | null; error?: string } {
-  const configuredWallets = paymentNodeConfig.getRegistrationFundingWallets(
-    params.network,
-  );
-  if (configuredWallets.length === 0) {
-    const envName =
-      params.network === "Mainnet"
-        ? "PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_MAINNET"
-        : "PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_PREPROD";
-    return {
-      wallet: null,
-      error: `No registration funding wallets are configured for ${params.network}. Set ${envName} to one or more existing selling wallet addresses on payment source ${params.paymentSourceId}.`,
-    };
-  }
-
-  const matchedWallets = configuredWallets
-    .map((address) =>
-      params.sellingWallets.find(
-        (candidate) => candidate.walletAddress === address,
-      ),
-    )
-    .filter((wallet): wallet is PaymentSourceWallet => wallet != null);
-
-  if (matchedWallets.length > 0) {
-    const selectedIndex = Math.floor(Math.random() * matchedWallets.length);
-    return { wallet: matchedWallets[selectedIndex] ?? null };
-  }
-
-  return {
-    wallet: null,
-    error: `None of the configured registration funding wallets matched a managed selling wallet on payment source ${params.paymentSourceId} for ${params.network}.`,
-  };
 }
 
 /**

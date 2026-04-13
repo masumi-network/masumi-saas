@@ -143,3 +143,13 @@ export {
   earningsQuerySchema,
   parseNetwork,
 } from "./api-query";
+export {
+  getCanonicalInboxAgentSlug,
+  inboxAgentFilterStatusSchema,
+  inboxAgentIdRouteParamSchema,
+  inboxAgentsListQuerySchema,
+  inboxAgentStateSchema,
+  registerInboxAgentBodySchema,
+  validateCanonicalInboxAgentSlug,
+  type RegisterInboxAgentBody,
+} from "./inbox-agent";

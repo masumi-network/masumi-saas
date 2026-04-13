@@ -9,6 +9,10 @@ import {
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  consumeCreditOrThrow,
+  createCreditReference,
+} from "@/lib/credits/service";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
@@ -207,6 +211,18 @@ export async function POST(request: NextRequest) {
       network,
     });
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
+
+    await consumeCreditOrThrow({
+      userId: user.id,
+      reason: "agent_register",
+      reference: createCreditReference("agent-register"),
+      metadata: {
+        name,
+        apiUrl,
+        network,
+        authMethod: authContext.authMethod,
+      },
+    });
 
     const params: RegisterAgentParams = {
       name,

@@ -553,6 +553,7 @@
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "inboxAgents": "Inbox agents",
         "activity": "Activity",
         "analytics": "Analytics",
         "organizations": "Organizations",
@@ -773,6 +774,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "Agents",
+        "inboxAgents": "Inbox agents",
         "activity": "Activity",
         "analytics": "Analytics",
         "organizations": "Organizations",
@@ -884,7 +886,7 @@
       },
       "Discovery": {
         "title": "Registry discovery",
-        "description": "Browse both Masumi discovery routes: the standard agent lookup and the newly added inbox-agent lookup.",
+        "description": "Browse the latest healthy Masumi agents here. Verified inbox-agent discovery now lives under Inbox agents.",
         "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
         "inboxDescription": "Verified agents returned by the inbox-agent discovery route.",
         "views": {

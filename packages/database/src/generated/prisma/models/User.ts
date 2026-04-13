@@ -20,8 +20,18 @@ export type UserModel =
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null;
+  _avg: UserAvgAggregateOutputType | null;
+  _sum: UserSumAggregateOutputType | null;
   _min: UserMinAggregateOutputType | null;
   _max: UserMaxAggregateOutputType | null;
+};
+
+export type UserAvgAggregateOutputType = {
+  creditsRemaining: number | null;
+};
+
+export type UserSumAggregateOutputType = {
+  creditsRemaining: number | null;
 };
 
 export type UserMinAggregateOutputType = {
@@ -29,6 +39,7 @@ export type UserMinAggregateOutputType = {
   name: string | null;
   email: string | null;
   emailVerified: boolean | null;
+  creditsRemaining: number | null;
   image: string | null;
   imageHash: string | null;
   createdAt: Date | null;
@@ -51,6 +62,7 @@ export type UserMaxAggregateOutputType = {
   name: string | null;
   email: string | null;
   emailVerified: boolean | null;
+  creditsRemaining: number | null;
   image: string | null;
   imageHash: string | null;
   createdAt: Date | null;
@@ -73,6 +85,7 @@ export type UserCountAggregateOutputType = {
   name: number;
   email: number;
   emailVerified: number;
+  creditsRemaining: number;
   image: number;
   imageHash: number;
   createdAt: number;
@@ -91,11 +104,20 @@ export type UserCountAggregateOutputType = {
   _all: number;
 };
 
+export type UserAvgAggregateInputType = {
+  creditsRemaining?: true;
+};
+
+export type UserSumAggregateInputType = {
+  creditsRemaining?: true;
+};
+
 export type UserMinAggregateInputType = {
   id?: true;
   name?: true;
   email?: true;
   emailVerified?: true;
+  creditsRemaining?: true;
   image?: true;
   imageHash?: true;
   createdAt?: true;
@@ -118,6 +140,7 @@ export type UserMaxAggregateInputType = {
   name?: true;
   email?: true;
   emailVerified?: true;
+  creditsRemaining?: true;
   image?: true;
   imageHash?: true;
   createdAt?: true;
@@ -140,6 +163,7 @@ export type UserCountAggregateInputType = {
   name?: true;
   email?: true;
   emailVerified?: true;
+  creditsRemaining?: true;
   image?: true;
   imageHash?: true;
   createdAt?: true;
@@ -201,6 +225,18 @@ export type UserAggregateArgs<
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
+   * Select which fields to average
+   **/
+  _avg?: UserAvgAggregateInputType;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+   **/
+  _sum?: UserSumAggregateInputType;
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
    **/
   _min?: UserMinAggregateInputType;
@@ -233,6 +269,8 @@ export type UserGroupByArgs<
   take?: number;
   skip?: number;
   _count?: UserCountAggregateInputType | true;
+  _avg?: UserAvgAggregateInputType;
+  _sum?: UserSumAggregateInputType;
   _min?: UserMinAggregateInputType;
   _max?: UserMaxAggregateInputType;
 };
@@ -242,6 +280,7 @@ export type UserGroupByOutputType = {
   name: string;
   email: string;
   emailVerified: boolean;
+  creditsRemaining: number;
   image: string | null;
   imageHash: string | null;
   createdAt: Date;
@@ -258,6 +297,8 @@ export type UserGroupByOutputType = {
   banReason: string | null;
   banExpires: Date | null;
   _count: UserCountAggregateOutputType | null;
+  _avg: UserAvgAggregateOutputType | null;
+  _sum: UserSumAggregateOutputType | null;
   _min: UserMinAggregateOutputType | null;
   _max: UserMaxAggregateOutputType | null;
 };
@@ -282,6 +323,7 @@ export type UserWhereInput = {
   name?: Prisma.StringFilter<"User"> | string;
   email?: Prisma.StringFilter<"User"> | string;
   emailVerified?: Prisma.BoolFilter<"User"> | boolean;
+  creditsRemaining?: Prisma.IntFilter<"User"> | number;
   image?: Prisma.StringNullableFilter<"User"> | string | null;
   imageHash?: Prisma.StringNullableFilter<"User"> | string | null;
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
@@ -309,6 +351,7 @@ export type UserWhereInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenListRelationFilter;
   oauthConsents?: Prisma.OauthConsentListRelationFilter;
   oidcUserGrants?: Prisma.OidcUserGrantListRelationFilter;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryListRelationFilter;
   agents?: Prisma.AgentListRelationFilter;
   agentActivityEvents?: Prisma.AgentActivityEventListRelationFilter;
   veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
@@ -330,6 +373,7 @@ export type UserOrderByWithRelationInput = {
   name?: Prisma.SortOrder;
   email?: Prisma.SortOrder;
   emailVerified?: Prisma.SortOrder;
+  creditsRemaining?: Prisma.SortOrder;
   image?: Prisma.SortOrderInput | Prisma.SortOrder;
   imageHash?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -354,6 +398,7 @@ export type UserOrderByWithRelationInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenOrderByRelationAggregateInput;
   oauthConsents?: Prisma.OauthConsentOrderByRelationAggregateInput;
   oidcUserGrants?: Prisma.OidcUserGrantOrderByRelationAggregateInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryOrderByRelationAggregateInput;
   agents?: Prisma.AgentOrderByRelationAggregateInput;
   agentActivityEvents?: Prisma.AgentActivityEventOrderByRelationAggregateInput;
   veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput;
@@ -375,6 +420,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     name?: Prisma.StringFilter<"User"> | string;
     emailVerified?: Prisma.BoolFilter<"User"> | boolean;
+    creditsRemaining?: Prisma.IntFilter<"User"> | number;
     image?: Prisma.StringNullableFilter<"User"> | string | null;
     imageHash?: Prisma.StringNullableFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
@@ -400,6 +446,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<
     oauthAccessTokens?: Prisma.OauthAccessTokenListRelationFilter;
     oauthConsents?: Prisma.OauthConsentListRelationFilter;
     oidcUserGrants?: Prisma.OidcUserGrantListRelationFilter;
+    creditLedgerEntries?: Prisma.CreditLedgerEntryListRelationFilter;
     agents?: Prisma.AgentListRelationFilter;
     agentActivityEvents?: Prisma.AgentActivityEventListRelationFilter;
     veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
@@ -423,6 +470,7 @@ export type UserOrderByWithAggregationInput = {
   name?: Prisma.SortOrder;
   email?: Prisma.SortOrder;
   emailVerified?: Prisma.SortOrder;
+  creditsRemaining?: Prisma.SortOrder;
   image?: Prisma.SortOrderInput | Prisma.SortOrder;
   imageHash?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -439,8 +487,10 @@ export type UserOrderByWithAggregationInput = {
   banReason?: Prisma.SortOrderInput | Prisma.SortOrder;
   banExpires?: Prisma.SortOrderInput | Prisma.SortOrder;
   _count?: Prisma.UserCountOrderByAggregateInput;
+  _avg?: Prisma.UserAvgOrderByAggregateInput;
   _max?: Prisma.UserMaxOrderByAggregateInput;
   _min?: Prisma.UserMinOrderByAggregateInput;
+  _sum?: Prisma.UserSumOrderByAggregateInput;
 };
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -455,6 +505,7 @@ export type UserScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"User"> | string;
   email?: Prisma.StringWithAggregatesFilter<"User"> | string;
   emailVerified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean;
+  creditsRemaining?: Prisma.IntWithAggregatesFilter<"User"> | number;
   image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
   imageHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
@@ -490,6 +541,7 @@ export type UserCreateInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -513,6 +565,7 @@ export type UserCreateInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -528,6 +581,7 @@ export type UserUncheckedCreateInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -552,6 +606,7 @@ export type UserUncheckedCreateInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -566,6 +621,7 @@ export type UserUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -599,6 +655,7 @@ export type UserUpdateInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -614,6 +671,7 @@ export type UserUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -651,6 +709,7 @@ export type UserUncheckedUpdateInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -665,6 +724,7 @@ export type UserCreateManyInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -687,6 +747,7 @@ export type UserUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -718,6 +779,7 @@ export type UserUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -753,6 +815,7 @@ export type UserCountOrderByAggregateInput = {
   name?: Prisma.SortOrder;
   email?: Prisma.SortOrder;
   emailVerified?: Prisma.SortOrder;
+  creditsRemaining?: Prisma.SortOrder;
   image?: Prisma.SortOrder;
   imageHash?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -770,11 +833,16 @@ export type UserCountOrderByAggregateInput = {
   banExpires?: Prisma.SortOrder;
 };
 
+export type UserAvgOrderByAggregateInput = {
+  creditsRemaining?: Prisma.SortOrder;
+};
+
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   email?: Prisma.SortOrder;
   emailVerified?: Prisma.SortOrder;
+  creditsRemaining?: Prisma.SortOrder;
   image?: Prisma.SortOrder;
   imageHash?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -797,6 +865,7 @@ export type UserMinOrderByAggregateInput = {
   name?: Prisma.SortOrder;
   email?: Prisma.SortOrder;
   emailVerified?: Prisma.SortOrder;
+  creditsRemaining?: Prisma.SortOrder;
   image?: Prisma.SortOrder;
   imageHash?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -812,6 +881,10 @@ export type UserMinOrderByAggregateInput = {
   banned?: Prisma.SortOrder;
   banReason?: Prisma.SortOrder;
   banExpires?: Prisma.SortOrder;
+};
+
+export type UserSumOrderByAggregateInput = {
+  creditsRemaining?: Prisma.SortOrder;
 };
 
 export type UserScalarRelationFilter = {
@@ -830,6 +903,14 @@ export type StringFieldUpdateOperationsInput = {
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean;
+};
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number;
+  increment?: number;
+  decrement?: number;
+  multiply?: number;
+  divide?: number;
 };
 
 export type NullableStringFieldUpdateOperationsInput = {
@@ -1108,6 +1189,32 @@ export type UserUpdateOneRequiredWithoutOidcUserGrantsNestedInput = {
   >;
 };
 
+export type UserCreateNestedOneWithoutCreditLedgerEntriesInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedCreateWithoutCreditLedgerEntriesInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreditLedgerEntriesInput;
+  connect?: Prisma.UserWhereUniqueInput;
+};
+
+export type UserUpdateOneRequiredWithoutCreditLedgerEntriesNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.UserCreateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedCreateWithoutCreditLedgerEntriesInput
+  >;
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreditLedgerEntriesInput;
+  upsert?: Prisma.UserUpsertWithoutCreditLedgerEntriesInput;
+  connect?: Prisma.UserWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.UserUpdateToOneWithWhereWithoutCreditLedgerEntriesInput,
+      Prisma.UserUpdateWithoutCreditLedgerEntriesInput
+    >,
+    Prisma.UserUncheckedUpdateWithoutCreditLedgerEntriesInput
+  >;
+};
+
 export type UserCreateNestedOneWithoutKycVerificationInput = {
   create?: Prisma.XOR<
     Prisma.UserCreateWithoutKycVerificationInput,
@@ -1329,6 +1436,7 @@ export type UserCreateWithoutTwoFactorInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1352,6 +1460,7 @@ export type UserCreateWithoutTwoFactorInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1366,6 +1475,7 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1390,6 +1500,7 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1431,6 +1542,7 @@ export type UserUpdateWithoutTwoFactorInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1464,6 +1576,7 @@ export type UserUpdateWithoutTwoFactorInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1478,6 +1591,7 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1515,6 +1629,7 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1528,6 +1643,7 @@ export type UserCreateWithoutSessionsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1550,6 +1666,7 @@ export type UserCreateWithoutSessionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1565,6 +1682,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1588,6 +1706,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1630,6 +1749,7 @@ export type UserUpdateWithoutSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1662,6 +1782,7 @@ export type UserUpdateWithoutSessionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1677,6 +1798,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1713,6 +1835,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1727,6 +1850,7 @@ export type UserCreateWithoutAccountsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1749,6 +1873,7 @@ export type UserCreateWithoutAccountsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1764,6 +1889,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1787,6 +1913,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -1829,6 +1956,7 @@ export type UserUpdateWithoutAccountsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1861,6 +1989,7 @@ export type UserUpdateWithoutAccountsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -1876,6 +2005,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1912,6 +2042,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -1926,6 +2057,7 @@ export type UserCreateWithoutMembersInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1948,6 +2080,7 @@ export type UserCreateWithoutMembersInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -1963,6 +2096,7 @@ export type UserUncheckedCreateWithoutMembersInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -1986,6 +2120,7 @@ export type UserUncheckedCreateWithoutMembersInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2028,6 +2163,7 @@ export type UserUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2060,6 +2196,7 @@ export type UserUpdateWithoutMembersInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2075,6 +2212,7 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2111,6 +2249,7 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2125,6 +2264,7 @@ export type UserCreateWithoutInvitationsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2147,6 +2287,7 @@ export type UserCreateWithoutInvitationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2162,6 +2303,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2185,6 +2327,7 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2227,6 +2370,7 @@ export type UserUpdateWithoutInvitationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2259,6 +2403,7 @@ export type UserUpdateWithoutInvitationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2274,6 +2419,7 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2310,6 +2456,7 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2324,6 +2471,7 @@ export type UserCreateWithoutApikeysInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2346,6 +2494,7 @@ export type UserCreateWithoutApikeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2361,6 +2510,7 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2384,6 +2534,7 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2426,6 +2577,7 @@ export type UserUpdateWithoutApikeysInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2458,6 +2610,7 @@ export type UserUpdateWithoutApikeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2473,6 +2626,7 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2509,6 +2663,7 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2523,6 +2678,7 @@ export type UserCreateWithoutOauthApplicationsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2545,6 +2701,7 @@ export type UserCreateWithoutOauthApplicationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2560,6 +2717,7 @@ export type UserUncheckedCreateWithoutOauthApplicationsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2583,6 +2741,7 @@ export type UserUncheckedCreateWithoutOauthApplicationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2625,6 +2784,7 @@ export type UserUpdateWithoutOauthApplicationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2657,6 +2817,7 @@ export type UserUpdateWithoutOauthApplicationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2672,6 +2833,7 @@ export type UserUncheckedUpdateWithoutOauthApplicationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2708,6 +2870,7 @@ export type UserUncheckedUpdateWithoutOauthApplicationsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2722,6 +2885,7 @@ export type UserCreateWithoutOauthAccessTokensInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2744,6 +2908,7 @@ export type UserCreateWithoutOauthAccessTokensInput = {
   oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2759,6 +2924,7 @@ export type UserUncheckedCreateWithoutOauthAccessTokensInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2782,6 +2948,7 @@ export type UserUncheckedCreateWithoutOauthAccessTokensInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -2824,6 +2991,7 @@ export type UserUpdateWithoutOauthAccessTokensInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2856,6 +3024,7 @@ export type UserUpdateWithoutOauthAccessTokensInput = {
   oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -2871,6 +3040,7 @@ export type UserUncheckedUpdateWithoutOauthAccessTokensInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -2907,6 +3077,7 @@ export type UserUncheckedUpdateWithoutOauthAccessTokensInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -2921,6 +3092,7 @@ export type UserCreateWithoutOauthConsentsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2943,6 +3115,7 @@ export type UserCreateWithoutOauthConsentsInput = {
   oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -2958,6 +3131,7 @@ export type UserUncheckedCreateWithoutOauthConsentsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -2981,6 +3155,7 @@ export type UserUncheckedCreateWithoutOauthConsentsInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -3023,6 +3198,7 @@ export type UserUpdateWithoutOauthConsentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3055,6 +3231,7 @@ export type UserUpdateWithoutOauthConsentsInput = {
   oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3070,6 +3247,7 @@ export type UserUncheckedUpdateWithoutOauthConsentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3106,6 +3284,7 @@ export type UserUncheckedUpdateWithoutOauthConsentsInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3120,6 +3299,7 @@ export type UserCreateWithoutOidcUserGrantsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3142,6 +3322,7 @@ export type UserCreateWithoutOidcUserGrantsInput = {
   oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -3157,6 +3338,7 @@ export type UserUncheckedCreateWithoutOidcUserGrantsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3180,6 +3362,7 @@ export type UserUncheckedCreateWithoutOidcUserGrantsInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -3222,6 +3405,7 @@ export type UserUpdateWithoutOidcUserGrantsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3254,6 +3438,7 @@ export type UserUpdateWithoutOidcUserGrantsInput = {
   oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3269,6 +3454,7 @@ export type UserUncheckedUpdateWithoutOidcUserGrantsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3305,6 +3491,7 @@ export type UserUncheckedUpdateWithoutOidcUserGrantsInput = {
   oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3314,11 +3501,12 @@ export type UserUncheckedUpdateWithoutOidcUserGrantsInput = {
   twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
 };
 
-export type UserCreateWithoutKycVerificationInput = {
+export type UserCreateWithoutCreditLedgerEntriesInput = {
   id?: string;
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3345,6 +3533,214 @@ export type UserCreateWithoutKycVerificationInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
+  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput;
+};
+
+export type UserUncheckedCreateWithoutCreditLedgerEntriesInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  creditsRemaining?: number;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  kycVerificationId?: string | null;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
+  oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput;
+  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput;
+  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput;
+};
+
+export type UserCreateOrConnectWithoutCreditLedgerEntriesInput = {
+  where: Prisma.UserWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedCreateWithoutCreditLedgerEntriesInput
+  >;
+};
+
+export type UserUpsertWithoutCreditLedgerEntriesInput = {
+  update: Prisma.XOR<
+    Prisma.UserUpdateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedUpdateWithoutCreditLedgerEntriesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.UserCreateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedCreateWithoutCreditLedgerEntriesInput
+  >;
+  where?: Prisma.UserWhereInput;
+};
+
+export type UserUpdateToOneWithWhereWithoutCreditLedgerEntriesInput = {
+  where?: Prisma.UserWhereInput;
+  data: Prisma.XOR<
+    Prisma.UserUpdateWithoutCreditLedgerEntriesInput,
+    Prisma.UserUncheckedUpdateWithoutCreditLedgerEntriesInput
+  >;
+};
+
+export type UserUpdateWithoutCreditLedgerEntriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
+  oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
+  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput;
+};
+
+export type UserUncheckedUpdateWithoutCreditLedgerEntriesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  email?: Prisma.StringFieldUpdateOperationsInput | string;
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  kycVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeApiKeyEncrypted?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  role?: Prisma.StringFieldUpdateOperationsInput | string;
+  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  banExpires?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput;
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput;
+  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput;
+  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
+  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
+  oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
+  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
+  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
+  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput;
+  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput;
+  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput;
+};
+
+export type UserCreateWithoutKycVerificationInput = {
+  id?: string;
+  name: string;
+  email: string;
+  emailVerified?: boolean;
+  creditsRemaining?: number;
+  image?: string | null;
+  imageHash?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  onboardingCompleted?: boolean;
+  stripeCustomerId?: string | null;
+  twoFactorEnabled?: boolean;
+  paymentNodeApiKeyEncrypted?: string | null;
+  role?: string;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: Date | string | null;
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput;
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput;
+  members?: Prisma.MemberCreateNestedManyWithoutUserInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput;
+  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput;
+  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput;
+  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
+  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
+  oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
+  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput;
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput;
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput;
@@ -3356,6 +3752,7 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3379,6 +3776,7 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -3421,6 +3819,7 @@ export type UserUpdateWithoutKycVerificationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3454,6 +3853,7 @@ export type UserUpdateWithoutKycVerificationInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -3468,6 +3868,7 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3501,6 +3902,7 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -3515,6 +3917,7 @@ export type UserCreateWithoutAgentsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3538,6 +3941,7 @@ export type UserCreateWithoutAgentsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -3552,6 +3956,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3576,6 +3981,7 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -3617,6 +4023,7 @@ export type UserUpdateWithoutAgentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3650,6 +4057,7 @@ export type UserUpdateWithoutAgentsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -3664,6 +4072,7 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3701,6 +4110,7 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -3714,6 +4124,7 @@ export type UserCreateWithoutAgentActivityEventsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3737,6 +4148,7 @@ export type UserCreateWithoutAgentActivityEventsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -3751,6 +4163,7 @@ export type UserUncheckedCreateWithoutAgentActivityEventsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3775,6 +4188,7 @@ export type UserUncheckedCreateWithoutAgentActivityEventsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -3816,6 +4230,7 @@ export type UserUpdateWithoutAgentActivityEventsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3849,6 +4264,7 @@ export type UserUpdateWithoutAgentActivityEventsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -3863,6 +4279,7 @@ export type UserUncheckedUpdateWithoutAgentActivityEventsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -3900,6 +4317,7 @@ export type UserUncheckedUpdateWithoutAgentActivityEventsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -3913,6 +4331,7 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3936,6 +4355,7 @@ export type UserCreateWithoutCreatedOrgApiKeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -3950,6 +4370,7 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -3974,6 +4395,7 @@ export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -4015,6 +4437,7 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4048,6 +4471,7 @@ export type UserUpdateWithoutCreatedOrgApiKeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -4062,6 +4486,7 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4099,6 +4524,7 @@ export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -4112,6 +4538,7 @@ export type UserCreateWithoutKycSubmissionsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4135,6 +4562,7 @@ export type UserCreateWithoutKycSubmissionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -4149,6 +4577,7 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4173,6 +4602,7 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -4214,6 +4644,7 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4247,6 +4678,7 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -4261,6 +4693,7 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4298,6 +4731,7 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -4311,6 +4745,7 @@ export type UserCreateWithoutWalletCachesInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4334,6 +4769,7 @@ export type UserCreateWithoutWalletCachesInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput;
@@ -4348,6 +4784,7 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4372,6 +4809,7 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput;
@@ -4413,6 +4851,7 @@ export type UserUpdateWithoutWalletCachesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4446,6 +4885,7 @@ export type UserUpdateWithoutWalletCachesInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput;
@@ -4460,6 +4900,7 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4497,6 +4938,7 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput;
@@ -4510,6 +4952,7 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4533,6 +4976,7 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput;
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput;
@@ -4547,6 +4991,7 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   name: string;
   email: string;
   emailVerified?: boolean;
+  creditsRemaining?: number;
   image?: string | null;
   imageHash?: string | null;
   createdAt?: Date | string;
@@ -4571,6 +5016,7 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput;
   oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -4612,6 +5058,7 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4645,6 +5092,7 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput;
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput;
@@ -4659,6 +5107,7 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   email?: Prisma.StringFieldUpdateOperationsInput | string;
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number;
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -4696,6 +5145,7 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput;
   oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput;
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput;
+  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput;
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput;
   createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -4718,6 +5168,7 @@ export type UserCountOutputType = {
   oauthAccessTokens: number;
   oauthConsents: number;
   oidcUserGrants: number;
+  creditLedgerEntries: number;
   agents: number;
   agentActivityEvents: number;
   veridianCredentials: number;
@@ -4739,6 +5190,9 @@ export type UserCountOutputTypeSelect<
   oauthAccessTokens?: boolean | UserCountOutputTypeCountOauthAccessTokensArgs;
   oauthConsents?: boolean | UserCountOutputTypeCountOauthConsentsArgs;
   oidcUserGrants?: boolean | UserCountOutputTypeCountOidcUserGrantsArgs;
+  creditLedgerEntries?:
+    | boolean
+    | UserCountOutputTypeCountCreditLedgerEntriesArgs;
   agents?: boolean | UserCountOutputTypeCountAgentsArgs;
   agentActivityEvents?:
     | boolean
@@ -4857,6 +5311,16 @@ export type UserCountOutputTypeCountOidcUserGrantsArgs<
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountCreditLedgerEntriesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.CreditLedgerEntryWhereInput;
+};
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountAgentsArgs<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -4923,6 +5387,7 @@ export type UserSelect<
     name?: boolean;
     email?: boolean;
     emailVerified?: boolean;
+    creditsRemaining?: boolean;
     image?: boolean;
     imageHash?: boolean;
     createdAt?: boolean;
@@ -4947,6 +5412,9 @@ export type UserSelect<
     oauthAccessTokens?: boolean | Prisma.User$oauthAccessTokensArgs<ExtArgs>;
     oauthConsents?: boolean | Prisma.User$oauthConsentsArgs<ExtArgs>;
     oidcUserGrants?: boolean | Prisma.User$oidcUserGrantsArgs<ExtArgs>;
+    creditLedgerEntries?:
+      | boolean
+      | Prisma.User$creditLedgerEntriesArgs<ExtArgs>;
     agents?: boolean | Prisma.User$agentsArgs<ExtArgs>;
     agentActivityEvents?:
       | boolean
@@ -4973,6 +5441,7 @@ export type UserSelectCreateManyAndReturn<
     name?: boolean;
     email?: boolean;
     emailVerified?: boolean;
+    creditsRemaining?: boolean;
     image?: boolean;
     imageHash?: boolean;
     createdAt?: boolean;
@@ -5002,6 +5471,7 @@ export type UserSelectUpdateManyAndReturn<
     name?: boolean;
     email?: boolean;
     emailVerified?: boolean;
+    creditsRemaining?: boolean;
     image?: boolean;
     imageHash?: boolean;
     createdAt?: boolean;
@@ -5027,6 +5497,7 @@ export type UserSelectScalar = {
   name?: boolean;
   email?: boolean;
   emailVerified?: boolean;
+  creditsRemaining?: boolean;
   image?: boolean;
   imageHash?: boolean;
   createdAt?: boolean;
@@ -5052,6 +5523,7 @@ export type UserOmit<
   | "name"
   | "email"
   | "emailVerified"
+  | "creditsRemaining"
   | "image"
   | "imageHash"
   | "createdAt"
@@ -5082,6 +5554,7 @@ export type UserInclude<
   oauthAccessTokens?: boolean | Prisma.User$oauthAccessTokensArgs<ExtArgs>;
   oauthConsents?: boolean | Prisma.User$oauthConsentsArgs<ExtArgs>;
   oidcUserGrants?: boolean | Prisma.User$oidcUserGrantsArgs<ExtArgs>;
+  creditLedgerEntries?: boolean | Prisma.User$creditLedgerEntriesArgs<ExtArgs>;
   agents?: boolean | Prisma.User$agentsArgs<ExtArgs>;
   agentActivityEvents?: boolean | Prisma.User$agentActivityEventsArgs<ExtArgs>;
   veridianCredentials?: boolean | Prisma.User$veridianCredentialsArgs<ExtArgs>;
@@ -5120,6 +5593,7 @@ export type $UserPayload<
     oauthAccessTokens: Prisma.$OauthAccessTokenPayload<ExtArgs>[];
     oauthConsents: Prisma.$OauthConsentPayload<ExtArgs>[];
     oidcUserGrants: Prisma.$OidcUserGrantPayload<ExtArgs>[];
+    creditLedgerEntries: Prisma.$CreditLedgerEntryPayload<ExtArgs>[];
     agents: Prisma.$AgentPayload<ExtArgs>[];
     agentActivityEvents: Prisma.$AgentActivityEventPayload<ExtArgs>[];
     veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[];
@@ -5135,6 +5609,7 @@ export type $UserPayload<
       name: string;
       email: string;
       emailVerified: boolean;
+      creditsRemaining: number;
       image: string | null;
       imageHash: string | null;
       createdAt: Date;
@@ -5799,6 +6274,19 @@ export interface Prisma__UserClient<
       >
     | Null
   >;
+  creditLedgerEntries<
+    T extends Prisma.User$creditLedgerEntriesArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.User$creditLedgerEntriesArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$CreditLedgerEntryPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   agents<T extends Prisma.User$agentsArgs<ExtArgs> = {}>(
     args?: Prisma.Subset<T, Prisma.User$agentsArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
@@ -5941,6 +6429,7 @@ export interface UserFieldRefs {
   readonly name: Prisma.FieldRef<"User", "String">;
   readonly email: Prisma.FieldRef<"User", "String">;
   readonly emailVerified: Prisma.FieldRef<"User", "Boolean">;
+  readonly creditsRemaining: Prisma.FieldRef<"User", "Int">;
   readonly image: Prisma.FieldRef<"User", "String">;
   readonly imageHash: Prisma.FieldRef<"User", "String">;
   readonly createdAt: Prisma.FieldRef<"User", "DateTime">;
@@ -6673,6 +7162,37 @@ export type User$oidcUserGrantsArgs<
   distinct?:
     | Prisma.OidcUserGrantScalarFieldEnum
     | Prisma.OidcUserGrantScalarFieldEnum[];
+};
+
+/**
+ * User.creditLedgerEntries
+ */
+export type User$creditLedgerEntriesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the CreditLedgerEntry
+   */
+  select?: Prisma.CreditLedgerEntrySelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the CreditLedgerEntry
+   */
+  omit?: Prisma.CreditLedgerEntryOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CreditLedgerEntryInclude<ExtArgs> | null;
+  where?: Prisma.CreditLedgerEntryWhereInput;
+  orderBy?:
+    | Prisma.CreditLedgerEntryOrderByWithRelationInput
+    | Prisma.CreditLedgerEntryOrderByWithRelationInput[];
+  cursor?: Prisma.CreditLedgerEntryWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.CreditLedgerEntryScalarFieldEnum
+    | Prisma.CreditLedgerEntryScalarFieldEnum[];
 };
 
 /**

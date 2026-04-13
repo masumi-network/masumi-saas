@@ -2,6 +2,7 @@
 
 import { Activity, ChevronRight, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   type ReactNode,
@@ -734,6 +735,7 @@ function InboxAgentListItem({
 
 export function AgentsDiscovery() {
   const t = useTranslations("App.Agents");
+  const router = useRouter();
   const { network } = usePaymentNetwork();
   const [activeTab, setActiveTab] = useState<DiscoveryTab>("agents");
   const [registryState, setRegistryState] = useState<
@@ -1059,7 +1061,13 @@ export function AgentsDiscovery() {
         <Tabs
           tabs={discoveryTabs}
           activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as DiscoveryTab)}
+          onTabChange={(tab) => {
+            if (tab === "inbox") {
+              router.push("/inbox-agents?section=discovery");
+              return;
+            }
+            setActiveTab(tab as DiscoveryTab);
+          }}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">

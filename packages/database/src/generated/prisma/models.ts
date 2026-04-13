@@ -21,6 +21,7 @@ export type * from "./models/OauthApplication.js";
 export type * from "./models/OauthAccessToken.js";
 export type * from "./models/OauthConsent.js";
 export type * from "./models/OidcUserGrant.js";
+export type * from "./models/CreditLedgerEntry.js";
 export type * from "./models/DeviceCode.js";
 export type * from "./models/Jwks.js";
 export type * from "./models/RateLimit.js";
