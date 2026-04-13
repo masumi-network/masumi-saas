@@ -3,7 +3,7 @@
  * Used across authenticated and public API routes for consistent validation.
  */
 
-import { z } from "zod";
+import { z } from "@/lib/zod-openapi";
 
 /** Payment node network: Mainnet | Preprod. Default Preprod when invalid/missing. */
 export const networkQuerySchema = z
