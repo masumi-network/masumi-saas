@@ -21,6 +21,7 @@ type ManagedInboxRegistrationResult =
   | {
       success: true;
       sellingWallet: GeneratedWallet;
+      sellingWalletId: string;
       fundingWallet: PaymentSourceWallet;
     }
   | {
@@ -134,6 +135,22 @@ export async function prepareManagedInboxRegistration(params: {
     };
   }
 
+  const sellingWalletId =
+    paymentSource.SellingWallets.find(
+      (wallet) => wallet.walletVkey === sellingWallet.walletVkey,
+    )?.id ?? null;
+  if (!sellingWalletId) {
+    console.error("[Payment Node] Could not resolve managed inbox wallet ID:", {
+      walletVkey: sellingWallet.walletVkey,
+      paymentSourceId,
+    });
+    return {
+      success: false,
+      error:
+        "Could not attach the new inbox wallet to the payment source. Please try again.",
+    };
+  }
+
   const fundingWalletResult = resolveRegistrationFundingWallet({
     network: params.network,
     paymentSourceId,
@@ -151,6 +168,7 @@ export async function prepareManagedInboxRegistration(params: {
   return {
     success: true,
     sellingWallet,
+    sellingWalletId,
     fundingWallet: fundingWalletResult.wallet,
   };
 }

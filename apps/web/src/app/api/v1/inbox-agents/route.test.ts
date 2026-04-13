@@ -8,6 +8,7 @@ const requireNetworkedOidcApiScopeMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
+const ensureUserPaymentNodeKeyScopedToWalletsMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
@@ -24,6 +25,11 @@ vi.mock("@/lib/payment-node/get-user-client", () => ({
 
 vi.mock("@/lib/inbox-agents/server", () => ({
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
+}));
+
+vi.mock("@/lib/payment-node/wallet-scopes", () => ({
+  ensureUserPaymentNodeKeyScopedToWallets:
+    ensureUserPaymentNodeKeyScopedToWalletsMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -81,6 +87,7 @@ describe("/api/v1/inbox-agents", () => {
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
+    ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
   });
 
   it("lists inbox agents from the v1 route", async () => {
@@ -124,6 +131,7 @@ describe("/api/v1/inbox-agents", () => {
         walletAddress: "addr_test1managed",
         walletVkey: "managed_vkey",
       },
+      sellingWalletId: "managed-1",
       fundingWallet: {
         id: "funding-1",
         walletVkey: "funding_vkey",
@@ -152,6 +160,10 @@ describe("/api/v1/inbox-agents", () => {
     expect(prepareManagedInboxRegistrationMock).toHaveBeenCalledWith({
       name: "Support inbox",
       network: "Preprod",
+    });
+    expect(ensureUserPaymentNodeKeyScopedToWalletsMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      walletIds: ["managed-1", "funding-1"],
     });
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",

@@ -17,6 +17,7 @@ import {
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
+import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
 import {
   isWalletAddressCompatibleWithNetwork,
@@ -217,6 +218,20 @@ async function registerAgentOnChainUntilSetup(
     paymentSource.SellingWallets.find(
       (w: PaymentSourceWallet) => w.walletVkey === sellingWallet.walletVkey,
     )?.id ?? null;
+  if (!sellingWalletId) {
+    console.error(
+      "[Payment Node] Could not resolve managed selling wallet ID:",
+      {
+        walletVkey: sellingWallet.walletVkey,
+        paymentSourceId,
+      },
+    );
+    return {
+      success: false,
+      error:
+        "Could not attach the new agent wallet to your payment permissions. Please try again.",
+    };
+  }
 
   const fundingWalletResult = resolveRegistrationFundingWallet({
     network,
@@ -232,6 +247,25 @@ async function registerAgentOnChainUntilSetup(
     };
   }
   const fundingWallet = fundingWalletResult.wallet;
+
+  try {
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: user.id,
+      walletIds: [sellingWalletId, fundingWallet.id],
+    });
+  } catch (error) {
+    console.error("[Payment Node] Failed to scope user key for agent wallet:", {
+      userId: user.id,
+      sellingWalletId,
+      fundingWalletId: fundingWallet.id,
+      error,
+    });
+    return {
+      success: false,
+      error:
+        "Could not update the payment permissions for the new agent wallet. Please try again.",
+    };
+  }
 
   const agentMetadata: Record<string, unknown> = {
     authorName: user.name?.trim() || "Unknown",

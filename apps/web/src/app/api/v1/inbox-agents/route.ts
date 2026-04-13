@@ -8,6 +8,7 @@ import {
 } from "@/lib/credits/service";
 import { prepareManagedInboxRegistration } from "@/lib/inbox-agents/server";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 import {
   getCanonicalInboxAgentSlug,
   inboxAgentsListQuerySchema,
@@ -158,6 +159,14 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: authContext.user.id,
+      walletIds: [
+        managedRegistration.sellingWalletId,
+        managedRegistration.fundingWallet.id,
+      ],
+    });
 
     const created = await client.registerInboxAgent({
       network,

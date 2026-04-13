@@ -22,6 +22,7 @@ import type {
   ListPaymentsOutput,
   ListPurchasesOutput,
   PaymentIncomeOutput,
+  PaymentNodeApiKey,
   PaymentNodeNetwork,
   RegisterAgentInput,
   RegisterInboxAgentInput,
@@ -29,10 +30,12 @@ import type {
   RegistryInboxCountResponse,
   RegistryInboxEntry,
   RegistryStatusFilter,
+  UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
 import {
   addWalletToSourceOutputSchema,
+  createApiKeyInputSchema,
   createApiKeyOutputSchema,
   generatedWalletSchema,
   getPaymentSourcesOutputSchema,
@@ -42,6 +45,7 @@ import {
   listPurchasesOutputSchema,
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
+  paymentNodeApiKeySchema,
   registryEntrySchema,
   registryInboxCountResponseSchema,
   registryInboxEntrySchema,
@@ -49,6 +53,7 @@ import {
   registryInboxWalletResponseSchema,
   registryListResponseSchema,
   registryWalletResponseSchema,
+  updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
 
@@ -68,6 +73,7 @@ export type {
   ListPaymentsOutput,
   ListPurchasesOutput,
   PaymentIncomeOutput,
+  PaymentNodeApiKey,
   PaymentNodeNetwork,
   PaymentOrPurchaseItem,
   PaymentSourceInfo,
@@ -79,6 +85,7 @@ export type {
   RegistryInboxEntry,
   RegistryRequestState,
   RegistryStatusFilter,
+  UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
   WalletStatus,
@@ -487,18 +494,44 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
 
     /** Create a new API key (admin only). Returns the raw token once — store it encrypted. */
     async createApiKey(body: CreateApiKeyInput): Promise<CreateApiKeyOutput> {
+      const parsedBody = createApiKeyInputSchema.parse(body);
       return requestParse(
         base,
         apiKey,
         `/api-key`,
         {
           method: "POST",
-          body: {
-            ...body,
-            UsageCredits: body.UsageCredits,
-          },
+          body: parsedBody,
         },
         createApiKeyOutputSchema,
+      );
+    },
+
+    /** Get information about the currently authenticated API key. */
+    async getApiKeyStatus(): Promise<PaymentNodeApiKey> {
+      return requestParse(
+        base,
+        apiKey,
+        `/api-key-status`,
+        {
+          method: "GET",
+        },
+        paymentNodeApiKeySchema,
+      );
+    },
+
+    /** Update an existing API key (admin only). */
+    async updateApiKey(body: UpdateApiKeyInput): Promise<PaymentNodeApiKey> {
+      const parsedBody = updateApiKeyInputSchema.parse(body);
+      return requestParse(
+        base,
+        apiKey,
+        `/api-key`,
+        {
+          method: "PATCH",
+          body: parsedBody,
+        },
+        paymentNodeApiKeySchema,
       );
     },
 

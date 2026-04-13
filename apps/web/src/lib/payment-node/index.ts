@@ -8,6 +8,7 @@ export {
   type GeneratedWallet,
   type InboxAgentIdentifierMetadata,
   type InboxAgentMetadata,
+  type PaymentNodeApiKey,
   type PaymentNodeClient,
   type PaymentNodeNetwork,
   type PaymentSourceInfo,
@@ -19,6 +20,7 @@ export {
   type RegistryInboxEntry,
   type RegistryRequestState,
   type RegistryStatusFilter,
+  type UpdateApiKeyInput,
 } from "./client";
 export { paymentNodeConfig } from "./config";
 export {

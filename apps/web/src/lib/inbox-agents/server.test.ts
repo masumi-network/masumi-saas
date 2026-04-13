@@ -51,6 +51,13 @@ describe("prepareManagedInboxRegistration", () => {
       network: "Preprod",
       SellingWallets: [
         {
+          id: "managed-1",
+          walletVkey: "managed_vkey",
+          walletAddress: "addr_test1managed",
+          collectionAddress: null,
+          note: "Managed wallet",
+        },
+        {
           id: "funding-1",
           walletVkey: "funding_vkey",
           walletAddress: "addr_test1funding",
@@ -91,6 +98,13 @@ describe("prepareManagedInboxRegistration", () => {
       paymentSourceId: "payment-source-1",
       sellingWallets: [
         {
+          id: "managed-1",
+          walletVkey: "managed_vkey",
+          walletAddress: "addr_test1managed",
+          collectionAddress: null,
+          note: "Managed wallet",
+        },
+        {
           id: "funding-1",
           walletVkey: "funding_vkey",
           walletAddress: "addr_test1funding",
@@ -106,6 +120,7 @@ describe("prepareManagedInboxRegistration", () => {
         walletAddress: "addr_test1managed",
         walletVkey: "managed_vkey",
       },
+      sellingWalletId: "managed-1",
       fundingWallet: {
         id: "funding-1",
         walletVkey: "funding_vkey",
