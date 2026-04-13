@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth/auth";
 import {
   type GetAuthenticatedOptions,
   getAuthenticatedOrThrow,
+  UnauthorizedError,
 } from "@/lib/auth/utils";
 
 /** Roles that can be set via invite or role update (never "owner"). */
@@ -105,6 +106,13 @@ export async function getOrganizationsAction(): Promise<
 
     return { success: true, data: organizations };
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
     console.error("Failed to get organizations:", error);
     return {
       success: false,

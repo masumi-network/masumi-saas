@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { EmailVerificationPanel } from "@/app/oidc/consent/components/email-verification-panel";
 import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,9 @@ type DeviceApprovalCardProps = {
   lookupError?: string | null;
   accountEmail?: string | null;
   accountName?: string | null;
+  emailVerified?: boolean;
   switchAccountCallbackUrl?: string | null;
+  verificationContinueUrl?: string | null;
   clientLabel?: string | null;
   isResolvedRequest: boolean;
   identityScopeItems?: Array<{
@@ -60,6 +63,7 @@ const copy = {
   pending: "A CLI is requesting access to your Masumi account.",
   noRequestLoaded:
     "Enter a device code to review the request before you approve it.",
+  verifyRequired: "Verify your email before approving this device login.",
   backToDashboard: "Back to dashboard",
   approve: "Approve",
   working: "Working...",
@@ -74,7 +78,9 @@ export function DeviceApprovalCard({
   lookupError,
   accountEmail,
   accountName,
+  emailVerified,
   switchAccountCallbackUrl,
+  verificationContinueUrl,
   clientLabel,
   isResolvedRequest,
   identityScopeItems = [],
@@ -102,10 +108,13 @@ export function DeviceApprovalCard({
   const shouldShowCodeLookupButton =
     normalizedUserCode.length > 0 &&
     (!isResolvedRequest || normalizedUserCode !== resolvedUserCode);
+  const requiresEmailVerification =
+    Boolean(accountEmail) && emailVerified === false;
   const canSubmitDecision =
     isResolvedRequest &&
     normalizedUserCode.length > 0 &&
     normalizedUserCode === resolvedUserCode;
+  const canApprove = canSubmitDecision && !requiresEmailVerification;
   const resolvedClientLabel = clientLabel?.trim() || "Masumi CLI";
 
   useEffect(() => {
@@ -115,6 +124,14 @@ export function DeviceApprovalCard({
     setIsSubmitting(false);
     setIsCheckingCode(false);
   }, [initialUserCode, lookupError, isResolvedRequest]);
+
+  function resolveActionError(errorDescription: string | undefined): string {
+    if (errorDescription === "email_verification_required") {
+      return copy.verifyRequired;
+    }
+
+    return errorDescription || "Request failed.";
+  }
 
   function handleLookupSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -147,7 +164,7 @@ export function DeviceApprovalCard({
         const body = (await response.json().catch(() => null)) as {
           error_description?: string;
         } | null;
-        setActionError(body?.error_description || "Request failed.");
+        setActionError(resolveActionError(body?.error_description));
         return;
       }
 
@@ -215,19 +232,26 @@ export function DeviceApprovalCard({
                     {copy.pendingCodeChange}
                   </p>
                 ) : null}
+                {requiresEmailVerification ? (
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    {copy.verifyRequired}
+                  </p>
+                ) : null}
                 {actionError ? (
                   <p className="text-sm text-destructive">{actionError}</p>
                 ) : null}
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button
-                    className="flex-1"
-                    disabled={isSubmitting || !canSubmitDecision}
-                    type="button"
-                    variant="primary"
-                    onClick={() => handleDecision("approve")}
-                  >
-                    {isSubmitting ? copy.working : copy.approve}
-                  </Button>
+                  {requiresEmailVerification ? null : (
+                    <Button
+                      className="flex-1"
+                      disabled={isSubmitting || !canApprove}
+                      type="button"
+                      variant="primary"
+                      onClick={() => handleDecision("approve")}
+                    >
+                      {isSubmitting ? copy.working : copy.approve}
+                    </Button>
+                  )}
                   <Button
                     className="flex-1"
                     disabled={isSubmitting || !canSubmitDecision}
@@ -316,6 +340,12 @@ export function DeviceApprovalCard({
               {accountEmail}
             </p>
           </div>
+        ) : null}
+        {requiresEmailVerification && accountEmail ? (
+          <EmailVerificationPanel
+            email={accountEmail}
+            continueUrl={verificationContinueUrl ?? undefined}
+          />
         ) : null}
         {isResolvedRequest ? (
           <>

@@ -304,6 +304,21 @@ export async function POST(request: Request): Promise<Response> {
 
   if (pathname === DEVICE_APPROVE_PATH) {
     const body = await readBodyFields(request);
+    const session = await getSessionForHeaders(request.headers);
+
+    if (session?.user && session.user.emailVerified !== true) {
+      return Response.json(
+        {
+          error: OIDC_ACCESS_DENIED,
+          error_description: OIDC_EMAIL_VERIFICATION_REQUIRED,
+        },
+        {
+          status: 403,
+          headers: OIDC_NO_STORE_HEADERS,
+        },
+      );
+    }
+
     const response = await authHandler.POST(request);
 
     if (response.ok && typeof body?.userCode === "string") {
