@@ -4,6 +4,7 @@ import prisma from "@masumi/database/client";
 import { toNextJsHandler } from "better-auth/next-js";
 
 import { auth } from "@/lib/auth/auth";
+import { buildAbsoluteAppUrl } from "@/lib/auth/callback-url";
 import {
   exchangeAuthForOidcTokenSet,
   OIDC_NO_STORE_HEADERS,
@@ -719,7 +720,7 @@ async function appendContinueUrlToConsentRedirect(
   const location = response.headers.get("location");
 
   if (location) {
-    const redirectUrl = new URL(location, request.url);
+    const redirectUrl = new URL(buildAbsoluteAppUrl(location));
     if (redirectUrl.pathname !== "/oidc/consent") {
       return response;
     }
@@ -749,7 +750,7 @@ async function appendContinueUrlToConsentRedirect(
     return response;
   }
 
-  const redirectUrl = new URL(body.url, request.url);
+  const redirectUrl = new URL(buildAbsoluteAppUrl(body.url));
   if (redirectUrl.pathname !== "/oidc/consent") {
     return response;
   }
