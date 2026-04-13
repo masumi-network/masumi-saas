@@ -10,10 +10,9 @@ import {
   YAxis,
 } from "recharts";
 
+import type { EarningsChartPoint } from "@/lib/earnings/fetch-earnings-client";
 import type { DashboardEarningsAmountUnit } from "@/lib/payment-node/format";
 import { formatDashboardEarningsTotal } from "@/lib/payment-node/format";
-
-export type EarningsChartPoint = { date: string; amount: number };
 
 type ChartRow = EarningsChartPoint & { time: number };
 

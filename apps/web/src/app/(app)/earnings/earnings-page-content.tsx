@@ -9,7 +9,13 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -111,13 +117,27 @@ export function EarningsPageContent() {
     }
   }, [period, network, t]);
 
-  // useLayoutEffect so period matches URL/storage before useEffect(fetch) runs,
-  // avoiding a redundant fetch with the default "7d" when localStorage has another value.
+  /** When `?period=` is present, keep state and localStorage aligned (links, back/forward). */
   useLayoutEffect(() => {
     const urlPeriod = getValidPeriod(searchParams.get("period"));
     if (urlPeriod) {
       persistPeriodToStorage(urlPeriod);
       setPeriod((prev) => (prev === urlPeriod ? prev : urlPeriod));
+    }
+  }, [searchParams]);
+
+  /**
+   * If the URL omits `period`, restore once from localStorage and mirror into the URL.
+   * Split from the effect above so we do not depend on `searchParams` while also calling
+   * `router.replace` (which updates `searchParams` and would otherwise retrigger the same effect).
+   */
+  const mirroredStorageToUrlRef = useRef(false);
+  useLayoutEffect(() => {
+    if (mirroredStorageToUrlRef.current) return;
+
+    const urlPeriod = getValidPeriod(searchParams.get("period"));
+    if (urlPeriod) {
+      mirroredStorageToUrlRef.current = true;
       return;
     }
 
@@ -129,15 +149,18 @@ export function EarningsPageContent() {
     } catch {
       /* ignore */
     }
-    if (stored) {
-      setPeriod((prev) => (prev === stored ? prev : stored));
-      const next = new URLSearchParams(searchParams.toString());
-      next.set("period", stored);
-      router.replace(
-        next.toString() ? `${pathname}?${next.toString()}` : pathname,
-        { scroll: false },
-      );
-    }
+
+    mirroredStorageToUrlRef.current = true;
+
+    if (!stored) return;
+
+    setPeriod((prev) => (prev === stored ? prev : stored));
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("period", stored);
+    router.replace(
+      next.toString() ? `${pathname}?${next.toString()}` : pathname,
+      { scroll: false },
+    );
   }, [pathname, router, searchParams]);
 
   const onPeriodChange = useCallback(
