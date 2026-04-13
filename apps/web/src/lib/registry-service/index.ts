@@ -1,4 +1,4 @@
-export { registryServiceConfig, isRegistryServiceConfigured } from "./config";
+export { isRegistryServiceConfigured, registryServiceConfig } from "./config";
 export {
   createRegistryServiceFetchClient,
   type RegistryServiceFetchClient,

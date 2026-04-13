@@ -1,11 +1,10 @@
-import { z } from "@/lib/zod-openapi";
-
 import {
   INBOX_AGENT_LIMITS,
   isReservedInboxAgentSlug,
   normalizeInboxAgentSlug,
 } from "@/lib/inbox-agents/validation";
 import { parseNetwork } from "@/lib/schemas/api-query";
+import { z } from "@/lib/zod-openapi";
 
 export const inboxAgentStateSchema = z.enum([
   "RegistrationRequested",

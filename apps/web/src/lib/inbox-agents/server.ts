@@ -8,6 +8,7 @@ import type {
   PaymentSourceWallet,
 } from "@/lib/payment-node";
 import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
+
 import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,

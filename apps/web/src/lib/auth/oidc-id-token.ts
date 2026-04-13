@@ -8,7 +8,7 @@ import {
   oidcEnvConfig,
 } from "@/lib/config/oidc.config";
 
-type OidcRefreshTokenUser = {
+type OidcAccessTokenUser = {
   id: string;
   email: string;
   emailVerified: boolean;
@@ -17,7 +17,7 @@ type OidcRefreshTokenUser = {
   updatedAt: Date;
 };
 
-type OidcRefreshTokenRecord = {
+export type OidcAccessTokenRecord = {
   id: string;
   accessToken: string;
   accessTokenExpiresAt: Date;
@@ -26,7 +26,7 @@ type OidcRefreshTokenRecord = {
   refreshToken: string;
   scopes: string;
   updatedAt: Date;
-  user: OidcRefreshTokenUser | null;
+  user: OidcAccessTokenUser | null;
 };
 
 function normalizeScopes(scopes: string): string[] {
@@ -37,7 +37,7 @@ function normalizeScopes(scopes: string): string[] {
 }
 
 function buildOidcUserClaims(
-  tokenRecord: NonNullable<OidcRefreshTokenRecord>,
+  tokenRecord: NonNullable<OidcAccessTokenRecord>,
 ): Record<string, unknown> {
   const user = tokenRecord.user;
   if (!user) {
@@ -71,14 +71,12 @@ function buildOidcUserClaims(
   return claims;
 }
 
-export async function createIdTokenForRefreshToken(
-  refreshToken: string,
+export async function createIdTokenForAccessTokenRecord(
+  tokenRecord: OidcAccessTokenRecord | null,
+  options?: {
+    nonce?: string | null;
+  },
 ): Promise<string | null> {
-  const tokenRecord = (await prisma.oauthAccessToken.findUnique({
-    where: { refreshToken },
-    include: { user: true },
-  })) as OidcRefreshTokenRecord | null;
-
   if (!tokenRecord?.user) {
     return null;
   }
@@ -100,6 +98,7 @@ export async function createIdTokenForRefreshToken(
 
   const payload = {
     acr: "urn:mace:incommon:iap:silver",
+    ...(options?.nonce ? { nonce: options.nonce } : {}),
     ...buildOidcUserClaims(tokenRecord),
   };
 
@@ -144,4 +143,15 @@ export async function createIdTokenForRefreshToken(
     } as unknown as Parameters<typeof getJwtToken>[0],
     jwtOptions,
   );
+}
+
+export async function createIdTokenForRefreshToken(
+  refreshToken: string,
+): Promise<string | null> {
+  const tokenRecord = (await prisma.oauthAccessToken.findUnique({
+    where: { refreshToken },
+    include: { user: true },
+  })) as OidcAccessTokenRecord | null;
+
+  return await createIdTokenForAccessTokenRecord(tokenRecord);
 }

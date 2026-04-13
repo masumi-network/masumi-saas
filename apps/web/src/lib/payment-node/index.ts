@@ -10,15 +10,15 @@ export {
   type InboxAgentMetadata,
   type PaymentNodeClient,
   type PaymentNodeNetwork,
-  type RegisterInboxAgentInput,
-  type RegisterAgentInput,
-  type RegistryInboxCountResponse,
-  type RegistryInboxEntry,
-  type RegistryEntry,
-  type RegistryRequestState,
-  type RegistryStatusFilter,
   type PaymentSourceInfo,
   type PaymentSourceWallet,
+  type RegisterAgentInput,
+  type RegisterInboxAgentInput,
+  type RegistryEntry,
+  type RegistryInboxCountResponse,
+  type RegistryInboxEntry,
+  type RegistryRequestState,
+  type RegistryStatusFilter,
 } from "./client";
 export { paymentNodeConfig } from "./config";
 export {

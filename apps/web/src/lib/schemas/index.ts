@@ -149,7 +149,7 @@ export {
   inboxAgentIdRouteParamSchema,
   inboxAgentsListQuerySchema,
   inboxAgentStateSchema,
+  type RegisterInboxAgentBody,
   registerInboxAgentBodySchema,
   validateCanonicalInboxAgentSlug,
-  type RegisterInboxAgentBody,
 } from "./inbox-agent";

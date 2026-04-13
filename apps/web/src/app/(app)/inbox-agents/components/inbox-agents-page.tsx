@@ -57,6 +57,74 @@ import { InboxAgentsDiscovery } from "./inbox-agents-discovery";
 const PAGE_SIZE = 10;
 const MAX_VISIBLE_PAGES = 5;
 const VALID_SECTIONS = ["manage", "discovery"] as const;
+const INBOX_PAGE_TEXT = {
+  tabs: {
+    all: "All",
+    registered: "Registered",
+    deregistered: "Deregistered",
+    pending: "Pending",
+    failed: "Failed",
+  },
+  sections: {
+    manage: "Manage",
+    discovery: "Discovery",
+  },
+  title: "Inbox agents",
+  manageDescription: (network: string) =>
+    `Inspect, deregister, and clean up inbox-agent registrations on ${network}.`,
+  discoveryDescription: (network: string) =>
+    `Browse the latest pending and verified inbox agents published to the Masumi registry on ${network}.`,
+  noDescription: "No description",
+  noDescriptionProvided: "No description provided.",
+  noIdentifier: "No on-chain identifier yet.",
+  notCheckedYet: "Not checked yet",
+  usesRegistrationWallet: "Uses the registration wallet",
+  awaitingConfirmation: "Awaiting confirmation",
+  noTransactionHash: "No transaction hash yet.",
+  noActiveTransaction: "No active transaction.",
+  rawLookup: "Raw lookup",
+  close: "Close",
+  delete: "Delete",
+  deregister: "Deregister",
+  confirm: "Confirm",
+  deleteInboxAgent: "Delete inbox agent",
+  deregisterInboxAgent: "Deregister inbox agent",
+  deleteInboxAgentDescription: (name: string) =>
+    `Delete ${name}? This removes the registration record from your inbox-agent list.`,
+  deregisterInboxAgentDescription: (name: string) =>
+    `Deregister ${name}? This starts the on-chain deregistration flow.`,
+  details: "Details",
+  emptyTitle: "No inbox agents found",
+  emptyDescription: "Try a broader search or switch tabs.",
+  table: {
+    name: "Name",
+    added: "Added",
+    inboxSlug: "Inbox slug",
+    agentId: "Agent ID",
+    wallets: "Wallets",
+    status: "Status",
+    actions: "Actions",
+  },
+  regWalletPrefix: "Reg:",
+  fundWalletPrefix: "Fund:",
+  dash: "\u2014",
+  metadataVersionPrefix: "v",
+  middleDot: "\u00b7",
+  loadingPage: "Loading page...",
+  detail: {
+    inboxSlug: "Inbox slug:",
+    description: "Description",
+    agentIdentifier: "Agent identifier",
+    metadataVersion: "Metadata version",
+    created: "Created",
+    updated: "Updated",
+    lastChecked: "Last checked",
+    registrationWallet: "Registration wallet",
+    fundingWallet: "Funding wallet",
+    currentTransaction: "Current transaction",
+    failure: "Failure",
+  },
+} as const;
 
 type InboxTabKey = "all" | "registered" | "deregistered" | "pending" | "failed";
 type InboxSection = (typeof VALID_SECTIONS)[number];
@@ -336,12 +404,14 @@ function InboxAgentDetailsDialog({
 
   const actionLabel = useMemo(() => {
     if (!agent) return null;
-    if (agent.state === "RegistrationConfirmed") return "Deregister";
+    if (agent.state === "RegistrationConfirmed") {
+      return INBOX_PAGE_TEXT.deregister;
+    }
     if (
       agent.state === "RegistrationFailed" ||
       agent.state === "DeregistrationConfirmed"
     ) {
-      return "Delete";
+      return INBOX_PAGE_TEXT.delete;
     }
     return null;
   }, [agent]);
@@ -355,7 +425,7 @@ function InboxAgentDetailsDialog({
     setIsActionLoading(true);
     try {
       const result =
-        actionLabel === "Delete"
+        actionLabel === INBOX_PAGE_TEXT.delete
           ? await inboxAgentApiClient.deleteInboxAgent(agent.id, { network })
           : await inboxAgentApiClient.deregisterInboxAgent(agent.id, {
               network,
@@ -369,7 +439,7 @@ function InboxAgentDetailsDialog({
       }
 
       toast.success(
-        actionLabel === "Delete"
+        actionLabel === INBOX_PAGE_TEXT.delete
           ? "Inbox agent deleted"
           : "Inbox agent deregistration started",
       );
@@ -392,7 +462,7 @@ function InboxAgentDetailsDialog({
               <div>
                 <DialogTitle>{agent.name}</DialogTitle>
                 <DialogDescription className="mt-2">
-                  Inbox slug:{" "}
+                  {INBOX_PAGE_TEXT.detail.inboxSlug}{" "}
                   <span className="font-mono">{agent.agentSlug}</span>
                 </DialogDescription>
               </div>
@@ -403,66 +473,72 @@ function InboxAgentDetailsDialog({
           </DialogHeader>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <DetailField label="Description" fullWidth>
+            <DetailField label={INBOX_PAGE_TEXT.detail.description} fullWidth>
               <p className="text-sm text-muted-foreground">
-                {agent.description || "No description provided."}
+                {agent.description || INBOX_PAGE_TEXT.noDescriptionProvided}
               </p>
             </DetailField>
 
-            <DetailField label="Agent identifier">
+            <DetailField label={INBOX_PAGE_TEXT.detail.agentIdentifier}>
               {agent.agentIdentifier ? (
                 <CopyableValue monospace value={agent.agentIdentifier} />
               ) : (
                 <span className="text-sm text-muted-foreground">
-                  No on-chain identifier yet.
+                  {INBOX_PAGE_TEXT.noIdentifier}
                 </span>
               )}
             </DetailField>
 
-            <DetailField label="Metadata version">
-              <span className="text-sm">v{agent.metadataVersion}</span>
+            <DetailField label={INBOX_PAGE_TEXT.detail.metadataVersion}>
+              <span className="text-sm">
+                {INBOX_PAGE_TEXT.metadataVersionPrefix}
+                {agent.metadataVersion}
+              </span>
             </DetailField>
 
-            <DetailField label="Created">
+            <DetailField label={INBOX_PAGE_TEXT.detail.created}>
               <span className="text-sm">
-                {formatDate(agent.createdAt)} ·{" "}
+                {formatDate(agent.createdAt)} {INBOX_PAGE_TEXT.middleDot}{" "}
                 {formatRelativeDate(agent.createdAt)}
               </span>
             </DetailField>
 
-            <DetailField label="Updated">
+            <DetailField label={INBOX_PAGE_TEXT.detail.updated}>
               <span className="text-sm">
-                {formatDate(agent.updatedAt)} ·{" "}
+                {formatDate(agent.updatedAt)} {INBOX_PAGE_TEXT.middleDot}{" "}
                 {formatRelativeDate(agent.updatedAt)}
               </span>
             </DetailField>
 
-            <DetailField label="Last checked">
+            <DetailField label={INBOX_PAGE_TEXT.detail.lastChecked}>
               <span className="text-sm">
                 {agent.lastCheckedAt
                   ? `${formatDate(agent.lastCheckedAt)} · ${formatRelativeDate(agent.lastCheckedAt)}`
-                  : "Not checked yet"}
+                  : INBOX_PAGE_TEXT.notCheckedYet}
               </span>
             </DetailField>
 
-            <DetailField label="Registration wallet">
+            <DetailField label={INBOX_PAGE_TEXT.detail.registrationWallet}>
               <CopyableValue
                 monospace
                 value={agent.SmartContractWallet.walletAddress}
               />
             </DetailField>
 
-            <DetailField label="Funding wallet">
+            <DetailField label={INBOX_PAGE_TEXT.detail.fundingWallet}>
               {holdingWallet ? (
                 <CopyableValue monospace value={holdingWallet.walletAddress} />
               ) : (
                 <span className="text-sm text-muted-foreground">
-                  Uses the registration wallet
+                  {INBOX_PAGE_TEXT.usesRegistrationWallet}
                 </span>
               )}
             </DetailField>
 
-            <DetailField label="Current transaction" fullWidth>
+            <DetailField
+              label={INBOX_PAGE_TEXT.detail.currentTransaction}
+              fullWidth
+            >
               {agent.CurrentTransaction ? (
                 <div className="space-y-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
@@ -472,7 +548,7 @@ function InboxAgentDetailsDialog({
                     <span className="text-muted-foreground">
                       {agent.CurrentTransaction.confirmations != null
                         ? `${agent.CurrentTransaction.confirmations} confirmations`
-                        : "Awaiting confirmation"}
+                        : INBOX_PAGE_TEXT.awaitingConfirmation}
                     </span>
                   </div>
                   {agent.CurrentTransaction.txHash ? (
@@ -482,19 +558,19 @@ function InboxAgentDetailsDialog({
                     />
                   ) : (
                     <span className="text-muted-foreground">
-                      No transaction hash yet.
+                      {INBOX_PAGE_TEXT.noTransactionHash}
                     </span>
                   )}
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">
-                  No active transaction.
+                  {INBOX_PAGE_TEXT.noActiveTransaction}
                 </span>
               )}
             </DetailField>
 
             {agent.error ? (
-              <DetailField label="Failure" fullWidth>
+              <DetailField label={INBOX_PAGE_TEXT.detail.failure} fullWidth>
                 <p className="text-sm text-destructive">{agent.error}</p>
               </DetailField>
             ) : null}
@@ -513,7 +589,7 @@ function InboxAgentDetailsDialog({
                     target="_blank"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    Raw lookup
+                    {INBOX_PAGE_TEXT.rawLookup}
                   </Link>
                 </Button>
               ) : null}
@@ -521,10 +597,14 @@ function InboxAgentDetailsDialog({
             <div className="flex items-center gap-2">
               {actionLabel ? (
                 <Button
-                  variant={actionLabel === "Delete" ? "destructive" : "outline"}
+                  variant={
+                    actionLabel === INBOX_PAGE_TEXT.delete
+                      ? "destructive"
+                      : "outline"
+                  }
                   onClick={() => setConfirmOpen(true)}
                 >
-                  {actionLabel === "Delete" ? (
+                  {actionLabel === INBOX_PAGE_TEXT.delete ? (
                     <Trash2 className="mr-2 h-4 w-4" />
                   ) : (
                     <Unplug className="mr-2 h-4 w-4" />
@@ -533,7 +613,7 @@ function InboxAgentDetailsDialog({
                 </Button>
               ) : null}
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
+                {INBOX_PAGE_TEXT.close}
               </Button>
             </div>
           </DialogFooter>
@@ -547,17 +627,19 @@ function InboxAgentDetailsDialog({
           void handleAction();
         }}
         title={
-          actionLabel === "Delete"
-            ? "Delete inbox agent"
-            : "Deregister inbox agent"
+          actionLabel === INBOX_PAGE_TEXT.delete
+            ? INBOX_PAGE_TEXT.deleteInboxAgent
+            : INBOX_PAGE_TEXT.deregisterInboxAgent
         }
         description={
-          actionLabel === "Delete"
-            ? `Delete ${agent.name}? This removes the registration record from your inbox-agent list.`
-            : `Deregister ${agent.name}? This starts the on-chain deregistration flow.`
+          actionLabel === INBOX_PAGE_TEXT.delete
+            ? INBOX_PAGE_TEXT.deleteInboxAgentDescription(agent.name)
+            : INBOX_PAGE_TEXT.deregisterInboxAgentDescription(agent.name)
         }
-        confirmText={actionLabel ?? "Confirm"}
-        variant={actionLabel === "Delete" ? "destructive" : "default"}
+        confirmText={actionLabel ?? INBOX_PAGE_TEXT.confirm}
+        variant={
+          actionLabel === INBOX_PAGE_TEXT.delete ? "destructive" : "default"
+        }
         isLoading={isActionLoading}
       />
     </>
@@ -626,7 +708,14 @@ export function InboxAgentsPage() {
 
   useEffect(() => {
     if (activeSection !== "manage") return;
-    void loadFirstPage();
+
+    const timeoutId = window.setTimeout(() => {
+      void loadFirstPage();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [activeSection, loadFirstPage]);
 
   const handlePageChange = useCallback(
@@ -666,15 +755,15 @@ export function InboxAgentsPage() {
   );
 
   const tabs = [
-    { name: "All", key: "all" },
-    { name: "Registered", key: "registered" },
-    { name: "Deregistered", key: "deregistered" },
-    { name: "Pending", key: "pending" },
-    { name: "Failed", key: "failed" },
+    { name: INBOX_PAGE_TEXT.tabs.all, key: "all" },
+    { name: INBOX_PAGE_TEXT.tabs.registered, key: "registered" },
+    { name: INBOX_PAGE_TEXT.tabs.deregistered, key: "deregistered" },
+    { name: INBOX_PAGE_TEXT.tabs.pending, key: "pending" },
+    { name: INBOX_PAGE_TEXT.tabs.failed, key: "failed" },
   ];
   const sections = [
-    { name: "Manage", key: "manage" },
-    { name: "Discovery", key: "discovery" },
+    { name: INBOX_PAGE_TEXT.sections.manage, key: "manage" },
+    { name: INBOX_PAGE_TEXT.sections.discovery, key: "discovery" },
   ];
 
   const handleSectionChange = (section: InboxSection) => {
@@ -696,12 +785,12 @@ export function InboxAgentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">
-            Inbox agents
+            {INBOX_PAGE_TEXT.title}
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground">
             {activeSection === "manage"
-              ? `Inspect, deregister, and clean up inbox-agent registrations on ${network}.`
-              : `Browse the latest pending and verified inbox agents published to the Masumi registry on ${network}.`}
+              ? INBOX_PAGE_TEXT.manageDescription(network)
+              : INBOX_PAGE_TEXT.discoveryDescription(network)}
           </p>
         </div>
         {activeSection === "manage" && (
@@ -741,7 +830,7 @@ export function InboxAgentsPage() {
               </div>
               <div className="text-sm text-muted-foreground">
                 {state.isPageLoading
-                  ? "Loading page..."
+                  ? INBOX_PAGE_TEXT.loadingPage
                   : `Page ${state.currentPage}`}
               </div>
             </div>
@@ -755,9 +844,11 @@ export function InboxAgentsPage() {
             ) : currentItems.length === 0 ? (
               <div className="rounded-xl border border-dashed px-6 py-14 text-center">
                 <div className="mx-auto max-w-md space-y-2">
-                  <p className="text-base font-medium">No inbox agents found</p>
+                  <p className="text-base font-medium">
+                    {INBOX_PAGE_TEXT.emptyTitle}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Try a broader search or switch tabs.
+                    {INBOX_PAGE_TEXT.emptyDescription}
                   </p>
                 </div>
               </div>
@@ -767,13 +858,15 @@ export function InboxAgentsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead>Name</TableHead>
-                        <TableHead>Added</TableHead>
-                        <TableHead>Inbox slug</TableHead>
-                        <TableHead>Agent ID</TableHead>
-                        <TableHead>Wallets</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.name}</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.added}</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.inboxSlug}</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.agentId}</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.wallets}</TableHead>
+                        <TableHead>{INBOX_PAGE_TEXT.table.status}</TableHead>
+                        <TableHead className="text-right">
+                          {INBOX_PAGE_TEXT.table.actions}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -791,7 +884,8 @@ export function InboxAgentsPage() {
                               <div className="space-y-1">
                                 <div className="font-medium">{agent.name}</div>
                                 <div className="truncate text-xs text-muted-foreground">
-                                  {agent.description || "No description"}
+                                  {agent.description ||
+                                    INBOX_PAGE_TEXT.noDescription}
                                 </div>
                               </div>
                             </TableCell>
@@ -817,20 +911,20 @@ export function InboxAgentsPage() {
                                 </div>
                               ) : (
                                 <span className="text-sm text-muted-foreground">
-                                  —
+                                  {INBOX_PAGE_TEXT.dash}
                                 </span>
                               )}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               <div>
-                                Reg:{" "}
+                                {INBOX_PAGE_TEXT.regWalletPrefix}{" "}
                                 {shortenAddress(
                                   agent.SmartContractWallet.walletAddress,
                                   8,
                                 )}
                               </div>
                               <div>
-                                Fund:{" "}
+                                {INBOX_PAGE_TEXT.fundWalletPrefix}{" "}
                                 {shortenAddress(holdingWallet.walletAddress, 8)}
                               </div>
                             </TableCell>
@@ -850,7 +944,7 @@ export function InboxAgentsPage() {
                                   setSelectedAgent(agent);
                                 }}
                               >
-                                Details
+                                {INBOX_PAGE_TEXT.details}
                               </Button>
                             </TableCell>
                           </TableRow>

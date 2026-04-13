@@ -16,11 +16,12 @@ import {
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { USDM } from "@/lib/payment-node/tokens";
+
 import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,
 } from "./payment-node/registration-wallets";
-import { USDM } from "@/lib/payment-node/tokens";
 
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 

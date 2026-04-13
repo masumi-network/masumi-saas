@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from "node:crypto";
+
 import prisma from "@masumi/database/client";
 import { toNextJsHandler } from "better-auth/next-js";
 
@@ -7,9 +9,17 @@ import {
   OIDC_NO_STORE_HEADERS,
   OidcTokenExchangeError,
 } from "@/lib/auth/oidc-flow";
-import { createIdTokenForRefreshToken } from "@/lib/auth/oidc-id-token";
+import {
+  createIdTokenForAccessTokenRecord,
+  createIdTokenForRefreshToken,
+  type OidcAccessTokenRecord,
+} from "@/lib/auth/oidc-id-token";
 import { filterRequestedOidcScopes } from "@/lib/auth/oidc-user-grants";
-import { oidcEnvConfig, resolveOidcClientKey } from "@/lib/config/oidc.config";
+import {
+  getTrustedOidcClients,
+  oidcEnvConfig,
+  resolveOidcClientKey,
+} from "@/lib/config/oidc.config";
 import {
   OIDC_STANDARD_SCOPES,
   serializeScopeList,
@@ -23,8 +33,28 @@ const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_TOKEN_GRANT = "refresh_token";
+const AUTHORIZATION_CODE_GRANT = "authorization_code";
 const OIDC_EMAIL_VERIFICATION_REQUIRED = "email_verification_required";
 const OIDC_ACCESS_DENIED = "access_denied";
+const OIDC_ACCESS_TOKEN_EXPIRES_IN_SECONDS = 3600;
+const OIDC_REFRESH_TOKEN_EXPIRES_IN_SECONDS = 604800;
+
+type TrustedOidcClient = ReturnType<typeof getTrustedOidcClients>[number];
+type AuthorizationCodeVerificationValue = {
+  clientId?: unknown;
+  codeChallenge?: unknown;
+  codeChallengeMethod?: unknown;
+  nonce?: unknown;
+  redirectURI?: unknown;
+  scope?: unknown;
+  userId?: unknown;
+};
+
+type AuthorizationCodeVerificationRecord = {
+  id: string;
+  value: string;
+  expiresAt: Date;
+};
 
 async function getSessionForHeaders(requestHeaders: Headers) {
   return auth.api.getSession({
@@ -71,6 +101,359 @@ function createJsonRequest(
     headers,
     body: JSON.stringify(body),
   });
+}
+
+function createOauthJsonErrorResponse(
+  error: string,
+  errorDescription: string,
+  status: number,
+): Response {
+  return Response.json(
+    {
+      error,
+      error_description: errorDescription,
+    },
+    {
+      status,
+      headers: OIDC_NO_STORE_HEADERS,
+    },
+  );
+}
+
+function resolveTrustedOidcClient(
+  clientId: string | null | undefined,
+): TrustedOidcClient | null {
+  if (!clientId) {
+    return null;
+  }
+
+  return (
+    getTrustedOidcClients().find((client) => client.clientId === clientId) ??
+    null
+  );
+}
+
+function normalizeRequestedScopes(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((scope): scope is string => typeof scope === "string");
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(" ")
+      .map((scope) => scope.trim())
+      .filter(Boolean);
+  }
+
+  return [...OIDC_STANDARD_SCOPES];
+}
+
+function parseAuthorizationCodeVerificationValue(
+  value: string,
+): AuthorizationCodeVerificationValue | null {
+  try {
+    const parsed = JSON.parse(value) as AuthorizationCodeVerificationValue;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseClientCredentials(
+  request: Request,
+  body: Record<string, string>,
+): {
+  clientId: string | null;
+  clientSecret: string | null;
+  errorResponse: Response | null;
+} {
+  let clientId = body.client_id ?? null;
+  let clientSecret = body.client_secret ?? null;
+  const authorization = request.headers.get("authorization");
+
+  if (
+    authorization &&
+    !clientId &&
+    !clientSecret &&
+    authorization.startsWith("Basic ")
+  ) {
+    try {
+      const decoded = Buffer.from(
+        authorization.slice("Basic ".length),
+        "base64",
+      ).toString("utf8");
+      const separatorIndex = decoded.indexOf(":");
+      if (separatorIndex <= 0) {
+        throw new Error("invalid");
+      }
+
+      clientId = decoded.slice(0, separatorIndex);
+      clientSecret = decoded.slice(separatorIndex + 1);
+      if (!clientId || !clientSecret) {
+        throw new Error("invalid");
+      }
+    } catch {
+      return {
+        clientId: null,
+        clientSecret: null,
+        errorResponse: createOauthJsonErrorResponse(
+          "invalid_client",
+          "invalid authorization header format",
+          401,
+        ),
+      };
+    }
+  }
+
+  return { clientId, clientSecret, errorResponse: null };
+}
+
+function verifyPkceChallenge(
+  codeVerifier: string,
+  expectedChallenge: string,
+  method: string | null,
+): boolean {
+  if ((method ?? "S256").toLowerCase() === "plain") {
+    return codeVerifier === expectedChallenge;
+  }
+
+  const actualChallenge = createHash("sha256")
+    .update(codeVerifier)
+    .digest("base64url");
+
+  return actualChallenge === expectedChallenge;
+}
+
+async function exchangeAuthorizationCodeGrant(
+  request: Request,
+  body: Record<string, string>,
+): Promise<Response> {
+  const {
+    clientId,
+    clientSecret,
+    errorResponse: authHeaderErrorResponse,
+  } = parseClientCredentials(request, body);
+  if (authHeaderErrorResponse) {
+    return authHeaderErrorResponse;
+  }
+
+  if (!clientId) {
+    return createOauthJsonErrorResponse(
+      "invalid_client",
+      "client_id is required",
+      401,
+    );
+  }
+
+  const client = resolveTrustedOidcClient(clientId);
+  if (!client || client.disabled) {
+    return createOauthJsonErrorResponse(
+      "invalid_client",
+      "invalid client_id",
+      401,
+    );
+  }
+
+  if (client.type !== "public") {
+    if (!clientSecret) {
+      return createOauthJsonErrorResponse(
+        "invalid_client",
+        "client_secret is required for confidential clients",
+        401,
+      );
+    }
+  }
+
+  const code = body.code;
+  if (!code) {
+    return createOauthJsonErrorResponse(
+      "invalid_request",
+      "code is required",
+      400,
+    );
+  }
+
+  const redirectUri = body.redirect_uri;
+  if (!redirectUri) {
+    return createOauthJsonErrorResponse(
+      "invalid_request",
+      "redirect_uri is required",
+      400,
+    );
+  }
+
+  const codeVerifier = body.code_verifier;
+  if (!codeVerifier) {
+    return createOauthJsonErrorResponse(
+      "invalid_request",
+      "code verifier is missing",
+      400,
+    );
+  }
+
+  const verificationRecord = (await prisma.verification.findFirst({
+    where: {
+      identifier: code,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      value: true,
+      expiresAt: true,
+    },
+  })) as AuthorizationCodeVerificationRecord | null;
+
+  if (!verificationRecord) {
+    return createOauthJsonErrorResponse("invalid_grant", "invalid code", 401);
+  }
+
+  if (verificationRecord.expiresAt < new Date()) {
+    return createOauthJsonErrorResponse("invalid_grant", "code expired", 401);
+  }
+
+  const verificationValue = parseAuthorizationCodeVerificationValue(
+    verificationRecord.value,
+  );
+  if (!verificationValue) {
+    return createOauthJsonErrorResponse(
+      "invalid_grant",
+      "invalid code payload",
+      401,
+    );
+  }
+
+  if (verificationValue.clientId !== clientId) {
+    return createOauthJsonErrorResponse(
+      "invalid_client",
+      "invalid client_id",
+      401,
+    );
+  }
+
+  if (verificationValue.redirectURI !== redirectUri) {
+    return createOauthJsonErrorResponse(
+      "invalid_client",
+      "invalid redirect_uri",
+      401,
+    );
+  }
+
+  if (!client.redirectUrls.includes(redirectUri)) {
+    return createOauthJsonErrorResponse(
+      "invalid_client",
+      "redirect_uri is not registered for this client",
+      401,
+    );
+  }
+
+  if (
+    typeof verificationValue.userId !== "string" ||
+    !verificationValue.userId
+  ) {
+    return createOauthJsonErrorResponse("invalid_grant", "user not found", 401);
+  }
+
+  if (typeof verificationValue.codeChallenge !== "string") {
+    return createOauthJsonErrorResponse(
+      "invalid_request",
+      "code verifier is missing",
+      400,
+    );
+  }
+
+  if (
+    !verifyPkceChallenge(
+      codeVerifier,
+      verificationValue.codeChallenge,
+      typeof verificationValue.codeChallengeMethod === "string"
+        ? verificationValue.codeChallengeMethod
+        : null,
+    )
+  ) {
+    return createOauthJsonErrorResponse(
+      "invalid_request",
+      "code verification failed",
+      401,
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: verificationValue.userId },
+    select: {
+      id: true,
+      email: true,
+      emailVerified: true,
+      name: true,
+      image: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user) {
+    return createOauthJsonErrorResponse("invalid_grant", "user not found", 401);
+  }
+
+  const deletedVerification = await prisma.verification.deleteMany({
+    where: { id: verificationRecord.id },
+  });
+  if (deletedVerification.count === 0) {
+    return createOauthJsonErrorResponse("invalid_grant", "invalid code", 401);
+  }
+
+  const issuedAt = new Date();
+  const accessTokenExpiresAt = new Date(
+    issuedAt.getTime() + OIDC_ACCESS_TOKEN_EXPIRES_IN_SECONDS * 1000,
+  );
+  const refreshTokenExpiresAt = new Date(
+    issuedAt.getTime() + OIDC_REFRESH_TOKEN_EXPIRES_IN_SECONDS * 1000,
+  );
+  const accessToken = randomBytes(32).toString("base64url");
+  const refreshToken = randomBytes(32).toString("base64url");
+  const scopes = normalizeRequestedScopes(verificationValue.scope);
+
+  const tokenRecord = (await prisma.oauthAccessToken.create({
+    data: {
+      accessToken,
+      refreshToken,
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
+      clientId,
+      userId: user.id,
+      scopes: scopes.join(" "),
+      createdAt: issuedAt,
+      updatedAt: issuedAt,
+    },
+    include: {
+      user: true,
+    },
+  })) as OidcAccessTokenRecord;
+
+  const idToken = scopes.includes("openid")
+    ? await createIdTokenForAccessTokenRecord(tokenRecord, {
+        nonce:
+          typeof verificationValue.nonce === "string"
+            ? verificationValue.nonce
+            : null,
+      })
+    : null;
+
+  return Response.json(
+    {
+      access_token: accessToken,
+      token_type: "Bearer",
+      expires_in: OIDC_ACCESS_TOKEN_EXPIRES_IN_SECONDS,
+      refresh_token: scopes.includes("offline_access")
+        ? refreshToken
+        : undefined,
+      scope: scopes.join(" "),
+      id_token: idToken ?? undefined,
+    },
+    {
+      headers: OIDC_NO_STORE_HEADERS,
+    },
+  );
 }
 
 function createConsentPromptedAuthorizeRequest(
@@ -603,6 +986,12 @@ export async function POST(request: Request): Promise<Response> {
     const body = await readBodyFields(request);
     if (body?.grant_type === DEVICE_CODE_GRANT) {
       return exchangeDeviceGrantForOidcToken(request, body);
+    }
+    if (
+      pathname === OAUTH_TOKEN_PATH &&
+      body?.grant_type === AUTHORIZATION_CODE_GRANT
+    ) {
+      return exchangeAuthorizationCodeGrant(request, body);
     }
     if (
       pathname === OAUTH_TOKEN_PATH &&
