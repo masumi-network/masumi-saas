@@ -405,7 +405,8 @@
           "newTransactionsCardAria": "View activity, {count} new transactions",
           "viewAll": "View all",
           "percentValue": "{value}%",
-          "vsPreviousPeriod": "vs prev. period"
+          "vsPreviousPeriod": "vs prev. period",
+          "earningsLoadUnexpectedError": "Could not load earnings. Please try again."
         },
         "networkHint": "Data for {network}.",
         "networkHintChange": "Change",

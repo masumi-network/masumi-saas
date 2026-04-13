@@ -49,10 +49,16 @@ export function DashboardRevenueCard() {
       setTotal(result.total);
       setAmountUnit(result.amountUnit);
       setPreviousTotal(result.previousTotal);
+    } catch (err) {
+      console.error("[DashboardRevenueCard] fetchEarnings:", err);
+      setError(t("earningsLoadUnexpectedError"));
+      setTotal(0);
+      setAmountUnit("USD");
+      setPreviousTotal(undefined);
     } finally {
       setIsLoading(false);
     }
-  }, [period, network]);
+  }, [period, network, t]);
 
   useEffect(() => {
     fetchEarnings();
