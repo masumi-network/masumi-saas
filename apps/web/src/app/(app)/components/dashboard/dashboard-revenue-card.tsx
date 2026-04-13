@@ -38,7 +38,9 @@ export function DashboardRevenueCard() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await fetchEarningsForPeriod(period, network);
+      const result = await fetchEarningsForPeriod(period, network, {
+        genericErrorMessage: t("earningsLoadUnexpectedError"),
+      });
       if (!result.ok) {
         setError(result.error);
         setTotal(0);

@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { agentHasPaymentIncomeData } from "@/lib/agents/agent-earnings-eligibility";
+import { whereUserAgentsForPaymentNetwork } from "@/lib/agents/where-user-agents-for-payment-network";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
@@ -190,10 +191,7 @@ export async function GET(request: Request) {
     const { current, previous } = getDashboardPeriodWindows(period);
 
     const userAgents = await prisma.agent.findMany({
-      where: {
-        userId: user.id,
-        OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
-      },
+      where: whereUserAgentsForPaymentNetwork(user.id, network),
       select: {
         id: true,
         agentIdentifier: true,

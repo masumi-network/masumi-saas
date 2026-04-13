@@ -1,16 +1,16 @@
 import prisma from "@masumi/database/client";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
+import { whereUserAgentsForPaymentNetwork } from "@/lib/agents/where-user-agents-for-payment-network";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
   userId: string,
   network?: string,
 ): Promise<DashboardOverview> {
-  const networkFilter = network
-    ? { OR: [{ networkIdentifier: network }, { networkIdentifier: null }] }
-    : {};
-  const baseAgentWhere = { userId, ...networkFilter } as const;
+  const baseAgentWhere = network
+    ? whereUserAgentsForPaymentNetwork(userId, network)
+    : ({ userId } as const);
 
   const [
     userWithOrgs,

@@ -10,7 +10,7 @@ The payment-node `POST /payment/income` endpoint accepts `agentIdentifier: null`
 
 For each request we:
 
-1. Load the authenticated user’s **agents** that match the requested network (`networkIdentifier` equals the selected network, or `null` for agents not pinned to a network).
+1. Load the authenticated user’s **agents** scoped to the requested network (agent row `networkIdentifier`, or `AgentReference.networkIdentifier` when the agent row is still unset — not “any `null` on every network”).
 2. Keep only agents that are **on-chain and eligible for income** (same rules as `GET /api/agents/[agentId]/earnings`: `agentIdentifier` set and registration state in the confirmed/deregistration set).
 3. Call `getPaymentIncome` **once per eligible agent** with that agent’s `agentIdentifier`, then **merge** `TotalIncome.Units` and `DailyIncome` in process memory.
 
