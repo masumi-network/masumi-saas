@@ -483,16 +483,21 @@ export const auth = betterAuth({
         // When getSession({ headers }) is used (e.g. from API routes), context has ctx.headers, not ctx.request
         const headers = ctx.request?.headers ?? ctx.headers;
         if (!headers) return null;
+        const apiKeyPrefix = authConfig.apiKey.defaultKeyPrefix;
+
         const xApiKey = headers.get("x-api-key");
-        if (xApiKey) return xApiKey.trim();
+        if (xApiKey) {
+          const trimmed = xApiKey.trim();
+          if (trimmed.startsWith(apiKeyPrefix)) return trimmed;
+        }
         const auth = headers.get("authorization");
-        if (auth?.startsWith("Bearer ")) return auth.slice(7).trim();
+        if (auth?.startsWith("Bearer ")) {
+          const token = auth.slice(7).trim();
+          if (token.startsWith(apiKeyPrefix)) return token;
+        }
         // Payment-node-style header: scripts often send `token` for mas_* keys; only treat as SaaS API key when prefixed.
         const tokenHeader = headers.get("token");
-        if (
-          tokenHeader &&
-          tokenHeader.startsWith(authConfig.apiKey.defaultKeyPrefix)
-        ) {
+        if (tokenHeader && tokenHeader.startsWith(apiKeyPrefix)) {
           return tokenHeader.trim();
         }
         return null;

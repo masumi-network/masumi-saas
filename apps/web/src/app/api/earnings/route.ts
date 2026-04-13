@@ -27,6 +27,40 @@ import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
  */
 const EARNINGS_PAYMENT_INCOME_TIMEZONE = "Etc/UTC";
 
+/**
+ * Caps concurrent payment-node `getPaymentIncome` calls so large agent lists do not
+ * fan out into 2×n parallel requests (current + previous windows) or hit upstream limits.
+ */
+const PAYMENT_INCOME_AGENT_CONCURRENCY = 5;
+
+/** Like `Promise.allSettled`, but runs at most `concurrency` tasks at a time. */
+async function allSettledWithConcurrencyLimit<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  if (items.length === 0) return [];
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    for (;;) {
+      const i = nextIndex++;
+      if (i >= items.length) return;
+      try {
+        const value = await fn(items[i]!, i);
+        results[i] = { status: "fulfilled", value };
+      } catch (reason) {
+        results[i] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  const workers = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(Array.from({ length: workers }, () => worker()));
+  return results;
+}
+
 export type EarningsDataPoint = {
   date: string;
   amount: number;
@@ -177,13 +211,15 @@ export async function GET(request: Request) {
       nodeClient: PaymentNodeClient,
     ): Promise<PaymentIncomeOutput[]> {
       if (eligibleAgents.length === 0) return [];
-      const settled = await Promise.allSettled(
-        eligibleAgents.map((a) =>
+      const params = incomeRangeParams(range);
+      const settled = await allSettledWithConcurrencyLimit(
+        eligibleAgents,
+        PAYMENT_INCOME_AGENT_CONCURRENCY,
+        (a) =>
           nodeClient.getPaymentIncome({
-            ...incomeRangeParams(range),
+            ...params,
             agentIdentifier: a.agentIdentifier!,
           }),
-        ),
       );
       const ok: PaymentIncomeOutput[] = [];
       for (let i = 0; i < settled.length; i++) {
@@ -201,12 +237,15 @@ export async function GET(request: Request) {
       return ok;
     }
 
-    const [currentIncomes, previousIncomes] = await Promise.all([
-      fetchIncomeForEligible(current, paymentNodeClient),
-      previous
-        ? fetchIncomeForEligible(previous, paymentNodeClient)
-        : Promise.resolve([]),
-    ]);
+    // Load previous after current so peak concurrent payment-node calls stays at
+    // PAYMENT_INCOME_AGENT_CONCURRENCY (not 2× when both windows exist).
+    const currentIncomes = await fetchIncomeForEligible(
+      current,
+      paymentNodeClient,
+    );
+    const previousIncomes = previous
+      ? await fetchIncomeForEligible(previous, paymentNodeClient)
+      : [];
 
     const mergedCurrentUnits = mergeIncomeUnitRows(
       currentIncomes.map((i) => i.TotalIncome.Units),
