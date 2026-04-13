@@ -1,3 +1,4 @@
+import prisma from "@masumi/database/client";
 import { randomBytes, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -6,7 +7,6 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import prisma from "@masumi/database/client";
 
 const bodySchema = z.object({
   regenerate: z.boolean().optional().default(false),
