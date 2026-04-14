@@ -85,16 +85,11 @@ export function AgentsContent() {
   )
     ? (sectionParam as (typeof VALID_SECTIONS)[number])
     : "manage";
-  const validTabs = agentVerificationUiEnabled
+  const validTabs: readonly string[] = agentVerificationUiEnabled
     ? ALL_TABS
-    : (ALL_TABS.filter((tab) => tab !== "verified") as Exclude<
-        (typeof ALL_TABS)[number],
-        "verified"
-      >[]);
+    : ALL_TABS.filter((tab) => tab !== "verified");
   const tabParam = searchParams.get("tab");
-  const activeTab = validTabs.includes(tabParam as (typeof validTabs)[number])
-    ? (tabParam as (typeof validTabs)[number])
-    : "all";
+  const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : "all";
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
