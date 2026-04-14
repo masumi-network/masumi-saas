@@ -149,6 +149,21 @@ describe("SMOKE — Authenticated /api/v1 proxy", () => {
     expect(res.status).toBe(401);
   });
 
+  it("POST /api/v1/inbox-agent-registration-search without auth → 401", async () => {
+    const res = await request(
+      "/api/v1/inbox-agent-registration-search?network=Preprod",
+      {
+        method: "POST",
+        body: {
+          limit: 1,
+          network: "Preprod",
+          query: "agent@example.com",
+        },
+      },
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("GET /api/v1/admin — not exposed → 404", async () => {
     const { CookieJar, signIn } = await import("../helpers");
     const jar = await signIn();
@@ -175,6 +190,7 @@ describe("SMOKE — Authenticated /api/v1 proxy", () => {
     expect(b.paths?.["/v1/registry-entry"]).toBeDefined();
     expect(b.paths?.["/v1/registry-diff"]).toBeDefined();
     expect(b.paths?.["/v1/capability"]).toBeDefined();
+    expect(b.paths?.["/v1/inbox-agent-registration-search"]).toBeDefined();
     expect(b.paths?.["/v1/registry-inbox"]).toBeUndefined();
     expect(b.paths?.["/v1/inbox-agent-registration"]).toBeUndefined();
     expect(b.paths?.["/v1/inbox-agents"]).toBeDefined();

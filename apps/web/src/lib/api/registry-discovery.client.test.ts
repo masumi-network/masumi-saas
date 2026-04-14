@@ -106,4 +106,56 @@ describe("registryDiscoveryClient", () => {
       },
     });
   });
+
+  it("wraps the public inbox-agent-registration-search route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            registrations: [
+              {
+                id: "inbox-2",
+                name: "Inbox Agent",
+                linkedEmail: "agent@example.com",
+              },
+            ],
+          },
+          status: "success",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await registryDiscoveryClient.searchInboxAgentRegistrations({
+      network: "Preprod",
+      query: "agent@example.com",
+      limit: 1,
+      filter: { status: ["Verified"] },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/inbox-agent-registration-search",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
+    expect(result).toStrictEqual({
+      success: true,
+      data: {
+        items: [
+          {
+            id: "inbox-2",
+            name: "Inbox Agent",
+            linkedEmail: "agent@example.com",
+          },
+        ],
+        nextCursor: "inbox-2",
+      },
+    });
+  });
 });

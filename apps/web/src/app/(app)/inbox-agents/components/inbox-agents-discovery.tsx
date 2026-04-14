@@ -35,9 +35,10 @@ import {
 } from "@/components/ui/pagination";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   type InboxAgentRegistration,
+  type InboxAgentRegistrationFilter,
+  type InboxAgentRegistrationSearchFilter,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
@@ -107,26 +108,6 @@ function getPageNumbers(
   }
 
   return pages;
-}
-
-function matchesInboxLookup(
-  registration: InboxAgentRegistration,
-  query: string,
-) {
-  if (!query) return true;
-
-  const haystack = [
-    registration.name,
-    registration.description ?? "",
-    registration.agentIdentifier,
-    registration.agentSlug,
-    registration.RegistrySource.policyId ?? "",
-    registration.RegistrySource.url ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(query);
 }
 
 function getInboxRegistrationBadgeVariant(
@@ -490,7 +471,8 @@ export function InboxAgentsDiscovery() {
   const [selectedInboxRegistration, setSelectedInboxRegistration] =
     useState<InboxAgentRegistration | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const debouncedSearch = useDebouncedValue(searchQuery, 200);
+  const requestSequenceRef = useRef(0);
+  const normalizedSearch = searchQuery.trim();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -514,27 +496,49 @@ export function InboxAgentsDiscovery() {
   }, []);
 
   const fetchInboxRegistrations = useCallback(
-    async (cursorId?: string) =>
-      registryDiscoveryClient.getInboxAgentRegistrations({
+    async (params?: { cursorId?: string; query?: string }) => {
+      const filter: InboxAgentRegistrationFilter &
+        InboxAgentRegistrationSearchFilter = {
+        status: ["Pending", "Verified"],
+      };
+
+      if (params?.query) {
+        return registryDiscoveryClient.searchInboxAgentRegistrations({
+          network,
+          limit: PAGE_SIZE,
+          cursorId: params.cursorId,
+          query: params.query,
+          filter,
+        });
+      }
+
+      return registryDiscoveryClient.getInboxAgentRegistrations({
         network,
         limit: PAGE_SIZE,
-        cursorId,
-        filter: {
-          status: ["Pending", "Verified"],
-        },
-      }),
+        cursorId: params?.cursorId,
+        filter,
+      });
+    },
     [network],
   );
 
   const loadInitial = useCallback(async () => {
+    const requestSequence = ++requestSequenceRef.current;
+
     setState((current) => ({
       ...current,
-      isLoading: true,
-      isPageLoading: false,
+      isLoading: current.pages.length === 0,
+      isPageLoading: current.pages.length > 0,
       error: null,
     }));
 
-    const result = await fetchInboxRegistrations();
+    const result = await fetchInboxRegistrations({
+      query: normalizedSearch || undefined,
+    });
+
+    if (requestSequence !== requestSequenceRef.current) {
+      return;
+    }
 
     setState({
       pages: result.success ? [result.data.items] : [],
@@ -544,7 +548,7 @@ export function InboxAgentsDiscovery() {
       isPageLoading: false,
       error: result.success ? null : result.error || t("Discovery.error"),
     });
-  }, [fetchInboxRegistrations, t]);
+  }, [fetchInboxRegistrations, normalizedSearch, t]);
 
   useEffect(() => {
     void loadInitial();
@@ -563,6 +567,8 @@ export function InboxAgentsDiscovery() {
       const cursor = state.nextCursors[state.pages.length - 1];
       if (!cursor) return;
 
+      const requestSequence = ++requestSequenceRef.current;
+
       setState((current) => ({
         ...current,
         isPageLoading: true,
@@ -570,7 +576,15 @@ export function InboxAgentsDiscovery() {
       }));
 
       try {
-        const result = await fetchInboxRegistrations(cursor);
+        const result = await fetchInboxRegistrations({
+          cursorId: cursor,
+          query: normalizedSearch || undefined,
+        });
+
+        if (requestSequence !== requestSequenceRef.current) {
+          return;
+        }
+
         if (!result.success) {
           setState((current) => ({
             ...current,
@@ -595,21 +609,19 @@ export function InboxAgentsDiscovery() {
         }));
       }
     },
-    [fetchInboxRegistrations, state, t],
+    [fetchInboxRegistrations, normalizedSearch, state, t],
   );
 
   const pageItems = useMemo(() => getCurrentPageItems(state), [state]);
-  const visibleItems = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-
-    return [...pageItems]
-      .sort(
+  const visibleItems = useMemo(
+    () =>
+      [...pageItems].sort(
         (left, right) =>
           new Date(right.statusUpdatedAt).getTime() -
           new Date(left.statusUpdatedAt).getTime(),
-      )
-      .filter((registration) => matchesInboxLookup(registration, query));
-  }, [debouncedSearch, pageItems]);
+      ),
+    [pageItems],
+  );
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -624,7 +636,7 @@ export function InboxAgentsDiscovery() {
     ellipsisSrText: t("Discovery.paginationMore"),
   };
 
-  const activeEmptyLabel = debouncedSearch
+  const activeEmptyLabel = normalizedSearch
     ? t("Discovery.inboxEmptySearch")
     : t("Discovery.inboxEmpty");
 

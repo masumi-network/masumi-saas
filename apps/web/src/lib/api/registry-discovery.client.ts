@@ -10,8 +10,13 @@ type RegistryEntryResponse =
 type InboxAgentRegistrationRequest = NonNullable<
   RegistryServicePaths["/inbox-agent-registration/"]["post"]["requestBody"]
 >["content"]["application/json"];
+type InboxAgentRegistrationSearchRequest = NonNullable<
+  RegistryServicePaths["/inbox-agent-registration-search/"]["post"]["requestBody"]
+>["content"]["application/json"];
 type InboxAgentRegistrationResponse =
   RegistryServicePaths["/inbox-agent-registration/"]["post"]["responses"][200]["content"]["application/json"];
+type InboxAgentRegistrationSearchResponse =
+  RegistryServicePaths["/inbox-agent-registration-search/"]["post"]["responses"][200]["content"]["application/json"];
 
 export type RegistryEntry = RegistryEntryResponse["data"]["entries"][number];
 export type RegistryEntryFilter = NonNullable<RegistryEntryRequest["filter"]>;
@@ -19,6 +24,9 @@ export type InboxAgentRegistration =
   InboxAgentRegistrationResponse["data"]["registrations"][number];
 export type InboxAgentRegistrationFilter = NonNullable<
   InboxAgentRegistrationRequest["filter"]
+>;
+export type InboxAgentRegistrationSearchFilter = NonNullable<
+  InboxAgentRegistrationSearchRequest["filter"]
 >;
 
 type PaginatedDiscoveryResult<T> =
@@ -94,7 +102,10 @@ class RegistryDiscoveryClient {
 
   private async postCollection<T extends { id: string }>(
     endpoint: string,
-    body: RegistryEntryRequest | InboxAgentRegistrationRequest,
+    body:
+      | RegistryEntryRequest
+      | InboxAgentRegistrationRequest
+      | InboxAgentRegistrationSearchRequest,
     collectionKey: "entries" | "registrations",
   ): Promise<PaginatedDiscoveryResult<T>> {
     try {
@@ -194,6 +205,18 @@ class RegistryDiscoveryClient {
           error instanceof Error ? error.message : "Network error occurred",
       };
     }
+  }
+
+  async searchInboxAgentRegistrations(
+    body: InboxAgentRegistrationSearchRequest,
+  ): Promise<
+    PaginatedDiscoveryResult<
+      InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
+    >
+  > {
+    return this.postCollection<
+      InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
+    >("/inbox-agent-registration-search", body, "registrations");
   }
 }
 
