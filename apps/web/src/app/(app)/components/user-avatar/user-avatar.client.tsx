@@ -176,7 +176,7 @@ export default function UserAvatarClient({
                     className="!h-7 !w-7 md:!h-7 md:!w-7 text-xs"
                   />
                   <span className="ml-1.5 text-sm font-semibold truncate group-data-[collapsible=icon]:hidden">
-                    {sessionUser.name ?? sessionUser.email ?? "User"}
+                    {sessionUser.name || sessionUser.email || "User"}
                   </span>
                   <ChevronsUpDown className="ml-1 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </Button>
