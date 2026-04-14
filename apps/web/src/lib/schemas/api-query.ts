@@ -1,9 +1,11 @@
 /**
  * Shared Zod schemas for API route query parameters.
  * Used across authenticated and public API routes for consistent validation.
+ * These are also reused by OpenAPI generation, so they must come from the
+ * shared extended Zod instance in `lib/zod-openapi`.
  */
 
-import { z } from "zod";
+import { z } from "@/lib/zod-openapi";
 
 /** Payment node network: Mainnet | Preprod. Default Preprod when invalid/missing. */
 export const networkQuerySchema = z
