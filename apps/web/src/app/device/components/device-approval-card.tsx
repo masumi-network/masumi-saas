@@ -1,14 +1,24 @@
 "use client";
 
+import {
+  AlertCircle,
+  Fingerprint,
+  ShieldAlert,
+  ShieldCheck,
+  Terminal,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import type { OidcGroupedApiPermissionCatalogGroup } from "@/lib/config/oidc-scopes.config";
 
 import { EmailVerificationPanel } from "../../oidc/consent/components/email-verification-panel";
@@ -37,13 +47,11 @@ type ApprovalState = "idle" | "denied";
 
 const copy = {
   protocolBadge: "OIDC",
-  title: "Review device access",
-  subtitle:
-    "Verify the device code, review the requested access, and approve the device login in one place.",
-  codeLabel: "Verify device code",
+  title: "Authorize this device",
+  subtitle: "Do you want to authorize this device?",
+  codeLabel: "Device code",
   codeHint: "Dashes are optional. The code is not case sensitive.",
-  codeLoadedHint:
-    "Code verified. Edit it only if you want to review a different device request.",
+  codeLoadedHint: "Code verified. Edit to review a different device request.",
   pendingCodeChange:
     "Review the updated code before approving. The permissions below belong to the previously loaded request.",
   reviewCode: "Verify code",
@@ -51,12 +59,8 @@ const copy = {
   codeVerified: "Verified",
   accountLabel: "Authorizing as",
   scopesLabel: "Identity scopes",
-  newPermissionsLabel: "New API permissions requested",
-  newPermissionsDescription:
-    "This device login is asking for additional API permissions it did not have before.",
-  existingPermissionsLabel: "Already granted API permissions",
-  existingPermissionsDescription:
-    "These API permissions are already approved for this client.",
+  newPermissionsLabel: "New API permissions",
+  existingPermissionsLabel: "Granted API permissions",
   defaultScope: "openid",
   noNewPermissions: "No additional API permissions are being requested.",
   noExistingPermissions: "No API permissions have been granted yet.",
@@ -73,6 +77,14 @@ const copy = {
   switching: "Switching...",
   successRedirect: "/device/success",
 };
+
+function getInitial(
+  name: string | null | undefined,
+  email: string | null | undefined,
+): string {
+  const source = name?.trim() || email || "?";
+  return source.charAt(0).toUpperCase();
+}
 
 export function DeviceApprovalCard({
   initialUserCode,
@@ -209,37 +221,42 @@ export function DeviceApprovalCard({
     <AuthorizationRequestCard
       protocolBadge={copy.protocolBadge}
       clientLabel={resolvedClientLabel}
+      icon={<Terminal className="h-6 w-6 text-primary" />}
       title={copy.title}
-      description={
-        <>
-          {resolvedClientLabel} {copy.subtitle}
-        </>
-      }
+      description={`${copy.subtitle} Review the requested access for ${resolvedClientLabel}.`}
       footer={
         isResolvedRequest ? (
           <div className="flex w-full flex-col gap-3">
             {status === "denied" ? (
-              <>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <XCircle className="h-10 w-10 text-muted-foreground" />
                 <p className="text-sm text-foreground">{copy.denied}</p>
                 <Button asChild className="w-full" variant="outline">
                   <Link href="/">{copy.backToDashboard}</Link>
                 </Button>
-              </>
+              </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">{copy.pending}</p>
+                <p className="text-center text-sm text-muted-foreground">
+                  {copy.pending}
+                </p>
                 {hasPendingCodeChange ? (
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    {copy.pendingCodeChange}
-                  </p>
+                  <div className="flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{copy.pendingCodeChange}</span>
+                  </div>
                 ) : null}
                 {requiresEmailVerification ? (
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    {copy.verifyRequired}
-                  </p>
+                  <div className="flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{copy.verifyRequired}</span>
+                  </div>
                 ) : null}
                 {actionError ? (
-                  <p className="text-sm text-destructive">{actionError}</p>
+                  <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{actionError}</span>
+                  </div>
                 ) : null}
                 <div className="flex flex-col gap-3 sm:flex-row">
                   {requiresEmailVerification ? null : (
@@ -257,22 +274,25 @@ export function DeviceApprovalCard({
                     className="flex-1"
                     disabled={isSubmitting || !canSubmitDecision}
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleDecision("deny")}
                   >
                     {copy.deny}
                   </Button>
                 </div>
                 {accountEmail ? (
-                  <Button
-                    className="w-full"
-                    disabled={isSubmitting || isSwitchingAccount}
-                    type="button"
-                    variant="ghost"
-                    onClick={handleSwitchAccount}
-                  >
-                    {isSwitchingAccount ? copy.switching : copy.switchAccount}
-                  </Button>
+                  <>
+                    <Separator />
+                    <Button
+                      className="w-full"
+                      disabled={isSubmitting || isSwitchingAccount}
+                      type="button"
+                      variant="ghost"
+                      onClick={handleSwitchAccount}
+                    >
+                      {isSwitchingAccount ? copy.switching : copy.switchAccount}
+                    </Button>
+                  </>
                 ) : null}
               </>
             )}
@@ -280,11 +300,8 @@ export function DeviceApprovalCard({
         ) : undefined
       }
     >
-      <div className="space-y-4">
-        <form
-          className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-4"
-          onSubmit={handleLookupSubmit}
-        >
+      <div className="space-y-5">
+        <form className="space-y-2" onSubmit={handleLookupSubmit}>
           <div className="flex items-center justify-between gap-3">
             <label className="text-sm font-medium" htmlFor="device-user-code">
               {copy.codeLabel}
@@ -304,6 +321,7 @@ export function DeviceApprovalCard({
               maxLength={12}
               placeholder="ABCD1234"
               spellCheck={false}
+              className="font-mono tracking-wider"
               value={userCode}
               onChange={(event) => setUserCode(event.target.value)}
             />
@@ -318,7 +336,10 @@ export function DeviceApprovalCard({
             ) : null}
           </div>
           {lookupError ? (
-            <p className="text-sm text-destructive">{lookupError}</p>
+            <div className="flex items-start gap-2 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{lookupError}</span>
+            </div>
           ) : hasPendingCodeChange ? (
             <p className="text-xs text-amber-700 dark:text-amber-400">
               {normalizedUserCode.length === 0
@@ -331,27 +352,39 @@ export function DeviceApprovalCard({
             </p>
           )}
         </form>
+
         {accountEmail ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{copy.accountLabel}</p>
-            <p className="text-sm text-foreground">
-              {accountName?.trim() || accountEmail}
-            </p>
-            <p className="break-all font-mono text-xs text-muted-foreground">
-              {accountEmail}
-            </p>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="text-xs font-medium">
+                {getInitial(accountName, accountEmail)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">
+                {accountName?.trim() || accountEmail}
+              </p>
+              <p className="truncate font-mono text-xs text-muted-foreground">
+                {accountEmail}
+              </p>
+            </div>
           </div>
         ) : null}
+
         {requiresEmailVerification && accountEmail ? (
           <EmailVerificationPanel
             email={accountEmail}
             continueUrl={verificationContinueUrl ?? undefined}
           />
         ) : null}
+
         {isResolvedRequest ? (
           <>
             <div className="space-y-2">
-              <p className="text-sm font-medium">{copy.scopesLabel}</p>
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                {copy.scopesLabel}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {identityScopeItems.length === 0 ? (
                   <Badge variant="outline">{copy.defaultScope}</Badge>
@@ -364,22 +397,22 @@ export function DeviceApprovalCard({
                 )}
               </div>
             </div>
+
             <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <p className="text-sm font-medium">{copy.newPermissionsLabel}</p>
-              <p className="text-sm text-muted-foreground">
-                {copy.newPermissionsDescription}
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ShieldAlert className="h-4 w-4 text-primary" />
+                {copy.newPermissionsLabel}
               </p>
               <OidcPermissionSummary
                 emptyLabel={copy.noNewPermissions}
                 groups={newApiPermissionGroups}
               />
             </div>
+
             <div className="space-y-2">
-              <p className="text-sm font-medium">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                 {copy.existingPermissionsLabel}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {copy.existingPermissionsDescription}
               </p>
               <OidcPermissionSummary
                 emptyLabel={copy.noExistingPermissions}
@@ -389,8 +422,11 @@ export function DeviceApprovalCard({
             </div>
           </>
         ) : (
-          <div className="rounded-lg border border-dashed px-4 py-6 text-sm text-muted-foreground">
-            {copy.noRequestLoaded}
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
+            <Terminal className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              {copy.noRequestLoaded}
+            </p>
           </div>
         )}
       </div>
