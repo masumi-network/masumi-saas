@@ -1,7 +1,6 @@
 import { Shield } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -14,8 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type AuthorizationRequestCardProps = {
-  protocolBadge: string;
-  clientLabel: string;
   title: ReactNode;
   description: ReactNode;
   children: ReactNode;
@@ -26,8 +23,6 @@ type AuthorizationRequestCardProps = {
 };
 
 export function AuthorizationRequestCard({
-  protocolBadge,
-  clientLabel,
   title,
   description,
   children,
@@ -39,14 +34,14 @@ export function AuthorizationRequestCard({
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <Card className={cn("w-full max-w-lg animate-page-in", cardClassName)}>
-        <CardHeader className="items-center space-y-4 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <CardHeader className="items-center space-y-3 text-center">
+          <div className="animate-scale-in flex h-12 w-12 items-center justify-center justify-self-center rounded-full bg-primary/10 ring-1 ring-primary/20">
             {icon ?? <Shield className="h-6 w-6 text-primary" />}
           </div>
-          <Badge variant="secondary">{protocolBadge}</Badge>
-          <div className="text-base font-semibold">{clientLabel}</div>
-          <CardTitle className="text-lg">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="justify-self-center text-lg">{title}</CardTitle>
+          <CardDescription className="justify-self-center">
+            {description}
+          </CardDescription>
         </CardHeader>
         <CardContent className={cn("space-y-6", contentClassName)}>
           {children}
