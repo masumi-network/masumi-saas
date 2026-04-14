@@ -1,4 +1,12 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const findManyMock = vi.fn();
@@ -38,6 +46,10 @@ describe("getOrganizationsAction", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns Unauthorized without logging when auth is missing", async () => {
