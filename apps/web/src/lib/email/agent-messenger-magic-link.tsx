@@ -12,6 +12,7 @@ interface AgentMessengerMagicLinkEmailProps {
   magicLink: string;
   magicCode?: string;
   logoUrl?: string;
+  poweredByLogoUrl?: string;
   includePrivacyConsent?: boolean;
   privacyPolicyUrl?: string;
   translations: {
@@ -35,6 +36,7 @@ export const AgentMessengerMagicLinkEmail = ({
   magicLink,
   magicCode,
   logoUrl,
+  poweredByLogoUrl,
   includePrivacyConsent,
   privacyPolicyUrl,
   translations: t,
@@ -45,6 +47,7 @@ export const AgentMessengerMagicLinkEmail = ({
     greeting={t.greeting.replace("{name}", name)}
     footer={t.footer}
     logoUrl={logoUrl}
+    poweredByLogoUrl={poweredByLogoUrl}
   >
     <MasumiEmailParagraph>{t.message}</MasumiEmailParagraph>
 

@@ -15,7 +15,7 @@ import {
 } from "@react-email/components";
 import type { ReactNode } from "react";
 
-import { emailConfig } from "@/lib/config/email.config";
+import { emailConfig } from "../config/email.config";
 
 type MasumiEmailLayoutProps = {
   preview: string;

@@ -436,7 +436,8 @@ export const auth = betterAuth({
                 name,
                 magicLink: url,
                 magicCode,
-                logoUrl: emailConfig.brandLogoUrl,
+                logoUrl: emailConfig.agentMessengerLogoUrl,
+                poweredByLogoUrl: emailConfig.brandLogoUrl,
                 includePrivacyConsent: !existingUser,
                 privacyPolicyUrl: PRIVACY_POLICY_URL,
                 translations: {

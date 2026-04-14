@@ -273,7 +273,8 @@ masumi-saas/
    - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
      - If not set, emails are logged to console in development
 
-   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the logo image shown at the top of transactional emails (verification, magic link, org invitations, etc.). Defaults to a Masumi GitHub avatar URL if unset.
+   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the Masumi logo used in transactional emails and the "Powered by Masumi" footer in Agent Messenger OIDC emails. Defaults to the app logo asset if unset.
+   - **EMAIL_AGENT_MESSENGER_LOGO_URL** _(optional)_: Absolute URL of the logo shown at the top of Agent Messenger OIDC magic-link emails. Defaults to `EMAIL_BRAND_LOGO_URL` if unset.
 
    - **NEXT_PUBLIC_PRIVACY_POLICY_URL** _(optional)_: Privacy policy URL used by signup forms (checkbox link) and the consent line in magic-link emails when the address is not yet registered. Defaults to the House of Communication policy URL if unset.
 
