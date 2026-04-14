@@ -15,10 +15,7 @@ import {
 } from "@/components/ui/card";
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
-import {
-  isAgentVerificationFlowEnabled,
-  verificationFeatureCopy,
-} from "@/lib/config/verification.config";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { cn } from "@/lib/utils";
 
 import { RequestVerificationDialog } from "./request-verification-dialog";
@@ -32,19 +29,21 @@ export function AgentVerificationCard({
   agent,
   onVerificationSuccess,
 }: AgentVerificationCardProps) {
+  const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
-  const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const [isLoadingKyc, setIsLoadingKyc] = useState(agentVerificationEnabled);
   const [, startTransition] = useTransition();
 
   const status = agent.verificationStatus || "PENDING";
 
   useEffect(() => {
-    if (!agentVerificationEnabled) return;
+    if (!agentVerificationEnabled) {
+      return;
+    }
 
     startTransition(async () => {
       const result = await getKycStatusAction();
@@ -54,6 +53,10 @@ export function AgentVerificationCard({
       setIsLoadingKyc(false);
     });
   }, [agentVerificationEnabled, startTransition]);
+
+  if (!agentVerificationEnabled) {
+    return null;
+  }
 
   const statusConfig = {
     PENDING: {
@@ -87,17 +90,7 @@ export function AgentVerificationCard({
   };
 
   const config =
-    !agentVerificationEnabled && status !== "VERIFIED"
-      ? {
-          icon: AlertCircle,
-          iconColor: "text-muted-foreground",
-          title: verificationFeatureCopy.agentVerificationUnavailableTitle,
-          description:
-            verificationFeatureCopy.agentVerificationUnavailableDescription,
-          showButton: false,
-        }
-      : statusConfig[status as keyof typeof statusConfig] ||
-        statusConfig.PENDING;
+    statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
   const Icon = config.icon;
 
   return (

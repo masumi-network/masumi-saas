@@ -6,6 +6,7 @@ import {
   Building2,
   Check,
   ChevronsUpDown,
+  Key,
   LogOut,
   MessageSquare,
   Plus,
@@ -72,6 +73,7 @@ export default function UserAvatarClient({
   sessionUser,
 }: UserAvatarClientProps) {
   const t = useTranslations("App.Header");
+  const tNav = useTranslations("App.Sidebar.MenuItems");
   const tCreate = useTranslations("App.Organizations.Create");
   const { showLogoutModal } = useGlobalModalsContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -337,6 +339,13 @@ export default function UserAvatarClient({
             >
               <Building2 className="text-muted-foreground" />
               {t("organizations")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2"
+              onClick={(e) => handleClick(e, "/api-keys")}
+            >
+              <Key className="text-muted-foreground" />
+              {tNav("apiKeys")}
             </DropdownMenuItem>
           </DropdownMenuGroup>
 

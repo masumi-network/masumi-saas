@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { auth } from "@/lib/auth/auth";
 import { getRequestHeaders } from "@/lib/auth/utils";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 
 import {
   UserProfileCard,
@@ -40,9 +41,11 @@ export default async function AccountPage() {
         accounts={accounts}
         user={session.user}
         userProfileCard={
-          <Suspense fallback={<UserProfileCardSkeleton />}>
-            <UserProfileCard />
-          </Suspense>
+          isKycVerificationEnabled() ? (
+            <Suspense fallback={<UserProfileCardSkeleton />}>
+              <UserProfileCard />
+            </Suspense>
+          ) : null
         }
       />
     </div>

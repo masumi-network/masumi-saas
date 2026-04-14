@@ -17,10 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import {
-  isKycVerificationEnabled,
-  verificationFeatureCopy,
-} from "@/lib/config/verification.config";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
@@ -28,6 +25,10 @@ import {
 import { getInitials } from "@/lib/utils/format-name";
 
 export async function UserProfileCard() {
+  if (!isKycVerificationEnabled()) {
+    return null;
+  }
+
   const t = await getTranslations("App.Home.KycStatus");
   const tStatus = await getTranslations("App.Agents");
 
@@ -35,7 +36,6 @@ export async function UserProfileCard() {
     requireEmailVerified: false,
   });
   const result = await getKycStatusAction();
-  const kycVerificationEnabled = isKycVerificationEnabled();
 
   if (!result.success || !result.data) {
     return null;
@@ -58,11 +58,9 @@ export async function UserProfileCard() {
     PENDING: {
       icon: AlertCircle,
       title: t("pending.title"),
-      description: kycVerificationEnabled
-        ? t("pending.description")
-        : verificationFeatureCopy.kycUnavailableDescription,
-      action: kycVerificationEnabled ? t("pending.action") : null,
-      actionHref: kycVerificationEnabled ? "/verification" : null,
+      description: t("pending.description"),
+      action: t("pending.action"),
+      actionHref: "/verification",
     },
     REVIEW: {
       icon: Clock,
@@ -85,14 +83,9 @@ export async function UserProfileCard() {
     REJECTED: {
       icon: XCircle,
       title: t("rejected.title"),
-      description:
-        kycVerificationEnabled && kycRejectionReason
-          ? kycRejectionReason
-          : kycVerificationEnabled
-            ? t("rejected.description")
-            : verificationFeatureCopy.kycUnavailableDescription,
-      action: kycVerificationEnabled ? t("rejected.action") : null,
-      actionHref: kycVerificationEnabled ? "/verification" : null,
+      description: kycRejectionReason || t("rejected.description"),
+      action: t("rejected.action"),
+      actionHref: "/verification",
     },
   };
 

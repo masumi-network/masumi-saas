@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ShieldCheck } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -73,14 +73,6 @@ export function AgentPageHeader({
           <h1 className="text-2xl font-light tracking-tight truncate min-w-0">
             {agent.name}
           </h1>
-          {agent.verificationStatus === "VERIFIED" && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
-              </TooltipTrigger>
-              <TooltipContent>{"Verified agent"}</TooltipContent>
-            </Tooltip>
-          )}
         </div>
         <Badge
           variant={

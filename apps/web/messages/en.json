@@ -445,6 +445,7 @@
           "completeKyc": "Complete identity verification",
           "completeKycDone": "Identity verified",
           "createOrg": "Create your first organization",
+          "createOrgOptional": "Create your first organization (optional)",
           "registerAgent": "Register your first AI agent",
           "doIt": "Do it",
           "step1": "1",

@@ -28,22 +28,6 @@ interface AgentPageContentProps {
   agent: Agent;
 }
 
-const VALID_TAB_KEYS = [
-  "details",
-  "earnings",
-  "transactions",
-  "credentials",
-] as const;
-
-function isValidTab(
-  tab: string | null,
-): tab is (typeof VALID_TAB_KEYS)[number] {
-  return (
-    tab !== null &&
-    VALID_TAB_KEYS.includes(tab as (typeof VALID_TAB_KEYS)[number])
-  );
-}
-
 const DEFAULT_TAB = "details";
 
 function isValidNetwork(
@@ -62,6 +46,7 @@ export function AgentPageContent({
   const searchParams = useSearchParams();
   const { network, setNetwork } = usePaymentNetwork();
   const [agent, setAgent] = useState<Agent>(initialAgent);
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -180,18 +165,20 @@ export function AgentPageContent({
 
   const tabParam = searchParams.get("tab");
   const fromParam = searchParams.get("from");
-  const activeTab = isValidTab(tabParam) ? tabParam : DEFAULT_TAB;
-
   const isFromDashboard = fromParam === "dashboard";
   const backHref = isFromDashboard ? "/" : "/ai-agents";
   const backLabel = isFromDashboard ? t("backToDashboard") : undefined;
-
   const tabs = [
     { name: tTabs("detailTabs.details"), key: "details" },
     { name: tTabs("detailTabs.earnings"), key: "earnings" },
     { name: tTabs("detailTabs.transactions"), key: "transactions" },
-    { name: tTabs("detailTabs.credentials"), key: "credentials" },
   ];
+  if (agentVerificationUiEnabled) {
+    tabs.push({ name: tTabs("detailTabs.credentials"), key: "credentials" });
+  }
+  const activeTab = tabs.some((tab) => tab.key === tabParam)
+    ? tabParam
+    : DEFAULT_TAB;
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -268,7 +255,7 @@ export function AgentPageContent({
         />
       )}
 
-      {activeTab === "credentials" && (
+      {agentVerificationUiEnabled && activeTab === "credentials" && (
         <AgentCredentials
           agent={agent}
           onVerificationSuccess={handleVerificationSuccess}
