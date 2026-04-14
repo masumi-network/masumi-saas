@@ -169,7 +169,8 @@ export async function consumeCreditIfRequired(params: {
 }): Promise<CreditBalance> {
   const effectiveNetwork = parseNetwork(params.network);
 
-  if (effectiveNetwork === "Preprod") {
+  // Credits should only be spent for writes against Mainnet.
+  if (effectiveNetwork !== "Mainnet") {
     return getCreditBalance(params.userId);
   }
 

@@ -255,6 +255,37 @@ describe("credit service", () => {
     expect(store.current.ledger).toHaveLength(0);
   });
 
+  it("skips debit when no network is provided", async () => {
+    store.current = createState(0);
+
+    const result = await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "agent_register",
+      reference: "agent-register:default-network",
+      metadata: { network: null },
+    });
+
+    expect(result.creditsRemaining).toBe(0);
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(0);
+  });
+
+  it("skips debit for unknown networks", async () => {
+    store.current = createState(0);
+
+    const result = await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:unknown-network",
+      network: "Preview",
+      metadata: { network: "Preview" },
+    });
+
+    expect(result.creditsRemaining).toBe(0);
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(0);
+  });
+
   it("still debits on Mainnet", async () => {
     store.current = createState(1);
 
