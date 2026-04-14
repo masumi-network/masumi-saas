@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { Award, Lock, ScanFace, ShieldCheck } from "lucide-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,27 +39,41 @@ export function IntroStep({
 
       <div className="space-y-6">
         <div className="space-y-1.5">
-          <h3 className="text-sm font-medium">{t("purposeTitle")}</h3>
-          <p className="text-sm text-muted-foreground leading-6">
+          <h3 className="flex items-center gap-2 text-sm font-medium">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            {t("purposeTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-6 pl-6">
             {t("purpose")}
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-sm font-medium">{t("gdprTitle")}</h3>
-          <p className="text-sm text-muted-foreground leading-6">{t("gdpr")}</p>
+          <h3 className="flex items-center gap-2 text-sm font-medium">
+            <Lock className="h-4 w-4 text-primary" />
+            {t("gdprTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-6 pl-6">
+            {t("gdpr")}
+          </p>
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-sm font-medium">{t("biometricTitle")}</h3>
-          <p className="text-sm text-muted-foreground leading-6">
+          <h3 className="flex items-center gap-2 text-sm font-medium">
+            <ScanFace className="h-4 w-4 text-primary" />
+            {t("biometricTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-6 pl-6">
             {t("biometric")}
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-sm font-medium">{t("credentialTitle")}</h3>
-          <p className="text-sm text-muted-foreground leading-6">
+          <h3 className="flex items-center gap-2 text-sm font-medium">
+            <Award className="h-4 w-4 text-primary" />
+            {t("credentialTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-6 pl-6">
             {t("credential")}
           </p>
         </div>

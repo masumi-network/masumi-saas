@@ -8,7 +8,6 @@ import {
   Inbox,
   Key,
   LayoutDashboard,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -81,12 +80,6 @@ export default function MenuItems() {
       href: "/developers",
       label: t("developers"),
       Icon: Code,
-    },
-    {
-      key: "account",
-      href: "/account",
-      label: t("account"),
-      Icon: User,
     },
   ];
 

@@ -148,7 +148,9 @@ export default async function DashboardOverview({
           <CardContent className="min-w-0 space-y-4">
             {agents.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
-                <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Bot className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="text-center text-sm font-medium text-foreground">
                   {t("noAgentsYet")}
                 </p>
@@ -218,7 +220,9 @@ export default async function DashboardOverview({
           <CardContent className="space-y-4">
             {apiKeys.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
-                <Key className="mb-3 h-10 w-10 text-muted-foreground" />
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Key className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="text-center text-sm font-medium text-foreground">
                   {t("noApiKeysYet")}
                 </p>

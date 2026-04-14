@@ -466,7 +466,7 @@ function RegistryAgentListItem({
     <button
       type="button"
       onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-colors hover:border-primary/35 hover:bg-muted-surface/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-muted-surface/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
         <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
@@ -690,7 +690,9 @@ export function AgentsDiscovery() {
               {t("Discovery.description")}
             </CardDescription>
           </div>
-          <Badge variant="outline-muted">{network}</Badge>
+          <Badge variant="outline-muted" className="whitespace-nowrap">
+            {network}
+          </Badge>
         </div>
       </CardHeader>
 

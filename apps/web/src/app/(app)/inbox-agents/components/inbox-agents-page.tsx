@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Search, Trash2, Unplug } from "lucide-react";
+import { ExternalLink, Inbox, Search, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -843,7 +843,10 @@ export function InboxAgentsPage() {
               </div>
             ) : currentItems.length === 0 ? (
               <div className="rounded-xl border border-dashed px-6 py-14 text-center">
-                <div className="mx-auto max-w-md space-y-2">
+                <div className="mx-auto max-w-md space-y-3">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <Inbox className="h-6 w-6 text-muted-foreground" />
+                  </div>
                   <p className="text-base font-medium">
                     {INBOX_PAGE_TEXT.emptyTitle}
                   </p>
@@ -870,14 +873,15 @@ export function InboxAgentsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {currentItems.map((agent) => {
+                      {currentItems.map((agent, index) => {
                         const holdingWallet =
                           agent.RecipientWallet ?? agent.SmartContractWallet;
 
                         return (
                           <TableRow
                             key={agent.id}
-                            className="cursor-pointer"
+                            className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                            style={{ animationDelay: `${index * 40}ms` }}
                             onClick={() => setSelectedAgent(agent)}
                           >
                             <TableCell className="max-w-56">
