@@ -21,6 +21,7 @@ import { headers } from "next/headers";
 
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
+import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig } from "@/lib/config/email.config";
 import {
@@ -33,6 +34,7 @@ import {
 import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
+import { reactAgentMessengerMagicLinkEmail } from "@/lib/email/agent-messenger-magic-link";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -209,7 +211,6 @@ export const auth = betterAuth({
             greeting: msg.ResetPassword.greeting,
             message: msg.ResetPassword.message,
             button: msg.ResetPassword.button,
-            linkText: msg.ResetPassword.linkText,
             footer: msg.ResetPassword.footer,
           },
         }),
@@ -273,7 +274,6 @@ export const auth = betterAuth({
               codeLabel: msg.codeLabel,
               codeExpiry: msg.codeExpiry,
               codeHelp: msg.codeHelp,
-              linkText: msg.linkText,
               footer: msg.footer,
             },
           }),
@@ -381,6 +381,13 @@ export const auth = betterAuth({
           typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
             ? ctx.body.name.trim()
             : null;
+        const callbackUrl =
+          typeof ctx?.body?.callbackURL === "string"
+            ? ctx.body.callbackURL
+            : typeof ctx?.body?.newUserCallbackURL === "string"
+              ? ctx.body.newUserCallbackURL
+              : undefined;
+        const isOidcMagicLink = isOidcMagicLinkCallbackUrl(callbackUrl);
         const existingUser = await prisma.user.findUnique({
           where: { email },
           select: { name: true },
@@ -414,41 +421,69 @@ export const auth = betterAuth({
 
         const headersList = await headers();
         const locale = parseAcceptLanguage(headersList.get("accept-language"));
-        const msg = getEmailMessages(locale).MagicLink;
+        const emailMessages = getEmailMessages(locale);
+        const msg = isOidcMagicLink
+          ? emailMessages.MagicLinkOidc
+          : emailMessages.MagicLink;
 
         try {
           if (process.env.NODE_ENV === "development") {
             logDevCode("Magic link sign-in code", email, magicCode);
           }
 
+          const htmlBody = isOidcMagicLink
+            ? await reactAgentMessengerMagicLinkEmail({
+                name,
+                magicLink: url,
+                magicCode,
+                logoUrl: emailConfig.agentMessengerLogoUrl,
+                poweredByLogoUrl: emailConfig.brandLogoUrl,
+                includePrivacyConsent: !existingUser,
+                privacyPolicyUrl: PRIVACY_POLICY_URL,
+                translations: {
+                  preview: msg.preview,
+                  title: msg.title,
+                  greeting: msg.greeting,
+                  message: msg.message,
+                  consentBefore: msg.consentBefore,
+                  consentPrivacyLabel: msg.consentPrivacyLabel,
+                  consentAfter: msg.consentAfter,
+                  button: msg.button,
+                  codeLabel: msg.codeLabel,
+                  codeExpiry: msg.codeExpiry,
+                  codeHelp: msg.codeHelp,
+                  footer: msg.footer,
+                },
+              })
+            : await reactMagicLinkEmail({
+                name,
+                magicLink: url,
+                magicCode,
+                logoUrl: emailConfig.brandLogoUrl,
+                includePrivacyConsent: !existingUser,
+                privacyPolicyUrl: PRIVACY_POLICY_URL,
+                translations: {
+                  preview: msg.preview,
+                  title: msg.title,
+                  greeting: msg.greeting,
+                  message: msg.message,
+                  consentBefore: msg.consentBefore,
+                  consentPrivacyLabel: msg.consentPrivacyLabel,
+                  consentAfter: msg.consentAfter,
+                  button: msg.button,
+                  codeLabel: msg.codeLabel,
+                  codeExpiry: msg.codeExpiry,
+                  codeHelp: msg.codeHelp,
+                  footer: msg.footer,
+                },
+              });
+
           await postmarkClient.sendEmail({
             From: emailConfig.postmarkFromEmail,
             To: email,
             Tag: "magic-link",
             Subject: msg.preview,
-            HtmlBody: await reactMagicLinkEmail({
-              name,
-              magicLink: url,
-              magicCode,
-              logoUrl: emailConfig.brandLogoUrl,
-              includePrivacyConsent: !existingUser,
-              privacyPolicyUrl: PRIVACY_POLICY_URL,
-              translations: {
-                preview: msg.preview,
-                title: msg.title,
-                greeting: msg.greeting,
-                message: msg.message,
-                consentBefore: msg.consentBefore,
-                consentPrivacyLabel: msg.consentPrivacyLabel,
-                consentAfter: msg.consentAfter,
-                button: msg.button,
-                codeLabel: msg.codeLabel,
-                codeExpiry: msg.codeExpiry,
-                codeHelp: msg.codeHelp,
-                linkText: msg.linkText,
-                footer: msg.footer,
-              },
-            }),
+            HtmlBody: htmlBody,
             MessageStream: "outbound",
           });
         } catch (err) {
@@ -572,7 +607,6 @@ export const auth = betterAuth({
               greeting: msg.greeting,
               message: msg.message,
               button: msg.button,
-              linkText: msg.linkText,
               footer: msg.footer,
             },
           }),

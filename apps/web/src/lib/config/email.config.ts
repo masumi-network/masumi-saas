@@ -1,6 +1,7 @@
+import { authEnvConfig } from "./auth.config";
+
 /** Default Masumi mark used in transactional emails when EMAIL_BRAND_LOGO_URL is unset. */
-const DEFAULT_EMAIL_BRAND_LOGO_URL =
-  "https://avatars.githubusercontent.com/u/194367856?s=200&v=4";
+const DEFAULT_EMAIL_BRAND_LOGO_URL = `${authEnvConfig.baseUrl}/assets/logo.png`;
 
 export const emailConfig = {
   postmarkServerId: process.env.POSTMARK_SERVER_ID,
@@ -8,4 +9,8 @@ export const emailConfig = {
     process.env.POSTMARK_FROM_EMAIL || "noreply@masumi.network",
   brandLogoUrl:
     process.env.EMAIL_BRAND_LOGO_URL?.trim() || DEFAULT_EMAIL_BRAND_LOGO_URL,
+  agentMessengerLogoUrl:
+    process.env.EMAIL_AGENT_MESSENGER_LOGO_URL?.trim() ||
+    process.env.EMAIL_BRAND_LOGO_URL?.trim() ||
+    DEFAULT_EMAIL_BRAND_LOGO_URL,
 };

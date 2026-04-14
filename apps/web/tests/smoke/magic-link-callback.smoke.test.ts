@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMagicLinkCallbackUrl,
   decodeMagicLinkContinuation,
+  isOidcMagicLinkCallbackUrl,
 } from "../../src/lib/auth/magic-link-callback";
 
 describe("SMOKE — magic-link callback wrapping", () => {
@@ -20,11 +21,13 @@ describe("SMOKE — magic-link callback wrapping", () => {
     expect(
       decodeMagicLinkContinuation(parsed.searchParams.get("flow") ?? undefined),
     ).toBe(authorizePath);
+    expect(isOidcMagicLinkCallbackUrl(wrapped)).toBe(true);
   });
 
   it("keeps non-OIDC callbacks unchanged", () => {
     expect(buildMagicLinkCallbackUrl("/dashboard")).toBe(
       "http://localhost:2999/dashboard",
     );
+    expect(isOidcMagicLinkCallbackUrl("/dashboard")).toBe(false);
   });
 });
