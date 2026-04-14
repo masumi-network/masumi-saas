@@ -1,8 +1,9 @@
 import {
   AlertCircle,
+  CheckCircle2,
   Fingerprint,
-  ShieldAlert,
-  ShieldCheck,
+  Lock,
+  MessageSquare,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -33,15 +34,11 @@ export const metadata: Metadata = {
 };
 
 const PAGE_COPY = {
-  protocolBadge: "OIDC",
   titlePrefix: "Authorize",
   descriptionSuffix: "wants to access your Masumi account.",
-  accountLabel: "Account",
   identityScopesLabel: "Identity scopes",
   newPermissionsLabel: "New API permissions",
   grantedPermissionsLabel: "Granted API permissions",
-  noNewPermissions: "No additional API permissions are being requested.",
-  noGrantedPermissions: "No API permissions have been granted yet.",
   defaultScope: "openid",
   cancel: "Cancel",
   switchAccount: "Switch account",
@@ -69,13 +66,13 @@ function normalizeScopes(value: string | undefined): string[] {
 
 function getClientLabel(clientId: string | undefined): string {
   if (!clientId) {
-    return "Masumi client";
+    return "Agent Messenger";
   }
 
   const client = getTrustedOidcClients().find(
     (item) => item.clientId === clientId,
   );
-  return client?.name ?? clientId;
+  return client?.name ?? "Agent Messenger";
 }
 
 function buildConsentCallbackUrl(searchParams: {
@@ -163,8 +160,7 @@ export default async function OidcConsentPage({
 
   return (
     <AuthorizationRequestCard
-      protocolBadge={PAGE_COPY.protocolBadge}
-      clientLabel={clientLabel}
+      icon={<MessageSquare className="h-6 w-6 text-primary" />}
       title={`${PAGE_COPY.titlePrefix} ${clientLabel}`}
       description={`${clientLabel} ${PAGE_COPY.descriptionSuffix}`}
       footer={
@@ -224,7 +220,7 @@ export default async function OidcConsentPage({
           </div>
         ) : null}
 
-        <div className="flex items-center gap-3">
+        <div className="animate-fade-in-up animate-stagger-1 flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="text-xs font-medium">
               {getInitial(session.user.name, session.user.email)}
@@ -247,7 +243,7 @@ export default async function OidcConsentPage({
           />
         ) : null}
 
-        <div className="space-y-2">
+        <div className="animate-fade-in-up animate-stagger-2 space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium">
             <Fingerprint className="h-4 w-4 text-muted-foreground" />
             {PAGE_COPY.identityScopesLabel}
@@ -265,28 +261,32 @@ export default async function OidcConsentPage({
           </div>
         </div>
 
-        <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <p className="flex items-center gap-2 text-sm font-medium">
-            <ShieldAlert className="h-4 w-4 text-primary" />
-            {PAGE_COPY.newPermissionsLabel}
-          </p>
-          <OidcPermissionSummary
-            emptyLabel={PAGE_COPY.noNewPermissions}
-            groups={newApiPermissionGroups}
-          />
-        </div>
+        {newApiPermissionGroups.length > 0 ? (
+          <div className="animate-fade-in-up animate-stagger-3 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="h-4 w-4 text-primary" />
+              {PAGE_COPY.newPermissionsLabel}
+            </p>
+            <OidcPermissionSummary
+              emptyLabel=""
+              groups={newApiPermissionGroups}
+            />
+          </div>
+        ) : null}
 
-        <div className="space-y-2">
-          <p className="flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            {PAGE_COPY.grantedPermissionsLabel}
-          </p>
-          <OidcPermissionSummary
-            emptyLabel={PAGE_COPY.noGrantedPermissions}
-            groups={existingApiPermissionGroups}
-            surfaceClassName="rounded-lg border p-3"
-          />
-        </div>
+        {existingApiPermissionGroups.length > 0 ? (
+          <div className="animate-fade-in-up animate-stagger-4 space-y-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              {PAGE_COPY.grantedPermissionsLabel}
+            </p>
+            <OidcPermissionSummary
+              emptyLabel=""
+              groups={existingApiPermissionGroups}
+              surfaceClassName="rounded-lg border p-3"
+            />
+          </div>
+        ) : null}
       </div>
     </AuthorizationRequestCard>
   );

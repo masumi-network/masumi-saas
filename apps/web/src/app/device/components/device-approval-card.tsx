@@ -2,9 +2,9 @@
 
 import {
   AlertCircle,
+  CheckCircle2,
   Fingerprint,
-  ShieldAlert,
-  ShieldCheck,
+  Lock,
   Terminal,
   XCircle,
 } from "lucide-react";
@@ -46,7 +46,6 @@ type DeviceApprovalCardProps = {
 type ApprovalState = "idle" | "denied";
 
 const copy = {
-  protocolBadge: "OIDC",
   title: "Authorize this device",
   subtitle: "Do you want to authorize this device?",
   codeLabel: "Device code",
@@ -62,12 +61,10 @@ const copy = {
   newPermissionsLabel: "New API permissions",
   existingPermissionsLabel: "Granted API permissions",
   defaultScope: "openid",
-  noNewPermissions: "No additional API permissions are being requested.",
-  noExistingPermissions: "No API permissions have been granted yet.",
   denied: "Device request denied.",
   pending: "A CLI is requesting access to your Masumi account.",
   noRequestLoaded:
-    "Enter a device code to review the request before you approve it.",
+    "Enter the device code shown in your terminal to review the request before you approve it.",
   verifyRequired: "Verify your email before approving this device login.",
   backToDashboard: "Back to dashboard",
   approve: "Approve",
@@ -128,7 +125,7 @@ export function DeviceApprovalCard({
     normalizedUserCode.length > 0 &&
     normalizedUserCode === resolvedUserCode;
   const canApprove = canSubmitDecision && !requiresEmailVerification;
-  const resolvedClientLabel = clientLabel?.trim() || "Masumi CLI";
+  const resolvedClientLabel = clientLabel?.trim() || "Agent Messenger CLI";
 
   useEffect(() => {
     setUserCode(initialUserCode ?? "");
@@ -219,8 +216,6 @@ export function DeviceApprovalCard({
 
   return (
     <AuthorizationRequestCard
-      protocolBadge={copy.protocolBadge}
-      clientLabel={resolvedClientLabel}
       icon={<Terminal className="h-6 w-6 text-primary" />}
       title={copy.title}
       description={`${copy.subtitle} Review the requested access for ${resolvedClientLabel}.`}
@@ -301,13 +296,18 @@ export function DeviceApprovalCard({
       }
     >
       <div className="space-y-5">
-        <form className="space-y-2" onSubmit={handleLookupSubmit}>
+        <form
+          className="animate-fade-in-up animate-stagger-1 space-y-2"
+          onSubmit={handleLookupSubmit}
+        >
           <div className="flex items-center justify-between gap-3">
             <label className="text-sm font-medium" htmlFor="device-user-code">
               {copy.codeLabel}
             </label>
             {isResolvedRequest && !hasPendingCodeChange && !lookupError ? (
-              <Badge variant="secondary">{copy.codeVerified}</Badge>
+              <Badge variant="secondary" className="animate-fade-in-up">
+                {copy.codeVerified}
+              </Badge>
             ) : null}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -354,7 +354,7 @@ export function DeviceApprovalCard({
         </form>
 
         {accountEmail ? (
-          <div className="flex items-center gap-3">
+          <div className="animate-fade-in-up animate-stagger-2 flex items-center gap-3">
             <Avatar className="h-9 w-9">
               <AvatarFallback className="text-xs font-medium">
                 {getInitial(accountName, accountEmail)}
@@ -380,7 +380,7 @@ export function DeviceApprovalCard({
 
         {isResolvedRequest ? (
           <>
-            <div className="space-y-2">
+            <div className="animate-fade-in-up animate-stagger-3 space-y-2">
               <p className="flex items-center gap-2 text-sm font-medium">
                 <Fingerprint className="h-4 w-4 text-muted-foreground" />
                 {copy.scopesLabel}
@@ -398,33 +398,39 @@ export function DeviceApprovalCard({
               </div>
             </div>
 
-            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <ShieldAlert className="h-4 w-4 text-primary" />
-                {copy.newPermissionsLabel}
-              </p>
-              <OidcPermissionSummary
-                emptyLabel={copy.noNewPermissions}
-                groups={newApiPermissionGroups}
-              />
-            </div>
+            {newApiPermissionGroups.length > 0 ? (
+              <div className="animate-fade-in-up animate-stagger-4 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <Lock className="h-4 w-4 text-primary" />
+                  {copy.newPermissionsLabel}
+                </p>
+                <OidcPermissionSummary
+                  emptyLabel=""
+                  groups={newApiPermissionGroups}
+                />
+              </div>
+            ) : null}
 
-            <div className="space-y-2">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                {copy.existingPermissionsLabel}
-              </p>
-              <OidcPermissionSummary
-                emptyLabel={copy.noExistingPermissions}
-                groups={existingApiPermissionGroups}
-                surfaceClassName="rounded-lg border p-3"
-              />
-            </div>
+            {existingApiPermissionGroups.length > 0 ? (
+              <div className="animate-fade-in-up animate-stagger-5 space-y-2">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  {copy.existingPermissionsLabel}
+                </p>
+                <OidcPermissionSummary
+                  emptyLabel=""
+                  groups={existingApiPermissionGroups}
+                  surfaceClassName="rounded-lg border p-3"
+                />
+              </div>
+            ) : null}
           </>
         ) : (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-8 text-center">
-            <Terminal className="h-8 w-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
+          <div className="animate-fade-in-up animate-stagger-2 flex flex-col items-center gap-4 rounded-lg border border-dashed border-muted-foreground/20 px-6 py-10 text-center">
+            <div className="rounded-full bg-muted/50 p-3">
+              <Terminal className="h-8 w-8 text-muted-foreground/40" />
+            </div>
+            <p className="max-w-[260px] text-sm text-muted-foreground">
               {copy.noRequestLoaded}
             </p>
           </div>

@@ -72,7 +72,7 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
 
   let lookupError: string | null = null;
   let isResolvedRequest = false;
-  let clientLabel = "Masumi CLI";
+  let clientLabel = "Agent Messenger CLI";
   let identityScopeItems: ReturnType<typeof getOidcScopeDisplayItems> = [];
   let newApiPermissionGroups: ReturnType<
     typeof getGroupedOidcApiPermissionItems
