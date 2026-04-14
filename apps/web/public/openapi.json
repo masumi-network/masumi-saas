@@ -30,7 +30,8 @@
           },
           "apiUrl": {
             "type": "string",
-            "example": "https://my-agent.example.com"
+            "example": "https://my-agent.example.com",
+            "description": "Agent API base URL. In production it must be a public HTTPS endpoint."
           },
           "verificationStatus": {
             "type": "string",

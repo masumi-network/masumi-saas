@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import {
-  createForwardedAuthHeaders,
+  createSessionForwardedAuthHeaders,
   exchangeAuthForOidcTokenSet,
   OIDC_NO_STORE_HEADERS,
   OidcTokenExchangeError,
@@ -45,6 +45,18 @@ export async function POST(request: NextRequest) {
   try {
     const authContext = await getAuthenticatedOrThrow(request);
 
+    if (authContext.authMethod !== "session") {
+      return jsonWithCors(
+        request,
+        {
+          success: false,
+          error: "access_denied",
+          error_description: "browser_session_required",
+        },
+        { status: 403 },
+      );
+    }
+
     if (authContext.user.emailVerified !== true) {
       return jsonWithCors(
         request,
@@ -72,7 +84,7 @@ export async function POST(request: NextRequest) {
     const exchange = await exchangeAuthForOidcTokenSet({
       requestUrl: request.url,
       clientKey: parsed.data.client,
-      authHeaders: createForwardedAuthHeaders(request),
+      authHeaders: createSessionForwardedAuthHeaders(request),
       scopes: ["openid", "profile", "email", "offline_access"],
     });
 

@@ -1,5 +1,4 @@
-import prisma from "@masumi/database/client";
-
+import { findDeviceCodeByDeviceCode } from "@/lib/auth/auth-storage";
 import {
   exchangeAuthForOidcTokenSet,
   OidcTokenExchangeError,
@@ -81,9 +80,8 @@ async function getRequestedDeviceScopes(
     return [...OIDC_STANDARD_SCOPES];
   }
 
-  const record = await prisma.deviceCode.findUnique({
-    where: { deviceCode },
-    select: { scope: true },
+  const record = await findDeviceCodeByDeviceCode(deviceCode, {
+    scope: true,
   });
 
   return record?.scope?.trim()
@@ -96,13 +94,10 @@ async function getDeviceCodeExchangeRecord(deviceCode: string | undefined) {
     return null;
   }
 
-  return prisma.deviceCode.findUnique({
-    where: { deviceCode },
-    select: {
-      clientId: true,
-      scope: true,
-      userId: true,
-    },
+  return findDeviceCodeByDeviceCode(deviceCode, {
+    clientId: true,
+    scope: true,
+    userId: true,
   });
 }
 

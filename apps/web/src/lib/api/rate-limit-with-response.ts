@@ -28,6 +28,22 @@ export async function checkRateLimitOrRespond(
     typeof rateOptions === "function" ? rateOptions(ip) : rateOptions;
   const rl = await checkRateLimit(`${keyPrefix}:${ip}`, resolved);
   if (!rl.allowed) {
+    if (rl.reason === "backend_unavailable") {
+      return {
+        response: addCorsHeaders(
+          NextResponse.json(
+            {
+              success: false,
+              error: "rate_limit_backend_unavailable",
+            },
+            { status: 503 },
+          ),
+          request,
+          corsMethods,
+        ),
+      };
+    }
+
     const res = NextResponse.json(
       {
         success: false,

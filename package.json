@@ -32,6 +32,7 @@
     "test:smoke": "pnpm --filter web test:smoke",
     "test:e2e": "pnpm --filter web test:e2e",
     "test:stress": "pnpm --filter web test:stress",
+    "ci:check-workflows": "node scripts/check-github-workflows.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

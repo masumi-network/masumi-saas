@@ -13,6 +13,11 @@ import {
   serializeScopeList,
 } from "../config/oidc-scopes.config";
 import { auth } from "./auth";
+import {
+  createStoredOauthAccessToken,
+  findDeviceCodeByUserCode,
+  findVerificationByIdentifier,
+} from "./auth-storage";
 import { buildAbsoluteAppUrl } from "./callback-url";
 import {
   createIdTokenForAccessTokenRecord,
@@ -322,18 +327,10 @@ export async function handleMasumiAuthorizationCodeGrant(
     );
   }
 
-  const verificationRecord = (await prisma.verification.findFirst({
-    where: {
-      identifier: code,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      id: true,
-      value: true,
-      expiresAt: true,
-    },
+  const verificationRecord = (await findVerificationByIdentifier(code, {
+    id: true,
+    value: true,
+    expiresAt: true,
   })) as AuthorizationCodeVerificationRecord | null;
 
   if (!verificationRecord) {
@@ -458,21 +455,16 @@ export async function handleMasumiAuthorizationCodeGrant(
   );
   const scopes = scopeResolution.finalScopes;
 
-  const tokenRecord = (await prisma.oauthAccessToken.create({
-    data: {
-      accessToken,
-      refreshToken,
-      accessTokenExpiresAt,
-      refreshTokenExpiresAt,
-      clientId,
-      userId: user.id,
-      scopes: scopes.join(" "),
-      createdAt: issuedAt,
-      updatedAt: issuedAt,
-    },
-    include: {
-      user: true,
-    },
+  const tokenRecord = (await createStoredOauthAccessToken({
+    accessToken,
+    refreshToken,
+    accessTokenExpiresAt,
+    refreshTokenExpiresAt,
+    clientId,
+    userId: user.id,
+    scopes: scopes.join(" "),
+    createdAt: issuedAt,
+    updatedAt: issuedAt,
   })) as OidcAccessTokenRecord;
 
   const idToken = scopes.includes("openid")
@@ -817,12 +809,9 @@ export async function persistApprovedDeviceScopes(
   }
 
   const normalizedUserCode = userCode.trim().replace(/-/g, "").toUpperCase();
-  const deviceCodeRecord = await prisma.deviceCode.findUnique({
-    where: { userCode: normalizedUserCode },
-    select: {
-      clientId: true,
-      scope: true,
-    },
+  const deviceCodeRecord = await findDeviceCodeByUserCode(normalizedUserCode, {
+    clientId: true,
+    scope: true,
   });
 
   if (!deviceCodeRecord?.clientId) {

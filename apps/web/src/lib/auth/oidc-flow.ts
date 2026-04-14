@@ -9,10 +9,14 @@ import {
   OIDC_NO_STORE_HEADERS,
 } from "./oidc-route-helpers";
 
-const FORWARDED_AUTH_HEADERS = [
-  "authorization",
+const SESSION_BRIDGE_FORWARDED_HEADERS = [
   "cookie",
-  "x-api-key",
+  "origin",
+  "referer",
+  "sec-fetch-dest",
+  "sec-fetch-mode",
+  "sec-fetch-site",
+  "user-agent",
 ] as const;
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 
@@ -127,15 +131,18 @@ function createInternalTokenRequest(options: {
   };
 }
 
-export function createForwardedAuthHeaders(request: Request): Headers {
+export function createSessionForwardedAuthHeaders(request: Request): Headers {
   const headers = new Headers({
     Accept: "application/json",
-    "sec-fetch-mode": "cors",
   });
 
-  for (const key of FORWARDED_AUTH_HEADERS) {
+  for (const key of SESSION_BRIDGE_FORWARDED_HEADERS) {
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
+  }
+
+  if (!headers.has("sec-fetch-mode")) {
+    headers.set("sec-fetch-mode", "cors");
   }
 
   return headers;

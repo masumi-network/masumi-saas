@@ -1,5 +1,6 @@
-import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+import { z } from "@/lib/zod-openapi";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const nameSchema = z.string().min(1, "Name is required");

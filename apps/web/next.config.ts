@@ -3,10 +3,164 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import path from "path";
 
+function parseOrigin(value: string | undefined): string | null {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function buildContentSecurityPolicy(options: {
+  sentryOrigin: string | null;
+  sumsubOrigin: string | null;
+  route: "default" | "verification" | "docs";
+}) {
+  const connectSrc = new Set(["'self'", "https:", "wss:"]);
+  const frameSrc = new Set(["'self'"]);
+
+  if (options.sentryOrigin) {
+    connectSrc.add(options.sentryOrigin);
+  }
+
+  if (options.route === "verification" && options.sumsubOrigin) {
+    connectSrc.add(options.sumsubOrigin);
+    frameSrc.add(options.sumsubOrigin);
+  }
+
+  const directives = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    "object-src 'none'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    `connect-src ${[...connectSrc].join(" ")}`,
+    `frame-src ${[...frameSrc].join(" ")}`,
+    "worker-src 'self' blob:",
+  ];
+
+  if (options.route === "docs") {
+    directives.push("manifest-src 'self'");
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    directives.push("upgrade-insecure-requests");
+  }
+
+  return directives.join("; ");
+}
+
+function buildSecurityHeaders() {
+  const sentryOrigin = parseOrigin(process.env.NEXT_PUBLIC_SENTRY_DSN);
+  const sumsubOrigin = parseOrigin(
+    process.env.SUMSUB_BASE_URL || "https://api.sumsub.com",
+  );
+  const verificationPermissionsPolicy = [
+    `camera=(self${sumsubOrigin ? ` "${sumsubOrigin}"` : ""})`,
+    `microphone=(self${sumsubOrigin ? ` "${sumsubOrigin}"` : ""})`,
+    "accelerometer=()",
+    "geolocation=()",
+    "gyroscope=()",
+    "magnetometer=()",
+    "payment=()",
+    "usb=()",
+  ].join(", ");
+
+  const baseHeaders = [
+    {
+      key: "Content-Security-Policy",
+      value: buildContentSecurityPolicy({
+        sentryOrigin,
+        sumsubOrigin,
+        route: "default",
+      }),
+    },
+    {
+      key: "Permissions-Policy",
+      value:
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+    },
+    {
+      key: "Referrer-Policy",
+      value: "strict-origin-when-cross-origin",
+    },
+    {
+      key: "X-Content-Type-Options",
+      value: "nosniff",
+    },
+    {
+      key: "X-Frame-Options",
+      value: "SAMEORIGIN",
+    },
+  ];
+
+  if (process.env.NODE_ENV === "production") {
+    baseHeaders.unshift({
+      key: "Strict-Transport-Security",
+      value: "max-age=63072000; includeSubDomains; preload",
+    });
+  }
+
+  return {
+    baseHeaders,
+    verificationCsp: buildContentSecurityPolicy({
+      sentryOrigin,
+      sumsubOrigin,
+      route: "verification",
+    }),
+    verificationPermissionsPolicy,
+    docsCsp: buildContentSecurityPolicy({
+      sentryOrigin,
+      sumsubOrigin,
+      route: "docs",
+    }),
+  };
+}
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
+  },
+  async headers() {
+    const securityHeaders = buildSecurityHeaders();
+
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders.baseHeaders,
+      },
+      {
+        source: "/verification/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: securityHeaders.verificationCsp,
+          },
+          {
+            key: "Permissions-Policy",
+            value: securityHeaders.verificationPermissionsPolicy,
+          },
+        ],
+      },
+      {
+        source: "/docs/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: securityHeaders.docsCsp,
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [

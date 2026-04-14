@@ -147,7 +147,7 @@ export function getPublicOidcMetadata(): Partial<OIDCMetadata> {
       "urn:mace:incommon:iap:bronze",
     ],
     subject_types_supported: ["public"] as ["public"],
-    id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG, "none"],
+    id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG],
     token_endpoint_auth_methods_supported: [
       "client_secret_basic",
       "client_secret_post",

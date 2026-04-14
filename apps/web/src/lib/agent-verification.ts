@@ -1,5 +1,10 @@
 import crypto from "crypto";
 
+import {
+  assertAllowedAgentApiUrl,
+  OutboundUrlValidationError,
+} from "@/lib/security/outbound-url";
+
 const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
@@ -29,17 +34,20 @@ export async function fetchAgentCredentialChallenge(
 ): Promise<
   { success: true; signature: string } | { success: false; error: string }
 > {
-  const baseUrl = apiUrl.replace(/\/$/, "");
-  const url = new URL("/get-credential", baseUrl);
-  url.searchParams.set("masumi_challenge", challenge);
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   try {
+    const baseUrl = await assertAllowedAgentApiUrl(apiUrl);
+    const url = new URL("/get-credential", baseUrl);
+    url.searchParams.set("masumi_challenge", challenge);
+
+    const controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: { Accept: "text/plain, application/json, */*" },
+      redirect: "error",
       signal: controller.signal,
     });
 
@@ -74,7 +82,12 @@ export async function fetchAgentCredentialChallenge(
 
     return { success: true, signature };
   } catch (error) {
-    clearTimeout(timeout);
+    if (error instanceof OutboundUrlValidationError) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
 
     if (error instanceof Error) {
       if (error.name === "AbortError") {
@@ -82,6 +95,13 @@ export async function fetchAgentCredentialChallenge(
           success: false,
           error:
             "Agent did not respond in time. Check that your agent is running and reachable.",
+        };
+      }
+      if (/redirect/i.test(error.message)) {
+        return {
+          success: false,
+          error:
+            "Agent verification endpoint must not redirect. Configure a direct public URL for GET /get-credential.",
         };
       }
       return {
@@ -95,5 +115,9 @@ export async function fetchAgentCredentialChallenge(
       error:
         "Could not reach agent. Ensure your agent is running and the API URL is correct.",
     };
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
   }
 }

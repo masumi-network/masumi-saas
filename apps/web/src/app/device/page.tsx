@@ -1,7 +1,7 @@
-import prisma from "@masumi/database/client";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { findDeviceCodeByUserCode } from "@/lib/auth/auth-storage";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
@@ -82,14 +82,11 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
   > = [];
 
   if (normalizedUserCode) {
-    const deviceRequest = await prisma.deviceCode.findUnique({
-      where: { userCode: normalizedUserCode },
-      select: {
-        clientId: true,
-        scope: true,
-        status: true,
-        expiresAt: true,
-      },
+    const deviceRequest = await findDeviceCodeByUserCode(normalizedUserCode, {
+      clientId: true,
+      scope: true,
+      status: true,
+      expiresAt: true,
     });
 
     lookupError = getDeviceLookupError(deviceRequest);

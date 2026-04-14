@@ -12,6 +12,33 @@ const exampleOutputSchema = z.object({
   mimeType: z.string().max(60).min(1),
 });
 
+const AGENT_API_URL_SECURITY_DESCRIPTION =
+  "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected.";
+
+const agentApiUrlSchema = z
+  .string()
+  .url("API URL must be a valid URL")
+  .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
+    message: "API URL must start with http:// or https://",
+  })
+  .refine(
+    (val) => {
+      try {
+        const parsed = new URL(val);
+        return !parsed.username && !parsed.password;
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "API URL must not include embedded credentials",
+    },
+  )
+  .openapi({
+    example: "https://agent.example.com/mip",
+    description: AGENT_API_URL_SECURITY_DESCRIPTION,
+  });
+
 /**
  * Schema for agent.metadata JSON. Only allowed keys are accepted to prevent
  * metadata injection. Used when parsing stored metadata in API responses.
@@ -46,12 +73,7 @@ export const registerAgentBodySchema = z.object({
     .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
-  apiUrl: z
-    .string()
-    .url("API URL must be a valid URL")
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "API URL must start with http:// or https://",
-    }),
+  apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional(),
   pricing: z
@@ -117,12 +139,7 @@ const registerAgentFormBaseSchema = z.object({
     .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
-  apiUrl: z
-    .string()
-    .url("API URL must be a valid URL")
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "API URL must start with http:// or https://",
-    }),
+  apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
   /** "Free" | "Fixed" */
