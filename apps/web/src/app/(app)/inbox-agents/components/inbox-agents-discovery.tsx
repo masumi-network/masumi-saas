@@ -756,7 +756,7 @@ export function InboxAgentsDiscovery() {
       searchQueryResult.isLoading ||
       searchQueryResult.isFetching
     : state.isPageLoading;
-  const activeEmptyLabel = immediateSearch
+  const activeEmptyLabel = hasActiveSearch
     ? t("Discovery.inboxEmptySearch")
     : t("Discovery.inboxEmpty");
   const activeError = hasActiveSearch

@@ -25,9 +25,6 @@ export type InboxAgentRegistration =
 export type InboxAgentRegistrationFilter = NonNullable<
   InboxAgentRegistrationRequest["filter"]
 >;
-export type InboxAgentRegistrationSearchFilter = NonNullable<
-  InboxAgentRegistrationSearchRequest["filter"]
->;
 
 type PaginatedDiscoveryResult<T> =
   | {
