@@ -5,6 +5,11 @@ import prisma from "@masumi/database/client";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { sumsubConfig } from "@/lib/config/sumsub.config";
 import {
+  isKybVerificationEnabled,
+  isKycVerificationEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import {
   generateSumsubAccessToken,
   getApplicantByExternalUserId,
   getApplicantData,
@@ -21,6 +26,13 @@ export async function generateKycAccessTokenAction(
   levelName: string = sumsubConfig.kycLevel,
 ) {
   try {
+    if (!isKycVerificationEnabled()) {
+      return {
+        success: false,
+        error: verificationFeatureCopy.kycUnavailableDescription,
+      };
+    }
+
     const { user } = await getAuthenticatedOrThrow();
 
     const token = await generateSumsubAccessToken(user.id, levelName, 600);
@@ -51,6 +63,13 @@ export async function generateKybAccessTokenAction(
   levelName: string = sumsubConfig.kybLevel,
 ) {
   try {
+    if (!isKybVerificationEnabled()) {
+      return {
+        success: false,
+        error: verificationFeatureCopy.kybUnavailableDescription,
+      };
+    }
+
     const { user } = await getAuthenticatedOrThrow();
 
     // Verify user is a member of the organization
@@ -97,6 +116,13 @@ export async function generateKybAccessTokenAction(
  */
 export async function markKycAsSubmittedAction() {
   try {
+    if (!isKycVerificationEnabled()) {
+      return {
+        success: false,
+        error: verificationFeatureCopy.kycUnavailableDescription,
+      };
+    }
+
     const { user } = await getAuthenticatedOrThrow();
 
     // Check if user already has a verification record
@@ -179,6 +205,17 @@ export async function getKycStatusAction() {
           kycStatus: "PENDING" as const,
           kycCompletedAt: null,
           kycRejectionReason: null,
+        },
+      };
+    }
+
+    if (!isKycVerificationEnabled()) {
+      return {
+        success: true,
+        data: {
+          kycStatus: currentVerification.status as KycStatus,
+          kycCompletedAt: currentVerification.completedAt,
+          kycRejectionReason: currentVerification.rejectionReason,
         },
       };
     }

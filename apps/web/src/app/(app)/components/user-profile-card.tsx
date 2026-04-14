@@ -18,6 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
+  isKycVerificationEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
 } from "@/lib/kyc-status";
@@ -31,6 +35,7 @@ export async function UserProfileCard() {
     requireEmailVerified: false,
   });
   const result = await getKycStatusAction();
+  const kycVerificationEnabled = isKycVerificationEnabled();
 
   if (!result.success || !result.data) {
     return null;
@@ -53,9 +58,11 @@ export async function UserProfileCard() {
     PENDING: {
       icon: AlertCircle,
       title: t("pending.title"),
-      description: t("pending.description"),
-      action: t("pending.action"),
-      actionHref: "/verification",
+      description: kycVerificationEnabled
+        ? t("pending.description")
+        : verificationFeatureCopy.kycUnavailableDescription,
+      action: kycVerificationEnabled ? t("pending.action") : null,
+      actionHref: kycVerificationEnabled ? "/verification" : null,
     },
     REVIEW: {
       icon: Clock,
@@ -78,9 +85,14 @@ export async function UserProfileCard() {
     REJECTED: {
       icon: XCircle,
       title: t("rejected.title"),
-      description: kycRejectionReason || t("rejected.description"),
-      action: t("rejected.action"),
-      actionHref: "/verification",
+      description:
+        kycVerificationEnabled && kycRejectionReason
+          ? kycRejectionReason
+          : kycVerificationEnabled
+            ? t("rejected.description")
+            : verificationFeatureCopy.kycUnavailableDescription,
+      action: kycVerificationEnabled ? t("rejected.action") : null,
+      actionHref: kycVerificationEnabled ? "/verification" : null,
     },
   };
 

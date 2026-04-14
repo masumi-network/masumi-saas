@@ -11,6 +11,10 @@ import {
 } from "@/lib/agents/wallet-ownership";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import {
   createPaymentNodeClient,
   paymentNodeConfig,
   type PaymentNodeNetwork,
@@ -319,6 +323,13 @@ export async function deleteAgentAction(agentId: string, userId?: string) {
 
 export async function requestAgentVerificationAction(agentId: string) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return {
+        success: false as const,
+        error: verificationFeatureCopy.agentVerificationUnavailableDescription,
+      };
+    }
+
     const { user } = await getAuthenticatedOrThrow();
 
     const agent = await getWalletOwnedAgentForUser({

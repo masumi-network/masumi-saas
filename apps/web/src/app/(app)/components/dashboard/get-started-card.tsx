@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { verificationFeatureCopy } from "@/lib/config/verification.config";
 
 const STORAGE_KEY = "masumi-get-started-dismissed";
 
@@ -21,6 +22,7 @@ interface GetStartedCardProps {
   isKycCompleted: boolean;
   kycError?: string;
   needsKycAction: boolean;
+  kycVerificationEnabled: boolean;
 }
 
 export function GetStartedCard({
@@ -28,6 +30,7 @@ export function GetStartedCard({
   isKycCompleted,
   kycError,
   needsKycAction,
+  kycVerificationEnabled,
 }: GetStartedCardProps) {
   const t = useTranslations("App.Home.Dashboard");
   const [isDismissed, setIsDismissed] = useState<boolean | null>(null);
@@ -106,11 +109,13 @@ export function GetStartedCard({
             >
               {kycError
                 ? t("kycLoadError")
-                : needsKycAction
-                  ? t("getStarted.completeKyc")
-                  : t("getStarted.completeKycDone")}
+                : !kycVerificationEnabled
+                  ? verificationFeatureCopy.kycUnavailableDescription
+                  : needsKycAction
+                    ? t("getStarted.completeKyc")
+                    : t("getStarted.completeKycDone")}
             </span>
-            {needsKycAction && (
+            {kycVerificationEnabled && needsKycAction && (
               <Button asChild size="sm" variant="ghost">
                 <Link href="/verification">{t("getStarted.doIt")}</Link>
               </Button>

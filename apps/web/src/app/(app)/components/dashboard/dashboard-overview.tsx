@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 import { formatPricingDisplay, getGreeting } from "@/lib/utils";
 
@@ -51,7 +52,8 @@ export default async function DashboardOverview({
       kycStatus === "REJECTED" ||
       kycStatus === "REVOKED" ||
       kycStatus === "EXPIRED");
-  const showStartKycCta = needsKycAction;
+  const kycVerificationEnabled = isKycVerificationEnabled();
+  const showStartKycCta = kycVerificationEnabled && needsKycAction;
 
   return (
     <div className="animate-in fade-in duration-300 min-w-0 space-y-8">
@@ -126,6 +128,7 @@ export default async function DashboardOverview({
           isKycCompleted={isKycCompleted}
           kycError={kycError}
           needsKycAction={needsKycAction}
+          kycVerificationEnabled={kycVerificationEnabled}
         />
       )}
 

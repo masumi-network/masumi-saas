@@ -9,6 +9,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
@@ -158,7 +159,12 @@ export function AgentPageContent({
   // Handles the case where the user accepted the credential in Veridian
   // after the dialog was closed or the page was reloaded.
   useEffect(() => {
-    if (agent.verificationStatus === "VERIFIED") return;
+    if (
+      !isAgentVerificationFlowEnabled() ||
+      agent.verificationStatus === "VERIFIED"
+    ) {
+      return;
+    }
     (async () => {
       const result = await credentialApiClient.reconcilePendingCredentials(
         agent.id,

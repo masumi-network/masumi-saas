@@ -32,6 +32,7 @@ import {
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
 import { appConfig } from "@/lib/config/app.config";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import {
   formatDate,
   formatPricingDisplay,
@@ -71,14 +72,16 @@ export function AgentDetails({
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
-  const [isLoadingKyc, setIsLoadingKyc] = useState(true);
+  const agentVerificationEnabled = isAgentVerificationFlowEnabled();
+  const [isLoadingKyc, setIsLoadingKyc] = useState(agentVerificationEnabled);
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const isVerified = agent.verificationStatus === "VERIFIED";
   const isRegistrationConfirmed =
     agent.registrationState === "RegistrationConfirmed";
-  const showVerificationCta = !isVerified && isRegistrationConfirmed;
+  const showVerificationCta =
+    agentVerificationEnabled && !isVerified && isRegistrationConfirmed;
 
   const [isVerificationBannerDismissed, setIsVerificationBannerDismissed] =
     useState(true);
@@ -100,6 +103,8 @@ export function AgentDetails({
   }, [agent.id]);
 
   useEffect(() => {
+    if (!agentVerificationEnabled) return;
+
     startTransition(async () => {
       const result = await getKycStatusAction();
       if (result.success && result.data) {
@@ -107,7 +112,7 @@ export function AgentDetails({
       }
       setIsLoadingKyc(false);
     });
-  }, []);
+  }, [agentVerificationEnabled, startTransition]);
 
   const sokosumiUrl = `${appConfig.sokosumiMarketplaceUrl}/${agent.agentIdentifier ?? agent.id}`;
 

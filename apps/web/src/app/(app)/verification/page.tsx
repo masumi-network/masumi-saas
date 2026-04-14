@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthContextWithHeaders } from "@/lib/auth/utils";
+import {
+  isKycVerificationEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 
 import { VerificationWizard } from "./components/verification-wizard";
 
@@ -22,6 +35,28 @@ export default async function VerificationPage() {
 
   if (!user || !session) {
     redirect("/signin");
+  }
+
+  if (!isKycVerificationEnabled()) {
+    return (
+      <div className="flex w-full max-w-2xl justify-center px-4 py-12">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>{verificationFeatureCopy.kycUnavailableTitle}</CardTitle>
+            <CardDescription>
+              {verificationFeatureCopy.kycUnavailableDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/">
+                {verificationFeatureCopy.returnToDashboardLabel}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const result = await getKycStatusAction();

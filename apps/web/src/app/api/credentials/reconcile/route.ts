@@ -5,6 +5,10 @@ import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   fetchContactCredentials,
@@ -13,6 +17,13 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     const { user } = authContext;
 
