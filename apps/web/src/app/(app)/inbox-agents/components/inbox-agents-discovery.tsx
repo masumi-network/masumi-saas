@@ -750,31 +750,32 @@ export function InboxAgentsDiscovery() {
     ellipsisSrText: t("Discovery.paginationMore"),
   };
 
-  const isSearchLoading =
-    immediateSearch !== normalizedSearch ||
-    searchQueryResult.isPending ||
-    searchQueryResult.isFetching;
+  const hasActiveSearch = normalizedSearch.length > 0;
+  const isSearchLoading = hasActiveSearch
+    ? immediateSearch !== normalizedSearch ||
+      searchQueryResult.isLoading ||
+      searchQueryResult.isFetching
+    : state.isPageLoading;
   const activeEmptyLabel = immediateSearch
     ? t("Discovery.inboxEmptySearch")
     : t("Discovery.inboxEmpty");
-  const activeError =
-    normalizedSearch.length > 0
-      ? searchQueryResult.error instanceof Error
-        ? searchQueryResult.error.message
-        : null
-      : state.error;
-  const activeCurrentPage =
-    normalizedSearch.length > 0 ? searchCurrentPage : state.currentPage;
-  const activeTotalPages =
-    normalizedSearch.length > 0
-      ? Math.max(
-          1,
-          (searchQueryResult.data?.pages.length ?? 0) +
-            (searchQueryResult.hasNextPage ? 1 : 0),
-        )
-      : getKnownTotalPages(state);
+  const activeError = hasActiveSearch
+    ? searchQueryResult.error instanceof Error
+      ? searchQueryResult.error.message
+      : null
+    : state.error;
+  const activeCurrentPage = hasActiveSearch
+    ? searchCurrentPage
+    : state.currentPage;
+  const activeTotalPages = hasActiveSearch
+    ? Math.max(
+        1,
+        (searchQueryResult.data?.pages.length ?? 0) +
+          (searchQueryResult.hasNextPage ? 1 : 0),
+      )
+    : getKnownTotalPages(state);
   const summaryLoadedCount =
-    normalizedSearch.length > 0 && !isSearchPendingWithoutResults
+    hasActiveSearch && !isSearchPendingWithoutResults
       ? searchPageItems.length
       : pageItems.length;
 
