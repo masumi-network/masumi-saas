@@ -1,0 +1,6 @@
+query-filters:
+  # These HMACs are used for token lookup privacy and vendor request signing,
+  # not for end-user password hashing. The default CodeQL password-hash query
+  # produces false positives on these deterministic keyed hashes.
+  - exclude:
+      id: js/insufficient-password-hash

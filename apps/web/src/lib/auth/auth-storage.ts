@@ -110,6 +110,8 @@ function isEncryptedField(model: string, field: string): boolean {
 }
 
 export function hashAuthLookupValue(value: string, label: string): string {
+  // Deterministic keyed hashing is intentional here so opaque random tokens can
+  // be matched without storing them in plaintext.
   return createHmac("sha256", getHashKey())
     .update(label, "utf8")
     .update("\0")

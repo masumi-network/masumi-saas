@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 2999",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start -p 2999",
     "lint": "node scripts/run-eslint.cjs --max-warnings 0 .",
     "lint:fix": "node scripts/run-eslint.cjs --fix .",
