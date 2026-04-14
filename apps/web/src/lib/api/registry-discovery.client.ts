@@ -42,6 +42,10 @@ type PaginatedDiscoveryResult<T> =
       error: string;
     };
 
+type RegistryDiscoveryRequestOptions = {
+  signal?: AbortSignal;
+};
+
 function getErrorMessage(payload: unknown, status: number) {
   if (payload && typeof payload === "object") {
     const error =
@@ -84,6 +88,10 @@ function extractList<T>(
   return [];
 }
 
+function isAbortError(error: unknown): error is Error {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 async function readJsonSafely(response: Response) {
   const text = await response.text();
 
@@ -107,6 +115,7 @@ class RegistryDiscoveryClient {
       | InboxAgentRegistrationRequest
       | InboxAgentRegistrationSearchRequest,
     collectionKey: "entries" | "registrations",
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<T>> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -116,6 +125,7 @@ class RegistryDiscoveryClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: options?.signal,
       });
 
       const payload = await readJsonSafely(response);
@@ -140,6 +150,10 @@ class RegistryDiscoveryClient {
         },
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       return {
         success: false,
         error:
@@ -150,16 +164,19 @@ class RegistryDiscoveryClient {
 
   async getRegistryEntries(
     body: RegistryEntryRequest,
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<RegistryEntry>> {
     return this.postCollection<RegistryEntry>(
       "/registry-entry",
       body,
       "entries",
+      options,
     );
   }
 
   async getInboxAgentRegistrations(
     body: InboxAgentRegistrationRequest,
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<InboxAgentRegistration>> {
     try {
       const response = await fetch(
@@ -171,6 +188,7 @@ class RegistryDiscoveryClient {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
+          signal: options?.signal,
         },
       );
 
@@ -199,6 +217,10 @@ class RegistryDiscoveryClient {
         },
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       return {
         success: false,
         error:
@@ -209,6 +231,7 @@ class RegistryDiscoveryClient {
 
   async searchInboxAgentRegistrations(
     body: InboxAgentRegistrationSearchRequest,
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<
     PaginatedDiscoveryResult<
       InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
@@ -216,7 +239,7 @@ class RegistryDiscoveryClient {
   > {
     return this.postCollection<
       InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
-    >("/inbox-agent-registration-search", body, "registrations");
+    >("/inbox-agent-registration-search", body, "registrations", options);
   }
 }
 
