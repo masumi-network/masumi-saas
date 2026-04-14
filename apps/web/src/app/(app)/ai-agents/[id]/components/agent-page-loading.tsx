@@ -4,21 +4,19 @@ import { useSearchParams } from "next/navigation";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 
 import { type TabKey, TabSkeleton } from "./agent-tab-skeletons";
 
-const VALID_TAB_KEYS: TabKey[] = [
-  "details",
-  "earnings",
-  "transactions",
-  "credentials",
-];
-
 export function AgentPageLoading() {
   const searchParams = useSearchParams();
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const tabParam = searchParams.get("tab");
+  const validTabKeys: TabKey[] = agentVerificationUiEnabled
+    ? ["details", "earnings", "transactions", "credentials"]
+    : ["details", "earnings", "transactions"];
   const activeTab: TabKey =
-    tabParam && VALID_TAB_KEYS.includes(tabParam as TabKey)
+    tabParam && validTabKeys.includes(tabParam as TabKey)
       ? (tabParam as TabKey)
       : "details";
 
@@ -26,8 +24,10 @@ export function AgentPageLoading() {
     { name: "Details", key: "details" },
     { name: "Earnings", key: "earnings" },
     { name: "Transactions", key: "transactions" },
-    { name: "Credentials", key: "credentials" },
   ];
+  if (agentVerificationUiEnabled) {
+    tabs.push({ name: "Credentials", key: "credentials" });
+  }
 
   return (
     <div className="w-full space-y-4">

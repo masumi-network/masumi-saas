@@ -5,6 +5,10 @@ import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 import { verifyAgentBodySchema } from "@/lib/schemas/agent";
 import {
   fetchContactCredentials,
@@ -18,6 +22,17 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            verificationFeatureCopy.agentVerificationUnavailableDescription,
+        },
+        { status: 503 },
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 

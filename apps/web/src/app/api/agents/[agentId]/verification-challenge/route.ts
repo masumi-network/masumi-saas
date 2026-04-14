@@ -7,6 +7,10 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 
 const bodySchema = z.object({
   regenerate: z.boolean().optional().default(false),
@@ -40,6 +44,13 @@ async function handleChallengeRequest(
   regenerate: boolean,
 ) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 

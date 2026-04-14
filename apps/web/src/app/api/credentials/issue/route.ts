@@ -8,6 +8,10 @@ import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import {
   getAgentVerificationSchemaSaid,
   issueCredential,
   resolveOobi,
@@ -36,6 +40,13 @@ const issueCredentialSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     const { user } = authContext;
 

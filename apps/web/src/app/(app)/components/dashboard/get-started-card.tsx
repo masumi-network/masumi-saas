@@ -18,17 +18,9 @@ const STORAGE_KEY = "masumi-get-started-dismissed";
 
 interface GetStartedCardProps {
   user: { emailVerified: boolean };
-  isKycCompleted: boolean;
-  kycError?: string;
-  needsKycAction: boolean;
 }
 
-export function GetStartedCard({
-  user,
-  isKycCompleted,
-  kycError,
-  needsKycAction,
-}: GetStartedCardProps) {
+export function GetStartedCard({ user }: GetStartedCardProps) {
   const t = useTranslations("App.Home.Dashboard");
   const [isDismissed, setIsDismissed] = useState<boolean | null>(null);
 
@@ -94,38 +86,14 @@ export function GetStartedCard({
             className="flex items-center gap-3 animate-list-item-in"
             style={{ animationDelay: "60ms" }}
           >
-            {isKycCompleted ? (
-              <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
-            ) : (
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                {t("getStarted.step2")}
-              </span>
-            )}
-            <span
-              className={`flex-1 text-sm ${isKycCompleted ? "text-muted-foreground" : ""}`}
-            >
-              {kycError
-                ? t("kycLoadError")
-                : needsKycAction
-                  ? t("getStarted.completeKyc")
-                  : t("getStarted.completeKycDone")}
-            </span>
-            {needsKycAction && (
-              <Button asChild size="sm" variant="ghost">
-                <Link href="/verification">{t("getStarted.doIt")}</Link>
-              </Button>
-            )}
-          </li>
-          <li
-            className="flex items-center gap-3 animate-list-item-in"
-            style={{ animationDelay: "120ms" }}
-          >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-              {t("getStarted.step3")}
+              {t("getStarted.step2")}
             </span>
-            <span className="flex-1 text-sm">{t("getStarted.createOrg")}</span>
+            <span className="flex-1 text-sm">
+              {t("getStarted.registerAgent")}
+            </span>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/organizations">{t("getStarted.doIt")}</Link>
+              <Link href="/ai-agents">{t("getStarted.doIt")}</Link>
             </Button>
           </li>
           <li
@@ -133,13 +101,13 @@ export function GetStartedCard({
             style={{ animationDelay: "180ms" }}
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-              {t("getStarted.step4")}
+              {t("getStarted.step3")}
             </span>
             <span className="flex-1 text-sm">
-              {t("getStarted.registerAgent")}
+              {t("getStarted.createOrgOptional")}
             </span>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/ai-agents">{t("getStarted.doIt")}</Link>
+              <Link href="/organizations">{t("getStarted.doIt")}</Link>
             </Button>
           </li>
         </ul>
