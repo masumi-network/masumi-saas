@@ -24,12 +24,16 @@ export default async function AuthLayout({
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       <div
-        className="absolute inset-0 opacity-40 animate-grid-glide"
+        className="absolute inset-0 opacity-25 animate-grid-glide"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
           backgroundPosition: "center",
+          maskImage:
+            "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 25%, black 70%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 25%, black 70%)",
         }}
       />
       <div className="relative z-10">

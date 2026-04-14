@@ -2,7 +2,6 @@
 
 import { Activity, ChevronRight, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   type ReactNode,
@@ -43,22 +42,17 @@ import {
 } from "@/components/ui/pagination";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
-import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
-  type InboxAgentRegistration,
   registryDiscoveryClient,
   type RegistryEntry,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { formatUnitAmount } from "@/lib/payment-node/format";
-import { formatRelativeDate, getInitials, shortenAddress } from "@/lib/utils";
+import { formatRelativeDate, getInitials } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
-const DISCOVERY_TABS = ["agents", "inbox"] as const;
 const MAX_VISIBLE_PAGES = 5;
-
-type DiscoveryTab = (typeof DISCOVERY_TABS)[number];
 
 type CursorPageState<T> = {
   pages: T[][];
@@ -161,43 +155,6 @@ function matchesRegistryLookup(entry: RegistryEntry, query: string) {
     .toLowerCase();
 
   return haystack.includes(query);
-}
-
-function matchesInboxLookup(
-  registration: InboxAgentRegistration,
-  query: string,
-) {
-  if (!query) return true;
-
-  const haystack = [
-    registration.name,
-    registration.description ?? "",
-    registration.agentIdentifier,
-    registration.agentSlug,
-    registration.RegistrySource.policyId ?? "",
-    registration.RegistrySource.url ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(query);
-}
-
-function getInboxRegistrationBadgeVariant(
-  status: InboxAgentRegistration["status"],
-) {
-  switch (status) {
-    case "Verified":
-      return "success" as const;
-    case "Pending":
-      return "secondary-muted" as const;
-    case "Invalid":
-      return "destructive" as const;
-    case "Deregistered":
-      return "outline-muted" as const;
-    default:
-      return "secondary" as const;
-  }
 }
 
 function DiscoverySkeleton() {
@@ -563,221 +520,17 @@ function RegistryAgentListItem({
   );
 }
 
-function InboxAgentDetailsDialog({
-  registration,
-  open,
-  onOpenChange,
-}: {
-  registration: InboxAgentRegistration | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useTranslations("App.Agents");
-
-  if (!registration) return null;
-
-  const sourceUrl = registration.RegistrySource.url;
-  const policyId = registration.RegistrySource.policyId;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]">
-        <DialogHeader className="shrink-0 border-b px-6 py-5">
-          <div className="flex items-start gap-4 pr-8">
-            <Avatar className="h-14 w-14 border border-border/70">
-              <AvatarFallback>{getInitials(registration.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <DialogTitle className="text-xl">
-                  {registration.name}
-                </DialogTitle>
-                <Badge
-                  variant={getInboxRegistrationBadgeVariant(
-                    registration.status,
-                  )}
-                >
-                  {registration.status}
-                </Badge>
-              </div>
-              <DialogDescription className="leading-6">
-                {registration.description?.trim() || t("Details.noDescription")}
-              </DialogDescription>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="primary-muted">{registration.agentSlug}</Badge>
-                <Badge variant="secondary">{t("Discovery.inboxSource")}</Badge>
-                <Badge variant="outline-muted">
-                  {t("Discovery.metadataVersion", {
-                    version: registration.metadataVersion,
-                  })}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DiscoveryDetailItem label={t("Discovery.inboxSlug")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate">
-                  {registration.agentSlug}
-                </span>
-                <CopyButton value={registration.agentSlug} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.agentId")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {registration.agentIdentifier}
-                </span>
-                <CopyButton value={registration.agentIdentifier} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.verifiedUpdated")}>
-              {formatRelativeDate(registration.statusUpdatedAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.added")}>
-              {formatRelativeDate(registration.createdAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.policyId")}>
-              {policyId ? (
-                <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-mono">
-                    {policyId}
-                  </span>
-                  <CopyButton value={policyId} />
-                </div>
-              ) : (
-                <span className="text-muted-foreground">
-                  {t("Discovery.noPolicyId")}
-                </span>
-              )}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.source")} fullWidth>
-              {sourceUrl ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="min-w-0 flex-1 truncate text-foreground hover:underline"
-                  >
-                    {sourceUrl}
-                  </Link>
-                  <CopyButton value={sourceUrl} />
-                  <Button asChild variant="outline" size="sm2">
-                    <Link href={sourceUrl} target="_blank" rel="noreferrer">
-                      {t("Discovery.openSource")}
-                      <ExternalLink className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <span className="text-muted-foreground">
-                  {t("Discovery.noSourceUrl")}
-                </span>
-              )}
-            </DiscoveryDetailItem>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function InboxAgentListItem({
-  registration,
-  onViewDetails,
-}: {
-  registration: InboxAgentRegistration;
-  onViewDetails: () => void;
-}) {
-  const t = useTranslations("App.Agents");
-  const policyId = registration.RegistrySource.policyId;
-  const shortDescription =
-    registration.description?.trim() || t("Details.noDescription");
-
-  return (
-    <button
-      type="button"
-      onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-colors hover:border-primary/35 hover:bg-muted-surface/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
-        <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
-          <AvatarFallback>{getInitials(registration.name)}</AvatarFallback>
-        </Avatar>
-
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
-              {registration.name}
-            </span>
-            <Badge
-              variant={getInboxRegistrationBadgeVariant(registration.status)}
-            >
-              {registration.status}
-            </Badge>
-          </div>
-
-          <p className="line-clamp-1 text-sm text-muted-foreground">
-            {shortDescription}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{registration.agentSlug}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span>{formatRelativeDate(registration.statusUpdatedAt)}</span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="primary-muted">{registration.agentSlug}</Badge>
-            <Badge variant="outline-muted">
-              {t("Discovery.metadataVersion", {
-                version: registration.metadataVersion,
-              })}
-            </Badge>
-            <Badge variant="outline-muted">
-              {policyId
-                ? shortenAddress(policyId, 8)
-                : t("Discovery.noPolicyId")}
-            </Badge>
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 self-center text-xs text-muted-foreground sm:flex">
-          <span>{t("Discovery.viewDetails")}</span>
-          <ChevronRight className="h-4 w-4" />
-        </div>
-      </div>
-    </button>
-  );
-}
-
 export function AgentsDiscovery() {
   const t = useTranslations("App.Agents");
-  const router = useRouter();
   const { network } = usePaymentNetwork();
-  const [activeTab, setActiveTab] = useState<DiscoveryTab>("agents");
   const [registryState, setRegistryState] = useState<
     CursorPageState<RegistryEntry>
   >(() => createCursorPageState<RegistryEntry>());
-  const [inboxState, setInboxState] = useState<
-    CursorPageState<InboxAgentRegistration>
-  >(() => createCursorPageState<InboxAgentRegistration>());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedRegistryEntry, setSelectedRegistryEntry] =
     useState<RegistryEntry | null>(null);
-  const [selectedInboxRegistration, setSelectedInboxRegistration] =
-    useState<InboxAgentRegistration | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
 
@@ -802,11 +555,6 @@ export function AgentsDiscovery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    setSelectedRegistryEntry(null);
-    setSelectedInboxRegistration(null);
-  }, [activeTab]);
-
   const fetchRegistryEntries = useCallback(
     async (cursorId?: string) =>
       registryDiscoveryClient.getRegistryEntries({
@@ -815,19 +563,6 @@ export function AgentsDiscovery() {
         cursorId,
         filter: {
           status: ["Online"],
-        },
-      }),
-    [network],
-  );
-
-  const fetchInboxRegistrations = useCallback(
-    async (cursorId?: string) =>
-      registryDiscoveryClient.getInboxAgentRegistrations({
-        network,
-        limit: PAGE_SIZE,
-        cursorId,
-        filter: {
-          status: ["Pending", "Verified"],
         },
       }),
     [network],
@@ -853,29 +588,9 @@ export function AgentsDiscovery() {
     });
   }, [fetchRegistryEntries, t]);
 
-  const loadInboxInitial = useCallback(async () => {
-    setInboxState((current) => ({
-      ...current,
-      isLoading: true,
-      isPageLoading: false,
-      error: null,
-    }));
-
-    const result = await fetchInboxRegistrations();
-
-    setInboxState({
-      pages: result.success ? [result.data.items] : [],
-      nextCursors: result.success ? [result.data.nextCursor] : [],
-      currentPage: 1,
-      isLoading: false,
-      isPageLoading: false,
-      error: result.success ? null : result.error || t("Discovery.error"),
-    });
-  }, [fetchInboxRegistrations, t]);
-
   useEffect(() => {
-    void Promise.all([loadRegistryInitial(), loadInboxInitial()]);
-  }, [loadInboxInitial, loadRegistryInitial]);
+    void loadRegistryInitial();
+  }, [loadRegistryInitial]);
 
   const loadRegistryPage = useCallback(
     async (page: number) => {
@@ -925,63 +640,10 @@ export function AgentsDiscovery() {
     [fetchRegistryEntries, registryState, t],
   );
 
-  const loadInboxPage = useCallback(
-    async (page: number) => {
-      if (inboxState.isPageLoading) return;
-      if (page < 1 || page > getKnownTotalPages(inboxState)) return;
-
-      if (page <= inboxState.pages.length) {
-        setInboxState((current) => ({ ...current, currentPage: page }));
-        return;
-      }
-
-      const cursor = inboxState.nextCursors[inboxState.pages.length - 1];
-      if (!cursor) return;
-
-      setInboxState((current) => ({
-        ...current,
-        isPageLoading: true,
-        error: null,
-      }));
-
-      try {
-        const result = await fetchInboxRegistrations(cursor);
-        if (!result.success) {
-          setInboxState((current) => ({
-            ...current,
-            isPageLoading: false,
-            error: result.error || t("Discovery.error"),
-          }));
-          return;
-        }
-
-        setInboxState((current) => ({
-          ...current,
-          pages: [...current.pages, result.data.items],
-          nextCursors: [...current.nextCursors, result.data.nextCursor],
-          currentPage: page,
-          isPageLoading: false,
-        }));
-      } catch (error) {
-        setInboxState((current) => ({
-          ...current,
-          isPageLoading: false,
-          error: error instanceof Error ? error.message : t("Discovery.error"),
-        }));
-      }
-    },
-    [fetchInboxRegistrations, inboxState, t],
-  );
-
   const registryPageItems = useMemo(
     () => getCurrentPageItems(registryState),
     [registryState],
   );
-  const inboxPageItems = useMemo(
-    () => getCurrentPageItems(inboxState),
-    [inboxState],
-  );
-
   const visibleRegistryEntries = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
 
@@ -994,71 +656,19 @@ export function AgentsDiscovery() {
       .filter((entry) => matchesRegistryLookup(entry, query));
   }, [debouncedSearch, registryPageItems]);
 
-  const visibleInboxRegistrations = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-
-    return [...inboxPageItems]
-      .sort(
-        (left, right) =>
-          new Date(right.statusUpdatedAt).getTime() -
-          new Date(left.statusUpdatedAt).getTime(),
-      )
-      .filter((registration) => matchesInboxLookup(registration, query));
-  }, [debouncedSearch, inboxPageItems]);
-
-  const activeItems =
-    activeTab === "agents" ? visibleRegistryEntries : visibleInboxRegistrations;
-  const activePageItems =
-    activeTab === "agents" ? registryPageItems : inboxPageItems;
-  const activeState = activeTab === "agents" ? registryState : inboxState;
-  const activeCurrentPage =
-    activeTab === "agents" ? registryState.currentPage : inboxState.currentPage;
-  const activeTotalPages =
-    activeTab === "agents"
-      ? getKnownTotalPages(registryState)
-      : getKnownTotalPages(inboxState);
-  const activePageChange =
-    activeTab === "agents" ? loadRegistryPage : loadInboxPage;
-
   const handleRefresh = () => {
     setIsRefreshing(true);
-    const refreshPromise =
-      activeTab === "agents" ? loadRegistryInitial() : loadInboxInitial();
-    refreshPromise.finally(() => setIsRefreshing(false));
+    loadRegistryInitial().finally(() => setIsRefreshing(false));
   };
 
-  const discoveryTabs = useMemo(
-    () => [
-      { name: t("Discovery.views.agents"), key: "agents" },
-      { name: t("Discovery.views.inbox"), key: "inbox" },
-    ],
-    [t],
-  );
-
   const summaryLabel = t("Discovery.resultsSummary", {
-    visibleCount: activeItems.length,
-    loadedCount: activePageItems.length,
+    visibleCount: visibleRegistryEntries.length,
+    loadedCount: registryPageItems.length,
   });
 
-  const activeDescription =
-    activeTab === "agents"
-      ? t("Discovery.agentsDescription")
-      : t("Discovery.inboxDescription");
-  const activeFilterLabel =
-    activeTab === "agents"
-      ? t("Discovery.onlineOnly")
-      : t("Discovery.pendingAndVerified");
-  const activeSearchPlaceholder =
-    activeTab === "agents"
-      ? t("Discovery.searchPlaceholder")
-      : t("Discovery.inboxSearchPlaceholder");
-  const activeEmptyLabel = debouncedSearch
-    ? activeTab === "agents"
-      ? t("Discovery.emptySearch")
-      : t("Discovery.inboxEmptySearch")
-    : activeTab === "agents"
-      ? t("Discovery.empty")
-      : t("Discovery.inboxEmpty");
+  const emptyLabel = debouncedSearch
+    ? t("Discovery.emptySearch")
+    : t("Discovery.empty");
 
   const paginationLabels = {
     previous: t("Discovery.previous"),
@@ -1085,27 +695,15 @@ export function AgentsDiscovery() {
       </CardHeader>
 
       <CardContent className="space-y-6 p-6">
-        <Tabs
-          tabs={discoveryTabs}
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            if (tab === "inbox") {
-              router.push("/inbox-agents?section=discovery");
-              return;
-            }
-            setActiveTab(tab as DiscoveryTab);
-          }}
-        />
-
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="success">{activeFilterLabel}</Badge>
+            <Badge variant="success">{t("Discovery.onlineOnly")}</Badge>
             <span className="text-sm text-muted-foreground">
-              {activeDescription}
+              {t("Discovery.agentsDescription")}
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: activeCurrentPage })}
+            {t("Discovery.page", { page: registryState.currentPage })}
           </div>
         </div>
 
@@ -1118,7 +716,7 @@ export function AgentsDiscovery() {
             <Input
               ref={searchInputRef}
               type="search"
-              placeholder={activeSearchPlaceholder}
+              placeholder={t("Discovery.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
@@ -1143,57 +741,45 @@ export function AgentsDiscovery() {
           <div>{summaryLabel}</div>
         </div>
 
-        {activeState.error && (
+        {registryState.error && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {activeState.error}
+            {registryState.error}
           </div>
         )}
 
-        {activeState.isLoading ? (
+        {registryState.isLoading ? (
           <DiscoverySkeleton />
         ) : (
           <>
-            {activeState.isPageLoading && (
+            {registryState.isPageLoading && (
               <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
                 <Spinner size={14} />
                 {t("loadingMore")}
               </div>
             )}
 
-            {activeItems.length > 0 ? (
+            {visibleRegistryEntries.length > 0 ? (
               <div className="space-y-3">
-                {activeTab === "agents"
-                  ? visibleRegistryEntries.map((entry) => (
-                      <RegistryAgentListItem
-                        key={entry.id}
-                        entry={entry}
-                        onViewDetails={() => setSelectedRegistryEntry(entry)}
-                      />
-                    ))
-                  : visibleInboxRegistrations.map((registration) => (
-                      <InboxAgentListItem
-                        key={registration.id}
-                        registration={registration}
-                        onViewDetails={() =>
-                          setSelectedInboxRegistration(registration)
-                        }
-                      />
-                    ))}
+                {visibleRegistryEntries.map((entry) => (
+                  <RegistryAgentListItem
+                    key={entry.id}
+                    entry={entry}
+                    onViewDetails={() => setSelectedRegistryEntry(entry)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 px-4 py-12 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {activeEmptyLabel}
-                </p>
+                <p className="text-muted-foreground text-sm">{emptyLabel}</p>
               </div>
             )}
 
             <DiscoveryPaginationBar
-              currentPage={activeCurrentPage}
-              totalPages={activeTotalPages}
-              isLoading={activeState.isPageLoading}
+              currentPage={registryState.currentPage}
+              totalPages={getKnownTotalPages(registryState)}
+              isLoading={registryState.isPageLoading}
               onPageChange={(page) => {
-                void activePageChange(page);
+                void loadRegistryPage(page);
               }}
               labels={paginationLabels}
             />
@@ -1203,14 +789,6 @@ export function AgentsDiscovery() {
               open={selectedRegistryEntry !== null}
               onOpenChange={(open) => {
                 if (!open) setSelectedRegistryEntry(null);
-              }}
-            />
-
-            <InboxAgentDetailsDialog
-              registration={selectedInboxRegistration}
-              open={selectedInboxRegistration !== null}
-              onOpenChange={(open) => {
-                if (!open) setSelectedInboxRegistration(null);
               }}
             />
           </>

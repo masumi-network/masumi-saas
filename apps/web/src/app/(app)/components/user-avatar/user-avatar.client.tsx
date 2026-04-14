@@ -160,7 +160,7 @@ export default function UserAvatarClient({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="relative h-8 w-8 rounded-full px-2 md:h-10 md:w-10 md:px-4"
+                  className="relative h-8 w-auto rounded-full px-2 md:h-10 md:px-2 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:md:w-10 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:md:px-4"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent
@@ -174,6 +174,10 @@ export default function UserAvatarClient({
                     imageAlt={sessionUser.name ?? "User avatar"}
                     fallbackName={sessionUser.name ?? sessionUser.email}
                   />
+                  <span className="ml-2 text-sm font-semibold truncate group-data-[collapsible=icon]:hidden">
+                    {sessionUser.name ?? sessionUser.email ?? "User"}
+                  </span>
+                  <ChevronsUpDown className="ml-1 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>

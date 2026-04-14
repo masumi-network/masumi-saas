@@ -118,35 +118,35 @@ export default function AdminSignInForm() {
               <FormItem className="w-full">
                 <FormLabel className="sr-only">{t("password")}</FormLabel>
                 <FormControl>
-                  <div className="flex gap-4 items-center w-full">
-                    <Input
-                      type="password"
-                      placeholder={t("password")}
-                      autoComplete="current-password"
-                      className="flex-1 bg-background"
-                      {...field}
-                    />
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={isLoading}
-                      size="lg"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Spinner size={16} className="mr-2" />
-                          {t("submitting")}
-                        </>
-                      ) : (
-                        t("submit")
-                      )}
-                    </Button>
-                  </div>
+                  <Input
+                    type="password"
+                    placeholder={t("password")}
+                    autoComplete="current-password"
+                    className="bg-background"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isLoading}
+            size="lg"
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Spinner size={16} className="mr-2" />
+                {t("submitting")}
+              </>
+            ) : (
+              t("submit")
+            )}
+          </Button>
         </form>
       </Form>
     </div>
