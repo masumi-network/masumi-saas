@@ -1,13 +1,13 @@
 import { Link, render } from "@react-email/components";
 
+import { AgentMessengerEmailLayout } from "./agent-messenger-email-layout";
 import {
   MasumiEmailButton,
   MasumiEmailCodeBlock,
-  MasumiEmailLayout,
   MasumiEmailParagraph,
 } from "./masumi-email-layout";
 
-interface MagicLinkEmailProps {
+interface AgentMessengerMagicLinkEmailProps {
   name: string;
   magicLink: string;
   magicCode?: string;
@@ -30,7 +30,7 @@ interface MagicLinkEmailProps {
   };
 }
 
-export const MagicLinkEmail = ({
+export const AgentMessengerMagicLinkEmail = ({
   name,
   magicLink,
   magicCode,
@@ -38,8 +38,8 @@ export const MagicLinkEmail = ({
   includePrivacyConsent,
   privacyPolicyUrl,
   translations: t,
-}: MagicLinkEmailProps) => (
-  <MasumiEmailLayout
+}: AgentMessengerMagicLinkEmailProps) => (
+  <AgentMessengerEmailLayout
     preview={t.preview}
     title={t.title}
     greeting={t.greeting.replace("{name}", name)}
@@ -73,9 +73,11 @@ export const MagicLinkEmail = ({
     ) : null}
 
     <MasumiEmailButton href={magicLink}>{t.button}</MasumiEmailButton>
-  </MasumiEmailLayout>
+  </AgentMessengerEmailLayout>
 );
 
-export async function reactMagicLinkEmail(props: MagicLinkEmailProps) {
-  return await render(<MagicLinkEmail {...props} />);
+export async function reactAgentMessengerMagicLinkEmail(
+  props: AgentMessengerMagicLinkEmailProps,
+) {
+  return await render(<AgentMessengerMagicLinkEmail {...props} />);
 }

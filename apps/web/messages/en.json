@@ -1453,7 +1453,7 @@
       "greeting": "Hello {name},",
       "message": "We received a request to reset your password. Click the button below to create a new password.",
       "button": "Reset password",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup reset link",
       "footer": "If you didn't request a password reset, you can safely ignore this email."
     },
     "Verification": {
@@ -1465,7 +1465,7 @@
       "codeLabel": "Verification code",
       "codeExpiry": "This code expires in 5 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer verification by code.",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup verification link",
       "footer": "If you didn't create an account, you can safely ignore this email."
     },
     "VerificationCode": {
@@ -1478,18 +1478,33 @@
       "footer": "If you didn't request this code, you can safely ignore this email."
     },
     "MagicLink": {
-      "preview": "Your Masumi magic link",
-      "title": "Sign in to Masumi",
+      "preview": "Your Masumi access link",
+      "title": "Continue to Masumi",
       "greeting": "Hello {name},",
-      "message": "Click the button below to continue to Masumi, or enter the code shown below.",
+      "message": "Use the button below to continue to Masumi. If you prefer, you can use the code shown below instead.",
       "consentBefore": "If this is your first time here, using this link to access Masumi means you agree to our ",
       "consentPrivacyLabel": "Privacy Policy",
       "consentAfter": ".",
-      "button": "Open Masumi",
-      "codeLabel": "Sign-in code",
+      "button": "Continue to Masumi",
+      "codeLabel": "Access code",
       "codeExpiry": "This code expires in 5 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer not to open the link.",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup access link",
+      "footer": "If you didn't request this email, you can safely ignore it."
+    },
+    "MagicLinkOidc": {
+      "preview": "Your Agent Messenger access link",
+      "title": "Continue to Agent Messenger",
+      "greeting": "Hello {name},",
+      "message": "Use the button below to continue to Agent Messenger. If you prefer, you can use the code shown below instead.",
+      "consentBefore": "If this is your first time here, using this link to access Agent Messenger means you agree to our ",
+      "consentPrivacyLabel": "Privacy Policy",
+      "consentAfter": ".",
+      "button": "Continue to Agent Messenger",
+      "codeLabel": "Access code",
+      "codeExpiry": "This code expires in 5 minutes.",
+      "codeHelp": "You can enter this code in Agent Messenger if you prefer not to open the link.",
+      "linkText": "Backup Agent Messenger link",
       "footer": "If you didn't request this email, you can safely ignore it."
     },
     "Invitation": {
@@ -1498,7 +1513,7 @@
       "greeting": "{inviter} has invited you to join {organization} as {role}.",
       "message": "Click the button below to accept the invitation and get started.",
       "button": "Accept invitation",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup invitation link",
       "footer": "If you weren't expecting this invitation, you can safely ignore this email."
     }
   },
