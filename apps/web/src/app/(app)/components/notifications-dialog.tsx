@@ -60,6 +60,9 @@ export function NotificationsDialog() {
               <Bell className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground">{t("empty")}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              {t("emptyHint")}
+            </p>
           </div>
         ) : (
           <ul className="max-h-[min(70vh,24rem)] overflow-y-auto">

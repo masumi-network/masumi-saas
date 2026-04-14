@@ -30,11 +30,11 @@ export function Steps({ currentStep, steps, className }: StepsProps) {
               <div className="flex items-center">
                 <div
                   className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-full border-2 text-sm font-semibold transition-colors",
+                    "flex items-center justify-center w-10 h-10 rounded-full border-2 text-sm font-semibold transition-all duration-300",
                     isCompleted &&
                       "bg-primary text-primary-foreground border-primary",
                     isActive &&
-                      "bg-primary text-primary-foreground border-primary",
+                      "bg-primary text-primary-foreground border-primary ring-4 ring-primary/20",
                     isUpcoming &&
                       "bg-background text-muted-foreground border-muted",
                   )}

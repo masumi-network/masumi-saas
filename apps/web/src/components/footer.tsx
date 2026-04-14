@@ -48,19 +48,19 @@ export function FooterSections({ className }: FooterSectionsProps) {
       <div className="flex flex-wrap items-center flex-1 justify-end gap-4">
         <Link
           href="https://www.masumi.network/about"
-          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
+          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("about")}
         </Link>
         <Link
           href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
-          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
+          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("privacyPolicy")}
         </Link>
         <Link
           href="https://www.masumi.network/legal"
-          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight"
+          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("legal")}
         </Link>

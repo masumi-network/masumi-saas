@@ -160,7 +160,7 @@ export default function UserAvatarClient({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="relative h-8 w-8 rounded-full px-2 md:h-10 md:w-10 md:px-4"
+                  className="relative h-9 w-auto rounded-full pl-1 pr-2.5 md:h-10 md:pl-1.5 md:pr-3 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:md:h-10 group-data-[collapsible=icon]:md:w-10 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent
@@ -173,7 +173,12 @@ export default function UserAvatarClient({
                     }
                     imageAlt={sessionUser.name ?? "User avatar"}
                     fallbackName={sessionUser.name ?? sessionUser.email}
+                    className="!h-7 !w-7 md:!h-7 md:!w-7 text-xs"
                   />
+                  <span className="ml-1.5 text-sm font-semibold truncate group-data-[collapsible=icon]:hidden">
+                    {sessionUser.name || sessionUser.email || "User"}
+                  </span>
+                  <ChevronsUpDown className="ml-1 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
@@ -183,7 +188,13 @@ export default function UserAvatarClient({
           </Tooltip>
         </TooltipProvider>
 
-        <DropdownMenuContent className="w-72" align="end" collisionPadding={8}>
+        <DropdownMenuContent
+          className="w-72"
+          align="start"
+          side="top"
+          sideOffset={8}
+          collisionPadding={8}
+        >
           {/* Workspace switcher - active workspace + popover trigger */}
           <DropdownMenuGroup>
             <Popover

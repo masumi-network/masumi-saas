@@ -32,8 +32,8 @@
       "emailFormDivider": "or continue with"
     },
     "SignIn": {
-      "title": "Login",
-      "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
+      "title": "Sign In",
+      "description": "Sign in to manage your AI agents, organizations, and payments.",
       "continueWithGoogle": "Continue with Google",
       "continueWithGithub": "Continue with GitHub",
       "continueWithMicrosoft": "Continue with Microsoft",
@@ -43,12 +43,12 @@
       "magicLinkSubmit": "Email me a magic link",
       "magicLinkSubmitting": "Sending link...",
       "magicLinkSuccess": "Check your email for your magic link.",
-      "submit": "Login",
-      "submitting": "Validating...",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
       "usePassword": "Use password instead",
       "useMagicLink": "Use magic link instead (recommended)",
       "noAccount": "Don't have an account?",
-      "login": "Login",
+      "login": "Sign In",
       "register": "Register",
       "forgotPassword": "Forgot password?",
       "checkEmail": {
@@ -61,7 +61,7 @@
     },
     "SignUp": {
       "title": "Register",
-      "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "description": "Create an account to manage your AI agents, organizations, and payments.",
       "name": "Name",
       "email": "Email",
       "password": "Password",
@@ -77,7 +77,7 @@
       "termsAccepted": "I agree to the",
       "privacyPolicy": "Privacy Policy",
       "hasAccount": "Already have an account?",
-      "login": "Login",
+      "login": "Sign In",
       "checkEmail": {
         "title": "Check your email",
         "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
@@ -380,7 +380,7 @@
           "balance": "Balance",
           "balanceDescription": "Available funds",
           "earnings": "Earnings",
-          "earningsDescription": "Withdrawn seller income from your payment node for this network (USDM as USD, or ADA when no stablecoin in range)",
+          "earningsDescription": "Total earnings from your registered agents.",
           "viewAnalytics": "View analytics",
           "viewActivity": "View activity",
           "viewAllTransactions": "View all transactions",
@@ -800,6 +800,7 @@
     "Notifications": {
       "title": "Notifications",
       "empty": "No notifications yet",
+      "emptyHint": "Agent updates, transaction alerts, and invitations will appear here.",
       "markAllRead": "Mark all as read",
       "clearAll": "Clear all",
       "dismiss": "Dismiss",
@@ -891,7 +892,7 @@
       },
       "Discovery": {
         "title": "Registry discovery",
-        "description": "Browse the latest healthy Masumi agents here. Verified inbox-agent discovery now lives under Inbox agents.",
+        "description": "Browse the latest healthy Masumi agents here.",
         "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
         "inboxDescription": "Pending and verified agents returned by the inbox-agent discovery route.",
         "views": {

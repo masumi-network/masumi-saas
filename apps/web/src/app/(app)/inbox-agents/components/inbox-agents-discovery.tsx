@@ -41,7 +41,7 @@ import {
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { formatRelativeDate, getInitials } from "@/lib/utils";
+import { formatRelativeDate, getInitials, shortenAddress } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -417,14 +417,13 @@ function InboxAgentListItem({
 }) {
   const t = useTranslations("App.Agents");
   const policyId = registration.RegistrySource.policyId;
-  const shortDescription =
-    registration.description?.trim() || t("Details.noDescription");
+  const shortDescription = registration.description?.trim();
 
   return (
     <button
       type="button"
       onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-colors hover:border-primary/35 hover:bg-muted-surface/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-muted-surface/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
         <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
@@ -443,9 +442,11 @@ function InboxAgentListItem({
             </Badge>
           </div>
 
-          <p className="line-clamp-1 text-sm text-muted-foreground">
-            {shortDescription}
-          </p>
+          {shortDescription && (
+            <p className="line-clamp-1 text-sm text-muted-foreground">
+              {shortDescription}
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>{registration.agentSlug}</span>
@@ -461,7 +462,9 @@ function InboxAgentListItem({
               })}
             </Badge>
             <Badge variant="outline-muted">
-              {policyId || t("Discovery.noPolicyId")}
+              {policyId
+                ? shortenAddress(policyId, 8)
+                : t("Discovery.noPolicyId")}
             </Badge>
           </div>
         </div>
