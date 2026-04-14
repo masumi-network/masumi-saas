@@ -37,7 +37,6 @@ export default function MenuItems() {
   const t = useTranslations("App.Sidebar.MenuItems");
   const pathname = usePathname();
   const { isMobile } = useSidebar();
-
   const items: MenuItemConfig[] = [
     {
       key: "dashboard",
@@ -91,7 +90,6 @@ export default function MenuItems() {
             const isActive =
               pathname === href ||
               (href !== "/" && pathname.startsWith(href + "/"));
-
             return (
               <SidebarMenuItem key={key}>
                 {disabled ? (

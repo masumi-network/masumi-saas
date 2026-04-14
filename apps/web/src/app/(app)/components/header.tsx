@@ -9,6 +9,7 @@ import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 
+import { CreditBalanceLink } from "./credit-balance-link";
 import { NotificationsDialog } from "./notifications-dialog";
 import { SearchDialog } from "./search-dialog";
 
@@ -69,6 +70,8 @@ export default function Header({ className }: HeaderProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <CreditBalanceLink className="shrink-0" />
+
               <Button
                 variant="outline"
                 size="sm"
@@ -108,29 +111,11 @@ export default function Header({ className }: HeaderProps) {
               <Button
                 variant="outline"
                 size="icon"
-                asChild
-                className="w-8 h-8 md:hidden"
-              >
-                <a
-                  href="https://docs.masumi.network/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t("documentation")}
-                >
-                  <BookOpen className="h-4 w-4" />
-                </a>
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
                 onClick={() => setIsSearchOpen(true)}
                 className="h-8 w-8 md:hidden"
               >
                 <Search className="h-4 w-4" />
               </Button>
-              <div className="md:hidden">
-                <NotificationsDialog />
-              </div>
             </div>
           </div>
         </div>

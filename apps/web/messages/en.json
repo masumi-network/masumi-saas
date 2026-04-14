@@ -470,12 +470,24 @@
     },
     "TopUp": {
       "title": "Top up",
-      "description": "Add funds to your wallet to pay for agent usage.",
-      "comingSoon": "Top-up is coming soon."
+      "description": "Buy credits for mainnet usage and keep your account ready for paid actions.",
+      "status": "Coming soon",
+      "balanceLabel": "Available credits",
+      "balanceDescription": "Your current balance is ready to use whenever you perform credit-backed actions on Mainnet.",
+      "mainnetOnlyTitle": "Credits are only spent on Mainnet",
+      "mainnetOnlyDescription": "Preprod, missing, or invalid networks never deduct credits. Only Mainnet writes reduce this balance.",
+      "cta": "Add credits",
+      "comingSoon": "Top-up is coming soon.",
+      "roadmapTitle": "What to expect",
+      "roadmapDescription": "We're preparing a self-serve top-up flow directly inside Masumi.",
+      "roadmapBilling": "Secure checkout with instant credit delivery",
+      "roadmapHistory": "Balance history and top-up receipts",
+      "roadmapAlerts": "Low-balance reminders before you run out"
     },
     "Withdraw": {
       "title": "Withdraw",
       "description": "Withdraw your earnings to your preferred payout method.",
+      "status": "Coming soon",
       "comingSoon": "Withdrawals are coming soon."
     },
     "Analytics": {
@@ -557,9 +569,10 @@
       "network": "Network",
       "MenuItems": {
         "dashboard": "Dashboard",
-        "agents": "Agents",
+        "agents": "AI agents",
         "inboxAgents": "Inbox agents",
         "activity": "Activity",
+        "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -778,9 +791,10 @@
       "links": "Links",
       "items": {
         "dashboard": "Dashboard",
-        "agents": "Agents",
+        "agents": "AI agents",
         "inboxAgents": "Inbox agents",
         "activity": "Activity",
+        "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",

@@ -120,6 +120,7 @@ export function EmailForm({ currentEmail }: EmailFormProps) {
               <CardFooter>
                 <Button
                   type="submit"
+                  variant="outline"
                   disabled={isSubmitting}
                   className="w-full"
                 >
