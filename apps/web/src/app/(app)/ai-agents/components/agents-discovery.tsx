@@ -538,8 +538,10 @@ export function AgentsDiscovery() {
   const browseRequestSequenceRef = useRef(0);
   const browseAbortControllerRef = useRef<AbortController | null>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
-  const immediateSearch = searchQuery.trim().toLowerCase();
+  const trimmedSearch = searchQuery.trim();
+  const immediateSearch = trimmedSearch.toLowerCase();
   const normalizedSearch = debouncedSearch.trim();
+  const isSearchDebouncing = trimmedSearch !== normalizedSearch;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -800,13 +802,13 @@ export function AgentsDiscovery() {
     [searchPageItems],
   );
 
-  const hasActiveSearch = immediateSearch.length > 0;
+  const hasActiveSearch = normalizedSearch.length > 0;
   const isSearchPendingWithoutResults =
-    normalizedSearch.length > 0 &&
+    hasActiveSearch &&
     !searchQueryResult.data &&
     (searchQueryResult.isPending || searchQueryResult.isFetching);
   const shouldUseSearchResults =
-    normalizedSearch.length > 0 &&
+    hasActiveSearch &&
     Boolean(searchQueryResult.data) &&
     !isSearchPendingWithoutResults;
   const visibleRegistryEntries = shouldUseSearchResults
@@ -815,7 +817,7 @@ export function AgentsDiscovery() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    if (normalizedSearch) {
+    if (hasActiveSearch) {
       searchQueryResult.refetch().finally(() => setIsRefreshing(false));
       return;
     }
@@ -849,7 +851,7 @@ export function AgentsDiscovery() {
     ? searchErrorMessage
     : registryState.error;
   const isSearchLoading = hasActiveSearch
-    ? immediateSearch !== normalizedSearch ||
+    ? isSearchDebouncing ||
       searchQueryResult.isLoading ||
       searchQueryResult.isFetching
     : registryState.isPageLoading;

@@ -478,6 +478,7 @@ export function InboxAgentsDiscovery() {
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
   const immediateSearch = searchQuery.trim();
   const normalizedSearch = debouncedSearch.trim();
+  const isSearchDebouncing = immediateSearch !== normalizedSearch;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -721,20 +722,20 @@ export function InboxAgentsDiscovery() {
       ),
     [searchPageItems],
   );
+  const hasActiveSearch = normalizedSearch.length > 0;
   const isSearchPendingWithoutResults =
-    normalizedSearch.length > 0 &&
+    hasActiveSearch &&
     !searchQueryResult.data &&
     (searchQueryResult.isPending || searchQueryResult.isFetching);
-  const visibleItems =
-    normalizedSearch.length > 0
-      ? isSearchPendingWithoutResults
-        ? sortedPageItems
-        : sortedSearchPageItems
-      : sortedPageItems;
+  const visibleItems = hasActiveSearch
+    ? isSearchPendingWithoutResults
+      ? sortedPageItems
+      : sortedSearchPageItems
+    : sortedPageItems;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    if (normalizedSearch) {
+    if (hasActiveSearch) {
       searchQueryResult.refetch().finally(() => setIsRefreshing(false));
       return;
     }
@@ -750,9 +751,8 @@ export function InboxAgentsDiscovery() {
     ellipsisSrText: t("Discovery.paginationMore"),
   };
 
-  const hasActiveSearch = normalizedSearch.length > 0;
   const isSearchLoading = hasActiveSearch
-    ? immediateSearch !== normalizedSearch ||
+    ? isSearchDebouncing ||
       searchQueryResult.isLoading ||
       searchQueryResult.isFetching
     : state.isPageLoading;
@@ -855,7 +855,7 @@ export function InboxAgentsDiscovery() {
           </div>
         )}
 
-        {!normalizedSearch && state.isLoading ? (
+        {!hasActiveSearch && state.isLoading ? (
           <DiscoverySkeleton />
         ) : (
           <>
