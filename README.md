@@ -151,21 +151,22 @@ curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 
 The authenticated **v1** namespace proxies a curated set of routes to external Masumi services. Route exposure is generated from checked-in upstream OpenAPI specs and matched on **method + normalized path**. New upstream routes stay **403** until added to the safe manifest. Use app authentication (session or API key); SaaS forwards either the user's payment-service token or a shared registry-service token server-side. Paths containing traversal or malformed segments are rejected before `fetch`.
 
-| Path                                         | Description                                 |
-| -------------------------------------------- | ------------------------------------------- |
-| `GET/POST /api/v1/purchase`                  | Create or list purchases                    |
-| `GET/POST /api/v1/payment`                   | Create or list payments                     |
-| `GET/POST /api/v1/registry`                  | Register agents, list registry, deregister  |
-| `POST /api/v1/registry-entry`                | Query registry-service agent lookup entries |
-| `POST /api/v1/registry-diff`                 | Query registry-service diffs                |
-| `GET /api/v1/payment-information`            | Payment information for one agent           |
-| `GET /api/v1/capability`                     | Registry-service capability lookup          |
-| `POST /api/v1/inbox-agent-registration`      | Inbox agent registration lookup             |
-| `POST /api/v1/inbox-agent-registration-diff` | Inbox registration diffs                    |
-| `GET /api/v1/api-key-status`                 | API key status                              |
-| `GET /api/v1/payment-source`                 | List payment sources                        |
-| `GET/POST/DELETE /api/v1/webhooks`           | Webhooks                                    |
-| …                                            | See the generated proxy manifest            |
+| Path                                         | Description                                  |
+| -------------------------------------------- | -------------------------------------------- |
+| `GET/POST /api/v1/purchase`                  | Create or list purchases                     |
+| `GET/POST /api/v1/payment`                   | Create or list payments                      |
+| `GET/POST /api/v1/registry`                  | Register agents, list registry, deregister   |
+| `POST /api/v1/registry-entry`                | Query registry-service agent lookup entries  |
+| `POST /api/v1/registry-entry-search`         | Search registry-service agent lookup entries |
+| `POST /api/v1/registry-diff`                 | Query registry-service diffs                 |
+| `GET /api/v1/payment-information`            | Payment information for one agent            |
+| `GET /api/v1/capability`                     | Registry-service capability lookup           |
+| `POST /api/v1/inbox-agent-registration`      | Inbox agent registration lookup              |
+| `POST /api/v1/inbox-agent-registration-diff` | Inbox registration diffs                     |
+| `GET /api/v1/api-key-status`                 | API key status                               |
+| `GET /api/v1/payment-source`                 | List payment sources                         |
+| `GET/POST/DELETE /api/v1/webhooks`           | Webhooks                                     |
+| …                                            | See the generated proxy manifest             |
 
 Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` + `apps/web/src/lib/v1-proxy/manifest.ts`.
 

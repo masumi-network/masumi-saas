@@ -188,6 +188,7 @@ describe("SMOKE — Authenticated /api/v1 proxy", () => {
     expect(res.status).toBe(200);
     const b = res.body as { paths?: Record<string, unknown> };
     expect(b.paths?.["/v1/registry-entry"]).toBeDefined();
+    expect(b.paths?.["/v1/registry-entry-search"]).toBeDefined();
     expect(b.paths?.["/v1/registry-diff"]).toBeDefined();
     expect(b.paths?.["/v1/capability"]).toBeDefined();
     expect(b.paths?.["/v1/inbox-agent-registration-search"]).toBeDefined();

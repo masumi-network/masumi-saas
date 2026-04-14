@@ -14,6 +14,10 @@ import {
 describe("v1 proxy manifest", () => {
   it("includes generated payment and registry descriptors", () => {
     const registryRoute = getProxyRouteDescriptor("POST", "registry-entry");
+    const registrySearchRoute = getProxyRouteDescriptor(
+      "POST",
+      "registry-entry-search",
+    );
     const inboxSearchRoute = getProxyRouteDescriptor(
       "POST",
       "inbox-agent-registration-search",
@@ -25,6 +29,12 @@ describe("v1 proxy manifest", () => {
       authMode: "registry-shared-token",
       upstreamPath: "/registry-entry/",
       openapiPath: "/v1/registry-entry",
+    });
+    expect(registrySearchRoute).toMatchObject({
+      upstream: "registry",
+      authMode: "registry-shared-token",
+      upstreamPath: "/registry-entry-search/",
+      openapiPath: "/v1/registry-entry-search",
     });
     expect(inboxSearchRoute).toMatchObject({
       upstream: "registry",
@@ -94,6 +104,7 @@ describe("v1 proxy manifest", () => {
       ),
     ).toBe(true);
     expect(spec.paths["/v1/registry-inbox"]).toBeUndefined();
+    expect(spec.paths["/v1/registry-entry-search"]).toBeDefined();
     expect(spec.paths["/v1/inbox-agent-registration-search"]).toBeDefined();
     expect(spec.paths["/v1/inbox-agent-registration"]).toBeUndefined();
   });
