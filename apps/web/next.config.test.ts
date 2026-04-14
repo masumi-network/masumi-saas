@@ -2,6 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 type EnvSnapshot = Record<string, string | undefined>;
 
+function setEnvValue(key: string, value: string | undefined) {
+  const env = process.env as Record<string, string | undefined>;
+  if (value === undefined) {
+    delete env[key];
+    return;
+  }
+
+  env[key] = value;
+}
+
 function captureEnv(): EnvSnapshot {
   return {
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -12,12 +22,7 @@ function captureEnv(): EnvSnapshot {
 
 function restoreEnv(snapshot: EnvSnapshot) {
   for (const [key, value] of Object.entries(snapshot)) {
-    if (value === undefined) {
-      delete process.env[key];
-      continue;
-    }
-
-    process.env[key] = value;
+    setEnvValue(key, value);
   }
 }
 
@@ -30,9 +35,12 @@ describe("next security headers", () => {
   });
 
   it("adds hardened defaults plus verification-specific Sumsub allowances", async () => {
-    process.env.NODE_ENV = "production";
-    process.env.NEXT_PUBLIC_SENTRY_DSN = "https://public@sentry.example.com/1";
-    process.env.SUMSUB_BASE_URL = "https://api.sumsub.com";
+    setEnvValue("NODE_ENV", "production");
+    setEnvValue(
+      "NEXT_PUBLIC_SENTRY_DSN",
+      "https://public@sentry.example.com/1",
+    );
+    setEnvValue("SUMSUB_BASE_URL", "https://api.sumsub.com");
 
     const configModule = await import("./next.config");
     const headers = await configModule.default.headers?.();

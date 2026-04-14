@@ -8,6 +8,16 @@ vi.mock("node:dns/promises", () => ({
 
 type EnvSnapshot = Record<string, string | undefined>;
 
+function setEnvValue(key: string, value: string | undefined) {
+  const env = process.env as Record<string, string | undefined>;
+  if (value === undefined) {
+    delete env[key];
+    return;
+  }
+
+  env[key] = value;
+}
+
 function captureEnv(): EnvSnapshot {
   return {
     NODE_ENV: process.env.NODE_ENV,
@@ -16,12 +26,7 @@ function captureEnv(): EnvSnapshot {
 
 function restoreEnv(snapshot: EnvSnapshot) {
   for (const [key, value] of Object.entries(snapshot)) {
-    if (value === undefined) {
-      delete process.env[key];
-      continue;
-    }
-
-    process.env[key] = value;
+    setEnvValue(key, value);
   }
 }
 
@@ -35,7 +40,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("allows local HTTP agent URLs outside production", async () => {
-    process.env.NODE_ENV = "test";
+    setEnvValue("NODE_ENV", "test");
     const { assertAllowedAgentApiUrl } = await import("./outbound-url");
 
     await expect(
@@ -44,7 +49,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("rejects non-HTTPS URLs in production", async () => {
-    process.env.NODE_ENV = "production";
+    setEnvValue("NODE_ENV", "production");
     const { assertAllowedAgentApiUrl, OutboundUrlValidationError } =
       await import("./outbound-url");
 
@@ -54,7 +59,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("rejects private IPv4 targets in production", async () => {
-    process.env.NODE_ENV = "production";
+    setEnvValue("NODE_ENV", "production");
     const { assertAllowedAgentApiUrl } = await import("./outbound-url");
 
     await expect(
@@ -63,7 +68,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("rejects hostnames that resolve to private network addresses in production", async () => {
-    process.env.NODE_ENV = "production";
+    setEnvValue("NODE_ENV", "production");
     lookupMock.mockResolvedValue([{ address: "192.168.1.8", family: 4 }]);
     const { assertAllowedAgentApiUrl } = await import("./outbound-url");
 
@@ -73,7 +78,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("allows public HTTPS hosts in production", async () => {
-    process.env.NODE_ENV = "production";
+    setEnvValue("NODE_ENV", "production");
     lookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     const { assertAllowedAgentApiUrl } = await import("./outbound-url");
 
@@ -83,7 +88,7 @@ describe("assertAllowedAgentApiUrl", () => {
   });
 
   it("rejects embedded credentials in any environment", async () => {
-    process.env.NODE_ENV = "test";
+    setEnvValue("NODE_ENV", "test");
     const { assertAllowedAgentApiUrl } = await import("./outbound-url");
 
     await expect(

@@ -9,6 +9,16 @@ vi.mock("@sentry/nextjs", () => ({
 
 type EnvSnapshot = Record<string, string | undefined>;
 
+function setEnvValue(key: string, value: string | undefined) {
+  const env = process.env as Record<string, string | undefined>;
+  if (value === undefined) {
+    delete env[key];
+    return;
+  }
+
+  env[key] = value;
+}
+
 function captureEnv(): EnvSnapshot {
   return {
     NODE_ENV: process.env.NODE_ENV,
@@ -19,12 +29,7 @@ function captureEnv(): EnvSnapshot {
 
 function restoreEnv(snapshot: EnvSnapshot) {
   for (const [key, value] of Object.entries(snapshot)) {
-    if (value === undefined) {
-      delete process.env[key];
-      continue;
-    }
-
-    process.env[key] = value;
+    setEnvValue(key, value);
   }
 }
 
@@ -39,9 +44,9 @@ describe("rate limit backend hardening", () => {
   });
 
   it("fails closed once in production when Upstash is missing", async () => {
-    process.env.NODE_ENV = "production";
-    delete process.env.UPSTASH_REDIS_REST_URL;
-    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    setEnvValue("NODE_ENV", "production");
+    setEnvValue("UPSTASH_REDIS_REST_URL", undefined);
+    setEnvValue("UPSTASH_REDIS_REST_TOKEN", undefined);
 
     const consoleErrorSpy = vi
       .spyOn(console, "error")
@@ -64,9 +69,9 @@ describe("rate limit backend hardening", () => {
   });
 
   it("returns a 503 helper response when the backend is unavailable", async () => {
-    process.env.NODE_ENV = "production";
-    delete process.env.UPSTASH_REDIS_REST_URL;
-    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    setEnvValue("NODE_ENV", "production");
+    setEnvValue("UPSTASH_REDIS_REST_URL", undefined);
+    setEnvValue("UPSTASH_REDIS_REST_TOKEN", undefined);
 
     const { checkRateLimitOrRespond } =
       await import("./rate-limit-with-response");

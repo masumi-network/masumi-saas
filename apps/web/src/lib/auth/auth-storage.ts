@@ -6,10 +6,12 @@ import {
   randomBytes,
 } from "node:crypto";
 
-import prisma, { Prisma } from "@masumi/database/client";
+import prisma from "@masumi/database/client";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
 import { authEnvConfig } from "@/lib/config/auth.config";
+
+import type { Prisma } from "../../../../../packages/database/dist/generated/prisma/client.js";
 
 const HASH_KEY_INFO = "masumi-auth-storage-hmac";
 const ENCRYPTION_KEY_INFO = "masumi-auth-storage-aes-256-gcm";
@@ -30,12 +32,40 @@ const ENCRYPTED_FIELDS = {
   jwks: new Set(["privateKey"]),
 } as const;
 
-type AdapterWhere = Array<{
+type AdapterWhereValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | Date
+  | null;
+
+type AdapterWhere = {
+  operator?:
+    | "eq"
+    | "ne"
+    | "lt"
+    | "lte"
+    | "gt"
+    | "gte"
+    | "in"
+    | "not_in"
+    | "contains"
+    | "starts_with"
+    | "ends_with";
+  value: AdapterWhereValue;
   field: string;
-  value: unknown;
-  operator?: string;
   connector?: "AND" | "OR";
-}>;
+};
+
+type AdapterJoinOption = {
+  [model: string]:
+    | boolean
+    | {
+        limit?: number;
+      };
+};
 
 function getMasterSecret(): Buffer {
   const secret = authEnvConfig.secret?.trim();
@@ -136,8 +166,8 @@ export async function decryptAuthSecret(
 
 function transformStoredWhere(
   model: string,
-  where?: AdapterWhere,
-): AdapterWhere {
+  where?: AdapterWhere[],
+): AdapterWhere[] {
   if (!where?.length) {
     return where ?? [];
   }
@@ -261,9 +291,9 @@ export function securePrismaAuthAdapter(
       },
       async findOne(args: {
         model: string;
-        where?: AdapterWhere;
+        where?: AdapterWhere[];
         select?: string[];
-        join?: Record<string, { relation: string; limit?: number }>;
+        join?: AdapterJoinOption;
       }) {
         const result = await adapter.findOne({
           ...args,
@@ -273,11 +303,11 @@ export function securePrismaAuthAdapter(
       },
       async findMany(args: {
         model: string;
-        where?: AdapterWhere;
+        where?: AdapterWhere[];
         limit?: number;
         offset?: number;
-        sortBy?: { field: string; direction?: string };
-        join?: Record<string, { relation: string; limit?: number }>;
+        sortBy?: { field: string; direction: "asc" | "desc" };
+        join?: AdapterJoinOption;
       }) {
         const result = await adapter.findMany({
           ...args,
@@ -285,7 +315,7 @@ export function securePrismaAuthAdapter(
         });
         return await restoreReadResult(args.model, result);
       },
-      async count(args: { model: string; where?: AdapterWhere }) {
+      async count(args: { model: string; where?: AdapterWhere[] }) {
         return adapter.count({
           ...args,
           where: transformStoredWhere(args.model, args.where),
@@ -293,7 +323,7 @@ export function securePrismaAuthAdapter(
       },
       async update(args: {
         model: string;
-        where?: AdapterWhere;
+        where: AdapterWhere[];
         update: Record<string, unknown>;
       }) {
         const update = await transformStoredData(args.model, args.update);
@@ -306,7 +336,7 @@ export function securePrismaAuthAdapter(
       },
       async updateMany(args: {
         model: string;
-        where?: AdapterWhere;
+        where: AdapterWhere[];
         update: Record<string, unknown>;
       }) {
         return adapter.updateMany({
@@ -315,13 +345,13 @@ export function securePrismaAuthAdapter(
           update: await transformStoredData(args.model, args.update),
         });
       },
-      async delete(args: { model: string; where?: AdapterWhere }) {
+      async delete(args: { model: string; where: AdapterWhere[] }) {
         return adapter.delete({
           ...args,
           where: transformStoredWhere(args.model, args.where),
         });
       },
-      async deleteMany(args: { model: string; where?: AdapterWhere }) {
+      async deleteMany(args: { model: string; where: AdapterWhere[] }) {
         return adapter.deleteMany({
           ...args,
           where: transformStoredWhere(args.model, args.where),
@@ -429,35 +459,51 @@ type OauthAccessTokenLookupArgs = Omit<
 >;
 
 function buildStoredOauthAccessTokenWhere(
+  field: "accessToken",
+  token: string,
+): { accessToken: string };
+function buildStoredOauthAccessTokenWhere(
+  field: "refreshToken",
+  token: string,
+): { refreshToken: string };
+function buildStoredOauthAccessTokenWhere(
   field: "accessToken" | "refreshToken",
   token: string,
 ) {
-  return {
-    [field]: hashAuthLookupValue(
-      token,
-      getFieldLabel("oauthAccessToken", field),
-    ),
-  };
+  const hashed = hashAuthLookupValue(
+    token,
+    getFieldLabel("oauthAccessToken", field),
+  );
+
+  if (field === "accessToken") {
+    return { accessToken: hashed };
+  }
+
+  return { refreshToken: hashed };
 }
 
-export async function findOauthAccessTokenByAccessToken(
-  accessToken: string,
-  args: OauthAccessTokenLookupArgs,
-) {
+export async function findOauthAccessTokenByAccessToken<
+  T extends OauthAccessTokenLookupArgs,
+>(accessToken: string, args: T) {
   return prisma.oauthAccessToken.findUnique({
     ...args,
-    where: buildStoredOauthAccessTokenWhere("accessToken", accessToken),
-  });
+    where: buildStoredOauthAccessTokenWhere(
+      "accessToken",
+      accessToken,
+    ) as Prisma.OauthAccessTokenWhereUniqueInput,
+  }) as Promise<Prisma.OauthAccessTokenGetPayload<T> | null>;
 }
 
-export async function findOauthAccessTokenByRefreshToken(
-  refreshToken: string,
-  args: OauthAccessTokenLookupArgs,
-) {
+export async function findOauthAccessTokenByRefreshToken<
+  T extends OauthAccessTokenLookupArgs,
+>(refreshToken: string, args: T) {
   return prisma.oauthAccessToken.findUnique({
     ...args,
-    where: buildStoredOauthAccessTokenWhere("refreshToken", refreshToken),
-  });
+    where: buildStoredOauthAccessTokenWhere(
+      "refreshToken",
+      refreshToken,
+    ) as Prisma.OauthAccessTokenWhereUniqueInput,
+  }) as Promise<Prisma.OauthAccessTokenGetPayload<T> | null>;
 }
 
 type CreateOauthAccessTokenArgs = {
