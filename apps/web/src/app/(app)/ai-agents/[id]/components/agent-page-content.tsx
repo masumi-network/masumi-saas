@@ -176,9 +176,10 @@ export function AgentPageContent({
   if (agentVerificationUiEnabled) {
     tabs.push({ name: tTabs("detailTabs.credentials"), key: "credentials" });
   }
-  const activeTab = tabs.some((tab) => tab.key === tabParam)
-    ? tabParam
-    : DEFAULT_TAB;
+  const activeTab =
+    tabParam && tabs.some((tab) => tab.key === tabParam)
+      ? tabParam
+      : DEFAULT_TAB;
 
   const handleTabChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
