@@ -1,5 +1,6 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Activity, ChevronRight, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -46,6 +47,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   registryDiscoveryClient,
   type RegistryEntry,
+  type RegistryEntryFilter,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { formatUnitAmount } from "@/lib/payment-node/format";
@@ -529,10 +531,17 @@ export function AgentsDiscovery() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchCurrentPage, setSearchCurrentPage] = useState(1);
   const [selectedRegistryEntry, setSelectedRegistryEntry] =
     useState<RegistryEntry | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const browseRequestSequenceRef = useRef(0);
+  const browseAbortControllerRef = useRef<AbortController | null>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
+  const trimmedSearch = searchQuery.trim();
+  const immediateSearch = trimmedSearch.toLowerCase();
+  const normalizedSearch = debouncedSearch.trim();
+  const isSearchDebouncing = trimmedSearch !== normalizedSearch;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -555,20 +564,66 @@ export function AgentsDiscovery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(
+    () => () => {
+      browseAbortControllerRef.current?.abort();
+    },
+    [],
+  );
+
   const fetchRegistryEntries = useCallback(
-    async (cursorId?: string) =>
-      registryDiscoveryClient.getRegistryEntries({
-        network,
-        limit: PAGE_SIZE,
-        cursorId,
-        filter: {
-          status: ["Online"],
+    async (cursorId?: string, signal?: AbortSignal) => {
+      const filter: RegistryEntryFilter = {
+        status: ["Online"],
+      };
+
+      return registryDiscoveryClient.getRegistryEntries(
+        {
+          network,
+          limit: PAGE_SIZE,
+          cursorId,
+          filter,
         },
-      }),
+        { signal },
+      );
+    },
     [network],
   );
 
+  const searchQueryResult = useInfiniteQuery({
+    queryKey: ["registry-entry-search", network, normalizedSearch],
+    initialPageParam: undefined as string | undefined,
+    enabled: normalizedSearch.length > 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const result = await registryDiscoveryClient.searchRegistryEntries(
+        {
+          network,
+          limit: PAGE_SIZE,
+          cursorId: pageParam,
+          query: normalizedSearch,
+          filter: {
+            status: ["Online"],
+          },
+        },
+        { signal },
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || t("Discovery.error"));
+      }
+
+      return result.data;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    placeholderData: (previousData) => previousData,
+  });
+
   const loadRegistryInitial = useCallback(async () => {
+    browseAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    browseAbortControllerRef.current = controller;
+    const requestSequence = ++browseRequestSequenceRef.current;
+
     setRegistryState((current) => ({
       ...current,
       isLoading: true,
@@ -576,24 +631,75 @@ export function AgentsDiscovery() {
       error: null,
     }));
 
-    const result = await fetchRegistryEntries();
+    try {
+      const result = await fetchRegistryEntries(undefined, controller.signal);
 
-    setRegistryState({
-      pages: result.success ? [result.data.items] : [],
-      nextCursors: result.success ? [result.data.nextCursor] : [],
-      currentPage: 1,
-      isLoading: false,
-      isPageLoading: false,
-      error: result.success ? null : result.error || t("Discovery.error"),
-    });
+      if (
+        requestSequence !== browseRequestSequenceRef.current ||
+        controller.signal.aborted
+      ) {
+        return;
+      }
+
+      setRegistryState({
+        pages: result.success ? [result.data.items] : [],
+        nextCursors: result.success ? [result.data.nextCursor] : [],
+        currentPage: 1,
+        isLoading: false,
+        isPageLoading: false,
+        error: result.success ? null : result.error || t("Discovery.error"),
+      });
+    } catch (error) {
+      if (controller.signal.aborted) return;
+
+      setRegistryState((current) => ({
+        ...current,
+        isLoading: false,
+        isPageLoading: false,
+        error: error instanceof Error ? error.message : t("Discovery.error"),
+      }));
+    }
   }, [fetchRegistryEntries, t]);
 
   useEffect(() => {
     void loadRegistryInitial();
   }, [loadRegistryInitial]);
 
+  useEffect(() => {
+    setSearchCurrentPage(1);
+  }, [normalizedSearch, network]);
+
   const loadRegistryPage = useCallback(
     async (page: number) => {
+      const useSearchPagination =
+        normalizedSearch.length > 0 && Boolean(searchQueryResult.data);
+
+      if (useSearchPagination) {
+        const searchTotalPages =
+          (searchQueryResult.data?.pages.length ?? 0) +
+          (searchQueryResult.hasNextPage ? 1 : 0);
+
+        if (page < 1 || page > Math.max(1, searchTotalPages)) return;
+
+        if (page <= (searchQueryResult.data?.pages.length ?? 0)) {
+          setSearchCurrentPage(page);
+          return;
+        }
+
+        if (
+          !searchQueryResult.hasNextPage ||
+          searchQueryResult.isFetchingNextPage
+        ) {
+          return;
+        }
+
+        const result = await searchQueryResult.fetchNextPage();
+        if (result.error) return;
+
+        setSearchCurrentPage(page);
+        return;
+      }
+
       if (registryState.isPageLoading) return;
       if (page < 1 || page > getKnownTotalPages(registryState)) return;
 
@@ -602,8 +708,14 @@ export function AgentsDiscovery() {
         return;
       }
 
-      const cursor = registryState.nextCursors[registryState.pages.length - 1];
+      const cursor =
+        registryState.nextCursors[registryState.pages.length - 1] ?? null;
       if (!cursor) return;
+
+      browseAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      browseAbortControllerRef.current = controller;
+      const requestSequence = ++browseRequestSequenceRef.current;
 
       setRegistryState((current) => ({
         ...current,
@@ -612,7 +724,15 @@ export function AgentsDiscovery() {
       }));
 
       try {
-        const result = await fetchRegistryEntries(cursor);
+        const result = await fetchRegistryEntries(cursor, controller.signal);
+
+        if (
+          requestSequence !== browseRequestSequenceRef.current ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
+
         if (!result.success) {
           setRegistryState((current) => ({
             ...current,
@@ -630,6 +750,8 @@ export function AgentsDiscovery() {
           isPageLoading: false,
         }));
       } catch (error) {
+        if (controller.signal.aborted) return;
+
         setRegistryState((current) => ({
           ...current,
           isPageLoading: false,
@@ -637,36 +759,80 @@ export function AgentsDiscovery() {
         }));
       }
     },
-    [fetchRegistryEntries, registryState, t],
+    [
+      fetchRegistryEntries,
+      normalizedSearch,
+      registryState,
+      searchQueryResult,
+      t,
+    ],
   );
 
-  const registryPageItems = useMemo(
+  const pageItems = useMemo(
     () => getCurrentPageItems(registryState),
     [registryState],
   );
-  const visibleRegistryEntries = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-
-    return [...registryPageItems]
-      .sort(
+  const sortedPageItems = useMemo(
+    () =>
+      [...pageItems].sort(
         (left, right) =>
           new Date(right.updatedAt).getTime() -
           new Date(left.updatedAt).getTime(),
-      )
-      .filter((entry) => matchesRegistryLookup(entry, query));
-  }, [debouncedSearch, registryPageItems]);
+      ),
+    [pageItems],
+  );
+  const locallyFilteredPageItems = useMemo(
+    () =>
+      sortedPageItems.filter((entry) =>
+        matchesRegistryLookup(entry, immediateSearch),
+      ),
+    [immediateSearch, sortedPageItems],
+  );
+  const searchPageItems = useMemo(
+    () => searchQueryResult.data?.pages[searchCurrentPage - 1]?.items ?? [],
+    [searchCurrentPage, searchQueryResult.data],
+  );
+  const sortedSearchPageItems = useMemo(
+    () =>
+      [...searchPageItems].sort(
+        (left, right) =>
+          new Date(right.updatedAt).getTime() -
+          new Date(left.updatedAt).getTime(),
+      ),
+    [searchPageItems],
+  );
+
+  const hasActiveSearch = normalizedSearch.length > 0;
+  const isSearchPendingWithoutResults =
+    hasActiveSearch &&
+    !searchQueryResult.data &&
+    (searchQueryResult.isPending || searchQueryResult.isFetching);
+  const shouldUseSearchResults =
+    hasActiveSearch &&
+    Boolean(searchQueryResult.data) &&
+    !isSearchPendingWithoutResults;
+  const visibleRegistryEntries = shouldUseSearchResults
+    ? sortedSearchPageItems
+    : locallyFilteredPageItems;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    if (hasActiveSearch) {
+      searchQueryResult.refetch().finally(() => setIsRefreshing(false));
+      return;
+    }
+
     loadRegistryInitial().finally(() => setIsRefreshing(false));
   };
 
   const summaryLabel = t("Discovery.resultsSummary", {
     visibleCount: visibleRegistryEntries.length,
-    loadedCount: registryPageItems.length,
+    loadedCount: shouldUseSearchResults
+      ? searchPageItems.length
+      : pageItems.length,
   });
 
-  const emptyLabel = debouncedSearch
+  const emptyLabel = hasActiveSearch
     ? t("Discovery.emptySearch")
     : t("Discovery.empty");
 
@@ -677,6 +843,28 @@ export function AgentsDiscovery() {
     nextAriaLabel: t("Discovery.paginationNext"),
     ellipsisSrText: t("Discovery.paginationMore"),
   };
+  const searchErrorMessage =
+    searchQueryResult.error instanceof Error
+      ? searchQueryResult.error.message
+      : null;
+  const activeError = hasActiveSearch
+    ? searchErrorMessage
+    : registryState.error;
+  const isSearchLoading = hasActiveSearch
+    ? isSearchDebouncing ||
+      searchQueryResult.isLoading ||
+      searchQueryResult.isFetching
+    : registryState.isPageLoading;
+  const activeCurrentPage = hasActiveSearch
+    ? searchCurrentPage
+    : registryState.currentPage;
+  const activeTotalPages = hasActiveSearch
+    ? Math.max(
+        1,
+        (searchQueryResult.data?.pages.length ?? 0) +
+          (searchQueryResult.hasNextPage ? 1 : 0),
+      )
+    : getKnownTotalPages(registryState);
 
   return (
     <Card className="overflow-hidden gap-0 py-0">
@@ -705,7 +893,7 @@ export function AgentsDiscovery() {
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: registryState.currentPage })}
+            {t("Discovery.page", { page: activeCurrentPage })}
           </div>
         </div>
 
@@ -743,17 +931,17 @@ export function AgentsDiscovery() {
           <div>{summaryLabel}</div>
         </div>
 
-        {registryState.error && (
+        {activeError && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {registryState.error}
+            {activeError}
           </div>
         )}
 
-        {registryState.isLoading ? (
+        {!hasActiveSearch && registryState.isLoading ? (
           <DiscoverySkeleton />
         ) : (
           <>
-            {registryState.isPageLoading && (
+            {isSearchLoading && (
               <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
                 <Spinner size={14} />
                 {t("loadingMore")}
@@ -777,9 +965,9 @@ export function AgentsDiscovery() {
             )}
 
             <DiscoveryPaginationBar
-              currentPage={registryState.currentPage}
-              totalPages={getKnownTotalPages(registryState)}
-              isLoading={registryState.isPageLoading}
+              currentPage={activeCurrentPage}
+              totalPages={activeTotalPages}
+              isLoading={isSearchLoading}
               onPageChange={(page) => {
                 void loadRegistryPage(page);
               }}

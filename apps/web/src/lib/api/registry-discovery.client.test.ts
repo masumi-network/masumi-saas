@@ -56,6 +56,93 @@ describe("registryDiscoveryClient", () => {
     });
   });
 
+  it("wraps the public registry-entry-search route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            entries: [
+              {
+                id: "entry-2",
+                name: "Agent Search Result",
+              },
+            ],
+          },
+          status: "success",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await registryDiscoveryClient.searchRegistryEntries({
+      network: "Preprod",
+      query: "search result",
+      limit: 1,
+      filter: { status: ["Online"] },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/registry-entry-search",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
+    expect(result).toStrictEqual({
+      success: true,
+      data: {
+        items: [
+          {
+            id: "entry-2",
+            name: "Agent Search Result",
+          },
+        ],
+        nextCursor: "entry-2",
+      },
+    });
+  });
+
+  it("forwards an abort signal to registry search requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            entries: [],
+          },
+          status: "success",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    const controller = new AbortController();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await registryDiscoveryClient.searchRegistryEntries(
+      {
+        network: "Preprod",
+        query: "search result",
+        limit: 1,
+        filter: { status: ["Online"] },
+      },
+      { signal: controller.signal },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/registry-entry-search",
+      expect.objectContaining({
+        signal: controller.signal,
+      }),
+    );
+  });
+
   it("wraps the internal inbox-agent-registration route", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(

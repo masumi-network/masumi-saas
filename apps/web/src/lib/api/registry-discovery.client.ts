@@ -5,8 +5,13 @@ import type { RegistryServicePaths } from "@/lib/registry-service/generated-clie
 type RegistryEntryRequest = NonNullable<
   RegistryServicePaths["/registry-entry/"]["post"]["requestBody"]
 >["content"]["application/json"];
+type RegistryEntrySearchRequest = NonNullable<
+  RegistryServicePaths["/registry-entry-search/"]["post"]["requestBody"]
+>["content"]["application/json"];
 type RegistryEntryResponse =
   RegistryServicePaths["/registry-entry/"]["post"]["responses"][200]["content"]["application/json"];
+type RegistryEntrySearchResponse =
+  RegistryServicePaths["/registry-entry-search/"]["post"]["responses"][200]["content"]["application/json"];
 type InboxAgentRegistrationRequest = NonNullable<
   RegistryServicePaths["/inbox-agent-registration/"]["post"]["requestBody"]
 >["content"]["application/json"];
@@ -109,6 +114,7 @@ class RegistryDiscoveryClient {
     endpoint: string,
     body:
       | RegistryEntryRequest
+      | RegistryEntrySearchRequest
       | InboxAgentRegistrationRequest
       | InboxAgentRegistrationSearchRequest,
     collectionKey: "entries" | "registrations",
@@ -169,6 +175,19 @@ class RegistryDiscoveryClient {
       "entries",
       options,
     );
+  }
+
+  async searchRegistryEntries(
+    body: RegistryEntrySearchRequest,
+    options?: RegistryDiscoveryRequestOptions,
+  ): Promise<
+    PaginatedDiscoveryResult<
+      RegistryEntrySearchResponse["data"]["entries"][number]
+    >
+  > {
+    return this.postCollection<
+      RegistryEntrySearchResponse["data"]["entries"][number]
+    >("/registry-entry-search", body, "entries", options);
   }
 
   async getInboxAgentRegistrations(
