@@ -1,10 +1,18 @@
+import {
+  AlertCircle,
+  Fingerprint,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { switchAccountAction } from "@/lib/actions/auth.action";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
@@ -26,17 +34,12 @@ export const metadata: Metadata = {
 
 const PAGE_COPY = {
   protocolBadge: "OIDC",
-  titlePrefix: "Authorize as",
-  description:
-    "wants to use your Masumi account for sign-in and SpacetimeDB access. Confirm to authorize without logging in again.",
+  titlePrefix: "Authorize",
+  descriptionSuffix: "wants to access your Masumi account.",
   accountLabel: "Account",
   identityScopesLabel: "Identity scopes",
-  newPermissionsLabel: "New API permissions requested",
-  newPermissionsDescription:
-    "This client is asking for additional API permissions it did not have before.",
-  grantedPermissionsLabel: "Already granted API permissions",
-  grantedPermissionsDescription:
-    "These API permissions are already approved for this client.",
+  newPermissionsLabel: "New API permissions",
+  grantedPermissionsLabel: "Granted API permissions",
   noNewPermissions: "No additional API permissions are being requested.",
   noGrantedPermissions: "No API permissions have been granted yet.",
   defaultScope: "openid",
@@ -100,6 +103,11 @@ function buildConsentCallbackUrl(searchParams: {
   return query ? `/oidc/consent?${query}` : "/oidc/consent";
 }
 
+function getInitial(name: string | null | undefined, email: string): string {
+  const source = name?.trim() || email;
+  return source.charAt(0).toUpperCase();
+}
+
 export default async function OidcConsentPage({
   searchParams,
 }: OidcConsentPageProps) {
@@ -157,16 +165,8 @@ export default async function OidcConsentPage({
     <AuthorizationRequestCard
       protocolBadge={PAGE_COPY.protocolBadge}
       clientLabel={clientLabel}
-      title={
-        <>
-          {PAGE_COPY.titlePrefix} {session.user.email}
-        </>
-      }
-      description={
-        <>
-          {clientLabel} {PAGE_COPY.description}
-        </>
-      }
+      title={`${PAGE_COPY.titlePrefix} ${clientLabel}`}
+      description={`${clientLabel} ${PAGE_COPY.descriptionSuffix}`}
       footer={
         <div className="flex w-full flex-col gap-3">
           <form
@@ -186,20 +186,28 @@ export default async function OidcConsentPage({
               value={resolvedSearchParams.scope ?? ""}
             />
             <input type="hidden" name="continueUrl" value={continueUrl ?? ""} />
-            <Button type="submit" name="accept" value="false" variant="outline">
-              {PAGE_COPY.cancel}
-            </Button>
             {emailVerified ? (
               <Button
                 type="submit"
                 name="accept"
                 value="true"
                 variant="primary"
+                className="flex-1"
               >
                 {PAGE_COPY.continue}
               </Button>
             ) : null}
+            <Button
+              type="submit"
+              name="accept"
+              value="false"
+              variant="ghost"
+              className="flex-1"
+            >
+              {PAGE_COPY.cancel}
+            </Button>
           </form>
+          <Separator />
           <form action={switchAccount} className="w-full">
             <Button type="submit" variant="ghost" className="w-full">
               {PAGE_COPY.switchAccount}
@@ -208,23 +216,42 @@ export default async function OidcConsentPage({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         {errorMessage ? (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {errorMessage}
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{errorMessage}</span>
           </div>
         ) : null}
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{PAGE_COPY.accountLabel}</p>
-          <p className="text-sm text-muted-foreground">
-            {session.user.name?.trim() || session.user.email}
-          </p>
-          <p className="break-all font-mono text-xs text-muted-foreground">
-            {session.user.email}
-          </p>
+
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="text-xs font-medium">
+              {getInitial(session.user.name, session.user.email)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              {session.user.name?.trim() || session.user.email}
+            </p>
+            <p className="truncate font-mono text-xs text-muted-foreground">
+              {session.user.email}
+            </p>
+          </div>
         </div>
+
+        {!emailVerified ? (
+          <EmailVerificationPanel
+            email={session.user.email}
+            continueUrl={continueUrl}
+          />
+        ) : null}
+
         <div className="space-y-2">
-          <p className="text-sm font-medium">{PAGE_COPY.identityScopesLabel}</p>
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <Fingerprint className="h-4 w-4 text-muted-foreground" />
+            {PAGE_COPY.identityScopesLabel}
+          </p>
           <div className="flex flex-wrap gap-2">
             {identityScopeItems.length === 0 ? (
               <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
@@ -237,35 +264,29 @@ export default async function OidcConsentPage({
             )}
           </div>
         </div>
+
         <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-medium">{PAGE_COPY.newPermissionsLabel}</p>
-          <p className="text-sm text-muted-foreground">
-            {PAGE_COPY.newPermissionsDescription}
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <ShieldAlert className="h-4 w-4 text-primary" />
+            {PAGE_COPY.newPermissionsLabel}
           </p>
           <OidcPermissionSummary
             emptyLabel={PAGE_COPY.noNewPermissions}
             groups={newApiPermissionGroups}
           />
         </div>
+
         <div className="space-y-2">
-          <p className="text-sm font-medium">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
             {PAGE_COPY.grantedPermissionsLabel}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {PAGE_COPY.grantedPermissionsDescription}
           </p>
           <OidcPermissionSummary
             emptyLabel={PAGE_COPY.noGrantedPermissions}
             groups={existingApiPermissionGroups}
-            surfaceClassName="rounded-md border px-3 py-3"
+            surfaceClassName="rounded-lg border p-3"
           />
         </div>
-        {!emailVerified ? (
-          <EmailVerificationPanel
-            email={session.user.email}
-            continueUrl={continueUrl}
-          />
-        ) : null}
       </div>
     </AuthorizationRequestCard>
   );

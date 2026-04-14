@@ -882,6 +882,36 @@ describe("SMOKE — OIDC device flow", () => {
     );
   });
 
+  it("device page shows email verification gate for unverified users", async () => {
+    const deviceRes = await requestForm("/api/auth/device/code", {
+      body: {
+        client_id: "masumi-spacetime-cli",
+        scope: "openid profile offline_access",
+      },
+    });
+    expect(deviceRes.status).toBe(200);
+
+    const deviceBody = deviceRes.body as Record<string, unknown>;
+    const { jar } = await signUpAndSignIn();
+    const devicePageRes = await request(
+      `/device?user_code=${encodeURIComponent(deviceBody.user_code as string)}`,
+      {
+        jar,
+        headers: {
+          Accept: "text/html",
+        },
+      },
+    );
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "Verify your email to continue",
+    );
+    expect(String(devicePageRes.body)).toContain(
+      "Verify your email before approving this device login.",
+    );
+  });
+
   it("approved device flow returns an OIDC token set from the standard token endpoint", async () => {
     const deviceRes = await requestForm("/api/auth/device/code", {
       body: {
@@ -1004,20 +1034,26 @@ describe("SMOKE — OIDC device flow", () => {
       jar: authJar.jar,
       body: { userCode: deviceBody.user_code },
     });
-    expect(approveRes.status).toBe(200);
+    expect(approveRes.status).toBe(403);
+    const approveBody = approveRes.body as Record<string, unknown>;
+    expect(approveBody.error).toBe("access_denied");
+    expect(approveBody.error_description).toBe("email_verification_required");
 
-    const tokenRes = await requestForm("/api/auth/oauth2/token", {
-      body: {
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-        device_code: deviceBody.device_code as string,
-        client_id: "masumi-spacetime-cli",
+    const deviceRecord = await prisma.deviceCode.findUnique({
+      where: {
+        userCode: String(deviceBody.user_code).replace(/-/g, ""),
+      },
+      select: {
+        status: true,
       },
     });
+    expect(deviceRecord?.status).toBe("pending");
 
-    expect(tokenRes.status).toBe(403);
-    const token = tokenRes.body as Record<string, unknown>;
-    expect(token.error).toBe("access_denied");
-    expect(token.error_description).toBe("email_verification_required");
+    const storedGrantScopes = await getOidcGrantScopes(
+      authJar.email,
+      "masumi-spacetime-cli",
+    );
+    expect(storedGrantScopes).toEqual([]);
   });
 
   it("legacy POST /api/auth/device/token still returns an OIDC token set", async () => {

@@ -1,10 +1,12 @@
+import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,29 +17,32 @@ export const metadata: Metadata = {
 };
 
 const copy = {
-  badge: "OIDC",
   title: "Device authorized",
   description:
     "Your CLI device authorization request has been approved successfully.",
   detail: "You can return to your CLI and close this tab.",
+  backToDashboard: "Back to dashboard",
 } as const;
 
 export default function DeviceSuccessPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{copy.badge}</Badge>
+      <Card className="w-full max-w-sm animate-page-in text-center">
+        <CardHeader className="items-center space-y-4">
+          <div className="rounded-full bg-green-500/10 p-4">
+            <CheckCircle2 className="h-12 w-12 animate-check-in text-green-500" />
           </div>
-          <CardTitle className="text-3xl font-light tracking-tight">
-            {copy.title}
-          </CardTitle>
-          <CardDescription>{copy.description}</CardDescription>
+          <CardTitle className="text-2xl font-semibold">{copy.title}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
+          <p className="text-base text-muted-foreground">{copy.description}</p>
           <p className="text-sm text-muted-foreground">{copy.detail}</p>
         </CardContent>
+        <CardFooter className="justify-center">
+          <Button asChild variant="outline">
+            <Link href="/">{copy.backToDashboard}</Link>
+          </Button>
+        </CardFooter>
       </Card>
     </main>
   );

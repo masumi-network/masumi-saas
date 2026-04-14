@@ -68,6 +68,7 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
   const { user_code } = await searchParams;
   const normalizedUserCode = normalizeUserCode(user_code);
   const session = await getSession();
+  const emailVerified = session?.user?.emailVerified === true;
 
   let lookupError: string | null = null;
   let isResolvedRequest = false;
@@ -139,7 +140,13 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
       lookupError={lookupError}
       accountEmail={session?.user?.email ?? null}
       accountName={session?.user?.name ?? null}
+      emailVerified={emailVerified}
       switchAccountCallbackUrl={
+        normalizedUserCode
+          ? `/device?user_code=${normalizedUserCode}`
+          : "/device"
+      }
+      verificationContinueUrl={
         normalizedUserCode
           ? `/device?user_code=${normalizedUserCode}`
           : "/device"

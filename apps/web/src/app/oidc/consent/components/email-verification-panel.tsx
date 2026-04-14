@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -168,17 +169,15 @@ export function EmailVerificationPanel({
     cooldownRemaining > 0 || isSendingCode || isSendingLink || isVerifying;
 
   return (
-    <div className="space-y-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-      <div className="space-y-1">
-        <p className="text-sm font-medium">{t("title")}</p>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-      </div>
-
-      <div className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("emailLabel")}
-        </p>
-        <p className="break-all text-sm">{email}</p>
+    <div className="space-y-4 rounded-lg border border-amber-400/20 bg-amber-500/5 p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+          <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">{t("title")}</p>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -195,6 +194,7 @@ export function EmailVerificationPanel({
           placeholder={t("codePlaceholder")}
           value={otp}
           maxLength={6}
+          className="text-center font-mono text-lg tracking-widest"
           onChange={(event) =>
             setOtp(event.target.value.replace(/\D+/g, "").slice(0, 6))
           }
@@ -202,8 +202,9 @@ export function EmailVerificationPanel({
       </div>
 
       {inlineError ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {inlineError}
+        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{inlineError}</span>
         </div>
       ) : null}
 
@@ -235,7 +236,7 @@ export function EmailVerificationPanel({
       <Button
         type="button"
         variant="link"
-        className="h-auto px-0"
+        className="h-auto px-0 text-xs"
         disabled={sendDisabled}
         onClick={handleSendLink}
       >
