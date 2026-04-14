@@ -62,6 +62,7 @@ The SaaS repo must allow that callback URL:
 If the external webapp wants to use the bridge endpoint as a fallback:
 
 - its origin must be allowed by `OIDC_WEB_REDIRECT_URLS` or `CORS_ALLOWED_ORIGINS`
+- the user must already have an active Masumi browser session cookie; API keys and bearer tokens are not accepted by the bridge
 
 ## Recommended Integration Shape
 
@@ -77,7 +78,7 @@ For the external webapp, the recommended flow is:
 
 Do not use cookie-protected SaaS app routes from the external webapp.
 
-Do not use the bridge endpoint as the primary login strategy for the external webapp unless you intentionally want a Masumi-session-based integration instead of a full OIDC client.
+Do not use the bridge endpoint as the primary login strategy for the external webapp unless you intentionally want a Masumi-session-based integration instead of a full OIDC client. The bridge only works for an existing Masumi browser session and is not a general bearer-token exchange endpoint.
 
 ## Token Semantics
 

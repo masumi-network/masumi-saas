@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -6,6 +7,7 @@ export type RateLimitResult = {
   limit: number;
   remaining: number;
   resetAt: number;
+  reason?: "backend_unavailable";
 };
 
 let _upstashRedis: Redis | null = null;
@@ -74,6 +76,8 @@ function checkInMemory(
 const hasUpstash =
   !!process.env.UPSTASH_REDIS_REST_URL &&
   !!process.env.UPSTASH_REDIS_REST_TOKEN;
+const allowInMemoryFallback = process.env.NODE_ENV !== "production";
+let hasLoggedMissingRateLimitBackend = false;
 
 const _upstashLimiterByPolicy = new Map<string, Ratelimit>();
 
@@ -89,6 +93,29 @@ function getUpstashLimiter(maxRequests: number, windowMs: number): Ratelimit {
     _upstashLimiterByPolicy.set(cacheKey, limiter);
   }
   return limiter;
+}
+
+function reportMissingRateLimitBackend() {
+  if (hasLoggedMissingRateLimitBackend) {
+    return;
+  }
+
+  hasLoggedMissingRateLimitBackend = true;
+  const error = new Error(
+    "Upstash rate limit backend is not configured in production.",
+  );
+
+  console.error("[rate-limit] backend unavailable", {
+    code: "rate_limit_backend_unavailable",
+    nodeEnv: process.env.NODE_ENV,
+  });
+  Sentry.captureException(error, {
+    level: "error",
+    tags: {
+      component: "rate-limit",
+      code: "rate_limit_backend_unavailable",
+    },
+  });
 }
 
 export async function checkRateLimit(
@@ -110,6 +137,17 @@ export async function checkRateLimit(
       limit: result.limit,
       remaining: result.remaining,
       resetAt: result.reset,
+    };
+  }
+
+  if (!allowInMemoryFallback) {
+    reportMissingRateLimitBackend();
+    return {
+      allowed: false,
+      limit: maxRequests,
+      remaining: 0,
+      resetAt: Date.now() + windowMs,
+      reason: "backend_unavailable",
     };
   }
 

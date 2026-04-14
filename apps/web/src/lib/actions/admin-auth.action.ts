@@ -1,8 +1,7 @@
 "use server";
 
-import prisma from "@masumi/database/client";
-
 import { auth } from "@/lib/auth/auth";
+import { deleteSessionByRawToken } from "@/lib/auth/auth-storage";
 import { classifyAuthError } from "@/lib/auth/error-results";
 import { isAdminUser } from "@/lib/auth/utils";
 import { signInFormDataSchema } from "@/lib/schemas";
@@ -47,9 +46,7 @@ export async function adminSignInAction(formData: FormData) {
         // the session record is also removed from the database
         if (result.token) {
           try {
-            await prisma.session.deleteMany({
-              where: { token: result.token },
-            });
+            await deleteSessionByRawToken(result.token);
           } catch {
             // Session cleanup failed - log but don't expose to client
             console.error(

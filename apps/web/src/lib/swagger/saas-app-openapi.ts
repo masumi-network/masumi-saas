@@ -131,7 +131,11 @@ const agentListItemSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   extendedDescription: z.string().nullable(),
-  apiUrl: z.string(),
+  apiUrl: z.string().openapi({
+    description:
+      "Agent API base URL. In production it must be a public HTTPS endpoint.",
+    example: "https://agent.example.com/mip",
+  }),
   organizationId: z.string().nullable(),
   registrationState: z.string(),
   verificationStatus: z

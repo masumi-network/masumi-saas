@@ -4929,7 +4929,9 @@
                             "nullable": true
                           },
                           "apiUrl": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                            "example": "https://agent.example.com/mip"
                           },
                           "organizationId": {
                             "type": "string",
@@ -5236,7 +5238,9 @@
                   },
                   "apiUrl": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri",
+                    "example": "https://agent.example.com/mip",
+                    "description": "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected."
                   },
                   "tags": {
                     "type": "string"
@@ -5455,7 +5459,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -5808,7 +5814,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -7223,7 +7231,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -8149,7 +8159,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",

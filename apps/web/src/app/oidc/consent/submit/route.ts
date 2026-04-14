@@ -1,7 +1,7 @@
-import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { findVerificationByIdentifier } from "@/lib/auth/auth-storage";
 import {
   buildAbsoluteAppUrl,
   sanitizeCallbackUrl,
@@ -88,17 +88,12 @@ export async function POST(request: Request) {
         );
       }
 
-      const verificationRecord = await prisma.verification.findFirst({
-        where: {
-          identifier: consentCode,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
+      const verificationRecord = await findVerificationByIdentifier(
+        consentCode,
+        {
           value: true,
         },
-      });
+      );
 
       const verificationValue = verificationRecord
         ? parseConsentVerificationValue(verificationRecord.value)

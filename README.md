@@ -80,7 +80,7 @@ SpacetimeDB reducers should validate:
 
 If you are upgrading from an older local setup that issued `EdDSA` tokens, clear or recreate the auth database so Better Auth generates a fresh `ES256` JWK. Better Auth will otherwise continue reusing the latest stored signing key.
 
-For browser flows that authenticate directly against Better Auth (cookie or bearer session token), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
+For browser flows that authenticate directly against Better Auth, use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated browser session for an issuer-signed OIDC token set suitable for SpacetimeDB. This bridge is session-cookie only and rejects API-key or bearer-token callers. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
 
 ```json
 { "client": "web" }

@@ -2,6 +2,10 @@ import { createHash, createHmac } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  findDeviceCodeByUserCode,
+  findVerificationByIdentifier,
+} from "../../src/lib/auth/auth-storage";
 import { BASE_URL, request, requestForm, signUpAndSignIn } from "../helpers";
 import prisma from "../prisma-client";
 
@@ -463,14 +467,15 @@ describe("SMOKE — OIDC discovery", () => {
 describe("SMOKE — OIDC Spacetime bridge", () => {
   it("sign-up creates an email verification code record", async () => {
     const { email } = await signUpAndSignIn();
-    const verification = await prisma.verification.findFirst({
-      where: {
-        identifier: `email-verification-otp-${email.toLowerCase()}`,
+    const verification = await findVerificationByIdentifier(
+      `email-verification-otp-${email.toLowerCase()}`,
+      {
+        value: true,
       },
-    });
+    );
 
     expect(verification).not.toBeNull();
-    expect(verification?.value).toMatch(/^\d{6}:0$/);
+    expect(verification?.value).toMatch(/^[a-f0-9]{64}:0$/);
   });
 
   it("OPTIONS /api/oidc/spacetimedb/token allows configured OIDC web origins", async () => {
@@ -858,9 +863,17 @@ describe("SMOKE — OIDC device flow", () => {
     expect(deviceRes.status).toBe(200);
 
     const deviceBody = deviceRes.body as Record<string, unknown>;
+    const deviceCode = await findDeviceCodeByUserCode(
+      String(deviceBody.user_code).replace(/-/g, ""),
+      {
+        id: true,
+      },
+    );
+    expect(deviceCode?.id).toBeTruthy();
+
     await prisma.deviceCode.update({
       where: {
-        userCode: String(deviceBody.user_code).replace(/-/g, ""),
+        id: deviceCode!.id,
       },
       data: {
         expiresAt: new Date(Date.now() - 60_000),
@@ -1039,14 +1052,12 @@ describe("SMOKE — OIDC device flow", () => {
     expect(approveBody.error).toBe("access_denied");
     expect(approveBody.error_description).toBe("email_verification_required");
 
-    const deviceRecord = await prisma.deviceCode.findUnique({
-      where: {
-        userCode: String(deviceBody.user_code).replace(/-/g, ""),
-      },
-      select: {
+    const deviceRecord = await findDeviceCodeByUserCode(
+      String(deviceBody.user_code).replace(/-/g, ""),
+      {
         status: true,
       },
-    });
+    );
     expect(deviceRecord?.status).toBe("pending");
 
     const storedGrantScopes = await getOidcGrantScopes(

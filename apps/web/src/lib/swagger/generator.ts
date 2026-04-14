@@ -15,7 +15,11 @@ const AgentSchema = registry.register(
     description: z
       .string()
       .openapi({ example: "A payment processing agent on the Masumi network" }),
-    apiUrl: z.string().openapi({ example: "https://my-agent.example.com" }),
+    apiUrl: z.string().openapi({
+      example: "https://my-agent.example.com",
+      description:
+        "Agent API base URL. In production it must be a public HTTPS endpoint.",
+    }),
     verificationStatus: z
       .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
       .openapi({

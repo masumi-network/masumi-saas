@@ -19,6 +19,7 @@ import {
   agentsListQuerySchema,
   registerAgentBodySchema,
 } from "@/lib/schemas/agent";
+import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 
 function matchesAgentSearch(
   agent: {
@@ -232,6 +233,22 @@ export async function POST(request: NextRequest) {
       action: "write",
       network,
     });
+
+    try {
+      await assertAllowedAgentApiUrl(apiUrl);
+    } catch (error) {
+      if (error instanceof Error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        { success: false, error: "Invalid API URL" },
+        { status: 400 },
+      );
+    }
+
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
 
     await consumeCreditIfRequired({

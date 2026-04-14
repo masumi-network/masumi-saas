@@ -2,7 +2,6 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 import { APIError, betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import {
   admin,
@@ -19,6 +18,14 @@ import {
 import { localization } from "better-auth-localization";
 import { headers } from "next/headers";
 
+import {
+  buildStoredOtpValue,
+  createEmailOtpStoreOptions,
+  createMagicLinkTokenHasher,
+  createVerificationValue,
+  deleteVerificationByIdentifier,
+  securePrismaAuthAdapter,
+} from "@/lib/auth/auth-storage";
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
@@ -72,19 +79,13 @@ async function createEmailOtp(
   const identifier = `${type}-otp-${email.toLowerCase()}`;
   const otp = generateEmailVerificationCode();
 
-  await prisma.verification.deleteMany({
-    where: {
-      identifier,
-    },
-  });
+  await deleteVerificationByIdentifier(identifier);
 
-  await prisma.verification.create({
-    data: {
-      id: crypto.randomUUID(),
-      identifier,
-      value: `${otp}:0`,
-      expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
-    },
+  await createVerificationValue({
+    id: crypto.randomUUID(),
+    identifier,
+    value: buildStoredOtpValue(otp),
+    expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
   });
 
   return otp;
@@ -153,7 +154,7 @@ async function sendVerificationOtpEmail({
 export const auth = betterAuth({
   disabledPaths: ["/token"],
   appName: "Masumi",
-  database: prismaAdapter(prisma, {
+  database: securePrismaAuthAdapter(prisma, {
     provider: "postgresql",
   }),
   secret: authEnvConfig.secret,
@@ -161,10 +162,14 @@ export const auth = betterAuth({
   trustedOrigins: [
     authEnvConfig.baseUrl,
     oidcEnvConfig.issuer,
-    "http://localhost:2999",
-    "http://127.0.0.1:2999",
     ...getTrustedOidcOrigins(),
+    ...(process.env.NODE_ENV === "production"
+      ? []
+      : ["http://localhost:2999", "http://127.0.0.1:2999"]),
   ],
+  account: {
+    encryptOAuthTokens: true,
+  },
   emailAndPassword: {
     enabled: true,
     // Allow unverified users to sign in; we enforce verification at the action level instead
@@ -344,6 +349,7 @@ export const auth = betterAuth({
       consentPage: "/oidc/consent",
       useJWTPlugin: true,
       requirePKCE: true,
+      storeClientSecret: "hashed",
       scopes: OIDC_API_SCOPES,
       trustedClients: getTrustedOidcClients(),
       metadata: getPublicOidcMetadata(),
@@ -364,6 +370,7 @@ export const auth = betterAuth({
       expiresIn: EMAIL_OTP_EXPIRES_IN_SECONDS,
       otpLength: 6,
       allowedAttempts: EMAIL_OTP_ALLOWED_ATTEMPTS,
+      storeOTP: createEmailOtpStoreOptions(),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type !== "email-verification") {
           return;
@@ -376,6 +383,7 @@ export const auth = betterAuth({
     magicLink({
       expiresIn: authConfig.magicLink.expiresIn,
       rateLimit: authConfig.magicLink.rateLimit,
+      storeToken: createMagicLinkTokenHasher(),
       sendMagicLink: async ({ email, url }, ctx) => {
         const requestedName =
           typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
@@ -507,6 +515,7 @@ export const auth = betterAuth({
     }),
     apiKey({
       defaultPrefix: authConfig.apiKey.defaultKeyPrefix,
+      disableKeyHashing: false,
       startingCharactersConfig: {
         shouldStore: true,
         charactersLength: 12,
