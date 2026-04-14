@@ -111,11 +111,30 @@ export default function Header({ className }: HeaderProps) {
               <Button
                 variant="outline"
                 size="icon"
+                asChild
+                className="w-8 h-8 md:hidden"
+              >
+                <a
+                  href="https://docs.masumi.network/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("documentation")}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </a>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setIsSearchOpen(true)}
                 className="h-8 w-8 md:hidden"
               >
                 <Search className="h-4 w-4" />
               </Button>
+              <div className="md:hidden">
+                <NotificationsDialog />
+              </div>
             </div>
           </div>
         </div>

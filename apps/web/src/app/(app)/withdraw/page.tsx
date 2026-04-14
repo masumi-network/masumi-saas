@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Clock3, Wallet } from "lucide-react";
+import { Clock3, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
