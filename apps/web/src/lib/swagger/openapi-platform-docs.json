@@ -3244,13 +3244,6 @@
           "RegistrySource": {
             "type": "object",
             "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "Web3CardanoV1",
-                  "MasumiInboxV1"
-                ]
-              },
               "policyId": {
                 "type": "string",
                 "nullable": true
@@ -3261,7 +3254,6 @@
               }
             },
             "required": [
-              "type",
               "policyId",
               "url"
             ]
@@ -3600,13 +3592,6 @@
               "id": {
                 "type": "string"
               },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "Web3CardanoV1",
-                  "MasumiInboxV1"
-                ]
-              },
               "policyId": {
                 "type": "string",
                 "nullable": true
@@ -3618,7 +3603,6 @@
             },
             "required": [
               "id",
-              "type",
               "policyId",
               "url"
             ]
@@ -3810,6 +3794,26 @@
           "agentIdentifier": {
             "type": "string"
           },
+          "linkedEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "encryptionPublicKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "encryptionKeyVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "signingPublicKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "signingKeyVersion": {
+            "type": "string",
+            "nullable": true
+          },
           "metadataVersion": {
             "type": "integer"
           },
@@ -3818,12 +3822,6 @@
             "properties": {
               "id": {
                 "type": "string"
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "MasumiInboxV1"
-                ]
               },
               "policyId": {
                 "type": "string",
@@ -3836,7 +3834,6 @@
             },
             "required": [
               "id",
-              "type",
               "policyId",
               "url"
             ]
@@ -3852,6 +3849,11 @@
           "description",
           "agentSlug",
           "agentIdentifier",
+          "linkedEmail",
+          "encryptionPublicKey",
+          "encryptionKeyVersion",
+          "signingPublicKey",
+          "signingKeyVersion",
           "metadataVersion",
           "RegistrySource"
         ]
@@ -3861,13 +3863,6 @@
         "properties": {
           "id": {
             "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "Web3CardanoV1",
-              "MasumiInboxV1"
-            ]
           },
           "url": {
             "type": "string",
@@ -3906,7 +3901,6 @@
         },
         "required": [
           "id",
-          "type",
           "url",
           "policyId",
           "note",
@@ -17286,7 +17280,6 @@
                           "RegistrySource": {
                             "id": "unique_cuid_v2",
                             "policyId": "policy_id",
-                            "type": "Web3CardanoV1",
                             "url": "https://example.com/api/"
                           },
                           "Capability": {
@@ -17312,6 +17305,169 @@
                             }
                           ],
                           "metadataVersion": 1
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (possible parameters missing or invalid)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/v1/inbox-agent-registration-search": {
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nFuzzy-search blockchain-tracked Masumi inbox registrations by slug, name, or linked email. By default, only pending and verified registrations are returned. Supports pagination and optional filtering by status and policy id.",
+        "summary": "REQUIRES API KEY Authentication (+user)",
+        "tags": [
+          "inbox-agent-registration"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10
+                  },
+                  "cursorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Case-insensitive fuzzy match against inbox agent slug, name, or linked email."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Pending",
+                            "Verified",
+                            "Invalid",
+                            "Deregistered"
+                          ]
+                        },
+                        "maxItems": 4
+                      },
+                      "policyId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "network",
+                  "query"
+                ],
+                "example": {
+                  "limit": 10,
+                  "cursorId": "last_paginated_item",
+                  "network": "Preprod",
+                  "query": "agent@example.com",
+                  "filter": {
+                    "policyId": "policy_id",
+                    "status": [
+                      "Pending",
+                      "Verified"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox agent registrations matching the fuzzy search",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "registrations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_InboxAgentRegistration"
+                          }
+                        }
+                      },
+                      "required": [
+                        "registrations"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "registrations": [
+                        {
+                          "id": "unique_cuid_v2",
+                          "createdAt": "1970-01-01T00:00:00.000Z",
+                          "updatedAt": "1970-01-01T00:02:00.000Z",
+                          "status": "Pending",
+                          "statusUpdatedAt": "1970-01-01T00:02:00.000Z",
+                          "name": "Inbox Agent",
+                          "description": "Masumi inbox identity registration",
+                          "agentSlug": "inbox-agent",
+                          "agentIdentifier": "333333333333333333333333333333333333333333333333333333333333333333",
+                          "linkedEmail": "agent@example.com",
+                          "encryptionPublicKey": "encryption_public_key",
+                          "encryptionKeyVersion": "enc-v1",
+                          "signingPublicKey": "signing_public_key",
+                          "signingKeyVersion": "sig-v1",
+                          "metadataVersion": 1,
+                          "RegistrySource": {
+                            "id": "unique_cuid_v2",
+                            "policyId": "policy_id",
+                            "url": "https://example.com/registry.json"
+                          }
                         }
                       ]
                     },
@@ -17468,7 +17624,6 @@
                           "RegistrySource": {
                             "id": "unique_cuid_v2",
                             "policyId": "policy_id",
-                            "type": "Web3CardanoV1",
                             "url": "https://example.com/api/"
                           },
                           "Capability": {
@@ -17567,7 +17722,6 @@
                       "description": "Example Capability description",
                       "status": "Online",
                       "RegistrySource": {
-                        "type": "Web3CardanoV1",
                         "policyId": "0000000000000000000000000000000000000000000000000000000000000000",
                         "url": null
                       },

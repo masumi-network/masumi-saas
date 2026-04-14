@@ -10,8 +10,13 @@ type RegistryEntryResponse =
 type InboxAgentRegistrationRequest = NonNullable<
   RegistryServicePaths["/inbox-agent-registration/"]["post"]["requestBody"]
 >["content"]["application/json"];
+type InboxAgentRegistrationSearchRequest = NonNullable<
+  RegistryServicePaths["/inbox-agent-registration-search/"]["post"]["requestBody"]
+>["content"]["application/json"];
 type InboxAgentRegistrationResponse =
   RegistryServicePaths["/inbox-agent-registration/"]["post"]["responses"][200]["content"]["application/json"];
+type InboxAgentRegistrationSearchResponse =
+  RegistryServicePaths["/inbox-agent-registration-search/"]["post"]["responses"][200]["content"]["application/json"];
 
 export type RegistryEntry = RegistryEntryResponse["data"]["entries"][number];
 export type RegistryEntryFilter = NonNullable<RegistryEntryRequest["filter"]>;
@@ -33,6 +38,10 @@ type PaginatedDiscoveryResult<T> =
       success: false;
       error: string;
     };
+
+type RegistryDiscoveryRequestOptions = {
+  signal?: AbortSignal;
+};
 
 function getErrorMessage(payload: unknown, status: number) {
   if (payload && typeof payload === "object") {
@@ -76,6 +85,10 @@ function extractList<T>(
   return [];
 }
 
+function isAbortError(error: unknown): error is Error {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 async function readJsonSafely(response: Response) {
   const text = await response.text();
 
@@ -94,8 +107,12 @@ class RegistryDiscoveryClient {
 
   private async postCollection<T extends { id: string }>(
     endpoint: string,
-    body: RegistryEntryRequest | InboxAgentRegistrationRequest,
+    body:
+      | RegistryEntryRequest
+      | InboxAgentRegistrationRequest
+      | InboxAgentRegistrationSearchRequest,
     collectionKey: "entries" | "registrations",
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<T>> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -105,6 +122,7 @@ class RegistryDiscoveryClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: options?.signal,
       });
 
       const payload = await readJsonSafely(response);
@@ -129,6 +147,10 @@ class RegistryDiscoveryClient {
         },
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       return {
         success: false,
         error:
@@ -139,16 +161,19 @@ class RegistryDiscoveryClient {
 
   async getRegistryEntries(
     body: RegistryEntryRequest,
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<RegistryEntry>> {
     return this.postCollection<RegistryEntry>(
       "/registry-entry",
       body,
       "entries",
+      options,
     );
   }
 
   async getInboxAgentRegistrations(
     body: InboxAgentRegistrationRequest,
+    options?: RegistryDiscoveryRequestOptions,
   ): Promise<PaginatedDiscoveryResult<InboxAgentRegistration>> {
     try {
       const response = await fetch(
@@ -160,6 +185,7 @@ class RegistryDiscoveryClient {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
+          signal: options?.signal,
         },
       );
 
@@ -188,12 +214,29 @@ class RegistryDiscoveryClient {
         },
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
       return {
         success: false,
         error:
           error instanceof Error ? error.message : "Network error occurred",
       };
     }
+  }
+
+  async searchInboxAgentRegistrations(
+    body: InboxAgentRegistrationSearchRequest,
+    options?: RegistryDiscoveryRequestOptions,
+  ): Promise<
+    PaginatedDiscoveryResult<
+      InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
+    >
+  > {
+    return this.postCollection<
+      InboxAgentRegistrationSearchResponse["data"]["registrations"][number]
+    >("/inbox-agent-registration-search", body, "registrations", options);
   }
 }
 

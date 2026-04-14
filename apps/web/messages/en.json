@@ -914,7 +914,7 @@
           "inbox": "Inbox"
         },
         "searchPlaceholder": "Look up agents, tags, capabilities, or IDs...",
-        "inboxSearchPlaceholder": "Look up inbox agents, slugs, policy IDs, or agent IDs...",
+        "inboxSearchPlaceholder": "Search by inbox agent name, slug, or linked email...",
         "resultsSummary": "{visibleCount, plural, one {# agent shown} other {# agents shown}} on this page",
         "sortHint": "Sorted by newest updates first",
         "page": "Page {page}",
@@ -954,7 +954,7 @@
         "empty": "No registry agents found yet.",
         "emptySearch": "No discovered agents match your lookup on this page. Try a broader search or switch pages.",
         "inboxEmpty": "No pending or verified inbox agents found yet.",
-        "inboxEmptySearch": "No pending or verified inbox agents match your lookup on this page. Try a broader search or switch pages.",
+        "inboxEmptySearch": "No pending or verified inbox agents match that name, slug, or linked email. Try another search.",
         "error": "Failed to load discovery results. Please try again.",
         "pricing": {
           "free": "Free",

@@ -152,6 +152,11 @@ const REGISTRY_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
   },
   {
     upstream: "registry",
+    upstreamPath: "/inbox-agent-registration-search/",
+    authMode: "registry-shared-token",
+  },
+  {
+    upstream: "registry",
     upstreamPath: "/registry-diff/",
     authMode: "registry-shared-token",
   },

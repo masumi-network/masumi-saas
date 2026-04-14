@@ -106,4 +106,111 @@ describe("registryDiscoveryClient", () => {
       },
     });
   });
+
+  it("wraps the public inbox-agent-registration-search route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            registrations: [
+              {
+                id: "inbox-2",
+                name: "Inbox Agent",
+                linkedEmail: "agent@example.com",
+              },
+            ],
+          },
+          status: "success",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await registryDiscoveryClient.searchInboxAgentRegistrations({
+      network: "Preprod",
+      query: "agent@example.com",
+      limit: 1,
+      filter: { status: ["Verified"] },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/inbox-agent-registration-search",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
+    expect(result).toStrictEqual({
+      success: true,
+      data: {
+        items: [
+          {
+            id: "inbox-2",
+            name: "Inbox Agent",
+            linkedEmail: "agent@example.com",
+          },
+        ],
+        nextCursor: "inbox-2",
+      },
+    });
+  });
+
+  it("forwards an abort signal to inbox-agent search requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            registrations: [],
+          },
+          status: "success",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    const controller = new AbortController();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await registryDiscoveryClient.searchInboxAgentRegistrations(
+      {
+        network: "Preprod",
+        query: "agent@example.com",
+        limit: 1,
+        filter: { status: ["Verified"] },
+      },
+      { signal: controller.signal },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/inbox-agent-registration-search",
+      expect.objectContaining({
+        signal: controller.signal,
+      }),
+    );
+  });
+
+  it("rethrows aborted inbox browse requests", async () => {
+    const abortError = new DOMException(
+      "The operation was aborted.",
+      "AbortError",
+    );
+    const fetchMock = vi.fn().mockRejectedValue(abortError);
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      registryDiscoveryClient.getInboxAgentRegistrations({
+        network: "Preprod",
+        limit: 1,
+        filter: { status: ["Verified"] },
+      }),
+    ).rejects.toBe(abortError);
+  });
 });

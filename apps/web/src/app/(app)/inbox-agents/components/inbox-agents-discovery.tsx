@@ -1,5 +1,6 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ChevronRight, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -38,6 +39,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   type InboxAgentRegistration,
+  type InboxAgentRegistrationFilter,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
@@ -107,26 +109,6 @@ function getPageNumbers(
   }
 
   return pages;
-}
-
-function matchesInboxLookup(
-  registration: InboxAgentRegistration,
-  query: string,
-) {
-  if (!query) return true;
-
-  const haystack = [
-    registration.name,
-    registration.description ?? "",
-    registration.agentIdentifier,
-    registration.agentSlug,
-    registration.RegistrySource.policyId ?? "",
-    registration.RegistrySource.url ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(query);
 }
 
 function getInboxRegistrationBadgeVariant(
@@ -487,10 +469,15 @@ export function InboxAgentsDiscovery() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchCurrentPage, setSearchCurrentPage] = useState(1);
   const [selectedInboxRegistration, setSelectedInboxRegistration] =
     useState<InboxAgentRegistration | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const browseRequestSequenceRef = useRef(0);
+  const browseAbortControllerRef = useRef<AbortController | null>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
+  const immediateSearch = searchQuery.trim();
+  const normalizedSearch = debouncedSearch.trim();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -513,20 +500,67 @@ export function InboxAgentsDiscovery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(
+    () => () => {
+      browseAbortControllerRef.current?.abort();
+    },
+    [],
+  );
+
   const fetchInboxRegistrations = useCallback(
-    async (cursorId?: string) =>
-      registryDiscoveryClient.getInboxAgentRegistrations({
-        network,
-        limit: PAGE_SIZE,
-        cursorId,
-        filter: {
-          status: ["Pending", "Verified"],
+    async (cursorId?: string, signal?: AbortSignal) => {
+      const filter: InboxAgentRegistrationFilter = {
+        status: ["Pending", "Verified"],
+      };
+
+      return registryDiscoveryClient.getInboxAgentRegistrations(
+        {
+          network,
+          limit: PAGE_SIZE,
+          cursorId,
+          filter,
         },
-      }),
+        { signal },
+      );
+    },
     [network],
   );
 
+  const searchQueryResult = useInfiniteQuery({
+    queryKey: ["inbox-agent-registrations-search", network, normalizedSearch],
+    initialPageParam: undefined as string | undefined,
+    enabled: normalizedSearch.length > 0,
+    queryFn: async ({ pageParam, signal }) => {
+      const result =
+        await registryDiscoveryClient.searchInboxAgentRegistrations(
+          {
+            network,
+            limit: PAGE_SIZE,
+            cursorId: pageParam,
+            query: normalizedSearch,
+            filter: {
+              status: ["Pending", "Verified"],
+            },
+          },
+          { signal },
+        );
+
+      if (!result.success) {
+        throw new Error(result.error || t("Discovery.error"));
+      }
+
+      return result.data;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    placeholderData: (previousData) => previousData,
+  });
+
   const loadInitial = useCallback(async () => {
+    browseAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    browseAbortControllerRef.current = controller;
+    const requestSequence = ++browseRequestSequenceRef.current;
+
     setState((current) => ({
       ...current,
       isLoading: true,
@@ -534,24 +568,75 @@ export function InboxAgentsDiscovery() {
       error: null,
     }));
 
-    const result = await fetchInboxRegistrations();
+    try {
+      const result = await fetchInboxRegistrations(
+        undefined,
+        controller.signal,
+      );
 
-    setState({
-      pages: result.success ? [result.data.items] : [],
-      nextCursors: result.success ? [result.data.nextCursor] : [],
-      currentPage: 1,
-      isLoading: false,
-      isPageLoading: false,
-      error: result.success ? null : result.error || t("Discovery.error"),
-    });
+      if (
+        requestSequence !== browseRequestSequenceRef.current ||
+        controller.signal.aborted
+      ) {
+        return;
+      }
+
+      setState({
+        pages: result.success ? [result.data.items] : [],
+        nextCursors: result.success ? [result.data.nextCursor] : [],
+        currentPage: 1,
+        isLoading: false,
+        isPageLoading: false,
+        error: result.success ? null : result.error || t("Discovery.error"),
+      });
+    } catch (error) {
+      if (controller.signal.aborted) return;
+
+      setState((current) => ({
+        ...current,
+        isLoading: false,
+        isPageLoading: false,
+        error: error instanceof Error ? error.message : t("Discovery.error"),
+      }));
+    }
   }, [fetchInboxRegistrations, t]);
 
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
 
+  useEffect(() => {
+    setSearchCurrentPage(1);
+  }, [normalizedSearch, network]);
+
   const loadPage = useCallback(
     async (page: number) => {
+      if (normalizedSearch) {
+        const searchTotalPages =
+          (searchQueryResult.data?.pages.length ?? 0) +
+          (searchQueryResult.hasNextPage ? 1 : 0);
+
+        if (page < 1 || page > Math.max(1, searchTotalPages)) return;
+
+        if (page <= (searchQueryResult.data?.pages.length ?? 0)) {
+          setSearchCurrentPage(page);
+          return;
+        }
+
+        if (
+          !searchQueryResult.hasNextPage ||
+          searchQueryResult.isFetchingNextPage
+        ) {
+          return;
+        }
+
+        const result = await searchQueryResult.fetchNextPage();
+        if (result.error) return;
+
+        setSearchCurrentPage(page);
+        return;
+      }
+
       if (state.isPageLoading) return;
       if (page < 1 || page > getKnownTotalPages(state)) return;
 
@@ -563,6 +648,11 @@ export function InboxAgentsDiscovery() {
       const cursor = state.nextCursors[state.pages.length - 1];
       if (!cursor) return;
 
+      browseAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      browseAbortControllerRef.current = controller;
+      const requestSequence = ++browseRequestSequenceRef.current;
+
       setState((current) => ({
         ...current,
         isPageLoading: true,
@@ -570,7 +660,15 @@ export function InboxAgentsDiscovery() {
       }));
 
       try {
-        const result = await fetchInboxRegistrations(cursor);
+        const result = await fetchInboxRegistrations(cursor, controller.signal);
+
+        if (
+          requestSequence !== browseRequestSequenceRef.current ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
+
         if (!result.success) {
           setState((current) => ({
             ...current,
@@ -588,6 +686,8 @@ export function InboxAgentsDiscovery() {
           isPageLoading: false,
         }));
       } catch (error) {
+        if (controller.signal.aborted) return;
+
         setState((current) => ({
           ...current,
           isPageLoading: false,
@@ -595,24 +695,50 @@ export function InboxAgentsDiscovery() {
         }));
       }
     },
-    [fetchInboxRegistrations, state, t],
+    [fetchInboxRegistrations, normalizedSearch, searchQueryResult, state, t],
   );
 
   const pageItems = useMemo(() => getCurrentPageItems(state), [state]);
-  const visibleItems = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-
-    return [...pageItems]
-      .sort(
+  const sortedPageItems = useMemo(
+    () =>
+      [...pageItems].sort(
         (left, right) =>
           new Date(right.statusUpdatedAt).getTime() -
           new Date(left.statusUpdatedAt).getTime(),
-      )
-      .filter((registration) => matchesInboxLookup(registration, query));
-  }, [debouncedSearch, pageItems]);
+      ),
+    [pageItems],
+  );
+  const searchPageItems = useMemo(
+    () => searchQueryResult.data?.pages[searchCurrentPage - 1]?.items ?? [],
+    [searchCurrentPage, searchQueryResult.data],
+  );
+  const sortedSearchPageItems = useMemo(
+    () =>
+      [...searchPageItems].sort(
+        (left, right) =>
+          new Date(right.statusUpdatedAt).getTime() -
+          new Date(left.statusUpdatedAt).getTime(),
+      ),
+    [searchPageItems],
+  );
+  const isSearchPendingWithoutResults =
+    normalizedSearch.length > 0 &&
+    !searchQueryResult.data &&
+    (searchQueryResult.isPending || searchQueryResult.isFetching);
+  const visibleItems =
+    normalizedSearch.length > 0
+      ? isSearchPendingWithoutResults
+        ? sortedPageItems
+        : sortedSearchPageItems
+      : sortedPageItems;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    if (normalizedSearch) {
+      searchQueryResult.refetch().finally(() => setIsRefreshing(false));
+      return;
+    }
+
     loadInitial().finally(() => setIsRefreshing(false));
   };
 
@@ -624,9 +750,34 @@ export function InboxAgentsDiscovery() {
     ellipsisSrText: t("Discovery.paginationMore"),
   };
 
-  const activeEmptyLabel = debouncedSearch
+  const hasActiveSearch = normalizedSearch.length > 0;
+  const isSearchLoading = hasActiveSearch
+    ? immediateSearch !== normalizedSearch ||
+      searchQueryResult.isLoading ||
+      searchQueryResult.isFetching
+    : state.isPageLoading;
+  const activeEmptyLabel = hasActiveSearch
     ? t("Discovery.inboxEmptySearch")
     : t("Discovery.inboxEmpty");
+  const activeError = hasActiveSearch
+    ? searchQueryResult.error instanceof Error
+      ? searchQueryResult.error.message
+      : null
+    : state.error;
+  const activeCurrentPage = hasActiveSearch
+    ? searchCurrentPage
+    : state.currentPage;
+  const activeTotalPages = hasActiveSearch
+    ? Math.max(
+        1,
+        (searchQueryResult.data?.pages.length ?? 0) +
+          (searchQueryResult.hasNextPage ? 1 : 0),
+      )
+    : getKnownTotalPages(state);
+  const summaryLoadedCount =
+    hasActiveSearch && !isSearchPendingWithoutResults
+      ? searchPageItems.length
+      : pageItems.length;
 
   return (
     <Card className="overflow-hidden gap-0 py-0">
@@ -655,7 +806,7 @@ export function InboxAgentsDiscovery() {
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: state.currentPage })}
+            {t("Discovery.page", { page: activeCurrentPage })}
           </div>
         </div>
 
@@ -693,22 +844,22 @@ export function InboxAgentsDiscovery() {
           <div>
             {t("Discovery.resultsSummary", {
               visibleCount: visibleItems.length,
-              loadedCount: pageItems.length,
+              loadedCount: summaryLoadedCount,
             })}
           </div>
         </div>
 
-        {state.error && (
+        {activeError && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {state.error}
+            {activeError}
           </div>
         )}
 
-        {state.isLoading ? (
+        {!normalizedSearch && state.isLoading ? (
           <DiscoverySkeleton />
         ) : (
           <>
-            {state.isPageLoading && (
+            {isSearchLoading && (
               <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
                 <Spinner size={14} />
                 {t("loadingMore")}
@@ -736,9 +887,9 @@ export function InboxAgentsDiscovery() {
             )}
 
             <DiscoveryPaginationBar
-              currentPage={state.currentPage}
-              totalPages={getKnownTotalPages(state)}
-              isLoading={state.isPageLoading}
+              currentPage={activeCurrentPage}
+              totalPages={activeTotalPages}
+              isLoading={isSearchLoading}
               onPageChange={(page) => {
                 void loadPage(page);
               }}
