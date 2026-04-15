@@ -72,6 +72,7 @@ export async function deregisterAgentForUser(
         (await getSmartContractAddressForConfiguredSource(
           userClient,
           userId,
+          network,
         )) ?? undefined;
     }
 

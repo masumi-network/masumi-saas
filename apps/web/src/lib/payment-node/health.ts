@@ -10,7 +10,7 @@ import { paymentNodeConfig } from "./config";
 export type PaymentNodeHealthResult = {
   ok: boolean;
   error?: string;
-  /** Env vars (BASE_URL, ADMIN_API_KEY, PAYMENT_SOURCE_ID) are missing */
+  /** Env vars (BASE_URL, ADMIN_API_KEY, PAYMENT_SOURCE_ID_PREPROD) are missing */
   configMissing?: boolean;
   /** Payment node did not respond (network error, timeout) */
   unreachable?: boolean;
@@ -67,7 +67,7 @@ export async function checkPaymentNodeHealth(): Promise<PaymentNodeHealthResult>
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
-    paymentNodeConfig.getPaymentSourceId(); // ensure all required env is present
+    paymentNodeConfig.getPaymentSourceId(NETWORK_FOR_CHECK);
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Payment node config missing";
@@ -111,7 +111,7 @@ export function isPaymentNodeConfigured(): boolean {
   try {
     paymentNodeConfig.getBaseUrl();
     paymentNodeConfig.getAdminApiKey();
-    paymentNodeConfig.getPaymentSourceId();
+    paymentNodeConfig.getPaymentSourceId(NETWORK_FOR_CHECK);
     return true;
   } catch {
     return false;

@@ -7,6 +7,7 @@ import {
 } from "@/lib/activity-cursor";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import {
   activityApiSearchParamsSchema,
   activityPaginationFromLimitParamSchema,
@@ -152,6 +153,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("Failed to get activity feed:", error);
     const message =
       process.env.NODE_ENV === "development" && error instanceof Error

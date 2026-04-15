@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import { activityTransactionQuerySchema } from "@/lib/schemas/api-query";
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
       await getSmartContractAddressForConfiguredSource(
         client,
         authContext.user.id,
+        network,
       );
     if (!smartContractAddress) {
       return NextResponse.json(
@@ -84,6 +86,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("[Activity transaction] GET failed:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load transaction" },

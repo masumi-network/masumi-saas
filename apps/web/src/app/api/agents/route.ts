@@ -14,6 +14,7 @@ import {
   consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
@@ -319,6 +320,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("Failed to register agent:", error);
     return NextResponse.json(
       { success: false, error: "Failed to register agent" },

@@ -15,6 +15,7 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
@@ -157,20 +158,15 @@ async function registerAgentOnChainUntilSetup(
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
-    paymentSourceId = paymentNodeConfig.getPaymentSourceId();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
   } catch (e) {
+    if (isPaymentNodeConfigError(e)) {
+      throw e;
+    }
     console.error("Payment node config missing:", e);
     return {
       success: false,
       error: "Something went wrong. Please try again later.",
-    };
-  }
-
-  if (network === "Mainnet") {
-    return {
-      success: false,
-      error:
-        "Agent registration on Mainnet is not available yet. Please use Preprod for now.",
     };
   }
 
@@ -197,7 +193,7 @@ async function registerAgentOnChainUntilSetup(
     });
     return {
       success: false,
-      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but agent registration is using ${network}. Update PAYMENT_NODE_PAYMENT_SOURCE_ID to a ${network} payment source.`,
+      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but agent registration is using ${network}. Update ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} to a ${network} payment source.`,
     };
   }
 
@@ -611,7 +607,7 @@ export async function completeOnChainRegistration(
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes("Network and Address combination not supported")) {
         throw new Error(
-          `Payment source and wallet network mismatch. Registration is using ${network}. Check that PAYMENT_NODE_PAYMENT_SOURCE_ID points to a ${network} payment source.`,
+          `Payment source and wallet network mismatch. Registration is using ${network}. Check that ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} points to a ${network} payment source.`,
         );
       }
       if (message.includes("Registration request timed out")) {
