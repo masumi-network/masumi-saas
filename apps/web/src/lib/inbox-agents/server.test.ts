@@ -23,6 +23,11 @@ vi.mock("@/lib/payment-node", () => ({
   },
 }));
 
+vi.mock("@/lib/payment-node/config", () => ({
+  isPaymentNodeConfigError: (error: unknown) =>
+    error instanceof Error && error.name === "PaymentNodeConfigError",
+}));
+
 vi.mock("../payment-node/registration-wallets", () => ({
   isWalletAddressCompatibleWithNetwork:
     isWalletAddressCompatibleWithNetworkMock,
@@ -209,6 +214,31 @@ describe("prepareManagedInboxRegistration", () => {
         collectionAddress: null,
         note: "Funding wallet",
       },
+    });
+  });
+
+  it("keeps base URL config errors on the generic fallback path", async () => {
+    getBaseUrlMock.mockImplementation(() => {
+      throw Object.assign(
+        new Error(
+          "PAYMENT_NODE_BASE_URL is required for payment node integration",
+        ),
+        {
+          name: "PaymentNodeConfigError",
+          envName: "PAYMENT_NODE_BASE_URL",
+        },
+      );
+    });
+
+    const { prepareManagedInboxRegistration } = await import("./server");
+    const result = await prepareManagedInboxRegistration({
+      name: "Mainnet inbox",
+      network: "Mainnet",
+    });
+
+    expect(result).toStrictEqual({
+      success: false,
+      error: "Something went wrong. Please try again later.",
     });
   });
 });
