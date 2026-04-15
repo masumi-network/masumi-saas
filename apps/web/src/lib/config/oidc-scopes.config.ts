@@ -108,6 +108,66 @@ export const OIDC_API_SCOPE_GROUPS = [
     ],
   },
   {
+    key: "registry",
+    label: "Registry",
+    scopes: [
+      {
+        scope: "registry:read:preprod",
+        label: "Read registry (Preprod)",
+        description:
+          "Search registry entries, capabilities, payment details, and diff feeds on Preprod.",
+      },
+      {
+        scope: "registry:write:preprod",
+        label: "Manage registry (Preprod)",
+        description:
+          "Register, deregister, or delete registry entries on Preprod.",
+      },
+      {
+        scope: "registry:read:mainnet",
+        label: "Read registry (Mainnet)",
+        description:
+          "Search registry entries, capabilities, payment details, and diff feeds on Mainnet.",
+      },
+      {
+        scope: "registry:write:mainnet",
+        label: "Manage registry (Mainnet)",
+        description:
+          "Register, deregister, or delete registry entries on Mainnet.",
+      },
+    ],
+  },
+  {
+    key: "payments",
+    label: "Payments",
+    scopes: [
+      {
+        scope: "payments:read:preprod",
+        label: "Read payments (Preprod)",
+        description:
+          "View payments, payment sources, counts, diffs, and income analytics on Preprod.",
+      },
+      {
+        scope: "payments:write:preprod",
+        label: "Manage payments (Preprod)",
+        description:
+          "Create payments, submit results, authorize refunds, and recover payment errors on Preprod.",
+      },
+      {
+        scope: "payments:read:mainnet",
+        label: "Read payments (Mainnet)",
+        description:
+          "View payments, payment sources, counts, diffs, and income analytics on Mainnet.",
+      },
+      {
+        scope: "payments:write:mainnet",
+        label: "Manage payments (Mainnet)",
+        description:
+          "Create payments, submit results, authorize refunds, and recover payment errors on Mainnet.",
+      },
+    ],
+  },
+  {
     key: "credentials",
     label: "Credentials",
     scopes: [
@@ -298,6 +358,8 @@ export function buildNetworkedOidcScope(
   resource:
     | "agents"
     | "inbox-agents"
+    | "registry"
+    | "payments"
     | "credentials"
     | "activity"
     | "earnings"

@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
-const rejectOidcAccessTokenAuthMock = vi.fn();
+const requireNetworkedOidcApiScopeMock = vi.fn();
 const resolveRegistrySharedTokenUpstreamMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/auth/utils", () => ({
 }));
 
 vi.mock("@/lib/auth/oidc-api-permissions", () => ({
-  rejectOidcAccessTokenAuth: rejectOidcAccessTokenAuthMock,
+  requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
@@ -52,7 +52,7 @@ describe("/api/v1/inbox-agent-registration-search", () => {
       user: { id: "user-1" },
       authMethod: "session",
     });
-    rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
+    requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
     resolveRegistrySharedTokenUpstreamMock.mockReturnValue({
       ok: true,
       baseUrl: "https://registry.example.com/api/v1",
@@ -70,23 +70,84 @@ describe("/api/v1/inbox-agent-registration-search", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agent-registration-search?network=Preprod",
+      "https://saas.example.com/api/v1/inbox-agent-registration-search",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "agent@example.com", limit: 5 }),
+        body: JSON.stringify({
+          network: "Preprod",
+          query: "agent@example.com",
+          limit: 5,
+        }),
       },
     );
 
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "session",
+      }),
+      {
+        resource: "inbox-agents",
+        action: "read",
+        network: "Preprod",
+      },
+    );
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://registry.example.com/api/v1/inbox-agent-registration-search/?network=Preprod",
+      "https://registry.example.com/api/v1/inbox-agent-registration-search/",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ query: "agent@example.com", limit: 5 }),
+        body: JSON.stringify({
+          network: "Preprod",
+          query: "agent@example.com",
+          limit: 5,
+        }),
       }),
+    );
+  });
+
+  it("allows OIDC inbox-read callers by checking the request body network", async () => {
+    getAuthenticatedOrThrowMock.mockResolvedValue({
+      user: { id: "user-1" },
+      authMethod: "oidcAccessToken",
+      oidcScopes: ["inbox-agents:read:mainnet"],
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "success", data: {} }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/v1/inbox-agent-registration-search",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          network: "Mainnet",
+          query: "agent@example.com",
+          limit: 5,
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "oidcAccessToken",
+      }),
+      {
+        resource: "inbox-agents",
+        action: "read",
+        network: "Mainnet",
+      },
     );
   });
 
@@ -98,11 +159,15 @@ describe("/api/v1/inbox-agent-registration-search", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agent-registration-search?network=Preprod",
+      "https://saas.example.com/api/v1/inbox-agent-registration-search",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "agent@example.com", limit: 5 }),
+        body: JSON.stringify({
+          network: "Preprod",
+          query: "agent@example.com",
+          limit: 5,
+        }),
       },
     );
 

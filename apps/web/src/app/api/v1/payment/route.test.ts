@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
-const rejectOidcAccessTokenAuthMock = vi.fn();
+const requireNetworkedOidcApiScopeMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const resolvePaymentUserTokenUpstreamMock = vi.fn();
 
@@ -13,7 +13,7 @@ vi.mock("@/lib/auth/utils", () => ({
 }));
 
 vi.mock("@/lib/auth/oidc-api-permissions", () => ({
-  rejectOidcAccessTokenAuth: rejectOidcAccessTokenAuthMock,
+  requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -60,7 +60,7 @@ describe("/api/v1/payment", () => {
       user: { id: "user-1" },
       authMethod: "session",
     });
-    rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
+    requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
     consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
@@ -93,6 +93,16 @@ describe("/api/v1/payment", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "session",
+      }),
+      {
+        resource: "payments",
+        action: "write",
+        network: "Preprod",
+      },
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "https://payment.example.com/api/v1/payment?network=Preprod",
       expect.objectContaining({
@@ -134,6 +144,16 @@ describe("/api/v1/payment", () => {
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "session",
+      }),
+      {
+        resource: "payments",
+        action: "read",
+        network: "Preprod",
+      },
+    );
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
   });
 });
