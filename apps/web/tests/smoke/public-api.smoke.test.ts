@@ -105,6 +105,11 @@ describe("SMOKE — Public API /api/v1/", () => {
     expect(b.openapi).toBeDefined();
     expect(b.info).toBeDefined();
     expect(b.paths).toBeDefined();
+    const paths = b.paths as Record<string, unknown>;
+    expect(paths["/api/v1/agents"]).toBeDefined();
+    expect(paths["/api/v1/agents/{agentId}"]).toBeDefined();
+    expect(paths["/api/v1/agents/verify"]).toBeDefined();
+    expect(paths["/agents"]).toBeUndefined();
   });
 
   it("CORS headers present on public API response", async () => {
@@ -125,6 +130,7 @@ describe("SMOKE — Public API /api/v1/", () => {
     const res = await request("/api/v1/openapi");
     expect(res.status).toBe(200);
     const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/api/v1/agents/verify"]).toBeDefined();
     expect(b.paths?.["/registry-entry"]).toBeUndefined();
     expect(b.paths?.["/registry-diff"]).toBeUndefined();
   });
@@ -190,6 +196,12 @@ describe("SMOKE — Authenticated payment/registry wrappers", () => {
     const res = await request("/api/openapi");
     expect(res.status).toBe(200);
     const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/api/agents"]).toBeDefined();
+    expect(b.paths?.["/api/dashboard/overview"]).toBeDefined();
+    expect(b.paths?.["/api/credentials/schema-said"]).toBeDefined();
+    expect(b.paths?.["/api/activity/transaction"]).toBeDefined();
+    expect(b.paths?.["/api/earnings/agent"]).toBeDefined();
+    expect(b.paths?.["/api/earnings/agents"]).toBeDefined();
     expect(b.paths?.["/registry/api/v1/registry-entry"]).toBeDefined();
     expect(b.paths?.["/registry/api/v1/registry-entry-search"]).toBeDefined();
     expect(b.paths?.["/registry/api/v1/registry-diff"]).toBeDefined();
@@ -206,6 +218,12 @@ describe("SMOKE — Authenticated payment/registry wrappers", () => {
     expect(b.paths?.["/registry/api/v1/registry-source"]).toBeDefined();
     expect(b.paths?.["/pay/api/v1/payment"]).toBeDefined();
     expect(b.paths?.["/pay/api/v1/inbox-agents"]).toBeDefined();
+    expect(b.paths?.["/api/masumi/inbox-agent/register"]).toBeDefined();
+    expect(b.paths?.["/api/credits"]).toBeDefined();
+    expect(b.paths?.["/agents"]).toBeUndefined();
+    expect(b.paths?.["/dashboard/overview"]).toBeUndefined();
+    expect(b.paths?.["/activity"]).toBeUndefined();
+    expect(b.paths?.["/earnings"]).toBeUndefined();
     expect(b.paths?.["/v1/registry-entry"]).toBeUndefined();
     expect(b.paths?.["/inbox-agents"]).toBeUndefined();
   });

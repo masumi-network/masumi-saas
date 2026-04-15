@@ -130,14 +130,15 @@ Granted API scopes in an issued `access_token` are:
 
 The **v1** namespace exposes read-only, rate-limited endpoints for agent discovery. No API key required.
 
-| Path                      | Description                                                                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/agents`      | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
-| `GET /api/v1/agents/[id]` | Get a single agent by ID.                                                                                                     |
+| Path                        | Description                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/agents`        | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
+| `GET /api/v1/agents/[id]`   | Get a single agent by ID.                                                                                                     |
+| `GET /api/v1/agents/verify` | Verify an agent identifier and return current credential status.                                                              |
 
 OpenAPI JSON for this surface: **`GET /api/v1/openapi`** (Swagger UI: **`/docs/openapi`**).
 
-**Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, allow-listed `/api/v1/*` proxy paths, etc. — not the public catalog above.
+**Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes explicit runtime paths like `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, plus allow-listed `/pay/api/v1/*` and `/registry/api/v1/*` wrapper paths — not the public catalog above.
 
 **Documentation:** header **Documentation** opens **[docs.masumi.network](https://docs.masumi.network/)**. **`/docs`** redirects there with **307** (temporary) so browsers/CDNs do not cache a permanent hop if the external docs URL changes. **Developers** (signed-in) → **`/developers`**: **Schema Validator** and **OpenAPI**; OpenAPI iframe is **`/docs/saas-openapi`**. **Public** discovery: **`/docs/openapi`**. Old paths **`/docs/api`** and **`/docs/saas-api`** **308** to **`/docs/saas-openapi`**.
 

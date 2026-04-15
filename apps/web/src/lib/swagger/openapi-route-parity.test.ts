@@ -1,0 +1,249 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { describe, expect, it } from "vitest";
+
+import { generateOpenAPISpec } from "./generator";
+import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi";
+
+const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+const DOCUMENTED_PLATFORM_EXTRAS = new Set(["GET /credits"]);
+
+type HttpMethod = (typeof HTTP_METHODS)[number];
+type OpenApiDocumentLike = {
+  paths?: Record<string, Record<string, unknown>>;
+  servers?: Array<{ url?: string }>;
+};
+
+function collectRouteFiles(dir: string): string[] {
+  const files: string[] = [];
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectRouteFiles(entryPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name === "route.ts") {
+      files.push(entryPath);
+    }
+  }
+
+  return files;
+}
+
+function toRoutePath(appRoot: string, routeFile: string): string {
+  const relativeDir = path.posix.dirname(
+    path.relative(appRoot, routeFile).split(path.sep).join("/"),
+  );
+  const segments = relativeDir
+    .split("/")
+    .filter(Boolean)
+    .filter((segment) => !(segment.startsWith("(") && segment.endsWith(")")))
+    .map((segment) => {
+      const catchAll = /^\[\.\.\.(.+)\]$/.exec(segment);
+      if (catchAll) return `{${catchAll[1]}}`;
+
+      const dynamic = /^\[(.+)\]$/.exec(segment);
+      if (dynamic) return `{${dynamic[1]}}`;
+
+      return segment;
+    });
+
+  return `/${segments.join("/")}`;
+}
+
+function hasMethodExport(source: string, method: HttpMethod): boolean {
+  return (
+    new RegExp(`export\\s+(?:async\\s+)?function\\s+${method}\\s*\\(`).test(
+      source,
+    ) ||
+    new RegExp(`export\\s+const\\s+${method}\\s*=`).test(source) ||
+    new RegExp(`export\\s*\\{[^}]*\\b${method}\\b[^}]*\\}\\s*from`).test(source)
+  );
+}
+
+function collectRouteOperations(appRoot: string): Set<string> {
+  const operations = new Set<string>();
+
+  for (const routeFile of collectRouteFiles(appRoot)) {
+    const routePath = toRoutePath(appRoot, routeFile);
+    const source = readFileSync(routeFile, "utf8");
+
+    for (const method of HTTP_METHODS) {
+      if (hasMethodExport(source, method)) {
+        operations.add(`${method} ${routePath}`);
+      }
+    }
+  }
+
+  return operations;
+}
+
+function normalizePath(rawPath: string): string {
+  const normalized = rawPath.replace(/\/+/g, "/");
+  if (normalized === "") return "/";
+  if (normalized === "/") return "/";
+  return normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
+}
+
+function resolveServerPath(url?: string): string {
+  const serverUrl = url?.trim() || "/";
+  if (serverUrl.startsWith("http://") || serverUrl.startsWith("https://")) {
+    return normalizePath(new URL(serverUrl).pathname || "/");
+  }
+  return normalizePath(serverUrl.startsWith("/") ? serverUrl : `/${serverUrl}`);
+}
+
+function joinServerAndPath(serverUrl: string | undefined, specPath: string) {
+  const serverPath = resolveServerPath(serverUrl);
+  const normalizedSpecPath = normalizePath(
+    specPath.startsWith("/") ? specPath : `/${specPath}`,
+  );
+  const joined =
+    serverPath === "/"
+      ? normalizedSpecPath
+      : `${serverPath}${normalizedSpecPath}`;
+
+  return normalizePath(joined);
+}
+
+function collectSpecOperations(document: OpenApiDocumentLike): Set<string> {
+  const operations = new Set<string>();
+  const documentServers =
+    Array.isArray(document.servers) && document.servers.length > 0
+      ? document.servers
+      : [{ url: "/" }];
+
+  for (const [specPath, pathItem] of Object.entries(document.paths ?? {})) {
+    const pathServers =
+      Array.isArray(pathItem.servers) && pathItem.servers.length > 0
+        ? (pathItem.servers as Array<{ url?: string }>)
+        : documentServers;
+
+    for (const method of HTTP_METHODS) {
+      const operation = pathItem[method.toLowerCase()];
+      if (!operation || typeof operation !== "object") continue;
+
+      const operationServers =
+        Array.isArray(
+          (operation as { servers?: Array<{ url?: string }> }).servers,
+        ) &&
+        (operation as { servers?: Array<{ url?: string }> }).servers!.length > 0
+          ? (operation as { servers: Array<{ url?: string }> }).servers
+          : pathServers;
+
+      for (const server of operationServers) {
+        operations.add(`${method} ${joinServerAndPath(server?.url, specPath)}`);
+      }
+    }
+  }
+
+  return operations;
+}
+
+function getOperationPath(operation: string): string {
+  return operation.slice(operation.indexOf(" ") + 1);
+}
+
+function isPublicDiscoveryPath(routePath: string): boolean {
+  return (
+    routePath === "/api/v1/agents" ||
+    routePath === "/api/v1/agents/{agentId}" ||
+    routePath === "/api/v1/agents/verify"
+  );
+}
+
+function isExcludedPlatformPath(routePath: string): boolean {
+  if (routePath === "/api/openapi" || routePath === "/api/v1/openapi") {
+    return true;
+  }
+  if (routePath.startsWith("/api/admin")) return true;
+  if (routePath.startsWith("/api/auth")) return true;
+  if (routePath.startsWith("/api/oidc")) return true;
+  if (routePath.startsWith("/api/registry-discovery")) return true;
+  if (routePath.startsWith("/api/webhooks")) return true;
+  if (routePath.startsWith("/api/v1/"))
+    return !isPublicDiscoveryPath(routePath);
+  if (routePath === "/pay/api/v1/registry-inbox/agent-identifier") {
+    return true;
+  }
+  return false;
+}
+
+function isRequiredPlatformPath(routePath: string): boolean {
+  return (
+    (routePath.startsWith("/api/") &&
+      !isPublicDiscoveryPath(routePath) &&
+      !isExcludedPlatformPath(routePath)) ||
+    (routePath.startsWith("/pay/api/v1/") &&
+      !isExcludedPlatformPath(routePath)) ||
+    routePath.startsWith("/registry/api/v1/")
+  );
+}
+
+function diff(left: Set<string>, right: Set<string>): string[] {
+  return [...left].filter((item) => !right.has(item)).sort();
+}
+
+describe("OpenAPI route parity", () => {
+  const appRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../app",
+  );
+  const routeOperations = collectRouteOperations(appRoot);
+
+  it("keeps the platform spec aligned with documented runtime routes", () => {
+    const platformRouteOperations = new Set(
+      [...routeOperations].filter((operation) =>
+        isRequiredPlatformPath(getOperationPath(operation)),
+      ),
+    );
+    const requiredPlatformOperations = new Set([
+      ...platformRouteOperations,
+      ...DOCUMENTED_PLATFORM_EXTRAS,
+    ]);
+    const platformSpecOperations = collectSpecOperations(
+      generateSaaSAppOpenAPISpec(),
+    );
+
+    const missingRouteDefinitions = diff(
+      DOCUMENTED_PLATFORM_EXTRAS,
+      routeOperations,
+    );
+    const missingSpecOperations = diff(
+      requiredPlatformOperations,
+      platformSpecOperations,
+    );
+    const unexpected = [...platformSpecOperations]
+      .filter((operation) => !requiredPlatformOperations.has(operation))
+      .sort();
+
+    expect({
+      missingRouteDefinitions,
+      missingSpecOperations,
+      unexpected,
+    }).toEqual({
+      missingRouteDefinitions: [],
+      missingSpecOperations: [],
+      unexpected: [],
+    });
+  });
+
+  it("keeps the public discovery spec aligned with the public /api/v1 agent routes", () => {
+    const publicRouteOperations = new Set(
+      [...routeOperations].filter((operation) =>
+        isPublicDiscoveryPath(getOperationPath(operation)),
+      ),
+    );
+    const publicSpecOperations = collectSpecOperations(generateOpenAPISpec());
+
+    const missing = diff(publicRouteOperations, publicSpecOperations);
+    const unexpected = [...publicSpecOperations]
+      .filter((operation) => !publicRouteOperations.has(operation))
+      .sort();
+
+    expect({ missing, unexpected }).toEqual({ missing: [], unexpected: [] });
+  });
+});

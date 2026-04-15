@@ -3,6 +3,8 @@ import {
   OpenAPIRegistry,
 } from "@asteasolutions/zod-to-openapi";
 
+import { agentVerifyQuerySchema } from "@/lib/schemas";
+
 import { z } from "./zod-openapi";
 
 const registry = new OpenAPIRegistry();
@@ -41,6 +43,40 @@ const AgentSchema = registry.register(
   }),
 );
 
+const verifyAgentResultSchema = z
+  .union([
+    z.object({
+      success: z.literal(true),
+      data: z.object({
+        verified: z.literal(false),
+      }),
+    }),
+    z.object({
+      success: z.literal(true),
+      data: z.object({
+        verified: z.boolean(),
+        credentialId: z.string(),
+        expiresAt: z.string().nullable(),
+        agentName: z.string(),
+        apiUrl: z.string(),
+      }),
+    }),
+  ])
+  .openapi({
+    description:
+      "Returns `verified: false` when the agent identifier is unknown, not VERIFIED, has no issued credential, or only has an expired credential. Expired credentials still include their metadata in the response.",
+    example: {
+      success: true,
+      data: {
+        verified: true,
+        credentialId: "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+        expiresAt: "2026-12-31T23:59:59.000Z",
+        agentName: "My AI Agent",
+        apiUrl: "https://my-agent.example.com",
+      },
+    },
+  });
+
 const errorResponses = {
   400: { description: "Bad Request — invalid query parameters" },
   429: {
@@ -52,7 +88,7 @@ const errorResponses = {
 
 registry.registerPath({
   method: "get",
-  path: "/agents",
+  path: "/api/v1/agents",
   tags: ["Agents"],
   summary: "List agents",
   description:
@@ -128,7 +164,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/agents/{agentId}",
+  path: "/api/v1/agents/{agentId}",
   tags: ["Agents"],
   summary: "Get agent by ID",
   description: "Returns a single agent by its ID. No authentication required.",
@@ -176,6 +212,29 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/agents/verify",
+  tags: ["Agents"],
+  summary: "Verify agent identifier",
+  description:
+    "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
+  request: {
+    query: agentVerifyQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Verification result",
+      content: {
+        "application/json": {
+          schema: verifyAgentResultSchema,
+        },
+      },
+    },
+    ...errorResponses,
+  },
+});
+
 export function generateOpenAPISpec() {
   return new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.0",
@@ -187,7 +246,7 @@ export function generateOpenAPISpec() {
     },
     servers: [
       {
-        url: "/api/v1",
+        url: "/",
         description: "Current environment",
       },
     ],
