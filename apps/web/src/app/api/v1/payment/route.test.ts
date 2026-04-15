@@ -45,7 +45,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
   };
 });
 
-describe("/api/v1/payment", () => {
+describe("/pay/api/v1/payment", () => {
   let GET: typeof import("./route").GET;
   let POST: typeof import("./route").POST;
 
@@ -82,7 +82,7 @@ describe("/api/v1/payment", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/payment?network=Preprod",
+      "https://saas.example.com/pay/api/v1/payment?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +137,7 @@ describe("/api/v1/payment", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/payment?network=Preprod",
+      "https://saas.example.com/pay/api/v1/payment?network=Preprod",
       { method: "GET" },
     );
 

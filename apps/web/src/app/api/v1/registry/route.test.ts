@@ -47,7 +47,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
   };
 });
 
-describe("/api/v1/registry", () => {
+describe("/pay/api/v1/registry", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -84,7 +84,7 @@ describe("/api/v1/registry", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/registry?network=Preprod",
+      "https://saas.example.com/pay/api/v1/registry?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -585,7 +585,7 @@ function InboxAgentDetailsDialog({
                   className="inline-flex items-center gap-2"
                 >
                   <Link
-                    href={`/api/registry-discovery/inbox-agent-identifier?agentIdentifier=${encodeURIComponent(agent.agentIdentifier)}&network=${network}`}
+                    href={`/pay/api/v1/registry-inbox/agent-identifier?agentIdentifier=${encodeURIComponent(agent.agentIdentifier)}&network=${network}`}
                     target="_blank"
                   >
                     <ExternalLink className="h-4 w-4" />

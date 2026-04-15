@@ -53,7 +53,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
   },
 }));
 
-describe("/api/v1/payment/income", () => {
+describe("/pay/api/v1/payment/income", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -90,7 +90,7 @@ describe("/api/v1/payment/income", () => {
 
     const body = JSON.stringify({ network: "Preprod", amount: 1 });
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/payment/income",
+      "https://saas.example.com/pay/api/v1/payment/income",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

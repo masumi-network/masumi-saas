@@ -36,7 +36,7 @@ describe("registryDiscoveryClient", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/registry-entry",
+      "/registry/api/v1/registry-entry",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
@@ -86,7 +86,7 @@ describe("registryDiscoveryClient", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/registry-entry-search",
+      "/registry/api/v1/registry-entry-search",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
@@ -136,14 +136,14 @@ describe("registryDiscoveryClient", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/registry-entry-search",
+      "/registry/api/v1/registry-entry-search",
       expect.objectContaining({
         signal: controller.signal,
       }),
     );
   });
 
-  it("wraps the internal inbox-agent-registration route", async () => {
+  it("wraps the inbox-agent-registration route", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -173,7 +173,7 @@ describe("registryDiscoveryClient", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/registry-discovery/inbox-agent-registrations",
+      "/registry/api/v1/inbox-agent-registration",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
@@ -225,7 +225,7 @@ describe("registryDiscoveryClient", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/inbox-agent-registration-search",
+      "/registry/api/v1/inbox-agent-registration-search",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
@@ -276,7 +276,7 @@ describe("registryDiscoveryClient", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/inbox-agent-registration-search",
+      "/registry/api/v1/inbox-agent-registration-search",
       expect.objectContaining({
         signal: controller.signal,
       }),

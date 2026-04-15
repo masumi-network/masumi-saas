@@ -39,7 +39,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
   };
 });
 
-describe("/api/v1/registry-entry-search", () => {
+describe("/registry/api/v1/registry-entry-search", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -71,7 +71,7 @@ describe("/api/v1/registry-entry-search", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/registry-entry-search?network=Preprod",
+      "https://saas.example.com/registry/api/v1/registry-entry-search?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,7 +109,7 @@ describe("/api/v1/registry-entry-search", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/registry-entry-search?network=Preprod",
+      "https://saas.example.com/registry/api/v1/registry-entry-search?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

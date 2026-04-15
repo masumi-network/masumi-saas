@@ -14,7 +14,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { switchAccountAction } from "@/lib/actions/auth.action";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
@@ -27,6 +26,7 @@ import {
 } from "@/lib/config/oidc-scopes.config";
 
 import { EmailVerificationPanel } from "./components/email-verification-panel";
+import { OidcSwitchAccountButton } from "./components/oidc-switch-account-button";
 
 export const metadata: Metadata = {
   title: "Masumi - OIDC Authorization",
@@ -153,11 +153,6 @@ export default async function OidcConsentPage({
   );
   const switchAccountCallbackUrl =
     continueUrl ?? buildConsentCallbackUrl(resolvedSearchParams);
-  const switchAccount = switchAccountAction.bind(
-    null,
-    switchAccountCallbackUrl,
-  );
-
   return (
     <AuthorizationRequestCard
       icon={<MessageSquare className="h-6 w-6 text-primary" />}
@@ -204,11 +199,10 @@ export default async function OidcConsentPage({
             </Button>
           </form>
           <Separator />
-          <form action={switchAccount} className="w-full">
-            <Button type="submit" variant="ghost" className="w-full">
-              {PAGE_COPY.switchAccount}
-            </Button>
-          </form>
+          <OidcSwitchAccountButton
+            callbackUrl={switchAccountCallbackUrl}
+            label={PAGE_COPY.switchAccount}
+          />
         </div>
       }
     >
