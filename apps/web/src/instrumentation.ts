@@ -29,7 +29,7 @@ async function validatePaymentNodeAtStartup() {
 
   if (!isPaymentNodeConfigured()) {
     const msg =
-      "Payment node config missing: set PAYMENT_NODE_BASE_URL, PAYMENT_NODE_ADMIN_API_KEY, and PAYMENT_NODE_PAYMENT_SOURCE_ID.";
+      "Payment node config missing: set PAYMENT_NODE_BASE_URL, PAYMENT_NODE_ADMIN_API_KEY, and PAYMENT_NODE_PAYMENT_SOURCE_ID_PREPROD.";
     console.error(`[payment-node] ${msg}`);
     throw new Error(msg);
   }

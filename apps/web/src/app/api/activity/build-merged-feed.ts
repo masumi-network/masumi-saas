@@ -377,7 +377,7 @@ async function loadActivityTransactionFeedPart(params: {
       return { transactionItems, transactionLastUpdate };
     }
     const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(client, userId);
+      await getSmartContractAddressForConfiguredSource(client, userId, network);
     const agentIdentifiers = new Set(
       agents.map((a) => a.agentIdentifier).filter(Boolean) as string[],
     );

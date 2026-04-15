@@ -77,10 +77,13 @@ export async function GET(
       });
     }
 
+    const network = toNetwork(agent.networkIdentifier);
+
     const smartContractAddress =
       await getSmartContractAddressForConfiguredSource(
         client,
         authContext.user.id,
+        network,
       );
     if (!smartContractAddress) {
       return NextResponse.json({
@@ -88,8 +91,6 @@ export async function GET(
         data: { transactions: [] },
       });
     }
-
-    const network = toNetwork(agent.networkIdentifier);
 
     const [paymentsRes, purchasesRes] = await Promise.all([
       client.listPayments({

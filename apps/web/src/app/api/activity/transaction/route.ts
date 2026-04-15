@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       await getSmartContractAddressForConfiguredSource(
         client,
         authContext.user.id,
+        network,
       );
     if (!smartContractAddress) {
       return NextResponse.json(

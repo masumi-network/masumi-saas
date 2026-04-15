@@ -85,7 +85,7 @@ export async function prepareManagedInboxRegistration(params: {
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
-    paymentSourceId = paymentNodeConfig.getPaymentSourceId();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(params.network);
   } catch (error) {
     console.error("Payment node config missing for inbox registration:", error);
     return {
@@ -115,7 +115,7 @@ export async function prepareManagedInboxRegistration(params: {
     });
     return {
       success: false,
-      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but inbox-agent registration is using ${params.network}. Update PAYMENT_NODE_PAYMENT_SOURCE_ID to a ${params.network} payment source.`,
+      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but inbox-agent registration is using ${params.network}. Update ${paymentNodeConfig.getPaymentSourceIdEnvName(params.network)} to a ${params.network} payment source.`,
     };
   }
 
