@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { AGENT_STATES_WITH_EARNINGS } from "@/lib/earnings/agent-income";
 import { listUserOwnedAgentsForEarnings } from "@/lib/earnings/owned-agent";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { parseNetwork } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 export type EarningsAgentsApiResponse =
   | {
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
         network,
       }));
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: filteredAgents,
     } satisfies EarningsAgentsApiResponse);
@@ -62,12 +65,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to list earnings agents:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to load eligible agents",
-      } satisfies EarningsAgentsApiResponse,
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load eligible agents",
+    } satisfies EarningsAgentsApiResponse);
   }
 }

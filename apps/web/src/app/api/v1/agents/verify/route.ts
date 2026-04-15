@@ -1,9 +1,12 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { agentVerifyQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflightResponse(request);
@@ -23,15 +26,12 @@ export async function GET(request: NextRequest) {
     });
     if (!queryResult.success) {
       return addCorsHeaders(
-        NextResponse.json(
-          {
-            success: false,
-            error:
-              queryResult.error.issues.map((i) => i.message).join("; ") ||
-              "Invalid query",
-          },
-          { status: 400 },
-        ),
+        contractJsonResponse(contract, "GET", 400, {
+          success: false,
+          error:
+            queryResult.error.issues.map((i) => i.message).join("; ") ||
+            "Invalid query",
+        }),
         request,
       );
     }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!agent || agent.verificationStatus !== "VERIFIED") {
-      const res = NextResponse.json({
+      const res = contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { verified: false },
       });
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!credential) {
-      const res = NextResponse.json({
+      const res = contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { verified: false },
       });
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const isExpired =
       credential.expiresAt !== null && credential.expiresAt < new Date();
 
-    const res = NextResponse.json({
+    const res = contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         verified: !isExpired,
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Failed to verify agent:", error);
     return addCorsHeaders(
-      NextResponse.json(
-        { success: false, error: "Failed to verify agent" },
-        { status: 500 },
-      ),
+      contractJsonResponse(contract, "GET", 500, {
+        success: false,
+        error: "Failed to verify agent",
+      }),
       request,
     );
   }

@@ -15,31 +15,37 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
   requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
-vi.mock("@/lib/schemas/activity", () => ({
-  activityApiSearchParamsSchema: {
-    safeParse: () => ({
-      success: true as const,
-      data: {
-        filter: "transactions",
-        network: "Mainnet",
-        summary: false,
-        lastUpdate: undefined,
-        limit: undefined,
-        cursor: undefined,
-      },
-    }),
-  },
-  activityPaginationFromLimitParamSchema: {
-    safeParse: () => ({
-      success: true as const,
-      data: {
-        usePagination: false,
-        pageLimit: 50,
-      },
-    }),
-  },
-  parseActivityQueryInput: (input: Record<string, unknown>) => input,
-}));
+vi.mock("@/lib/schemas/activity", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/schemas/activity")>();
+
+  return {
+    ...actual,
+    activityApiSearchParamsSchema: {
+      safeParse: () => ({
+        success: true as const,
+        data: {
+          filter: "transactions",
+          network: "Mainnet",
+          summary: false,
+          lastUpdate: undefined,
+          limit: undefined,
+          cursor: undefined,
+        },
+      }),
+    },
+    activityPaginationFromLimitParamSchema: {
+      safeParse: () => ({
+        success: true as const,
+        data: {
+          usePagination: false,
+          pageLimit: 50,
+        },
+      }),
+    },
+    parseActivityQueryInput: (input: Record<string, unknown>) => input,
+  };
+});
 
 vi.mock("./build-merged-feed", () => ({
   ACTIVITY_MERGED_FEED_LIMIT: 200,

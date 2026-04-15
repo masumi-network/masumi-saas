@@ -1,19 +1,12 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextRequest } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
-import { agentPaginationSchema, publicAgentSelect } from "@/lib/schemas/agent";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { publicAgentSelect } from "@/lib/schemas/agent";
 
-// Agent verification uses PENDING | VERIFIED | REVOKED | EXPIRED (not KYC-style APPROVED).
-// Verified agents have always been set to VERIFIED in this product; no migration from APPROVED.
-const querySchema = z.object({
-  status: z
-    .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
-    .optional()
-    .default("VERIFIED"),
-});
+import contract, { publicAgentsQuerySchema } from "./route.contract";
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflightResponse(request);
@@ -30,26 +23,18 @@ export async function GET(request: NextRequest) {
 
     // Validate query params
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
-    const validation = querySchema.safeParse(params);
+    const validation = publicAgentsQuerySchema.safeParse(params);
     if (!validation.success) {
       return addCorsHeaders(
-        NextResponse.json(
-          {
-            success: false,
-            error: validation.error.issues.map((e) => e.message).join(", "),
-          },
-          { status: 400 },
-        ),
+        contractJsonResponse(contract, "GET", 400, {
+          success: false,
+          error: validation.error.issues.map((e) => e.message).join(", "),
+        }),
         request,
       );
     }
 
-    const { status } = validation.data;
-
-    const paginationValidation = agentPaginationSchema.safeParse(params);
-    const { page, limit } = paginationValidation.success
-      ? paginationValidation.data
-      : { page: 1, limit: 50 };
+    const { status, page, limit } = validation.data;
 
     const where = {
       verificationStatus: status,
@@ -70,7 +55,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // 5. Return response
-    const res = NextResponse.json({
+    const res = contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: agents,
       pagination: {
@@ -86,10 +71,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Failed to list agents:", error);
     return addCorsHeaders(
-      NextResponse.json(
-        { success: false, error: "Failed to list agents" },
-        { status: 500 },
-      ),
+      contractJsonResponse(contract, "GET", 500, {
+        success: false,
+        error: "Failed to list agents",
+      }),
       request,
     );
   }

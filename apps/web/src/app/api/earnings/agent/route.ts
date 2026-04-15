@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
@@ -11,9 +11,12 @@ import {
   resolveAgentAnalyticsPeriod,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { agentAnalyticsQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 export type AgentAnalyticsApiResponse =
   | {
@@ -46,13 +49,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!query.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: query.error.issues.map((issue) => issue.message).join("; "),
-        } satisfies AgentAnalyticsApiResponse,
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: query.error.issues.map((issue) => issue.message).join("; "),
+      });
     }
 
     const { agentId, network, range, startDate, endDate, timeZone } =
@@ -70,13 +70,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!agent) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Agent not found",
-        } satisfies AgentAnalyticsApiResponse,
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
 
     const agentNetwork = toNetwork(
@@ -84,13 +81,10 @@ export async function GET(request: NextRequest) {
     );
 
     if (agentNetwork !== network) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Agent not found",
-        } satisfies AgentAnalyticsApiResponse,
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
 
     const resolvedPeriod = resolveAgentAnalyticsPeriod({
@@ -109,7 +103,7 @@ export async function GET(request: NextRequest) {
     } as const;
 
     if (!hasAgentEarningsData(agent)) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           agent: agentMeta,
@@ -127,7 +121,7 @@ export async function GET(request: NextRequest) {
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           agent: agentMeta,
@@ -152,7 +146,7 @@ export async function GET(request: NextRequest) {
       timeZone,
     });
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         agent: agentMeta,
@@ -171,12 +165,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agent earnings analytics:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to load earnings",
-      } satisfies AgentAnalyticsApiResponse,
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load earnings",
+    });
   }
 }

@@ -1,9 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { agentCountsQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,13 +18,10 @@ export async function GET(request: NextRequest) {
       network: request.nextUrl.searchParams.get("network"),
     });
     if (!queryResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryResult.error.issues.map((i) => i.message).join("; "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryResult.error.issues.map((i) => i.message).join("; "),
+      });
     }
     const network = queryResult.data.network;
     requireNetworkedOidcApiScope(authContext, {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       (agent) => agent.verificationStatus === "VERIFIED",
     ).length;
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         all,
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agent counts:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to get agent counts" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to get agent counts",
+    });
   }
 }

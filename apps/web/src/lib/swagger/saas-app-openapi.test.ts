@@ -8,7 +8,8 @@ describe("generateSaaSAppOpenAPISpec", () => {
   it("works when shared query schemas load before the OpenAPI generator", async () => {
     await import("@/lib/schemas/api-query");
 
-    const { generateSaaSAppOpenAPISpec } = await import("./saas-app-openapi");
+    const { generateSaaSAppOpenAPISpec } =
+      await import("./saas-app-openapi-generator");
 
     expect(() => generateSaaSAppOpenAPISpec()).not.toThrow();
 

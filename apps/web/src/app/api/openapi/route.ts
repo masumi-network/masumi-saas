@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import fallbackSaaSAppOpenApiSpec from "@/lib/swagger/openapi-platform-docs.json";
-import { generateSaaSAppOpenAPISpec } from "@/lib/swagger/saas-app-openapi";
+import { generateSaaSAppOpenAPISpec } from "@/lib/swagger/saas-app-openapi-generator";
 
 /**
  * OpenAPI 3.0 JSON for the **Masumi SaaS** HTTP API (`/api/*` authenticated surface).

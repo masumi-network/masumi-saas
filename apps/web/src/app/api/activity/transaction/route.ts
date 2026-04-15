@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import { activityTransactionQuerySchema } from "@/lib/schemas/api-query";
+
+import contract from "./route.contract";
 
 /**
  * GET /api/activity/transaction?id=&type=payment|purchase&network=
@@ -20,10 +23,10 @@ export async function GET(request: NextRequest) {
     const query = Object.fromEntries(request.nextUrl.searchParams.entries());
     const parsedQuery = activityTransactionQuerySchema.safeParse(query);
     if (!parsedQuery.success) {
-      return NextResponse.json(
-        { success: false, error: "Missing or invalid id or type" },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: "Missing or invalid id or type",
+      });
     }
     const { id, type: typeRaw, network } = parsedQuery.data;
     requireNetworkedOidcApiScope(authContext, {
@@ -34,10 +37,10 @@ export async function GET(request: NextRequest) {
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json(
-        { success: false, error: "Payment node is not configured" },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "GET", 503, {
+        success: false,
+        error: "Payment node is not configured",
+      });
     }
 
     const smartContractAddress =
@@ -47,13 +50,10 @@ export async function GET(request: NextRequest) {
         network,
       );
     if (!smartContractAddress) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No smart contract address for this payment source",
-        },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "GET", 503, {
+        success: false,
+        error: "No smart contract address for this payment source",
+      });
     }
 
     const listParams = {
@@ -73,13 +73,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (!item) {
-      return NextResponse.json(
-        { success: false, error: "Transaction not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Transaction not found",
+      });
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: { type: typeRaw as "payment" | "purchase", item },
     });
@@ -87,15 +87,15 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     if (isPaymentNodeConfigError(error)) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "GET", 503, {
+        success: false,
+        error: error.message,
+      });
     }
     console.error("[Activity transaction] GET failed:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load transaction" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load transaction",
+    });
   }
 }

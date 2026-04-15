@@ -1,7 +1,6 @@
 import prisma from "@masumi/database/client";
 import { randomBytes, randomUUID } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextRequest } from "next/server";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
@@ -11,10 +10,9 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 
-const bodySchema = z.object({
-  regenerate: z.boolean().optional().default(false),
-});
+import contract, { bodySchema } from "./route.contract";
 
 /**
  * GET or POST /api/agents/[agentId]/verification-challenge
@@ -34,7 +32,7 @@ export async function POST(
 ) {
   const body = await request.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(body);
-  const regenerate = parsed.success ? parsed.data.regenerate : false;
+  const regenerate = parsed.success ? (parsed.data.regenerate ?? false) : false;
   return handleChallengeRequest(request, params, regenerate);
 }
 
@@ -48,6 +46,8 @@ async function handleChallengeRequest(
       return apiError(
         verificationFeatureCopy.agentVerificationUnavailableDescription,
         503,
+        undefined,
+        { contract, method: "GET" },
       );
     }
 
@@ -60,7 +60,10 @@ async function handleChallengeRequest(
     });
 
     if (!agent) {
-      return apiError("Agent not found", 404);
+      return apiError("Agent not found", 404, undefined, {
+        contract,
+        method: "GET",
+      });
     }
     requireNetworkedOidcApiScope(authContext, {
       resource: "agents",
@@ -72,6 +75,8 @@ async function handleChallengeRequest(
       return apiError(
         `Agent must be registered. Current state: ${agent.registrationState}`,
         400,
+        undefined,
+        { contract, method: "GET" },
       );
     }
 
@@ -93,7 +98,7 @@ async function handleChallengeRequest(
       generatedAt = updated.verificationChallengeGeneratedAt;
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, regenerate ? "POST" : "GET", 200, {
       success: true,
       data: {
         challenge,
@@ -110,6 +115,8 @@ async function handleChallengeRequest(
         ? error.message
         : "Failed to get verification challenge",
       500,
+      undefined,
+      { contract, method: regenerate ? "POST" : "GET" },
     );
   }
 }

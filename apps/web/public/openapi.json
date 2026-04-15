@@ -87,13 +87,181 @@
     "parameters": {}
   },
   "paths": {
-    "/api/v1/agents": {
+    "/api/v1/agents/{agentId}": {
       "get": {
+        "summary": "Get agent by ID",
+        "description": "Returns a single agent by its ID. No authentication required.",
         "tags": [
           "Agents"
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "The unique agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "The unique agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Agent"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "name": "My AI Agent",
+                      "description": "A payment processing agent on the Masumi network",
+                      "apiUrl": "https://my-agent.example.com",
+                      "verificationStatus": "VERIFIED",
+                      "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+                      "tags": [
+                        "payments",
+                        "ai"
+                      ],
+                      "createdAt": "2026-01-26T10:00:00.000Z",
+                      "updatedAt": "2026-01-26T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Agent not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agents": {
+      "get": {
         "summary": "List agents",
-        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters (for example name or tag search) are **not** supported on this public endpoint and are ignored.",
+        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters are ignored.",
+        "tags": [
+          "Agents"
+        ],
         "parameters": [
           {
             "schema": {
@@ -104,6 +272,7 @@
                 "REVOKED",
                 "EXPIRED"
               ],
+              "default": "VERIFIED",
               "description": "Filter by agent verification status. Defaults to VERIFIED if not specified.",
               "example": "VERIFIED"
             },
@@ -116,6 +285,7 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
+              "default": 1,
               "description": "Page number for pagination. Defaults to 1.",
               "example": 1
             },
@@ -129,6 +299,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
+              "default": 50,
               "description": "Number of results per page. Defaults to 50, max 100.",
               "example": 50
             },
@@ -221,40 +392,7 @@
             }
           },
           "400": {
-            "description": "Bad Request — invalid query parameters"
-          },
-          "429": {
-            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header."
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/agents/{agentId}": {
-      "get": {
-        "tags": [
-          "Agents"
-        ],
-        "summary": "Get agent by ID",
-        "description": "Returns a single agent by its ID. No authentication required.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "description": "The unique agent ID (CUID)",
-              "example": "cmlf6gswz0000x1uctad958tq"
-            },
-            "required": true,
-            "description": "The unique agent ID (CUID)",
-            "name": "agentId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Agent found",
+            "description": "Bad Request — invalid query parameters",
             "content": {
               "application/json": {
                 "schema": {
@@ -263,60 +401,81 @@
                     "success": {
                       "type": "boolean",
                       "enum": [
-                        true
+                        false
                       ]
                     },
-                    "data": {
-                      "$ref": "#/components/schemas/Agent"
+                    "error": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "success",
-                    "data"
-                  ],
-                  "example": {
-                    "success": true,
-                    "data": {
-                      "id": "cmlf6gswz0000x1uctad958tq",
-                      "name": "My AI Agent",
-                      "description": "A payment processing agent on the Masumi network",
-                      "apiUrl": "https://my-agent.example.com",
-                      "verificationStatus": "VERIFIED",
-                      "veridianCredentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-                      "tags": [
-                        "payments",
-                        "ai"
-                      ],
-                      "createdAt": "2026-01-26T10:00:00.000Z",
-                      "updatedAt": "2026-01-26T12:00:00.000Z"
-                    }
-                  }
+                    "error"
+                  ]
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad Request — invalid query parameters"
-          },
-          "404": {
-            "description": "Agent not found"
-          },
           "429": {
-            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header."
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
           },
           "500": {
-            "description": "Internal Server Error"
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/v1/agents/verify": {
       "get": {
+        "summary": "Verify agent identifier",
+        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
         "tags": [
           "Agents"
         ],
-        "summary": "Verify agent identifier",
-        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
         "parameters": [
           {
             "schema": {

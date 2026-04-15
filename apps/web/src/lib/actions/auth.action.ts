@@ -15,7 +15,6 @@ import {
   getAuthErrorDetails,
   isInfrastructureError,
 } from "@/lib/auth/error-results";
-import { buildSwitchAccountSignInHref } from "@/lib/auth/switch-account";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
@@ -67,15 +66,6 @@ export async function signOutAction() {
     headers: headersList,
   });
   redirect("/signin");
-}
-
-export async function switchAccountAction(callbackUrl?: string) {
-  const headersList = await getRequestHeaders();
-  await auth.api.signOut({
-    headers: headersList,
-  });
-
-  redirect(buildSwitchAccountSignInHref(callbackUrl));
 }
 
 function getSignUpErrorResult(error: unknown) {

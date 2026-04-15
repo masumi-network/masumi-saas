@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
@@ -7,9 +7,12 @@ import {
   hasAgentEarningsData,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { agentEarningsQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;
@@ -55,10 +58,10 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: "Agent not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
     const network = toNetwork(
       agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
@@ -71,7 +74,7 @@ export async function GET(
     });
 
     if (!hasAgentEarningsData(agent)) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           totalTransactions: 0,
@@ -89,19 +92,16 @@ export async function GET(
       period: searchParams.get("period") ?? undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryResult.error.issues.map((i) => i.message).join("; "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryResult.error.issues.map((i) => i.message).join("; "),
+      });
     }
     const period = queryResult.data.period;
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           totalTransactions: 0,
@@ -125,7 +125,7 @@ export async function GET(
       timeZone: "Etc/UTC",
     });
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         totalTransactions: income.totalTransactions,
@@ -142,9 +142,9 @@ export async function GET(
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agent earnings:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load earnings" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load earnings",
+    });
   }
 }

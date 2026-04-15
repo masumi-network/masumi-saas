@@ -1,0 +1,75 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { routeFilePathToRoutePath } from "./route-path.js";
+
+const cwd = process.cwd();
+const srcRoot = path.join(cwd, "src");
+const appRoot = path.join(srcRoot, "app");
+const outputPath = path.join(
+  srcRoot,
+  "lib",
+  "openapi",
+  "generated",
+  "route-contract-manifest.ts",
+);
+
+function collectContractFiles(dir: string): string[] {
+  const files: string[] = [];
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectContractFiles(entryPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name === "route.contract.ts") {
+      files.push(entryPath);
+    }
+  }
+
+  return files;
+}
+
+const contractFiles = collectContractFiles(appRoot).sort((left, right) =>
+  left.localeCompare(right),
+);
+
+const importLines: string[] = [
+  'import type { RouteContractManifestEntry } from "../contracts";',
+];
+const entryLines: string[] = [];
+
+contractFiles.forEach((contractFile, index) => {
+  const routeFile = path.join(path.dirname(contractFile), "route.ts");
+  if (!fs.existsSync(routeFile)) {
+    throw new Error(`Missing route.ts next to contract: ${contractFile}`);
+  }
+
+  const alias = `routeContract${index}`;
+  const importPath = path
+    .relative(path.dirname(outputPath), contractFile)
+    .split(path.sep)
+    .join("/")
+    .replace(/\.ts$/, "");
+  const filePath = path.relative(cwd, contractFile).split(path.sep).join("/");
+  const routePath = routeFilePathToRoutePath(appRoot, routeFile);
+
+  importLines.push(
+    `import ${alias} from "${importPath.startsWith(".") ? importPath : `./${importPath}`}";`,
+  );
+  entryLines.push(
+    `  { contract: ${alias}, filePath: "${filePath}", routePath: "${routePath}" },`,
+  );
+});
+
+const contents = `${importLines.join("\n")}
+
+export const routeContractManifest = [
+${entryLines.join("\n")}
+] satisfies RouteContractManifestEntry[];
+`;
+
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.writeFileSync(outputPath, contents, "utf8");
+console.log(`✓ Route contract manifest written to ${outputPath}`);

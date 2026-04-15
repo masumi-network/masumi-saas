@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import { z } from "@/lib/zod-openapi";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
@@ -71,6 +71,30 @@ describe("/pay/api/v1/inbox-agents", () => {
   let GET: typeof import("./route").GET;
   let POST: typeof import("./route").POST;
 
+  const inboxAgent = {
+    id: "inbox-1",
+    name: "Support inbox",
+    description: "Routes support requests",
+    agentSlug: "support-inbox",
+    state: "RegistrationConfirmed",
+    error: null,
+    createdAt: "2026-04-13T10:00:00.000Z",
+    updatedAt: "2026-04-13T10:01:00.000Z",
+    lastCheckedAt: "2026-04-13T10:02:00.000Z",
+    agentIdentifier: "policy.asset",
+    metadataVersion: 1,
+    sendFundingLovelace: null,
+    SmartContractWallet: {
+      walletVkey: "managed_vkey",
+      walletAddress: "addr_test1managed",
+    },
+    RecipientWallet: {
+      walletVkey: "recipient_vkey",
+      walletAddress: "addr_test1recipient",
+    },
+    CurrentTransaction: null,
+  } as const;
+
   beforeAll(async () => {
     ({ GET, POST } = await import("./route"));
   });
@@ -92,7 +116,7 @@ describe("/pay/api/v1/inbox-agents", () => {
 
   it("lists inbox agents from the v1 route", async () => {
     const getRegistryInboxMock = vi.fn().mockResolvedValue({
-      Assets: [{ id: "inbox-1", name: "Support inbox" }],
+      Assets: [inboxAgent],
     });
     getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegistryInbox: getRegistryInboxMock,
@@ -117,10 +141,7 @@ describe("/pay/api/v1/inbox-agents", () => {
   });
 
   it("registers inbox agents with managed wallets selected on the server", async () => {
-    const registerInboxAgentMock = vi.fn().mockResolvedValue({
-      id: "inbox-1",
-      name: "Support inbox",
-    });
+    const registerInboxAgentMock = vi.fn().mockResolvedValue(inboxAgent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
       registerInboxAgent: registerInboxAgentMock,
     });

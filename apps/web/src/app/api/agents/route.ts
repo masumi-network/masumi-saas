@@ -1,5 +1,5 @@
 import prisma, { RegistrationState } from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   buildAgentPricing,
@@ -14,13 +14,13 @@ import {
   consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
-import {
-  agentsListQuerySchema,
-  registerAgentBodySchema,
-} from "@/lib/schemas/agent";
+import { agentsListQuerySchema } from "@/lib/schemas/agent";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
+
+import contract, { registerAgentBodySchema } from "./route.contract";
 
 function matchesAgentSearch(
   agent: {
@@ -93,13 +93,10 @@ export async function GET(request: NextRequest) {
     );
     const queryValidation = agentsListQuerySchema.safeParse(rawParams);
     if (!queryValidation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryValidation.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryValidation.error.issues.map((e) => e.message).join(", "),
+      });
     }
 
     const {
@@ -159,7 +156,7 @@ export async function GET(request: NextRequest) {
     const nextCursor =
       hasMore && page.length > 0 ? (page[page.length - 1]?.id ?? null) : null;
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: page.map(({ agentReference: _agentReference, ...agent }) => agent),
       nextCursor,
@@ -168,10 +165,10 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agents:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to get agents" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to get agents",
+    });
   }
 }
 
@@ -189,13 +186,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: validation.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: validation.error.issues.map((e) => e.message).join(", "),
+      });
     }
 
     const {
@@ -222,10 +216,10 @@ export async function POST(request: NextRequest) {
       : [];
 
     if (tagsArray.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "At least one tag is required." },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: "At least one tag is required.",
+      });
     }
 
     const network = getNetworkFromRequest(request);
@@ -239,15 +233,15 @@ export async function POST(request: NextRequest) {
       await assertAllowedAgentApiUrl(apiUrl);
     } catch (error) {
       if (error instanceof Error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 400 },
-        );
+        return contractJsonResponse(contract, "POST", 400, {
+          success: false,
+          error: error.message,
+        });
       }
-      return NextResponse.json(
-        { success: false, error: "Invalid API URL" },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: "Invalid API URL",
+      });
     }
 
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
@@ -302,34 +296,35 @@ export async function POST(request: NextRequest) {
         include: { agentReference: true },
       });
       if (!agent) {
-        return NextResponse.json(
-          { success: false, error: "Failed to load created agent" },
-          { status: 500 },
-        );
+        return contractJsonResponse(contract, "POST", 500, {
+          success: false,
+          error: "Failed to load created agent",
+        });
       }
       const data = shapeAgentWithMergedMetadata(agent);
-      return NextResponse.json(
-        { success: true, data, agentId: result.agentId },
-        { status: 200 },
-      );
+      return contractJsonResponse(contract, "POST", 200, {
+        success: true,
+        data,
+        agentId: result.agentId,
+      });
     }
-    return NextResponse.json(
-      { success: false, error: result.error },
-      { status: 400 },
-    );
+    return contractJsonResponse(contract, "POST", 400, {
+      success: false,
+      error: result.error,
+    });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     if (isPaymentNodeConfigError(error)) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "POST", 503, {
+        success: false,
+        error: error.message,
+      });
     }
     console.error("Failed to register agent:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to register agent" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "POST", 500, {
+      success: false,
+      error: "Failed to register agent",
+    });
   }
 }

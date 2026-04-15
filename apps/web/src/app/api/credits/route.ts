@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { getCreditBalance } from "@/lib/credits/service";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
+
+import contract from "./route.contract";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +13,7 @@ export async function GET(request: NextRequest) {
     });
     const balance = await getCreditBalance(authContext.user.id);
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         creditsRemaining: balance.creditsRemaining,
@@ -21,9 +24,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("GET /api/credits:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load credits" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load credits",
+    });
   }
 }
