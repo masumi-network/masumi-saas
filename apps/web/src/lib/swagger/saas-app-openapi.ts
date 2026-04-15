@@ -14,17 +14,17 @@ import {
 
 import { activityQueryInputSchema } from "@/lib/schemas/activity";
 import {
-  activityTransactionQuerySchema,
-  agentAnalyticsQuerySchema,
   agentsListQuerySchema,
-  credentialReconcileQuerySchema,
-  credentialStatusQuerySchema,
   registerAgentBodySchema,
   verifyAgentBodySchema,
 } from "@/lib/schemas/agent";
 import {
+  activityTransactionQuerySchema,
+  agentAnalyticsQuerySchema,
   agentCountsQuerySchema,
   agentEarningsQuerySchema,
+  credentialReconcileQuerySchema,
+  credentialStatusQuerySchema,
   dashboardOverviewQuerySchema,
   earningsQuerySchema,
 } from "@/lib/schemas/api-query";
