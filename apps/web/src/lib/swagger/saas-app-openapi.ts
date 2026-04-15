@@ -830,7 +830,14 @@ const credentialIssueBodySchema = z
     attributes: z.record(z.string(), z.any()).optional(),
     agentId: z.string().min(1),
     organizationId: z.string().optional(),
-    expiresAt: z.string().optional(),
+    expiresAt: z
+      .string()
+      .datetime({ offset: true })
+      .openapi({
+        format: "date-time",
+        example: "2026-12-31T23:59:59.000Z",
+      })
+      .optional(),
     signature: z.string().min(1),
     signedMessage: z.string().min(1),
   })

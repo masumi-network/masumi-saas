@@ -5266,7 +5266,9 @@
                     "type": "string"
                   },
                   "expiresAt": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-12-31T23:59:59.000Z"
                   },
                   "signature": {
                     "type": "string",
