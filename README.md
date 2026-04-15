@@ -271,8 +271,10 @@ masumi-saas/
    - **NEXT_PUBLIC_SOKOSUMI_MARKETPLACE_URL**: Sokosumi marketplace base URL (optional)
      - Defaults to `https://app.sokosumi.com`
 
-   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
+   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL** / **POSTMARK_FROM_NAME**: Postmark sender config (optional)
      - If not set, emails are logged to console in development
+     - Uses per-email sender names like `Masumi Verification <support@masumi.network>` and `Agent Messenger <support@masumi.network>` for OIDC magic links
+     - Rewrites `no-reply` / `noreply` local parts to `support@...`
 
    - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the Masumi logo used in transactional emails and the "Powered by Masumi" footer in Agent Messenger OIDC emails. Defaults to the app logo asset if unset.
    - **EMAIL_AGENT_MESSENGER_LOGO_URL** _(optional)_: Absolute URL of the logo shown at the top of Agent Messenger OIDC magic-link emails. Defaults to `EMAIL_BRAND_LOGO_URL` if unset.

@@ -79,31 +79,31 @@ export const OIDC_API_SCOPE_GROUPS = [
   },
   {
     key: "inbox-agents",
-    label: "Inbox agents",
+    label: "Inboxes",
     scopes: [
       {
         scope: "inbox-agents:read:preprod",
-        label: "Read inbox agents (Preprod)",
+        label: "Read inboxes (Preprod)",
         description:
-          "View inbox-agent registrations, wallet choices, and details on Preprod.",
+          "View inbox registrations, wallet choices, and details on Preprod.",
       },
       {
         scope: "inbox-agents:write:preprod",
-        label: "Manage inbox agents (Preprod)",
+        label: "Manage inboxes (Preprod)",
         description:
-          "Register, deregister, or delete inbox-agent registrations on Preprod.",
+          "Register, deregister, or delete inbox registrations on Preprod.",
       },
       {
         scope: "inbox-agents:read:mainnet",
-        label: "Read inbox agents (Mainnet)",
+        label: "Read inboxes (Mainnet)",
         description:
-          "View inbox-agent registrations, wallet choices, and details on Mainnet.",
+          "View inbox registrations, wallet choices, and details on Mainnet.",
       },
       {
         scope: "inbox-agents:write:mainnet",
-        label: "Manage inbox agents (Mainnet)",
+        label: "Manage inboxes (Mainnet)",
         description:
-          "Register, deregister, or delete inbox-agent registrations on Mainnet.",
+          "Register, deregister, or delete inbox registrations on Mainnet.",
       },
     ],
   },

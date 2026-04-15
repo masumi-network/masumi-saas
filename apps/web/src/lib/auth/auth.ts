@@ -30,7 +30,7 @@ import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
-import { emailConfig } from "@/lib/config/email.config";
+import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
 import {
   getPublicOidcMetadata,
   getTrustedOidcClients,
@@ -130,7 +130,7 @@ async function sendVerificationOtpEmail({
   const msg = getEmailMessages(locale).VerificationCode;
 
   await postmarkClient.sendEmail({
-    From: emailConfig.postmarkFromEmail,
+    From: getPostmarkFromHeader("verification"),
     To: email,
     Tag: "verification-code",
     Subject: msg.preview,
@@ -203,7 +203,7 @@ export const auth = betterAuth({
       const msg = getEmailMessages(locale);
 
       await postmarkClient.sendEmail({
-        From: emailConfig.postmarkFromEmail,
+        From: getPostmarkFromHeader("passwordReset"),
         To: user.email,
         Tag: "reset-password",
         Subject: msg.ResetPassword.preview,
@@ -261,7 +261,7 @@ export const auth = betterAuth({
 
       try {
         await postmarkClient.sendEmail({
-          From: emailConfig.postmarkFromEmail,
+          From: getPostmarkFromHeader("verification"),
           To: user.email,
           Tag: "verification-email",
           Subject: msg.preview,
@@ -487,7 +487,9 @@ export const auth = betterAuth({
               });
 
           await postmarkClient.sendEmail({
-            From: emailConfig.postmarkFromEmail,
+            From: getPostmarkFromHeader(
+              isOidcMagicLink ? "agentMessenger" : "magicLink",
+            ),
             To: email,
             Tag: "magic-link",
             Subject: msg.preview,
@@ -600,7 +602,7 @@ export const auth = betterAuth({
               : "Member";
 
         await postmarkClient.sendEmail({
-          From: emailConfig.postmarkFromEmail,
+          From: getPostmarkFromHeader("invitation"),
           To: data.email,
           Tag: "organization-invitation",
           Subject: replaceOrganization(msg.preview),
