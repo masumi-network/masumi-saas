@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
-const rejectOidcAccessTokenAuthMock = vi.fn();
+const requireNetworkedOidcApiScopeMock = vi.fn();
 const resolveRegistrySharedTokenUpstreamMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/auth/utils", () => ({
 }));
 
 vi.mock("@/lib/auth/oidc-api-permissions", () => ({
-  rejectOidcAccessTokenAuth: rejectOidcAccessTokenAuthMock,
+  requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
@@ -30,6 +30,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
       const body = await request.text();
       return body || undefined;
     },
+    getEffectivePaymentNetwork: () => "Preprod",
     resolveRegistrySharedTokenUpstream: resolveRegistrySharedTokenUpstreamMock,
     toUpstreamResponse: async (response: Response) => {
       const text = await response.text();
@@ -52,7 +53,7 @@ describe("/api/v1/registry-entry", () => {
       user: { id: "user-1" },
       authMethod: "session",
     });
-    rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
+    requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
     resolveRegistrySharedTokenUpstreamMock.mockReturnValue({
       ok: true,
       baseUrl: "https://registry.example.com/api/v1",
@@ -81,6 +82,16 @@ describe("/api/v1/registry-entry", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "session",
+      }),
+      {
+        resource: "registry",
+        action: "read",
+        network: "Preprod",
+      },
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "https://registry.example.com/api/v1/registry-entry/?network=Preprod",
       expect.objectContaining({

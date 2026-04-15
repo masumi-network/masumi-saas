@@ -45,6 +45,8 @@ export function requireNetworkedOidcApiScope(
     resource:
       | "agents"
       | "inbox-agents"
+      | "registry"
+      | "payments"
       | "credentials"
       | "activity"
       | "earnings"
@@ -68,6 +70,8 @@ export function requireAnyNetworkedOidcApiScope(
     resource:
       | "agents"
       | "inbox-agents"
+      | "registry"
+      | "payments"
       | "credentials"
       | "activity"
       | "earnings"
@@ -79,6 +83,42 @@ export function requireAnyNetworkedOidcApiScope(
     buildNetworkedOidcScope(options.resource, options.action, "preprod"),
     buildNetworkedOidcScope(options.resource, options.action, "mainnet"),
   ]);
+}
+
+export function requireAllNetworkedOidcApiScopes(
+  authContext: AuthenticatedApiContext,
+  options: {
+    resource:
+      | "agents"
+      | "inbox-agents"
+      | "registry"
+      | "payments"
+      | "credentials"
+      | "activity"
+      | "earnings"
+      | "dashboard";
+    action: "read" | "write";
+  },
+): string[] {
+  const requiredScopes = [
+    buildNetworkedOidcScope(options.resource, options.action, "preprod"),
+    buildNetworkedOidcScope(options.resource, options.action, "mainnet"),
+  ];
+
+  if (authContext.authMethod !== "oidcAccessToken") {
+    return requiredScopes;
+  }
+
+  const missingScopes = requiredScopes.filter(
+    (scope) => !authContext.oidcScopes.includes(scope),
+  );
+  if (missingScopes.length > 0) {
+    throw new ForbiddenError(
+      `Missing required scopes: ${missingScopes.join(", ")}`,
+    );
+  }
+
+  return requiredScopes;
 }
 
 export function rejectOidcAccessTokenAuth(

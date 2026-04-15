@@ -84,11 +84,26 @@ export async function readOptionalRequestBody(
   }
 }
 
+function extractNetworkFromBody(body: string | undefined): string | undefined {
+  if (!body) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(body) as { network?: unknown };
+    return typeof parsed.network === "string" ? parsed.network : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function getEffectivePaymentNetwork(
   request: NextRequest,
+  body?: string,
 ): "Mainnet" | "Preprod" {
   return parseNetwork(
-    request.nextUrl.searchParams.get("network") ??
+    extractNetworkFromBody(body) ??
+      request.nextUrl.searchParams.get("network") ??
       request.cookies.get("payment_network")?.value,
   );
 }

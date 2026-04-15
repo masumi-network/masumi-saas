@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
+import {
+  requireAllNetworkedOidcApiScopes,
+  requireNetworkedOidcApiScope,
+} from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
@@ -22,10 +25,11 @@ export async function GET(request: NextRequest) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this /api/v1 endpoint",
-    );
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "registry",
+      action: "read",
+      network: getEffectivePaymentNetwork(request),
+    });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
@@ -61,10 +65,13 @@ export async function POST(request: NextRequest) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this /api/v1 endpoint",
-    );
+    const body = await readOptionalRequestBody(request);
+    const network = getEffectivePaymentNetwork(request, body);
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "registry",
+      action: "write",
+      network,
+    });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
@@ -75,7 +82,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Debit before the first upstream write.
-    const network = getEffectivePaymentNetwork(request);
     await consumeCreditIfRequired({
       userId: authContext.user.id,
       reason: "payment_proxy_write",
@@ -91,7 +97,6 @@ export async function POST(request: NextRequest) {
     });
 
     const headers = buildUpstreamHeaders(request, upstream.token);
-    const body = await readOptionalRequestBody(request);
     const response = await fetch(
       `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
       {
@@ -118,10 +123,12 @@ export async function DELETE(request: NextRequest) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this /api/v1 endpoint",
-    );
+    const body = await readOptionalRequestBody(request);
+    const network = getEffectivePaymentNetwork(request, body);
+    requireAllNetworkedOidcApiScopes(authContext, {
+      resource: "registry",
+      action: "write",
+    });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
@@ -132,7 +139,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Debit before the first upstream write.
-    const network = getEffectivePaymentNetwork(request);
     await consumeCreditIfRequired({
       userId: authContext.user.id,
       reason: "payment_proxy_write",
@@ -148,7 +154,6 @@ export async function DELETE(request: NextRequest) {
     });
 
     const headers = buildUpstreamHeaders(request, upstream.token);
-    const body = await readOptionalRequestBody(request);
     const response = await fetch(
       `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
       {

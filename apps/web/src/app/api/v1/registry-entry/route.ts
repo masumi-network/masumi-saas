@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
+  getEffectivePaymentNetwork,
   readOptionalRequestBody,
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
@@ -21,10 +22,13 @@ async function handleRequest(request: NextRequest, method: string) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this /api/v1 endpoint",
-    );
+    const body =
+      method === "GET" ? undefined : await readOptionalRequestBody(request);
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "registry",
+      action: "read",
+      network: getEffectivePaymentNetwork(request, body),
+    });
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
@@ -35,8 +39,6 @@ async function handleRequest(request: NextRequest, method: string) {
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
-    const body =
-      method === "GET" ? undefined : await readOptionalRequestBody(request);
     const response = await fetch(
       `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
       {
