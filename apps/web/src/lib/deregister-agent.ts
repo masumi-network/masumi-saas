@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 
@@ -91,6 +92,9 @@ export async function deregisterAgentForUser(
 
     return { success: true };
   } catch (error) {
+    if (isPaymentNodeConfigError(error)) {
+      throw error;
+    }
     console.error("Failed to deregister agent:", error);
     const message =
       error instanceof Error ? error.message : "Failed to deregister agent";

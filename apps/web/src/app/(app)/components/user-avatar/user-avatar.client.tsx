@@ -161,8 +161,8 @@ export default function UserAvatarClient({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="relative h-9 w-auto rounded-full pl-1 pr-2.5 md:h-10 md:pl-1.5 md:pr-3 group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:md:h-10 group-data-[collapsible=icon]:md:w-10 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+                  variant="ghost"
+                  className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 text-left shadow-none transition-colors hover:bg-sidebar-accent/45 hover:border-sidebar-border group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-sidebar-accent/30"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent
@@ -175,12 +175,17 @@ export default function UserAvatarClient({
                     }
                     imageAlt={sessionUser.name ?? "User avatar"}
                     fallbackName={sessionUser.name ?? sessionUser.email}
-                    className="!h-7 !w-7 md:!h-7 md:!w-7 text-xs"
+                    className="!h-8 !w-8 md:!h-8 md:!w-8 text-xs"
                   />
-                  <span className="ml-1.5 text-sm font-semibold truncate group-data-[collapsible=icon]:hidden">
-                    {sessionUser.name || sessionUser.email || "User"}
+                  <span className="ml-2.5 min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                    <span className="block truncate text-sm font-semibold leading-tight text-sidebar-foreground">
+                      {sessionUser.name || sessionUser.email || "User"}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {sessionUser.email}
+                    </span>
                   </span>
-                  <ChevronsUpDown className="ml-1 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                  <ChevronsUpDown className="ml-2 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>

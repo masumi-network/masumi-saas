@@ -83,12 +83,18 @@ export async function prepareManagedInboxRegistration(params: {
   let baseUrl: string;
   let adminKey: string;
   let paymentSourceId: string;
+  const paymentSourceEnvName = paymentNodeConfig.getPaymentSourceIdEnvName(
+    params.network,
+  );
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
     paymentSourceId = paymentNodeConfig.getPaymentSourceId(params.network);
   } catch (error) {
-    if (isPaymentNodeConfigError(error)) {
+    if (
+      isPaymentNodeConfigError(error) &&
+      error.envName === paymentSourceEnvName
+    ) {
       throw error;
     }
     console.error("Payment node config missing for inbox registration:", error);

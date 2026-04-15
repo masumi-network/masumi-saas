@@ -134,6 +134,8 @@ export {
   parseActivityQueryInput,
 } from "./activity";
 export {
+  agentAnalyticsQuerySchema,
+  type AgentAnalyticsRange,
   agentCountsQuerySchema,
   agentEarningsQuerySchema,
   agentVerifyQuerySchema,

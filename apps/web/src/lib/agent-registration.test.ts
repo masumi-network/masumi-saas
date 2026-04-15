@@ -46,6 +46,8 @@ vi.mock("./payment-node/config", () => ({
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
   },
+  isPaymentNodeConfigError: (error: unknown) =>
+    error instanceof Error && error.name === "PaymentNodeConfigError",
 }));
 
 vi.mock("@/lib/payment-node/get-user-client", () => ({
@@ -290,6 +292,52 @@ describe("startAgentRegistration", () => {
       success: false,
       error:
         "Configured payment source payment-source-mainnet is on Preprod, but agent registration is using Mainnet. Update PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET to a Mainnet payment source.",
+    });
+  });
+
+  it("keeps base URL config errors on the generic fallback path", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+    getBaseUrlMock.mockImplementation(() => {
+      throw Object.assign(
+        new Error(
+          "PAYMENT_NODE_BASE_URL is required for payment node integration",
+        ),
+        {
+          name: "PaymentNodeConfigError",
+          envName: "PAYMENT_NODE_BASE_URL",
+        },
+      );
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Mainnet",
+      },
+      {
+        name: "Mainnet agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+      },
+    );
+
+    expect(result).toStrictEqual({
+      success: false,
+      error: "Something went wrong. Please try again later.",
     });
   });
 });

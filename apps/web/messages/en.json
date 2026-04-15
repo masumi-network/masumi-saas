@@ -475,8 +475,8 @@
       "status": "Coming soon",
       "balanceLabel": "Available credits",
       "balanceDescription": "Your current balance is ready to use whenever you perform credit-backed actions on Mainnet.",
-      "mainnetOnlyTitle": "Credits are only spent on Mainnet",
-      "mainnetOnlyDescription": "Preprod, missing, or invalid networks never deduct credits. Only Mainnet writes reduce this balance.",
+      "mainnetOnlyTitle": "Only Mainnet activity uses credits",
+      "mainnetOnlyDescription": "Preprod and any missing or invalid network values never deduct credits. Your balance only decreases for write operations on Mainnet.",
       "cta": "Add credits",
       "comingSoon": "Top-up is coming soon.",
       "roadmapTitle": "What to expect",
@@ -495,6 +495,69 @@
       "title": "Analytics",
       "description": "Revenue, usage, and performance across your agents.",
       "comingSoon": "Analytics are coming soon."
+    },
+    "Earnings": {
+      "title": "Earnings",
+      "description": "Track income, refunds, and pending payouts for one agent at a time on the selected network.",
+      "filtersTitle": "Earnings filters",
+      "filtersDescription": "Pick an eligible agent and time window. The network comes from the global switcher in the sidebar.",
+      "agentLabel": "Agent",
+      "rangeLabel": "Range",
+      "selectAgent": "Select an agent",
+      "searchAgentsPlaceholder": "Search agents by name or identifier...",
+      "searchAgentsEmpty": "No matching agents found.",
+      "missingIdentifier": "Agent identifier unavailable",
+      "applyCustomRange": "Apply range",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "loadAgentsError": "Failed to load eligible agents.",
+      "loadAgentsHelp": "Try refreshing or switch networks if you expect this agent to be visible elsewhere.",
+      "loadEarningsError": "Failed to load earnings.",
+      "loadEarningsHelp": "Refresh the page or pick a different range to try again.",
+      "tryAgain": "Try again",
+      "emptyTitle": "No eligible agents on this network",
+      "emptyDescription": "This network does not have any wallet-owned agents with earnings history yet. Register an agent or switch networks to continue.",
+      "emptyCta": "Go to agents",
+      "cards": {
+        "income": "Income",
+        "refunded": "Refunded",
+        "pending": "Pending",
+        "transactions": "Transactions"
+      },
+      "metric": {
+        "income": "Income",
+        "refunded": "Refunded",
+        "pending": "Pending"
+      },
+      "granularity": {
+        "day": "Daily view",
+        "month": "Monthly view"
+      },
+      "range": {
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "all": "All time",
+        "custom": "Custom range"
+      },
+      "network": {
+        "preprod": "Preprod",
+        "mainnet": "Mainnet"
+      },
+      "feesLabel": "Blockchain fees: {fees}",
+      "transactionsHint": "Payment requests included in this period",
+      "noDataTitle": "No earnings yet in this period",
+      "noDataDescription": "When this agent starts receiving payments, the selected metric will appear here with a timeline and breakdown.",
+      "mixedUnitsTitle": "Chart unavailable for mixed payment units",
+      "mixedUnitsDescription": "This metric includes both USD stablecoins and ADA in the selected period. Use the breakdown table below to inspect the exact amounts.",
+      "breakdownTitle": "{metric} breakdown",
+      "breakdownEmpty": "There is no breakdown data for this metric yet.",
+      "table": {
+        "period": "Period",
+        "amount": "Amount",
+        "fees": "Fees",
+        "raw": "Raw units"
+      }
     },
     "Activity": {
       "title": "Activity",
@@ -573,6 +636,7 @@
         "agents": "AI agents",
         "inboxAgents": "Inbox agents",
         "activity": "Activity",
+        "earnings": "Earnings",
         "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",
@@ -795,6 +859,7 @@
         "agents": "AI agents",
         "inboxAgents": "Inbox agents",
         "activity": "Activity",
+        "earnings": "Earnings",
         "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",

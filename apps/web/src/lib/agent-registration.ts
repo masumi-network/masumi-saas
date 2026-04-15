@@ -155,12 +155,14 @@ async function registerAgentOnChainUntilSetup(
   let baseUrl: string;
   let adminKey: string;
   let paymentSourceId: string;
+  const paymentSourceEnvName =
+    paymentNodeConfig.getPaymentSourceIdEnvName(network);
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
     paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
   } catch (e) {
-    if (isPaymentNodeConfigError(e)) {
+    if (isPaymentNodeConfigError(e) && e.envName === paymentSourceEnvName) {
       throw e;
     }
     console.error("Payment node config missing:", e);
