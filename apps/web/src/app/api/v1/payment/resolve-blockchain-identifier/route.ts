@@ -23,10 +23,11 @@ export async function POST(request: NextRequest) {
       requireEmailVerified: false,
     });
     const body = await readOptionalRequestBody(request);
+    const network = getEffectivePaymentNetwork(request, body);
     requireNetworkedOidcApiScope(authContext, {
       resource: "payments",
       action: "read",
-      network: getEffectivePaymentNetwork(request, body),
+      network,
     });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
@@ -38,7 +39,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Debit before the first upstream write.
-    const network = getEffectivePaymentNetwork(request);
     await consumeCreditIfRequired({
       userId: authContext.user.id,
       reason: "payment_proxy_write",
