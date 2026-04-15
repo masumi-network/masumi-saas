@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "/api",
+      "url": "/",
       "description": "This app"
     }
   ],
@@ -25,8 +25,20 @@
       "description": "Masumi SaaS API key introspection"
     },
     {
+      "name": "Credits",
+      "description": "Credit balances and compatibility"
+    },
+    {
+      "name": "Credentials",
+      "description": "Veridian credential issuance and polling"
+    },
+    {
       "name": "Agents",
       "description": "Your agents"
+    },
+    {
+      "name": "Inbox agents",
+      "description": "Managed inbox-agent registration flows"
     },
     {
       "name": "Dashboard",
@@ -3998,7 +4010,7 @@
     "parameters": {}
   },
   "paths": {
-    "/register/email": {
+    "/api/register/email": {
       "post": {
         "tags": [
           "Auth"
@@ -4164,7 +4176,7 @@
         }
       }
     },
-    "/health": {
+    "/api/health": {
       "get": {
         "tags": [
           "System"
@@ -4336,7 +4348,7 @@
         }
       }
     },
-    "/api-key-status": {
+    "/api/api-key-status": {
       "get": {
         "tags": [
           "API keys"
@@ -4617,13 +4629,13 @@
         }
       }
     },
-    "/credits": {
+    "/api/credits": {
       "get": {
         "tags": [
           "Credits"
         ],
         "summary": "Get remaining credits",
-        "description": "Returns the authenticated user’s remaining write credits. New users start with 1 credit; existing users stay at 0 until credits are granted outside this v1 flow.",
+        "description": "Canonical credits endpoint for the authenticated SaaS API. Returns the authenticated user’s remaining write credits.",
         "security": [
           {
             "apiKeyHeader": []
@@ -4802,7 +4814,1588 @@
         }
       }
     },
-    "/agents": {
+    "/credits": {
+      "get": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Get remaining credits",
+        "description": "Compatibility alias for `/api/credits`. Returns the authenticated user’s remaining write credits. New users start with 1 credit; existing users stay at 0 until credits are granted outside this v1 flow.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "creditsRemaining": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "creditsRemaining",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "creditsRemaining": 1,
+                      "updatedAt": "2026-04-13T10:30:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/check-connection": {
+      "post": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Check recipient AID connection",
+        "description": "Validates whether Veridian already knows the recipient AID before issuing a credential.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "aid": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "aid"
+                ],
+                "example": {
+                  "aid": "EXAMPLE_AID"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recipient AID connection status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exists": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "exists"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "exists": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/issue": {
+      "post": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Issue verification credential",
+        "description": "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "aid": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "oobi": {
+                    "type": "string"
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  },
+                  "agentId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "organizationId": {
+                    "type": "string"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-12-31T23:59:59.000Z"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "signedMessage": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "aid",
+                  "agentId",
+                  "signature",
+                  "signedMessage"
+                ],
+                "example": {
+                  "aid": "EXAMPLE_AID",
+                  "oobi": "http://veridian.example/oobi/aid/EXAMPLE_AID",
+                  "agentId": "cmlf6gswz0000x1uctad958tq",
+                  "attributes": {
+                    "tier": "gold"
+                  },
+                  "signature": "base64-signature",
+                  "signedMessage": "challenge text"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credential issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "credentialId": {
+                          "type": "string"
+                        },
+                        "schemaSaid": {
+                          "type": "string"
+                        },
+                        "aid": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "ISSUED",
+                            "REVOKED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "issuedAt": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "credentialId",
+                        "schemaSaid",
+                        "aid",
+                        "status",
+                        "issuedAt",
+                        "expiresAt"
+                      ],
+                      "example": {
+                        "id": "cred_123",
+                        "credentialId": "pending-550e8400-e29b-41d4-a716-446655440000",
+                        "schemaSaid": "EM0example_schema_said",
+                        "aid": "EXAMPLE_AID",
+                        "status": "PENDING",
+                        "issuedAt": "2026-04-15T12:00:00.000Z",
+                        "expiresAt": null
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cred_123",
+                      "credentialId": "pending-550e8400-e29b-41d4-a716-446655440000",
+                      "schemaSaid": "EM0example_schema_said",
+                      "aid": "EXAMPLE_AID",
+                      "status": "PENDING",
+                      "issuedAt": "2026-04-15T12:00:00.000Z",
+                      "expiresAt": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/issuer-oobi": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Get issuer OOBI",
+        "description": "Returns the Veridian issuer OOBI that agents can resolve before credential issuance.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Issuer OOBI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "oobi": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "oobi"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "oobi": "http://veridian.example/oobi/issuer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/reconcile": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Reconcile pending credentials",
+        "description": "Checks pending credentials for an owned agent and marks the first matching issued credential as resolved.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "agentId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential reconciliation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "resolved": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "resolved"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "resolved": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/schema-said": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Get verification schema SAID",
+        "description": "Returns the configured Veridian schema SAID for agent verification credentials.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification schema SAID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "schemaSaid": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "schemaSaid"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "schemaSaid": "EM0example_schema_said"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/credentials/status": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Get credential status",
+        "description": "Polls the current credential state for a pending or issued verification credential owned by the caller.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "credentialId": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "ISSUED",
+                            "REVOKED",
+                            "EXPIRED"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cred_123",
+                      "credentialId": "pending-550e8400-e29b-41d4-a716-446655440000",
+                      "status": "PENDING"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents": {
       "get": {
         "tags": [
           "Agents"
@@ -5755,7 +7348,7 @@
         }
       }
     },
-    "/agents/{agentId}": {
+    "/api/agents/{agentId}": {
       "get": {
         "tags": [
           "Agents"
@@ -6238,7 +7831,7 @@
         }
       }
     },
-    "/agents/counts": {
+    "/api/agents/counts": {
       "get": {
         "tags": [
           "Agents"
@@ -6454,7 +8047,7 @@
         }
       }
     },
-    "/agents/{agentId}/transactions": {
+    "/api/agents/{agentId}/transactions": {
       "get": {
         "tags": [
           "Agents"
@@ -6703,7 +8296,7 @@
         }
       }
     },
-    "/agents/{agentId}/earnings": {
+    "/api/agents/{agentId}/earnings": {
       "get": {
         "tags": [
           "Agents"
@@ -7146,7 +8739,7 @@
         }
       }
     },
-    "/agents/{agentId}/verify": {
+    "/api/agents/{agentId}/verify": {
       "post": {
         "tags": [
           "Agents"
@@ -7484,7 +9077,7 @@
         }
       }
     },
-    "/agents/{agentId}/verification-challenge": {
+    "/api/agents/{agentId}/verification-challenge": {
       "get": {
         "tags": [
           "Agents"
@@ -7902,7 +9495,7 @@
         }
       }
     },
-    "/agents/{agentId}/test-verification-endpoint": {
+    "/api/agents/{agentId}/test-verification-endpoint": {
       "post": {
         "tags": [
           "Agents"
@@ -8094,7 +9687,7 @@
         }
       }
     },
-    "/agents/{agentId}/complete-registration": {
+    "/api/agents/{agentId}/complete-registration": {
       "post": {
         "tags": [
           "Agents"
@@ -8447,7 +10040,7 @@
         }
       }
     },
-    "/agents/{agentId}/deregister": {
+    "/api/agents/{agentId}/deregister": {
       "post": {
         "tags": [
           "Agents"
@@ -9048,6 +10641,434 @@
             "description": "This app"
           }
         ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "agentSlug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "name",
+                  "agentSlug"
+                ],
+                "additionalProperties": false,
+                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the server automatically overrides wallet selection so a configured funding wallet pays while the newly created managed inbox wallet receives the registration asset.",
+                "example": {
+                  "name": "Support inbox",
+                  "description": "Routes support requests into the Masumi inbox registry",
+                  "agentSlug": "support-inbox"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox-agent registration created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentSlug": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "lastCheckedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadataVersion": {
+                          "type": "number"
+                        },
+                        "sendFundingLovelace": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "SmartContractWallet": {
+                          "type": "object",
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "RecipientWallet": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "CurrentTransaction": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "txHash": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "Pending",
+                                "Confirmed",
+                                "FailedViaTimeout",
+                                "FailedViaManualReset",
+                                "RolledBack"
+                              ]
+                            },
+                            "confirmations": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "fees": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "blockHeight": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "blockTime": {
+                              "type": "number",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "txHash",
+                            "status",
+                            "confirmations",
+                            "fees",
+                            "blockHeight",
+                            "blockTime"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "description",
+                        "agentSlug",
+                        "state",
+                        "createdAt",
+                        "updatedAt",
+                        "lastCheckedAt",
+                        "agentIdentifier",
+                        "metadataVersion",
+                        "sendFundingLovelace",
+                        "SmartContractWallet",
+                        "RecipientWallet",
+                        "CurrentTransaction"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cm_inbox_1",
+                      "name": "Support inbox",
+                      "description": "Routes support requests into the Masumi inbox registry",
+                      "agentSlug": "support-inbox",
+                      "state": "RegistrationConfirmed",
+                      "error": null,
+                      "createdAt": "2026-04-10T10:00:00.000Z",
+                      "updatedAt": "2026-04-10T10:10:00.000Z",
+                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                      "agentIdentifier": "policy.asset",
+                      "metadataVersion": 1,
+                      "sendFundingLovelace": null,
+                      "SmartContractWallet": {
+                        "walletVkey": "wallet_vkey_123",
+                        "walletAddress": "addr_test1mint..."
+                      },
+                      "RecipientWallet": {
+                        "walletVkey": "wallet_vkey_456",
+                        "walletAddress": "addr_test1recipient..."
+                      },
+                      "CurrentTransaction": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Insufficient credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "Insufficient credits"
+                      ]
+                    },
+                    "creditsRemaining": {
+                      "type": "number"
+                    },
+                    "requiredCredits": {
+                      "type": "number",
+                      "enum": [
+                        1
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "creditsRemaining",
+                    "requiredCredits"
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Insufficient credits",
+                    "creditsRemaining": 0,
+                    "requiredCredits": 1
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/masumi/inbox-agent/register": {
+      "post": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "Register inbox agent",
+        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent through the authenticated user’s payment-node token using the same managed wallet flow as the canonical route.",
         "security": [
           {
             "apiKeyHeader": []
@@ -10181,7 +12202,7 @@
         }
       }
     },
-    "/dashboard/overview": {
+    "/api/dashboard/overview": {
       "get": {
         "tags": [
           "Dashboard"
@@ -10585,7 +12606,7 @@
         }
       }
     },
-    "/activity": {
+    "/api/activity": {
       "get": {
         "tags": [
           "Activity"
@@ -10987,7 +13008,7 @@
         }
       }
     },
-    "/earnings": {
+    "/api/earnings": {
       "get": {
         "tags": [
           "Earnings"
@@ -11091,6 +13112,1311 @@
                       "amountUnit": "USD",
                       "previousTotal": 10
                     }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/activity/transaction": {
+      "get": {
+        "tags": [
+          "Activity"
+        ],
+        "summary": "Get activity transaction",
+        "description": "Loads a single payment or purchase visible to the caller by ID and transaction type.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment",
+                "purchase"
+              ]
+            },
+            "required": true,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "payment",
+                            "purchase"
+                          ]
+                        },
+                        "item": {
+                          "nullable": true,
+                          "description": "Underlying payment-node transaction payload for the requested payment or purchase."
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "type": "payment",
+                      "item": {
+                        "id": "txn-1",
+                        "status": "FundsLocked",
+                        "txHash": "abc123"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment node is not configured or the active payment source is unavailable for the requested network.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/earnings/agent": {
+      "get": {
+        "tags": [
+          "Earnings"
+        ],
+        "summary": "Get per-agent earnings analytics",
+        "description": "Returns earnings analytics, time-bucketed series, and display-unit totals for one owned agent on the selected network.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "agentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Mainnet",
+                "Preprod"
+              ]
+            },
+            "required": true,
+            "name": "network",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": "30d"
+            },
+            "required": false,
+            "name": "range",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "startDate",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "endDate",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "Etc/UTC"
+            },
+            "required": false,
+            "name": "timeZone",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-agent earnings analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "agent": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "icon": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "agentIdentifier": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "network": {
+                              "type": "string",
+                              "enum": [
+                                "Mainnet",
+                                "Preprod"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "icon",
+                            "agentIdentifier",
+                            "network"
+                          ]
+                        },
+                        "period": {
+                          "type": "object",
+                          "properties": {
+                            "range": {
+                              "type": "string",
+                              "enum": [
+                                "7d",
+                                "30d",
+                                "90d",
+                                "all",
+                                "custom"
+                              ]
+                            },
+                            "granularity": {
+                              "type": "string",
+                              "enum": [
+                                "day",
+                                "month"
+                              ]
+                            },
+                            "startDate": {
+                              "type": "string"
+                            },
+                            "endDate": {
+                              "type": "string"
+                            },
+                            "periodStart": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "periodEnd": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "timeZone": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "range",
+                            "granularity",
+                            "startDate",
+                            "endDate",
+                            "periodStart",
+                            "periodEnd",
+                            "timeZone"
+                          ]
+                        },
+                        "totalTransactions": {
+                          "type": "number"
+                        },
+                        "displayUnit": {
+                          "type": "string",
+                          "enum": [
+                            "USD",
+                            "ADA"
+                          ]
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "income": {
+                              "type": "object",
+                              "properties": {
+                                "usdAmount": {
+                                  "type": "number"
+                                },
+                                "adaAmount": {
+                                  "type": "number"
+                                },
+                                "displayUnit": {
+                                  "type": "string",
+                                  "enum": [
+                                    "USD",
+                                    "ADA"
+                                  ]
+                                },
+                                "displayAmount": {
+                                  "type": "number"
+                                },
+                                "hasMixedUnits": {
+                                  "type": "boolean"
+                                },
+                                "units": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "amount"
+                                    ]
+                                  }
+                                },
+                                "blockchainFees": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "usdAmount",
+                                "adaAmount",
+                                "displayUnit",
+                                "displayAmount",
+                                "hasMixedUnits",
+                                "units",
+                                "blockchainFees"
+                              ]
+                            },
+                            "refunded": {
+                              "type": "object",
+                              "properties": {
+                                "usdAmount": {
+                                  "type": "number"
+                                },
+                                "adaAmount": {
+                                  "type": "number"
+                                },
+                                "displayUnit": {
+                                  "type": "string",
+                                  "enum": [
+                                    "USD",
+                                    "ADA"
+                                  ]
+                                },
+                                "displayAmount": {
+                                  "type": "number"
+                                },
+                                "hasMixedUnits": {
+                                  "type": "boolean"
+                                },
+                                "units": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "amount"
+                                    ]
+                                  }
+                                },
+                                "blockchainFees": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "usdAmount",
+                                "adaAmount",
+                                "displayUnit",
+                                "displayAmount",
+                                "hasMixedUnits",
+                                "units",
+                                "blockchainFees"
+                              ]
+                            },
+                            "pending": {
+                              "type": "object",
+                              "properties": {
+                                "usdAmount": {
+                                  "type": "number"
+                                },
+                                "adaAmount": {
+                                  "type": "number"
+                                },
+                                "displayUnit": {
+                                  "type": "string",
+                                  "enum": [
+                                    "USD",
+                                    "ADA"
+                                  ]
+                                },
+                                "displayAmount": {
+                                  "type": "number"
+                                },
+                                "hasMixedUnits": {
+                                  "type": "boolean"
+                                },
+                                "units": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "unit": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "unit",
+                                      "amount"
+                                    ]
+                                  }
+                                },
+                                "blockchainFees": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "usdAmount",
+                                "adaAmount",
+                                "displayUnit",
+                                "displayAmount",
+                                "hasMixedUnits",
+                                "units",
+                                "blockchainFees"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "income",
+                            "refunded",
+                            "pending"
+                          ]
+                        },
+                        "series": {
+                          "type": "object",
+                          "properties": {
+                            "income": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "usdAmount": {
+                                    "type": "number"
+                                  },
+                                  "adaAmount": {
+                                    "type": "number"
+                                  },
+                                  "displayUnit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "USD",
+                                      "ADA"
+                                    ]
+                                  },
+                                  "displayAmount": {
+                                    "type": "number"
+                                  },
+                                  "hasMixedUnits": {
+                                    "type": "boolean"
+                                  },
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "units": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "amount"
+                                      ]
+                                    }
+                                  },
+                                  "blockchainFees": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "usdAmount",
+                                  "adaAmount",
+                                  "displayUnit",
+                                  "displayAmount",
+                                  "hasMixedUnits",
+                                  "key",
+                                  "label",
+                                  "amount",
+                                  "units",
+                                  "blockchainFees"
+                                ]
+                              }
+                            },
+                            "refunded": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "usdAmount": {
+                                    "type": "number"
+                                  },
+                                  "adaAmount": {
+                                    "type": "number"
+                                  },
+                                  "displayUnit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "USD",
+                                      "ADA"
+                                    ]
+                                  },
+                                  "displayAmount": {
+                                    "type": "number"
+                                  },
+                                  "hasMixedUnits": {
+                                    "type": "boolean"
+                                  },
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "units": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "amount"
+                                      ]
+                                    }
+                                  },
+                                  "blockchainFees": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "usdAmount",
+                                  "adaAmount",
+                                  "displayUnit",
+                                  "displayAmount",
+                                  "hasMixedUnits",
+                                  "key",
+                                  "label",
+                                  "amount",
+                                  "units",
+                                  "blockchainFees"
+                                ]
+                              }
+                            },
+                            "pending": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "usdAmount": {
+                                    "type": "number"
+                                  },
+                                  "adaAmount": {
+                                    "type": "number"
+                                  },
+                                  "displayUnit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "USD",
+                                      "ADA"
+                                    ]
+                                  },
+                                  "displayAmount": {
+                                    "type": "number"
+                                  },
+                                  "hasMixedUnits": {
+                                    "type": "boolean"
+                                  },
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "units": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "unit",
+                                        "amount"
+                                      ]
+                                    }
+                                  },
+                                  "blockchainFees": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "usdAmount",
+                                  "adaAmount",
+                                  "displayUnit",
+                                  "displayAmount",
+                                  "hasMixedUnits",
+                                  "key",
+                                  "label",
+                                  "amount",
+                                  "units",
+                                  "blockchainFees"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "income",
+                            "refunded",
+                            "pending"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "agent",
+                        "period",
+                        "totalTransactions",
+                        "displayUnit",
+                        "totals",
+                        "series"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "agent": {
+                        "id": "agent-1",
+                        "name": "Alpha",
+                        "icon": null,
+                        "agentIdentifier": "agent-alpha",
+                        "network": "Preprod"
+                      },
+                      "period": {
+                        "range": "30d",
+                        "granularity": "day",
+                        "startDate": "2026-03-17",
+                        "endDate": "2026-04-15",
+                        "periodStart": "2026-03-17T00:00:00.000Z",
+                        "periodEnd": "2026-04-15T23:59:59.000Z",
+                        "timeZone": "Etc/UTC"
+                      },
+                      "totalTransactions": 5,
+                      "displayUnit": "USD",
+                      "totals": {
+                        "income": {
+                          "usdAmount": 2.5,
+                          "adaAmount": 0,
+                          "displayUnit": "USD",
+                          "displayAmount": 2.5,
+                          "hasMixedUnits": false,
+                          "units": [
+                            {
+                              "unit": "USDM",
+                              "amount": 2500000
+                            }
+                          ],
+                          "blockchainFees": 350000
+                        },
+                        "refunded": {
+                          "usdAmount": 0,
+                          "adaAmount": 0,
+                          "displayUnit": "USD",
+                          "displayAmount": 0,
+                          "hasMixedUnits": false,
+                          "units": [],
+                          "blockchainFees": 0
+                        },
+                        "pending": {
+                          "usdAmount": 0,
+                          "adaAmount": 4,
+                          "displayUnit": "ADA",
+                          "displayAmount": 4,
+                          "hasMixedUnits": false,
+                          "units": [
+                            {
+                              "unit": "",
+                              "amount": 4000000
+                            }
+                          ],
+                          "blockchainFees": 0
+                        }
+                      },
+                      "series": {
+                        "income": [
+                          {
+                            "key": "2026-04-10",
+                            "label": "Apr 10",
+                            "amount": 1,
+                            "usdAmount": 1,
+                            "adaAmount": 0,
+                            "displayUnit": "USD",
+                            "displayAmount": 1,
+                            "hasMixedUnits": false,
+                            "units": [
+                              {
+                                "unit": "USDM",
+                                "amount": 1000000
+                              }
+                            ],
+                            "blockchainFees": 100000
+                          }
+                        ],
+                        "refunded": [],
+                        "pending": [
+                          {
+                            "key": "2026-04-11",
+                            "label": "Apr 11",
+                            "amount": 4,
+                            "usdAmount": 0,
+                            "adaAmount": 4,
+                            "displayUnit": "ADA",
+                            "displayAmount": 4,
+                            "hasMixedUnits": false,
+                            "units": [
+                              {
+                                "unit": "",
+                                "amount": 4000000
+                              }
+                            ],
+                            "blockchainFees": 0
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/earnings/agents": {
+      "get": {
+        "tags": [
+          "Earnings"
+        ],
+        "summary": "List agents eligible for earnings analytics",
+        "description": "Returns owned agents that have a payment identifier and a registration state eligible for earnings reporting.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Mainnet",
+                "Preprod"
+              ],
+              "description": "Target payment network. Defaults to `Preprod` when omitted.",
+              "example": "Preprod"
+            },
+            "required": false,
+            "description": "Target payment network. Defaults to `Preprod` when omitted.",
+            "name": "network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agents eligible for earnings reporting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "icon": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "agentIdentifier": {
+                            "type": "string"
+                          },
+                          "registrationState": {
+                            "type": "string"
+                          },
+                          "network": {
+                            "type": "string",
+                            "enum": [
+                              "Mainnet",
+                              "Preprod"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "icon",
+                          "agentIdentifier",
+                          "registrationState",
+                          "network"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": [
+                      {
+                        "id": "agent-1",
+                        "name": "Alpha",
+                        "icon": null,
+                        "agentIdentifier": "agent-alpha",
+                        "registrationState": "RegistrationConfirmed",
+                        "network": "Preprod"
+                      }
+                    ]
                   }
                 }
               }

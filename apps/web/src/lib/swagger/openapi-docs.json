@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "/api/v1",
+      "url": "/",
       "description": "Current environment"
     }
   ],
@@ -87,7 +87,7 @@
     "parameters": {}
   },
   "paths": {
-    "/agents": {
+    "/api/v1/agents": {
       "get": {
         "tags": [
           "Agents"
@@ -232,7 +232,7 @@
         }
       }
     },
-    "/agents/{agentId}": {
+    "/api/v1/agents/{agentId}": {
       "get": {
         "tags": [
           "Agents"
@@ -300,6 +300,131 @@
           },
           "404": {
             "description": "Agent not found"
+          },
+          "429": {
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header."
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/agents/verify": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Verify agent identifier",
+        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "agentIdentifier",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "verified": {
+                              "type": "boolean",
+                              "enum": [
+                                false
+                              ]
+                            }
+                          },
+                          "required": [
+                            "verified"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "success",
+                        "data"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "verified": {
+                              "type": "boolean"
+                            },
+                            "credentialId": {
+                              "type": "string"
+                            },
+                            "expiresAt": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "agentName": {
+                              "type": "string"
+                            },
+                            "apiUrl": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "verified",
+                            "credentialId",
+                            "expiresAt",
+                            "agentName",
+                            "apiUrl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "success",
+                        "data"
+                      ]
+                    }
+                  ],
+                  "description": "Returns `verified: false` when the agent identifier is unknown, not VERIFIED, has no issued credential, or only has an expired credential. Expired credentials still include their metadata in the response.",
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "verified": true,
+                      "credentialId": "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
+                      "expiresAt": "2026-12-31T23:59:59.000Z",
+                      "agentName": "My AI Agent",
+                      "apiUrl": "https://my-agent.example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request — invalid query parameters"
           },
           "429": {
             "description": "Too Many Requests — rate limit exceeded. Check Retry-After header."

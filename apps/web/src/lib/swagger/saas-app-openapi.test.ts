@@ -14,7 +14,14 @@ describe("generateSaaSAppOpenAPISpec", () => {
 
     const spec = generateSaaSAppOpenAPISpec();
 
-    expect(spec.paths["/agents"]).toBeDefined();
+    expect(spec.paths["/api/agents"]).toBeDefined();
+    expect(spec.paths["/agents"]).toBeUndefined();
+    expect(spec.paths["/api/credits"]).toBeDefined();
     expect(spec.paths["/credits"]).toBeDefined();
+    expect(spec.paths["/api/credentials/schema-said"]).toBeDefined();
+    expect(spec.paths["/api/activity/transaction"]).toBeDefined();
+    expect(spec.paths["/api/earnings/agent"]).toBeDefined();
+    expect(spec.paths["/api/earnings/agents"]).toBeDefined();
+    expect(spec.paths["/api/masumi/inbox-agent/register"]).toBeDefined();
   });
 });
