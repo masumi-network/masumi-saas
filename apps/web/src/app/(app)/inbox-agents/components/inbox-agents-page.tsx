@@ -69,11 +69,11 @@ const INBOX_PAGE_TEXT = {
     manage: "Manage",
     discovery: "Discovery",
   },
-  title: "Inbox agents",
+  title: "Inboxes",
   manageDescription: (network: string) =>
-    `Inspect, deregister, and clean up inbox-agent registrations on ${network}.`,
+    `Inspect, deregister, and clean up inbox registrations on ${network}.`,
   discoveryDescription: (network: string) =>
-    `Browse the latest pending and verified inbox agents published to the Masumi registry on ${network}.`,
+    `Browse the latest pending and verified inboxes published to the Masumi registry on ${network}.`,
   noDescription: "No description",
   noDescriptionProvided: "No description provided.",
   noIdentifier: "No on-chain identifier yet.",
@@ -87,14 +87,14 @@ const INBOX_PAGE_TEXT = {
   delete: "Delete",
   deregister: "Deregister",
   confirm: "Confirm",
-  deleteInboxAgent: "Delete inbox agent",
-  deregisterInboxAgent: "Deregister inbox agent",
+  deleteInboxAgent: "Delete inbox",
+  deregisterInboxAgent: "Deregister inbox",
   deleteInboxAgentDescription: (name: string) =>
-    `Delete ${name}? This removes the registration record from your inbox-agent list.`,
+    `Delete ${name}? This removes the registration record from your inbox list.`,
   deregisterInboxAgentDescription: (name: string) =>
     `Deregister ${name}? This starts the on-chain deregistration flow.`,
   details: "Details",
-  emptyTitle: "No inbox agents found",
+  emptyTitle: "No inboxes found",
   emptyDescription: "Try a broader search or switch tabs.",
   table: {
     name: "Name",
@@ -433,15 +433,15 @@ function InboxAgentDetailsDialog({
 
       if (!result.success) {
         toast.error(
-          result.error || `Failed to ${actionLabel.toLowerCase()} inbox agent`,
+          result.error || `Failed to ${actionLabel.toLowerCase()} inbox`,
         );
         return;
       }
 
       toast.success(
         actionLabel === INBOX_PAGE_TEXT.delete
-          ? "Inbox agent deleted"
-          : "Inbox agent deregistration started",
+          ? "Inbox deleted"
+          : "Inbox deregistration started",
       );
       setConfirmOpen(false);
       onOpenChange(false);

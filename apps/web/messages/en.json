@@ -571,7 +571,7 @@
       "MenuItems": {
         "dashboard": "Dashboard",
         "agents": "AI agents",
-        "inboxAgents": "Inbox agents",
+        "inboxAgents": "Inboxes",
         "activity": "Activity",
         "topUp": "Top up",
         "analytics": "Analytics",
@@ -793,7 +793,7 @@
       "items": {
         "dashboard": "Dashboard",
         "agents": "AI agents",
-        "inboxAgents": "Inbox agents",
+        "inboxAgents": "Inboxes",
         "activity": "Activity",
         "topUp": "Top up",
         "analytics": "Analytics",
@@ -909,13 +909,13 @@
         "title": "Registry discovery",
         "description": "Browse the latest healthy Masumi agents here.",
         "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
-        "inboxDescription": "Pending and verified agents returned by the inbox-agent discovery route.",
+        "inboxDescription": "Pending and verified inboxes returned by the registry discovery route.",
         "views": {
           "agents": "Agents",
           "inbox": "Inbox"
         },
         "searchPlaceholder": "Look up agents, tags, capabilities, or IDs...",
-        "inboxSearchPlaceholder": "Search by inbox agent name, slug, or linked email...",
+        "inboxSearchPlaceholder": "Search by inbox name, slug, or linked email...",
         "resultsSummary": "{visibleCount, plural, one {# agent shown} other {# agents shown}} on this page",
         "sortHint": "Sorted by newest updates first",
         "page": "Page {page}",
@@ -954,8 +954,8 @@
         "openSource": "Open source",
         "empty": "No registry agents found yet.",
         "emptySearch": "No discovered agents match your lookup on this page. Try a broader search or switch pages.",
-        "inboxEmpty": "No pending or verified inbox agents found yet.",
-        "inboxEmptySearch": "No pending or verified inbox agents match that name, slug, or linked email. Try another search.",
+        "inboxEmpty": "No pending or verified inboxes found yet.",
+        "inboxEmptySearch": "No pending or verified inboxes match that name, slug, or linked email. Try another search.",
         "error": "Failed to load discovery results. Please try again.",
         "pricing": {
           "free": "Free",
