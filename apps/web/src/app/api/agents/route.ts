@@ -10,6 +10,7 @@ import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { parseValidAgentCollectionAddress } from "@/lib/cardano/agent-collection-address";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -203,6 +204,7 @@ export async function POST(request: NextRequest) {
       description,
       extendedDescription,
       apiUrl,
+      collectionAddress,
       tags,
       icon,
       pricing,
@@ -234,6 +236,17 @@ export async function POST(request: NextRequest) {
       action: "write",
       network,
     });
+
+    const collectionParsed = parseValidAgentCollectionAddress(
+      collectionAddress,
+      network,
+    );
+    if (!collectionParsed.ok) {
+      return NextResponse.json(
+        { success: false, error: collectionParsed.error },
+        { status: 400 },
+      );
+    }
 
     try {
       await assertAllowedAgentApiUrl(apiUrl);
@@ -272,6 +285,7 @@ export async function POST(request: NextRequest) {
         | string
         | null,
       apiUrl,
+      sellingCollectionAddress: collectionParsed.address,
       tags: tagsArray,
       icon: icon?.trim() || null,
       agentPricing,

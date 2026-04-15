@@ -61,6 +61,11 @@ vi.mock("@/lib/payment-node/tokens", () => ({
   },
 }));
 
+const TEST_PREPROD_COLLECTION =
+  "addr_test1qr7pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rq2ymhl3";
+const TEST_MAINNET_COLLECTION =
+  "addr1q87pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rqfjxhnw";
+
 const {
   shouldCheckRecipientWalletForRegisteredAssets,
   startAgentRegistration,
@@ -204,6 +209,7 @@ describe("startAgentRegistration", () => {
         description: "Test",
         extendedDescription: null,
         apiUrl: "https://agent.example.com",
+        sellingCollectionAddress: TEST_PREPROD_COLLECTION,
         tags: ["demo"],
         icon: null,
         agentPricing: { pricingType: "Free" },
@@ -220,7 +226,7 @@ describe("startAgentRegistration", () => {
         {
           walletMnemonic: "selling mnemonic",
           note: "Agent: Demo agent (selling)",
-          collectionAddress: null,
+          collectionAddress: TEST_PREPROD_COLLECTION,
         },
       ],
     });
@@ -268,6 +274,7 @@ describe("startAgentRegistration", () => {
         description: "Test",
         extendedDescription: null,
         apiUrl: "https://agent.example.com",
+        sellingCollectionAddress: TEST_MAINNET_COLLECTION,
         tags: ["demo"],
         icon: null,
         agentPricing: { pricingType: "Free" },
@@ -284,7 +291,7 @@ describe("startAgentRegistration", () => {
         {
           walletMnemonic: "selling mnemonic",
           note: "Agent: Mainnet agent (selling)",
-          collectionAddress: null,
+          collectionAddress: TEST_MAINNET_COLLECTION,
         },
       ],
     });
@@ -326,6 +333,7 @@ describe("startAgentRegistration", () => {
         description: "Test",
         extendedDescription: null,
         apiUrl: "https://agent.example.com",
+        sellingCollectionAddress: TEST_MAINNET_COLLECTION,
         tags: ["demo"],
         icon: null,
         agentPricing: { pricingType: "Free" },

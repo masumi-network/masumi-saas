@@ -58,6 +58,11 @@ vi.mock("@/lib/schemas", () => ({
     value === "Mainnet" ? "Mainnet" : "Preprod",
 }));
 
+const TEST_PREPROD_COLLECTION =
+  "addr_test1qr7pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rq2ymhl3";
+const TEST_MAINNET_COLLECTION =
+  "addr1q87pdg0u7vy6a5p7cx9my9m0t63f4n48pwmez30t4laguawge7xugp6m5qgr6nnp6wazurtagjva8l9fc3a5a4scx0rqfjxhnw";
+
 vi.mock("@/lib/schemas/agent", () => {
   const registerAgentBodySchema = z
     .object({
@@ -65,6 +70,7 @@ vi.mock("@/lib/schemas/agent", () => {
       description: z.string().optional().or(z.literal("")),
       extendedDescription: z.string().optional().or(z.literal("")),
       apiUrl: z.string().url(),
+      collectionAddress: z.string().min(1),
       tags: z.string().min(1),
       icon: z.string().optional().or(z.literal("")),
       pricing: z.any().optional(),
@@ -144,6 +150,7 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           description: "Helps with literature review",
           apiUrl: "https://agent.example.com/mip",
+          collectionAddress: TEST_PREPROD_COLLECTION,
           tags: "research, nlp",
         }),
       },
@@ -185,6 +192,7 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           description: "Helps with literature review",
           apiUrl: "https://agent.example.com/mip",
+          collectionAddress: TEST_MAINNET_COLLECTION,
           tags: "research, nlp",
         }),
       },
@@ -286,6 +294,7 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           description: "Helps with literature review",
           apiUrl: "https://agent.example.com/mip",
+          collectionAddress: TEST_PREPROD_COLLECTION,
           tags: "research, nlp",
         }),
       },
@@ -306,6 +315,7 @@ describe("/api/agents POST", () => {
         body: JSON.stringify({
           name: "Research assistant",
           apiUrl: "https://agent.example.com/mip",
+          collectionAddress: TEST_PREPROD_COLLECTION,
           tags: "",
         }),
       },
