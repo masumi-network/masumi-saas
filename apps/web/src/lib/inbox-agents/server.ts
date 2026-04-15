@@ -8,6 +8,7 @@ import type {
   PaymentSourceWallet,
 } from "@/lib/payment-node";
 import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 
 import {
   isWalletAddressCompatibleWithNetwork,
@@ -87,6 +88,9 @@ export async function prepareManagedInboxRegistration(params: {
     adminKey = paymentNodeConfig.getAdminApiKey();
     paymentSourceId = paymentNodeConfig.getPaymentSourceId(params.network);
   } catch (error) {
+    if (isPaymentNodeConfigError(error)) {
+      throw error;
+    }
     console.error("Payment node config missing for inbox registration:", error);
     return {
       success: false,

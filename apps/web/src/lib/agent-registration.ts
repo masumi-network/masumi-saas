@@ -15,6 +15,7 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import type { PaymentSourceWallet } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
@@ -159,6 +160,9 @@ async function registerAgentOnChainUntilSetup(
     adminKey = paymentNodeConfig.getAdminApiKey();
     paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
   } catch (e) {
+    if (isPaymentNodeConfigError(e)) {
+      throw e;
+    }
     console.error("Payment node config missing:", e);
     return {
       success: false,
