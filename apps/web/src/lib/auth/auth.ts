@@ -534,7 +534,8 @@ export const auth = betterAuth({
         const xApiKey = headers.get("x-api-key");
         if (xApiKey) {
           const trimmed = xApiKey.trim();
-          if (trimmed.startsWith(apiKeyPrefix)) return trimmed;
+          // `x-api-key` is only for SaaS API keys — pass through so Better Auth can validate (prefix may vary).
+          if (trimmed) return trimmed;
         }
         const auth = headers.get("authorization");
         if (auth?.startsWith("Bearer ")) {
