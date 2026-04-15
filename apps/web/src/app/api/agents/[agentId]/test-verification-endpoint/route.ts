@@ -5,6 +5,10 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 
 /**
  * POST /api/agents/[agentId]/test-verification-endpoint
@@ -15,6 +19,13 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 

@@ -3,7 +3,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
-const rejectOidcAccessTokenAuthMock = vi.fn();
+const requireAllNetworkedOidcApiScopesMock = vi.fn();
+const requireNetworkedOidcApiScopeMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const resolvePaymentUserTokenUpstreamMock = vi.fn();
 
@@ -13,7 +14,8 @@ vi.mock("@/lib/auth/utils", () => ({
 }));
 
 vi.mock("@/lib/auth/oidc-api-permissions", () => ({
-  rejectOidcAccessTokenAuth: rejectOidcAccessTokenAuthMock,
+  requireAllNetworkedOidcApiScopes: requireAllNetworkedOidcApiScopesMock,
+  requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -45,7 +47,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
   };
 });
 
-describe("/api/v1/registry", () => {
+describe("/pay/api/v1/registry", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -59,7 +61,8 @@ describe("/api/v1/registry", () => {
       user: { id: "user-1" },
       authMethod: "session",
     });
-    rejectOidcAccessTokenAuthMock.mockImplementation(() => {});
+    requireAllNetworkedOidcApiScopesMock.mockImplementation(() => []);
+    requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
     consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
@@ -81,7 +84,7 @@ describe("/api/v1/registry", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/registry?network=Preprod",
+      "https://saas.example.com/pay/api/v1/registry?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,6 +95,16 @@ describe("/api/v1/registry", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: "session",
+      }),
+      {
+        resource: "registry",
+        action: "write",
+        network: "Preprod",
+      },
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "https://payment.example.com/api/v1/registry?network=Preprod",
       expect.objectContaining({

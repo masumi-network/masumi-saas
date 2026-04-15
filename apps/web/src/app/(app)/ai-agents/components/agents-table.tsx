@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, Trash2, Unplug } from "lucide-react";
+import { Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import {
   formatPricingDisplay,
   formatRelativeDate,
@@ -52,6 +53,7 @@ export function AgentsTable({
   const t = useTranslations("App.Agents");
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
@@ -173,14 +175,12 @@ export function AgentsTable({
                       <span className="text-sm font-medium truncate">
                         {agent.name}
                       </span>
-                      {agent.verificationStatus === "VERIFIED" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>{"Verified agent"}</TooltipContent>
-                        </Tooltip>
-                      )}
+                      {agentVerificationUiEnabled &&
+                        agent.verificationStatus === "VERIFIED" && (
+                          <span className="sr-only">
+                            {t("status.verified")}
+                          </span>
+                        )}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {agent.description ??

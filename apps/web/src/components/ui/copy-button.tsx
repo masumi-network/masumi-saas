@@ -27,7 +27,11 @@ export function CopyButton({ value, className }: CopyButtonProps) {
       variant="ghost"
       size="icon"
       onClick={handleCopy}
-      className={cn("h-8 w-8", className)}
+      className={cn(
+        "h-8 w-8 transition-colors duration-300",
+        copied && "bg-green-500/10",
+        className,
+      )}
     >
       <span className="relative flex items-center justify-center h-4 w-4">
         <Copy

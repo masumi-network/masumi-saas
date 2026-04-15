@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Search, Trash2, Unplug } from "lucide-react";
+import { ExternalLink, Inbox, Search, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -69,11 +69,11 @@ const INBOX_PAGE_TEXT = {
     manage: "Manage",
     discovery: "Discovery",
   },
-  title: "Inbox agents",
+  title: "Inboxes",
   manageDescription: (network: string) =>
-    `Inspect, deregister, and clean up inbox-agent registrations on ${network}.`,
+    `Inspect, deregister, and clean up inbox registrations on ${network}.`,
   discoveryDescription: (network: string) =>
-    `Browse the latest pending and verified inbox agents published to the Masumi registry on ${network}.`,
+    `Browse the latest pending and verified inboxes published to the Masumi registry on ${network}.`,
   noDescription: "No description",
   noDescriptionProvided: "No description provided.",
   noIdentifier: "No on-chain identifier yet.",
@@ -87,14 +87,14 @@ const INBOX_PAGE_TEXT = {
   delete: "Delete",
   deregister: "Deregister",
   confirm: "Confirm",
-  deleteInboxAgent: "Delete inbox agent",
-  deregisterInboxAgent: "Deregister inbox agent",
+  deleteInboxAgent: "Delete inbox",
+  deregisterInboxAgent: "Deregister inbox",
   deleteInboxAgentDescription: (name: string) =>
-    `Delete ${name}? This removes the registration record from your inbox-agent list.`,
+    `Delete ${name}? This removes the registration record from your inbox list.`,
   deregisterInboxAgentDescription: (name: string) =>
     `Deregister ${name}? This starts the on-chain deregistration flow.`,
   details: "Details",
-  emptyTitle: "No inbox agents found",
+  emptyTitle: "No inboxes found",
   emptyDescription: "Try a broader search or switch tabs.",
   table: {
     name: "Name",
@@ -434,15 +434,15 @@ function InboxAgentDetailsDialog({
 
       if (!result.success) {
         toast.error(
-          result.error || `Failed to ${actionLabel.toLowerCase()} inbox agent`,
+          result.error || `Failed to ${actionLabel.toLowerCase()} inbox`,
         );
         return;
       }
 
       toast.success(
         actionLabel === INBOX_PAGE_TEXT.delete
-          ? "Inbox agent deleted"
-          : "Inbox agent deregistration started",
+          ? "Inbox deleted"
+          : "Inbox deregistration started",
       );
       setConfirmOpen(false);
       onOpenChange(false);
@@ -586,7 +586,7 @@ function InboxAgentDetailsDialog({
                   className="inline-flex items-center gap-2"
                 >
                   <Link
-                    href={`/api/registry-discovery/inbox-agent-identifier?agentIdentifier=${encodeURIComponent(agent.agentIdentifier)}&network=${network}`}
+                    href={`/pay/api/v1/registry-inbox/agent-identifier?agentIdentifier=${encodeURIComponent(agent.agentIdentifier)}&network=${network}`}
                     target="_blank"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -878,7 +878,10 @@ export function InboxAgentsPage() {
               </div>
             ) : currentItems.length === 0 ? (
               <div className="rounded-xl border border-dashed px-6 py-14 text-center">
-                <div className="mx-auto max-w-md space-y-2">
+                <div className="mx-auto max-w-md space-y-3">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <Inbox className="h-6 w-6 text-muted-foreground" />
+                  </div>
                   <p className="text-base font-medium">
                     {INBOX_PAGE_TEXT.emptyTitle}
                   </p>
@@ -905,14 +908,15 @@ export function InboxAgentsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {currentItems.map((agent) => {
+                      {currentItems.map((agent, index) => {
                         const holdingWallet =
                           agent.RecipientWallet ?? agent.SmartContractWallet;
 
                         return (
                           <TableRow
                             key={agent.id}
-                            className="cursor-pointer"
+                            className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                            style={{ animationDelay: `${index * 40}ms` }}
                             onClick={() => setSelectedAgent(agent)}
                           >
                             <TableCell className="max-w-56">

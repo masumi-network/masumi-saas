@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const createPaymentNodeClientMock = vi.fn();
+const getPaymentNodeClientForUserMock = vi.fn();
+const getBaseUrlMock = vi.fn();
+const getAdminApiKeyMock = vi.fn();
+const getPaymentSourceIdMock = vi.fn();
+const getPaymentSourceIdEnvNameMock = vi.fn();
 const getRegistrationFundingWalletsMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
@@ -23,17 +29,29 @@ vi.mock("@/lib/email/send-registration-failed", () => ({
 }));
 
 vi.mock("@/lib/payment-node", () => ({
-  createPaymentNodeClient: vi.fn(),
+  createPaymentNodeClient: createPaymentNodeClientMock,
+  paymentNodeConfig: {
+    getBaseUrl: getBaseUrlMock,
+    getAdminApiKey: getAdminApiKeyMock,
+    getPaymentSourceId: getPaymentSourceIdMock,
+    getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
+  },
 }));
 
 vi.mock("./payment-node/config", () => ({
   paymentNodeConfig: {
+    getBaseUrl: getBaseUrlMock,
+    getAdminApiKey: getAdminApiKeyMock,
+    getPaymentSourceId: getPaymentSourceIdMock,
+    getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
   },
+  isPaymentNodeConfigError: (error: unknown) =>
+    error instanceof Error && error.name === "PaymentNodeConfigError",
 }));
 
 vi.mock("@/lib/payment-node/get-user-client", () => ({
-  getPaymentNodeClientForUser: vi.fn(),
+  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
 }));
 
 vi.mock("@/lib/payment-node/tokens", () => ({
@@ -43,14 +61,23 @@ vi.mock("@/lib/payment-node/tokens", () => ({
   },
 }));
 
-const { shouldCheckRecipientWalletForRegisteredAssets } =
-  await import("./agent-registration");
+const {
+  shouldCheckRecipientWalletForRegisteredAssets,
+  startAgentRegistration,
+} = await import("./agent-registration");
 const { resolveRegistrationFundingWallet } =
   await import("./payment-node/registration-wallets");
 
 describe("resolveRegistrationFundingWallet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
+    getAdminApiKeyMock.mockReturnValue("admin-key");
+    getPaymentSourceIdEnvNameMock.mockImplementation((network: string) =>
+      network === "Mainnet"
+        ? "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET"
+        : "PAYMENT_NODE_PAYMENT_SOURCE_ID_PREPROD",
+    );
   });
 
   it("selects randomly from all matched configured funding wallets", () => {
@@ -125,5 +152,192 @@ describe("shouldCheckRecipientWalletForRegisteredAssets", () => {
     expect(shouldCheckRecipientWalletForRegisteredAssets("not-a-date")).toBe(
       false,
     );
+  });
+});
+
+describe("startAgentRegistration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
+    getAdminApiKeyMock.mockReturnValue("admin-key");
+    getPaymentSourceIdEnvNameMock.mockImplementation((network: string) =>
+      network === "Mainnet"
+        ? "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET"
+        : "PAYMENT_NODE_PAYMENT_SOURCE_ID_PREPROD",
+    );
+  });
+
+  it("uses the Preprod payment source config and names the PREPROD env in mismatch errors", async () => {
+    const generateWalletMock = vi.fn().mockResolvedValue({
+      walletMnemonic: "selling mnemonic",
+      walletAddress: "addr_test1selling",
+      walletVkey: "selling-vkey",
+    });
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({
+      id: "payment-source-preprod",
+      network: "Mainnet",
+      SellingWallets: [],
+      PurchasingWallets: [],
+    });
+
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+    getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
+    createPaymentNodeClientMock.mockReturnValue({
+      generateWallet: generateWalletMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Preprod",
+      },
+      {
+        name: "Demo agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+      },
+    );
+
+    expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Preprod");
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-preprod",
+      AddSellingWallets: [
+        {
+          walletMnemonic: "selling mnemonic",
+          note: "Agent: Demo agent (selling)",
+          collectionAddress: null,
+        },
+      ],
+    });
+    expect(result).toStrictEqual({
+      success: false,
+      error:
+        "Configured payment source payment-source-preprod is on Mainnet, but agent registration is using Preprod. Update PAYMENT_NODE_PAYMENT_SOURCE_ID_PREPROD to a Preprod payment source.",
+    });
+  });
+
+  it("allows Mainnet registration to proceed to network validation instead of short-circuiting", async () => {
+    const generateWalletMock = vi.fn().mockResolvedValue({
+      walletMnemonic: "selling mnemonic",
+      walletAddress: "addr1selling",
+      walletVkey: "selling-vkey-mainnet",
+    });
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({
+      id: "payment-source-mainnet",
+      network: "Preprod",
+      SellingWallets: [],
+      PurchasingWallets: [],
+    });
+
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+    getPaymentSourceIdMock.mockReturnValue("payment-source-mainnet");
+    createPaymentNodeClientMock.mockReturnValue({
+      generateWallet: generateWalletMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Mainnet",
+      },
+      {
+        name: "Mainnet agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+      },
+    );
+
+    expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Mainnet");
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-mainnet",
+      AddSellingWallets: [
+        {
+          walletMnemonic: "selling mnemonic",
+          note: "Agent: Mainnet agent (selling)",
+          collectionAddress: null,
+        },
+      ],
+    });
+    expect(result).toStrictEqual({
+      success: false,
+      error:
+        "Configured payment source payment-source-mainnet is on Preprod, but agent registration is using Mainnet. Update PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET to a Mainnet payment source.",
+    });
+  });
+
+  it("keeps base URL config errors on the generic fallback path", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+    getBaseUrlMock.mockImplementation(() => {
+      throw Object.assign(
+        new Error(
+          "PAYMENT_NODE_BASE_URL is required for payment node integration",
+        ),
+        {
+          name: "PaymentNodeConfigError",
+          envName: "PAYMENT_NODE_BASE_URL",
+        },
+      );
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Mainnet",
+      },
+      {
+        name: "Mainnet agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+      },
+    );
+
+    expect(result).toStrictEqual({
+      success: false,
+      error: "Something went wrong. Please try again later.",
+    });
   });
 });

@@ -4,7 +4,10 @@ import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/auth";
-import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import {
+  buildAbsoluteCallbackUrl,
+  sanitizeCallbackUrl,
+} from "@/lib/auth/callback-url";
 import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
 import {
   classifyAuthError,
@@ -12,6 +15,7 @@ import {
   getAuthErrorDetails,
   isInfrastructureError,
 } from "@/lib/auth/error-results";
+import { buildSwitchAccountSignInHref } from "@/lib/auth/switch-account";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
@@ -71,8 +75,7 @@ export async function switchAccountAction(callbackUrl?: string) {
     headers: headersList,
   });
 
-  const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
-  redirect(`/signin?callbackUrl=${encodeURIComponent(redirectTo)}`);
+  redirect(buildSwitchAccountSignInHref(callbackUrl));
 }
 
 function getSignUpErrorResult(error: unknown) {
@@ -266,7 +269,7 @@ export async function signUpAction(formData: FormData, callbackUrl?: string) {
     const verificationCallbackURL = redirectTo.startsWith(
       "/api/auth/oauth2/authorize",
     )
-      ? redirectTo
+      ? buildAbsoluteCallbackUrl(redirectTo)
       : undefined;
     const requestHeaders = stripOidcTransientCookies(await getRequestHeaders());
     const result = await auth.api.signUpEmail({

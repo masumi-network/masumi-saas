@@ -80,7 +80,7 @@ SpacetimeDB reducers should validate:
 
 If you are upgrading from an older local setup that issued `EdDSA` tokens, clear or recreate the auth database so Better Auth generates a fresh `ES256` JWK. Better Auth will otherwise continue reusing the latest stored signing key.
 
-For browser flows that authenticate directly against Better Auth (cookie or bearer session token), use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated Masumi session for an issuer-signed OIDC token set suitable for SpacetimeDB. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
+For browser flows that authenticate directly against Better Auth, use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated browser session for an issuer-signed OIDC token set suitable for SpacetimeDB. This bridge is session-cookie only and rejects API-key or bearer-token callers. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
 
 ```json
 { "client": "web" }
@@ -151,23 +151,26 @@ curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 
 The authenticated **v1** namespace proxies a curated set of routes to external Masumi services. Route exposure is generated from checked-in upstream OpenAPI specs and matched on **method + normalized path**. New upstream routes stay **403** until added to the safe manifest. Use app authentication (session or API key); SaaS forwards either the user's payment-service token or a shared registry-service token server-side. Paths containing traversal or malformed segments are rejected before `fetch`.
 
-| Path                                         | Description                                 |
-| -------------------------------------------- | ------------------------------------------- |
-| `GET/POST /api/v1/purchase`                  | Create or list purchases                    |
-| `GET/POST /api/v1/payment`                   | Create or list payments                     |
-| `GET/POST /api/v1/registry`                  | Register agents, list registry, deregister  |
-| `POST /api/v1/registry-entry`                | Query registry-service agent lookup entries |
-| `POST /api/v1/registry-diff`                 | Query registry-service diffs                |
-| `GET /api/v1/payment-information`            | Payment information for one agent           |
-| `GET /api/v1/capability`                     | Registry-service capability lookup          |
-| `POST /api/v1/inbox-agent-registration`      | Inbox agent registration lookup             |
-| `POST /api/v1/inbox-agent-registration-diff` | Inbox registration diffs                    |
-| `GET /api/v1/api-key-status`                 | API key status                              |
-| `GET /api/v1/payment-source`                 | List payment sources                        |
-| `GET/POST/DELETE /api/v1/webhooks`           | Webhooks                                    |
-| …                                            | See the generated proxy manifest            |
+| Path                                                     | Description                                  |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `GET/POST /pay/api/v1/payment`                           | Create or list payments                      |
+| `GET /pay/api/v1/payment-source`                         | List payment sources                         |
+| `GET/POST/DELETE /pay/api/v1/registry`                   | Register agents, list registry, deregister   |
+| `GET/POST /pay/api/v1/inbox-agents`                      | List or register inbox agents                |
+| `DELETE /pay/api/v1/inbox-agents/{id}`                   | Delete an inbox agent entry                  |
+| `POST /pay/api/v1/inbox-agents/{id}/deregister`          | Deregister an inbox agent                    |
+| `POST /registry/api/v1/registry-entry`                   | Query registry-service agent lookup entries  |
+| `POST /registry/api/v1/registry-entry-search`            | Search registry-service agent lookup entries |
+| `POST /registry/api/v1/registry-diff`                    | Query registry-service diffs                 |
+| `GET /registry/api/v1/payment-information`               | Payment information for one agent            |
+| `GET /registry/api/v1/capability`                        | Registry-service capability lookup           |
+| `POST /registry/api/v1/inbox-agent-registration`         | Inbox agent registration lookup              |
+| `POST /registry/api/v1/inbox-agent-registration-diff`    | Inbox registration diffs                     |
+| `POST /registry/api/v1/inbox-agent-registration-search`  | Inbox registration search                    |
+| `GET/POST/PATCH/DELETE /registry/api/v1/registry-source` | Manage registry sources (admin only)         |
+| …                                                        | See the generated proxy manifest             |
 
-Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` + `apps/web/src/lib/v1-proxy/manifest.ts`.
+Implementation: `apps/web/src/app/pay/api/v1/*`, `apps/web/src/app/registry/api/v1/*`, and `apps/web/src/lib/v1-proxy/manifest.ts`.
 
 **Regenerate checked-in OpenAPI JSON** (same workflow as masumi-payment-service `pnpm run swagger-json`): from the monorepo root run `pnpm --filter web run swagger-json` (alias: `swagger:generate`). Writes:
 
@@ -270,10 +273,13 @@ masumi-saas/
    - **NEXT_PUBLIC_SOKOSUMI_MARKETPLACE_URL**: Sokosumi marketplace base URL (optional)
      - Defaults to `https://app.sokosumi.com`
 
-   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
+   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL** / **POSTMARK_FROM_NAME**: Postmark sender config (optional)
      - If not set, emails are logged to console in development
+     - Uses per-email sender names like `Masumi Verification <support@masumi.network>` and `Agent Messenger <support@masumi.network>` for OIDC magic links
+     - Rewrites `no-reply` / `noreply` local parts to `support@...`
 
-   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the logo image shown at the top of transactional emails (verification, magic link, org invitations, etc.). Defaults to a Masumi GitHub avatar URL if unset.
+   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the Masumi logo used in transactional emails and the "Powered by Masumi" footer in Agent Messenger OIDC emails. Defaults to the app logo asset if unset.
+   - **EMAIL_AGENT_MESSENGER_LOGO_URL** _(optional)_: Absolute URL of the logo shown at the top of Agent Messenger OIDC magic-link emails. Defaults to `EMAIL_BRAND_LOGO_URL` if unset.
 
    - **NEXT_PUBLIC_PRIVACY_POLICY_URL** _(optional)_: Privacy policy URL used by signup forms (checkbox link) and the consent line in magic-link emails when the address is not yet registered. Defaults to the House of Communication policy URL if unset.
 
@@ -300,7 +306,7 @@ masumi-saas/
    - **REGISTRY_SERVICE_BASE_URL**: Base URL of the Masumi registry service API, including the version path
      - e.g. `https://registry.masumi.network/api/v1`
    - **REGISTRY_SERVICE_API_KEY**: Shared server-side API key for safe registry lookup and discovery proxy routes
-     - Used for `/api/v1/registry-entry`, capability lookup, inbox registration lookup, and similar read-only registry routes
+     - Used for `/registry/api/v1/registry-entry`, capability lookup, inbox registration lookup, and similar read-only registry routes
    - **REGISTRY_SERVICE_OPENAPI_URL** _(optional)_: Override URL for fetching the registry service OpenAPI document during type generation
      - Defaults to `https://registry.masumi.network/api-docs`
 

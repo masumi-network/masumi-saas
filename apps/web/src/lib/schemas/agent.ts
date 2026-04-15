@@ -12,11 +12,32 @@ const exampleOutputSchema = z.object({
   mimeType: z.string().max(60).min(1),
 });
 
-/** Shelley receive address; required for new registration (POST /api/agents and register forms). */
-const collectionAddressRegistrationField = z
+const AGENT_API_URL_SECURITY_DESCRIPTION =
+  "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected.";
+
+const agentApiUrlSchema = z
   .string()
-  .min(1, "Collection address is required")
-  .max(120, "Collection address is too long");
+  .url("API URL must be a valid URL")
+  .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
+    message: "API URL must start with http:// or https://",
+  })
+  .refine(
+    (val) => {
+      try {
+        const parsed = new URL(val);
+        return !parsed.username && !parsed.password;
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "API URL must not include embedded credentials",
+    },
+  )
+  .openapi({
+    example: "https://agent.example.com/mip",
+    description: AGENT_API_URL_SECURITY_DESCRIPTION,
+  });
 
 /**
  * Schema for agent.metadata JSON. Only allowed keys are accepted to prevent
@@ -52,14 +73,7 @@ export const registerAgentBodySchema = z.object({
     .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
-  apiUrl: z
-    .string()
-    .url("API URL must be a valid URL")
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "API URL must start with http:// or https://",
-    }),
-  /** Shelley receive address for completed-sale proceeds; must match request network. */
-  collectionAddress: collectionAddressRegistrationField,
+  apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional(),
   pricing: z
@@ -110,13 +124,11 @@ export const verifyAgentBodySchema = z.object({
   schemaSaid: z.string().optional(),
 });
 
-/**
- * Shared FormData fields (flat keys). Registration extends this with required `collectionAddress`.
- * For an edit-via-FormData action later, extend the same object with
- * `collectionAddress: z.union([z.literal(""), collectionAddressRegistrationField])` so legacy
- * agents without a stored address can still submit updates.
+/** Full schema for form-based registration (server actions).
+ * Nested structures (prices, exampleOutputs) are serialised as JSON strings
+ * because FormData is a flat key/value structure.
  */
-const registerAgentFormFieldsSchema = z.object({
+const registerAgentFormBaseSchema = z.object({
   name: z
     .string()
     .min(1, "Name is required")
@@ -127,12 +139,7 @@ const registerAgentFormFieldsSchema = z.object({
     .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
-  apiUrl: z
-    .string()
-    .url("API URL must be a valid URL")
-    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
-      message: "API URL must start with http:// or https://",
-    }),
+  apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
   /** "Free" | "Fixed" */
@@ -150,16 +157,7 @@ const registerAgentFormFieldsSchema = z.object({
   exampleOutputs: z.string().optional(),
 });
 
-/**
- * Full schema for form-based **registration** (server actions).
- * Nested structures (prices, exampleOutputs) are serialised as JSON strings
- * because FormData is a flat key/value structure.
- */
-const registerAgentFormBaseSchema = registerAgentFormFieldsSchema.extend({
-  collectionAddress: collectionAddressRegistrationField,
-});
-
-/** FormData variant for server actions (new agent) */
+/** FormData variant for server actions */
 export const registerAgentFormDataSchema = zfd.formData(
   registerAgentFormBaseSchema,
 );

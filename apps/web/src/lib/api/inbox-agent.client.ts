@@ -15,7 +15,7 @@ export type {
 };
 
 class InboxAgentApiClient {
-  private baseUrl = "/api/v1/inbox-agents";
+  private baseUrl = "/pay/api/v1/inbox-agents";
 
   private async request<T>(
     endpoint: string,

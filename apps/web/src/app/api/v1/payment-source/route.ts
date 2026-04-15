@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
+import { requireAllNetworkedOidcApiScopes } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
@@ -26,10 +26,10 @@ async function handleRequest(request: NextRequest, method: string) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this /api/v1 endpoint",
-    );
+    requireAllNetworkedOidcApiScopes(authContext, {
+      resource: "payments",
+      action: "read",
+    });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {

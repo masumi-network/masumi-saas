@@ -1,18 +1,26 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { getTrustedOidcClient, oidcEnvConfig } from "@/lib/config/oidc.config";
-import type { OidcClientKey } from "@/lib/config/oidc-scopes.config";
+import { getTrustedOidcClient, oidcEnvConfig } from "../config/oidc.config";
+import type { OidcClientKey } from "../config/oidc-scopes.config";
+import {
+  handleMasumiAuthorizationCodeGrant,
+  handleMasumiOidcAuthorizeRequest,
+  OAUTH_AUTHORIZE_PATH,
+  OIDC_NO_STORE_HEADERS,
+} from "./oidc-route-helpers";
 
-const FORWARDED_AUTH_HEADERS = [
-  "authorization",
+const SESSION_BRIDGE_FORWARDED_HEADERS = [
   "cookie",
-  "x-api-key",
+  "origin",
+  "referer",
+  "sec-fetch-dest",
+  "sec-fetch-mode",
+  "sec-fetch-site",
+  "user-agent",
 ] as const;
+const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 
-export const OIDC_NO_STORE_HEADERS = {
-  "Cache-Control": "no-store",
-  Pragma: "no-cache",
-} as const;
+export { OIDC_NO_STORE_HEADERS };
 
 export class OidcTokenExchangeError extends Error {
   constructor(
@@ -58,15 +66,83 @@ async function readJsonSafe(response: Response): Promise<unknown> {
   }
 }
 
-export function createForwardedAuthHeaders(request: Request): Headers {
+function createInternalUrl(requestUrl: string, pathname: string): URL {
+  return new URL(pathname, requestUrl);
+}
+
+function createInternalAuthorizeRequest(options: {
+  requestUrl: string;
+  clientId: string;
+  redirectUrl: string;
+  scopes: string[];
+  state: string;
+  codeChallenge: string;
+  authHeaders: Headers;
+}): Request {
+  const authorizeUrl = createInternalUrl(
+    options.requestUrl,
+    OAUTH_AUTHORIZE_PATH,
+  );
+  authorizeUrl.searchParams.set("response_type", "code");
+  authorizeUrl.searchParams.set("client_id", options.clientId);
+  authorizeUrl.searchParams.set("redirect_uri", options.redirectUrl);
+  authorizeUrl.searchParams.set("scope", options.scopes.join(" "));
+  authorizeUrl.searchParams.set("state", options.state);
+  authorizeUrl.searchParams.set("code_challenge", options.codeChallenge);
+  authorizeUrl.searchParams.set("code_challenge_method", "s256");
+
+  return new Request(authorizeUrl, {
+    method: "GET",
+    headers: new Headers(options.authHeaders),
+    cache: "no-store",
+  });
+}
+
+function createInternalTokenRequest(options: {
+  requestUrl: string;
+  clientId: string;
+  code: string;
+  redirectUrl: string;
+  codeVerifier: string;
+}): {
+  request: Request;
+  body: Record<string, string>;
+} {
+  const tokenUrl = createInternalUrl(options.requestUrl, OAUTH_TOKEN_PATH);
+  const body = {
+    grant_type: "authorization_code",
+    client_id: options.clientId,
+    code: options.code,
+    redirect_uri: options.redirectUrl,
+    code_verifier: options.codeVerifier,
+  };
+
+  return {
+    request: new Request(tokenUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(body).toString(),
+      cache: "no-store",
+    }),
+    body,
+  };
+}
+
+export function createSessionForwardedAuthHeaders(request: Request): Headers {
   const headers = new Headers({
     Accept: "application/json",
-    "sec-fetch-mode": "cors",
   });
 
-  for (const key of FORWARDED_AUTH_HEADERS) {
+  for (const key of SESSION_BRIDGE_FORWARDED_HEADERS) {
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
+  }
+
+  if (!headers.has("sec-fetch-mode")) {
+    headers.set("sec-fetch-mode", "cors");
   }
 
   return headers;
@@ -86,23 +162,17 @@ export async function exchangeAuthForOidcTokenSet(options: {
   const { codeVerifier, codeChallenge } = createPkcePair();
   const state = randomBytes(16).toString("hex");
 
-  const authorizeUrl = new URL(
-    "/api/auth/oauth2/authorize",
-    options.requestUrl,
+  const authorizeResponse = await handleMasumiOidcAuthorizeRequest(
+    createInternalAuthorizeRequest({
+      requestUrl: options.requestUrl,
+      clientId: client.clientId,
+      redirectUrl,
+      scopes: options.scopes,
+      state,
+      codeChallenge,
+      authHeaders: options.authHeaders,
+    }),
   );
-  authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("client_id", client.clientId);
-  authorizeUrl.searchParams.set("redirect_uri", redirectUrl);
-  authorizeUrl.searchParams.set("scope", options.scopes.join(" "));
-  authorizeUrl.searchParams.set("state", state);
-  authorizeUrl.searchParams.set("code_challenge", codeChallenge);
-  authorizeUrl.searchParams.set("code_challenge_method", "s256");
-
-  const authorizeResponse = await fetch(authorizeUrl, {
-    method: "GET",
-    headers: options.authHeaders,
-    cache: "no-store",
-  });
 
   const authorizeBody = await readJsonSafe(authorizeResponse);
   if (!authorizeResponse.ok) {
@@ -140,24 +210,17 @@ export async function exchangeAuthForOidcTokenSet(options: {
     );
   }
 
-  const tokenUrl = new URL("/api/auth/oauth2/token", options.requestUrl);
-  const tokenBody = new URLSearchParams({
-    grant_type: "authorization_code",
-    client_id: client.clientId,
+  const tokenRequest = createInternalTokenRequest({
+    requestUrl: options.requestUrl,
+    clientId: client.clientId,
     code,
-    redirect_uri: redirectUrl,
-    code_verifier: codeVerifier,
+    redirectUrl,
+    codeVerifier,
   });
-
-  const tokenResponse = await fetch(tokenUrl, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: tokenBody.toString(),
-    cache: "no-store",
-  });
+  const tokenResponse = await handleMasumiAuthorizationCodeGrant(
+    tokenRequest.request,
+    tokenRequest.body,
+  );
 
   const tokenJson = await readJsonSafe(tokenResponse);
   if (!tokenResponse.ok) {

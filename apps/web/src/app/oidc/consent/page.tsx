@@ -1,18 +1,19 @@
+import {
+  AlertCircle,
+  CheckCircle2,
+  Fingerprint,
+  Lock,
+  MessageSquare,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { switchAccountAction } from "@/lib/actions/auth.action";
+import { Separator } from "@/components/ui/separator";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/config/oidc-scopes.config";
 
 import { EmailVerificationPanel } from "./components/email-verification-panel";
+import { OidcSwitchAccountButton } from "./components/oidc-switch-account-button";
 
 export const metadata: Metadata = {
   title: "Masumi - OIDC Authorization",
@@ -32,20 +34,11 @@ export const metadata: Metadata = {
 };
 
 const PAGE_COPY = {
-  protocolBadge: "OIDC",
-  titlePrefix: "Authorize as",
-  description:
-    "wants to use your Masumi account for sign-in and SpacetimeDB access. Confirm to authorize without logging in again.",
-  accountLabel: "Account",
+  titlePrefix: "Authorize",
+  descriptionSuffix: "wants to access your Masumi account.",
   identityScopesLabel: "Identity scopes",
-  newPermissionsLabel: "New API permissions requested",
-  newPermissionsDescription:
-    "This client is asking for additional API permissions it did not have before.",
-  grantedPermissionsLabel: "Already granted API permissions",
-  grantedPermissionsDescription:
-    "These API permissions are already approved for this client.",
-  noNewPermissions: "No additional API permissions are being requested.",
-  noGrantedPermissions: "No API permissions have been granted yet.",
+  newPermissionsLabel: "New API permissions",
+  grantedPermissionsLabel: "Granted API permissions",
   defaultScope: "openid",
   cancel: "Cancel",
   switchAccount: "Switch account",
@@ -73,13 +66,13 @@ function normalizeScopes(value: string | undefined): string[] {
 
 function getClientLabel(clientId: string | undefined): string {
   if (!clientId) {
-    return "Masumi client";
+    return "Agent Messenger";
   }
 
   const client = getTrustedOidcClients().find(
     (item) => item.clientId === clientId,
   );
-  return client?.name ?? clientId;
+  return client?.name ?? "Agent Messenger";
 }
 
 function buildConsentCallbackUrl(searchParams: {
@@ -105,6 +98,11 @@ function buildConsentCallbackUrl(searchParams: {
 
   const query = params.toString();
   return query ? `/oidc/consent?${query}` : "/oidc/consent";
+}
+
+function getInitial(name: string | null | undefined, email: string): string {
+  const source = name?.trim() || email;
+  return source.charAt(0).toUpperCase();
 }
 
 export default async function OidcConsentPage({
@@ -155,139 +153,135 @@ export default async function OidcConsentPage({
   );
   const switchAccountCallbackUrl =
     continueUrl ?? buildConsentCallbackUrl(resolvedSearchParams);
-  const switchAccount = switchAccountAction.bind(
-    null,
-    switchAccountCallbackUrl,
-  );
-
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{PAGE_COPY.protocolBadge}</Badge>
-            <Badge variant="outline">{clientLabel}</Badge>
-          </div>
-          <CardTitle>
-            {PAGE_COPY.titlePrefix} {session.user.email}
-          </CardTitle>
-          <CardDescription>
-            {clientLabel} {PAGE_COPY.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {errorMessage ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {errorMessage}
-            </div>
-          ) : null}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{PAGE_COPY.accountLabel}</p>
-            <p className="text-sm text-muted-foreground">
-              {session.user.name?.trim() || session.user.email}
-            </p>
-            <p className="break-all font-mono text-xs text-muted-foreground">
-              {session.user.email}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.identityScopesLabel}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {identityScopeItems.length === 0 ? (
-                <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
-              ) : (
-                identityScopeItems.map((scopeItem) => (
-                  <Badge key={scopeItem.scope} variant="outline">
-                    {scopeItem.label}
-                  </Badge>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.newPermissionsLabel}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {PAGE_COPY.newPermissionsDescription}
-            </p>
-            <OidcPermissionSummary
-              emptyLabel={PAGE_COPY.noNewPermissions}
-              groups={newApiPermissionGroups}
+    <AuthorizationRequestCard
+      icon={<MessageSquare className="h-6 w-6 text-primary" />}
+      title={`${PAGE_COPY.titlePrefix} ${clientLabel}`}
+      description={`${clientLabel} ${PAGE_COPY.descriptionSuffix}`}
+      footer={
+        <div className="flex w-full flex-col gap-3">
+          <form
+            action="/oidc/consent/submit"
+            method="post"
+            className="flex w-full flex-col gap-3 sm:flex-row"
+          >
+            <input type="hidden" name="consentCode" value={consentCode} />
+            <input
+              type="hidden"
+              name="clientId"
+              value={resolvedSearchParams.client_id ?? ""}
             />
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              {PAGE_COPY.grantedPermissionsLabel}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {PAGE_COPY.grantedPermissionsDescription}
-            </p>
-            <OidcPermissionSummary
-              emptyLabel={PAGE_COPY.noGrantedPermissions}
-              groups={existingApiPermissionGroups}
-              surfaceClassName="rounded-md border px-3 py-3"
+            <input
+              type="hidden"
+              name="scope"
+              value={resolvedSearchParams.scope ?? ""}
             />
-          </div>
-          {!emailVerified ? (
-            <EmailVerificationPanel
-              email={session.user.email}
-              continueUrl={continueUrl}
-            />
-          ) : null}
-        </CardContent>
-        <CardFooter>
-          <div className="flex w-full flex-col gap-3">
-            <form
-              action="/oidc/consent/submit"
-              method="post"
-              className="flex w-full flex-col gap-3 sm:flex-row"
-            >
-              <input type="hidden" name="consentCode" value={consentCode} />
-              <input
-                type="hidden"
-                name="clientId"
-                value={resolvedSearchParams.client_id ?? ""}
-              />
-              <input
-                type="hidden"
-                name="scope"
-                value={resolvedSearchParams.scope ?? ""}
-              />
-              <input
-                type="hidden"
-                name="continueUrl"
-                value={continueUrl ?? ""}
-              />
+            <input type="hidden" name="continueUrl" value={continueUrl ?? ""} />
+            {emailVerified ? (
               <Button
                 type="submit"
                 name="accept"
-                value="false"
-                variant="outline"
+                value="true"
+                variant="primary"
+                className="flex-1"
               >
-                {PAGE_COPY.cancel}
+                {PAGE_COPY.continue}
               </Button>
-              {emailVerified ? (
-                <Button
-                  type="submit"
-                  name="accept"
-                  value="true"
-                  variant="primary"
-                >
-                  {PAGE_COPY.continue}
-                </Button>
-              ) : null}
-            </form>
-            <form action={switchAccount} className="w-full">
-              <Button type="submit" variant="ghost" className="w-full">
-                {PAGE_COPY.switchAccount}
-              </Button>
-            </form>
+            ) : null}
+            <Button
+              type="submit"
+              name="accept"
+              value="false"
+              variant="ghost"
+              className="flex-1"
+            >
+              {PAGE_COPY.cancel}
+            </Button>
+          </form>
+          <Separator />
+          <OidcSwitchAccountButton
+            callbackUrl={switchAccountCallbackUrl}
+            label={PAGE_COPY.switchAccount}
+          />
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        {errorMessage ? (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{errorMessage}</span>
           </div>
-        </CardFooter>
-      </Card>
-    </main>
+        ) : null}
+
+        <div className="animate-fade-in-up animate-stagger-1 flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="text-xs font-medium">
+              {getInitial(session.user.name, session.user.email)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              {session.user.name?.trim() || session.user.email}
+            </p>
+            <p className="truncate font-mono text-xs text-muted-foreground">
+              {session.user.email}
+            </p>
+          </div>
+        </div>
+
+        {!emailVerified ? (
+          <EmailVerificationPanel
+            email={session.user.email}
+            continueUrl={continueUrl}
+          />
+        ) : null}
+
+        <div className="animate-fade-in-up animate-stagger-2 space-y-2">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <Fingerprint className="h-4 w-4 text-muted-foreground" />
+            {PAGE_COPY.identityScopesLabel}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {identityScopeItems.length === 0 ? (
+              <Badge variant="outline">{PAGE_COPY.defaultScope}</Badge>
+            ) : (
+              identityScopeItems.map((scopeItem) => (
+                <Badge key={scopeItem.scope} variant="outline">
+                  {scopeItem.label}
+                </Badge>
+              ))
+            )}
+          </div>
+        </div>
+
+        {newApiPermissionGroups.length > 0 ? (
+          <div className="animate-fade-in-up animate-stagger-3 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="h-4 w-4 text-primary" />
+              {PAGE_COPY.newPermissionsLabel}
+            </p>
+            <OidcPermissionSummary
+              emptyLabel=""
+              groups={newApiPermissionGroups}
+            />
+          </div>
+        ) : null}
+
+        {existingApiPermissionGroups.length > 0 ? (
+          <div className="animate-fade-in-up animate-stagger-4 space-y-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              {PAGE_COPY.grantedPermissionsLabel}
+            </p>
+            <OidcPermissionSummary
+              emptyLabel=""
+              groups={existingApiPermissionGroups}
+              surfaceClassName="rounded-lg border p-3"
+            />
+          </div>
+        ) : null}
+      </div>
+    </AuthorizationRequestCard>
   );
 }

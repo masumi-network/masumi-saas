@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { agentHasPaymentIncomeData } from "@/lib/agents/agent-earnings-eligibility";
-import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  fetchNormalizedAgentPaymentIncome,
+  hasAgentEarningsData,
+} from "@/lib/earnings/agent-income";
+import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { agentEarningsQuerySchema } from "@/lib/schemas";
@@ -25,7 +28,7 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
       start.setDate(start.getDate() - 30);
       break;
     case "all":
-      start.setFullYear(2024, 11, 1);
+      start.setFullYear(2020, 0, 1);
       break;
     default:
       start.setDate(start.getDate() - 7);
@@ -46,7 +49,7 @@ export async function GET(
     });
     const { agentId } = await params;
 
-    const agent = await getWalletOwnedAgentForUser({
+    const agent = await getUserOwnedAgentForEarnings({
       userId: authContext.user.id,
       agentId,
     });
@@ -57,14 +60,17 @@ export async function GET(
         { status: 404 },
       );
     }
+    const network = toNetwork(
+      agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
+    );
+
     requireNetworkedOidcApiScope(authContext, {
       resource: "agents",
       action: "read",
-      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+      network,
     });
 
-    const hasEarningsData = agentHasPaymentIncomeData(agent);
-    if (!hasEarningsData) {
+    if (!hasAgentEarningsData(agent)) {
       return NextResponse.json({
         success: true,
         data: {
@@ -108,49 +114,28 @@ export async function GET(
       });
     }
 
-    const network = toNetwork(agent.networkIdentifier);
     const { startDate, endDate } = periodToDateRange(period);
 
-    const income = await client.getPaymentIncome({
+    const income = await fetchNormalizedAgentPaymentIncome({
+      client,
       network,
-      agentIdentifier: agent.agentIdentifier ?? undefined,
+      agentIdentifier: agent.agentIdentifier!,
       startDate,
       endDate,
       timeZone: "Etc/UTC",
     });
 
-    // Map payment node PascalCase/Units to frontend camelCase/units
     return NextResponse.json({
       success: true,
       data: {
         totalTransactions: income.totalTransactions,
-        totalIncome: {
-          units: income.TotalIncome.Units,
-          blockchainFees: income.TotalIncome.blockchainFees,
-        },
-        totalRefunded: {
-          units: income.TotalRefunded.Units,
-          blockchainFees: income.TotalRefunded.blockchainFees,
-        },
-        totalPending: {
-          units: income.TotalPending.Units,
-          blockchainFees: income.TotalPending.blockchainFees,
-        },
+        totalIncome: income.totalIncome,
+        totalRefunded: income.totalRefunded,
+        totalPending: income.totalPending,
         periodStart: income.periodStart,
         periodEnd: income.periodEnd,
-        dailyIncome: income.DailyIncome.map((d) => ({
-          day: d.day,
-          month: d.month,
-          year: d.year,
-          units: d.Units,
-          blockchainFees: d.blockchainFees,
-        })),
-        monthlyIncome: income.MonthlyIncome.map((m) => ({
-          month: m.month,
-          year: m.year,
-          units: m.Units,
-          blockchainFees: m.blockchainFees,
-        })),
+        dailyIncome: income.dailyIncome,
+        monthlyIncome: income.monthlyIncome,
       },
     });
   } catch (error) {

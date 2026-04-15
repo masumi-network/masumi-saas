@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Shield,
+  TrendingUp,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -57,11 +58,12 @@ const navigationItems: NavigationItem[] = [
   { key: "agents", href: "/ai-agents", icon: Bot },
   { key: "inboxAgents", href: "/inbox-agents", icon: Inbox },
   { key: "activity", href: "/activity", icon: Activity },
+  { key: "earnings", href: "/earnings", icon: TrendingUp },
   {
-    key: "earnings",
-    href: "/earnings",
+    key: "topUp",
+    href: "/top-up",
     icon: CircleDollarSign,
-    searchKeywords: ["revenue", "income", "payout", "chart"],
+    searchKeywords: ["credits", "balance", "billing", "funds"],
   },
   { key: "organizations", href: "/organizations", icon: Building2 },
   { key: "apiKeys", href: "/api-keys", icon: Key },

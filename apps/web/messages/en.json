@@ -32,8 +32,8 @@
       "emailFormDivider": "or continue with"
     },
     "SignIn": {
-      "title": "Login",
-      "description": "Your credentials are needed to access the dashboard. This is required to manage your AI agents, payment settings and view transactions.",
+      "title": "Sign In",
+      "description": "Sign in to manage your AI agents, organizations, and payments.",
       "continueWithGoogle": "Continue with Google",
       "continueWithGithub": "Continue with GitHub",
       "continueWithMicrosoft": "Continue with Microsoft",
@@ -43,12 +43,12 @@
       "magicLinkSubmit": "Email me a magic link",
       "magicLinkSubmitting": "Sending link...",
       "magicLinkSuccess": "Check your email for your magic link.",
-      "submit": "Login",
-      "submitting": "Validating...",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
       "usePassword": "Use password instead",
       "useMagicLink": "Use magic link instead (recommended)",
       "noAccount": "Don't have an account?",
-      "login": "Login",
+      "login": "Sign In",
       "register": "Register",
       "forgotPassword": "Forgot password?",
       "checkEmail": {
@@ -61,7 +61,7 @@
     },
     "SignUp": {
       "title": "Register",
-      "description": "Create an account to access the dashboard and manage your AI agents, payment settings, and view transactions.",
+      "description": "Create an account to manage your AI agents, organizations, and payments.",
       "name": "Name",
       "email": "Email",
       "password": "Password",
@@ -77,7 +77,7 @@
       "termsAccepted": "I agree to the",
       "privacyPolicy": "Privacy Policy",
       "hasAccount": "Already have an account?",
-      "login": "Login",
+      "login": "Sign In",
       "checkEmail": {
         "title": "Check your email",
         "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
@@ -380,7 +380,7 @@
           "balance": "Balance",
           "balanceDescription": "Available funds",
           "earnings": "Earnings",
-          "earningsDescription": "Earnings from completed payments across your agents for this period.",
+          "earningsDescription": "Total earnings from your registered agents.",
           "viewAnalytics": "View analytics",
           "viewActivity": "View activity",
           "viewAllTransactions": "View all transactions",
@@ -391,7 +391,6 @@
           "topUp": "Top up",
           "withdraw": "Withdraw",
           "agentsCardAria": "View agents, {count} registered",
-          "earningsCardAria": "View earnings, {total} total",
           "runningAgents": "{count} running",
           "pendingAgents": "{count} pending",
           "failedAgents": "{count} failed",
@@ -404,11 +403,7 @@
           "newTransactionsDescription": "New payment and purchase activity",
           "newTransactionsCardAria": "View activity, {count} new transactions",
           "viewAll": "View all",
-          "percentValue": "{value}%",
-          "vsPreviousPeriod": "vs prev. period",
-          "earningsLoadUnexpectedError": "Could not load earnings. Please try again.",
-          "previousComparisonUnavailable": "Prior-period comparison unavailable — we couldn’t load income for every agent for the previous window.",
-          "currentPeriodIncomeIncomplete": "Earnings may be incomplete — we couldn’t load income for every agent for this period."
+          "vsPreviousPeriod": "vs prev. period"
         },
         "networkHint": "Data for {network}.",
         "networkHintChange": "Change",
@@ -450,6 +445,7 @@
           "completeKyc": "Complete identity verification",
           "completeKycDone": "Identity verified",
           "createOrg": "Create your first organization",
+          "createOrgOptional": "Create your first organization (optional)",
           "registerAgent": "Register your first AI agent",
           "doIt": "Do it",
           "step1": "1",
@@ -475,28 +471,93 @@
     },
     "TopUp": {
       "title": "Top up",
-      "description": "Add funds to your wallet to pay for agent usage.",
-      "comingSoon": "Top-up is coming soon."
+      "description": "Buy credits for mainnet usage and keep your account ready for paid actions.",
+      "status": "Coming soon",
+      "balanceLabel": "Available credits",
+      "balanceDescription": "Your current balance is ready to use whenever you perform credit-backed actions on Mainnet.",
+      "mainnetOnlyTitle": "Only Mainnet activity uses credits",
+      "mainnetOnlyDescription": "Preprod and any missing or invalid network values never deduct credits. Your balance only decreases for write operations on Mainnet.",
+      "cta": "Add credits",
+      "comingSoon": "Top-up is coming soon.",
+      "roadmapTitle": "What to expect",
+      "roadmapDescription": "We're preparing a self-serve top-up flow directly inside Masumi.",
+      "roadmapBilling": "Secure checkout with instant credit delivery",
+      "roadmapHistory": "Balance history and top-up receipts",
+      "roadmapAlerts": "Low-balance reminders before you run out"
     },
-    "Earnings": {
-      "title": "Earnings",
-      "description": "Payment income from your agents on the network you selected.",
-      "chartTitle": "Earnings over time",
-      "chartPaused": "The daily earnings chart is temporarily unavailable.",
-      "totalLabel": "Period total",
-      "noData": "No earnings data for this period.",
-      "loadError": "Failed to load earnings. Please try again.",
-      "periodLabel": "Earnings period",
-      "periodPrefix": "Period:",
-      "refresh": "Refresh",
-      "refreshing": "Refreshing…",
-      "previousComparisonUnavailable": "Prior-period comparison unavailable — we couldn’t load income for every agent for the previous window.",
-      "currentPeriodIncomeIncomplete": "Earnings may be incomplete — we couldn’t load income for every agent for this period."
+    "Withdraw": {
+      "title": "Withdraw",
+      "description": "Withdraw your earnings to your preferred payout method.",
+      "status": "Coming soon",
+      "comingSoon": "Withdrawals are coming soon."
     },
     "Analytics": {
       "title": "Analytics",
       "description": "Revenue, usage, and performance across your agents.",
       "comingSoon": "Analytics are coming soon."
+    },
+    "Earnings": {
+      "title": "Earnings",
+      "description": "Track income, refunds, and pending payouts for one agent at a time on the selected network.",
+      "filtersTitle": "Earnings filters",
+      "filtersDescription": "Pick an eligible agent and time window. The network comes from the global switcher in the sidebar.",
+      "agentLabel": "Agent",
+      "rangeLabel": "Range",
+      "selectAgent": "Select an agent",
+      "searchAgentsPlaceholder": "Search agents by name or identifier...",
+      "searchAgentsEmpty": "No matching agents found.",
+      "missingIdentifier": "Agent identifier unavailable",
+      "applyCustomRange": "Apply range",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "loadAgentsError": "Failed to load eligible agents.",
+      "loadAgentsHelp": "Try refreshing or switch networks if you expect this agent to be visible elsewhere.",
+      "loadEarningsError": "Failed to load earnings.",
+      "loadEarningsHelp": "Refresh the page or pick a different range to try again.",
+      "tryAgain": "Try again",
+      "emptyTitle": "No eligible agents on this network",
+      "emptyDescription": "This network does not have any wallet-owned agents with earnings history yet. Register an agent or switch networks to continue.",
+      "emptyCta": "Go to agents",
+      "cards": {
+        "income": "Income",
+        "refunded": "Refunded",
+        "pending": "Pending",
+        "transactions": "Transactions"
+      },
+      "metric": {
+        "income": "Income",
+        "refunded": "Refunded",
+        "pending": "Pending"
+      },
+      "granularity": {
+        "day": "Daily view",
+        "month": "Monthly view"
+      },
+      "range": {
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "all": "All time",
+        "custom": "Custom range"
+      },
+      "network": {
+        "preprod": "Preprod",
+        "mainnet": "Mainnet"
+      },
+      "feesLabel": "Blockchain fees: {fees}",
+      "transactionsHint": "Payment requests included in this period",
+      "noDataTitle": "No earnings yet in this period",
+      "noDataDescription": "When this agent starts receiving payments, the selected metric will appear here with a timeline and breakdown.",
+      "mixedUnitsTitle": "Chart unavailable for mixed payment units",
+      "mixedUnitsDescription": "This metric includes both USD stablecoins and ADA in the selected period. Use the breakdown table below to inspect the exact amounts.",
+      "breakdownTitle": "{metric} breakdown",
+      "breakdownEmpty": "There is no breakdown data for this metric yet.",
+      "table": {
+        "period": "Period",
+        "amount": "Amount",
+        "fees": "Fees",
+        "raw": "Raw units"
+      }
     },
     "Activity": {
       "title": "Activity",
@@ -572,10 +633,11 @@
       "network": "Network",
       "MenuItems": {
         "dashboard": "Dashboard",
-        "agents": "Agents",
-        "inboxAgents": "Inbox agents",
+        "agents": "AI agents",
+        "inboxAgents": "Inboxes",
         "activity": "Activity",
         "earnings": "Earnings",
+        "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -633,7 +695,7 @@
     },
     "PaymentMethods": {
       "title": "Payment Methods",
-      "description": "Manage your payment methods for top-ups."
+      "description": "Manage your payment methods for top-ups and withdrawals."
     },
     "Organizations": {
       "title": "Organizations",
@@ -794,10 +856,11 @@
       "links": "Links",
       "items": {
         "dashboard": "Dashboard",
-        "agents": "Agents",
-        "inboxAgents": "Inbox agents",
+        "agents": "AI agents",
+        "inboxAgents": "Inboxes",
         "activity": "Activity",
         "earnings": "Earnings",
+        "topUp": "Top up",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",
@@ -817,6 +880,7 @@
     "Notifications": {
       "title": "Notifications",
       "empty": "No notifications yet",
+      "emptyHint": "Agent updates, transaction alerts, and invitations will appear here.",
       "markAllRead": "Mark all as read",
       "clearAll": "Clear all",
       "dismiss": "Dismiss",
@@ -908,15 +972,15 @@
       },
       "Discovery": {
         "title": "Registry discovery",
-        "description": "Browse the latest healthy Masumi agents here. Verified inbox-agent discovery now lives under Inbox agents.",
+        "description": "Browse the latest healthy Masumi agents here.",
         "agentsDescription": "Latest healthy agents returned by the standard agent discovery route.",
-        "inboxDescription": "Pending and verified agents returned by the inbox-agent discovery route.",
+        "inboxDescription": "Pending and verified inboxes returned by the registry discovery route.",
         "views": {
           "agents": "Agents",
           "inbox": "Inbox"
         },
         "searchPlaceholder": "Look up agents, tags, capabilities, or IDs...",
-        "inboxSearchPlaceholder": "Look up inbox agents, slugs, policy IDs, or agent IDs...",
+        "inboxSearchPlaceholder": "Search by inbox name, slug, or linked email...",
         "resultsSummary": "{visibleCount, plural, one {# agent shown} other {# agents shown}} on this page",
         "sortHint": "Sorted by newest updates first",
         "page": "Page {page}",
@@ -955,8 +1019,8 @@
         "openSource": "Open source",
         "empty": "No registry agents found yet.",
         "emptySearch": "No discovered agents match your lookup on this page. Try a broader search or switch pages.",
-        "inboxEmpty": "No pending or verified inbox agents found yet.",
-        "inboxEmptySearch": "No pending or verified inbox agents match your lookup on this page. Try a broader search or switch pages.",
+        "inboxEmpty": "No pending or verified inboxes found yet.",
+        "inboxEmptySearch": "No pending or verified inboxes match that name, slug, or linked email. Try another search.",
         "error": "Failed to load discovery results. Please try again.",
         "pricing": {
           "free": "Free",
@@ -1045,30 +1109,6 @@
         "apiUrlPlaceholder": "https://api.example.com",
         "apiUrlInvalid": "API URL must be a valid URL",
         "apiUrlProtocol": "API URL must start with http:// or https://",
-        "collectionAddress": "Collection address",
-        "collectionAddressPlaceholderPreprod": "addr_test1…",
-        "collectionAddressPlaceholderMainnet": "addr1…",
-        "collectionAddressHint": "Payout address for this agent's earnings.",
-        "collectionAddressRequired": "Collection address is required",
-        "collectionAddressMaxLength": "Address is too long",
-        "collectionAddressInvalidPreprod": "Enter a valid Preprod address (starts with addr_test1).",
-        "collectionAddressInvalidMainnet": "Enter a valid Mainnet address (starts with addr1).",
-        "generateWallet": "Generate",
-        "GenerateWallet": {
-          "title": "New wallet",
-          "loading": "Generating wallet…",
-          "error": "Could not generate a wallet.",
-          "retry": "Try again",
-          "mnemonicLabel": "Recovery phrase",
-          "mnemonicWarning": "Save this phrase offline in a safe place. Anyone with it can spend from this wallet. Masumi does not store it.",
-          "addressLabel": "Wallet address",
-          "useAddress": "Use this address",
-          "close": "Close",
-          "copyWarning": "Copy what you need before closing. Open this dialog again to generate a different wallet.",
-          "downloadTxt": "Download .txt",
-          "downloadGenerated": "Generated (UTC)",
-          "downloadDisclaimer": "Keep this file private. Anyone with the recovery phrase can spend from this wallet."
-        },
         "price": "Price",
         "pricePlaceholder": "e.g. Free, 5 ADA, 10 USDM",
         "isFree": "This is a free agent (no cost for interactions)",
@@ -1479,7 +1519,7 @@
       "greeting": "Hello {name},",
       "message": "We received a request to reset your password. Click the button below to create a new password.",
       "button": "Reset password",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup reset link",
       "footer": "If you didn't request a password reset, you can safely ignore this email."
     },
     "Verification": {
@@ -1491,7 +1531,7 @@
       "codeLabel": "Verification code",
       "codeExpiry": "This code expires in 5 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer verification by code.",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup verification link",
       "footer": "If you didn't create an account, you can safely ignore this email."
     },
     "VerificationCode": {
@@ -1504,18 +1544,33 @@
       "footer": "If you didn't request this code, you can safely ignore this email."
     },
     "MagicLink": {
-      "preview": "Your Masumi magic link",
-      "title": "Sign in to Masumi",
+      "preview": "Your Masumi access link",
+      "title": "Continue to Masumi",
       "greeting": "Hello {name},",
-      "message": "Click the button below to continue to Masumi, or enter the code shown below.",
+      "message": "Use the button below to continue to Masumi. If you prefer, you can use the code shown below instead.",
       "consentBefore": "If this is your first time here, using this link to access Masumi means you agree to our ",
       "consentPrivacyLabel": "Privacy Policy",
       "consentAfter": ".",
-      "button": "Open Masumi",
-      "codeLabel": "Sign-in code",
+      "button": "Continue to Masumi",
+      "codeLabel": "Access code",
       "codeExpiry": "This code expires in 5 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer not to open the link.",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup access link",
+      "footer": "If you didn't request this email, you can safely ignore it."
+    },
+    "MagicLinkOidc": {
+      "preview": "Your Agent Messenger access link",
+      "title": "Continue to Agent Messenger",
+      "greeting": "Hello {name},",
+      "message": "Use the button below to continue to Agent Messenger. If you prefer, you can use the code shown below instead.",
+      "consentBefore": "If this is your first time here, using this link to access Agent Messenger means you agree to our ",
+      "consentPrivacyLabel": "Privacy Policy",
+      "consentAfter": ".",
+      "button": "Continue to Agent Messenger",
+      "codeLabel": "Access code",
+      "codeExpiry": "This code expires in 5 minutes.",
+      "codeHelp": "You can enter this code in Agent Messenger if you prefer not to open the link.",
+      "linkText": "Backup Agent Messenger link",
       "footer": "If you didn't request this email, you can safely ignore it."
     },
     "Invitation": {
@@ -1524,7 +1579,7 @@
       "greeting": "{inviter} has invited you to join {organization} as {role}.",
       "message": "Click the button below to accept the invitation and get started.",
       "button": "Accept invitation",
-      "linkText": "Or copy and paste this link into your browser:",
+      "linkText": "Backup invitation link",
       "footer": "If you weren't expecting this invitation, you can safely ignore this email."
     }
   },

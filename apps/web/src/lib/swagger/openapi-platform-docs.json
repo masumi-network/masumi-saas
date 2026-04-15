@@ -3244,13 +3244,6 @@
           "RegistrySource": {
             "type": "object",
             "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "Web3CardanoV1",
-                  "MasumiInboxV1"
-                ]
-              },
               "policyId": {
                 "type": "string",
                 "nullable": true
@@ -3261,7 +3254,6 @@
               }
             },
             "required": [
-              "type",
               "policyId",
               "url"
             ]
@@ -3600,13 +3592,6 @@
               "id": {
                 "type": "string"
               },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "Web3CardanoV1",
-                  "MasumiInboxV1"
-                ]
-              },
               "policyId": {
                 "type": "string",
                 "nullable": true
@@ -3618,7 +3603,6 @@
             },
             "required": [
               "id",
-              "type",
               "policyId",
               "url"
             ]
@@ -3810,6 +3794,30 @@
           "agentIdentifier": {
             "type": "string"
           },
+          "providerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "encryptionPublicKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "encryptionKeyVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "signingPublicKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "signingKeyVersion": {
+            "type": "string",
+            "nullable": true
+          },
           "metadataVersion": {
             "type": "integer"
           },
@@ -3818,12 +3826,6 @@
             "properties": {
               "id": {
                 "type": "string"
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "MasumiInboxV1"
-                ]
               },
               "policyId": {
                 "type": "string",
@@ -3836,7 +3838,6 @@
             },
             "required": [
               "id",
-              "type",
               "policyId",
               "url"
             ]
@@ -3852,6 +3853,12 @@
           "description",
           "agentSlug",
           "agentIdentifier",
+          "providerUrl",
+          "linkedEmail",
+          "encryptionPublicKey",
+          "encryptionKeyVersion",
+          "signingPublicKey",
+          "signingKeyVersion",
           "metadataVersion",
           "RegistrySource"
         ]
@@ -3861,13 +3868,6 @@
         "properties": {
           "id": {
             "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "Web3CardanoV1",
-              "MasumiInboxV1"
-            ]
           },
           "url": {
             "type": "string",
@@ -3906,7 +3906,6 @@
         },
         "required": [
           "id",
-          "type",
           "url",
           "policyId",
           "note",
@@ -4930,7 +4929,9 @@
                             "nullable": true
                           },
                           "apiUrl": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                            "example": "https://agent.example.com/mip"
                           },
                           "organizationId": {
                             "type": "string",
@@ -5237,7 +5238,9 @@
                   },
                   "apiUrl": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri",
+                    "example": "https://agent.example.com/mip",
+                    "description": "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected."
                   },
                   "collectionAddress": {
                     "type": "string",
@@ -5463,7 +5466,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -5816,7 +5821,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -7231,7 +7238,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -8157,7 +8166,9 @@
                           "nullable": true
                         },
                         "apiUrl": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
                         },
                         "organizationId": {
                           "type": "string",
@@ -8620,13 +8631,19 @@
         }
       }
     },
-    "/v1/inbox-agents": {
+    "/pay/api/v1/inbox-agents": {
       "get": {
         "tags": [
           "Inbox agents"
         ],
         "summary": "List inbox agents",
         "description": "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ],
         "security": [
           {
             "apiKeyHeader": []
@@ -9032,6 +9049,12 @@
         ],
         "summary": "Register inbox agent",
         "description": "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ],
         "security": [
           {
             "apiKeyHeader": []
@@ -9453,13 +9476,19 @@
         }
       }
     },
-    "/v1/inbox-agents/{inboxAgentId}": {
+    "/pay/api/v1/inbox-agents/{inboxAgentId}": {
       "delete": {
         "tags": [
           "Inbox agents"
         ],
         "summary": "Delete inbox agent",
         "description": "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ],
         "security": [
           {
             "apiKeyHeader": []
@@ -9803,13 +9832,19 @@
         }
       }
     },
-    "/v1/inbox-agents/{inboxAgentId}/deregister": {
+    "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister": {
       "post": {
         "tags": [
           "Inbox agents"
         ],
         "summary": "Deregister inbox agent",
         "description": "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ],
         "security": [
           {
             "apiKeyHeader": []
@@ -11202,7 +11237,7 @@
         }
       }
     },
-    "/v1/payment": {
+    "/pay/api/v1/payment": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the payment status. It needs to be created first with a POST request.",
         "summary": "Get information about a payment request. (READ access required)",
@@ -11405,7 +11440,13 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       },
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nCreates a payment request and identifier. This will check incoming payments in the background.",
@@ -12140,10 +12181,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment-source": {
+    "/pay/api/v1/payment-source": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the payment source.",
         "summary": "List payment sources with their public details. (READ access required)",
@@ -12283,10 +12330,16 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/authorize-refund": {
+    "/pay/api/v1/payment/authorize-refund": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nAuthorizes a refund for a payment request. This will stop the right to receive a payment and initiate a refund for the other party. (+PAY access required; only the creator or an admin may authorize)",
         "summary": "Authorizes a refund for a payment request. This will stop the right to receive a payment and initiate a refund for the other party. (+PAY access required; only the creator or an admin may authorize)",
@@ -12909,10 +12962,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/count": {
+    "/pay/api/v1/payment/count": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the total count of payments.",
         "summary": "Get the total number of payments. (READ access required)",
@@ -12989,10 +13048,16 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/diff": {
+    "/pay/api/v1/payment/diff": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nReturns payments that changed since the provided timestamp (combined next-action + on-chain-state/result).",
         "summary": "Diff payments by combined status timestamp (READ access required)",
@@ -13189,10 +13254,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/diff/next-action": {
+    "/pay/api/v1/payment/diff/next-action": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nReturns payments whose next action changed since lastUpdate.",
         "summary": "Diff payments by next-action timestamp (READ access required)",
@@ -13389,10 +13460,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/diff/onchain-state-or-result": {
+    "/pay/api/v1/payment/diff/onchain-state-or-result": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nReturns payments whose on-chain state or result hash changed since lastUpdate.",
         "summary": "Diff payments by on-chain-state/result timestamp (READ access required)",
@@ -13589,10 +13666,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/error-state-recovery": {
+    "/pay/api/v1/payment/error-state-recovery": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nClears error states for payment requests in WaitingForManualAction state and resets them up for retry or other actions. This endpoint provides manual intervention capability to recover from error states by clearing error fields.",
         "summary": "Clear error state for payment request (PAY access required)",
@@ -14251,10 +14334,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/income": {
+    "/pay/api/v1/payment/income": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGet payment income analytics for Payment Request transactions, over specified time periods.",
         "summary": "Get payment income analytics. (READ access required)",
@@ -14943,10 +15032,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/resolve-blockchain-identifier": {
+    "/pay/api/v1/payment/resolve-blockchain-identifier": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nResolves a payment request by its blockchain identifier.",
         "summary": "Resolve a payment request by its blockchain identifier. (READ access required)",
@@ -15127,10 +15222,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment/submit-result": {
+    "/pay/api/v1/payment/submit-result": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nSubmit the hash of their completed job for a payment request, which triggers the fund unlock process so the seller can collect payment after the unlock time expires. (+PAY access required; only the creator or an admin may submit)",
         "summary": "Completes a payment request. This will collect the funds after the unlock time. (+PAY access required; only the creator or an admin may submit)",
@@ -15760,10 +15861,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry": {
+    "/pay/api/v1/registry": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the agent metadata.",
         "summary": "List every agent that is recorded in the Masumi Registry. (READ access required)",
@@ -15938,7 +16045,13 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       },
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nRegisters an agent to the registry (Please note that while it it is put on-chain, the transaction is not yet finalized by the blockchain, as designed finality is only eventually reached. If you need certainty, please check status via the registry(GET) or if you require custom logic, the transaction directly using the txHash)",
@@ -16348,7 +16461,13 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       },
       "delete": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nPermanently deletes an agent registration record from the database. This action is irreversible and should only be used for registrations in specific failed or completed states.",
@@ -16579,10 +16698,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry/agent-identifier": {
+    "/pay/api/v1/registry/agent-identifier": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the on-chain metadata for a specific agent by its identifier.",
         "summary": "Fetch the current metadata for a given agentIdentifier. (READ access required)",
@@ -16704,10 +16829,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry/count": {
+    "/pay/api/v1/registry/count": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets the total count of AI agents.",
         "summary": "Get the total number of AI agents. (READ access required)",
@@ -16784,10 +16915,16 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry/deregister": {
+    "/pay/api/v1/registry/deregister": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nDeregisters a agent from the specified registry (Please note that while the command is put on-chain, the transaction is not yet finalized by the blockchain, as designed finality is only eventually reached. If you need certainty, please check status via the registry(GET) or if you require custom logic, the transaction directly using the txHash)",
         "summary": "Deregisters an agent from the specified registry. (PAY access required)",
@@ -16955,10 +17092,16 @@
               }
             }
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry/diff": {
+    "/pay/api/v1/registry/diff": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi payment service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nReturns registry entries that changed since the provided timestamp (registrationStateLastChangedAt).",
         "summary": "Diff registry entries by state-change timestamp (READ access required)",
@@ -17087,10 +17230,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry-entry": {
+    "/registry/api/v1/registry-entry": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nQuery the registry for available and online (health-checked) entries. Registry filter, allows pagination, filtering by payment type and capability and optional date filters (to force update any entries checked before the specified date. Warning: this might take a bit of time as response is not cached). If no filter is set, only online entries are returned.",
         "summary": "REQUIRES API KEY Authentication (+user)",
@@ -17299,7 +17448,6 @@
                           "RegistrySource": {
                             "id": "unique_cuid_v2",
                             "policyId": "policy_id",
-                            "type": "Web3CardanoV1",
                             "url": "https://example.com/api/"
                           },
                           "Capability": {
@@ -17343,10 +17491,805 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/registry-diff": {
+    "/registry/api/v1/registry-entry-search": {
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nFuzzy-search online (or explicitly filtered) registry entries by core metadata, capability, asset identifier, api base URL, and tags. Supports the same pagination, structured filters, and optional health-check refresh as the standard registry query endpoint.",
+        "summary": "REQUIRES API KEY Authentication (+user)",
+        "tags": [
+          "registry-entry"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10
+                  },
+                  "cursorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Case-insensitive fuzzy match against registry entry core metadata, capability, asset identifier, api base URL, and tags."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "paymentTypes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Web3CardanoV1",
+                            "None"
+                          ]
+                        },
+                        "maxItems": 5
+                      },
+                      "status": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Online",
+                            "Offline",
+                            "Deregistered",
+                            "Invalid"
+                          ]
+                        },
+                        "maxItems": 5
+                      },
+                      "policyId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      },
+                      "assetIdentifier": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 150
+                        }
+                      },
+                      "capability": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 150
+                          },
+                          "version": {
+                            "type": "string",
+                            "maxLength": 150
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  "minHealthCheckDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "network",
+                  "query"
+                ],
+                "example": {
+                  "limit": 10,
+                  "cursorId": "last_paginated_item",
+                  "network": "Preprod",
+                  "query": "example capability",
+                  "filter": {
+                    "policyId": "policy_id",
+                    "tags": [
+                      "tag1",
+                      "tag2"
+                    ],
+                    "assetIdentifier": "asset_identifier",
+                    "paymentTypes": [
+                      "Web3CardanoV1"
+                    ],
+                    "status": [
+                      "Online",
+                      "Offline"
+                    ],
+                    "capability": {
+                      "name": "Example Capability",
+                      "version": "Optional version"
+                    }
+                  },
+                  "minHealthCheckDate": "1970-01-01T00:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registry entries matching the fuzzy search",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_RegistryEntry"
+                          }
+                        }
+                      },
+                      "required": [
+                        "entries"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "entries": [
+                        {
+                          "id": "unique_cuid_v2",
+                          "name": "Example API",
+                          "createdAt": "1970-01-01T00:00:00.000Z",
+                          "updatedAt": "1970-01-01T00:02:00.000Z",
+                          "description": "Example API description",
+                          "status": "Online",
+                          "statusUpdatedAt": "1970-01-01T00:02:00.000Z",
+                          "authorName": null,
+                          "authorContactEmail": null,
+                          "authorContactOther": null,
+                          "image": "testimage.de",
+                          "otherLegal": null,
+                          "privacyPolicy": null,
+                          "tags": [],
+                          "termsAndCondition": "If the answer is 42 what was the question",
+                          "uptimeCheckCount": 10,
+                          "uptimeCount": 8,
+                          "lastUptimeCheck": "1970-01-01T00:00:00.000Z",
+                          "apiBaseUrl": "https://example.com/api/",
+                          "authorOrganization": "MASUMI",
+                          "paymentType": "Web3CardanoV1",
+                          "agentIdentifier": "222222222222222222222222222222222222222222222222222222222222222222",
+                          "RegistrySource": {
+                            "id": "unique_cuid_v2",
+                            "policyId": "policy_id",
+                            "url": "https://example.com/api/"
+                          },
+                          "Capability": {
+                            "name": "Example Capability",
+                            "version": "1.0.0"
+                          },
+                          "AgentPricing": {
+                            "pricingType": "Fixed",
+                            "FixedPricing": {
+                              "Amounts": [
+                                {
+                                  "amount": "100",
+                                  "unit": "USDC"
+                                }
+                              ]
+                            }
+                          },
+                          "ExampleOutput": [
+                            {
+                              "name": "Example Output",
+                              "mimeType": "image/png",
+                              "url": "https://example.com/image.png"
+                            }
+                          ],
+                          "metadataVersion": 1
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (possible parameters missing or invalid)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      }
+    },
+    "/registry/api/v1/inbox-agent-registration-search": {
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nFuzzy-search blockchain-tracked Masumi inbox registrations by slug, name, or linked email. By default, only pending and verified registrations are returned. Supports pagination and optional filtering by status and policy id.",
+        "summary": "REQUIRES API KEY Authentication (+user)",
+        "tags": [
+          "inbox-agent-registration"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10
+                  },
+                  "cursorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "description": "Case-insensitive fuzzy match against inbox agent slug, name, or linked email."
+                  },
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Pending",
+                            "Verified",
+                            "Invalid",
+                            "Deregistered"
+                          ]
+                        },
+                        "maxItems": 4
+                      },
+                      "policyId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "network",
+                  "query"
+                ],
+                "example": {
+                  "limit": 10,
+                  "cursorId": "last_paginated_item",
+                  "network": "Preprod",
+                  "query": "agent@example.com",
+                  "filter": {
+                    "policyId": "policy_id",
+                    "status": [
+                      "Pending",
+                      "Verified"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox agent registrations matching the fuzzy search",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "registrations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_InboxAgentRegistration"
+                          }
+                        }
+                      },
+                      "required": [
+                        "registrations"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "registrations": [
+                        {
+                          "id": "unique_cuid_v2",
+                          "createdAt": "1970-01-01T00:00:00.000Z",
+                          "updatedAt": "1970-01-01T00:02:00.000Z",
+                          "status": "Pending",
+                          "statusUpdatedAt": "1970-01-01T00:02:00.000Z",
+                          "name": "Inbox Agent",
+                          "description": "Masumi inbox identity registration",
+                          "agentSlug": "inbox-agent",
+                          "agentIdentifier": "333333333333333333333333333333333333333333333333333333333333333333",
+                          "providerUrl": "https://agentmessenger.io",
+                          "linkedEmail": "agent@example.com",
+                          "encryptionPublicKey": "encryption_public_key",
+                          "encryptionKeyVersion": "enc-v1",
+                          "signingPublicKey": "signing_public_key",
+                          "signingKeyVersion": "sig-v1",
+                          "metadataVersion": 1,
+                          "RegistrySource": {
+                            "id": "unique_cuid_v2",
+                            "policyId": "policy_id",
+                            "url": "https://example.com/registry.json"
+                          }
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (possible parameters missing or invalid)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      }
+    },
+    "/registry/api/v1/inbox-agent-registration": {
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nQuery blockchain-tracked Masumi inbox registrations. By default, only pending and verified registrations are returned. Supports pagination and filtering by slug, status, and policy id.",
+        "summary": "REQUIRES API KEY Authentication (+user)",
+        "tags": [
+          "inbox-agent-registration"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10
+                  },
+                  "cursorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "filter": {
+                    "type": "object",
+                    "properties": {
+                      "agentSlug": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "status": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "Pending",
+                            "Verified",
+                            "Invalid",
+                            "Deregistered"
+                          ]
+                        },
+                        "maxItems": 4
+                      },
+                      "policyId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "network"
+                ],
+                "example": {
+                  "limit": 10,
+                  "cursorId": "last_paginated_item",
+                  "network": "Preprod",
+                  "filter": {
+                    "policyId": "policy_id",
+                    "agentSlug": "inbox-agent",
+                    "status": [
+                      "Pending",
+                      "Verified"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox agent registrations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "registrations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_InboxAgentRegistration"
+                          }
+                        }
+                      },
+                      "required": [
+                        "registrations"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "registrations": [
+                        {
+                          "id": "unique_cuid_v2",
+                          "createdAt": "1970-01-01T00:00:00.000Z",
+                          "updatedAt": "1970-01-01T00:02:00.000Z",
+                          "status": "Pending",
+                          "statusUpdatedAt": "1970-01-01T00:02:00.000Z",
+                          "name": "Inbox Agent",
+                          "description": "Masumi inbox identity registration",
+                          "agentSlug": "inbox-agent",
+                          "agentIdentifier": "333333333333333333333333333333333333333333333333333333333333333333",
+                          "providerUrl": "https://agentmessenger.io",
+                          "linkedEmail": "agent@example.com",
+                          "encryptionPublicKey": "encryption_public_key",
+                          "encryptionKeyVersion": "enc-v1",
+                          "signingPublicKey": "signing_public_key",
+                          "signingKeyVersion": "sig-v1",
+                          "metadataVersion": 1,
+                          "RegistrySource": {
+                            "id": "unique_cuid_v2",
+                            "policyId": "policy_id",
+                            "url": "https://example.com/registry.json"
+                          }
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (possible parameters missing or invalid)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      }
+    },
+    "/registry/api/v1/inbox-agent-registration-diff": {
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nQuery inbox registrations whose status was updated after the provided timestamp. Supports pagination and optional filtering by status, slug, and policy id.",
+        "summary": "REQUIRES API KEY Authentication (+user)",
+        "tags": [
+          "inbox-agent-registration"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  },
+                  "statusUpdatedAfter": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10
+                  },
+                  "cursorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 75,
+                    "description": "The ID of the last item in the previous page. Use the last item statusUpdatedAt plus cursorId to paginate forward without missing transitions."
+                  },
+                  "policyId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 250
+                  },
+                  "agentSlug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "status": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "Pending",
+                        "Verified",
+                        "Invalid",
+                        "Deregistered"
+                      ]
+                    },
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "network",
+                  "statusUpdatedAfter"
+                ],
+                "example": {
+                  "limit": 10,
+                  "cursorId": "last_paginated_item",
+                  "network": "Preprod",
+                  "statusUpdatedAfter": "1970-01-01T00:00:00.000Z",
+                  "policyId": "policy_id",
+                  "agentSlug": "inbox-agent",
+                  "status": [
+                    "Pending",
+                    "Verified",
+                    "Invalid",
+                    "Deregistered"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox registrations with updated status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "registrations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_InboxAgentRegistration"
+                          }
+                        }
+                      },
+                      "required": [
+                        "registrations"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "registrations": [
+                        {
+                          "id": "unique_cuid_v2",
+                          "createdAt": "1970-01-01T00:00:00.000Z",
+                          "updatedAt": "1970-01-01T00:02:00.000Z",
+                          "status": "Pending",
+                          "statusUpdatedAt": "1970-01-01T00:02:00.000Z",
+                          "name": "Inbox Agent",
+                          "description": "Masumi inbox identity registration",
+                          "agentSlug": "inbox-agent",
+                          "agentIdentifier": "333333333333333333333333333333333333333333333333333333333333333333",
+                          "providerUrl": "https://agentmessenger.io",
+                          "linkedEmail": "agent@example.com",
+                          "encryptionPublicKey": "encryption_public_key",
+                          "encryptionKeyVersion": "enc-v1",
+                          "signingPublicKey": "signing_public_key",
+                          "signingKeyVersion": "sig-v1",
+                          "metadataVersion": 1,
+                          "RegistrySource": {
+                            "id": "unique_cuid_v2",
+                            "policyId": "policy_id",
+                            "url": "https://example.com/registry.json"
+                          }
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (possible parameters missing or invalid)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      }
+    },
+    "/registry/api/v1/registry-diff": {
       "post": {
         "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nQuery registry entries whose status was updated after the provided timestamp. Supports pagination. Always use statusUpdatedAt of the last item + its cursorId to paginate forward. This guarantees to include all items at least once, when paginating. Note: if the cursorId is not valid it will include all items with an id greater than the cursorId (in string comparison order). If no cursorId is provided, all items, including those with the same statusUpdatedAt, will be included. In case the statusUpdatedAt is before the provided statusUpdatedAfter, all items after the statusUpdatedAfter will be included, regardless of the cursorId.",
         "summary": "REQUIRES API KEY Authentication (+user)",
@@ -17481,7 +18424,6 @@
                           "RegistrySource": {
                             "id": "unique_cuid_v2",
                             "policyId": "policy_id",
-                            "type": "Web3CardanoV1",
                             "url": "https://example.com/api/"
                           },
                           "Capability": {
@@ -17525,10 +18467,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/payment-information": {
+    "/registry/api/v1/payment-information": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGet payment information for a registry entry",
         "summary": "REQUIRES API KEY Authentication (+user)",
@@ -17580,7 +18528,6 @@
                       "description": "Example Capability description",
                       "status": "Online",
                       "RegistrySource": {
-                        "type": "Web3CardanoV1",
                         "policyId": "0000000000000000000000000000000000000000000000000000000000000000",
                         "url": null
                       },
@@ -17646,10 +18593,16 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     },
-    "/v1/capability": {
+    "/registry/api/v1/capability": {
       "get": {
         "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets all capabilities that are currently online",
         "summary": "REQUIRES API KEY Authentication (+user)",
@@ -17726,7 +18679,363 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      }
+    },
+    "/registry/api/v1/registry-source": {
+      "get": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nGets all registry sources",
+        "summary": "REQUIRES API KEY Authentication (+admin)",
+        "tags": [
+          "registry-source"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 550
+            },
+            "required": false,
+            "name": "cursorId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registry sources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/RegistryProxy_RegistrySource"
+                          }
+                        }
+                      },
+                      "required": [
+                        "sources"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "sources": [
+                        {
+                          "id": "unique-cuid-v2-auto-generated",
+                          "policyId": "policyId",
+                          "url": "optional_url",
+                          "note": "optional_note",
+                          "rpcProviderApiKey": "optional_apikey",
+                          "network": "Preprod",
+                          "latestPage": 1,
+                          "latestIdentifier": "optional_latestIdentifier"
+                        }
+                      ]
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      },
+      "post": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nCreates a new registry source",
+        "summary": "REQUIRES API KEY Authentication (+admin)",
+        "tags": [
+          "registry-source"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "policyId": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "rpcProviderApiKey": {
+                    "type": "string"
+                  },
+                  "network": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ]
+                  }
+                },
+                "required": [
+                  "policyId",
+                  "note",
+                  "rpcProviderApiKey",
+                  "network"
+                ],
+                "example": {
+                  "policyId": "policyId",
+                  "rpcProviderApiKey": "apikey",
+                  "note": "optional_note",
+                  "network": "Preprod"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registry source",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RegistryProxy_RegistrySource"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "id": "unique-cuid-v2-auto-generated",
+                      "network": "Preprod",
+                      "url": "https://example.com/api/",
+                      "policyId": "policy_id",
+                      "note": "optional_note",
+                      "rpcProviderApiKey": "apikey",
+                      "latestPage": 1,
+                      "latestIdentifier": null
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      },
+      "patch": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nUpdates a registry source",
+        "summary": "REQUIRES API KEY Authentication (+admin)",
+        "tags": [
+          "registry-source"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "note": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "rpcProviderApiKey": {
+                    "type": "string"
+                  }
+                },
+                "example": {
+                  "id": "unique-cuid-v2-auto-generated",
+                  "note": "optional_note",
+                  "rpcProviderApiKey": "optional_apiKey"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registry source",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RegistryProxy_RegistrySource"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "id": "unique-cuid-v2-auto-generated",
+                      "network": "Preprod",
+                      "url": "https://example.com/api/",
+                      "policyId": "policy_id",
+                      "note": "optional_note",
+                      "rpcProviderApiKey": "apikey",
+                      "latestPage": 1,
+                      "latestIdentifier": null
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
+      },
+      "delete": {
+        "description": "Proxied via Masumi SaaS to the Masumi registry service. Authenticate here with a browser session or Masumi SaaS API key; SaaS forwards the upstream token server-side.\n\nUpdates a registry source",
+        "summary": "REQUIRES API KEY Authentication (+admin)",
+        "tags": [
+          "registry-source"
+        ],
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 150
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "example": {
+                  "id": "unique-cuid-v2-auto-generated"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registry source",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RegistryProxy_RegistrySource"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "status"
+                  ],
+                  "example": {
+                    "data": {
+                      "id": "unique-cuid-v2-auto-generated",
+                      "network": "Preprod",
+                      "url": "https://example.com/api/",
+                      "policyId": "policy_id",
+                      "note": "optional_note",
+                      "rpcProviderApiKey": "apikey",
+                      "latestPage": 1,
+                      "latestIdentifier": null
+                    },
+                    "status": "success"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "/",
+            "description": "This app"
+          }
+        ]
       }
     }
   }

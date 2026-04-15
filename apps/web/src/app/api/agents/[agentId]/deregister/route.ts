@@ -5,6 +5,7 @@ import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { deregisterAgentForUser } from "@/lib/deregister-agent";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 
 function networkFromRequest(request: NextRequest): PaymentNodeNetwork {
@@ -70,6 +71,12 @@ export async function POST(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("Failed to deregister agent:", error);
     return NextResponse.json(
       { success: false, error: "Failed to deregister agent" },

@@ -2,7 +2,6 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 import { APIError, betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import {
   admin,
@@ -19,10 +18,19 @@ import {
 import { localization } from "better-auth-localization";
 import { headers } from "next/headers";
 
+import {
+  buildStoredOtpValue,
+  createEmailOtpStoreOptions,
+  createMagicLinkTokenHasher,
+  createVerificationValue,
+  deleteVerificationByIdentifier,
+  securePrismaAuthAdapter,
+} from "@/lib/auth/auth-storage";
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
+import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
-import { emailConfig } from "@/lib/config/email.config";
+import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
 import {
   getPublicOidcMetadata,
   getTrustedOidcClients,
@@ -33,6 +41,7 @@ import {
 import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
+import { reactAgentMessengerMagicLinkEmail } from "@/lib/email/agent-messenger-magic-link";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -70,19 +79,13 @@ async function createEmailOtp(
   const identifier = `${type}-otp-${email.toLowerCase()}`;
   const otp = generateEmailVerificationCode();
 
-  await prisma.verification.deleteMany({
-    where: {
-      identifier,
-    },
-  });
+  await deleteVerificationByIdentifier(identifier);
 
-  await prisma.verification.create({
-    data: {
-      id: crypto.randomUUID(),
-      identifier,
-      value: `${otp}:0`,
-      expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
-    },
+  await createVerificationValue({
+    id: crypto.randomUUID(),
+    identifier,
+    value: buildStoredOtpValue(otp),
+    expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
   });
 
   return otp;
@@ -127,7 +130,7 @@ async function sendVerificationOtpEmail({
   const msg = getEmailMessages(locale).VerificationCode;
 
   await postmarkClient.sendEmail({
-    From: emailConfig.postmarkFromEmail,
+    From: getPostmarkFromHeader("verification"),
     To: email,
     Tag: "verification-code",
     Subject: msg.preview,
@@ -151,7 +154,7 @@ async function sendVerificationOtpEmail({
 export const auth = betterAuth({
   disabledPaths: ["/token"],
   appName: "Masumi",
-  database: prismaAdapter(prisma, {
+  database: securePrismaAuthAdapter(prisma, {
     provider: "postgresql",
   }),
   secret: authEnvConfig.secret,
@@ -159,10 +162,14 @@ export const auth = betterAuth({
   trustedOrigins: [
     authEnvConfig.baseUrl,
     oidcEnvConfig.issuer,
-    "http://localhost:2999",
-    "http://127.0.0.1:2999",
     ...getTrustedOidcOrigins(),
+    ...(process.env.NODE_ENV === "production"
+      ? []
+      : ["http://localhost:2999", "http://127.0.0.1:2999"]),
   ],
+  account: {
+    encryptOAuthTokens: true,
+  },
   emailAndPassword: {
     enabled: true,
     // Allow unverified users to sign in; we enforce verification at the action level instead
@@ -196,7 +203,7 @@ export const auth = betterAuth({
       const msg = getEmailMessages(locale);
 
       await postmarkClient.sendEmail({
-        From: emailConfig.postmarkFromEmail,
+        From: getPostmarkFromHeader("passwordReset"),
         To: user.email,
         Tag: "reset-password",
         Subject: msg.ResetPassword.preview,
@@ -209,7 +216,6 @@ export const auth = betterAuth({
             greeting: msg.ResetPassword.greeting,
             message: msg.ResetPassword.message,
             button: msg.ResetPassword.button,
-            linkText: msg.ResetPassword.linkText,
             footer: msg.ResetPassword.footer,
           },
         }),
@@ -255,7 +261,7 @@ export const auth = betterAuth({
 
       try {
         await postmarkClient.sendEmail({
-          From: emailConfig.postmarkFromEmail,
+          From: getPostmarkFromHeader("verification"),
           To: user.email,
           Tag: "verification-email",
           Subject: msg.preview,
@@ -273,7 +279,6 @@ export const auth = betterAuth({
               codeLabel: msg.codeLabel,
               codeExpiry: msg.codeExpiry,
               codeHelp: msg.codeHelp,
-              linkText: msg.linkText,
               footer: msg.footer,
             },
           }),
@@ -344,6 +349,7 @@ export const auth = betterAuth({
       consentPage: "/oidc/consent",
       useJWTPlugin: true,
       requirePKCE: true,
+      storeClientSecret: "hashed",
       scopes: OIDC_API_SCOPES,
       trustedClients: getTrustedOidcClients(),
       metadata: getPublicOidcMetadata(),
@@ -364,6 +370,7 @@ export const auth = betterAuth({
       expiresIn: EMAIL_OTP_EXPIRES_IN_SECONDS,
       otpLength: 6,
       allowedAttempts: EMAIL_OTP_ALLOWED_ATTEMPTS,
+      storeOTP: createEmailOtpStoreOptions(),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type !== "email-verification") {
           return;
@@ -376,11 +383,19 @@ export const auth = betterAuth({
     magicLink({
       expiresIn: authConfig.magicLink.expiresIn,
       rateLimit: authConfig.magicLink.rateLimit,
+      storeToken: createMagicLinkTokenHasher(),
       sendMagicLink: async ({ email, url }, ctx) => {
         const requestedName =
           typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
             ? ctx.body.name.trim()
             : null;
+        const callbackUrl =
+          typeof ctx?.body?.callbackURL === "string"
+            ? ctx.body.callbackURL
+            : typeof ctx?.body?.newUserCallbackURL === "string"
+              ? ctx.body.newUserCallbackURL
+              : undefined;
+        const isOidcMagicLink = isOidcMagicLinkCallbackUrl(callbackUrl);
         const existingUser = await prisma.user.findUnique({
           where: { email },
           select: { name: true },
@@ -414,41 +429,71 @@ export const auth = betterAuth({
 
         const headersList = await headers();
         const locale = parseAcceptLanguage(headersList.get("accept-language"));
-        const msg = getEmailMessages(locale).MagicLink;
+        const emailMessages = getEmailMessages(locale);
+        const msg = isOidcMagicLink
+          ? emailMessages.MagicLinkOidc
+          : emailMessages.MagicLink;
 
         try {
           if (process.env.NODE_ENV === "development") {
             logDevCode("Magic link sign-in code", email, magicCode);
           }
 
+          const htmlBody = isOidcMagicLink
+            ? await reactAgentMessengerMagicLinkEmail({
+                name,
+                magicLink: url,
+                magicCode,
+                logoUrl: emailConfig.agentMessengerLogoUrl,
+                poweredByLogoUrl: emailConfig.brandLogoUrl,
+                includePrivacyConsent: !existingUser,
+                privacyPolicyUrl: PRIVACY_POLICY_URL,
+                translations: {
+                  preview: msg.preview,
+                  title: msg.title,
+                  greeting: msg.greeting,
+                  message: msg.message,
+                  consentBefore: msg.consentBefore,
+                  consentPrivacyLabel: msg.consentPrivacyLabel,
+                  consentAfter: msg.consentAfter,
+                  button: msg.button,
+                  codeLabel: msg.codeLabel,
+                  codeExpiry: msg.codeExpiry,
+                  codeHelp: msg.codeHelp,
+                  footer: msg.footer,
+                },
+              })
+            : await reactMagicLinkEmail({
+                name,
+                magicLink: url,
+                magicCode,
+                logoUrl: emailConfig.brandLogoUrl,
+                includePrivacyConsent: !existingUser,
+                privacyPolicyUrl: PRIVACY_POLICY_URL,
+                translations: {
+                  preview: msg.preview,
+                  title: msg.title,
+                  greeting: msg.greeting,
+                  message: msg.message,
+                  consentBefore: msg.consentBefore,
+                  consentPrivacyLabel: msg.consentPrivacyLabel,
+                  consentAfter: msg.consentAfter,
+                  button: msg.button,
+                  codeLabel: msg.codeLabel,
+                  codeExpiry: msg.codeExpiry,
+                  codeHelp: msg.codeHelp,
+                  footer: msg.footer,
+                },
+              });
+
           await postmarkClient.sendEmail({
-            From: emailConfig.postmarkFromEmail,
+            From: getPostmarkFromHeader(
+              isOidcMagicLink ? "agentMessenger" : "magicLink",
+            ),
             To: email,
             Tag: "magic-link",
             Subject: msg.preview,
-            HtmlBody: await reactMagicLinkEmail({
-              name,
-              magicLink: url,
-              magicCode,
-              logoUrl: emailConfig.brandLogoUrl,
-              includePrivacyConsent: !existingUser,
-              privacyPolicyUrl: PRIVACY_POLICY_URL,
-              translations: {
-                preview: msg.preview,
-                title: msg.title,
-                greeting: msg.greeting,
-                message: msg.message,
-                consentBefore: msg.consentBefore,
-                consentPrivacyLabel: msg.consentPrivacyLabel,
-                consentAfter: msg.consentAfter,
-                button: msg.button,
-                codeLabel: msg.codeLabel,
-                codeExpiry: msg.codeExpiry,
-                codeHelp: msg.codeHelp,
-                linkText: msg.linkText,
-                footer: msg.footer,
-              },
-            }),
+            HtmlBody: htmlBody,
             MessageStream: "outbound",
           });
         } catch (err) {
@@ -472,6 +517,7 @@ export const auth = betterAuth({
     }),
     apiKey({
       defaultPrefix: authConfig.apiKey.defaultKeyPrefix,
+      disableKeyHashing: false,
       startingCharactersConfig: {
         shouldStore: true,
         charactersLength: 12,
@@ -568,7 +614,7 @@ export const auth = betterAuth({
               : "Member";
 
         await postmarkClient.sendEmail({
-          From: emailConfig.postmarkFromEmail,
+          From: getPostmarkFromHeader("invitation"),
           To: data.email,
           Tag: "organization-invitation",
           Subject: replaceOrganization(msg.preview),
@@ -584,7 +630,6 @@ export const auth = betterAuth({
               greeting: msg.greeting,
               message: msg.message,
               button: msg.button,
-              linkText: msg.linkText,
               footer: msg.footer,
             },
           }),

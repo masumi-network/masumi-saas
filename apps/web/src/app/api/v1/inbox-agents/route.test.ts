@@ -67,7 +67,7 @@ vi.mock("@/lib/schemas/inbox-agent", () => {
   };
 });
 
-describe("/api/v1/inbox-agents", () => {
+describe("/pay/api/v1/inbox-agents", () => {
   let GET: typeof import("./route").GET;
   let POST: typeof import("./route").POST;
 
@@ -99,7 +99,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod&take=1",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod&take=1",
       {
         method: "GET",
       },
@@ -142,7 +142,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,9 +187,46 @@ describe("/api/v1/inbox-agents", () => {
     });
   });
 
+  it("returns 503 when Mainnet payment-source config is missing", async () => {
+    const { PaymentNodeConfigError } =
+      await import("@/lib/payment-node/config");
+    const registerInboxAgentMock = vi.fn();
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      registerInboxAgent: registerInboxAgentMock,
+    });
+    prepareManagedInboxRegistrationMock.mockRejectedValue(
+      new PaymentNodeConfigError(
+        "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
+      ),
+    );
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Mainnet",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error:
+        "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
+    });
+    expect(registerInboxAgentMock).not.toHaveBeenCalled();
+  });
+
   it("rejects legacy wallet and top-up fields from the register schema", async () => {
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,7 +275,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

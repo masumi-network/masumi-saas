@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { cn } from "@/lib/utils";
 
 import { RequestVerificationDialog } from "./request-verification-dialog";
@@ -28,17 +29,22 @@ export function AgentVerificationCard({
   agent,
   onVerificationSuccess,
 }: AgentVerificationCardProps) {
+  const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
-  const [isLoadingKyc, setIsLoadingKyc] = useState(true);
+  const [isLoadingKyc, setIsLoadingKyc] = useState(agentVerificationEnabled);
   const [, startTransition] = useTransition();
 
   const status = agent.verificationStatus || "PENDING";
 
   useEffect(() => {
+    if (!agentVerificationEnabled) {
+      return;
+    }
+
     startTransition(async () => {
       const result = await getKycStatusAction();
       if (result.success && result.data) {
@@ -46,7 +52,11 @@ export function AgentVerificationCard({
       }
       setIsLoadingKyc(false);
     });
-  }, []);
+  }, [agentVerificationEnabled, startTransition]);
+
+  if (!agentVerificationEnabled) {
+    return null;
+  }
 
   const statusConfig = {
     PENDING: {

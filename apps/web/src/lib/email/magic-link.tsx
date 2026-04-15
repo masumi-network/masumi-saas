@@ -1,26 +1,17 @@
+import { Link, render } from "@react-email/components";
+
 import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  render,
-  Section,
-  Tailwind,
-  Text,
-} from "@react-email/components";
+  MasumiEmailButton,
+  MasumiEmailCodeBlock,
+  MasumiEmailLayout,
+  MasumiEmailParagraph,
+} from "./masumi-email-layout";
 
 interface MagicLinkEmailProps {
   name: string;
   magicLink: string;
   magicCode?: string;
   logoUrl?: string;
-  /** When true, show first-time consent line linking to the privacy policy. */
   includePrivacyConsent?: boolean;
   privacyPolicyUrl?: string;
   translations: {
@@ -35,7 +26,6 @@ interface MagicLinkEmailProps {
     codeLabel: string;
     codeExpiry: string;
     codeHelp: string;
-    linkText: string;
     footer: string;
   };
 }
@@ -47,90 +37,44 @@ export const MagicLinkEmail = ({
   logoUrl,
   includePrivacyConsent,
   privacyPolicyUrl,
-  translations,
-}: MagicLinkEmailProps) => {
-  return (
-    <Html>
-      <Head />
-      <Preview>{translations.preview}</Preview>
-      <Tailwind>
-        <Body className="mx-auto my-auto bg-white px-2 font-sans">
-          <Container className="mx-auto my-[40px] max-w-[465px] rounded border border-solid border-[#eaeaea] p-[20px]">
-            {logoUrl ? (
-              <Section className="mb-[24px] text-center">
-                <Img
-                  src={logoUrl}
-                  alt="Masumi"
-                  width={48}
-                  height={48}
-                  className="mx-auto rounded-full"
-                  style={{ borderRadius: "50%" }}
-                />
-              </Section>
-            ) : null}
-            <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-black">
-              {translations.title}
-            </Heading>
-            <Text className="text-[14px] leading-[24px] text-black">
-              {translations.greeting.replace("{name}", () => name)}
-            </Text>
-            <Text className="text-[14px] leading-[24px] text-black">
-              {translations.message}
-            </Text>
-            {magicCode ? (
-              <Section className="my-[32px] rounded border border-solid border-[#eaeaea] bg-[#fafafa] px-[16px] py-[20px] text-center">
-                <Text className="m-0 text-[12px] uppercase tracking-[0.2em] text-[#666666]">
-                  {translations.codeLabel}
-                </Text>
-                <Text className="m-0 mt-[12px] text-[32px] font-semibold tracking-[0.35em] text-black">
-                  {magicCode}
-                </Text>
-                <Text className="m-0 mt-[12px] text-[14px] leading-[24px] text-[#666666]">
-                  {translations.codeExpiry}
-                </Text>
-              </Section>
-            ) : null}
-            {magicCode ? (
-              <Text className="text-[14px] leading-[24px] text-black">
-                {translations.codeHelp}
-              </Text>
-            ) : null}
-            {includePrivacyConsent && privacyPolicyUrl ? (
-              <Text className="text-[13px] leading-[22px] text-[#444444] mt-[16px]">
-                {translations.consentBefore}
-                <Link
-                  href={privacyPolicyUrl}
-                  className="text-blue-600 no-underline"
-                >
-                  {translations.consentPrivacyLabel}
-                </Link>
-                {translations.consentAfter}
-              </Text>
-            ) : null}
-            <Section className="mt-[32px] mb-[32px] text-center">
-              <Button
-                className="rounded bg-[#000000] px-5 py-3 text-center text-[12px] font-semibold text-white no-underline"
-                href={magicLink}
-              >
-                {translations.button}
-              </Button>
-            </Section>
-            <Text className="text-[14px] leading-[24px] text-black">
-              {translations.linkText}{" "}
-              <Link href={magicLink} className="text-blue-600 no-underline">
-                {magicLink}
-              </Link>
-            </Text>
-            <Hr className="mx-0 my-[26px] w-full border border-solid border-[#eaeaea]" />
-            <Text className="text-[12px] leading-[24px] text-[#666666]">
-              {translations.footer}
-            </Text>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
-  );
-};
+  translations: t,
+}: MagicLinkEmailProps) => (
+  <MasumiEmailLayout
+    preview={t.preview}
+    title={t.title}
+    greeting={t.greeting.replace("{name}", name)}
+    footer={t.footer}
+    logoUrl={logoUrl}
+  >
+    <MasumiEmailParagraph>{t.message}</MasumiEmailParagraph>
+
+    {magicCode ? (
+      <>
+        <MasumiEmailParagraph>{t.codeHelp}</MasumiEmailParagraph>
+        <MasumiEmailCodeBlock
+          label={t.codeLabel}
+          code={magicCode}
+          helperText={t.codeExpiry}
+        />
+      </>
+    ) : null}
+
+    {includePrivacyConsent && privacyPolicyUrl ? (
+      <MasumiEmailParagraph>
+        {t.consentBefore}
+        <Link
+          href={privacyPolicyUrl}
+          className="font-medium text-[#ff51ff] no-underline"
+        >
+          {t.consentPrivacyLabel}
+        </Link>
+        {t.consentAfter}
+      </MasumiEmailParagraph>
+    ) : null}
+
+    <MasumiEmailButton href={magicLink}>{t.button}</MasumiEmailButton>
+  </MasumiEmailLayout>
+);
 
 export async function reactMagicLinkEmail(props: MagicLinkEmailProps) {
   return await render(<MagicLinkEmail {...props} />);

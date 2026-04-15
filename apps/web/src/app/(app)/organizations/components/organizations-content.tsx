@@ -38,7 +38,9 @@ export function OrganizationsContent({
     return (
       <Card className="border-border bg-muted-surface/50">
         <CardContent className="flex flex-col items-center justify-center py-16">
-          <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Building2 className="h-6 w-6 text-muted-foreground" />
+          </div>
           <p className="mb-6 text-center text-muted-foreground">{t("empty")}</p>
           <CreateOrganizationDialog triggerVariant="default" />
         </CardContent>

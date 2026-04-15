@@ -54,7 +54,8 @@ vi.mock("@/lib/api/agent-metadata", () => ({
 }));
 
 vi.mock("@/lib/schemas", () => ({
-  parseNetwork: () => "Preprod",
+  parseNetwork: (value?: string) =>
+    value === "Mainnet" ? "Mainnet" : "Preprod",
 }));
 
 vi.mock("@/lib/schemas/agent", () => {
@@ -164,6 +165,39 @@ describe("/api/agents POST", () => {
       },
     });
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 503 when Mainnet payment-source config is missing", async () => {
+    const { PaymentNodeConfigError } =
+      await import("@/lib/payment-node/config");
+    startAgentRegistrationMock.mockRejectedValue(
+      new PaymentNodeConfigError(
+        "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
+      ),
+    );
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Mainnet",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Research assistant",
+          description: "Helps with literature review",
+          apiUrl: "https://agent.example.com/mip",
+          tags: "research, nlp",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error:
+        "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
+    });
   });
 
   it("lists only wallet-owned agents for the selected network", async () => {

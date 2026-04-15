@@ -14,8 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 
 function DetailsTabSkeleton() {
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
       <div className="flex flex-col gap-2">
@@ -88,15 +91,18 @@ function DetailsTabSkeleton() {
               </div>
             </div>
 
-            {/* Verification CTA */}
-            <Separator />
-            <div className="flex gap-3 items-center justify-between">
-              <div className="flex gap-3 items-center min-w-0">
-                <Skeleton className="h-4 w-4 shrink-0 rounded" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-              <Skeleton className="h-9 w-40 shrink-0 rounded-md" />
-            </div>
+            {agentVerificationUiEnabled && (
+              <>
+                <Separator />
+                <div className="flex gap-3 items-center justify-between">
+                  <div className="flex gap-3 items-center min-w-0">
+                    <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-9 w-40 shrink-0 rounded-md" />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

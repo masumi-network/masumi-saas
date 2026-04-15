@@ -1,11 +1,11 @@
 import type { OIDCMetadata } from "better-auth/plugins/oidc-provider";
 
-import { authEnvConfig } from "@/lib/config/auth.config";
+import { authEnvConfig } from "./auth.config";
 import {
   getAllowedApiScopesForClient,
   OIDC_SUPPORTED_SCOPES,
   type OidcClientKey,
-} from "@/lib/config/oidc-scopes.config";
+} from "./oidc-scopes.config";
 
 type TrustedOidcClient = {
   clientId: string;
@@ -82,12 +82,13 @@ export const oidcEnvConfig = {
     process.env.OIDC_DEVICE_VERIFICATION_URI?.trim() || "/device",
   web: {
     clientId: process.env.OIDC_WEB_CLIENT_ID?.trim() || "masumi-spacetime-web",
-    clientName: process.env.OIDC_WEB_CLIENT_NAME?.trim() || "Masumi Web App",
+    clientName: process.env.OIDC_WEB_CLIENT_NAME?.trim() || "Agent Messenger",
     redirectUrls: webRedirectUrls,
   },
   cli: {
     clientId: process.env.OIDC_CLI_CLIENT_ID?.trim() || "masumi-spacetime-cli",
-    clientName: process.env.OIDC_CLI_CLIENT_NAME?.trim() || "Masumi CLI",
+    clientName:
+      process.env.OIDC_CLI_CLIENT_NAME?.trim() || "Agent Messenger CLI",
     redirectUrls: cliRedirectUrls,
   },
 } as const;
@@ -146,7 +147,7 @@ export function getPublicOidcMetadata(): Partial<OIDCMetadata> {
       "urn:mace:incommon:iap:bronze",
     ],
     subject_types_supported: ["public"] as ["public"],
-    id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG, "none"],
+    id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG],
     token_endpoint_auth_methods_supported: [
       "client_secret_basic",
       "client_secret_post",

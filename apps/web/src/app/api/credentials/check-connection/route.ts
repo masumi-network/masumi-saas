@@ -4,6 +4,10 @@ import { z } from "zod";
 import { apiError } from "@/lib/api/error";
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 import { checkContactExists } from "@/lib/veridian";
 
 const checkConnectionSchema = z.object({
@@ -12,6 +16,13 @@ const checkConnectionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     requireAnyNetworkedOidcApiScope(authContext, {
       resource: "credentials",

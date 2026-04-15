@@ -198,6 +198,95 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/registry-entry-search/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * REQUIRES API KEY Authentication (+user)
+     * @description Fuzzy-search online (or explicitly filtered) registry entries by core metadata, capability, asset identifier, api base URL, and tags. Supports the same pagination, structured filters, and optional health-check refresh as the standard registry query endpoint.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            network: "Preprod" | "Mainnet";
+            /** @default 10 */
+            limit?: number;
+            cursorId?: string;
+            /** @description Case-insensitive fuzzy match against registry entry core metadata, capability, asset identifier, api base URL, and tags. */
+            query: string;
+            filter?: {
+              paymentTypes?: ("Web3CardanoV1" | "None")[];
+              status?: ("Online" | "Offline" | "Deregistered" | "Invalid")[];
+              policyId?: string;
+              assetIdentifier?: string;
+              tags?: string[];
+              capability?: {
+                name: string;
+                version?: string;
+              };
+            };
+            minHealthCheckDate?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Registry entries matching the fuzzy search */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              data: {
+                entries: components["schemas"]["RegistryEntry"][];
+              };
+              status: string;
+            };
+          };
+        };
+        /** @description Bad Request (possible parameters missing or invalid) */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthorized */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Internal Server Error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/inbox-agent-registration/": {
     parameters: {
       query?: never;
@@ -236,6 +325,87 @@ export interface paths {
       };
       responses: {
         /** @description Inbox agent registrations */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              data: {
+                registrations: components["schemas"]["InboxAgentRegistration"][];
+              };
+              status: string;
+            };
+          };
+        };
+        /** @description Bad Request (possible parameters missing or invalid) */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthorized */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Internal Server Error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/inbox-agent-registration-search/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * REQUIRES API KEY Authentication (+user)
+     * @description Fuzzy-search blockchain-tracked Masumi inbox registrations by slug, name, or linked email. By default, only pending and verified registrations are returned. Supports pagination and optional filtering by status and policy id.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            network: "Preprod" | "Mainnet";
+            /** @default 10 */
+            limit?: number;
+            cursorId?: string;
+            /** @description Case-insensitive fuzzy match against inbox agent slug, name, or linked email. */
+            query: string;
+            filter?: {
+              status?: ("Pending" | "Verified" | "Invalid" | "Deregistered")[];
+              policyId?: string;
+            };
+          };
+        };
+      };
+      responses: {
+        /** @description Inbox agent registrations matching the fuzzy search */
         200: {
           headers: {
             [name: string]: unknown;
@@ -412,8 +582,6 @@ export interface paths {
       requestBody?: {
         content: {
           "application/json": {
-            /** @enum {string} */
-            type: "Web3CardanoV1" | "MasumiInboxV1";
             policyId: string;
             note: string | null;
             rpcProviderApiKey: string;
@@ -950,8 +1118,6 @@ export interface components {
       updatedAt: string;
       metadataVersion: number;
       RegistrySource: {
-        /** @enum {string} */
-        type: "Web3CardanoV1" | "MasumiInboxV1";
         policyId: string | null;
         url: string | null;
       };
@@ -1035,8 +1201,6 @@ export interface components {
       paymentType: "Web3CardanoV1" | "None";
       RegistrySource: {
         id: string;
-        /** @enum {string} */
-        type: "Web3CardanoV1" | "MasumiInboxV1";
         policyId: string | null;
         url: string | null;
       };
@@ -1082,19 +1246,21 @@ export interface components {
       description: string | null;
       agentSlug: string;
       agentIdentifier: string;
+      providerUrl: string | null;
+      linkedEmail: string | null;
+      encryptionPublicKey: string | null;
+      encryptionKeyVersion: string | null;
+      signingPublicKey: string | null;
+      signingKeyVersion: string | null;
       metadataVersion: number;
       RegistrySource: {
         id: string;
-        /** @enum {string} */
-        type: "MasumiInboxV1";
         policyId: string | null;
         url: string | null;
       };
     };
     RegistrySource: {
       id: string;
-      /** @enum {string} */
-      type: "Web3CardanoV1" | "MasumiInboxV1";
       url: string | null;
       policyId: string | null;
       note: string | null;

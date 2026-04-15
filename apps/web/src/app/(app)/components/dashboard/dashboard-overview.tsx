@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, Key, ShieldCheck } from "lucide-react";
+import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -15,7 +15,6 @@ import { formatPricingDisplay, getGreeting } from "@/lib/utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardActivitySummaryCard } from "./dashboard-activity-summary-card";
-import { DashboardKycBanner } from "./dashboard-kyc-banner";
 import { DashboardOrgContextBanner } from "./dashboard-org-context-banner";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 import { DashboardRevenueCard } from "./dashboard-revenue-card";
@@ -28,30 +27,13 @@ export default async function DashboardOverview({
 }) {
   const t = await getTranslations("App.Home.Dashboard");
 
-  const {
-    user,
-    kycStatus,
-    kycError,
-    agents,
-    apiKeys,
-    organizationCount,
-    apiKeyCount,
-    agentCount,
-  } = data;
+  const { user, agents, apiKeys, organizationCount, apiKeyCount, agentCount } =
+    data;
 
   const userName = user.name || user.email || "User";
   const greeting = getGreeting();
   const isNewUser =
     organizationCount === 0 && apiKeyCount === 0 && agentCount === 0;
-  const isKycCompleted = kycStatus === "APPROVED" || kycStatus === "VERIFIED";
-  const needsKycAction =
-    !kycError &&
-    (kycStatus === "PENDING" ||
-      kycStatus === "REVIEW" ||
-      kycStatus === "REJECTED" ||
-      kycStatus === "REVOKED" ||
-      kycStatus === "EXPIRED");
-  const showStartKycCta = needsKycAction;
 
   return (
     <div className="animate-in fade-in duration-300 min-w-0 space-y-8">
@@ -105,29 +87,9 @@ export default async function DashboardOverview({
         </div>
       </div>
 
-      {/* KYC load error - when lookup failed */}
-      {kycError && (
-        <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3">
-          <p className="text-sm text-muted-foreground">{t("kycLoadError")}</p>
-        </div>
-      )}
-
-      {/* Start KYC CTA - compact banner when KYC not submitted */}
-      {showStartKycCta && (
-        <DashboardKycBanner
-          startKycPrompt={t("startKycPrompt")}
-          startKyc={t("startKyc")}
-        />
-      )}
-
       {/* Get started checklist - for new users */}
       {isNewUser && (
-        <GetStartedCard
-          user={{ emailVerified: user.emailVerified }}
-          isKycCompleted={isKycCompleted}
-          kycError={kycError}
-          needsKycAction={needsKycAction}
-        />
+        <GetStartedCard user={{ emailVerified: user.emailVerified }} />
       )}
 
       {/* Agents and API Keys - same row */}
@@ -149,7 +111,9 @@ export default async function DashboardOverview({
           <CardContent className="min-w-0 space-y-4">
             {agents.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
-                <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Bot className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="text-center text-sm font-medium text-foreground">
                   {t("noAgentsYet")}
                 </p>
@@ -183,9 +147,6 @@ export default async function DashboardOverview({
                           >
                             {agent.name}
                           </p>
-                          {agent.verificationStatus === "VERIFIED" && (
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
-                          )}
                         </div>
                       </div>
                       <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
@@ -219,7 +180,9 @@ export default async function DashboardOverview({
           <CardContent className="space-y-4">
             {apiKeys.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4">
-                <Key className="mb-3 h-10 w-10 text-muted-foreground" />
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Key className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="text-center text-sm font-medium text-foreground">
                   {t("noApiKeysYet")}
                 </p>

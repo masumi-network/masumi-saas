@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { apiError } from "@/lib/api/error";
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+      );
+    }
+
     const authContext = await getAuthenticatedOrThrow(request);
     requireAnyNetworkedOidcApiScope(authContext, {
       resource: "credentials",

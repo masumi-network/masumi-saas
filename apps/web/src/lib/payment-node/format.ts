@@ -1,6 +1,6 @@
 /** Shared payment-node display helpers used by activity, transactions, and earnings API routes. */
 
-import { getKnownTokenByUnit, USDCX, USDM } from "./tokens";
+import { getKnownStableTokenByUnit, getKnownTokenByUnit } from "./tokens";
 
 export type Network = "Mainnet" | "Preprod";
 
@@ -59,7 +59,7 @@ export function formatUnits(
   return units.map((u) => formatUnitAmount(u.unit, u.amount)).join(", ");
 }
 
-/** Format earnings as USD when units are USDM/tUSDM or Mainnet USDCx (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
+/** Format earnings as USD when units are supported stablecoins. Falls back to formatUnits for ADA/other. */
 export function formatEarningsAsUsd(
   units: Array<{ unit: string; amount: number }>,
 ): string {
@@ -67,19 +67,13 @@ export function formatEarningsAsUsd(
   let usdCents = 0;
   const other: Array<{ unit: string; amount: number }> = [];
   for (const u of units) {
-    if (u.unit === USDM.Preprod.unit) {
-      usdCents += Math.round(
-        Number(u.amount) / 10 ** (USDM.Preprod.decimals - 2),
-      );
-    } else if (u.unit === USDM.Mainnet.unit) {
-      usdCents += Math.round(
-        Number(u.amount) / 10 ** (USDM.Mainnet.decimals - 2),
-      );
-    } else if (u.unit === USDCX.unit) {
-      usdCents += Math.round(Number(u.amount) / 10 ** (USDCX.decimals - 2));
-    } else {
+    const stableToken = getKnownStableTokenByUnit(u.unit);
+    if (!stableToken) {
       other.push(u);
+      continue;
     }
+
+    usdCents += Math.round(Number(u.amount) / 10 ** (stableToken.decimals - 2));
   }
   const usdFormatted = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -96,28 +90,24 @@ export function formatEarningsAsUsd(
 export type DashboardEarningsAmountUnit = "USD" | "ADA";
 
 /**
- * Split payment-node income `Units` into USD-pegged stablecoins and ADA (from lovelace).
- * Mainnet: USDM and USDCx; Preprod: tUSDM. Unknown units are ignored for the dashboard aggregate.
+ * Split payment-node income `Units` into supported stablecoins (as USD float)
+ * and ADA (from lovelace). Unknown units are ignored for the dashboard aggregate.
  */
 export function splitIncomeUnitsStablecoinUsdAndAda(
   units: Array<{ unit: string; amount: number }>,
   network: Network,
 ): { usd: number; ada: number } {
-  const stableMatches =
-    network === "Mainnet"
-      ? [
-          { unit: USDM.Mainnet.unit, decimals: USDM.Mainnet.decimals },
-          { unit: USDCX.unit, decimals: USDCX.decimals },
-        ]
-      : [{ unit: USDM.Preprod.unit, decimals: USDM.Preprod.decimals }];
   let usd = 0;
   let ada = 0;
   for (const u of units) {
-    const match = stableMatches.find((s) => s.unit === u.unit);
-    if (match) {
-      usd += Number(u.amount) / 10 ** match.decimals;
-    } else if (u.unit === "" || u.unit === "lovelace") {
+    if (u.unit === "" || u.unit === "lovelace") {
       ada += Number(u.amount) / 1_000_000;
+      continue;
+    }
+
+    const stableToken = getKnownStableTokenByUnit(u.unit, network);
+    if (stableToken) {
+      usd += Number(u.amount) / 10 ** stableToken.decimals;
     }
   }
   return { usd, ada };
@@ -149,15 +139,4 @@ export function formatDashboardEarningsTotal(
     minimumFractionDigits: 2,
     maximumFractionDigits: 6,
   })} ADA`;
-}
-
-/**
- * Absolute integer % change vs a previous total (dashboard + earnings “vs prev. period”).
- * Caller must only use when `previous > 0` (same guards as the UI).
- */
-export function earningsPercentChangeMagnitude(
-  current: number,
-  previous: number,
-): number {
-  return Math.abs(Math.round(((current - previous) / previous) * 100));
 }

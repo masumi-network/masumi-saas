@@ -1,7 +1,7 @@
-import prisma from "@masumi/database/client";
 import { getJwtToken, type JwtOptions } from "better-auth/plugins";
 
 import { auth } from "@/lib/auth/auth";
+import { findOauthAccessTokenByRefreshToken } from "@/lib/auth/auth-storage";
 import { authEnvConfig } from "@/lib/config/auth.config";
 import {
   OIDC_ID_TOKEN_SIGNING_ALG,
@@ -148,8 +148,7 @@ export async function createIdTokenForAccessTokenRecord(
 export async function createIdTokenForRefreshToken(
   refreshToken: string,
 ): Promise<string | null> {
-  const tokenRecord = (await prisma.oauthAccessToken.findUnique({
-    where: { refreshToken },
+  const tokenRecord = (await findOauthAccessTokenByRefreshToken(refreshToken, {
     include: { user: true },
   })) as OidcAccessTokenRecord | null;
 

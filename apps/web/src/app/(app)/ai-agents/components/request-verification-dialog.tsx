@@ -41,6 +41,7 @@ import {
 import { VeridianWalletConnect } from "@/components/veridian";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
@@ -71,6 +72,7 @@ export function RequestVerificationDialog({
   onSuccess,
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
+  const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const tStatus = useTranslations("App.Agents");
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,6 +108,10 @@ export function RequestVerificationDialog({
   }, [onSuccess, onOpenChange]);
 
   useEffect(() => {
+    if (!agentVerificationEnabled) {
+      return;
+    }
+
     if (!open) {
       setStep(0);
       veridianConnectKeyRef.current += 1;
@@ -121,10 +127,11 @@ export function RequestVerificationDialog({
       setIsWaitingForAcceptance(false);
       lastCheckedAidRef.current = null;
     }
-  }, [open]);
+  }, [agentVerificationEnabled, open]);
 
   // Fetch or generate verification challenge when dialog opens
   useEffect(() => {
+    if (!agentVerificationEnabled) return;
     if (!open || !agent.id || kycStatus !== "APPROVED") return;
 
     let cancelled = false;
@@ -152,7 +159,7 @@ export function RequestVerificationDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, agent.id, kycStatus]);
+  }, [agentVerificationEnabled, open, agent.id, kycStatus]);
 
   // Poll for credential acceptance after issue (timeout so user is not trapped)
   const pollAttemptsRef = useRef(0);
@@ -161,6 +168,7 @@ export function RequestVerificationDialog({
   const MAX_POLL_ATTEMPTS = 100; // ~5 minutes
 
   useEffect(() => {
+    if (!agentVerificationEnabled) return;
     if (!pendingCredentialId || !isWaitingForAcceptance) return;
     pollAttemptsRef.current = 0;
 
@@ -207,7 +215,12 @@ export function RequestVerificationDialog({
     return () => {
       stopPolling();
     };
-  }, [pendingCredentialId, isWaitingForAcceptance, t]);
+  }, [
+    agentVerificationEnabled,
+    pendingCredentialId,
+    isWaitingForAcceptance,
+    t,
+  ]);
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
@@ -462,6 +475,10 @@ export function RequestVerificationDialog({
   ];
 
   const isLastStep = step === STEP_COUNT - 1;
+
+  if (!agentVerificationEnabled) {
+    return null;
+  }
 
   const isNextDisabled =
     isTestingEndpoint ||

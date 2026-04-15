@@ -10,16 +10,17 @@ import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { parseValidAgentCollectionAddress } from "@/lib/cardano/agent-collection-address";
 import {
   consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
   registerAgentBodySchema,
 } from "@/lib/schemas/agent";
+import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 
 function matchesAgentSearch(
   agent: {
@@ -202,7 +203,6 @@ export async function POST(request: NextRequest) {
       description,
       extendedDescription,
       apiUrl,
-      collectionAddress,
       tags,
       icon,
       pricing,
@@ -234,13 +234,18 @@ export async function POST(request: NextRequest) {
       action: "write",
       network,
     });
-    const collectionParsed = parseValidAgentCollectionAddress(
-      collectionAddress,
-      network,
-    );
-    if (!collectionParsed.ok) {
+
+    try {
+      await assertAllowedAgentApiUrl(apiUrl);
+    } catch (error) {
+      if (error instanceof Error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
-        { success: false, error: collectionParsed.error },
+        { success: false, error: "Invalid API URL" },
         { status: 400 },
       );
     }
@@ -267,7 +272,6 @@ export async function POST(request: NextRequest) {
         | string
         | null,
       apiUrl,
-      sellingCollectionAddress: collectionParsed.address,
       tags: tagsArray,
       icon: icon?.trim() || null,
       agentPricing,
@@ -316,6 +320,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("Failed to register agent:", error);
     return NextResponse.json(
       { success: false, error: "Failed to register agent" },

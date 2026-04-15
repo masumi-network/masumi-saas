@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Suspense } from "react";
 
 import { EarningsPageContent } from "./earnings-page-content";
 
@@ -12,20 +11,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function EarningsPageFallback() {
-  return (
-    <div className="space-y-8" aria-busy>
-      <div className="bg-muted h-9 max-w-md animate-pulse rounded-md" />
-      <div className="bg-muted h-24 max-w-lg animate-pulse rounded-md" />
-      <div className="bg-muted h-[min(22rem,55vh)] min-h-[240px] w-full animate-pulse rounded-lg" />
-    </div>
-  );
-}
+export default async function EarningsPage() {
+  const t = await getTranslations("App.Earnings");
 
-export default function EarningsPage() {
   return (
-    <Suspense fallback={<EarningsPageFallback />}>
+    <div className="space-y-8 animate-page-in">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground text-sm leading-6">
+          {t("description")}
+        </p>
+      </div>
       <EarningsPageContent />
-    </Suspense>
+    </div>
   );
 }

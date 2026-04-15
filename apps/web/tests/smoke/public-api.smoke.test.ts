@@ -130,22 +130,40 @@ describe("SMOKE — Public API /api/v1/", () => {
   });
 });
 
-describe("SMOKE — Authenticated /api/v1 proxy", () => {
-  it("GET /api/v1/registry without auth → 401", async () => {
-    const res = await request("/api/v1/registry?network=Preprod");
+describe("SMOKE — Authenticated payment/registry wrappers", () => {
+  it("GET /pay/api/v1/registry without auth → 401", async () => {
+    const res = await request("/pay/api/v1/registry?network=Preprod");
     expect(res.status).toBe(401);
   });
 
-  it("GET /api/v1/inbox-agents without auth → 401", async () => {
-    const res = await request("/api/v1/inbox-agents?network=Preprod");
+  it("GET /pay/api/v1/inbox-agents without auth → 401", async () => {
+    const res = await request("/pay/api/v1/inbox-agents?network=Preprod");
     expect(res.status).toBe(401);
   });
 
-  it("POST /api/v1/registry-entry without auth → 401", async () => {
-    const res = await request("/api/v1/registry-entry?network=Preprod", {
-      method: "POST",
-      body: { limit: 1, network: "Preprod" },
-    });
+  it("POST /registry/api/v1/registry-entry without auth → 401", async () => {
+    const res = await request(
+      "/registry/api/v1/registry-entry?network=Preprod",
+      {
+        method: "POST",
+        body: { limit: 1, network: "Preprod" },
+      },
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /registry/api/v1/inbox-agent-registration-search without auth → 401", async () => {
+    const res = await request(
+      "/registry/api/v1/inbox-agent-registration-search?network=Preprod",
+      {
+        method: "POST",
+        body: {
+          limit: 1,
+          network: "Preprod",
+          query: "agent@example.com",
+        },
+      },
+    );
     expect(res.status).toBe(401);
   });
 
@@ -156,11 +174,11 @@ describe("SMOKE — Authenticated /api/v1 proxy", () => {
     expect(res.status).toBe(404);
   });
 
-  it("GET /api/v1/registry-source — registry admin path is not exposed → 404", async () => {
+  it("GET /registry/api/v1/registry-source without admin → 403", async () => {
     const { signIn } = await import("../helpers");
     const jar = await signIn();
-    const res = await request("/api/v1/registry-source", { jar });
-    expect(res.status).toBe(404);
+    const res = await request("/registry/api/v1/registry-source", { jar });
+    expect(res.status).toBe(403);
   });
 
   it("URL-encoded path traversal (%2e%2e) is not routable → 404", async () => {
@@ -172,12 +190,23 @@ describe("SMOKE — Authenticated /api/v1 proxy", () => {
     const res = await request("/api/openapi");
     expect(res.status).toBe(200);
     const b = res.body as { paths?: Record<string, unknown> };
-    expect(b.paths?.["/v1/registry-entry"]).toBeDefined();
-    expect(b.paths?.["/v1/registry-diff"]).toBeDefined();
-    expect(b.paths?.["/v1/capability"]).toBeDefined();
-    expect(b.paths?.["/v1/registry-inbox"]).toBeUndefined();
-    expect(b.paths?.["/v1/inbox-agent-registration"]).toBeUndefined();
-    expect(b.paths?.["/v1/inbox-agents"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-entry"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-entry-search"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-diff"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/capability"]).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration-search"],
+    ).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration"],
+    ).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration-diff"],
+    ).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-source"]).toBeDefined();
+    expect(b.paths?.["/pay/api/v1/payment"]).toBeDefined();
+    expect(b.paths?.["/pay/api/v1/inbox-agents"]).toBeDefined();
+    expect(b.paths?.["/v1/registry-entry"]).toBeUndefined();
     expect(b.paths?.["/inbox-agents"]).toBeUndefined();
   });
 });

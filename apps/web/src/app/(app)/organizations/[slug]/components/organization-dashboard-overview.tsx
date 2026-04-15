@@ -37,6 +37,10 @@ import type {
   OrgMember,
 } from "@/lib/actions/organization.action";
 import type { Agent } from "@/lib/api/agent.client";
+import {
+  isAgentVerificationFlowEnabled,
+  isKybVerificationEnabled,
+} from "@/lib/config/verification.config";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 import {
@@ -102,6 +106,8 @@ export function OrganizationDashboardOverview({
   const slugDisplay = `@${organization.slug}`;
   const isOwnerOrAdmin =
     organization.role === "owner" || organization.role === "admin";
+  const kybUiEnabled = isKybVerificationEnabled();
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
 
   useEffect(() => {
     const handler = () => router.refresh();
@@ -157,7 +163,7 @@ export function OrganizationDashboardOverview({
                 {isActive && (
                   <Badge variant="default">{tDetail("current")}</Badge>
                 )}
-                {kybStatus && (
+                {kybUiEnabled && kybStatus && (
                   <Badge variant={getKybStatusVariant(kybStatus)}>
                     {t(`kybStatus.${kybStatus}`)}
                   </Badge>
@@ -302,6 +308,7 @@ export function OrganizationDashboardOverview({
                       </p>
                       <Badge
                         variant={
+                          agentVerificationUiEnabled &&
                           agent.verificationStatus === "VERIFIED"
                             ? getVerificationStatusBadgeVariant(
                                 agent.verificationStatus as Agent["verificationStatus"],
@@ -315,7 +322,8 @@ export function OrganizationDashboardOverview({
                         }
                         className="min-w-fit shrink-0 capitalize"
                       >
-                        {agent.verificationStatus === "VERIFIED"
+                        {agentVerificationUiEnabled &&
+                        agent.verificationStatus === "VERIFIED"
                           ? tStatus(
                               getVerificationStatusKey(
                                 agent.verificationStatus as Agent["verificationStatus"],

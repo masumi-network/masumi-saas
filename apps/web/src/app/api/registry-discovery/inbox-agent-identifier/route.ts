@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
+  getEffectivePaymentNetwork,
   resolvePaymentUserTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
@@ -15,10 +16,11 @@ export async function GET(request: NextRequest) {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
-    rejectOidcAccessTokenAuth(
-      authContext,
-      "OIDC access tokens are not supported for this inbox lookup endpoint",
-    );
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "inbox-agents",
+      action: "read",
+      network: getEffectivePaymentNetwork(request),
+    });
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {

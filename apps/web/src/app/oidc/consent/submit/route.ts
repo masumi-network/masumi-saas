@@ -1,8 +1,11 @@
-import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import { findVerificationByIdentifier } from "@/lib/auth/auth-storage";
+import {
+  buildAbsoluteAppUrl,
+  sanitizeCallbackUrl,
+} from "@/lib/auth/callback-url";
 import { getAuthErrorDetails } from "@/lib/auth/error-results";
 import { addUserOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 
@@ -13,12 +16,8 @@ type ConsentVerificationValue = {
   userId?: unknown;
 };
 
-function buildConsentPageUrl(
-  request: Request,
-  formData: FormData,
-  error?: string,
-) {
-  const url = new URL("/oidc/consent", request.url);
+function buildConsentPageUrl(formData: FormData, error?: string) {
+  const url = new URL(buildAbsoluteAppUrl("/oidc/consent"));
   const consentCode = formData.get("consentCode");
   const clientId = formData.get("clientId");
   const scope = formData.get("scope");
@@ -63,7 +62,7 @@ export async function POST(request: Request) {
   const accept = formData.get("accept") === "true";
 
   if (typeof consentCode !== "string" || consentCode.trim().length === 0) {
-    return NextResponse.redirect(new URL("/", request.url), 303);
+    return NextResponse.redirect(buildAbsoluteAppUrl("/"), 303);
   }
 
   try {
@@ -75,7 +74,6 @@ export async function POST(request: Request) {
       if (!session?.user) {
         return NextResponse.redirect(
           buildConsentPageUrl(
-            request,
             formData,
             "Sign in again to continue the OIDC flow.",
           ),
@@ -85,26 +83,17 @@ export async function POST(request: Request) {
 
       if (session.user.emailVerified !== true) {
         return NextResponse.redirect(
-          buildConsentPageUrl(
-            request,
-            formData,
-            "Verify your email before continuing.",
-          ),
+          buildConsentPageUrl(formData, "Verify your email before continuing."),
           303,
         );
       }
 
-      const verificationRecord = await prisma.verification.findFirst({
-        where: {
-          identifier: consentCode,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
+      const verificationRecord = await findVerificationByIdentifier(
+        consentCode,
+        {
           value: true,
         },
-      });
+      );
 
       const verificationValue = verificationRecord
         ? parseConsentVerificationValue(verificationRecord.value)
@@ -119,7 +108,6 @@ export async function POST(request: Request) {
       ) {
         return NextResponse.redirect(
           buildConsentPageUrl(
-            request,
             formData,
             "The OIDC consent request is no longer valid. Please try again.",
           ),
@@ -181,7 +169,7 @@ export async function POST(request: Request) {
         : details.messages[0] || "Failed to process consent request";
 
     return NextResponse.redirect(
-      buildConsentPageUrl(request, formData, fallbackMessage),
+      buildConsentPageUrl(formData, fallbackMessage),
       303,
     );
   }

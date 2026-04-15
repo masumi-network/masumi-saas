@@ -1,13 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { toNextJsHandler } from "better-auth/next-js";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  const targetUrl = new URL("/api/auth/jwks", request.url);
-  const response = await fetch(targetUrl, {
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+import { auth } from "@/lib/auth/auth";
+import { buildAbsoluteAppUrl } from "@/lib/auth/callback-url";
+
+const authHandler = toNextJsHandler(auth);
+
+export async function GET() {
+  const response = await authHandler.GET(
+    new Request(buildAbsoluteAppUrl("/api/auth/jwks"), {
+      headers: {
+        Accept: "application/json",
+      },
+    }),
+  );
 
   const body = await response.text();
 

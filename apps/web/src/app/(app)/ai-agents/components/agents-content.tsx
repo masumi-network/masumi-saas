@@ -20,6 +20,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
@@ -37,7 +38,7 @@ const SYNC_ON_LOAD_STATES = [
   "DeregistrationInitiated",
 ] as const;
 
-const VALID_TABS = [
+const ALL_TABS = [
   "all",
   "verified",
   "registered",
@@ -72,6 +73,7 @@ function getFiltersForTab(tab: string) {
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const { activeOrganizationId } = useOrganizationContext();
   const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
@@ -83,10 +85,11 @@ export function AgentsContent() {
   )
     ? (sectionParam as (typeof VALID_SECTIONS)[number])
     : "manage";
+  const validTabs: readonly string[] = agentVerificationUiEnabled
+    ? ALL_TABS
+    : ALL_TABS.filter((tab) => tab !== "verified");
   const tabParam = searchParams.get("tab");
-  const activeTab = VALID_TABS.includes(tabParam as (typeof VALID_TABS)[number])
-    ? (tabParam as (typeof VALID_TABS)[number])
-    : "all";
+  const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : "all";
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -284,16 +287,24 @@ export function AgentsContent() {
     });
   };
 
-  const tabs = useMemo(
-    () => [
+  const tabs = useMemo(() => {
+    const items = [
       { name: t("tabs.all"), count: null, key: "all" },
-      { name: t("tabs.verified"), count: null, key: "verified" },
       { name: t("tabs.registered"), count: null, key: "registered" },
       { name: t("tabs.pending"), count: null, key: "pending" },
       { name: t("tabs.failed"), count: null, key: "failed" },
-    ],
-    [t],
-  );
+    ];
+
+    if (agentVerificationUiEnabled) {
+      items.splice(1, 0, {
+        name: t("tabs.verified"),
+        count: null,
+        key: "verified",
+      });
+    }
+
+    return items;
+  }, [agentVerificationUiEnabled, t]);
 
   const sections = useMemo(
     () => [
@@ -407,7 +418,9 @@ export function AgentsContent() {
 
                 {agents.length === 0 && (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
-                    <Bot className="mb-3 h-10 w-10 text-muted-foreground" />
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <Bot className="h-6 w-6 text-muted-foreground" />
+                    </div>
                     <p className="text-muted-foreground text-sm">
                       {debouncedSearch
                         ? t("noAgentsMatchingSearch")

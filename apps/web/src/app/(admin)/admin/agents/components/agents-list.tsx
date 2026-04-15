@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { formatDate } from "@/lib/utils";
 
 import { AdminPaginationBar } from "../../components/admin-pagination-bar";
@@ -64,6 +65,7 @@ export default function AgentsList({
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
   const router = useRouter();
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const [paramsPending, startTransition] = useTransition();
   const skipNextSearchPushRef = useRef(false);
   const updateParams = (newParams: Record<string, string>) => {
@@ -188,7 +190,9 @@ export default function AgentsList({
                     <TableHead>{t("owner")}</TableHead>
                     <TableHead>{t("agentIdentifier")}</TableHead>
                     <TableHead>{t("status")}</TableHead>
-                    <TableHead>{t("verificationStatus")}</TableHead>
+                    {agentVerificationUiEnabled && (
+                      <TableHead>{t("verificationStatus")}</TableHead>
+                    )}
                     <TableHead>{t("createdAt")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -224,18 +228,20 @@ export default function AgentsList({
                           {getRegistrationLabel(agent.registrationState)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            agent.verificationStatus === "VERIFIED"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="font-normal"
-                        >
-                          {getVerificationLabel(agent.verificationStatus)}
-                        </Badge>
-                      </TableCell>
+                      {agentVerificationUiEnabled && (
+                        <TableCell>
+                          <Badge
+                            variant={
+                              agent.verificationStatus === "VERIFIED"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="font-normal"
+                          >
+                            {getVerificationLabel(agent.verificationStatus)}
+                          </Badge>
+                        </TableCell>
+                      )}
                       <TableCell className="text-muted-foreground text-sm">
                         {formatDate(agent.createdAt)}
                       </TableCell>

@@ -2,6 +2,10 @@ import { createHash, createHmac } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  findDeviceCodeByUserCode,
+  findVerificationByIdentifier,
+} from "../../src/lib/auth/auth-storage";
 import { BASE_URL, request, requestForm, signUpAndSignIn } from "../helpers";
 import prisma from "../prisma-client";
 
@@ -463,14 +467,15 @@ describe("SMOKE — OIDC discovery", () => {
 describe("SMOKE — OIDC Spacetime bridge", () => {
   it("sign-up creates an email verification code record", async () => {
     const { email } = await signUpAndSignIn();
-    const verification = await prisma.verification.findFirst({
-      where: {
-        identifier: `email-verification-otp-${email.toLowerCase()}`,
+    const verification = await findVerificationByIdentifier(
+      `email-verification-otp-${email.toLowerCase()}`,
+      {
+        value: true,
       },
-    });
+    );
 
     expect(verification).not.toBeNull();
-    expect(verification?.value).toMatch(/^\d{6}:0$/);
+    expect(verification?.value).toMatch(/^[a-f0-9]{64}:0$/);
   });
 
   it("OPTIONS /api/oidc/spacetimedb/token allows configured OIDC web origins", async () => {
@@ -691,7 +696,7 @@ describe("SMOKE — OIDC API scopes", () => {
     });
 
     expect(consentFlow.consentHtml).toContain("New API permissions requested");
-    expect(consentFlow.consentHtml).toContain("Manage inbox agents");
+    expect(consentFlow.consentHtml).toContain("Manage inboxes");
     expect(consentFlow.consentHtml).toContain("Preprod");
     expect(consentFlow.consentHtml).toContain(
       "Already granted API permissions",
@@ -835,6 +840,91 @@ describe("SMOKE — OIDC device flow", () => {
     );
   });
 
+  it("device page shows an invalid-code error without requiring sign-in", async () => {
+    const devicePageRes = await request("/device?user_code=INVALID123", {
+      headers: {
+        Accept: "text/html",
+      },
+    });
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "Invalid device code. Check the code and try again.",
+    );
+  });
+
+  it("device page shows a timeout error for expired codes without requiring sign-in", async () => {
+    const deviceRes = await requestForm("/api/auth/device/code", {
+      body: {
+        client_id: "masumi-spacetime-cli",
+        scope: "openid profile offline_access",
+      },
+    });
+    expect(deviceRes.status).toBe(200);
+
+    const deviceBody = deviceRes.body as Record<string, unknown>;
+    const deviceCode = await findDeviceCodeByUserCode(
+      String(deviceBody.user_code).replace(/-/g, ""),
+      {
+        id: true,
+      },
+    );
+    expect(deviceCode?.id).toBeTruthy();
+
+    await prisma.deviceCode.update({
+      where: {
+        id: deviceCode!.id,
+      },
+      data: {
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+
+    const devicePageRes = await request(
+      `/device?user_code=${encodeURIComponent(deviceBody.user_code as string)}`,
+      {
+        headers: {
+          Accept: "text/html",
+        },
+      },
+    );
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "This device code timed out. Start again from the CLI to get a new code.",
+    );
+  });
+
+  it("device page shows email verification gate for unverified users", async () => {
+    const deviceRes = await requestForm("/api/auth/device/code", {
+      body: {
+        client_id: "masumi-spacetime-cli",
+        scope: "openid profile offline_access",
+      },
+    });
+    expect(deviceRes.status).toBe(200);
+
+    const deviceBody = deviceRes.body as Record<string, unknown>;
+    const { jar } = await signUpAndSignIn();
+    const devicePageRes = await request(
+      `/device?user_code=${encodeURIComponent(deviceBody.user_code as string)}`,
+      {
+        jar,
+        headers: {
+          Accept: "text/html",
+        },
+      },
+    );
+
+    expect(devicePageRes.status).toBe(200);
+    expect(String(devicePageRes.body)).toContain(
+      "Verify your email to continue",
+    );
+    expect(String(devicePageRes.body)).toContain(
+      "Verify your email before approving this device login.",
+    );
+  });
+
   it("approved device flow returns an OIDC token set from the standard token endpoint", async () => {
     const deviceRes = await requestForm("/api/auth/device/code", {
       body: {
@@ -909,7 +999,7 @@ describe("SMOKE — OIDC device flow", () => {
     expect(String(approvalPageRes.body)).toContain(
       "New API permissions requested",
     );
-    expect(String(approvalPageRes.body)).toContain("Manage inbox agents");
+    expect(String(approvalPageRes.body)).toContain("Manage inboxes");
     expect(String(approvalPageRes.body)).toContain("Preprod");
 
     const approveRes = await request("/api/auth/device/approve", {
@@ -957,20 +1047,24 @@ describe("SMOKE — OIDC device flow", () => {
       jar: authJar.jar,
       body: { userCode: deviceBody.user_code },
     });
-    expect(approveRes.status).toBe(200);
+    expect(approveRes.status).toBe(403);
+    const approveBody = approveRes.body as Record<string, unknown>;
+    expect(approveBody.error).toBe("access_denied");
+    expect(approveBody.error_description).toBe("email_verification_required");
 
-    const tokenRes = await requestForm("/api/auth/oauth2/token", {
-      body: {
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-        device_code: deviceBody.device_code as string,
-        client_id: "masumi-spacetime-cli",
+    const deviceRecord = await findDeviceCodeByUserCode(
+      String(deviceBody.user_code).replace(/-/g, ""),
+      {
+        status: true,
       },
-    });
+    );
+    expect(deviceRecord?.status).toBe("pending");
 
-    expect(tokenRes.status).toBe(403);
-    const token = tokenRes.body as Record<string, unknown>;
-    expect(token.error).toBe("access_denied");
-    expect(token.error_description).toBe("email_verification_required");
+    const storedGrantScopes = await getOidcGrantScopes(
+      authJar.email,
+      "masumi-spacetime-cli",
+    );
+    expect(storedGrantScopes).toEqual([]);
   });
 
   it("legacy POST /api/auth/device/token still returns an OIDC token set", async () => {

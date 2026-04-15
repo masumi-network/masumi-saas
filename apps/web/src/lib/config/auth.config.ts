@@ -1,4 +1,13 @@
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_APP_BASE_URL = "http://localhost:2999";
+
+function readConfiguredUrl(value: string | undefined): string | null {
+  const normalized = value?.trim().replace(/\/+$/, "");
+  return normalized ? normalized : null;
+}
+
+const publicBaseUrl =
+  readConfiguredUrl(process.env.BETTER_AUTH_URL) ?? DEFAULT_APP_BASE_URL;
 
 const magicLinkRateLimitMaxRaw =
   process.env.MAGIC_LINK_RATE_LIMIT_MAX ??
@@ -15,7 +24,7 @@ if (
 }
 
 export const authEnvConfig = {
-  baseUrl: process.env.BETTER_AUTH_URL || "http://localhost:2999",
+  baseUrl: publicBaseUrl,
   secret: process.env.BETTER_AUTH_SECRET!,
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&

@@ -29,6 +29,7 @@ export async function generateSumsubAccessToken(
   const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
+  // Sumsub requires an HMAC signature over the canonical request string.
   const signature = crypto
     .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}POST${path}`)
@@ -70,14 +71,23 @@ export function verifySumsubWebhookSignature(
     throw new Error("Sumsub secret key not configured");
   }
 
+  const normalizedSignature = signature.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(normalizedSignature)) {
+    return false;
+  }
+
   const expectedSignature = crypto
     .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}${payload}`)
     .digest("hex");
 
+  if (normalizedSignature.length !== expectedSignature.length) {
+    return false;
+  }
+
   return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature),
+    Buffer.from(normalizedSignature, "hex"),
+    Buffer.from(expectedSignature, "hex"),
   );
 }
 
@@ -94,6 +104,7 @@ export async function getApplicantData(applicantId: string) {
   const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
+  // Sumsub requires an HMAC signature over the canonical request string.
   const signature = crypto
     .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}GET${path}`)
@@ -147,6 +158,7 @@ export async function getApplicantByExternalUserId(externalUserId: string) {
   const url = `${sumsubConfig.baseUrl}${path}`;
 
   const timestamp = Math.floor(Date.now() / 1000);
+  // Sumsub requires an HMAC signature over the canonical request string.
   const signature = crypto
     .createHmac("sha256", sumsubConfig.secretKey)
     .update(`${timestamp}GET${path}`)

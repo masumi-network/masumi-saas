@@ -1,6 +1,5 @@
 import "server-only";
 
-import prisma from "@masumi/database/client";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
@@ -10,6 +9,7 @@ import { normalizeScopeList } from "@/lib/config/oidc-scopes.config";
 import { InsufficientCreditsError } from "@/lib/credits/service";
 
 import { auth } from "./auth";
+import { findOauthAccessTokenByAccessToken } from "./auth-storage";
 import { getBootstrapAdminIds } from "./config";
 import {
   getBetterAuthInnerSession,
@@ -88,8 +88,7 @@ async function resolveOidcAccessTokenContext(
     return null;
   }
 
-  const accessToken = await prisma.oauthAccessToken.findUnique({
-    where: { accessToken: bearerToken },
+  const accessToken = await findOauthAccessTokenByAccessToken(bearerToken, {
     include: { user: true },
   });
 

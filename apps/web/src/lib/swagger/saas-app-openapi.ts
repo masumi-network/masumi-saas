@@ -55,6 +55,8 @@ const security: SecurityRequirementObject[] = [{ apiKeyHeader: [] }];
 /** Public operations (no API key in Try it out). */
 const noSecurity: SecurityRequirementObject[] = [];
 
+const prefixedWrapperServers = [{ url: "/", description: "This app" }];
+
 /** Same validation as `POST /api/agents` — documented shape + Try-it-out example. */
 const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
   description:
@@ -133,7 +135,11 @@ const agentListItemSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   extendedDescription: z.string().nullable(),
-  apiUrl: z.string(),
+  apiUrl: z.string().openapi({
+    description:
+      "Agent API base URL. In production it must be a public HTTPS endpoint.",
+    example: "https://agent.example.com/mip",
+  }),
   organizationId: z.string().nullable(),
   registrationState: z.string(),
   verificationStatus: z
@@ -1292,11 +1298,12 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/v1/inbox-agents",
+  path: "/pay/api/v1/inbox-agents",
   tags: ["Inbox agents"],
   summary: "List inbox agents",
   description:
     "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+  servers: prefixedWrapperServers,
   security,
   request: {
     query: inboxAgentsListQuerySchema,
@@ -1309,11 +1316,12 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/v1/inbox-agents",
+  path: "/pay/api/v1/inbox-agents",
   tags: ["Inbox agents"],
   summary: "Register inbox agent",
   description:
     "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+  servers: prefixedWrapperServers,
   security,
   request: {
     body: {
@@ -1336,11 +1344,12 @@ registry.registerPath({
 
 registry.registerPath({
   method: "delete",
-  path: "/v1/inbox-agents/{inboxAgentId}",
+  path: "/pay/api/v1/inbox-agents/{inboxAgentId}",
   tags: ["Inbox agents"],
   summary: "Delete inbox agent",
   description:
     "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+  servers: prefixedWrapperServers,
   security,
   request: {
     params: z.object({
@@ -1358,11 +1367,12 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/v1/inbox-agents/{inboxAgentId}/deregister",
+  path: "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister",
   tags: ["Inbox agents"],
   summary: "Deregister inbox agent",
   description:
     "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+  servers: prefixedWrapperServers,
   security,
   request: {
     params: z.object({

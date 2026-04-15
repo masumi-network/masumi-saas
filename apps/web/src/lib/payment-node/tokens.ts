@@ -38,7 +38,16 @@ export const USDCX: TokenConfig = {
   aliases: ["USDCx", "USDC"],
 };
 
-const KNOWN_PAYMENT_TOKENS: TokenConfig[] = [USDM.Preprod, USDM.Mainnet, USDCX];
+export const STABLECOINS_BY_NETWORK: Record<PaymentNodeNetwork, TokenConfig[]> =
+  {
+    Preprod: [USDM.Preprod],
+    Mainnet: [USDM.Mainnet, USDCX],
+  };
+
+const KNOWN_PAYMENT_TOKENS: TokenConfig[] = [
+  ...STABLECOINS_BY_NETWORK.Preprod,
+  ...STABLECOINS_BY_NETWORK.Mainnet,
+];
 
 export function getKnownTokenByUnit(unit: string): TokenConfig | null {
   const normalized = unit.trim();
@@ -46,6 +55,28 @@ export function getKnownTokenByUnit(unit: string): TokenConfig | null {
 
   return (
     KNOWN_PAYMENT_TOKENS.find(
+      (token) =>
+        token.unit === normalized ||
+        token.policyId === normalized ||
+        token.symbol === normalized ||
+        token.aliases?.includes(normalized),
+    ) ?? null
+  );
+}
+
+export function getKnownStableTokenByUnit(
+  unit: string,
+  network?: PaymentNodeNetwork,
+): TokenConfig | null {
+  const normalized = unit.trim();
+  if (!normalized) return null;
+
+  const candidates = network
+    ? STABLECOINS_BY_NETWORK[network]
+    : KNOWN_PAYMENT_TOKENS;
+
+  return (
+    candidates.find(
       (token) =>
         token.unit === normalized ||
         token.policyId === normalized ||
