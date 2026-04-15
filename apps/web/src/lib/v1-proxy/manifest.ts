@@ -162,6 +162,16 @@ const REGISTRY_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
   },
   {
     upstream: "registry",
+    upstreamPath: "/inbox-agent-registration/",
+    authMode: "registry-shared-token",
+  },
+  {
+    upstream: "registry",
+    upstreamPath: "/inbox-agent-registration-diff/",
+    authMode: "registry-shared-token",
+  },
+  {
+    upstream: "registry",
     upstreamPath: "/registry-diff/",
     authMode: "registry-shared-token",
   },
@@ -173,6 +183,11 @@ const REGISTRY_PROXY_ROUTE_DEFINITIONS: readonly ProxyRouteDefinition[] = [
   {
     upstream: "registry",
     upstreamPath: "/capability/",
+    authMode: "registry-shared-token",
+  },
+  {
+    upstream: "registry",
+    upstreamPath: "/registry-source/",
     authMode: "registry-shared-token",
   },
 ] as const;
@@ -190,6 +205,10 @@ const UPSTREAM_OPENAPI_SPECS: Readonly<Record<ProxyUpstream, OpenApiDocument>> =
 
 function normalizeSpecPathToSaasPath(path: string): string {
   return path.replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+function getProxyRouteBasePath(upstream: ProxyUpstream): string {
+  return upstream === "payment" ? "/pay/api/v1" : "/registry/api/v1";
 }
 
 function makeProxyRouteKey(
@@ -258,8 +277,8 @@ export function buildProxyRouteManifest(
         ),
         method: method.toUpperCase() as ProxyOperationMethod,
         normalizedPath,
-        openapiPath: `/v1/${normalizedPath}`,
-        saasPath: `/api/v1/${normalizedPath}`,
+        openapiPath: `${getProxyRouteBasePath(definition.upstream)}/${normalizedPath}`,
+        saasPath: `${getProxyRouteBasePath(definition.upstream)}/${normalizedPath}`,
         upstream: definition.upstream,
         upstreamPath: definition.upstreamPath,
         authMode: definition.authMode,
@@ -415,6 +434,7 @@ export function injectProxyRoutesIntoOpenApiDocument<T>(baseDocument: T): T {
     ) as ProxyDocOperation;
 
     prefixedOperation.security = [{ apiKeyHeader: [] }];
+    prefixedOperation.servers = [{ url: "/", description: "This app" }];
     prefixedOperation.description = buildProxyOperationDescription(
       descriptor,
       prefixedOperation,

@@ -67,7 +67,7 @@ vi.mock("@/lib/schemas/inbox-agent", () => {
   };
 });
 
-describe("/api/v1/inbox-agents", () => {
+describe("/pay/api/v1/inbox-agents", () => {
   let GET: typeof import("./route").GET;
   let POST: typeof import("./route").POST;
 
@@ -99,7 +99,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod&take=1",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod&take=1",
       {
         method: "GET",
       },
@@ -142,7 +142,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,7 +201,7 @@ describe("/api/v1/inbox-agents", () => {
     );
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Mainnet",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Mainnet",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -226,7 +226,7 @@ describe("/api/v1/inbox-agents", () => {
 
   it("rejects legacy wallet and top-up fields from the register schema", async () => {
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -275,7 +275,7 @@ describe("/api/v1/inbox-agents", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agents?network=Preprod",
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

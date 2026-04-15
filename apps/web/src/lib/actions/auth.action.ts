@@ -15,6 +15,7 @@ import {
   getAuthErrorDetails,
   isInfrastructureError,
 } from "@/lib/auth/error-results";
+import { buildSwitchAccountSignInHref } from "@/lib/auth/switch-account";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
@@ -74,8 +75,7 @@ export async function switchAccountAction(callbackUrl?: string) {
     headers: headersList,
   });
 
-  const redirectTo = sanitizeCallbackUrl(callbackUrl) ?? "/";
-  redirect(`/signin?callbackUrl=${encodeURIComponent(redirectTo)}`);
+  redirect(buildSwitchAccountSignInHref(callbackUrl));
 }
 
 function getSignUpErrorResult(error: unknown) {

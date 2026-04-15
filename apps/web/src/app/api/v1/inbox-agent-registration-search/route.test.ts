@@ -38,7 +38,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
   };
 });
 
-describe("/api/v1/inbox-agent-registration-search", () => {
+describe("/registry/api/v1/inbox-agent-registration-search", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -70,7 +70,7 @@ describe("/api/v1/inbox-agent-registration-search", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agent-registration-search",
+      "https://saas.example.com/registry/api/v1/inbox-agent-registration-search",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,7 +124,7 @@ describe("/api/v1/inbox-agent-registration-search", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agent-registration-search",
+      "https://saas.example.com/registry/api/v1/inbox-agent-registration-search",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,7 +159,7 @@ describe("/api/v1/inbox-agent-registration-search", () => {
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/inbox-agent-registration-search",
+      "https://saas.example.com/registry/api/v1/inbox-agent-registration-search",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

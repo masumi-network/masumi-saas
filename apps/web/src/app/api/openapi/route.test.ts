@@ -53,8 +53,10 @@ describe("/api/openapi", () => {
     await expect(response.json()).resolves.toMatchObject({
       info: fallbackSaaSAppOpenApiSpec.info,
       paths: {
-        "/v1/registry-entry-search":
-          fallbackSaaSAppOpenApiSpec.paths["/v1/registry-entry-search"],
+        "/registry/api/v1/registry-entry-search":
+          fallbackSaaSAppOpenApiSpec.paths[
+            "/registry/api/v1/registry-entry-search"
+          ],
       },
     });
     expect(consoleErrorSpy).toHaveBeenCalledWith(

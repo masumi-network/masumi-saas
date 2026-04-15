@@ -53,7 +53,7 @@ vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
   },
 }));
 
-describe("/api/v1/payment/resolve-blockchain-identifier", () => {
+describe("/pay/api/v1/payment/resolve-blockchain-identifier", () => {
   let POST: typeof import("./route").POST;
 
   beforeAll(async () => {
@@ -90,7 +90,7 @@ describe("/api/v1/payment/resolve-blockchain-identifier", () => {
 
     const body = JSON.stringify({ network: "Preprod", transactionId: "tx-1" });
     const request = new NextRequest(
-      "https://saas.example.com/api/v1/payment/resolve-blockchain-identifier",
+      "https://saas.example.com/pay/api/v1/payment/resolve-blockchain-identifier",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

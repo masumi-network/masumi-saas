@@ -44,7 +44,7 @@ export function calculateDefaultTimes() {
 export function generateSaasPaymentCurl(origin: string, body: object): string {
   const base = origin.replace(/\/$/, "");
   const payload = JSON.stringify(body, null, 2);
-  return `curl -X POST "${base}/api/v1/payment" \\
+  return `curl -X POST "${base}/pay/api/v1/payment" \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: YOUR_MASUMI_SAAS_API_KEY" \\
   -d '${payload.replace(/'/g, `'\"'\"'`)}'`;

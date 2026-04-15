@@ -35,7 +35,7 @@ describe("inboxAgentApiClient", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/inbox-agents?filterStatus=Registered&search=support&take=1&network=Preprod",
+      "/pay/api/v1/inbox-agents?filterStatus=Registered&search=support&take=1&network=Preprod",
       expect.objectContaining({
         credentials: "include",
       }),
@@ -73,7 +73,7 @@ describe("inboxAgentApiClient", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/inbox-agents?network=Preprod",
+      "/pay/api/v1/inbox-agents?network=Preprod",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
