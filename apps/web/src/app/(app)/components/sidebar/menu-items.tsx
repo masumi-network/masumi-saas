@@ -1,6 +1,13 @@
 "use client";
 
-import { Activity, Bot, Code, Inbox, LayoutDashboard } from "lucide-react";
+import {
+  Activity,
+  Bot,
+  Code,
+  Inbox,
+  LayoutDashboard,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -53,6 +60,12 @@ export default function MenuItems() {
       href: "/activity",
       label: t("activity"),
       Icon: Activity,
+    },
+    {
+      key: "earnings",
+      href: "/earnings",
+      label: t("earnings"),
+      Icon: TrendingUp,
     },
   ];
   const developerItem: MenuItemConfig = {
@@ -123,20 +136,21 @@ export default function MenuItems() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup
-        className={cn(
-          "w-full mt-4 pt-4 border-t border-sidebar-border",
-          isMobile && "px-3 py-2",
-        )}
-      >
+      <SidebarGroup className={cn("w-full mt-4 pt-0", isMobile && "px-3 py-2")}>
+        <div
+          className={cn(
+            "mx-4 mb-4 h-px bg-sidebar-border/80",
+            isMobile && "mx-2.5 mb-3",
+          )}
+        />
         <SidebarGroupContent>
           <SidebarMenu className={cn(isMobile && "flex flex-col gap-1.5")}>
             {renderItem({
               ...developerItem,
               className:
-                "border border-pink-500/20 bg-pink-500/5 text-pink-700 hover:bg-pink-500/10 hover:text-pink-800 data-[active=true]:bg-pink-500/15 data-[active=true]:text-pink-800 dark:text-pink-300 dark:hover:text-pink-200 dark:data-[active=true]:text-pink-100",
+                "border-0 bg-transparent shadow-none text-pink-600 hover:bg-transparent hover:text-pink-700 data-[active=true]:bg-transparent data-[active=true]:text-pink-700 dark:text-pink-300 dark:hover:text-pink-200 dark:data-[active=true]:text-pink-100",
               linkClassName:
-                "text-pink-700 hover:text-pink-800 dark:text-pink-300 dark:hover:text-pink-200",
+                "text-pink-600 hover:text-pink-700 dark:text-pink-300 dark:hover:text-pink-200",
             })}
           </SidebarMenu>
         </SidebarGroupContent>
