@@ -55,6 +55,7 @@ import {
   formatResolvedEarningsPeriodLabel,
   getDefaultCustomDates,
 } from "@/lib/earnings/presentation";
+import { EARNINGS_TIME_SERIES_CHART_ENABLED } from "@/lib/earnings/time-series-chart-enabled";
 import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
@@ -598,6 +599,8 @@ export function EarningsPageContent() {
   );
   const chartCanRender =
     chartHasMeaningfulData && resolveChartUnit(chartPoints) !== null;
+  const showTimeSeriesChart =
+    EARNINGS_TIME_SERIES_CHART_ENABLED && chartCanRender;
   const chartTone = metricTone(selectedMetric);
   const ChartMetricIcon = metricIcon(selectedMetric);
 
@@ -643,7 +646,7 @@ export function EarningsPageContent() {
   };
 
   const { areaPath, linePath } = buildChartPaths(
-    chartCanRender ? chartPoints : [],
+    showTimeSeriesChart ? chartPoints : [],
   );
   const metricTabs: EarningsMetric[] = ["income", "refunded", "pending"];
 
@@ -1086,7 +1089,7 @@ export function EarningsPageContent() {
                   </div>
                 </div>
 
-                {chartCanRender ? (
+                {showTimeSeriesChart ? (
                   <div className="space-y-4">
                     <div className="h-64 w-full rounded-2xl border border-border/60 bg-gradient-to-b from-muted/30 to-background px-4 py-5">
                       <svg
@@ -1136,7 +1139,7 @@ export function EarningsPageContent() {
                       <span>{chartPoints[chartPoints.length - 1]?.label}</span>
                     </div>
                   </div>
-                ) : chartHasMeaningfulData ? (
+                ) : chartHasMeaningfulData && !chartCanRender ? (
                   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-16 text-center">
                     <ChartMetricIcon className="size-8 text-muted-foreground" />
                     <div className="space-y-1">
@@ -1146,7 +1149,9 @@ export function EarningsPageContent() {
                       </p>
                     </div>
                   </div>
-                ) : (
+                ) : chartHasMeaningfulData &&
+                  chartCanRender &&
+                  !EARNINGS_TIME_SERIES_CHART_ENABLED ? null : (
                   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-16 text-center">
                     <TrendingUp className="size-8 text-muted-foreground" />
                     <div className="space-y-1">

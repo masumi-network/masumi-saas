@@ -144,6 +144,10 @@ const registerAgentFormBaseSchema = z.object({
     .optional()
     .or(z.literal("")),
   apiUrl: agentApiUrlSchema,
+  collectionAddress: z
+    .string()
+    .min(1, "Collection address is required.")
+    .max(120, "Collection address must be 120 characters or less."),
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
   /** "Free" | "Fixed" */
