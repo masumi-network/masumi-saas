@@ -4,6 +4,22 @@
  */
 import type { PaymentNodeNetwork } from "./schemas";
 
+export class PaymentNodeConfigError extends Error {
+  readonly envName?: string;
+
+  constructor(message: string, options?: { envName?: string }) {
+    super(message);
+    this.name = "PaymentNodeConfigError";
+    this.envName = options?.envName;
+  }
+}
+
+export function isPaymentNodeConfigError(
+  error: unknown,
+): error is PaymentNodeConfigError {
+  return error instanceof PaymentNodeConfigError;
+}
+
 function getPaymentSourceIdEnvName(
   network: PaymentNodeNetwork,
 ):
@@ -27,8 +43,9 @@ function getSmartContractAddressEnvName(
 function getPaymentNodeBaseUrl(): string {
   const url = process.env.PAYMENT_NODE_BASE_URL;
   if (!url?.trim()) {
-    throw new Error(
+    throw new PaymentNodeConfigError(
       "PAYMENT_NODE_BASE_URL is required for payment node integration",
+      { envName: "PAYMENT_NODE_BASE_URL" },
     );
   }
   return url.replace(/\/$/, "");
@@ -37,8 +54,9 @@ function getPaymentNodeBaseUrl(): string {
 function getPaymentNodeAdminApiKey(): string {
   const key = process.env.PAYMENT_NODE_ADMIN_API_KEY;
   if (!key?.trim()) {
-    throw new Error(
+    throw new PaymentNodeConfigError(
       "PAYMENT_NODE_ADMIN_API_KEY is required for admin operations (add wallets, create user API keys)",
+      { envName: "PAYMENT_NODE_ADMIN_API_KEY" },
     );
   }
   return key;
@@ -49,8 +67,9 @@ function getPaymentNodePaymentSourceId(network: PaymentNodeNetwork): string {
   const envName = getPaymentSourceIdEnvName(network);
   const id = process.env[envName];
   if (!id?.trim()) {
-    throw new Error(
+    throw new PaymentNodeConfigError(
       `${envName} is required for ${network} payment-source operations`,
+      { envName },
     );
   }
   return id;

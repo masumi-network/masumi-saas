@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import prisma from "@masumi/database/client";
 
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
@@ -340,7 +341,7 @@ async function loadActivityDbSnapshot(params: {
 }
 
 /** Payment-node list + map to feed items. Runs every request (lazy key provisioning, external API). */
-async function loadActivityTransactionFeedPart(params: {
+export async function loadActivityTransactionFeedPart(params: {
   userId: string;
   network: NetworkQuery;
   validFilter: ActivityFeedFilter;
@@ -473,6 +474,9 @@ async function loadActivityTransactionFeedPart(params: {
         ? watermarkTimestamps.reduce((a, b) => (a > b ? a : b))
         : lastUpdate;
   } catch (txError) {
+    if (isPaymentNodeConfigError(txError)) {
+      throw txError;
+    }
     console.error("[Activity] Payment node / transactions error:", txError);
   }
 

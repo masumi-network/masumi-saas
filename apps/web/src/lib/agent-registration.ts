@@ -166,14 +166,6 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
-  if (network === "Mainnet") {
-    return {
-      success: false,
-      error:
-        "Agent registration on Mainnet is not available yet. Please use Preprod for now.",
-    };
-  }
-
   const adminClient = createPaymentNodeClient(baseUrl, adminKey);
 
   const sellingWallet = await adminClient.generateWallet(network);

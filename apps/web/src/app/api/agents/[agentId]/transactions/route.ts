@@ -4,6 +4,7 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
@@ -132,6 +133,12 @@ export async function GET(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("Failed to get agent transactions:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load transactions" },
