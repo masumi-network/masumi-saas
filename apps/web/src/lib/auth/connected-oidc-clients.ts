@@ -98,25 +98,10 @@ export async function listConnectedOidcClients(
         refreshTokenExpiresAt: true,
       },
     }),
-    (
-      prisma as unknown as {
-        oidcUserGrant?: {
-          findMany: (args: {
-            where: { userId: string };
-            select: { clientId: true; scopes: true; updatedAt: true };
-          }) => Promise<
-            Array<{
-              clientId: string;
-              scopes: string[] | null;
-              updatedAt: Date;
-            }>
-          >;
-        };
-      }
-    ).oidcUserGrant?.findMany({
+    prisma.oidcUserGrant.findMany({
       where: { userId },
       select: { clientId: true, scopes: true, updatedAt: true },
-    }) ?? Promise.resolve([]),
+    }),
   ]);
 
   for (const consent of consents) {
@@ -221,24 +206,11 @@ export async function revokeOidcClientConnection(
   deletedConsents: number;
   deletedGrants: number;
 }> {
-  const [tokens, consents] = await prisma.$transaction([
+  const [tokens, consents, grants] = await prisma.$transaction([
     prisma.oauthAccessToken.deleteMany({ where: { userId, clientId } }),
     prisma.oauthConsent.deleteMany({ where: { userId, clientId } }),
+    prisma.oidcUserGrant.deleteMany({ where: { userId, clientId } }),
   ]);
-
-  const grantDelegate = (
-    prisma as unknown as {
-      oidcUserGrant?: {
-        deleteMany: (args: {
-          where: { userId: string; clientId: string };
-        }) => Promise<{ count: number }>;
-      };
-    }
-  ).oidcUserGrant;
-
-  const grants = grantDelegate
-    ? await grantDelegate.deleteMany({ where: { userId, clientId } })
-    : { count: 0 };
 
   return {
     deletedTokens: tokens.count,
