@@ -273,6 +273,7 @@ export function AgentsTable({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={tDetails("deregister")}
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={(e) => handleDeregisterClick(e, agent)}
                           >
@@ -290,6 +291,7 @@ export function AgentsTable({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={tDetails("delete")}
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={(e) => handleDeleteClick(e, agent)}
                           >

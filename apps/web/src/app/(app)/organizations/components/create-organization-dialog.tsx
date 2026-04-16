@@ -1,10 +1,11 @@
 "use client";
 
-import { CircleHelp, Plus } from "lucide-react";
+import { AlertCircle, CircleHelp, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -99,12 +100,6 @@ export function CreateOrganizationDialog({
     [resetForm, setOpen],
   );
 
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => nameInputRef.current?.focus(), 0);
-    }
-  }, [open]);
-
   const handleNameChange = (value: string) => {
     setName(value);
     const derivedSlug = deriveSlugFromName(value);
@@ -176,6 +171,10 @@ export function CreateOrganizationDialog({
       <DialogContent
         className="sm:max-w-lg max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
         closeButtonClassName="top-8 right-4 -translate-y-1/2"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          nameInputRef.current?.focus();
+        }}
       >
         <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
           <DialogHeader>
@@ -192,7 +191,12 @@ export function CreateOrganizationDialog({
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <p className="text-muted-foreground text-sm">{t("description")}</p>
 
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4 inline mr-2" />
+                <AlertDescription className="inline">{error}</AlertDescription>
+              </Alert>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="name">{t("name")}</Label>

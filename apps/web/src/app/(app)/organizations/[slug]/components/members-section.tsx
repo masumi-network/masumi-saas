@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -212,19 +213,24 @@ function MemberRow({
         {/* Role */}
         <TableCell>
           {canModifyMember ? (
-            <Select
-              value={member.role}
-              onValueChange={handleRoleChange}
-              disabled={isUpdatingRole}
-            >
-              <SelectTrigger className="h-8 w-[110px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="member">{tRole("member")}</SelectItem>
-                <SelectItem value="admin">{tRole("admin")}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select
+                value={member.role}
+                onValueChange={handleRoleChange}
+                disabled={isUpdatingRole}
+              >
+                <SelectTrigger className="h-8 w-[110px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="member">{tRole("member")}</SelectItem>
+                  <SelectItem value="admin">{tRole("admin")}</SelectItem>
+                </SelectContent>
+              </Select>
+              {isUpdatingRole && (
+                <Spinner size={14} className="text-muted-foreground" />
+              )}
+            </div>
           ) : (
             <OrganizationRoleBadge role={member.role} />
           )}
