@@ -15,13 +15,42 @@ function parseOrigin(value: string | undefined): string | null {
   }
 }
 
+/**
+ * Collects origins that the OIDC consent form at `/oidc/consent` is allowed to
+ * be redirected to after POSTing to `/oidc/consent/submit`. The form-action
+ * CSP directive applies to the whole navigation chain of a form submission
+ * (including 303 redirects), so without these, Chromium/WebKit silently block
+ * the cross-origin hop to the OIDC client callback (Firefox doesn't enforce
+ * form-action on redirects — that's why the bug was browser-specific).
+ *
+ * Mirrors `parseRedirectUrls` in src/lib/config/oidc.config.ts but is
+ * duplicated here because next.config.ts cannot import from src at config
+ * load time.
+ */
+function parseOidcRedirectOrigins(rawValue: string | undefined): string[] {
+  if (!rawValue?.trim()) return [];
+  const origins = new Set<string>();
+  for (const value of rawValue.split(",")) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    try {
+      origins.add(new URL(trimmed).origin);
+    } catch {
+      // Ignore malformed entries — the app side validates these anyway.
+    }
+  }
+  return [...origins];
+}
+
 function buildContentSecurityPolicy(options: {
   sentryOrigin: string | null;
   sumsubOrigin: string | null;
+  oidcRedirectOrigins: string[];
   route: "default" | "verification" | "docs";
 }) {
   const connectSrc = new Set(["'self'", "https:", "wss:"]);
   const frameSrc = new Set(["'self'"]);
+  const formAction = new Set(["'self'", ...options.oidcRedirectOrigins]);
 
   if (options.sentryOrigin) {
     connectSrc.add(options.sentryOrigin);
@@ -35,7 +64,7 @@ function buildContentSecurityPolicy(options: {
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
-    "form-action 'self'",
+    `form-action ${[...formAction].join(" ")}`,
     "frame-ancestors 'self'",
     "object-src 'none'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
@@ -63,6 +92,9 @@ function buildSecurityHeaders() {
   const sumsubOrigin = parseOrigin(
     process.env.SUMSUB_BASE_URL || "https://api.sumsub.com",
   );
+  const oidcRedirectOrigins = parseOidcRedirectOrigins(
+    process.env.OIDC_WEB_REDIRECT_URLS,
+  );
   const verificationPermissionsPolicy = [
     `camera=(self${sumsubOrigin ? ` "${sumsubOrigin}"` : ""})`,
     `microphone=(self${sumsubOrigin ? ` "${sumsubOrigin}"` : ""})`,
@@ -80,6 +112,7 @@ function buildSecurityHeaders() {
       value: buildContentSecurityPolicy({
         sentryOrigin,
         sumsubOrigin,
+        oidcRedirectOrigins,
         route: "default",
       }),
     },
@@ -114,12 +147,14 @@ function buildSecurityHeaders() {
     verificationCsp: buildContentSecurityPolicy({
       sentryOrigin,
       sumsubOrigin,
+      oidcRedirectOrigins,
       route: "verification",
     }),
     verificationPermissionsPolicy,
     docsCsp: buildContentSecurityPolicy({
       sentryOrigin,
       sumsubOrigin,
+      oidcRedirectOrigins,
       route: "docs",
     }),
   };
