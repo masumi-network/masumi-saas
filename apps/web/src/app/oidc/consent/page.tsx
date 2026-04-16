@@ -28,6 +28,8 @@ import {
 import { EmailVerificationPanel } from "./components/email-verification-panel";
 import { OidcSwitchAccountButton } from "./components/oidc-switch-account-button";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Masumi - OIDC Authorization",
   description: "Confirm OIDC authorization for an external Masumi client",

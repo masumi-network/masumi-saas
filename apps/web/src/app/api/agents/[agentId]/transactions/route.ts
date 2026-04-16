@@ -1,13 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+
+import contract from "./route.contract";
 
 function mapItem(
   item: PaymentOrPurchaseItem,
@@ -52,10 +55,10 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: "Agent not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
     requireNetworkedOidcApiScope(authContext, {
       resource: "agents",
@@ -64,7 +67,7 @@ export async function GET(
     });
 
     if (!agent.agentIdentifier) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { transactions: [] },
       });
@@ -72,7 +75,7 @@ export async function GET(
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { transactions: [] },
       });
@@ -87,7 +90,7 @@ export async function GET(
         network,
       );
     if (!smartContractAddress) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { transactions: [] },
       });
@@ -126,7 +129,7 @@ export async function GET(
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: { transactions },
     });
@@ -134,15 +137,15 @@ export async function GET(
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     if (isPaymentNodeConfigError(error)) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "GET", 503, {
+        success: false,
+        error: error.message,
+      });
     }
     console.error("Failed to get agent transactions:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load transactions" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load transactions",
+    });
   }
 }

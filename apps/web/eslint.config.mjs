@@ -9,6 +9,12 @@ const config = [
   ...nextPlugin,
   prettier,
   {
+    // Generated files — authoritative content comes from the generator script.
+    // Lint autofix (especially simple-import-sort) would otherwise fight the
+    // generator and produce a permanent diff every time CI runs openapi:manifest.
+    ignores: ["src/lib/openapi/generated/**"],
+  },
+  {
     plugins: {
       react,
       "simple-import-sort": simpleImportSort,

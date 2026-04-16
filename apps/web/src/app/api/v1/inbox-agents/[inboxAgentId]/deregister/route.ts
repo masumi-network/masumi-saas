@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { resolveInboxSmartContractAddress } from "@/lib/inbox-agents/server";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
+
+import contract from "../../../../../pay/api/v1/inbox-agents/[inboxAgentId]/deregister/route.contract";
 
 function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   const value =
@@ -30,24 +33,21 @@ export async function POST(
     const inboxAgentIdResult =
       inboxAgentIdRouteParamSchema.safeParse(rawInboxAgentId);
     if (!inboxAgentIdResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            inboxAgentIdResult.error.issues
-              .map((issue) => issue.message)
-              .join(", ") || "Invalid inbox agent ID",
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error:
+          inboxAgentIdResult.error.issues
+            .map((issue) => issue.message)
+            .join(", ") || "Invalid inbox agent ID",
+      });
     }
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json(
-        { success: false, error: "Payment node not configured for user" },
-        { status: 403 },
-      );
+      return contractJsonResponse(contract, "POST", 403, {
+        success: false,
+        error: "Payment node not configured for user",
+      });
     }
 
     const inboxAgent = await client.getRegistryInboxById({
@@ -55,31 +55,25 @@ export async function POST(
       network,
     });
     if (!inboxAgent) {
-      return NextResponse.json(
-        { success: false, error: "Inbox agent not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "POST", 404, {
+        success: false,
+        error: "Inbox agent not found",
+      });
     }
 
     if (inboxAgent.state !== "RegistrationConfirmed") {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Inbox agent can only be deregistered after registration is confirmed",
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error:
+          "Inbox agent can only be deregistered after registration is confirmed",
+      });
     }
 
     if (!inboxAgent.agentIdentifier) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Inbox agent is missing its on-chain identifier",
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: "Inbox agent is missing its on-chain identifier",
+      });
     }
 
     const smartContractAddress = await resolveInboxSmartContractAddress(
@@ -88,14 +82,11 @@ export async function POST(
       inboxAgent.SmartContractWallet.walletVkey,
     );
     if (!smartContractAddress) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Could not resolve the payment source for this inbox agent registration",
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error:
+          "Could not resolve the payment source for this inbox agent registration",
+      });
     }
 
     const deregistered = await client.deregisterInboxAgent({
@@ -104,14 +95,17 @@ export async function POST(
       smartContractAddress,
     });
 
-    return NextResponse.json({ success: true, data: deregistered });
+    return contractJsonResponse(contract, "POST", 200, {
+      success: true,
+      data: deregistered,
+    });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to deregister inbox agent:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to deregister inbox agent" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "POST", 500, {
+      success: false,
+      error: "Failed to deregister inbox agent",
+    });
   }
 }

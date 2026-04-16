@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { generateOpenAPISpec } from "./generator";
+import { generateOpenAPISpec } from "./public-openapi-generator";
 
 describe("generateOpenAPISpec", () => {
   it("uses explicit runtime paths for the public discovery surface", () => {

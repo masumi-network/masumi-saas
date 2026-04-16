@@ -167,6 +167,15 @@ export const auth = betterAuth({
       ? []
       : ["http://localhost:2999", "http://127.0.0.1:2999"]),
   ],
+  advanced: {
+    useSecureCookies: authEnvConfig.baseUrl.startsWith("https://"),
+    defaultCookieAttributes: {
+      sameSite: "lax",
+      secure: authEnvConfig.baseUrl.startsWith("https://"),
+      httpOnly: true,
+      path: "/",
+    },
+  },
   account: {
     encryptOAuthTokens: true,
   },

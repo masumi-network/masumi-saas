@@ -5,7 +5,7 @@ import fallbackSaaSAppOpenApiSpec from "@/lib/swagger/openapi-platform-docs.json
 
 const generateSaaSAppOpenAPISpecMock = vi.fn();
 
-vi.mock("@/lib/swagger/saas-app-openapi", () => ({
+vi.mock("@/lib/swagger/saas-app-openapi-generator", () => ({
   generateSaaSAppOpenAPISpec: generateSaaSAppOpenAPISpecMock,
 }));
 

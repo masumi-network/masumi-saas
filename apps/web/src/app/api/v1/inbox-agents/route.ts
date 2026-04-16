@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
@@ -7,6 +7,7 @@ import {
   createCreditReference,
 } from "@/lib/credits/service";
 import { prepareManagedInboxRegistration } from "@/lib/inbox-agents/server";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
@@ -16,6 +17,8 @@ import {
   registerInboxAgentBodySchema,
   validateCanonicalInboxAgentSlug,
 } from "@/lib/schemas/inbox-agent";
+
+import contract from "../../../pay/api/v1/inbox-agents/route.contract";
 
 function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
   const fromQuery = request.nextUrl.searchParams.get("network");
@@ -42,15 +45,12 @@ export async function GET(request: NextRequest) {
         rawParams.network ?? request.cookies.get("payment_network")?.value,
     });
     if (!queryValidation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryValidation.error.issues
-            .map((issue) => issue.message)
-            .join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryValidation.error.issues
+          .map((issue) => issue.message)
+          .join(", "),
+      });
     }
 
     const { cursor, filterStatus, network, search, take } =
@@ -63,10 +63,10 @@ export async function GET(request: NextRequest) {
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json(
-        { success: false, error: "Payment node not configured for user" },
-        { status: 403 },
-      );
+      return contractJsonResponse(contract, "GET", 403, {
+        success: false,
+        error: "Payment node not configured for user",
+      });
     }
 
     const { Assets } = await client.getRegistryInbox({
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       searchQuery: search || undefined,
     });
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: Assets,
       nextCursor: Assets.length === take ? (Assets.at(-1)?.id ?? null) : null,
@@ -86,10 +86,10 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get inbox agents:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to get inbox agents" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to get inbox agents",
+    });
   }
 }
 
@@ -106,32 +106,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validation = registerInboxAgentBodySchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: validation.error.issues
-            .map((issue) => issue.message)
-            .join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: validation.error.issues.map((issue) => issue.message).join(", "),
+      });
     }
 
     const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json(
-        { success: false, error: "Payment node not configured for user" },
-        { status: 403 },
-      );
+      return contractJsonResponse(contract, "POST", 403, {
+        success: false,
+        error: "Payment node not configured for user",
+      });
     }
 
     const canonicalSlug = getCanonicalInboxAgentSlug(validation.data.agentSlug);
     const slugValidationError = validateCanonicalInboxAgentSlug(canonicalSlug);
     if (slugValidationError) {
-      return NextResponse.json(
-        { success: false, error: slugValidationError },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: slugValidationError,
+      });
     }
 
     await consumeCreditIfRequired({
@@ -152,13 +147,10 @@ export async function POST(request: NextRequest) {
       network,
     });
     if (!managedRegistration.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: managedRegistration.error,
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: managedRegistration.error,
+      });
     }
 
     await ensureUserPaymentNodeKeyScopedToWallets({
@@ -178,20 +170,23 @@ export async function POST(request: NextRequest) {
       agentSlug: canonicalSlug,
     });
 
-    return NextResponse.json({ success: true, data: created });
+    return contractJsonResponse(contract, "POST", 200, {
+      success: true,
+      data: created,
+    });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     if (isPaymentNodeConfigError(error)) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 503 },
-      );
+      return contractJsonResponse(contract, "POST", 503, {
+        success: false,
+        error: error.message,
+      });
     }
     console.error("Failed to register inbox agent:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to register inbox agent" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "POST", 500, {
+      success: false,
+      error: "Failed to register inbox agent",
+    });
   }
 }

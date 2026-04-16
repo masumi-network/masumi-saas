@@ -11,8 +11,8 @@
 import fs from "fs";
 import path from "path";
 
-import { generateOpenAPISpec } from "./generator";
-import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi";
+import { generateOpenAPISpec } from "./public-openapi-generator";
+import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi-generator";
 
 const swaggerDir = path.join(process.cwd(), "src", "lib", "swagger");
 

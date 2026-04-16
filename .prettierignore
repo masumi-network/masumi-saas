@@ -1,0 +1,4 @@
+# Generated files — authoritative content is emitted by code generators.
+# Running Prettier on these produces a different format from the generator,
+# causing CI (`openapi:manifest:verify`) to fail with drift.
+apps/web/src/lib/openapi/generated/

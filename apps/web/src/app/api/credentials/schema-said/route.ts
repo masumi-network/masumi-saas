@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { apiError } from "@/lib/api/error";
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -7,7 +7,10 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
+
+import contract from "./route.contract";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +18,8 @@ export async function GET(request: NextRequest) {
       return apiError(
         verificationFeatureCopy.agentVerificationUnavailableDescription,
         503,
+        undefined,
+        { contract, method: "GET" },
       );
     }
 
@@ -26,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const schemaSaid = getAgentVerificationSchemaSaid();
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: { schemaSaid },
     });
@@ -34,9 +39,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get schema SAID:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to get schema SAID" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to get schema SAID",
+    });
   }
 }

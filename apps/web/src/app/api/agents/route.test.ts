@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+
+import { z } from "@/lib/zod-openapi";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
@@ -58,7 +59,8 @@ vi.mock("@/lib/schemas", () => ({
     value === "Mainnet" ? "Mainnet" : "Preprod",
 }));
 
-vi.mock("@/lib/schemas/agent", () => {
+vi.mock("@/lib/schemas/agent", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/schemas/agent")>();
   const registerAgentBodySchema = z
     .object({
       name: z.string().min(1),
@@ -78,6 +80,7 @@ vi.mock("@/lib/schemas/agent", () => {
     .strict();
 
   return {
+    ...actual,
     agentsListQuerySchema: z.object({
       verificationStatus: z.string().optional(),
       unverified: z
@@ -96,6 +99,30 @@ vi.mock("@/lib/schemas/agent", () => {
 
 describe("/api/agents POST", () => {
   let POST: typeof import("./route").POST;
+
+  const agentResponseShape = {
+    id: "agent-1",
+    userId: "user-1",
+    name: "Research assistant",
+    description: "Helps with literature review",
+    extendedDescription: null,
+    apiUrl: "https://agent.example.com/mip",
+    organizationId: null,
+    registrationState: "RegistrationConfirmed",
+    verificationStatus: "VERIFIED",
+    tags: ["research", "nlp"],
+    metadata: null,
+    icon: "bot",
+    agentIdentifier: "policy.asset",
+    networkIdentifier: "Preprod",
+    pricing: {
+      pricingType: "Fixed",
+      prices: [{ amount: "5", currency: "USD" }],
+    },
+    createdAt: "2026-04-13T10:00:00.000Z",
+    updatedAt: "2026-04-13T10:00:00.000Z",
+    veridianCredentialId: null,
+  } as const;
 
   beforeAll(async () => {
     ({ POST } = await import("./route"));
@@ -124,14 +151,10 @@ describe("/api/agents POST", () => {
     });
     listWalletOwnedAgentsForUserMock.mockResolvedValue([]);
     agentFindFirstMock.mockResolvedValue({
-      id: "agent-1",
-      name: "Research assistant",
+      ...agentResponseShape,
       agentReference: null,
     });
-    shapeAgentWithMergedMetadataMock.mockReturnValue({
-      id: "agent-1",
-      name: "Research assistant",
-    });
+    shapeAgentWithMergedMetadataMock.mockReturnValue(agentResponseShape);
   });
 
   it("consumes one credit before starting registration", async () => {
@@ -204,6 +227,7 @@ describe("/api/agents POST", () => {
     const GET = (await import("./route")).GET;
     listWalletOwnedAgentsForUserMock.mockResolvedValue([
       {
+        ...agentResponseShape,
         id: "agent-1",
         name: "Visible confirmed agent",
         description: "shown",
@@ -216,6 +240,7 @@ describe("/api/agents POST", () => {
         agentReference: { externalId: "ext-1" },
       },
       {
+        ...agentResponseShape,
         id: "agent-2",
         name: "Hidden pending agent",
         description: "shown if search matches",

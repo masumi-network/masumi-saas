@@ -1,18 +1,28 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { generateOpenAPISpec } from "./generator";
-import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi";
+import { HTTP_METHODS } from "@/lib/openapi/contracts";
+import {
+  isPlatformDocumentPath,
+  isPublicDiscoveryPath,
+  shouldHaveRouteContract,
+} from "@/lib/openapi/document-filters";
+import { routeContractManifest } from "@/lib/openapi/generated/route-contract-manifest";
+import { proxyRouteDescriptors } from "@/lib/v1-proxy/manifest";
 
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
-const DOCUMENTED_PLATFORM_EXTRAS = new Set(["GET /credits"]);
+import { generateOpenAPISpec } from "./public-openapi-generator";
+import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi-generator";
 
 type HttpMethod = (typeof HTTP_METHODS)[number];
+// Loose duck-typed shape for reading OpenAPI documents produced by the spec
+// generators — the test walks paths/methods/servers without binding to
+// openapi3-ts' precise types (they block index access for dynamic methods).
 type OpenApiDocumentLike = {
-  paths?: Record<string, Record<string, unknown>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  paths?: Record<string, any>;
   servers?: Array<{ url?: string }>;
 };
 
@@ -147,44 +157,25 @@ function getOperationPath(operation: string): string {
   return operation.slice(operation.indexOf(" ") + 1);
 }
 
-function isPublicDiscoveryPath(routePath: string): boolean {
-  return (
-    routePath === "/api/v1/agents" ||
-    routePath === "/api/v1/agents/{agentId}" ||
-    routePath === "/api/v1/agents/verify"
-  );
-}
-
-function isExcludedPlatformPath(routePath: string): boolean {
-  if (routePath === "/api/openapi" || routePath === "/api/v1/openapi") {
-    return true;
-  }
-  if (routePath.startsWith("/api/admin")) return true;
-  if (routePath.startsWith("/api/auth")) return true;
-  if (routePath.startsWith("/api/oidc")) return true;
-  if (routePath.startsWith("/api/registry-discovery")) return true;
-  if (routePath.startsWith("/api/webhooks")) return true;
-  if (routePath.startsWith("/api/v1/"))
-    return !isPublicDiscoveryPath(routePath);
-  if (routePath === "/pay/api/v1/registry-inbox/agent-identifier") {
-    return true;
-  }
-  return false;
-}
-
-function isRequiredPlatformPath(routePath: string): boolean {
-  return (
-    (routePath.startsWith("/api/") &&
-      !isPublicDiscoveryPath(routePath) &&
-      !isExcludedPlatformPath(routePath)) ||
-    (routePath.startsWith("/pay/api/v1/") &&
-      !isExcludedPlatformPath(routePath)) ||
-    routePath.startsWith("/registry/api/v1/")
-  );
-}
-
 function diff(left: Set<string>, right: Set<string>): string[] {
   return [...left].filter((item) => !right.has(item)).sort();
+}
+
+function collectContractOperations(): Set<string> {
+  const operations = new Set<string>();
+
+  for (const entry of routeContractManifest) {
+    const contractOperations = entry.contract.operations as Partial<
+      Record<HttpMethod, unknown>
+    >;
+    for (const method of HTTP_METHODS) {
+      if (contractOperations[method]) {
+        operations.add(`${method} ${entry.routePath}`);
+      }
+    }
+  }
+
+  return operations;
 }
 
 describe("OpenAPI route parity", () => {
@@ -192,26 +183,70 @@ describe("OpenAPI route parity", () => {
     path.dirname(fileURLToPath(import.meta.url)),
     "../../app",
   );
+  const routeFiles = collectRouteFiles(appRoot);
   const routeOperations = collectRouteOperations(appRoot);
+  const contractOperations = collectContractOperations();
+  const proxyOperations = new Set(
+    proxyRouteDescriptors.map(
+      (descriptor) => `${descriptor.method} ${descriptor.saasPath}`,
+    ),
+  );
+
+  it("keeps documented first-party routes paired with adjacent contracts", () => {
+    const missingContractFiles = routeFiles
+      .filter((routeFile) =>
+        shouldHaveRouteContract(toRoutePath(appRoot, routeFile)),
+      )
+      .filter(
+        (routeFile) =>
+          !existsSync(path.join(path.dirname(routeFile), "route.contract.ts")),
+      )
+      .map((routeFile) =>
+        path.relative(appRoot, routeFile).split(path.sep).join("/"),
+      )
+      .sort();
+
+    const requiredContractOperations = new Set(
+      [...routeOperations].filter((operation) =>
+        shouldHaveRouteContract(getOperationPath(operation)),
+      ),
+    );
+
+    const missingContractOperations = diff(
+      requiredContractOperations,
+      contractOperations,
+    );
+    const unexpectedContractOperations = [...contractOperations]
+      .filter((operation) => !requiredContractOperations.has(operation))
+      .sort();
+
+    expect({
+      missingContractFiles,
+      missingContractOperations,
+      unexpectedContractOperations,
+    }).toEqual({
+      missingContractFiles: [],
+      missingContractOperations: [],
+      unexpectedContractOperations: [],
+    });
+  });
 
   it("keeps the platform spec aligned with documented runtime routes", () => {
-    const platformRouteOperations = new Set(
-      [...routeOperations].filter((operation) =>
-        isRequiredPlatformPath(getOperationPath(operation)),
+    const firstPartyPlatformOperations = new Set(
+      [...routeOperations].filter(
+        (operation) =>
+          shouldHaveRouteContract(getOperationPath(operation)) &&
+          isPlatformDocumentPath(getOperationPath(operation)),
       ),
     );
     const requiredPlatformOperations = new Set([
-      ...platformRouteOperations,
-      ...DOCUMENTED_PLATFORM_EXTRAS,
+      ...firstPartyPlatformOperations,
+      ...proxyOperations,
     ]);
     const platformSpecOperations = collectSpecOperations(
       generateSaaSAppOpenAPISpec(),
     );
 
-    const missingRouteDefinitions = diff(
-      DOCUMENTED_PLATFORM_EXTRAS,
-      routeOperations,
-    );
     const missingSpecOperations = diff(
       requiredPlatformOperations,
       platformSpecOperations,
@@ -221,11 +256,9 @@ describe("OpenAPI route parity", () => {
       .sort();
 
     expect({
-      missingRouteDefinitions,
       missingSpecOperations,
       unexpected,
     }).toEqual({
-      missingRouteDefinitions: [],
       missingSpecOperations: [],
       unexpected: [],
     });
