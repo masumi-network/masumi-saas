@@ -72,6 +72,7 @@ export const ModelName = {
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
+  EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
@@ -372,6 +373,17 @@ export const RateLimitScalarFieldEnum = {
 
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
+
+export const EmailSendRateLimitScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  count: "count",
+  windowStart: "windowStart",
+  updatedAt: "updatedAt",
+} as const;
+
+export type EmailSendRateLimitScalarFieldEnum =
+  (typeof EmailSendRateLimitScalarFieldEnum)[keyof typeof EmailSendRateLimitScalarFieldEnum];
 
 export const KycVerificationScalarFieldEnum = {
   id: "id",

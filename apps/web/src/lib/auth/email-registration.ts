@@ -7,6 +7,16 @@ function getMagicLinkErrorResult(error: unknown) {
   return classifyAuthError(error, [
     {
       matches: (message) =>
+        message.includes("too many email requests") ||
+        message.includes("too_many_email_requests"),
+      result: {
+        error:
+          "Too many email requests. Please wait before requesting another code.",
+        errorKey: "TooManyEmailRequests" as const,
+      },
+    },
+    {
+      matches: (message) =>
         message.includes("magic link") || message.includes("failed to send"),
       result: {
         error: "Failed to send magic link",

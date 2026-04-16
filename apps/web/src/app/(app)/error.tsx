@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,16 +35,20 @@ function isSelectiveHydrationLeak(error: Error): boolean {
 }
 
 export default function AppGroupError({ error, reset }: ErrorBoundaryProps) {
-  const autoResetAttempted = useRef(false);
+  const t = useTranslations("Common.ErrorBoundary");
+  const [autoResetAttempted, setAutoResetAttempted] = useState(false);
 
   useEffect(() => {
-    if (isSelectiveHydrationLeak(error) && !autoResetAttempted.current) {
-      autoResetAttempted.current = true;
+    if (isSelectiveHydrationLeak(error) && !autoResetAttempted) {
+      // Intentionally update state from an effect to guard reset() from looping
+      // if the leak reoccurs on the next render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAutoResetAttempted(true);
       reset();
     }
-  }, [error, reset]);
+  }, [error, reset, autoResetAttempted]);
 
-  if (isSelectiveHydrationLeak(error) && !autoResetAttempted.current) {
+  if (isSelectiveHydrationLeak(error) && !autoResetAttempted) {
     return null;
   }
 
@@ -51,16 +56,12 @@ export default function AppGroupError({ error, reset }: ErrorBoundaryProps) {
     <div className="bg-background text-foreground flex min-h-svh items-center justify-center p-4">
       <Card className="animate-in fade-in fill-mode-both delay-500 duration-150 max-w-md border-destructive">
         <CardHeader>
-          <CardTitle className="text-destructive">
-            Something went wrong
-          </CardTitle>
-          <CardDescription>
-            An unexpected error occurred while loading this page.
-          </CardDescription>
+          <CardTitle className="text-destructive">{t("title")}</CardTitle>
+          <CardDescription>{t("descriptionApp")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={reset} variant="outline">
-            Try again
+            {t("retry")}
           </Button>
         </CardContent>
       </Card>

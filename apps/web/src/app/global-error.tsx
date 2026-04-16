@@ -1,6 +1,9 @@
+// Strings in this file are intentionally hardcoded English because
+// NextIntlClientProvider is not mounted at the global-error layer.
+/* eslint-disable react/jsx-no-literals */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface GlobalErrorProps {
   error: Error & { digest?: string };
@@ -13,10 +16,12 @@ interface GlobalErrorProps {
  *
  * Must render its own <html> and <body> because it replaces the root layout
  * entirely. Avoid importing components that depend on providers from the root
- * layout (theme, i18n, etc.) — they are not mounted when this renders. We
- * detect theme directly from next-themes's localStorage key + the system
- * preference so the background matches the user's chosen theme and no
- * opposite-color flash is rendered.
+ * layout (theme, i18n, etc.) — they are not mounted when this renders. Strings
+ * here are intentionally hardcoded English because NextIntlClientProvider is
+ * unavailable at this layer; the `react/jsx-no-literals` rule is disabled
+ * inline for the user-facing copy below. We detect theme directly from
+ * next-themes's localStorage key + the system preference so the background
+ * matches the user's chosen theme and no opposite-color flash is rendered.
  *
  * React error #461 is an internal selective-hydration sentinel that isn't a
  * real error; it occasionally leaks on Firefox when an RSC response stream is
@@ -75,27 +80,33 @@ function resolveInitialTheme(): Theme {
   }
 }
 
+const FADE_IN_KEYFRAMES =
+  "@keyframes masumiGlobalErrorFadeIn { from { opacity: 0 } to { opacity: 1 } }";
+
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
-  const autoResetAttempted = useRef(false);
+  const [autoResetAttempted, setAutoResetAttempted] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme());
 
   useEffect(() => {
-    if (isSelectiveHydrationLeak(error) && !autoResetAttempted.current) {
-      autoResetAttempted.current = true;
+    if (isSelectiveHydrationLeak(error) && !autoResetAttempted) {
+      // Intentionally update state from an effect to guard reset() from
+      // looping if the leak reoccurs on the next render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAutoResetAttempted(true);
       reset();
     }
-  }, [error, reset]);
+  }, [error, reset, autoResetAttempted]);
 
   useEffect(() => {
     // Sync theme if the user changed it between when this error mounted and
     // any later render (e.g. system preference change).
     const resolved = resolveInitialTheme();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (resolved !== theme) setTheme(resolved);
   }, [theme]);
 
   const palette = theme === "dark" ? DARK_PALETTE : LIGHT_PALETTE;
-  const shouldHide =
-    isSelectiveHydrationLeak(error) && !autoResetAttempted.current;
+  const shouldHide = isSelectiveHydrationLeak(error) && !autoResetAttempted;
 
   return (
     <html lang="en" data-theme={theme}>
@@ -114,7 +125,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
           colorScheme: theme,
         }}
       >
-        <style>{`@keyframes masumiGlobalErrorFadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>
+        <style>{FADE_IN_KEYFRAMES}</style>
         {shouldHide ? null : (
           <div
             style={{

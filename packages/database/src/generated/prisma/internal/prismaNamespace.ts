@@ -430,6 +430,7 @@ export const ModelName = {
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
+  EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
@@ -479,6 +480,7 @@ export type TypeMap<
       | "deviceCode"
       | "jwks"
       | "rateLimit"
+      | "emailSendRateLimit"
       | "kycVerification"
       | "agent"
       | "agentActivityEvent"
@@ -1859,6 +1861,82 @@ export type TypeMap<
         };
       };
     };
+    EmailSendRateLimit: {
+      payload: Prisma.$EmailSendRateLimitPayload<ExtArgs>;
+      fields: Prisma.EmailSendRateLimitFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.EmailSendRateLimitFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.EmailSendRateLimitFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        findFirst: {
+          args: Prisma.EmailSendRateLimitFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.EmailSendRateLimitFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        findMany: {
+          args: Prisma.EmailSendRateLimitFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        create: {
+          args: Prisma.EmailSendRateLimitCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        createMany: {
+          args: Prisma.EmailSendRateLimitCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.EmailSendRateLimitCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        delete: {
+          args: Prisma.EmailSendRateLimitDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        update: {
+          args: Prisma.EmailSendRateLimitUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        deleteMany: {
+          args: Prisma.EmailSendRateLimitDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.EmailSendRateLimitUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.EmailSendRateLimitUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        upsert: {
+          args: Prisma.EmailSendRateLimitUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        aggregate: {
+          args: Prisma.EmailSendRateLimitAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailSendRateLimit>;
+        };
+        groupBy: {
+          args: Prisma.EmailSendRateLimitGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.EmailSendRateLimitGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.EmailSendRateLimitCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.EmailSendRateLimitCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     KycVerification: {
       payload: Prisma.$KycVerificationPayload<ExtArgs>;
       fields: Prisma.KycVerificationFieldRefs;
@@ -2856,6 +2934,17 @@ export const RateLimitScalarFieldEnum = {
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
 
+export const EmailSendRateLimitScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  count: "count",
+  windowStart: "windowStart",
+  updatedAt: "updatedAt",
+} as const;
+
+export type EmailSendRateLimitScalarFieldEnum =
+  (typeof EmailSendRateLimitScalarFieldEnum)[keyof typeof EmailSendRateLimitScalarFieldEnum];
+
 export const KycVerificationScalarFieldEnum = {
   id: "id",
   status: "status",
@@ -3361,6 +3450,7 @@ export type GlobalOmitConfig = {
   deviceCode?: Prisma.DeviceCodeOmit;
   jwks?: Prisma.JwksOmit;
   rateLimit?: Prisma.RateLimitOmit;
+  emailSendRateLimit?: Prisma.EmailSendRateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;

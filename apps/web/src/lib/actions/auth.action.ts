@@ -9,6 +9,7 @@ import {
   sanitizeCallbackUrl,
 } from "@/lib/auth/callback-url";
 import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
+import { resetEmailSendLimit } from "@/lib/auth/email-send-rate-limit";
 import {
   classifyAuthError,
   createUnexpectedErrorResult,
@@ -68,8 +69,43 @@ export async function signOutAction() {
   redirect("/signin");
 }
 
+/**
+ * Server-side sign-out for the OIDC consent "Switch account" button.
+ * Using a server action guarantees the session cookie is cleared before
+ * navigating to /signin; client-side signOut + window.location.assign can
+ * race in browsers that restrict third-party cookies (e.g. Brave), leaving
+ * the session intact so /signin short-circuits back to the callback URL.
+ */
+export async function switchAccountAction(formData: FormData) {
+  const headersList = await getRequestHeaders();
+  await auth.api.signOut({
+    headers: headersList,
+  });
+
+  const rawCallbackUrl = formData.get("callbackUrl");
+  const safeCallbackUrl =
+    typeof rawCallbackUrl === "string"
+      ? sanitizeCallbackUrl(rawCallbackUrl)
+      : undefined;
+
+  redirect(
+    safeCallbackUrl
+      ? `/signin?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`
+      : "/signin",
+  );
+}
+
 function getSignUpErrorResult(error: unknown) {
   return classifyAuthError(error, [
+    {
+      matches: (message) =>
+        message.includes("too many email requests") ||
+        message.includes("too_many_email_requests"),
+      result: {
+        error: "Too many email requests. Please wait before trying again.",
+        errorKey: "TooManyEmailRequests" as const,
+      },
+    },
     {
       matches: (message) =>
         message.includes("unique") ||
@@ -175,6 +211,17 @@ export async function signInAction(formData: FormData, callbackUrl?: string) {
     );
     const status = details.status;
     const errorMessage = details.message;
+
+    if (
+      status === 429 ||
+      errorMessage.includes("too many email requests") ||
+      errorMessage.includes("too_many_email_requests")
+    ) {
+      return {
+        error: "Too many email requests. Please wait before trying again.",
+        errorKey: "TooManyEmailRequests" as const,
+      };
+    }
 
     if (status === 401) {
       if (errorMessage.includes("failed to create session")) {
@@ -379,6 +426,10 @@ export async function signInMagicLinkCodeAction(
         errorKey: "InvalidMagicLinkCode" as const,
       };
     }
+
+    // Successful code redemption counts as a successful auth — clear the
+    // per-email send-rate window so the user starts fresh next time.
+    await resetEmailSendLimit(validation.data.email);
 
     return {
       success: true,

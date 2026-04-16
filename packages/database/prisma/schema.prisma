@@ -349,6 +349,20 @@ model RateLimit {
   @@map("rateLimit")
 }
 
+/// Tracks how many auth emails (magic-link + verification codes) have been
+/// sent to a specific email address within a rolling window. Used to cap
+/// sends at 5 per 30 minutes; the row is cleared on successful magic-link
+/// code verification or when the user's email is verified.
+model EmailSendRateLimit {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_send_rate_limit")
+}
+
 model KycVerification {
   id                String             @id @default(uuid())
   status            VerificationStatus @default(PENDING)
