@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,13 @@ import type { ConnectedOidcClient } from "@/lib/auth/connected-oidc-clients";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/lib/utils/format-date";
 
-type SerializedConnectedClient = Omit<
+/**
+ * Client-safe shape for connected OIDC clients. Dates are serialized to ISO
+ * strings because Next.js Server Components can't hand raw Date instances to
+ * client components. Single source of truth — server pages that prepare the
+ * prop should import this type instead of redefining it.
+ */
+export type SerializedConnectedClient = Omit<
   ConnectedOidcClient,
   "lastTokenIssuedAt" | "firstConnectedAt" | "lastConnectedAt"
 > & {
@@ -56,13 +62,23 @@ export function ConnectedAppsSection({ clients }: ConnectedAppsSectionProps) {
   const t = useTranslations("App.Account.Connected");
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
+  // Track that a user-triggered refresh is in flight so we can fire the
+  // success toast AFTER the transition resolves (i.e., the new RSC payload
+  // has committed), rather than synchronously next to router.refresh() which
+  // doesn't block.
+  const pendingToastRef = useRef(false);
+
+  useEffect(() => {
+    if (!isRefreshing && pendingToastRef.current) {
+      pendingToastRef.current = false;
+      toast.success(t("refreshed"));
+    }
+  }, [isRefreshing, t]);
 
   function handleRefresh() {
+    pendingToastRef.current = true;
     startRefresh(() => {
       router.refresh();
-      // router.refresh() settles when the RSC payload resolves; the transition
-      // owns the pending state so we don't need a manual timeout here.
-      toast.success(t("refreshed"));
     });
   }
 

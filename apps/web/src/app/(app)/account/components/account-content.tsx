@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { OrganizationSelect } from "@/components/organization-select";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth/auth";
-import type { ConnectedOidcClient } from "@/lib/auth/connected-oidc-clients";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
-import { ConnectedAppsSection } from "./connected-apps-section";
+import {
+  ConnectedAppsSection,
+  type SerializedConnectedClient,
+} from "./connected-apps-section";
 import { DeleteAccountForm } from "./delete-account-form";
 import { EmailForm } from "./email-form";
 import { NameForm } from "./name-form";
@@ -16,15 +18,6 @@ import { PasswordForm } from "./password-form";
 import { TwoFactorSection } from "./two-factor-section";
 
 type Account = Awaited<ReturnType<typeof auth.api.listUserAccounts>>[number];
-
-type SerializedConnectedClient = Omit<
-  ConnectedOidcClient,
-  "lastTokenIssuedAt" | "firstConnectedAt" | "lastConnectedAt"
-> & {
-  lastTokenIssuedAt: string | null;
-  firstConnectedAt: string | null;
-  lastConnectedAt: string | null;
-};
 
 function OrganizationSelectorSection() {
   const orgContext = useOrganizationContextOptional();

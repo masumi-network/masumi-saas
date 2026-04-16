@@ -3,11 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import {
-  type ConnectedOidcClient,
-  listConnectedOidcClients,
-  revokeOidcClientConnection,
-} from "@/lib/auth/connected-oidc-clients";
+import { revokeOidcClientConnection } from "@/lib/auth/connected-oidc-clients";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 
 const terminateSchema = z.object({
@@ -70,9 +66,4 @@ export async function terminateConnectedAppAction(
       error: "Failed to terminate connection. Please try again.",
     };
   }
-}
-
-export async function getConnectedAppsAction(): Promise<ConnectedOidcClient[]> {
-  const { user } = await getAuthenticatedOrThrow();
-  return listConnectedOidcClients(user.id);
 }
