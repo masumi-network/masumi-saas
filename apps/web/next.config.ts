@@ -16,16 +16,17 @@ function parseOrigin(value: string | undefined): string | null {
 }
 
 /**
- * Collects origins that the OIDC consent form at `/oidc/consent` is allowed to
- * be redirected to after POSTing to `/oidc/consent/submit`. The form-action
+ * Collects origins that the OIDC consent form at `/oidc/consent` is allowed
+ * to be redirected to after POSTing to `/oidc/consent/submit`. The form-action
  * CSP directive applies to the whole navigation chain of a form submission
  * (including 303 redirects), so without these, Chromium/WebKit silently block
  * the cross-origin hop to the OIDC client callback (Firefox doesn't enforce
  * form-action on redirects — that's why the bug was browser-specific).
  *
- * Mirrors `parseRedirectUrls` in src/lib/config/oidc.config.ts but is
- * duplicated here because next.config.ts cannot import from src at config
- * load time.
+ * No default fallback is applied: origins come exclusively from
+ * `OIDC_WEB_REDIRECT_URLS`. Local dev that relies on a localhost OIDC client
+ * must set the env var explicitly so the CSP matches the OIDC client
+ * registration and no localhost origin leaks into production CSPs by default.
  */
 function parseOidcRedirectOrigins(rawValue: string | undefined): string[] {
   if (!rawValue?.trim()) return [];
