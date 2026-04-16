@@ -212,8 +212,10 @@ export async function signInAction(formData: FormData, callbackUrl?: string) {
     const status = details.status;
     const errorMessage = details.message;
 
+    // Match by message only — a bare `status === 429` would also catch
+    // better-auth's generic sign-in brute-force limiter, which is a separate
+    // concern and would be mislabeled to the user as an email-send problem.
     if (
-      status === 429 ||
       errorMessage.includes("too many email requests") ||
       errorMessage.includes("too_many_email_requests")
     ) {
