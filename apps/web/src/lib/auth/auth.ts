@@ -168,10 +168,19 @@ export const auth = betterAuth({
       : ["http://localhost:2999", "http://127.0.0.1:2999"]),
   ],
   advanced: {
-    useSecureCookies: authEnvConfig.baseUrl.startsWith("https://"),
+    // In production we force secure cookies on regardless of BETTER_AUTH_URL.
+    // Prod deployments always run behind TLS; if BETTER_AUTH_URL were
+    // misconfigured (missing, http://, or no scheme) we'd silently drop the
+    // `__Secure-` prefix and Secure flag on session cookies, and WebKit/
+    // Safari/Brave would reject them on the OIDC cross-site redirect.
+    useSecureCookies:
+      process.env.NODE_ENV === "production" ||
+      authEnvConfig.baseUrl.startsWith("https://"),
     defaultCookieAttributes: {
       sameSite: "lax",
-      secure: authEnvConfig.baseUrl.startsWith("https://"),
+      secure:
+        process.env.NODE_ENV === "production" ||
+        authEnvConfig.baseUrl.startsWith("https://"),
       httpOnly: true,
       path: "/",
     },
