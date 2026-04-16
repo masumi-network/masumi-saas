@@ -162,7 +162,7 @@ export default function UserAvatarClient({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 text-left shadow-none transition-colors hover:bg-sidebar-accent/45 hover:border-sidebar-border group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-sidebar-accent/30"
+                  className="relative h-auto min-h-14 min-w-0 w-full max-w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 text-left shadow-none transition-colors hover:bg-sidebar-accent/45 hover:border-sidebar-border group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:max-w-none group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-sidebar-accent/30"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent

@@ -77,13 +77,13 @@ export default function Sidebar({ session }: SidebarProps) {
       </SidebarContent>
       <SidebarFooter
         className={cn(
-          "shrink-0 px-0",
+          "min-w-0 shrink-0",
           isMobile && "border-t border-sidebar-border py-4",
         )}
       >
         <div
           className={cn(
-            "flex flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-5 ease-in-out transition-all duration-300",
+            "flex min-w-0 w-full max-w-full flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-5 ease-in-out transition-all duration-300",
             isMobile && "px-4 py-0",
           )}
         >
