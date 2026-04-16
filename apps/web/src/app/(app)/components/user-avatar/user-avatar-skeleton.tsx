@@ -13,7 +13,7 @@ export default function UserAvatarSkeleton({
   return (
     <Button
       variant="ghost"
-      className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+      className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:min-w-11 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:shrink-0 group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
       aria-label="Loading user profile"
       disabled
     >

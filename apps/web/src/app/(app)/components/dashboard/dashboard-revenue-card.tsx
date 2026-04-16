@@ -93,8 +93,8 @@ export function DashboardRevenueCard() {
   return (
     <Card className="group relative flex h-full min-h-0 flex-col gap-0 overflow-hidden rounded-xl border-l-4 border-l-primary pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
       {/*
-        Select before the full-card Link in the DOM so Tab reaches the period control first.
-        (Overlay link stays z-[1]; control stays above for hit-testing and focus order.)
+        Select stays outside the earnings link (valid HTML; Tab reaches period before the link).
+        Main body is a real link so text is selectable and AT sees content inside the anchor.
       */}
       <div className="pointer-events-auto absolute right-6 top-6 z-[3]">
         <Select
@@ -114,13 +114,12 @@ export function DashboardRevenueCard() {
       </div>
       <Link
         href={`/earnings?period=${period}`}
-        className="absolute inset-0 z-[1] rounded-xl outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+        className="relative z-[1] flex min-h-0 flex-1 flex-col gap-6 rounded-xl outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
         aria-label={t("earningsCardAria", {
           total: formatDashboardEarningsTotal(total, amountUnit),
         })}
-      />
-      {/* gap-6 matches default Card spacing between header and content on other dashboard stat cards */}
-      <div className="relative z-[2] flex min-h-0 flex-1 flex-col gap-6 pointer-events-none">
+      >
+        {/* gap-6 matches default Card spacing between header and content on other dashboard stat cards */}
         <CardHeader className="relative space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
           <CardTitle className="flex min-w-0 items-center gap-2 pr-32 text-xs font-medium uppercase tracking-tight text-muted-foreground whitespace-nowrap transition-colors group-hover:underline">
             {amountUnit === "USD" ? (
@@ -183,7 +182,7 @@ export function DashboardRevenueCard() {
             </p>
           ) : null}
         </CardContent>
-      </div>
+      </Link>
     </Card>
   );
 }

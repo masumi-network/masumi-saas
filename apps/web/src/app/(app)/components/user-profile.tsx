@@ -22,7 +22,7 @@ export default function UserProfile({ session }: UserProfileProps) {
 
   return (
     <div className="flex min-w-0 w-full max-w-full flex-col-reverse gap-4 md:flex-initial md:flex-row md:items-center">
-      <div className="flex min-w-0 w-full items-center gap-2">
+      <div className="flex min-w-0 w-full items-center gap-2 group-data-[collapsible=icon]:justify-center">
         <UserAvatar session={session} />
       </div>
     </div>

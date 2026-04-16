@@ -83,7 +83,8 @@ export default function Sidebar({ session }: SidebarProps) {
       >
         <div
           className={cn(
-            "flex min-w-0 w-full max-w-full flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-5 ease-in-out transition-all duration-300",
+            // Icon rail is 5rem; px-5 leaves ~40px for content and squeezes the 44px profile control into a vertical ellipse. Use tighter horizontal padding when collapsed.
+            "flex min-w-0 w-full max-w-full flex-1 gap-2 p-4 pb-4 pt-0 md:justify-start md:flex-1 group-data-[collapsible=icon]:px-2 ease-in-out transition-all duration-300",
             isMobile && "px-4 py-0",
           )}
         >

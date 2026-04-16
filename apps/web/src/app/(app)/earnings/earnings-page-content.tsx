@@ -1149,9 +1149,7 @@ export function EarningsPageContent() {
                       </p>
                     </div>
                   </div>
-                ) : chartHasMeaningfulData &&
-                  chartCanRender &&
-                  !EARNINGS_TIME_SERIES_CHART_ENABLED ? null : (
+                ) : !EARNINGS_TIME_SERIES_CHART_ENABLED ? null : (
                   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-16 text-center">
                     <TrendingUp className="size-8 text-muted-foreground" />
                     <div className="space-y-1">
