@@ -753,6 +753,20 @@ async function appendContinueUrlToConsentRedirect(
 export async function handleMasumiOidcAuthorizeRequest(
   request: Request,
 ): Promise<Response> {
+  const ua = request.headers.get("user-agent") ?? "";
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const hasSessionCookie =
+    /better-auth\.session_token|__Secure-better-auth\.session_token/.test(
+      cookieHeader,
+    );
+  const requestUrl = new URL(request.url);
+  const reqPath = requestUrl.pathname + requestUrl.search;
+  console.info("[oidc authorize] enter", {
+    ua,
+    hasSessionCookie,
+    path: reqPath,
+  });
+
   const promptAwareRequest =
     createConsentPromptedAuthorizeRequest(request) ?? request;
   const authorizeRequest =
@@ -760,12 +774,25 @@ export async function handleMasumiOidcAuthorizeRequest(
   const unverifiedResponse =
     await createUnverifiedOidcAuthorizeResponse(authorizeRequest);
   if (unverifiedResponse) {
+    console.info("[oidc authorize] exit", {
+      status: unverifiedResponse.status,
+      location: unverifiedResponse.headers.get("location"),
+      reason: "unverified",
+    });
     return unverifiedResponse;
   }
 
   await ensureHeadlessWebConsent(authorizeRequest);
   const response = await authHandler.GET(authorizeRequest);
-  return appendContinueUrlToConsentRedirect(authorizeRequest, response);
+  const finalResponse = await appendContinueUrlToConsentRedirect(
+    authorizeRequest,
+    response,
+  );
+  console.info("[oidc authorize] exit", {
+    status: finalResponse.status,
+    location: finalResponse.headers.get("location"),
+  });
+  return finalResponse;
 }
 
 export async function readBodyFields(

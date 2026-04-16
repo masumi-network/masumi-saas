@@ -1,3 +1,5 @@
+import { createHash, randomUUID } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
@@ -8,6 +10,13 @@ import {
 } from "@/lib/auth/callback-url";
 import { getAuthErrorDetails } from "@/lib/auth/error-results";
 import { addUserOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
+
+function redirectNoStore(url: string | URL): NextResponse {
+  const res = NextResponse.redirect(url, 303);
+  res.headers.set("Cache-Control", "no-store");
+  res.headers.set("Pragma", "no-cache");
+  return res;
+}
 
 type ConsentVerificationValue = {
   clientId?: unknown;
@@ -61,8 +70,21 @@ export async function POST(request: Request) {
   const consentCode = formData.get("consentCode");
   const accept = formData.get("accept") === "true";
 
+  const requestId = randomUUID();
+  const ua = request.headers.get("user-agent") ?? "";
+  const codeHash =
+    typeof consentCode === "string"
+      ? createHash("sha256").update(consentCode).digest("hex").slice(0, 12)
+      : null;
+  console.info("[oidc consent submit] enter", {
+    requestId,
+    ua,
+    codeHash,
+    accept,
+  });
+
   if (typeof consentCode !== "string" || consentCode.trim().length === 0) {
-    return NextResponse.redirect(buildAbsoluteAppUrl("/"), 303);
+    return redirectNoStore(buildAbsoluteAppUrl("/"));
   }
 
   try {
@@ -72,19 +94,17 @@ export async function POST(request: Request) {
       });
 
       if (!session?.user) {
-        return NextResponse.redirect(
+        return redirectNoStore(
           buildConsentPageUrl(
             formData,
             "Sign in again to continue the OIDC flow.",
           ),
-          303,
         );
       }
 
       if (session.user.emailVerified !== true) {
-        return NextResponse.redirect(
+        return redirectNoStore(
           buildConsentPageUrl(formData, "Verify your email before continuing."),
-          303,
         );
       }
 
@@ -106,12 +126,11 @@ export async function POST(request: Request) {
         verificationValue.userId !== session.user.id ||
         typeof verificationValue.clientId !== "string"
       ) {
-        return NextResponse.redirect(
+        return redirectNoStore(
           buildConsentPageUrl(
             formData,
             "The OIDC consent request is no longer valid. Please try again.",
           ),
-          303,
         );
       }
 
@@ -147,13 +166,23 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.redirect(result.redirectURI, 303);
+    let redirectOrigin: string | null = null;
+    try {
+      redirectOrigin = new URL(result.redirectURI).origin;
+    } catch {}
+    console.info("[oidc consent submit] redirect", {
+      requestId,
+      redirectOrigin,
+    });
+
+    return redirectNoStore(result.redirectURI);
   } catch (error) {
     const details = getAuthErrorDetails(error);
     console.error(
       "[oidc consent] submit failed",
       {
-        consentCode,
+        requestId,
+        codeHash,
         accept,
         status: details.status,
         messages: details.messages,
@@ -168,9 +197,6 @@ export async function POST(request: Request) {
         ? details.body.error_description
         : details.messages[0] || "Failed to process consent request";
 
-    return NextResponse.redirect(
-      buildConsentPageUrl(formData, fallbackMessage),
-      303,
-    );
+    return redirectNoStore(buildConsentPageUrl(formData, fallbackMessage));
   }
 }
