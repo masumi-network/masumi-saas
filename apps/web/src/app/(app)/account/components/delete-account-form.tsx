@@ -1,12 +1,13 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -92,6 +93,12 @@ export function DeleteAccountForm() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
                   <fieldset className="space-y-4" disabled={isSubmitting}>
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4 inline mr-2" />
+                      <AlertDescription className="inline">
+                        {t("description")}
+                      </AlertDescription>
+                    </Alert>
                     <FormField
                       control={form.control}
                       name="currentPassword"

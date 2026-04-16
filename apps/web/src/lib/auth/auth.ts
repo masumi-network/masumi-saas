@@ -28,6 +28,12 @@ import {
 } from "@/lib/auth/auth-storage";
 import { getBootstrapAdminIds } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
+import {
+  checkAndIncrementEmailSendLimit,
+  EMAIL_SEND_RATE_LIMIT_MAX_ATTEMPTS,
+  EMAIL_SEND_RATE_LIMIT_WINDOW_MS,
+  resetEmailSendLimit,
+} from "@/lib/auth/email-send-rate-limit";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
@@ -53,6 +59,28 @@ import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
 const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
+
+/**
+ * Caps how many auth emails (magic-link + verification codes) any single
+ * email address can receive per rolling window. The counter is reset when
+ * the recipient either successfully redeems a magic-link code or verifies
+ * their email address.
+ */
+async function enforceEmailSendRateLimit(email: string): Promise<void> {
+  const result = await checkAndIncrementEmailSendLimit(email);
+  if (result.allowed) {
+    return;
+  }
+
+  const retryAfterMinutes = Math.max(
+    1,
+    Math.ceil(result.retryAfterSeconds / 60),
+  );
+  throw new APIError("TOO_MANY_REQUESTS", {
+    message: `Too many email requests. Please try again in ${retryAfterMinutes} minute(s). Max ${EMAIL_SEND_RATE_LIMIT_MAX_ATTEMPTS} emails per ${Math.round(EMAIL_SEND_RATE_LIMIT_WINDOW_MS / 60000)} minutes.`,
+    code: "TOO_MANY_EMAIL_REQUESTS",
+  });
+}
 
 function generateEmailVerificationCode(length = 6): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
@@ -247,6 +275,7 @@ export const auth = betterAuth({
       const isResend =
         typeof request?.url === "string" &&
         request.url.includes("send-verification-email");
+      await enforceEmailSendRateLimit(user.email);
       const verificationCode = await createEmailVerificationOtp(user.email);
 
       if (process.env.NODE_ENV === "development") {
@@ -349,6 +378,24 @@ export const auth = betterAuth({
           await createPaymentNodeKeyForUser(user.id);
         },
       },
+      update: {
+        after: async (user) => {
+          // Registration confirmation is "successful" the moment the user's
+          // email becomes verified — clear the per-email send counter so a
+          // legitimate user whose session is cycling isn't blocked.
+          if (user.emailVerified) {
+            try {
+              await resetEmailSendLimit(user.email);
+            } catch (error) {
+              console.error(
+                "[auth] Failed to reset email send rate limit",
+                user.id,
+                error,
+              );
+            }
+          }
+        },
+      },
     },
   },
   plugins: [
@@ -394,6 +441,7 @@ export const auth = betterAuth({
           return;
         }
 
+        await enforceEmailSendRateLimit(email);
         await sendVerificationOtpEmail({ email, otp });
       },
     }),
@@ -403,6 +451,7 @@ export const auth = betterAuth({
       rateLimit: authConfig.magicLink.rateLimit,
       storeToken: createMagicLinkTokenHasher(),
       sendMagicLink: async ({ email, url }, ctx) => {
+        await enforceEmailSendRateLimit(email);
         const requestedName =
           typeof ctx?.body?.name === "string" && ctx.body.name.trim().length > 0
             ? ctx.body.name.trim()

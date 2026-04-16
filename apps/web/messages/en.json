@@ -2,7 +2,13 @@
   "Common": {
     "Loading": "Loading...",
     "Error": "Error",
-    "Success": "Success"
+    "Success": "Success",
+    "ErrorBoundary": {
+      "title": "Something went wrong",
+      "descriptionRoot": "An unexpected error occurred. Please try again.",
+      "descriptionApp": "An unexpected error occurred while loading this page.",
+      "retry": "Try again"
+    }
   },
   "Auth": {
     "Errors": {
@@ -20,7 +26,8 @@
       "InvalidTwoFactorCode": "Invalid verification code. Please try again.",
       "InvalidMagicLinkCode": "Invalid sign-in code.",
       "ExpiredMagicLinkCode": "Sign-in code expired. Request a new email.",
-      "TooManyMagicLinkCodeAttempts": "Too many failed attempts. Request a new email."
+      "TooManyMagicLinkCodeAttempts": "Too many failed attempts. Request a new email.",
+      "TooManyEmailRequests": "Too many email requests. You can send up to 5 emails per 30 minutes. Please wait and try again."
     },
     "Results": {
       "SignInSuccess": "Logged in successfully!",

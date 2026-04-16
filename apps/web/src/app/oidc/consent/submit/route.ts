@@ -71,17 +71,10 @@ export async function POST(request: Request) {
   const accept = formData.get("accept") === "true";
 
   const requestId = randomUUID();
-  const ua = request.headers.get("user-agent") ?? "";
   const codeHash =
     typeof consentCode === "string"
       ? createHash("sha256").update(consentCode).digest("hex").slice(0, 12)
       : null;
-  console.info("[oidc consent submit] enter", {
-    requestId,
-    ua,
-    codeHash,
-    accept,
-  });
 
   if (typeof consentCode !== "string" || consentCode.trim().length === 0) {
     return redirectNoStore(buildAbsoluteAppUrl("/"));
@@ -134,7 +127,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const updatedGrantScopes = await addUserOidcGrantScopes({
+      await addUserOidcGrantScopes({
         userId: session.user.id,
         clientId: verificationValue.clientId,
         scopes:
@@ -142,19 +135,6 @@ export async function POST(request: Request) {
           Array.isArray(verificationValue.scope)
             ? verificationValue.scope
             : "",
-      });
-
-      console.info("[oidc grants] approved consent scopes synced", {
-        flow: "web-consent-submit",
-        clientId: verificationValue.clientId,
-        userId: session.user.id,
-        requestedScopes:
-          typeof verificationValue.scope === "string"
-            ? verificationValue.scope.split(" ").filter(Boolean)
-            : Array.isArray(verificationValue.scope)
-              ? verificationValue.scope
-              : [],
-        updatedGrantScopes,
       });
     }
 
@@ -164,15 +144,6 @@ export async function POST(request: Request) {
         accept,
         consent_code: consentCode,
       },
-    });
-
-    let redirectOrigin: string | null = null;
-    try {
-      redirectOrigin = new URL(result.redirectURI).origin;
-    } catch {}
-    console.info("[oidc consent submit] redirect", {
-      requestId,
-      redirectOrigin,
     });
 
     return redirectNoStore(result.redirectURI);

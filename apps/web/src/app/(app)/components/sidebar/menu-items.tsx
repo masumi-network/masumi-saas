@@ -148,9 +148,9 @@ export default function MenuItems() {
             {renderItem({
               ...developerItem,
               className:
-                "border-0 bg-transparent shadow-none text-pink-600 hover:bg-transparent hover:text-pink-700 data-[active=true]:bg-transparent data-[active=true]:text-pink-700 dark:text-pink-300 dark:hover:text-pink-200 dark:data-[active=true]:text-pink-100",
+                "border-0 bg-transparent shadow-none text-pink-700 hover:bg-transparent hover:text-pink-800 data-[active=true]:bg-transparent data-[active=true]:text-pink-800 dark:text-pink-600 dark:hover:text-pink-500 dark:data-[active=true]:text-pink-400",
               linkClassName:
-                "text-pink-600 hover:text-pink-700 dark:text-pink-300 dark:hover:text-pink-200",
+                "text-pink-700 hover:text-pink-800 dark:text-pink-600 dark:hover:text-pink-500",
             })}
           </SidebarMenu>
         </SidebarGroupContent>

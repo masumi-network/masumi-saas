@@ -135,6 +135,14 @@ export type Jwks = Prisma.JwksModel;
  */
 export type RateLimit = Prisma.RateLimitModel;
 /**
+ * Model EmailSendRateLimit
+ * Tracks how many auth emails (magic-link + verification codes) have been
+ * sent to a specific email address within a rolling window. Used to cap
+ * sends at 5 per 30 minutes; the row is cleared on successful magic-link
+ * code verification or when the user's email is verified.
+ */
+export type EmailSendRateLimit = Prisma.EmailSendRateLimitModel;
+/**
  * Model KycVerification
  *
  */

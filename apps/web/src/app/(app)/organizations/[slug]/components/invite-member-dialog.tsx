@@ -1,10 +1,11 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { AlertCircle, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -58,12 +59,6 @@ export function InviteMemberDialog({
     [resetForm],
   );
 
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => emailInputRef.current?.focus(), 0);
-    }
-  }, [open]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -108,6 +103,10 @@ export function InviteMemberDialog({
       <DialogContent
         className="sm:max-w-md max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
         closeButtonClassName="top-8 right-4 -translate-y-1/2"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          emailInputRef.current?.focus();
+        }}
       >
         <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
           <DialogHeader>
@@ -126,7 +125,12 @@ export function InviteMemberDialog({
               {t("inviteDialogDescription")}
             </p>
 
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4 inline mr-2" />
+                <AlertDescription className="inline">{error}</AlertDescription>
+              </Alert>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="invite-email">{t("inviteEmailLabel")}</Label>
