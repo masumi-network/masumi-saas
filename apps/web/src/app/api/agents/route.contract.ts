@@ -4,6 +4,10 @@ import {
   jsonResponse,
 } from "@/lib/openapi/contracts";
 import {
+  agentsListQuerySchema,
+  registerAgentBodySchema,
+} from "@/lib/schemas/agent";
+import {
   agentsListSuccessSchema,
   errBody,
   insufficientCreditsResponse,
@@ -12,10 +16,6 @@ import {
   startRegistrationSuccessSchema,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
-import {
-  agentsListQuerySchema,
-  registerAgentBodySchema,
-} from "@/lib/schemas/agent";
 
 const contract = defineRouteContract({
   documents: ["platform"],

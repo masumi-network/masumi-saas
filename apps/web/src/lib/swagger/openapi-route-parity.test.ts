@@ -17,7 +17,11 @@ import { generateOpenAPISpec } from "./public-openapi-generator";
 import { generateSaaSAppOpenAPISpec } from "./saas-app-openapi-generator";
 
 type HttpMethod = (typeof HTTP_METHODS)[number];
+// Loose duck-typed shape for reading OpenAPI documents produced by the spec
+// generators — the test walks paths/methods/servers without binding to
+// openapi3-ts' precise types (they block index access for dynamic methods).
 type OpenApiDocumentLike = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   paths?: Record<string, any>;
   servers?: Array<{ url?: string }>;
 };

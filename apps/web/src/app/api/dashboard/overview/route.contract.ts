@@ -1,5 +1,5 @@
-import { dashboardOverviewQuerySchema } from "@/lib/schemas/api-query";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { dashboardOverviewQuerySchema } from "@/lib/schemas/api-query";
 import {
   dashboardOverviewSuccessSchema,
   security,

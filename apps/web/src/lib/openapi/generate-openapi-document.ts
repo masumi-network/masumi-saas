@@ -1,6 +1,7 @@
 import {
   OpenApiGeneratorV3,
   OpenAPIRegistry,
+  type RouteConfig,
 } from "@asteasolutions/zod-to-openapi";
 
 import {
@@ -35,8 +36,8 @@ function registerManifestRoutes(
         ...operation,
         method: toOpenApiMethod(method),
         path: entry.routePath,
-        request: operation.request as any,
-        responses: operation.responses as any,
+        request: operation.request as RouteConfig["request"],
+        responses: operation.responses as RouteConfig["responses"],
         tags:
           operation.tags && operation.tags.length > 0
             ? operation.tags

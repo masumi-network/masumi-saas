@@ -9,9 +9,9 @@ export type OpenApiDocumentKey = "public-v1" | "platform";
 export type SecurityRequirementObject = Record<string, string[]>;
 
 export type RouteContractRequest = {
-  params?: any;
-  query?: any;
-  headers?: any;
+  params?: z.ZodType;
+  query?: z.ZodType;
+  headers?: z.ZodType;
   body?: {
     required?: boolean;
     description?: string;

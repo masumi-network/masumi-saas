@@ -1,9 +1,9 @@
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
 import {
+  errBody,
   healthServiceUnavailableSchema,
   healthSuccessSchema,
   noSecurity,
-  errBody,
 } from "@/lib/swagger/saas-app-openapi";
 
 const contract = defineRouteContract({

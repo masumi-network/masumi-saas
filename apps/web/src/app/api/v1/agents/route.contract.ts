@@ -1,4 +1,4 @@
-import { jsonResponse, defineRouteContract } from "@/lib/openapi/contracts";
+import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
 import { AgentSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/swagger/zod-openapi";
 

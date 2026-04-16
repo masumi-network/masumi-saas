@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { z } from "@/lib/zod-openapi";
 
 const getAuthenticatedOrThrowMock = vi.fn();

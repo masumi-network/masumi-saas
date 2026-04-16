@@ -3,11 +3,11 @@ import {
   jsonRequestBody,
   jsonResponse,
 } from "@/lib/openapi/contracts";
-import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import {
   registerByEmailApiBodySchema,
   registerByEmailApiSuccessSchema,
 } from "@/lib/schemas/auth-api";
+import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 
 const contract = defineRouteContract({
   documents: ["platform"],

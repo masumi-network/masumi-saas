@@ -1,5 +1,5 @@
-import { agentCountsQuerySchema } from "@/lib/schemas/api-query";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { agentCountsQuerySchema } from "@/lib/schemas/api-query";
 import {
   agentCountsSuccessSchema,
   security,

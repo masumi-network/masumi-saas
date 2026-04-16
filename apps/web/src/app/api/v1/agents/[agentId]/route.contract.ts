@@ -1,5 +1,5 @@
-import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import { AgentSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/swagger/zod-openapi";
 

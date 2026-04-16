@@ -1,5 +1,6 @@
-import { activityQueryInputSchema } from "@/lib/schemas/activity";
+import { ACTIVITY_STALE_CURSOR_CODE } from "@/lib/activity-cursor";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { activityQueryInputSchema } from "@/lib/schemas/activity";
 import {
   activitySuccessSchema,
   errBody,
@@ -7,7 +8,6 @@ import {
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/swagger/zod-openapi";
-import { ACTIVITY_STALE_CURSOR_CODE } from "@/lib/activity-cursor";
 
 const staleCursorErrorSchema = z.object({
   success: z.literal(false),

@@ -1,8 +1,8 @@
+import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
 import {
   agentEarningsQuerySchema,
   agentIdRouteParamSchema,
 } from "@/lib/schemas/api-query";
-import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
 import {
   agentEarningsSuccessSchema,
   security,

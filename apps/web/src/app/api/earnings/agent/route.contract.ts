@@ -1,5 +1,5 @@
-import { agentAnalyticsQuerySchema } from "@/lib/schemas/api-query";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { agentAnalyticsQuerySchema } from "@/lib/schemas/api-query";
 import {
   agentAnalyticsSuccessSchema,
   security,

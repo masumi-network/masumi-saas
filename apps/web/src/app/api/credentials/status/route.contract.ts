@@ -1,5 +1,5 @@
-import { credentialStatusQuerySchema } from "@/lib/schemas/api-query";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { credentialStatusQuerySchema } from "@/lib/schemas/api-query";
 import {
   credentialStatusSuccessSchema,
   security,

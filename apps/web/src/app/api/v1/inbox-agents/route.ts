@@ -7,6 +7,7 @@ import {
   createCreditReference,
 } from "@/lib/credits/service";
 import { prepareManagedInboxRegistration } from "@/lib/inbox-agents/server";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
@@ -16,7 +17,6 @@ import {
   registerInboxAgentBodySchema,
   validateCanonicalInboxAgentSlug,
 } from "@/lib/schemas/inbox-agent";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
 
 import contract from "../../../pay/api/v1/inbox-agents/route.contract";
 

@@ -3,16 +3,16 @@ import {
   jsonRequestBody,
   jsonResponse,
 } from "@/lib/openapi/contracts";
+import { inboxAgentsListQuerySchema } from "@/lib/schemas/inbox-agent";
 import {
   errBody,
-  inboxAgentsListSuccessSchema,
   inboxAgentMutationSuccessSchema,
+  inboxAgentsListSuccessSchema,
   insufficientCreditsResponse,
   registerInboxAgentOpenApiBodySchema,
   security,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
-import { inboxAgentsListQuerySchema } from "@/lib/schemas/inbox-agent";
 
 const contract = defineRouteContract({
   documents: ["platform"],

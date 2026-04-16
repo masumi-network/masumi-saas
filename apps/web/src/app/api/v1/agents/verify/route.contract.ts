@@ -1,5 +1,5 @@
-import { agentVerifyQuerySchema } from "@/lib/schemas";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { agentVerifyQuerySchema } from "@/lib/schemas";
 import {
   errorResponses,
   verifyAgentResultSchema,

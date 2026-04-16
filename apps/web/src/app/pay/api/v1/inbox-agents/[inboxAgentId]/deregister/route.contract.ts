@@ -1,5 +1,5 @@
-import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
 import { defineRouteContract, jsonResponse } from "@/lib/openapi/contracts";
+import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
 import {
   inboxAgentMutationSuccessSchema,
   security,
