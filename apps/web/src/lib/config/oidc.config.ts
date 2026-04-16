@@ -17,7 +17,10 @@ type TrustedOidcClient = {
   metadata: Record<string, unknown>;
 };
 
-const DEFAULT_WEB_REDIRECT_URLS = ["http://localhost:3002/auth/callback"];
+// Web client redirect URLs have no fallback: they must be provided via
+// OIDC_WEB_REDIRECT_URLS. A hardcoded localhost default would leak into
+// production CSP form-action/client-registration if the env var were ever
+// forgotten — failing explicitly is safer than silently accepting localhost.
 const DEFAULT_CLI_REDIRECT_URLS = ["http://127.0.0.1:43110/callback"];
 
 // SpacetimeDB rejects Better Auth's default EdDSA tokens in local testing.
@@ -68,7 +71,7 @@ const issuer = normalizeBaseUrl(
 
 const webRedirectUrls = parseRedirectUrls(
   process.env.OIDC_WEB_REDIRECT_URLS,
-  DEFAULT_WEB_REDIRECT_URLS,
+  [],
 );
 
 const cliRedirectUrls = parseRedirectUrls(
