@@ -1475,6 +1475,30 @@
         "regenerateSuccess": "Backup codes regenerated",
         "downloadNote1": "Each code can only be used once.",
         "downloadNote2": "Store these codes in a safe place."
+      },
+      "Connected": {
+        "sectionLabel": "Connections",
+        "title": "Connected applications",
+        "description": "Applications you have authorized to access your Masumi account. Terminate a session to revoke access and require re-authorization next time.",
+        "descriptionTooltipLabel": "About connected applications",
+        "emptyTitle": "No connections yet",
+        "emptyDescription": "Apps you authorize with your Masumi account will appear here.",
+        "firstParty": "First-party",
+        "activeSession": "Active session",
+        "activeSessions": "{count} active sessions",
+        "noActiveSessions": "No active session",
+        "connectedOn": "Connected {date}",
+        "lastUsed": "Last used {date}",
+        "scopesCount": "{count, plural, one {# permission} other {# permissions}}",
+        "terminate": "Terminate session",
+        "confirmTitle": "Terminate {name}?",
+        "confirmDescription": "This signs {name} out of your Masumi account on every device and deletes its saved permissions. You'll need to re-authorize on the next sign-in.",
+        "confirm": "Yes, terminate session",
+        "cancel": "Cancel",
+        "success": "Terminated {name}'s access",
+        "error": "Failed to terminate session. Please try again.",
+        "refresh": "Refresh",
+        "refreshed": "Connections refreshed"
       }
     }
   },
