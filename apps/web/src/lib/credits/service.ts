@@ -181,3 +181,59 @@ export async function consumeCreditIfRequired(params: {
     metadata: params.metadata,
   });
 }
+
+export async function refundConsumedCredit(params: {
+  userId: string;
+  reason: Exclude<CreditLedgerReason, "initial_grant">;
+  reference: string;
+  metadata?: CreditMetadata;
+  network?: string | null | undefined;
+}): Promise<void> {
+  const effectiveNetwork = parseNetwork(params.network);
+  if (effectiveNetwork !== "Mainnet") return;
+
+  const refundReference = `${params.reference}:refund`;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.creditLedgerEntry.findUnique({
+        where: {
+          userId_reason_reference: {
+            userId: params.userId,
+            reason: params.reason,
+            reference: refundReference,
+          },
+        },
+        select: { id: true },
+      });
+      if (existing) return;
+
+      const user = await tx.user.update({
+        where: { id: params.userId },
+        data: { creditsRemaining: { increment: CREDIT_COST } },
+        select: { creditsRemaining: true },
+      });
+
+      await tx.creditLedgerEntry.create({
+        data: {
+          userId: params.userId,
+          delta: CREDIT_COST,
+          balanceAfter: user.creditsRemaining,
+          reason: params.reason,
+          reference: refundReference,
+          ...(params.metadata
+            ? { metadata: toJsonMetadata(params.metadata) }
+            : {}),
+        },
+      });
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) return;
+    console.error("[Credits] Failed to refund consumed credit:", {
+      userId: params.userId,
+      reason: params.reason,
+      reference: params.reference,
+      error,
+    });
+  }
+}

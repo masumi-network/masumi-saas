@@ -34,7 +34,7 @@ const contract = defineRouteContract({
     POST: {
       summary: "Register inbox agent",
       description:
-        "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
       security,
       request: {
         body: jsonRequestBody(registerInboxAgentOpenApiBodySchema),
@@ -45,6 +45,7 @@ const contract = defineRouteContract({
           inboxAgentMutationSuccessSchema,
         ),
         402: insufficientCreditsResponse,
+        409: jsonResponse("Inbox agent already owned by another user", errBody),
         503: jsonResponse("Payment node unavailable", errBody),
         ...stdResponses,
       },

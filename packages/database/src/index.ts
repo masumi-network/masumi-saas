@@ -31,6 +31,7 @@ export type {
   Agent,
   AgentReference,
   Apikey,
+  InboxAgentReference,
   Invitation,
   KybSubmission,
   KybVerification,

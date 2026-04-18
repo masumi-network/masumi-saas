@@ -12402,7 +12402,7 @@
     "/api/masumi/inbox-agent/register": {
       "post": {
         "summary": "Register inbox agent",
-        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent through the authenticated user’s payment-node token using the same managed wallet flow as the canonical route.",
+        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route.",
         "security": [
           {
             "apiKeyHeader": []
@@ -12447,7 +12447,7 @@
                   "agentSlug"
                 ],
                 "additionalProperties": false,
-                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the server automatically overrides wallet selection so a configured funding wallet pays while the newly created managed inbox wallet receives the registration asset.",
+                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
                 "example": {
                   "name": "Support inbox",
                   "description": "Routes support requests into the Masumi inbox registry",
@@ -12776,6 +12776,31 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Inbox agent already owned by another user",
             "content": {
               "application/json": {
                 "schema": {
@@ -14290,7 +14315,7 @@
       },
       "post": {
         "summary": "Register inbox agent",
-        "description": "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
         "security": [
           {
             "apiKeyHeader": []
@@ -14335,7 +14360,7 @@
                   "agentSlug"
                 ],
                 "additionalProperties": false,
-                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and the server automatically overrides wallet selection so a configured funding wallet pays while the newly created managed inbox wallet receives the registration asset.",
+                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
                 "example": {
                   "name": "Support inbox",
                   "description": "Routes support requests into the Masumi inbox registry",
@@ -14664,6 +14689,31 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Inbox agent already owned by another user",
             "content": {
               "application/json": {
                 "schema": {

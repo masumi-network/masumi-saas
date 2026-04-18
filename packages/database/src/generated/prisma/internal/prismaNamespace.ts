@@ -439,6 +439,7 @@ export const ModelName = {
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
+  InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -489,6 +490,7 @@ export type TypeMap<
       | "kybSubmission"
       | "walletCache"
       | "agentReference"
+      | "inboxAgentReference"
       | "veridianCredential";
     txIsolationLevel: TransactionIsolationLevel;
   };
@@ -2545,6 +2547,82 @@ export type TypeMap<
         };
       };
     };
+    InboxAgentReference: {
+      payload: Prisma.$InboxAgentReferencePayload<ExtArgs>;
+      fields: Prisma.InboxAgentReferenceFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.InboxAgentReferenceFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.InboxAgentReferenceFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        findFirst: {
+          args: Prisma.InboxAgentReferenceFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.InboxAgentReferenceFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        findMany: {
+          args: Prisma.InboxAgentReferenceFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        create: {
+          args: Prisma.InboxAgentReferenceCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        createMany: {
+          args: Prisma.InboxAgentReferenceCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.InboxAgentReferenceCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        delete: {
+          args: Prisma.InboxAgentReferenceDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        update: {
+          args: Prisma.InboxAgentReferenceUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        deleteMany: {
+          args: Prisma.InboxAgentReferenceDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.InboxAgentReferenceUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.InboxAgentReferenceUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        upsert: {
+          args: Prisma.InboxAgentReferenceUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        aggregate: {
+          args: Prisma.InboxAgentReferenceAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateInboxAgentReference>;
+        };
+        groupBy: {
+          args: Prisma.InboxAgentReferenceGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.InboxAgentReferenceGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.InboxAgentReferenceCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.InboxAgentReferenceCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     VeridianCredential: {
       payload: Prisma.$VeridianCredentialPayload<ExtArgs>;
       fields: Prisma.VeridianCredentialFieldRefs;
@@ -3088,6 +3166,28 @@ export const AgentReferenceScalarFieldEnum = {
 export type AgentReferenceScalarFieldEnum =
   (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
 
+export const InboxAgentReferenceScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  paymentNodeId: "paymentNodeId",
+  networkIdentifier: "networkIdentifier",
+  name: "name",
+  description: "description",
+  agentSlug: "agentSlug",
+  state: "state",
+  agentIdentifier: "agentIdentifier",
+  executingWalletId: "executingWalletId",
+  executingWalletVkey: "executingWalletVkey",
+  executingWalletAddress: "executingWalletAddress",
+  smartContractAddress: "smartContractAddress",
+  registryEntry: "registryEntry",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type InboxAgentReferenceScalarFieldEnum =
+  (typeof InboxAgentReferenceScalarFieldEnum)[keyof typeof InboxAgentReferenceScalarFieldEnum];
+
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",
   credentialId: "credentialId",
@@ -3459,6 +3559,7 @@ export type GlobalOmitConfig = {
   kybSubmission?: Prisma.KybSubmissionOmit;
   walletCache?: Prisma.WalletCacheOmit;
   agentReference?: Prisma.AgentReferenceOmit;
+  inboxAgentReference?: Prisma.InboxAgentReferenceOmit;
   veridianCredential?: Prisma.VeridianCredentialOmit;
 };
 

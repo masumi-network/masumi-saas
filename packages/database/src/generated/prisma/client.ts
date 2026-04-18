@@ -216,6 +216,15 @@ export type WalletCache = Prisma.WalletCacheModel;
  */
 export type AgentReference = Prisma.AgentReferenceModel;
 /**
+ * Model InboxAgentReference
+ * Links a user to inbox-agent registrations created through the SaaS layer.
+ *
+ * Inbox registrations mint their on-chain token into a shared executing wallet,
+ * so user payment-node wallet scopes cannot be used as the source of ownership.
+ * This table is the local ownership record used by inbox list/manage routes.
+ */
+export type InboxAgentReference = Prisma.InboxAgentReferenceModel;
+/**
  * Model VeridianCredential
  *
  */

@@ -1,14 +1,16 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+
+import { z } from "@/lib/zod-openapi";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
-const getPaymentNodeClientForUserMock = vi.fn();
+const createInboxAdminPaymentNodeClientMock = vi.fn();
+const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
+const saveInboxAgentReferenceMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
-const ensureUserPaymentNodeKeyScopedToWalletsMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
@@ -19,22 +21,25 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
   requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
-vi.mock("@/lib/payment-node/get-user-client", () => ({
-  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
-}));
-
 vi.mock("@/lib/inbox-agents/server", () => ({
+  createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
+  listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
-}));
-
-vi.mock("@/lib/payment-node/wallet-scopes", () => ({
-  ensureUserPaymentNodeKeyScopedToWallets:
-    ensureUserPaymentNodeKeyScopedToWalletsMock,
+  saveInboxAgentReference: saveInboxAgentReferenceMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
   consumeCreditIfRequired: consumeCreditIfRequiredMock,
   createCreditReference: () => "inbox-agent-register:test",
+}));
+
+vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
+  getEffectivePaymentNetwork: (request: NextRequest) => {
+    const value =
+      request.nextUrl.searchParams.get("network") ??
+      request.cookies.get("payment_network")?.value;
+    return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
+  },
 }));
 
 vi.mock("@/lib/schemas/inbox-agent", () => {
@@ -86,32 +91,52 @@ describe("/api/masumi/inbox-agent/register", () => {
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
-    ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
+    saveInboxAgentReferenceMock.mockResolvedValue({
+      id: "ref-1",
+      userId: "user-1",
+    });
   });
 
   it("registers inbox agents through the compatibility alias", async () => {
-    const registerInboxAgentMock = vi.fn().mockResolvedValue({
+    const createdInboxAgent = {
       id: "inbox-1",
       name: "Support inbox",
-    });
-    getPaymentNodeClientForUserMock.mockResolvedValue({
+      description: "Routes support requests",
+      agentSlug: "support-inbox",
+      state: "RegistrationConfirmed",
+      error: null,
+      createdAt: "2026-04-13T10:00:00.000Z",
+      updatedAt: "2026-04-13T10:01:00.000Z",
+      lastCheckedAt: "2026-04-13T10:02:00.000Z",
+      agentIdentifier: "policy.asset",
+      metadataVersion: 1,
+      sendFundingLovelace: null,
+      SmartContractWallet: {
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+      },
+      RecipientWallet: {
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+      },
+      CurrentTransaction: null,
+    };
+    const registerInboxAgentMock = vi.fn();
+    registerInboxAgentMock.mockResolvedValue(createdInboxAgent);
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
       registerInboxAgent: registerInboxAgentMock,
     });
     prepareManagedInboxRegistrationMock.mockResolvedValue({
       success: true,
-      sellingWallet: {
-        walletMnemonic: "managed mnemonic",
-        walletAddress: "addr_test1managed",
-        walletVkey: "managed_vkey",
-      },
-      sellingWalletId: "managed-1",
-      fundingWallet: {
+      executingWallet: {
         id: "funding-1",
         walletVkey: "funding_vkey",
         walletAddress: "addr_test1funding",
         collectionAddress: null,
         note: "Funding wallet",
       },
+      paymentSourceId: "payment-source-1",
+      smartContractAddress: "addr_test1contract",
     });
 
     const request = new NextRequest(
@@ -137,10 +162,23 @@ describe("/api/masumi/inbox-agent/register", () => {
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
       sellingWalletVkey: "funding_vkey",
-      recipientWalletAddress: "addr_test1managed",
+      recipientWalletAddress: "addr_test1funding",
       name: "Support inbox",
       description: "Routes support requests",
       agentSlug: "support-inbox",
+    });
+    expect(saveInboxAgentReferenceMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      network: "Preprod",
+      entry: createdInboxAgent,
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+        collectionAddress: null,
+        note: "Funding wallet",
+      },
+      smartContractAddress: "addr_test1contract",
     });
   });
 });

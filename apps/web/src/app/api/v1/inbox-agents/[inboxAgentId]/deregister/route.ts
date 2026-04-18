@@ -2,19 +2,17 @@ import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { resolveInboxSmartContractAddress } from "@/lib/inbox-agents/server";
+import {
+  createInboxAdminPaymentNodeClient,
+  getOwnedInboxAgentForUser,
+  resolveInboxSmartContractAddress,
+  saveInboxAgentReference,
+} from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
+import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
 import contract from "../../../../../pay/api/v1/inbox-agents/[inboxAgentId]/deregister/route.contract";
-
-function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
-  const value =
-    request.nextUrl.searchParams.get("network") ??
-    request.cookies.get("payment_network")?.value;
-  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
-}
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +20,7 @@ export async function POST(
 ) {
   try {
     const authContext = await getAuthenticatedOrThrow(request);
-    const network = getNetworkFromRequest(request);
+    const network = getEffectivePaymentNetwork(request);
     requireNetworkedOidcApiScope(authContext, {
       resource: "inbox-agents",
       action: "write",
@@ -42,24 +40,20 @@ export async function POST(
       });
     }
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "POST", 403, {
-        success: false,
-        error: "Payment node not configured for user",
-      });
-    }
-
-    const inboxAgent = await client.getRegistryInboxById({
-      id: inboxAgentIdResult.data,
+    const ownedInboxAgent = await getOwnedInboxAgentForUser({
+      userId: authContext.user.id,
       network,
+      inboxAgentId: inboxAgentIdResult.data,
     });
-    if (!inboxAgent) {
+    if (!ownedInboxAgent) {
       return contractJsonResponse(contract, "POST", 404, {
         success: false,
         error: "Inbox agent not found",
       });
     }
+
+    const client = createInboxAdminPaymentNodeClient();
+    const inboxAgent = ownedInboxAgent.entry;
 
     if (inboxAgent.state !== "RegistrationConfirmed") {
       return contractJsonResponse(contract, "POST", 400, {
@@ -76,11 +70,13 @@ export async function POST(
       });
     }
 
-    const smartContractAddress = await resolveInboxSmartContractAddress(
-      client,
-      network,
-      inboxAgent.SmartContractWallet.walletVkey,
-    );
+    const smartContractAddress =
+      ownedInboxAgent.smartContractAddress ??
+      (await resolveInboxSmartContractAddress(
+        client,
+        network,
+        inboxAgent.SmartContractWallet.walletVkey,
+      ));
     if (!smartContractAddress) {
       return contractJsonResponse(contract, "POST", 400, {
         success: false,
@@ -94,6 +90,16 @@ export async function POST(
       agentIdentifier: inboxAgent.agentIdentifier,
       smartContractAddress,
     });
+
+    if (ownedInboxAgent.reference) {
+      await saveInboxAgentReference({
+        userId: authContext.user.id,
+        network,
+        entry: deregistered,
+        executingWallet: ownedInboxAgent.executingWallet,
+        smartContractAddress,
+      });
+    }
 
     return contractJsonResponse(contract, "POST", 200, {
       success: true,
