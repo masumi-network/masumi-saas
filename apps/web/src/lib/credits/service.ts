@@ -5,7 +5,7 @@ import prisma from "@masumi/database/client";
 import { parseNetwork } from "../schemas/api-query";
 
 export const CREDIT_COST = 1;
-const INITIAL_CREDIT_GRANT = 1;
+const INITIAL_CREDIT_GRANT = 20;
 
 export type CreditLedgerReason =
   | "initial_grant"

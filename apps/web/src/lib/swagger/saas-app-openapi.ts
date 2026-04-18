@@ -1321,7 +1321,7 @@ const creditsBalanceSuccessSchema = z
     example: {
       success: true,
       data: {
-        creditsRemaining: 1,
+        creditsRemaining: 20,
         updatedAt: "2026-04-13T10:30:00.000Z",
       },
     },

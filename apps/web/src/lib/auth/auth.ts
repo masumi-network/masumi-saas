@@ -374,7 +374,9 @@ export const auth = betterAuth({
               );
             }
           }
-          await grantInitialCreditsIfNeeded(user.id);
+          if (user.emailVerified) {
+            await grantInitialCreditsIfNeeded(user.id);
+          }
           await createPaymentNodeKeyForUser(user.id);
         },
       },
@@ -384,6 +386,7 @@ export const auth = betterAuth({
           // email becomes verified — clear the per-email send counter so a
           // legitimate user whose session is cycling isn't blocked.
           if (user.emailVerified) {
+            await grantInitialCreditsIfNeeded(user.id);
             try {
               await resetEmailSendLimit(user.email);
             } catch (error) {
