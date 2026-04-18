@@ -386,12 +386,20 @@ export const auth = betterAuth({
           // email becomes verified — clear the per-email send counter so a
           // legitimate user whose session is cycling isn't blocked.
           if (user.emailVerified) {
-            await grantInitialCreditsIfNeeded(user.id);
             try {
               await resetEmailSendLimit(user.email);
             } catch (error) {
               console.error(
                 "[auth] Failed to reset email send rate limit",
+                user.id,
+                error,
+              );
+            }
+            try {
+              await grantInitialCreditsIfNeeded(user.id);
+            } catch (error) {
+              console.error(
+                "[auth] Failed to grant initial credits",
                 user.id,
                 error,
               );
