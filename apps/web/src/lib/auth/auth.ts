@@ -374,7 +374,9 @@ export const auth = betterAuth({
               );
             }
           }
-          await grantInitialCreditsIfNeeded(user.id);
+          if (user.emailVerified) {
+            await grantInitialCreditsIfNeeded(user.id);
+          }
           await createPaymentNodeKeyForUser(user.id);
         },
       },
@@ -389,6 +391,15 @@ export const auth = betterAuth({
             } catch (error) {
               console.error(
                 "[auth] Failed to reset email send rate limit",
+                user.id,
+                error,
+              );
+            }
+            try {
+              await grantInitialCreditsIfNeeded(user.id);
+            } catch (error) {
+              console.error(
+                "[auth] Failed to grant initial credits",
                 user.id,
                 error,
               );

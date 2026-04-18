@@ -191,15 +191,15 @@ describe("credit service", () => {
     store.current = createState();
   });
 
-  it("grants exactly one initial credit once", async () => {
+  it("grants exactly twenty initial credits once", async () => {
     await grantInitialCreditsIfNeeded("user-1");
     await grantInitialCreditsIfNeeded("user-1");
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(20);
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: 1,
-      balanceAfter: 1,
+      delta: 20,
+      balanceAfter: 20,
       reason: "initial_grant",
       reference: "signup",
     });
