@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Masumi - Device Approved",
-  description: "Agent Messenger CLI device authorization approved",
+  description: "Masumi Agent Messenger CLI device authorization approved",
 };
 
 const copy = {
-  title: "Device authorized",
+  title: "Masumi Agent Messenger CLI authorized",
   description:
-    "Your Agent Messenger CLI authorization has been approved successfully.",
+    "Your Masumi Agent Messenger CLI authorization has been approved successfully.",
   detail: "You can return to your terminal and close this tab.",
 } as const;
 
