@@ -462,6 +462,25 @@ describe("SMOKE — OIDC discovery", () => {
       "urn:ietf:params:oauth:grant-type:device_code",
     );
   });
+
+  it("GET /api/auth/oauth2/authorize redirects browsers to sign in without a JSON content type", async () => {
+    const res = await fetch(`${BASE_URL}${buildWebAuthorizePath()}`, {
+      headers: {
+        Accept: "text/html",
+        Origin: BASE_URL,
+      },
+      redirect: "manual",
+    });
+
+    expect([302, 303, 307, 308]).toContain(res.status);
+    const location = res.headers.get("location");
+    expect(location).toBeTruthy();
+    expect(new URL(location as string, BASE_URL).pathname).toBe("/signin");
+
+    const contentType = res.headers.get("content-type")?.toLowerCase() ?? "";
+    expect(contentType).not.toContain("application/json");
+    expect(await res.text()).toBe("");
+  });
 });
 
 describe("SMOKE — OIDC Spacetime bridge", () => {

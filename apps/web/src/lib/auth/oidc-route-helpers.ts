@@ -28,6 +28,7 @@ import {
   type OidcScopeResolution,
   resolveOidcScopeGrantSet,
 } from "./oidc-user-grants";
+import { createEmptyBrowserRedirectResponse } from "./redirect-response";
 
 export const authHandler = toNextJsHandler(auth);
 
@@ -700,17 +701,11 @@ async function appendContinueUrlToConsentRedirect(
   if (location) {
     const redirectUrl = new URL(buildAbsoluteAppUrl(location));
     if (redirectUrl.pathname !== "/oidc/consent") {
-      return response;
+      return createEmptyBrowserRedirectResponse(response);
     }
 
     redirectUrl.searchParams.set("continueUrl", continueUrl);
-    const headers = new Headers(response.headers);
-    headers.set("location", redirectUrl.toString());
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    return createEmptyBrowserRedirectResponse(response, redirectUrl.toString());
   }
 
   const contentType = response.headers.get("content-type") ?? "";
