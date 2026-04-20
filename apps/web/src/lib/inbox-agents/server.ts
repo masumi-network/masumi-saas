@@ -15,7 +15,10 @@ import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { registryInboxEntrySchema } from "@/lib/payment-node/schemas";
 
-import { isWalletAddressCompatibleWithNetwork } from "../payment-node/registration-wallets";
+import {
+  isWalletAddressCompatibleWithNetwork,
+  resolveRegistrationFundingWallet,
+} from "../payment-node/registration-wallets";
 
 const PAYMENT_SOURCE_PAGE_SIZE = 100;
 const MAX_PAYMENT_SOURCE_PAGES = 10;
@@ -235,56 +238,41 @@ export async function prepareManagedInboxRegistration(params: {
     };
   }
 
-  const generatedWallet = await adminClient.generateWallet(params.network);
+  const fundingWalletResult = resolveRegistrationFundingWallet({
+    network: params.network,
+    paymentSourceId,
+    sellingWallets: paymentSource.SellingWallets,
+  });
+  if (!fundingWalletResult.wallet) {
+    return {
+      success: false,
+      error:
+        fundingWalletResult.error ??
+        "No registration funding wallet is available for inbox-agent registration.",
+    };
+  }
+
   if (
     !isWalletAddressCompatibleWithNetwork(
-      generatedWallet.walletAddress,
+      fundingWalletResult.wallet.walletAddress,
       params.network,
     )
   ) {
-    console.error("[Payment Node] Generated inbox wallet network mismatch:", {
-      walletAddress: generatedWallet.walletAddress,
+    console.error("[Payment Node] Inbox funding wallet network mismatch:", {
+      walletAddress: fundingWalletResult.wallet.walletAddress,
       expectedNetwork: params.network,
     });
     return {
       success: false,
-      error: `Generated inbox wallet address does not match ${params.network}. Please verify the payment node wallet configuration and try again.`,
-    };
-  }
-
-  const updatedPaymentSource = await adminClient.addWalletsToPaymentSource({
-    paymentSourceId,
-    AddSellingWallets: [
-      {
-        walletMnemonic: generatedWallet.walletMnemonic,
-        note: `Inbox agent: ${params.name} (selling)`,
-        collectionAddress: null,
-      },
-    ],
-  });
-  const executingWallet =
-    updatedPaymentSource.SellingWallets.find(
-      (wallet) => wallet.walletVkey === generatedWallet.walletVkey,
-    ) ?? null;
-  if (!executingWallet) {
-    console.error("[Payment Node] Could not resolve managed inbox wallet ID:", {
-      walletVkey: generatedWallet.walletVkey,
-      paymentSourceId,
-    });
-    return {
-      success: false,
-      error:
-        "Could not attach the new inbox wallet to payment permissions. Please try again.",
+      error: `Configured inbox funding wallet address does not match ${params.network}. Please verify ${params.network} payment-node wallet configuration and try again.`,
     };
   }
 
   return {
     success: true,
-    executingWallet,
+    executingWallet: fundingWalletResult.wallet,
     paymentSourceId,
-    smartContractAddress:
-      updatedPaymentSource.smartContractAddress ??
-      paymentSource.smartContractAddress,
+    smartContractAddress: paymentSource.smartContractAddress,
   };
 }
 

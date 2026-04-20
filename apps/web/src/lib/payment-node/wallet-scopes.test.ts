@@ -6,6 +6,7 @@ const getPaymentNodeApiKeyTokenForUserMock = vi.fn();
 const createPaymentNodeClientMock = vi.fn();
 const getBaseUrlMock = vi.fn();
 const getAdminApiKeyMock = vi.fn();
+const getRegistrationFundingWalletsMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
   default: {
@@ -23,6 +24,7 @@ vi.mock("@/lib/payment-node", () => ({
   paymentNodeConfig: {
     getBaseUrl: getBaseUrlMock,
     getAdminApiKey: getAdminApiKeyMock,
+    getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
   },
 }));
 
@@ -35,10 +37,11 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
     vi.clearAllMocks();
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
+    getRegistrationFundingWalletsMock.mockReturnValue([]);
     getPaymentNodeApiKeyTokenForUserMock.mockResolvedValue("user-key");
   });
 
-  it("enables wallet scope while preserving current payment-node wallet IDs", async () => {
+  it("enables wallet scope while preserving current payment-node and agent wallet IDs", async () => {
     const getApiKeyStatusMock = vi.fn().mockResolvedValue({
       id: "api-key-1",
       token: "user-key",
@@ -87,10 +90,83 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
         "wallet-existing",
         "wallet-admin-funding",
         "wallet-known",
-        "wallet-inbox",
         "wallet-new",
       ],
     });
+    expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
+  });
+
+  it("filters configured registration funding wallets out of wallet scopes", async () => {
+    getRegistrationFundingWalletsMock.mockImplementation((network: string) =>
+      network === "Preprod" ? ["addr_test1funding"] : [],
+    );
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: true,
+      WalletScopes: [
+        { hotWalletId: "wallet-existing" },
+        { hotWalletId: "wallet-funding" },
+      ],
+    });
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-preprod",
+          network: "Preprod",
+          SellingWallets: [
+            {
+              id: "wallet-funding",
+              walletVkey: "funding-vkey",
+              walletAddress: "addr_test1funding",
+              collectionAddress: null,
+              note: "Funding",
+            },
+          ],
+          PurchasingWallets: [],
+        },
+      ],
+    });
+    const updateApiKeyMock = vi.fn().mockResolvedValue({});
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getPaymentSources: getPaymentSourcesMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([
+      { sellingWalletId: "wallet-known" },
+      { sellingWalletId: "wallet-funding" },
+    ]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: "user-1",
+      walletIds: ["wallet-new", "wallet-funding"],
+    });
+
+    expect(updateApiKeyMock).toHaveBeenCalledWith({
+      id: "api-key-1",
+      walletScopeEnabled: true,
+      WalletScopeHotWalletIds: [
+        "wallet-existing",
+        "wallet-known",
+        "wallet-new",
+      ],
+    });
+    expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
   });
 
   it("does nothing when the key is already scoped to all requested wallets", async () => {
@@ -133,5 +209,6 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
     });
 
     expect(updateApiKeyMock).not.toHaveBeenCalled();
+    expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
   });
 });

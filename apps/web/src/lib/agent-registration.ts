@@ -14,19 +14,27 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
-import type { PaymentSourceWallet } from "@/lib/payment-node/client";
+import type {
+  PaymentSourceInfo,
+  PaymentSourceWallet,
+} from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
-import { isWalletAddressCompatibleWithNetwork } from "./payment-node/registration-wallets";
+import {
+  isWalletAddressCompatibleWithNetwork,
+  resolveRegistrationFundingWallet,
+} from "./payment-node/registration-wallets";
 
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const REGISTER_AGENT_HTTP_TIMEOUT_MS = 60_000;
 const REGISTER_AGENT_RETRY_COOLDOWN_MS = 2 * 60_000;
+const PAYMENT_SOURCE_PAGE_SIZE = 100;
+const MAX_PAYMENT_SOURCE_PAGES = 10;
 
 export type AgentPricing =
   | { pricingType: "Free" }
@@ -69,6 +77,9 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
+  fundingWalletId?: string;
+  fundingWalletVkey?: string;
+  fundingWalletAddress?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
   lastRegisterAttemptAt?: string;
@@ -108,6 +119,67 @@ function shouldTreatWalletRegistryLookupAsPending(message: string): boolean {
     normalized.startsWith("404: stake address not found") ||
     normalized.includes("requested component has not been found")
   );
+}
+
+async function getConfiguredPaymentSource(
+  client: ReturnType<typeof createPaymentNodeClient>,
+  paymentSourceId: string,
+): Promise<PaymentSourceInfo | null> {
+  let cursorId: string | undefined;
+
+  for (let page = 0; page < MAX_PAYMENT_SOURCE_PAGES; page += 1) {
+    const result = await client.getPaymentSources({
+      take: PAYMENT_SOURCE_PAGE_SIZE,
+      cursorId,
+    });
+    const match =
+      result.PaymentSources.find((source) => source.id === paymentSourceId) ??
+      null;
+    if (match) return match;
+
+    if (result.PaymentSources.length < PAYMENT_SOURCE_PAGE_SIZE) {
+      break;
+    }
+
+    const nextCursor = result.PaymentSources.at(-1)?.id;
+    if (!nextCursor || nextCursor === cursorId) {
+      break;
+    }
+    cursorId = nextCursor;
+  }
+
+  return null;
+}
+
+function getPaymentSourceMismatchError(params: {
+  paymentSourceId: string;
+  expectedNetwork: PaymentNodeNetwork;
+  actualNetwork: PaymentNodeNetwork;
+}): string {
+  return `Configured payment source ${params.paymentSourceId} is on ${params.actualNetwork}, but agent registration is using ${params.expectedNetwork}. Update ${paymentNodeConfig.getPaymentSourceIdEnvName(params.expectedNetwork)} to a ${params.expectedNetwork} payment source.`;
+}
+
+function validateRegistrationFundingWalletNetwork(params: {
+  fundingWallet: PaymentSourceWallet;
+  network: PaymentNodeNetwork;
+}): string | null {
+  if (
+    isWalletAddressCompatibleWithNetwork(
+      params.fundingWallet.walletAddress,
+      params.network,
+    )
+  ) {
+    return null;
+  }
+
+  console.error(
+    "[Payment Node] Registration funding wallet network mismatch:",
+    {
+      walletAddress: params.fundingWallet.walletAddress,
+      expectedNetwork: params.network,
+    },
+  );
+  return `Configured registration funding wallet address does not match ${params.network}. Please verify ${params.network} payment-node wallet configuration and try again.`;
 }
 
 /**
@@ -168,8 +240,59 @@ async function registerAgentOnChainUntilSetup(
 
   const adminClient = createPaymentNodeClient(baseUrl, adminKey);
 
-  const sellingWallet = await adminClient.generateWallet(network);
+  const configuredPaymentSource = await getConfiguredPaymentSource(
+    adminClient,
+    paymentSourceId,
+  );
+  if (!configuredPaymentSource) {
+    return {
+      success: false,
+      error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+    };
+  }
 
+  if (
+    configuredPaymentSource.network &&
+    configuredPaymentSource.network !== network
+  ) {
+    console.error("[Payment Node] Payment source network mismatch:", {
+      paymentSourceId,
+      expectedNetwork: network,
+      actualNetwork: configuredPaymentSource.network,
+    });
+    return {
+      success: false,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: configuredPaymentSource.network,
+      }),
+    };
+  }
+
+  const fundingWalletResult = resolveRegistrationFundingWallet({
+    network,
+    paymentSourceId,
+    sellingWallets: configuredPaymentSource.SellingWallets,
+  });
+  if (!fundingWalletResult.wallet) {
+    return {
+      success: false,
+      error:
+        fundingWalletResult.error ??
+        "No registration funding wallet is available for agent registration.",
+    };
+  }
+
+  const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
+    fundingWallet: fundingWalletResult.wallet,
+    network,
+  });
+  if (fundingWalletNetworkError) {
+    return { success: false, error: fundingWalletNetworkError };
+  }
+
+  const sellingWallet = await adminClient.generateWallet(network);
   const paymentSource = await adminClient.addWalletsToPaymentSource({
     paymentSourceId,
     AddSellingWallets: [
@@ -189,7 +312,11 @@ async function registerAgentOnChainUntilSetup(
     });
     return {
       success: false,
-      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but agent registration is using ${network}. Update ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} to a ${network} payment source.`,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: paymentSource.network,
+      }),
     };
   }
 
@@ -305,8 +432,14 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
-        ...(paymentSource.smartContractAddress && {
-          smartContractAddress: paymentSource.smartContractAddress,
+        fundingWalletId: fundingWalletResult.wallet.id,
+        fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
+        fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
+        ...((paymentSource.smartContractAddress ||
+          configuredPaymentSource.smartContractAddress) && {
+          smartContractAddress:
+            paymentSource.smartContractAddress ??
+            configuredPaymentSource.smartContractAddress,
         }),
         registrationPayload,
       },
@@ -416,16 +549,57 @@ export async function completeOnChainRegistration(
     return { status: "error", error: "Missing wallet key" };
   }
   let adminClient: ReturnType<typeof createPaymentNodeClient>;
+  let fundingWalletVkey =
+    typeof meta.fundingWalletVkey === "string"
+      ? meta.fundingWalletVkey.trim()
+      : "";
+  let paymentSourceId: string | null = null;
   try {
     adminClient = createPaymentNodeClient(
       paymentNodeConfig.getBaseUrl(),
       paymentNodeConfig.getAdminApiKey(),
     );
+    if (!fundingWalletVkey) {
+      paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+    }
   } catch (error) {
     if (isPaymentNodeConfigError(error)) {
       return { status: "error", error: error.message };
     }
     throw error;
+  }
+  if (!fundingWalletVkey) {
+    const configuredPaymentSource = await getConfiguredPaymentSource(
+      adminClient,
+      paymentSourceId!,
+    );
+    if (!configuredPaymentSource) {
+      return {
+        status: "error",
+        error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+      };
+    }
+    const fundingWalletResult = resolveRegistrationFundingWallet({
+      network,
+      paymentSourceId: paymentSourceId!,
+      sellingWallets: configuredPaymentSource.SellingWallets,
+    });
+    if (!fundingWalletResult.wallet) {
+      return {
+        status: "error",
+        error:
+          fundingWalletResult.error ??
+          "No registration funding wallet is available for agent registration.",
+      };
+    }
+    const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
+      fundingWallet: fundingWalletResult.wallet,
+      network,
+    });
+    if (fundingWalletNetworkError) {
+      return { status: "error", error: fundingWalletNetworkError };
+    }
+    fundingWalletVkey = fundingWalletResult.wallet.walletVkey;
   }
 
   const updatedAgent = await prisma.$transaction(async (tx) => {
@@ -517,7 +691,7 @@ export async function completeOnChainRegistration(
 
     const registerPromise = adminClient.registerAgent({
       network,
-      sellingWalletVkey: recipientWalletVkey,
+      sellingWalletVkey: fundingWalletVkey,
       recipientWalletAddress: address,
       name: agent.name,
       apiBaseUrl: agent.apiUrl,
@@ -563,6 +737,9 @@ export async function completeOnChainRegistration(
           externalId: registryEntry.id,
           metadata: {
             ...existingMeta,
+            ...(typeof existingMeta.fundingWalletVkey !== "string" && {
+              fundingWalletVkey,
+            }),
             ...(registryEntry.agentIdentifier && {
               agentIdentifier: registryEntry.agentIdentifier,
             }),
@@ -601,6 +778,9 @@ export async function completeOnChainRegistration(
           data: {
             metadata: {
               ...existingMeta,
+              ...(typeof existingMeta.fundingWalletVkey !== "string" && {
+                fundingWalletVkey,
+              }),
               lastRegisterAttemptAt: new Date().toISOString(),
             },
           },
