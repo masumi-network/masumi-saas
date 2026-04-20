@@ -11,17 +11,28 @@ import { MasumiIdentity } from "@masumi_network/identity-sdk";
 
 import { veridianConfig } from "@/lib/config/veridian.config";
 
+/**
+ * Sentinel URL passed to the SDK when VERIDIAN_KERIA_URL is not configured.
+ *
+ * The SDK's constructor requires a non-empty `keriaUrl` string, but none of
+ * the shim methods currently exposed to masumi-saas (issuer OOBI, contact
+ * credentials, connection check, credential issuance) actually hit KERIA —
+ * only signature-verification flows do. Mirror the pre-SDK behavior of
+ * `getKeriaUrl()` which only threw lazily, inside the signature path, by
+ * keeping the SDK happy at construction time and letting KERIA-bound calls
+ * fail noisily on this reserved `.invalid` TLD if anyone reaches for them
+ * without setting VERIDIAN_KERIA_URL first.
+ */
+const UNSET_KERIA_URL = "https://veridian-keria-url-not-configured.invalid";
+
 let cachedSdk: MasumiIdentity | null = null;
 
 /**
  * Build (or reuse) the SDK client.
  *
- * Fails fast when either VERIDIAN_CREDENTIAL_SERVER_URL or VERIDIAN_KERIA_URL
- * is missing — matching the pre-SDK behavior. We intentionally do NOT fall
- * back to the bundled production endpoints here: that would silently route
- * development or staging traffic through live Masumi infrastructure. Apps
- * that want the public defaults should import `MASUMI_IDENTITY_ENDPOINTS`
- * from the SDK and wire them into their own env explicitly.
+ * Fails fast only on VERIDIAN_CREDENTIAL_SERVER_URL, which every currently
+ * exposed method needs. KERIA is treated as optional to preserve the
+ * original lazy-throw semantics.
  */
 function getSdk(): MasumiIdentity {
   if (cachedSdk) return cachedSdk;
@@ -31,15 +42,10 @@ function getSdk(): MasumiIdentity {
       "VERIDIAN_CREDENTIAL_SERVER_URL is required. Please set it in your .env file.",
     );
   }
-  if (!veridianConfig.keriaUrl) {
-    throw new Error(
-      "VERIDIAN_KERIA_URL is required. Please set it in your .env file. Use the KERIA connect URL (port 3901), not the boot URL.",
-    );
-  }
 
   cachedSdk = new MasumiIdentity({
     credentialServerUrl: veridianConfig.credentialServerUrl,
-    keriaUrl: veridianConfig.keriaUrl,
+    keriaUrl: veridianConfig.keriaUrl ?? UNSET_KERIA_URL,
   });
 
   return cachedSdk;
