@@ -323,9 +323,11 @@ describe("/pay/api/v1/inbox-agents", () => {
   it("cleans up the payment-node entry when local ownership persistence fails", async () => {
     const registerInboxAgentMock = vi.fn().mockResolvedValue(inboxAgent);
     const deleteRegistryInboxEntryMock = vi.fn().mockResolvedValue(inboxAgent);
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({});
     createInboxAdminPaymentNodeClientMock.mockReturnValue({
       registerInboxAgent: registerInboxAgentMock,
       deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });
     saveInboxAgentReferenceMock.mockRejectedValue(new Error("DB unavailable"));
     prepareManagedInboxRegistrationMock.mockResolvedValue({
@@ -363,15 +365,21 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(saveInboxAgentReferenceMock).toHaveBeenCalledTimes(2);
     expect(deleteRegistryInboxEntryMock).toHaveBeenCalledWith("inbox-1");
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-1",
+      RemoveSellingWallets: [{ id: "funding-1" }],
+    });
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns 409 and leaves the remote entry intact on cross-user ownership collision", async () => {
     const registerInboxAgentMock = vi.fn().mockResolvedValue(inboxAgent);
     const deleteRegistryInboxEntryMock = vi.fn().mockResolvedValue(inboxAgent);
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({});
     createInboxAdminPaymentNodeClientMock.mockReturnValue({
       registerInboxAgent: registerInboxAgentMock,
       deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });
     saveInboxAgentReferenceMock.mockRejectedValue(
       new InboxAgentOwnershipMismatchError("other-user"),
@@ -411,7 +419,103 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(saveInboxAgentReferenceMock).toHaveBeenCalledTimes(1);
     expect(deleteRegistryInboxEntryMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-1",
+      RemoveSellingWallets: [{ id: "funding-1" }],
+    });
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("removes the generated wallet when payment permissions cannot be scoped", async () => {
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({});
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
+    });
+    ensureUserPaymentNodeKeyScopedToWalletsMock.mockRejectedValue(
+      new Error("scope failed"),
+    );
+    prepareManagedInboxRegistrationMock.mockResolvedValue({
+      success: true,
+      executingWallet: {
+        id: "managed-1",
+        walletVkey: "managed_vkey",
+        walletAddress: "addr_test1managed",
+        collectionAddress: null,
+        note: "Inbox agent: Support inbox (selling)",
+      },
+      paymentSourceId: "payment-source-1",
+      smartContractAddress: "addr_test1contract",
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-1",
+      RemoveSellingWallets: [{ id: "managed-1" }],
+    });
+    expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+    expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
+  });
+
+  it("removes the generated wallet when remote inbox registration fails", async () => {
+    const registerInboxAgentMock = vi
+      .fn()
+      .mockRejectedValue(new Error("registry unavailable"));
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({});
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+      registerInboxAgent: registerInboxAgentMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
+    });
+    prepareManagedInboxRegistrationMock.mockResolvedValue({
+      success: true,
+      executingWallet: {
+        id: "managed-1",
+        walletVkey: "managed_vkey",
+        walletAddress: "addr_test1managed",
+        collectionAddress: null,
+        note: "Inbox agent: Support inbox (selling)",
+      },
+      paymentSourceId: "payment-source-1",
+      smartContractAddress: "addr_test1contract",
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+    expect(registerInboxAgentMock).toHaveBeenCalledTimes(1);
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-1",
+      RemoveSellingWallets: [{ id: "managed-1" }],
+    });
+    expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+    expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
   });
 
   it("returns 503 when Mainnet payment-source config is missing", async () => {

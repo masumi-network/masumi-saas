@@ -103,6 +103,7 @@ describe("/api/masumi/inbox-agent/register", () => {
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
+    getPaymentNodeClientForUserMock.mockResolvedValue({});
     ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
@@ -176,7 +177,7 @@ describe("/api/masumi/inbox-agent/register", () => {
       userId: "user-1",
       walletIds: ["managed-1"],
     });
-    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",

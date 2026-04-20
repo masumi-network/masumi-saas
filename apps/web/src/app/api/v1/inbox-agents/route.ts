@@ -47,6 +47,32 @@ type PersistResult =
   | { status: "ownership-mismatch" }
   | { status: "error" };
 
+async function cleanupManagedInboxWallet(params: {
+  userId: string;
+  network: PaymentNodeNetwork;
+  paymentSourceId: string;
+  walletId: string;
+}): Promise<void> {
+  try {
+    const client = createInboxAdminPaymentNodeClient();
+    await client.addWalletsToPaymentSource({
+      paymentSourceId: params.paymentSourceId,
+      RemoveSellingWallets: [{ id: params.walletId }],
+    });
+  } catch (cleanupError) {
+    console.error(
+      "[Inbox Agents] Failed to remove managed inbox wallet after registration failure:",
+      {
+        error: cleanupError,
+        network: params.network,
+        paymentSourceId: params.paymentSourceId,
+        userId: params.userId,
+        walletId: params.walletId,
+      },
+    );
+  }
+}
+
 async function persistCreatedInboxAgentReference(params: {
   client: PaymentNodeClient;
   userId: string;
@@ -169,6 +195,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let creditRefund: (() => Promise<void>) | null = null;
+  let managedWalletCleanup: (() => Promise<void>) | null = null;
 
   try {
     const authContext = await getAuthenticatedOrThrow(request);
@@ -242,6 +269,13 @@ export async function POST(request: NextRequest) {
         error: managedRegistration.error,
       });
     }
+    managedWalletCleanup = () =>
+      cleanupManagedInboxWallet({
+        userId: authContext.user.id,
+        network,
+        paymentSourceId: managedRegistration.paymentSourceId,
+        walletId: managedRegistration.executingWallet.id,
+      });
 
     await ensureUserPaymentNodeKeyScopedToWallets({
       userId: authContext.user.id,
@@ -267,6 +301,8 @@ export async function POST(request: NextRequest) {
       smartContractAddress: managedRegistration.smartContractAddress,
     });
     if (persistResult.status === "ownership-mismatch") {
+      await managedWalletCleanup?.();
+      managedWalletCleanup = null;
       await creditRefund();
       creditRefund = null;
       return contractJsonResponse(contract, "POST", 409, {
@@ -275,6 +311,8 @@ export async function POST(request: NextRequest) {
       });
     }
     if (persistResult.status === "error") {
+      await managedWalletCleanup?.();
+      managedWalletCleanup = null;
       await creditRefund();
       creditRefund = null;
       return contractJsonResponse(contract, "POST", 500, {
@@ -283,12 +321,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    managedWalletCleanup = null;
     creditRefund = null;
     return contractJsonResponse(contract, "POST", 200, {
       success: true,
       data: created,
     });
   } catch (error) {
+    if (managedWalletCleanup) {
+      await managedWalletCleanup();
+    }
     if (creditRefund) {
       await creditRefund();
     }

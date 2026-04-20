@@ -21,7 +21,7 @@ const contract = defineRouteContract({
     GET: {
       summary: "List inbox agents",
       description:
-        "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+        "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie. Continue pagination only with the same `network`, `filterStatus`, and `search`; changing any of them requires restarting without `cursor`, otherwise the endpoint may return HTTP 410.",
       security,
       request: {
         query: inboxAgentsListQuerySchema,

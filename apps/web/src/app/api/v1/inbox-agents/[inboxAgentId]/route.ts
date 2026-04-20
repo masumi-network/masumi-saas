@@ -3,11 +3,12 @@ import { NextRequest } from "next/server";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
+  createInboxAdminPaymentNodeClient,
   deleteInboxAgentReference,
   getOwnedInboxAgentForUser,
 } from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
@@ -64,13 +65,7 @@ export async function DELETE(
       });
     }
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "DELETE", 503, {
-        success: false,
-        error: "Payment node unavailable",
-      });
-    }
+    const client = createInboxAdminPaymentNodeClient();
     const deleted = await client.deleteRegistryInboxEntry(inboxAgent.id);
     await deleteInboxAgentReference(ownedInboxAgent.reference.id);
 
@@ -81,6 +76,12 @@ export async function DELETE(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return contractJsonResponse(contract, "DELETE", 503, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to delete inbox agent:", error);
     return contractJsonResponse(contract, "DELETE", 500, {
       success: false,

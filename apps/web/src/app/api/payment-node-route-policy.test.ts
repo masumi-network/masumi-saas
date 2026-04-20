@@ -36,6 +36,7 @@ describe("payment-node route API-key policy", () => {
     ].filter(
       (routeFile) =>
         routeFile !== "v1/inbox-agents/route.ts" &&
+        routeFile !== "v1/inbox-agents/[inboxAgentId]/route.ts" &&
         routeFile !== "v1/inbox-agents/[inboxAgentId]/deregister/route.ts",
     );
 
@@ -78,6 +79,7 @@ describe("payment-node route API-key policy", () => {
     );
     const adminClientCall = source.indexOf(
       "const client = createInboxAdminPaymentNodeClient()",
+      scopeCall,
     );
 
     expect(source).toContain("createInboxAdminPaymentNodeClient");
@@ -87,6 +89,27 @@ describe("payment-node route API-key policy", () => {
     expect(source).toContain(
       "walletIds: [managedRegistration.executingWallet.id]",
     );
+    expect(source).toContain("RemoveSellingWallets");
+  });
+
+  it("allows inbox delete to use the admin client after ownership and state checks", () => {
+    const source = readRoute("v1/inbox-agents/[inboxAgentId]/route.ts");
+    const ownershipCheck = source.indexOf(
+      "const ownedInboxAgent = await getOwnedInboxAgentForUser",
+    );
+    const stateCheck = source.indexOf(
+      'inboxAgent.state !== "RegistrationFailed"',
+    );
+    const adminClientCall = source.indexOf(
+      "const client = createInboxAdminPaymentNodeClient()",
+    );
+
+    expect(source).toContain("createInboxAdminPaymentNodeClient");
+    expect(ownershipCheck).toBeGreaterThanOrEqual(0);
+    expect(stateCheck).toBeGreaterThanOrEqual(0);
+    expect(adminClientCall).toBeGreaterThanOrEqual(0);
+    expect(ownershipCheck).toBeLessThan(adminClientCall);
+    expect(stateCheck).toBeLessThan(adminClientCall);
   });
 
   it("keeps payment-node v1 proxy routes on the user payment-node token", () => {
@@ -116,17 +139,10 @@ describe("payment-node route API-key policy", () => {
     }
   });
 
-  it("keeps inbox-agent lookup and non-registration mutations on the user payment-node client", () => {
-    const inboxRoutes = [
-      "v1/inbox-agents/[inboxAgentId]/route.ts",
-      "registry-discovery/inbox-agent-identifier/route.ts",
-    ];
-
-    for (const routeFile of inboxRoutes) {
-      expect(readRoute(routeFile), routeFile).toContain(
-        "getPaymentNodeClientForUser",
-      );
-    }
+  it("keeps inbox-agent metadata lookup on the user payment-node client", () => {
+    expect(
+      readRoute("registry-discovery/inbox-agent-identifier/route.ts"),
+    ).toContain("getPaymentNodeClientForUser");
 
     expect(readRoute("masumi/inbox-agent/register/route.ts")).toContain(
       'export { POST } from "../../../v1/inbox-agents/route"',
