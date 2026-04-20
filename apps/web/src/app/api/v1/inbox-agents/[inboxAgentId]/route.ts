@@ -2,18 +2,17 @@ import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  createInboxAdminPaymentNodeClient,
+  deleteInboxAgentReference,
+  getOwnedInboxAgentForUser,
+} from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
+import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
 import contract from "../../../../pay/api/v1/inbox-agents/[inboxAgentId]/route.contract";
-
-function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
-  const value =
-    request.nextUrl.searchParams.get("network") ??
-    request.cookies.get("payment_network")?.value;
-  return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
-}
 
 export async function DELETE(
   request: NextRequest,
@@ -21,7 +20,7 @@ export async function DELETE(
 ) {
   try {
     const authContext = await getAuthenticatedOrThrow(request);
-    const network = getNetworkFromRequest(request);
+    const network = getEffectivePaymentNetwork(request);
     requireNetworkedOidcApiScope(authContext, {
       resource: "inbox-agents",
       action: "write",
@@ -41,24 +40,19 @@ export async function DELETE(
       });
     }
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "DELETE", 403, {
-        success: false,
-        error: "Payment node not configured for user",
-      });
-    }
-
-    const inboxAgent = await client.getRegistryInboxById({
-      id: inboxAgentIdResult.data,
+    const ownedInboxAgent = await getOwnedInboxAgentForUser({
+      userId: authContext.user.id,
       network,
+      inboxAgentId: inboxAgentIdResult.data,
     });
-    if (!inboxAgent) {
+    if (!ownedInboxAgent) {
       return contractJsonResponse(contract, "DELETE", 404, {
         success: false,
         error: "Inbox agent not found",
       });
     }
+
+    const inboxAgent = ownedInboxAgent.entry;
 
     if (
       inboxAgent.state !== "RegistrationFailed" &&
@@ -71,7 +65,9 @@ export async function DELETE(
       });
     }
 
+    const client = createInboxAdminPaymentNodeClient();
     const deleted = await client.deleteRegistryInboxEntry(inboxAgent.id);
+    await deleteInboxAgentReference(ownedInboxAgent.reference.id);
 
     return contractJsonResponse(contract, "DELETE", 200, {
       success: true,
@@ -80,6 +76,12 @@ export async function DELETE(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return contractJsonResponse(contract, "DELETE", 503, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to delete inbox agent:", error);
     return contractJsonResponse(contract, "DELETE", 500, {
       success: false,

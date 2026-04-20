@@ -430,6 +430,7 @@ export const ModelName = {
   DeviceCode: "DeviceCode",
   Jwks: "Jwks",
   RateLimit: "RateLimit",
+  EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
@@ -438,6 +439,7 @@ export const ModelName = {
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
+  InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -479,6 +481,7 @@ export type TypeMap<
       | "deviceCode"
       | "jwks"
       | "rateLimit"
+      | "emailSendRateLimit"
       | "kycVerification"
       | "agent"
       | "agentActivityEvent"
@@ -487,6 +490,7 @@ export type TypeMap<
       | "kybSubmission"
       | "walletCache"
       | "agentReference"
+      | "inboxAgentReference"
       | "veridianCredential";
     txIsolationLevel: TransactionIsolationLevel;
   };
@@ -1859,6 +1863,82 @@ export type TypeMap<
         };
       };
     };
+    EmailSendRateLimit: {
+      payload: Prisma.$EmailSendRateLimitPayload<ExtArgs>;
+      fields: Prisma.EmailSendRateLimitFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.EmailSendRateLimitFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.EmailSendRateLimitFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        findFirst: {
+          args: Prisma.EmailSendRateLimitFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.EmailSendRateLimitFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        findMany: {
+          args: Prisma.EmailSendRateLimitFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        create: {
+          args: Prisma.EmailSendRateLimitCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        createMany: {
+          args: Prisma.EmailSendRateLimitCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.EmailSendRateLimitCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        delete: {
+          args: Prisma.EmailSendRateLimitDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        update: {
+          args: Prisma.EmailSendRateLimitUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        deleteMany: {
+          args: Prisma.EmailSendRateLimitDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.EmailSendRateLimitUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.EmailSendRateLimitUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>[];
+        };
+        upsert: {
+          args: Prisma.EmailSendRateLimitUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendRateLimitPayload>;
+        };
+        aggregate: {
+          args: Prisma.EmailSendRateLimitAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailSendRateLimit>;
+        };
+        groupBy: {
+          args: Prisma.EmailSendRateLimitGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.EmailSendRateLimitGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.EmailSendRateLimitCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.EmailSendRateLimitCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     KycVerification: {
       payload: Prisma.$KycVerificationPayload<ExtArgs>;
       fields: Prisma.KycVerificationFieldRefs;
@@ -2467,6 +2547,82 @@ export type TypeMap<
         };
       };
     };
+    InboxAgentReference: {
+      payload: Prisma.$InboxAgentReferencePayload<ExtArgs>;
+      fields: Prisma.InboxAgentReferenceFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.InboxAgentReferenceFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.InboxAgentReferenceFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        findFirst: {
+          args: Prisma.InboxAgentReferenceFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.InboxAgentReferenceFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        findMany: {
+          args: Prisma.InboxAgentReferenceFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        create: {
+          args: Prisma.InboxAgentReferenceCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        createMany: {
+          args: Prisma.InboxAgentReferenceCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.InboxAgentReferenceCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        delete: {
+          args: Prisma.InboxAgentReferenceDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        update: {
+          args: Prisma.InboxAgentReferenceUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        deleteMany: {
+          args: Prisma.InboxAgentReferenceDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.InboxAgentReferenceUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.InboxAgentReferenceUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>[];
+        };
+        upsert: {
+          args: Prisma.InboxAgentReferenceUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$InboxAgentReferencePayload>;
+        };
+        aggregate: {
+          args: Prisma.InboxAgentReferenceAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateInboxAgentReference>;
+        };
+        groupBy: {
+          args: Prisma.InboxAgentReferenceGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.InboxAgentReferenceGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.InboxAgentReferenceCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.InboxAgentReferenceCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     VeridianCredential: {
       payload: Prisma.$VeridianCredentialPayload<ExtArgs>;
       fields: Prisma.VeridianCredentialFieldRefs;
@@ -2856,6 +3012,17 @@ export const RateLimitScalarFieldEnum = {
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
 
+export const EmailSendRateLimitScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  count: "count",
+  windowStart: "windowStart",
+  updatedAt: "updatedAt",
+} as const;
+
+export type EmailSendRateLimitScalarFieldEnum =
+  (typeof EmailSendRateLimitScalarFieldEnum)[keyof typeof EmailSendRateLimitScalarFieldEnum];
+
 export const KycVerificationScalarFieldEnum = {
   id: "id",
   status: "status",
@@ -2998,6 +3165,28 @@ export const AgentReferenceScalarFieldEnum = {
 
 export type AgentReferenceScalarFieldEnum =
   (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
+
+export const InboxAgentReferenceScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  paymentNodeId: "paymentNodeId",
+  networkIdentifier: "networkIdentifier",
+  name: "name",
+  description: "description",
+  agentSlug: "agentSlug",
+  state: "state",
+  agentIdentifier: "agentIdentifier",
+  executingWalletId: "executingWalletId",
+  executingWalletVkey: "executingWalletVkey",
+  executingWalletAddress: "executingWalletAddress",
+  smartContractAddress: "smartContractAddress",
+  registryEntry: "registryEntry",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type InboxAgentReferenceScalarFieldEnum =
+  (typeof InboxAgentReferenceScalarFieldEnum)[keyof typeof InboxAgentReferenceScalarFieldEnum];
 
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",
@@ -3361,6 +3550,7 @@ export type GlobalOmitConfig = {
   deviceCode?: Prisma.DeviceCodeOmit;
   jwks?: Prisma.JwksOmit;
   rateLimit?: Prisma.RateLimitOmit;
+  emailSendRateLimit?: Prisma.EmailSendRateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;
@@ -3369,6 +3559,7 @@ export type GlobalOmitConfig = {
   kybSubmission?: Prisma.KybSubmissionOmit;
   walletCache?: Prisma.WalletCacheOmit;
   agentReference?: Prisma.AgentReferenceOmit;
+  inboxAgentReference?: Prisma.InboxAgentReferenceOmit;
   veridianCredential?: Prisma.VeridianCredentialOmit;
 };
 

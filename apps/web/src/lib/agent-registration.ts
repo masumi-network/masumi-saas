@@ -20,10 +20,7 @@ import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client"
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
-import {
-  isWalletAddressCompatibleWithNetwork,
-  resolveRegistrationFundingWallet,
-} from "./payment-node/registration-wallets";
+import { isWalletAddressCompatibleWithNetwork } from "./payment-node/registration-wallets";
 
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
@@ -72,9 +69,6 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
-  mintingWalletAddress?: string;
-  mintingWalletId?: string;
-  mintingWalletVkey?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
   lastRegisterAttemptAt?: string;
@@ -231,31 +225,15 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
-  const fundingWalletResult = resolveRegistrationFundingWallet({
-    network,
-    paymentSourceId,
-    sellingWallets: paymentSource.SellingWallets,
-  });
-  if (!fundingWalletResult.wallet) {
-    return {
-      success: false,
-      error:
-        fundingWalletResult.error ??
-        "No registration funding wallet is available for this payment source.",
-    };
-  }
-  const fundingWallet = fundingWalletResult.wallet;
-
   try {
     await ensureUserPaymentNodeKeyScopedToWallets({
       userId: user.id,
-      walletIds: [sellingWalletId, fundingWallet.id],
+      walletIds: [sellingWalletId],
     });
   } catch (error) {
     console.error("[Payment Node] Failed to scope user key for agent wallet:", {
       userId: user.id,
       sellingWalletId,
-      fundingWalletId: fundingWallet.id,
       error,
     });
     return {
@@ -327,9 +305,6 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
-        mintingWalletAddress: fundingWallet.walletAddress,
-        mintingWalletId: fundingWallet.id,
-        mintingWalletVkey: fundingWallet.walletVkey,
         ...(paymentSource.smartContractAddress && {
           smartContractAddress: paymentSource.smartContractAddress,
         }),
@@ -440,10 +415,18 @@ export async function completeOnChainRegistration(
   if (!recipientWalletVkey) {
     return { status: "error", error: "Missing wallet key" };
   }
-  const mintingWalletVkey =
-    typeof meta.mintingWalletVkey === "string"
-      ? meta.mintingWalletVkey
-      : recipientWalletVkey;
+  let adminClient: ReturnType<typeof createPaymentNodeClient>;
+  try {
+    adminClient = createPaymentNodeClient(
+      paymentNodeConfig.getBaseUrl(),
+      paymentNodeConfig.getAdminApiKey(),
+    );
+  } catch (error) {
+    if (isPaymentNodeConfigError(error)) {
+      return { status: "error", error: error.message };
+    }
+    throw error;
+  }
 
   const updatedAgent = await prisma.$transaction(async (tx) => {
     const rows = await tx.$queryRaw<
@@ -532,9 +515,9 @@ export async function completeOnChainRegistration(
       return { agent: existing, eventType: null, pending: true };
     }
 
-    const registerPromise = userClient.registerAgent({
+    const registerPromise = adminClient.registerAgent({
       network,
-      sellingWalletVkey: mintingWalletVkey,
+      sellingWalletVkey: recipientWalletVkey,
       recipientWalletAddress: address,
       name: agent.name,
       apiBaseUrl: agent.apiUrl,

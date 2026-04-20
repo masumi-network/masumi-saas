@@ -107,6 +107,14 @@ export type Jwks = Prisma.JwksModel;
  */
 export type RateLimit = Prisma.RateLimitModel;
 /**
+ * Model EmailSendRateLimit
+ * Tracks how many auth emails (magic-link + verification codes) have been
+ * sent to a specific email address within a rolling window. Used to cap
+ * sends at 5 per 30 minutes; the row is cleared on successful magic-link
+ * code verification or when the user's email is verified.
+ */
+export type EmailSendRateLimit = Prisma.EmailSendRateLimitModel;
+/**
  * Model KycVerification
  *
  */
@@ -179,6 +187,15 @@ export type WalletCache = Prisma.WalletCacheModel;
  * look up or verify the agent in the Masumi network.
  */
 export type AgentReference = Prisma.AgentReferenceModel;
+/**
+ * Model InboxAgentReference
+ * Links a user to inbox-agent registrations created through the SaaS layer.
+ *
+ * Inbox registrations mint their on-chain token into a shared executing wallet,
+ * so user payment-node wallet scopes cannot be used as the source of ownership.
+ * This table is the local ownership record used by inbox list/manage routes.
+ */
+export type InboxAgentReference = Prisma.InboxAgentReferenceModel;
 /**
  * Model VeridianCredential
  *

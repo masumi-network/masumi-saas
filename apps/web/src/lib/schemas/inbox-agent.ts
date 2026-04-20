@@ -25,7 +25,10 @@ export const inboxAgentFilterStatusSchema = z.enum([
 ]);
 
 export const inboxAgentsListQuerySchema = z.object({
-  cursor: z.string().optional(),
+  cursor: z.string().optional().openapi({
+    description:
+      "Cursor from the previous response (`nextCursor`). A cursor is valid only when reusing the same `network`, `filterStatus`, and `search` values; changing any of them invalidates pagination and may return HTTP 410.",
+  }),
   take: z.coerce.number().int().min(1).max(50).optional().default(10),
   search: z.string().trim().optional(),
   filterStatus: inboxAgentFilterStatusSchema.optional(),

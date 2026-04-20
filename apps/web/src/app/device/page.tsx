@@ -17,7 +17,7 @@ import { DeviceApprovalCard } from "./components/device-approval-card";
 
 export const metadata: Metadata = {
   title: "Masumi - Device Login",
-  description: "Approve Masumi CLI device authorization",
+  description: "Authorize Masumi Agent Messenger CLI device access",
 };
 
 interface DevicePageProps {

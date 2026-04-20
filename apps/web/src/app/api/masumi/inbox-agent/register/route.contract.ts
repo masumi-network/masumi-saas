@@ -4,6 +4,7 @@ import {
   jsonResponse,
 } from "@/lib/openapi/contracts";
 import {
+  errBody,
   inboxAgentMutationSuccessSchema,
   insufficientCreditsResponse,
   registerInboxAgentOpenApiBodySchema,
@@ -18,7 +19,7 @@ const contract = defineRouteContract({
     POST: {
       summary: "Register inbox agent",
       description:
-        "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent through the authenticated user’s payment-node token using the same managed wallet flow as the canonical route.",
+        "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route.",
       security,
       request: {
         body: jsonRequestBody(registerInboxAgentOpenApiBodySchema),
@@ -29,6 +30,7 @@ const contract = defineRouteContract({
           inboxAgentMutationSuccessSchema,
         ),
         402: insufficientCreditsResponse,
+        409: jsonResponse("Inbox agent already owned by another user", errBody),
         ...stdResponses,
       },
     },

@@ -28,6 +28,7 @@ import {
   type OidcScopeResolution,
   resolveOidcScopeGrantSet,
 } from "./oidc-user-grants";
+import { createEmptyBrowserRedirectResponse } from "./redirect-response";
 
 export const authHandler = toNextJsHandler(auth);
 
@@ -700,17 +701,11 @@ async function appendContinueUrlToConsentRedirect(
   if (location) {
     const redirectUrl = new URL(buildAbsoluteAppUrl(location));
     if (redirectUrl.pathname !== "/oidc/consent") {
-      return response;
+      return createEmptyBrowserRedirectResponse(response);
     }
 
     redirectUrl.searchParams.set("continueUrl", continueUrl);
-    const headers = new Headers(response.headers);
-    headers.set("location", redirectUrl.toString());
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    return createEmptyBrowserRedirectResponse(response, redirectUrl.toString());
   }
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -753,20 +748,6 @@ async function appendContinueUrlToConsentRedirect(
 export async function handleMasumiOidcAuthorizeRequest(
   request: Request,
 ): Promise<Response> {
-  const ua = request.headers.get("user-agent") ?? "";
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const hasSessionCookie =
-    /better-auth\.session_token|__Secure-better-auth\.session_token/.test(
-      cookieHeader,
-    );
-  const requestUrl = new URL(request.url);
-  const reqPath = requestUrl.pathname + requestUrl.search;
-  console.info("[oidc authorize] enter", {
-    ua,
-    hasSessionCookie,
-    path: reqPath,
-  });
-
   const promptAwareRequest =
     createConsentPromptedAuthorizeRequest(request) ?? request;
   const authorizeRequest =
@@ -774,25 +755,12 @@ export async function handleMasumiOidcAuthorizeRequest(
   const unverifiedResponse =
     await createUnverifiedOidcAuthorizeResponse(authorizeRequest);
   if (unverifiedResponse) {
-    console.info("[oidc authorize] exit", {
-      status: unverifiedResponse.status,
-      location: unverifiedResponse.headers.get("location"),
-      reason: "unverified",
-    });
     return unverifiedResponse;
   }
 
   await ensureHeadlessWebConsent(authorizeRequest);
   const response = await authHandler.GET(authorizeRequest);
-  const finalResponse = await appendContinueUrlToConsentRedirect(
-    authorizeRequest,
-    response,
-  );
-  console.info("[oidc authorize] exit", {
-    status: finalResponse.status,
-    location: finalResponse.headers.get("location"),
-  });
-  return finalResponse;
+  return appendContinueUrlToConsentRedirect(authorizeRequest, response);
 }
 
 export async function readBodyFields(
@@ -845,17 +813,9 @@ export async function persistApprovedDeviceScopes(
     return;
   }
 
-  const updatedGrantScopes = await addUserOidcGrantScopes({
+  await addUserOidcGrantScopes({
     userId: session.user.id,
     clientId: deviceCodeRecord.clientId,
     scopes: deviceCodeRecord.scope ?? "",
-  });
-
-  console.info("[oidc grants] approved device scopes synced", {
-    flow: "device-approve",
-    clientId: deviceCodeRecord.clientId,
-    userId: session.user.id,
-    requestedScopes: normalizeRequestedScopes(deviceCodeRecord.scope ?? ""),
-    updatedGrantScopes,
   });
 }

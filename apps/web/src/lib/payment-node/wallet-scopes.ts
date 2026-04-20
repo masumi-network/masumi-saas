@@ -35,6 +35,21 @@ async function getKnownAgentWalletIdsForUser(
   return toUniqueWalletIds(refs.map((ref) => ref.sellingWalletId));
 }
 
+async function getKnownInboxAgentWalletIdsForUser(
+  userId: string,
+): Promise<string[]> {
+  const refs = await prisma.inboxAgentReference.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      executingWalletId: true,
+    },
+  });
+
+  return toUniqueWalletIds(refs.map((ref) => ref.executingWalletId));
+}
+
 export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
   userId: string;
   walletIds: Array<string | null | undefined>;
@@ -56,12 +71,14 @@ export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
   const currentWalletIds = keyStatus.WalletScopes.map(
     (walletScope) => walletScope.hotWalletId,
   );
-  const knownAgentWalletIds = await getKnownAgentWalletIdsForUser(
-    params.userId,
-  );
+  const [knownAgentWalletIds, knownInboxAgentWalletIds] = await Promise.all([
+    getKnownAgentWalletIdsForUser(params.userId),
+    getKnownInboxAgentWalletIdsForUser(params.userId),
+  ]);
   const nextWalletIds = toUniqueWalletIds([
     ...currentWalletIds,
     ...knownAgentWalletIds,
+    ...knownInboxAgentWalletIds,
     ...requestedWalletIds,
   ]);
 

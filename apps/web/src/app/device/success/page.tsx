@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 };
 
 const copy = {
-  title: "Device authorized",
+  title: "Masumi Agent Messenger CLI authorized",
   description:
-    "Your Agent Messenger CLI authorization has been approved successfully.",
+    "Your Masumi Agent Messenger CLI authorization has been approved successfully.",
   detail: "You can return to your terminal and close this tab.",
 } as const;
 

@@ -220,6 +220,8 @@ async function transformStoredData(
   return nextData;
 }
 
+const DECRYPT_FAILURE = Symbol("auth-storage:decrypt-failure");
+
 async function restoreReadResult<T>(model: string, result: T): Promise<T> {
   if (!result) {
     return result;
@@ -227,22 +229,50 @@ async function restoreReadResult<T>(model: string, result: T): Promise<T> {
 
   if (Array.isArray(result)) {
     const restoredItems = await Promise.all(
-      result.map((item) => restoreReadResult(model, item)),
+      result.map((item) => restoreReadResultInternal(model, item)),
     );
-    return restoredItems as T;
+    // Drop rows whose encrypted fields could not be decrypted (e.g. rows
+    // encrypted with a prior BETTER_AUTH_SECRET). Returning them would propagate
+    // a thrown error up the RSC render and cause a full-screen error flash; the
+    // rows are unusable anyway, so filtering lets other valid rows continue to
+    // work (e.g. signing with a newer JWKS key).
+    return restoredItems.filter((item) => item !== DECRYPT_FAILURE) as T;
   }
 
-  if (typeof result !== "object") {
+  const restored = await restoreReadResultInternal(model, result);
+  if (restored === DECRYPT_FAILURE) {
+    // Single-row reads: re-throw so callers see the real error instead of a
+    // silently missing record (which could hide bugs in write paths).
+    throw new Error(
+      `Failed to decrypt stored auth field(s) for ${model}; check BETTER_AUTH_SECRET`,
+    );
+  }
+  return restored as T;
+}
+
+async function restoreReadResultInternal<T>(
+  model: string,
+  result: T,
+): Promise<T | typeof DECRYPT_FAILURE> {
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
     return result;
   }
 
   const restored = { ...(result as Record<string, unknown>) };
   for (const [field, value] of Object.entries(restored)) {
     if (typeof value === "string" && isEncryptedField(model, field)) {
-      restored[field] = await decryptAuthSecret(
-        value,
-        getFieldLabel(model, field),
-      );
+      try {
+        restored[field] = await decryptAuthSecret(
+          value,
+          getFieldLabel(model, field),
+        );
+      } catch (error) {
+        console.warn(
+          `[auth-storage] Skipping ${model} row: failed to decrypt ${field}`,
+          error instanceof Error ? error.message : error,
+        );
+        return DECRYPT_FAILURE;
+      }
     }
   }
 
@@ -348,10 +378,25 @@ export function securePrismaAuthAdapter(
         });
       },
       async delete(args: { model: string; where: AdapterWhere[] }) {
-        return adapter.delete({
-          ...args,
-          where: transformStoredWhere(args.model, args.where),
-        });
+        try {
+          return await adapter.delete({
+            ...args,
+            where: transformStoredWhere(args.model, args.where),
+          });
+        } catch (error) {
+          // P2025: "Record to delete does not exist." Treat as success — the
+          // desired post-state (record absent) is already met. This avoids
+          // crashes when better-auth deletes a session whose token was hashed
+          // under a previous BETTER_AUTH_SECRET and can no longer be matched.
+          if (
+            typeof error === "object" &&
+            error !== null &&
+            (error as { code?: unknown }).code === "P2025"
+          ) {
+            return null;
+          }
+          throw error;
+        }
       },
       async deleteMany(args: { model: string; where: AdapterWhere[] }) {
         return adapter.deleteMany({

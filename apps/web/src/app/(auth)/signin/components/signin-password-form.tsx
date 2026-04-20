@@ -49,6 +49,7 @@ export const SigninPasswordForm = forwardRef<
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues,
+    mode: "onTouched",
   });
 
   useImperativeHandle(ref, () => ({
