@@ -77,7 +77,7 @@ function resolveSenderName(sender: TransactionalEmailSender): string {
     case "agentRegistration":
       return `${postmarkFrom.baseName} Agent Updates`;
     case "agentMessenger":
-      return "Agent Messenger";
+      return "Masumi Agent Messenger";
     case "default":
     default:
       return postmarkFrom.baseName;

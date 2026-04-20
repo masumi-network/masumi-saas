@@ -115,7 +115,7 @@ export function OidcPermissionSummary({
                             <div key={network.scope} className="space-y-1">
                               <div className="font-medium">{network.label}</div>
                               <div>{network.description}</div>
-                              <div className="font-mono text-[11px] text-muted-foreground">
+                              <div className="font-mono text-[11px] opacity-70">
                                 {network.scope}
                               </div>
                             </div>

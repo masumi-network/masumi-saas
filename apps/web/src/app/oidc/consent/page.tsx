@@ -1,3 +1,4 @@
+import gravatarUrl from "gravatar-url";
 import {
   AlertCircle,
   CheckCircle2,
@@ -10,7 +11,7 @@ import { redirect } from "next/navigation";
 
 import { AuthorizationRequestCard } from "@/components/oidc/authorization-request-card";
 import { OidcPermissionSummary } from "@/components/oidc/oidc-permission-summary";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -68,13 +69,13 @@ function normalizeScopes(value: string | undefined): string[] {
 
 function getClientLabel(clientId: string | undefined): string {
   if (!clientId) {
-    return "Agent Messenger";
+    return "Masumi Agent Messenger";
   }
 
   const client = getTrustedOidcClients().find(
     (item) => item.clientId === clientId,
   );
-  return client?.name ?? "Agent Messenger";
+  return client?.name ?? "Masumi Agent Messenger";
 }
 
 function buildConsentCallbackUrl(searchParams: {
@@ -161,7 +162,7 @@ export default async function OidcConsentPage({
       title={`${PAGE_COPY.titlePrefix} ${clientLabel}`}
       description={`${clientLabel} ${PAGE_COPY.descriptionSuffix}`}
       footer={
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col gap-4">
           <form
             action="/oidc/consent/submit"
             method="post"
@@ -217,7 +218,17 @@ export default async function OidcConsentPage({
         ) : null}
 
         <div className="animate-fade-in-up animate-stagger-1 flex items-center gap-3">
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-9 w-9 ring-1 ring-border">
+            <AvatarImage
+              src={
+                session.user.image ??
+                gravatarUrl(session.user.email, {
+                  size: 72,
+                  default: "404",
+                })
+              }
+              alt={session.user.name ?? "User avatar"}
+            />
             <AvatarFallback className="text-xs font-medium">
               {getInitial(session.user.name, session.user.email)}
             </AvatarFallback>

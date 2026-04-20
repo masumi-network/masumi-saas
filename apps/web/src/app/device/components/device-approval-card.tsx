@@ -80,12 +80,16 @@ function getDeviceClientLabel(clientLabel: string | null | undefined): string {
 
   if (
     !trimmedClientLabel ||
-    trimmedClientLabel.toLowerCase() === "agent messenger cli"
+    trimmedClientLabel.toLowerCase() === "agent messenger cli" ||
+    trimmedClientLabel.toLowerCase() === "masumi agent messenger cli"
   ) {
     return "Masumi Agent Messenger CLI";
   }
 
-  if (trimmedClientLabel.toLowerCase() === "agent messenger") {
+  if (
+    trimmedClientLabel.toLowerCase() === "agent messenger" ||
+    trimmedClientLabel.toLowerCase() === "masumi agent messenger"
+  ) {
     return "Masumi Agent Messenger";
   }
 
