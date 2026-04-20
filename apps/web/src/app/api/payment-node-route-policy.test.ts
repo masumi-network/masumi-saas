@@ -37,7 +37,8 @@ describe("payment-node route API-key policy", () => {
       (routeFile) =>
         routeFile !== "v1/inbox-agents/route.ts" &&
         routeFile !== "v1/inbox-agents/[inboxAgentId]/route.ts" &&
-        routeFile !== "v1/inbox-agents/[inboxAgentId]/deregister/route.ts",
+        routeFile !== "v1/inbox-agents/[inboxAgentId]/deregister/route.ts" &&
+        routeFile !== "registry-discovery/inbox-agent-identifier/route.ts",
     );
 
     for (const routeFile of routeFiles) {
@@ -139,11 +140,28 @@ describe("payment-node route API-key policy", () => {
     }
   });
 
-  it("keeps inbox-agent metadata lookup on the user payment-node client", () => {
-    expect(
-      readRoute("registry-discovery/inbox-agent-identifier/route.ts"),
-    ).toContain("getPaymentNodeClientForUser");
+  it("allows inbox-agent metadata lookup to use the admin client after registered ownership and scope checks", () => {
+    const source = readRoute(
+      "registry-discovery/inbox-agent-identifier/route.ts",
+    );
+    const scopeCheck = source.indexOf("requireNetworkedOidcApiScope(");
+    const ownershipCheck = source.indexOf(
+      "await getRegisteredOwnedInboxAgentReferenceByAgentIdentifier",
+    );
+    const adminClientCall = source.indexOf(
+      "const client = createInboxAdminPaymentNodeClient()",
+    );
 
+    expect(source).toContain("createInboxAdminPaymentNodeClient");
+    expect(source).toContain(
+      "getRegisteredOwnedInboxAgentReferenceByAgentIdentifier",
+    );
+    expect(source).not.toContain("getPaymentNodeClientForUser");
+    expect(scopeCheck).toBeGreaterThanOrEqual(0);
+    expect(ownershipCheck).toBeGreaterThanOrEqual(0);
+    expect(adminClientCall).toBeGreaterThanOrEqual(0);
+    expect(scopeCheck).toBeLessThan(adminClientCall);
+    expect(ownershipCheck).toBeLessThan(adminClientCall);
     expect(readRoute("masumi/inbox-agent/register/route.ts")).toContain(
       'export { POST } from "../../../v1/inbox-agents/route"',
     );

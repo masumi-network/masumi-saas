@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { InboxAgentReference } from "@masumi/database";
+import type { InboxAgentReference, Prisma } from "@masumi/database";
 import prisma, { type RegistrationState } from "@masumi/database/client";
 
 import type {
@@ -13,7 +13,6 @@ import type {
 } from "@/lib/payment-node";
 import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { registryInboxEntrySchema } from "@/lib/payment-node/schemas";
 
 import { isWalletAddressCompatibleWithNetwork } from "../payment-node/registration-wallets";
@@ -115,6 +114,15 @@ export function createInboxAdminPaymentNodeClient(): PaymentNodeClient {
     paymentNodeConfig.getBaseUrl(),
     paymentNodeConfig.getAdminApiKey(),
   );
+}
+
+function tryCreateInboxAdminPaymentNodeClient(): PaymentNodeClient | null {
+  try {
+    return createInboxAdminPaymentNodeClient();
+  } catch (error) {
+    if (isPaymentNodeConfigError(error)) return null;
+    throw error;
+  }
 }
 
 async function listPaymentSources(
@@ -444,6 +452,62 @@ function isPendingRegistrationState(state: RegistrationState): boolean {
   return PENDING_STATES.includes(state);
 }
 
+function getSearchFilter(
+  search?: string,
+): Prisma.InboxAgentReferenceWhereInput | null {
+  const query = search?.trim();
+  if (!query) return null;
+
+  return {
+    OR: [
+      { name: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+      { agentSlug: { contains: query, mode: "insensitive" } },
+      { agentIdentifier: { contains: query, mode: "insensitive" } },
+    ],
+  };
+}
+
+function getCursorWindowFilter(
+  cursorReference: InboxAgentReference | null,
+): Prisma.InboxAgentReferenceWhereInput | null {
+  if (!cursorReference) return null;
+
+  return {
+    OR: [
+      { createdAt: { lt: cursorReference.createdAt } },
+      {
+        createdAt: cursorReference.createdAt,
+        id: { lt: cursorReference.id },
+      },
+    ],
+  };
+}
+
+function getListReferenceWhere(params: {
+  userId: string;
+  network: PaymentNodeNetwork;
+  filterStatus?: RegistryStatusFilter;
+  search?: string;
+  cursorReference?: InboxAgentReference | null;
+}): Prisma.InboxAgentReferenceWhereInput {
+  const andFilters = [
+    params.filterStatus
+      ? { state: { in: getFilterStates(params.filterStatus) ?? [] } }
+      : null,
+    getSearchFilter(params.search),
+    getCursorWindowFilter(params.cursorReference ?? null),
+  ].filter(
+    (filter): filter is Prisma.InboxAgentReferenceWhereInput => filter != null,
+  );
+
+  return {
+    userId: params.userId,
+    networkIdentifier: params.network,
+    ...(andFilters.length > 0 ? { AND: andFilters } : {}),
+  };
+}
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   concurrency: number,
@@ -521,20 +585,64 @@ export async function listOwnedInboxAgentsForUser(params: {
   filterStatus?: RegistryStatusFilter;
   search?: string;
 }): Promise<ListOwnedInboxAgentsResult> {
-  const references = await prisma.inboxAgentReference.findMany({
-    where: {
+  let lookupClient: PaymentNodeClient | null | undefined;
+  const getLookupClient = () => {
+    if (lookupClient === undefined) {
+      lookupClient = tryCreateInboxAdminPaymentNodeClient();
+    }
+    return lookupClient;
+  };
+
+  const cursorReference = params.cursor
+    ? await prisma.inboxAgentReference.findFirst({
+        where: {
+          userId: params.userId,
+          networkIdentifier: params.network,
+          paymentNodeId: params.cursor,
+        },
+      })
+    : null;
+
+  if (params.cursor && !cursorReference) {
+    throw new StaleInboxAgentCursorError(params.cursor);
+  }
+
+  if (cursorReference) {
+    const cursorEntry = await refreshInboxAgentReference({
       userId: params.userId,
-      networkIdentifier: params.network,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+      network: params.network,
+      reference: cursorReference,
+      client: isPendingRegistrationState(cursorReference.state)
+        ? getLookupClient()
+        : null,
+    });
+    if (
+      !matchesSearch(cursorEntry, params.search) ||
+      !matchesFilterStatus(cursorEntry, params.filterStatus)
+    ) {
+      throw new StaleInboxAgentCursorError(params.cursor!);
+    }
+  }
+
+  const references = await prisma.inboxAgentReference.findMany({
+    where: getListReferenceWhere({
+      userId: params.userId,
+      network: params.network,
+      filterStatus: params.filterStatus,
+      search: params.search,
+      cursorReference,
+    }),
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: params.take,
   });
   if (references.length === 0) {
     return { Assets: [], nextCursor: null };
   }
 
-  const userClient = await getPaymentNodeClientForUser(params.userId);
+  const needsRefresh = references.some((reference) =>
+    isPendingRegistrationState(reference.state),
+  );
+  const client = needsRefresh ? getLookupClient() : null;
 
   const refreshedDbAssets = await mapWithConcurrency(
     references,
@@ -544,35 +652,19 @@ export async function listOwnedInboxAgentsForUser(params: {
         userId: params.userId,
         network: params.network,
         reference,
-        client: userClient,
+        client,
       }),
   );
 
   const assetsById = new Map<string, RegistryInboxEntry>();
   for (const entry of refreshedDbAssets) assetsById.set(entry.id, entry);
 
-  const filteredAssets = sortInboxEntriesByCreatedAtDesc(
+  const Assets = sortInboxEntriesByCreatedAtDesc(
     Array.from(assetsById.values()),
   )
     .filter((entry) => matchesSearch(entry, params.search))
-    .filter((entry) => matchesFilterStatus(entry, params.filterStatus));
-
-  const safeStartIndex = (() => {
-    if (!params.cursor) return 0;
-
-    const cursorIndex = filteredAssets.findIndex(
-      (entry) => entry.id === params.cursor,
-    );
-    if (cursorIndex < 0) {
-      throw new StaleInboxAgentCursorError(params.cursor);
-    }
-
-    return cursorIndex + 1;
-  })();
-  const Assets = filteredAssets.slice(
-    safeStartIndex,
-    safeStartIndex + params.take,
-  );
+    .filter((entry) => matchesFilterStatus(entry, params.filterStatus))
+    .slice(0, params.take);
 
   return {
     Assets,
@@ -642,12 +734,11 @@ export async function getOwnedInboxAgentForUser(params: {
   });
 
   if (reference) {
-    const userClient = await getPaymentNodeClientForUser(params.userId);
     return getOwnedInboxAgentFromReference({
       userId: params.userId,
       network: params.network,
       reference,
-      client: userClient,
+      client: tryCreateInboxAdminPaymentNodeClient(),
     });
   }
 
@@ -666,12 +757,11 @@ export async function getOwnedInboxAgentByAgentIdentifierForUser(params: {
   });
 
   if (reference) {
-    const userClient = await getPaymentNodeClientForUser(params.userId);
     const owned = await getOwnedInboxAgentFromReference({
       userId: params.userId,
       network: params.network,
       reference,
-      client: userClient,
+      client: tryCreateInboxAdminPaymentNodeClient(),
     });
     if (owned) return owned;
   }
@@ -703,6 +793,21 @@ export async function getOwnedInboxAgentReferenceByAgentIdentifier(params: {
       userId: params.userId,
       networkIdentifier: params.network,
       agentIdentifier: params.agentIdentifier,
+    },
+  });
+}
+
+export async function getRegisteredOwnedInboxAgentReferenceByAgentIdentifier(params: {
+  userId: string;
+  network: PaymentNodeNetwork;
+  agentIdentifier: string;
+}): Promise<InboxAgentReference | null> {
+  return prisma.inboxAgentReference.findFirst({
+    where: {
+      userId: params.userId,
+      networkIdentifier: params.network,
+      agentIdentifier: params.agentIdentifier,
+      state: "RegistrationConfirmed",
     },
   });
 }

@@ -4,8 +4,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
-const getPaymentNodeClientForUserMock = vi.fn();
-const getOwnedInboxAgentByAgentIdentifierForUserMock = vi.fn();
+const createInboxAdminPaymentNodeClientMock = vi.fn();
+const getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
@@ -17,12 +17,14 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 }));
 
 vi.mock("@/lib/inbox-agents/server", () => ({
-  getOwnedInboxAgentByAgentIdentifierForUser:
-    getOwnedInboxAgentByAgentIdentifierForUserMock,
+  createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
+  getRegisteredOwnedInboxAgentReferenceByAgentIdentifier:
+    getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock,
 }));
 
-vi.mock("@/lib/payment-node/get-user-client", () => ({
-  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
+vi.mock("@/lib/payment-node/config", () => ({
+  isPaymentNodeConfigError: (error: unknown) =>
+    error instanceof Error && error.name === "PaymentNodeConfigError",
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
@@ -46,7 +48,7 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
     requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
   });
 
-  it("looks up raw metadata through the user payment-node key after ownership is found", async () => {
+  it("looks up raw metadata through the admin payment-node key after registered ownership is found", async () => {
     const metadata = {
       policyId: "policy",
       assetName: "asset",
@@ -58,21 +60,16 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
         metadataVersion: 1,
       },
     };
-    getOwnedInboxAgentByAgentIdentifierForUserMock.mockResolvedValue({
-      source: "db",
-      reference: { id: "ref-1" },
-      entry: { id: "inbox-1" },
-      executingWallet: {
-        id: "funding-1",
-        walletVkey: "funding_vkey",
-        walletAddress: "addr_test1funding",
+    getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock.mockResolvedValue(
+      {
+        id: "ref-1",
+        state: "RegistrationConfirmed",
       },
-      smartContractAddress: "addr_test1contract",
-    });
+    );
     const getRegistryInboxByAgentIdentifierMock = vi
       .fn()
       .mockResolvedValue(metadata);
-    getPaymentNodeClientForUserMock.mockResolvedValue({
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
       getRegistryInboxByAgentIdentifier: getRegistryInboxByAgentIdentifierMock,
     });
 
@@ -87,22 +84,24 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
       success: true,
       data: metadata,
     });
-    expect(getOwnedInboxAgentByAgentIdentifierForUserMock).toHaveBeenCalledWith(
-      {
-        userId: "user-1",
-        network: "Preprod",
-        agentIdentifier: "policy.asset",
-      },
-    );
+    expect(
+      getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock,
+    ).toHaveBeenCalledWith({
+      userId: "user-1",
+      network: "Preprod",
+      agentIdentifier: "policy.asset",
+    });
     expect(getRegistryInboxByAgentIdentifierMock).toHaveBeenCalledWith({
       agentIdentifier: "policy.asset",
       network: "Preprod",
     });
-    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
+    expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalled();
   });
 
   it("does not call the payment node when ownership is missing", async () => {
-    getOwnedInboxAgentByAgentIdentifierForUserMock.mockResolvedValue(null);
+    getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock.mockResolvedValue(
+      null,
+    );
 
     const response = await GET(
       new NextRequest(
@@ -111,6 +110,32 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when admin payment-node config is missing", async () => {
+    getRegisteredOwnedInboxAgentReferenceByAgentIdentifierMock.mockResolvedValue(
+      {
+        id: "ref-1",
+        state: "RegistrationConfirmed",
+      },
+    );
+    createInboxAdminPaymentNodeClientMock.mockImplementation(() => {
+      throw Object.assign(new Error("PAYMENT_NODE_ADMIN_API_KEY is required"), {
+        name: "PaymentNodeConfigError",
+      });
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "https://saas.example.com/pay/api/v1/registry-inbox/agent-identifier?agentIdentifier=policy.asset&network=Preprod",
+      ),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error: "PAYMENT_NODE_ADMIN_API_KEY is required",
+    });
   });
 });

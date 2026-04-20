@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { getOwnedInboxAgentByAgentIdentifierForUser } from "@/lib/inbox-agents/server";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  createInboxAdminPaymentNodeClient,
+  getRegisteredOwnedInboxAgentReferenceByAgentIdentifier,
+} from "@/lib/inbox-agents/server";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
 export async function GET(request: NextRequest) {
@@ -26,26 +29,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const ownedInboxAgent = await getOwnedInboxAgentByAgentIdentifierForUser({
-      userId: authContext.user.id,
-      network,
-      agentIdentifier,
-    });
-    if (!ownedInboxAgent) {
+    const ownedReference =
+      await getRegisteredOwnedInboxAgentReferenceByAgentIdentifier({
+        userId: authContext.user.id,
+        network,
+        agentIdentifier,
+      });
+    if (!ownedReference) {
       return NextResponse.json(
         { success: false, error: "Inbox agent not found" },
         { status: 404 },
       );
     }
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return NextResponse.json(
-        { success: false, error: "Payment node unavailable" },
-        { status: 503 },
-      );
-    }
-
+    const client = createInboxAdminPaymentNodeClient();
     const metadata = await client.getRegistryInboxByAgentIdentifier({
       agentIdentifier,
       network,
@@ -61,6 +58,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 503 },
+      );
+    }
     console.error("[Registry Discovery:inbox-agent-identifier]", error);
     return NextResponse.json(
       { success: false, error: "Proxy request failed" },

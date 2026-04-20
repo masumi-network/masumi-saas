@@ -273,6 +273,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
     getRegistryInboxByIdMock.mockResolvedValue(null);
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(null);
     inboxAgentReferenceFindUniqueMock.mockResolvedValue(null);
     inboxAgentReferenceCreateMock.mockImplementation(async ({ data }) => ({
       id: `ref-${data.paymentNodeId}`,
@@ -297,6 +298,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     });
 
     expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(createPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
     expect(result.Assets).toStrictEqual([]);
@@ -312,27 +314,28 @@ describe("listOwnedInboxAgentsForUser", () => {
           id === "third" ? "RegistrationInitiated" : "RegistrationConfirmed",
       }),
     );
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getRegistryInboxById: getRegistryInboxByIdMock,
-    });
     const first = makeReference({
       id: "first",
       name: "Support alpha",
       agentSlug: "support-alpha",
       state: "RegistrationInitiated",
+      createdAt: "2026-04-13T10:05:00.000Z",
     });
     const second = makeReference({
       id: "second",
       name: "Support beta",
       agentSlug: "support-beta",
-      state: "RegistrationInitiated",
+      state: "RegistrationConfirmed",
+      createdAt: "2026-04-13T10:04:00.000Z",
     });
     const third = makeReference({
       id: "third",
       name: "Support gamma",
       agentSlug: "support-gamma",
+      createdAt: "2026-04-13T10:03:00.000Z",
     });
-    inboxAgentReferenceFindManyMock.mockResolvedValue([first, second, third]);
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(first);
+    inboxAgentReferenceFindManyMock.mockResolvedValue([second, third]);
 
     const { listOwnedInboxAgentsForUser } = await import("./server");
     const result = await listOwnedInboxAgentsForUser({
@@ -344,17 +347,52 @@ describe("listOwnedInboxAgentsForUser", () => {
       take: 1,
     });
 
+    expect(inboxAgentReferenceFindFirstMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        networkIdentifier: "Preprod",
+        paymentNodeId: "first",
+      },
+    });
     expect(inboxAgentReferenceFindManyMock).toHaveBeenCalledWith({
       where: {
         userId: "user-1",
         networkIdentifier: "Preprod",
+        AND: expect.arrayContaining([
+          {
+            state: {
+              in: expect.arrayContaining(["RegistrationConfirmed"]),
+            },
+          },
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              { name: { contains: "support", mode: "insensitive" } },
+            ]),
+          }),
+          {
+            OR: [
+              { createdAt: { lt: first.createdAt } },
+              {
+                createdAt: first.createdAt,
+                id: { lt: first.id },
+              },
+            ],
+          },
+        ]),
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 1,
     });
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
-      id: "second",
+      id: "first",
       network: "Preprod",
     });
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledTimes(1);
+    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
+      "https://payment.example.com/api/v1",
+      "admin-key",
+    );
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
     expect(result.Assets.map((asset) => asset.id)).toStrictEqual(["second"]);
     expect(result.nextCursor).toBe("second");
   });
@@ -388,9 +426,6 @@ describe("listOwnedInboxAgentsForUser", () => {
           updatedAt: new Date("2026-04-13T10:01:00.000Z"),
           ...data,
         };
-      });
-      getPaymentNodeClientForUserMock.mockResolvedValue({
-        getRegistryInboxById: getRegistryInboxByIdMock,
       });
       const remoteFails = makeReference({
         id: "remote-fails",
@@ -447,6 +482,11 @@ describe("listOwnedInboxAgentsForUser", () => {
       ]);
       expect(result.nextCursor).toBeNull();
       expect(getRegistryInboxByIdMock).toHaveBeenCalledTimes(3);
+      expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
+        "https://payment.example.com/api/v1",
+        "admin-key",
+      );
+      expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
       expect(inboxAgentReferenceCreateMock).toHaveBeenCalledWith({
         data: expect.objectContaining({ paymentNodeId: "write-fails" }),
       });
@@ -454,6 +494,52 @@ describe("listOwnedInboxAgentsForUser", () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  it("only refreshes the requested DB page instead of every owned reference", async () => {
+    const references = Array.from({ length: 150 }, (_, index) =>
+      makeReference({
+        id: `agent-${index.toString().padStart(3, "0")}`,
+        name: `Agent ${index}`,
+        agentSlug: `agent-${index}`,
+        state: "RegistrationInitiated",
+        createdAt: new Date(Date.UTC(2026, 3, 13, 10, 0, index)).toISOString(),
+      }),
+    );
+    inboxAgentReferenceFindManyMock.mockResolvedValue(references.slice(0, 1));
+    getRegistryInboxByIdMock.mockImplementation(async ({ id }) =>
+      makeInboxEntry({
+        id,
+        name: `Remote ${id}`,
+        agentSlug: id,
+        state: "RegistrationConfirmed",
+      }),
+    );
+
+    const { listOwnedInboxAgentsForUser } = await import("./server");
+    const result = await listOwnedInboxAgentsForUser({
+      userId: "user-1",
+      network: "Preprod",
+      take: 1,
+    });
+
+    expect(inboxAgentReferenceFindManyMock).toHaveBeenCalledTimes(1);
+    expect(inboxAgentReferenceFindManyMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        networkIdentifier: "Preprod",
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 1,
+    });
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledTimes(1);
+    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
+      "https://payment.example.com/api/v1",
+      "admin-key",
+    );
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(result.Assets).toHaveLength(1);
+    expect(result.nextCursor).toBe(result.Assets[0]?.id);
   });
 
   it("rejects stale cursors when refresh moves the cursor entry out of the filtered list", async () => {
@@ -466,9 +552,6 @@ describe("listOwnedInboxAgentsForUser", () => {
             : "RegistrationInitiated",
       }),
     );
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getRegistryInboxById: getRegistryInboxByIdMock,
-    });
     const cursorEntry = makeReference({
       id: "cursor-entry",
       name: "Support cursor",
@@ -481,6 +564,7 @@ describe("listOwnedInboxAgentsForUser", () => {
       agentSlug: "support-next",
       state: "RegistrationInitiated",
     });
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(cursorEntry);
     inboxAgentReferenceFindManyMock.mockResolvedValue([cursorEntry, nextEntry]);
 
     const { listOwnedInboxAgentsForUser, StaleInboxAgentCursorError } =
@@ -494,6 +578,12 @@ describe("listOwnedInboxAgentsForUser", () => {
         take: 1,
       }),
     ).rejects.toBeInstanceOf(StaleInboxAgentCursorError);
+    expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
+    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
+      "https://payment.example.com/api/v1",
+      "admin-key",
+    );
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
   });
 });
 
@@ -525,6 +615,7 @@ describe("getOwnedInboxAgentForUser", () => {
       },
     });
     expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(createPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(result).toBeNull();
     expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
@@ -537,9 +628,6 @@ describe("getOwnedInboxAgentForUser", () => {
     });
     inboxAgentReferenceFindFirstMock.mockResolvedValue(reference);
     getRegistryInboxByIdMock.mockResolvedValue(null);
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getRegistryInboxById: getRegistryInboxByIdMock,
-    });
 
     const { getOwnedInboxAgentForUser } = await import("./server");
     const result = await getOwnedInboxAgentForUser({
@@ -552,6 +640,11 @@ describe("getOwnedInboxAgentForUser", () => {
       id: "stale-1",
       network: "Preprod",
     });
+    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
+      "https://payment.example.com/api/v1",
+      "admin-key",
+    );
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       source: "db",
       reference,
@@ -586,5 +679,35 @@ describe("getOwnedInboxAgentForUser", () => {
     });
     expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
     expect(result).toBeNull();
+  });
+
+  it("filters registered owned inbox references by agent identifier in the DB", async () => {
+    const reference = makeReference({
+      id: "registered-reference",
+      state: "RegistrationConfirmed",
+    });
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(reference);
+
+    const { getRegisteredOwnedInboxAgentReferenceByAgentIdentifier } =
+      await import("./server");
+    const result = await getRegisteredOwnedInboxAgentReferenceByAgentIdentifier(
+      {
+        userId: "user-1",
+        network: "Preprod",
+        agentIdentifier: "policy.asset",
+      },
+    );
+
+    expect(inboxAgentReferenceFindFirstMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        networkIdentifier: "Preprod",
+        agentIdentifier: "policy.asset",
+        state: "RegistrationConfirmed",
+      },
+    });
+    expect(result).toBe(reference);
+    expect(createPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
   });
 });
