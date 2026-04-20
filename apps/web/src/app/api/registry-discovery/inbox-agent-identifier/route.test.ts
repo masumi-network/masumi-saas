@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
-const createInboxAdminPaymentNodeClientMock = vi.fn();
+const getPaymentNodeClientForUserMock = vi.fn();
 const getOwnedInboxAgentByAgentIdentifierForUserMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -17,9 +17,12 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 }));
 
 vi.mock("@/lib/inbox-agents/server", () => ({
-  createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
   getOwnedInboxAgentByAgentIdentifierForUser:
     getOwnedInboxAgentByAgentIdentifierForUserMock,
+}));
+
+vi.mock("@/lib/payment-node/get-user-client", () => ({
+  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
@@ -43,7 +46,7 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
     requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
   });
 
-  it("looks up raw metadata through admin only after ownership is found", async () => {
+  it("looks up raw metadata through the user payment-node key after ownership is found", async () => {
     const metadata = {
       policyId: "policy",
       assetName: "asset",
@@ -69,7 +72,7 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
     const getRegistryInboxByAgentIdentifierMock = vi
       .fn()
       .mockResolvedValue(metadata);
-    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+    getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegistryInboxByAgentIdentifier: getRegistryInboxByAgentIdentifierMock,
     });
 
@@ -95,6 +98,7 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
       agentIdentifier: "policy.asset",
       network: "Preprod",
     });
+    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
   });
 
   it("does not call the payment node when ownership is missing", async () => {
@@ -107,6 +111,6 @@ describe("GET /pay/api/v1/registry-inbox/agent-identifier", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
   });
 });

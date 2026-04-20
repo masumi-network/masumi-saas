@@ -9,6 +9,7 @@ import {
   saveInboxAgentReference,
 } from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
@@ -52,7 +53,6 @@ export async function POST(
       });
     }
 
-    const client = createInboxAdminPaymentNodeClient();
     const inboxAgent = ownedInboxAgent.entry;
 
     if (inboxAgent.state !== "RegistrationConfirmed") {
@@ -70,6 +70,7 @@ export async function POST(
       });
     }
 
+    const client = createInboxAdminPaymentNodeClient();
     const smartContractAddress =
       ownedInboxAgent.smartContractAddress ??
       (await resolveInboxSmartContractAddress(
@@ -91,15 +92,13 @@ export async function POST(
       smartContractAddress,
     });
 
-    if (ownedInboxAgent.reference) {
-      await saveInboxAgentReference({
-        userId: authContext.user.id,
-        network,
-        entry: deregistered,
-        executingWallet: ownedInboxAgent.executingWallet,
-        smartContractAddress,
-      });
-    }
+    await saveInboxAgentReference({
+      userId: authContext.user.id,
+      network,
+      entry: deregistered,
+      executingWallet: ownedInboxAgent.executingWallet,
+      smartContractAddress,
+    });
 
     return contractJsonResponse(contract, "POST", 200, {
       success: true,
@@ -108,6 +107,12 @@ export async function POST(
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return contractJsonResponse(contract, "POST", 503, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to deregister inbox agent:", error);
     return contractJsonResponse(contract, "POST", 500, {
       success: false,

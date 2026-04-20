@@ -23,6 +23,7 @@ import type {
   RegistryInboxEntry,
 } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 import {
   getCanonicalInboxAgentSlug,
   inboxAgentsListQuerySchema,
@@ -231,7 +232,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: authContext.user.id,
+      walletIds: [managedRegistration.executingWallet.id],
+    });
     const client = createInboxAdminPaymentNodeClient();
+
     const created = await client.registerInboxAgent({
       network,
       sellingWalletVkey: managedRegistration.executingWallet.walletVkey,

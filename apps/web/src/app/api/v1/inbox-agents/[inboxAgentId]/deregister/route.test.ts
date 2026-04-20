@@ -85,7 +85,7 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
     saveInboxAgentReferenceMock.mockResolvedValue(undefined);
   });
 
-  it("deregisters through admin after ownership is found", async () => {
+  it("deregisters through the admin key after ownership and scope checks pass", async () => {
     const deregistered = {
       ...inboxAgent,
       state: "DeregistrationRequested",
@@ -115,6 +115,17 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
     );
 
     expect(response.status).toBe(200);
+    expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: { id: "user-1" },
+      }),
+      {
+        resource: "inbox-agents",
+        action: "write",
+        network: "Preprod",
+      },
+    );
+    expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(deregisterInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
       agentIdentifier: "policy.asset",
@@ -133,7 +144,7 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
     });
   });
 
-  it("does not deregister through admin when ownership is missing", async () => {
+  it("does not create a payment-node client when ownership is missing", async () => {
     getOwnedInboxAgentForUserMock.mockResolvedValue(null);
 
     const response = await POST(
@@ -148,19 +159,14 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
   });
 
-  it("does not persist deregistration results for legacy wallet-owned inboxes", async () => {
-    const deregistered = {
-      ...inboxAgent,
-      state: "DeregistrationRequested",
-    };
-    const deregisterInboxAgentMock = vi.fn().mockResolvedValue(deregistered);
-    createInboxAdminPaymentNodeClientMock.mockReturnValue({
-      deregisterInboxAgent: deregisterInboxAgentMock,
-    });
+  it("does not create the admin client when the owned inbox is not deregisterable", async () => {
     getOwnedInboxAgentForUserMock.mockResolvedValue({
-      source: "legacy-wallet",
-      reference: null,
-      entry: inboxAgent,
+      source: "db",
+      reference,
+      entry: {
+        ...inboxAgent,
+        state: "RegistrationInitiated",
+      },
       executingWallet: {
         id: "funding-1",
         walletVkey: "funding_vkey",
@@ -177,11 +183,42 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
       { params: Promise.resolve({ inboxAgentId: "inbox-1" }) },
     );
 
-    expect(response.status).toBe(200);
-    expect(deregisterInboxAgentMock).toHaveBeenCalledWith({
-      network: "Preprod",
-      agentIdentifier: "policy.asset",
+    expect(response.status).toBe(400);
+    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when admin payment-node config is missing", async () => {
+    const { PaymentNodeConfigError } =
+      await import("@/lib/payment-node/config");
+    getOwnedInboxAgentForUserMock.mockResolvedValue({
+      source: "db",
+      reference,
+      entry: inboxAgent,
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+      },
       smartContractAddress: "addr_test1contract",
+    });
+    createInboxAdminPaymentNodeClientMock.mockImplementation(() => {
+      throw new PaymentNodeConfigError(
+        "PAYMENT_NODE_ADMIN_KEY is required for payment node integration",
+      );
+    });
+
+    const response = await POST(
+      new NextRequest(
+        "https://saas.example.com/pay/api/v1/inbox-agents/inbox-1/deregister?network=Preprod",
+        { method: "POST" },
+      ),
+      { params: Promise.resolve({ inboxAgentId: "inbox-1" }) },
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error: "PAYMENT_NODE_ADMIN_KEY is required for payment node integration",
     });
     expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
   });

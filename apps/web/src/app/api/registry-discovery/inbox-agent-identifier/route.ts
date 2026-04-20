@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import {
-  createInboxAdminPaymentNodeClient,
-  getOwnedInboxAgentByAgentIdentifierForUser,
-} from "@/lib/inbox-agents/server";
+import { getOwnedInboxAgentByAgentIdentifierForUser } from "@/lib/inbox-agents/server";
+import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
 export async function GET(request: NextRequest) {
@@ -40,7 +38,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const client = createInboxAdminPaymentNodeClient();
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
+    if (!client) {
+      return NextResponse.json(
+        { success: false, error: "Payment node unavailable" },
+        { status: 503 },
+      );
+    }
+
     const metadata = await client.getRegistryInboxByAgentIdentifier({
       agentIdentifier,
       network,

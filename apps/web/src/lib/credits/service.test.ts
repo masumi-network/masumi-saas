@@ -323,6 +323,13 @@ describe("credit service", () => {
   it("refunds a Mainnet debit with a :refund ledger entry", async () => {
     store.current = createState(1);
 
+    await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+      metadata: { network: "Mainnet" },
+    });
     await refundConsumedCredit({
       userId: "user-1",
       reason: "payment_proxy_write",
@@ -331,11 +338,11 @@ describe("credit service", () => {
       metadata: { network: "Mainnet" },
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(2);
-    expect(store.current.ledger).toHaveLength(1);
-    expect(store.current.ledger[0]).toMatchObject({
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(2);
+    expect(store.current.ledger[1]).toMatchObject({
       delta: CREDIT_COST,
-      balanceAfter: 2,
+      balanceAfter: 1,
       reason: "payment_proxy_write",
       reference: "payment:mainnet:refund",
     });
@@ -344,6 +351,12 @@ describe("credit service", () => {
   it("is idempotent when refunded twice with the same reference", async () => {
     store.current = createState(1);
 
+    await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
     await refundConsumedCredit({
       userId: "user-1",
       reason: "payment_proxy_write",
@@ -357,11 +370,25 @@ describe("credit service", () => {
       network: "Mainnet",
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(2);
-    expect(store.current.ledger).toHaveLength(1);
-    expect(store.current.ledger[0]).toMatchObject({
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(2);
+    expect(store.current.ledger[1]).toMatchObject({
       reference: "payment:mainnet:refund",
     });
+  });
+
+  it("does not refund when the original debit is missing", async () => {
+    store.current = createState(1);
+
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
+
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(0);
   });
 
   it("skips refund entirely on Preprod", async () => {

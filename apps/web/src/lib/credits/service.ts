@@ -208,6 +208,18 @@ export async function refundConsumedCredit(params: {
       });
       if (existing) return;
 
+      const originalDebit = await tx.creditLedgerEntry.findUnique({
+        where: {
+          userId_reason_reference: {
+            userId: params.userId,
+            reason: params.reason,
+            reference: params.reference,
+          },
+        },
+        select: { delta: true },
+      });
+      if (!originalDebit || originalDebit.delta !== -CREDIT_COST) return;
+
       const user = await tx.user.update({
         where: { id: params.userId },
         data: { creditsRemaining: { increment: CREDIT_COST } },

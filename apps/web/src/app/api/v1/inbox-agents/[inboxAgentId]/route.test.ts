@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
-const createInboxAdminPaymentNodeClientMock = vi.fn();
+const getPaymentNodeClientForUserMock = vi.fn();
 const deleteInboxAgentReferenceMock = vi.fn();
 const getOwnedInboxAgentForUserMock = vi.fn();
 
@@ -18,9 +18,12 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 }));
 
 vi.mock("@/lib/inbox-agents/server", () => ({
-  createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
   deleteInboxAgentReference: deleteInboxAgentReferenceMock,
   getOwnedInboxAgentForUser: getOwnedInboxAgentForUserMock,
+}));
+
+vi.mock("@/lib/payment-node/get-user-client", () => ({
+  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
@@ -74,9 +77,9 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
     deleteInboxAgentReferenceMock.mockResolvedValue(undefined);
   });
 
-  it("deletes through admin only after ownership is found", async () => {
+  it("deletes through the user payment-node key after ownership is found", async () => {
     const deleteRegistryInboxEntryMock = vi.fn().mockResolvedValue(inboxAgent);
-    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+    getPaymentNodeClientForUserMock.mockResolvedValue({
       deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
     });
     getOwnedInboxAgentForUserMock.mockResolvedValue({
@@ -105,11 +108,12 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
       network: "Preprod",
       inboxAgentId: "inbox-1",
     });
+    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(deleteRegistryInboxEntryMock).toHaveBeenCalledWith("inbox-1");
     expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("ref-1");
   });
 
-  it("does not delete through admin when ownership is missing", async () => {
+  it("does not create a payment-node client when ownership is missing", async () => {
     getOwnedInboxAgentForUserMock.mockResolvedValue(null);
 
     const response = await DELETE(
@@ -121,10 +125,10 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
   });
 
-  it("cleans up stale local DB references without calling the payment node", async () => {
+  it("does not delete local DB references when the remote lookup is inconclusive", async () => {
     const staleInboxAgent = {
       ...inboxAgent,
       state: "RegistrationInitiated",
@@ -139,7 +143,6 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
         walletAddress: "addr_test1funding",
       },
       smartContractAddress: "addr_test1contract",
-      remoteMissing: true,
     });
 
     const response = await DELETE(
@@ -150,42 +153,13 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
       { params: Promise.resolve({ inboxAgentId: "inbox-1" }) },
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     await expect(response.json()).resolves.toStrictEqual({
-      success: true,
-      data: staleInboxAgent,
+      success: false,
+      error:
+        "Inbox agent can only be deleted after a failed registration or completed deregistration",
     });
-    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("ref-stale");
-    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
-  });
-
-  it("does not delete a DB reference for legacy wallet-owned inboxes", async () => {
-    const deleteRegistryInboxEntryMock = vi.fn().mockResolvedValue(inboxAgent);
-    createInboxAdminPaymentNodeClientMock.mockReturnValue({
-      deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
-    });
-    getOwnedInboxAgentForUserMock.mockResolvedValue({
-      source: "legacy-wallet",
-      reference: null,
-      entry: inboxAgent,
-      executingWallet: {
-        id: "funding-1",
-        walletVkey: "funding_vkey",
-        walletAddress: "addr_test1funding",
-      },
-      smartContractAddress: "addr_test1contract",
-    });
-
-    const response = await DELETE(
-      new NextRequest(
-        "https://saas.example.com/pay/api/v1/inbox-agents/inbox-1?network=Preprod",
-        { method: "DELETE" },
-      ),
-      { params: Promise.resolve({ inboxAgentId: "inbox-1" }) },
-    );
-
-    expect(response.status).toBe(200);
-    expect(deleteRegistryInboxEntryMock).toHaveBeenCalledWith("inbox-1");
     expect(deleteInboxAgentReferenceMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
   });
 });

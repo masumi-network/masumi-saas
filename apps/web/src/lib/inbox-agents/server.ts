@@ -16,18 +16,10 @@ import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { registryInboxEntrySchema } from "@/lib/payment-node/schemas";
 
-import {
-  isWalletAddressCompatibleWithNetwork,
-  resolveRegistrationFundingWallet,
-} from "../payment-node/registration-wallets";
+import { isWalletAddressCompatibleWithNetwork } from "../payment-node/registration-wallets";
 
 const PAYMENT_SOURCE_PAGE_SIZE = 100;
 const MAX_PAYMENT_SOURCE_PAGES = 10;
-// Legacy (pre-PR) inboxes are surfaced via a bounded scan of the registry,
-// filtered to wallets scoped to the user's payment-node API key. Per-request
-// legacy scanning is capped to avoid amplifying network load on every list
-// call; users with more legacy entries than this should migrate.
-const MAX_LEGACY_LOOKUP_PAGES = 5;
 const REFRESH_CONCURRENCY = 5;
 
 const PENDING_STATES: RegistrationState[] = [
@@ -108,21 +100,14 @@ export type ListOwnedInboxAgentsResult = {
 };
 
 export type OwnedInboxAgent = {
-  source: "db" | "legacy-wallet";
-  reference: InboxAgentReference | null;
+  source: "db";
+  reference: InboxAgentReference;
   entry: RegistryInboxEntry;
   executingWallet: Pick<
     PaymentSourceWallet,
     "id" | "walletVkey" | "walletAddress"
   >;
   smartContractAddress: string | null;
-  remoteMissing?: true;
-};
-
-type LegacyInboxOwnershipContext = {
-  userClient: PaymentNodeClient;
-  paymentSources: PaymentSourceInfo[];
-  scopedWalletIds: Set<string>;
 };
 
 export function createInboxAdminPaymentNodeClient(): PaymentNodeClient {
@@ -242,34 +227,46 @@ export async function prepareManagedInboxRegistration(params: {
     };
   }
 
-  const executingWalletResult = resolveRegistrationFundingWallet({
-    network: params.network,
-    paymentSourceId,
-    sellingWallets: paymentSource.SellingWallets,
-  });
-  if (!executingWalletResult.wallet) {
-    return {
-      success: false,
-      error:
-        executingWalletResult.error ??
-        "No registration funding wallet is available for this payment source.",
-    };
-  }
-
-  const executingWallet = executingWalletResult.wallet;
+  const generatedWallet = await adminClient.generateWallet(params.network);
   if (
     !isWalletAddressCompatibleWithNetwork(
-      executingWallet.walletAddress,
+      generatedWallet.walletAddress,
       params.network,
     )
   ) {
-    console.error("[Payment Node] Executing inbox wallet network mismatch:", {
-      walletAddress: executingWallet.walletAddress,
+    console.error("[Payment Node] Generated inbox wallet network mismatch:", {
+      walletAddress: generatedWallet.walletAddress,
       expectedNetwork: params.network,
     });
     return {
       success: false,
-      error: `Configured inbox executing wallet address does not match ${params.network}. Please verify the payment node wallet configuration and try again.`,
+      error: `Generated inbox wallet address does not match ${params.network}. Please verify the payment node wallet configuration and try again.`,
+    };
+  }
+
+  const updatedPaymentSource = await adminClient.addWalletsToPaymentSource({
+    paymentSourceId,
+    AddSellingWallets: [
+      {
+        walletMnemonic: generatedWallet.walletMnemonic,
+        note: `Inbox agent: ${params.name} (selling)`,
+        collectionAddress: null,
+      },
+    ],
+  });
+  const executingWallet =
+    updatedPaymentSource.SellingWallets.find(
+      (wallet) => wallet.walletVkey === generatedWallet.walletVkey,
+    ) ?? null;
+  if (!executingWallet) {
+    console.error("[Payment Node] Could not resolve managed inbox wallet ID:", {
+      walletVkey: generatedWallet.walletVkey,
+      paymentSourceId,
+    });
+    return {
+      success: false,
+      error:
+        "Could not attach the new inbox wallet to payment permissions. Please try again.",
     };
   }
 
@@ -277,7 +274,9 @@ export async function prepareManagedInboxRegistration(params: {
     success: true,
     executingWallet,
     paymentSourceId,
-    smartContractAddress: paymentSource.smartContractAddress,
+    smartContractAddress:
+      updatedPaymentSource.smartContractAddress ??
+      paymentSource.smartContractAddress,
   };
 }
 
@@ -397,159 +396,6 @@ export async function saveInboxAgentReference(
   }
 }
 
-function findExecutingWalletForEntry(params: {
-  entry: RegistryInboxEntry;
-  paymentSources: PaymentSourceInfo[];
-}): {
-  wallet: Pick<PaymentSourceWallet, "id" | "walletVkey" | "walletAddress">;
-  smartContractAddress: string | null;
-} {
-  const paymentSource = findPaymentSourceBySellingWallet(
-    params.paymentSources,
-    params.entry.SmartContractWallet.walletVkey,
-  );
-  const matchedWallet =
-    paymentSource?.SellingWallets.find(
-      (wallet) =>
-        wallet.walletVkey === params.entry.SmartContractWallet.walletVkey,
-    ) ?? null;
-
-  return {
-    wallet: matchedWallet
-      ? {
-          id: matchedWallet.id,
-          walletVkey: matchedWallet.walletVkey,
-          walletAddress: matchedWallet.walletAddress,
-        }
-      : {
-          id: `legacy:${params.entry.SmartContractWallet.walletVkey}`,
-          walletVkey: params.entry.SmartContractWallet.walletVkey,
-          walletAddress: params.entry.SmartContractWallet.walletAddress,
-        },
-    smartContractAddress: paymentSource?.smartContractAddress ?? null,
-  };
-}
-
-function findSellingWalletByVkey(params: {
-  paymentSources: PaymentSourceInfo[];
-  walletVkey: string;
-}): PaymentSourceWallet | null {
-  for (const paymentSource of params.paymentSources) {
-    const wallet = paymentSource.SellingWallets.find(
-      (candidate) => candidate.walletVkey === params.walletVkey,
-    );
-    if (wallet) return wallet;
-  }
-  return null;
-}
-
-async function createLegacyInboxOwnershipContext(params: {
-  userId: string;
-  network: PaymentNodeNetwork;
-  adminClient: PaymentNodeClient;
-}): Promise<LegacyInboxOwnershipContext | null> {
-  const userClient = await getPaymentNodeClientForUser(params.userId);
-  if (!userClient) return null;
-
-  let scopedWalletIds: Set<string>;
-  try {
-    const keyStatus = await userClient.getApiKeyStatus();
-    scopedWalletIds = new Set(
-      keyStatus.WalletScopes.map((scope) => scope.hotWalletId),
-    );
-  } catch (error) {
-    console.warn(
-      "[Inbox Agents] Legacy inbox wallet lookup skipped; API key status unavailable:",
-      error,
-    );
-    return null;
-  }
-
-  const paymentSources = await listPaymentSourcesForNetwork(
-    params.adminClient,
-    params.network,
-  );
-
-  return {
-    userClient,
-    paymentSources,
-    scopedWalletIds,
-  };
-}
-
-function isOwnedByScopedLegacyRecipientWallet(
-  entry: RegistryInboxEntry,
-  context: LegacyInboxOwnershipContext,
-): boolean {
-  if (!entry.RecipientWallet) return false;
-  if (
-    entry.RecipientWallet.walletVkey === entry.SmartContractWallet.walletVkey
-  ) {
-    return false;
-  }
-
-  const recipientWallet = findSellingWalletByVkey({
-    paymentSources: context.paymentSources,
-    walletVkey: entry.RecipientWallet.walletVkey,
-  });
-
-  return recipientWallet
-    ? context.scopedWalletIds.has(recipientWallet.id)
-    : false;
-}
-
-async function listLegacyOwnedInboxEntries(params: {
-  userId: string;
-  network: PaymentNodeNetwork;
-  adminClient: PaymentNodeClient;
-}): Promise<{
-  entries: RegistryInboxEntry[];
-  paymentSources: PaymentSourceInfo[];
-}> {
-  const context = await createLegacyInboxOwnershipContext(params);
-  if (!context) {
-    return { entries: [], paymentSources: [] };
-  }
-
-  if (context.scopedWalletIds.size === 0) {
-    return { entries: [], paymentSources: context.paymentSources };
-  }
-
-  const entries: RegistryInboxEntry[] = [];
-  let cursorId: string | undefined;
-
-  for (let page = 0; page < MAX_LEGACY_LOOKUP_PAGES; page += 1) {
-    let response: { Assets: RegistryInboxEntry[] };
-    try {
-      response = await context.userClient.getRegistryInbox({
-        network: params.network,
-        cursorId,
-        limit: PAYMENT_SOURCE_PAGE_SIZE,
-      });
-    } catch (error) {
-      console.warn("[Inbox Agents] Legacy inbox wallet lookup skipped:", error);
-      return { entries, paymentSources: context.paymentSources };
-    }
-
-    for (const entry of response.Assets) {
-      if (isOwnedByScopedLegacyRecipientWallet(entry, context)) {
-        entries.push(entry);
-      }
-    }
-
-    if (response.Assets.length < PAYMENT_SOURCE_PAGE_SIZE) {
-      break;
-    }
-    const nextCursor = response.Assets.at(-1)?.id;
-    if (!nextCursor || nextCursor === cursorId) {
-      break;
-    }
-    cursorId = nextCursor;
-  }
-
-  return { entries, paymentSources: context.paymentSources };
-}
-
 function getFilterStates(
   filterStatus?: RegistryStatusFilter,
 ): RegistrationState[] | undefined {
@@ -622,14 +468,17 @@ export async function refreshInboxAgentReference(params: {
   userId: string;
   network: PaymentNodeNetwork;
   reference: InboxAgentReference;
-  adminClient?: PaymentNodeClient;
+  client?: PaymentNodeClient | null;
 }): Promise<RegistryInboxEntry> {
   if (!isPendingRegistrationState(params.reference.state)) {
     return referenceToRegistryInboxEntry(params.reference);
   }
 
-  const adminClient = params.adminClient ?? createInboxAdminPaymentNodeClient();
-  const remote = await adminClient.getRegistryInboxById({
+  if (!params.client) {
+    return referenceToRegistryInboxEntry(params.reference);
+  }
+
+  const remote = await params.client.getRegistryInboxById({
     id: params.reference.paymentNodeId,
     network: params.network,
   });
@@ -657,8 +506,6 @@ export async function listOwnedInboxAgentsForUser(params: {
   filterStatus?: RegistryStatusFilter;
   search?: string;
 }): Promise<ListOwnedInboxAgentsResult> {
-  const adminClient = createInboxAdminPaymentNodeClient();
-
   const references = await prisma.inboxAgentReference.findMany({
     where: {
       userId: params.userId,
@@ -668,6 +515,11 @@ export async function listOwnedInboxAgentsForUser(params: {
       createdAt: "desc",
     },
   });
+  if (references.length === 0) {
+    return { Assets: [], nextCursor: null };
+  }
+
+  const userClient = await getPaymentNodeClientForUser(params.userId);
 
   const refreshedDbAssets = await mapWithConcurrency(
     references,
@@ -677,18 +529,11 @@ export async function listOwnedInboxAgentsForUser(params: {
         userId: params.userId,
         network: params.network,
         reference,
-        adminClient,
+        client: userClient,
       }),
   );
 
-  const { entries: legacyAssets } = await listLegacyOwnedInboxEntries({
-    userId: params.userId,
-    network: params.network,
-    adminClient,
-  });
-
   const assetsById = new Map<string, RegistryInboxEntry>();
-  for (const entry of legacyAssets) assetsById.set(entry.id, entry);
   for (const entry of refreshedDbAssets) assetsById.set(entry.id, entry);
 
   const filteredAssets = sortInboxEntriesByCreatedAtDesc(
@@ -725,14 +570,24 @@ async function getOwnedInboxAgentFromReference(params: {
   userId: string;
   network: PaymentNodeNetwork;
   reference: InboxAgentReference;
-  adminClient: PaymentNodeClient;
+  client: PaymentNodeClient | null;
 }): Promise<OwnedInboxAgent | null> {
-  const remote = await params.adminClient.getRegistryInboxById({
+  const executingWallet = getExecutingWalletFromReference(params.reference);
+  if (!params.client) {
+    return {
+      source: "db",
+      reference: params.reference,
+      entry: referenceToRegistryInboxEntry(params.reference),
+      executingWallet,
+      smartContractAddress: params.reference.smartContractAddress,
+    };
+  }
+
+  const remote = await params.client.getRegistryInboxById({
     id: params.reference.paymentNodeId,
     network: params.network,
   });
 
-  const executingWallet = getExecutingWalletFromReference(params.reference);
   if (!remote) {
     return {
       source: "db",
@@ -740,7 +595,6 @@ async function getOwnedInboxAgentFromReference(params: {
       entry: referenceToRegistryInboxEntry(params.reference),
       executingWallet,
       smartContractAddress: params.reference.smartContractAddress,
-      remoteMissing: true,
     };
   }
 
@@ -761,34 +615,6 @@ async function getOwnedInboxAgentFromReference(params: {
   };
 }
 
-async function findLegacyOwnedInboxAgent(params: {
-  userId: string;
-  network: PaymentNodeNetwork;
-  adminClient: PaymentNodeClient;
-  predicate: (entry: RegistryInboxEntry) => boolean;
-}): Promise<OwnedInboxAgent | null> {
-  const { entries, paymentSources } = await listLegacyOwnedInboxEntries({
-    userId: params.userId,
-    network: params.network,
-    adminClient: params.adminClient,
-  });
-  const entry = entries.find(params.predicate) ?? null;
-  if (!entry) return null;
-
-  const { wallet, smartContractAddress } = findExecutingWalletForEntry({
-    entry,
-    paymentSources,
-  });
-
-  return {
-    source: "legacy-wallet",
-    reference: null,
-    entry,
-    executingWallet: wallet,
-    smartContractAddress,
-  };
-}
-
 export async function getOwnedInboxAgentForUser(params: {
   userId: string;
   network: PaymentNodeNetwork;
@@ -799,23 +625,18 @@ export async function getOwnedInboxAgentForUser(params: {
     network: params.network,
     inboxAgentId: params.inboxAgentId,
   });
-  const adminClient = createInboxAdminPaymentNodeClient();
 
   if (reference) {
+    const userClient = await getPaymentNodeClientForUser(params.userId);
     return getOwnedInboxAgentFromReference({
       userId: params.userId,
       network: params.network,
       reference,
-      adminClient,
+      client: userClient,
     });
   }
 
-  return findLegacyOwnedInboxAgent({
-    userId: params.userId,
-    network: params.network,
-    adminClient,
-    predicate: (entry) => entry.id === params.inboxAgentId,
-  });
+  return null;
 }
 
 export async function getOwnedInboxAgentByAgentIdentifierForUser(params: {
@@ -828,24 +649,19 @@ export async function getOwnedInboxAgentByAgentIdentifierForUser(params: {
     network: params.network,
     agentIdentifier: params.agentIdentifier,
   });
-  const adminClient = createInboxAdminPaymentNodeClient();
 
   if (reference) {
+    const userClient = await getPaymentNodeClientForUser(params.userId);
     const owned = await getOwnedInboxAgentFromReference({
       userId: params.userId,
       network: params.network,
       reference,
-      adminClient,
+      client: userClient,
     });
     if (owned) return owned;
   }
 
-  return findLegacyOwnedInboxAgent({
-    userId: params.userId,
-    network: params.network,
-    adminClient,
-    predicate: (entry) => entry.agentIdentifier === params.agentIdentifier,
-  });
+  return null;
 }
 
 export async function getOwnedInboxAgentReference(params: {

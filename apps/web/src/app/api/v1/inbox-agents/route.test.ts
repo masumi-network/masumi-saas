@@ -6,12 +6,14 @@ import { z } from "@/lib/zod-openapi";
 const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
+const getPaymentNodeClientForUserMock = vi.fn();
 const createInboxAdminPaymentNodeClientMock = vi.fn();
 const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
 const saveInboxAgentReferenceMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const refundConsumedCreditMock = vi.fn();
+const ensureUserPaymentNodeKeyScopedToWalletsMock = vi.fn();
 
 class InboxAgentOwnershipMismatchError extends Error {
   readonly ownedByUserId: string;
@@ -56,6 +58,15 @@ vi.mock("@/lib/credits/service", () => ({
   consumeCreditIfRequired: consumeCreditIfRequiredMock,
   refundConsumedCredit: refundConsumedCreditMock,
   createCreditReference: () => "inbox-agent-register:test",
+}));
+
+vi.mock("@/lib/payment-node/get-user-client", () => ({
+  getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
+}));
+
+vi.mock("@/lib/payment-node/wallet-scopes", () => ({
+  ensureUserPaymentNodeKeyScopedToWallets:
+    ensureUserPaymentNodeKeyScopedToWalletsMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
@@ -142,6 +153,7 @@ describe("/pay/api/v1/inbox-agents", () => {
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     refundConsumedCreditMock.mockResolvedValue(undefined);
+    ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
@@ -194,7 +206,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
   });
 
-  it("registers inbox agents into the configured executing wallet", async () => {
+  it("registers inbox agents through the admin key after scoping the user key to the generated wallet", async () => {
     const registerInboxAgentMock = vi.fn().mockResolvedValue(inboxAgent);
     createInboxAdminPaymentNodeClientMock.mockReturnValue({
       registerInboxAgent: registerInboxAgentMock,
@@ -202,11 +214,11 @@ describe("/pay/api/v1/inbox-agents", () => {
     prepareManagedInboxRegistrationMock.mockResolvedValue({
       success: true,
       executingWallet: {
-        id: "funding-1",
-        walletVkey: "funding_vkey",
-        walletAddress: "addr_test1funding",
+        id: "managed-1",
+        walletVkey: "managed_vkey",
+        walletAddress: "addr_test1managed",
         collectionAddress: null,
-        note: "Funding wallet",
+        note: "Inbox agent: Support inbox (selling)",
       },
       paymentSourceId: "payment-source-1",
       smartContractAddress: "addr_test1contract",
@@ -232,10 +244,16 @@ describe("/pay/api/v1/inbox-agents", () => {
       name: "Support inbox",
       network: "Preprod",
     });
+    expect(ensureUserPaymentNodeKeyScopedToWalletsMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      walletIds: ["managed-1"],
+    });
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
-      sellingWalletVkey: "funding_vkey",
-      recipientWalletAddress: "addr_test1funding",
+      sellingWalletVkey: "managed_vkey",
+      recipientWalletAddress: "addr_test1managed",
       name: "Support inbox",
       description: "Routes support requests",
       agentSlug: "support-inbox",
@@ -245,11 +263,11 @@ describe("/pay/api/v1/inbox-agents", () => {
       network: "Preprod",
       entry: inboxAgent,
       executingWallet: {
-        id: "funding-1",
-        walletVkey: "funding_vkey",
-        walletAddress: "addr_test1funding",
+        id: "managed-1",
+        walletVkey: "managed_vkey",
+        walletAddress: "addr_test1managed",
         collectionAddress: null,
-        note: "Funding wallet",
+        note: "Inbox agent: Support inbox (selling)",
       },
       smartContractAddress: "addr_test1contract",
     });
@@ -396,10 +414,12 @@ describe("/pay/api/v1/inbox-agents", () => {
         "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
     });
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects legacy wallet and top-up fields from the register schema", async () => {
+  it("rejects unsupported wallet and top-up fields from the register schema", async () => {
     const request = new NextRequest(
       "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
       {
@@ -466,6 +486,7 @@ describe("/pay/api/v1/inbox-agents", () => {
 
     expect(response.status).toBe(402);
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
   });
 });

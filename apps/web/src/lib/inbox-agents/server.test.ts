@@ -8,7 +8,6 @@ const getAdminApiKeyMock = vi.fn();
 const getPaymentSourceIdMock = vi.fn();
 const getPaymentSourceIdEnvNameMock = vi.fn();
 const isWalletAddressCompatibleWithNetworkMock = vi.fn();
-const resolveRegistrationFundingWalletMock = vi.fn();
 
 const generateWalletMock = vi.fn();
 const addWalletsToPaymentSourceMock = vi.fn();
@@ -57,7 +56,6 @@ vi.mock("@/lib/payment-node/config", () => ({
 vi.mock("../payment-node/registration-wallets", () => ({
   isWalletAddressCompatibleWithNetwork:
     isWalletAddressCompatibleWithNetworkMock,
-  resolveRegistrationFundingWallet: resolveRegistrationFundingWalletMock,
 }));
 
 describe("prepareManagedInboxRegistration", () => {
@@ -82,13 +80,18 @@ describe("prepareManagedInboxRegistration", () => {
     });
   });
 
-  it("selects the configured executing wallet without creating a wallet", async () => {
-    const fundingWallet = {
-      id: "funding-1",
-      walletVkey: "funding_vkey",
-      walletAddress: "addr_test1funding",
+  it("creates a managed inbox wallet and returns the new wallet identity", async () => {
+    const generatedWallet = {
+      walletMnemonic: "new inbox mnemonic",
+      walletVkey: "managed_vkey",
+      walletAddress: "addr_test1managed",
+    };
+    const managedWallet = {
+      id: "managed-1",
+      walletVkey: "managed_vkey",
+      walletAddress: "addr_test1managed",
       collectionAddress: null,
-      note: "Funding wallet",
+      note: "Inbox agent: Support inbox (selling)",
     };
     getPaymentSourcesMock.mockResolvedValue({
       PaymentSources: [
@@ -96,13 +99,18 @@ describe("prepareManagedInboxRegistration", () => {
           id: "payment-source-1",
           network: "Preprod",
           smartContractAddress: "addr_test1contract",
-          SellingWallets: [fundingWallet],
+          SellingWallets: [],
           PurchasingWallets: [],
         },
       ],
     });
-    resolveRegistrationFundingWalletMock.mockReturnValue({
-      wallet: fundingWallet,
+    generateWalletMock.mockResolvedValue(generatedWallet);
+    addWalletsToPaymentSourceMock.mockResolvedValue({
+      id: "payment-source-1",
+      network: "Preprod",
+      smartContractAddress: "addr_test1contract",
+      SellingWallets: [managedWallet],
+      PurchasingWallets: [],
     });
 
     const { prepareManagedInboxRegistration } = await import("./server");
@@ -111,32 +119,41 @@ describe("prepareManagedInboxRegistration", () => {
       network: "Preprod",
     });
 
-    expect(generateWalletMock).not.toHaveBeenCalled();
-    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
+    expect(generateWalletMock).toHaveBeenCalledWith("Preprod");
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+      paymentSourceId: "payment-source-1",
+      AddSellingWallets: [
+        {
+          walletMnemonic: "new inbox mnemonic",
+          note: "Inbox agent: Support inbox (selling)",
+          collectionAddress: null,
+        },
+      ],
+    });
     expect(getPaymentSourcesMock).toHaveBeenCalledWith({
       take: 100,
       cursorId: undefined,
     });
-    expect(resolveRegistrationFundingWalletMock).toHaveBeenCalledWith({
-      network: "Preprod",
-      paymentSourceId: "payment-source-1",
-      sellingWallets: [fundingWallet],
-    });
     expect(result).toStrictEqual({
       success: true,
-      executingWallet: fundingWallet,
+      executingWallet: managedWallet,
       paymentSourceId: "payment-source-1",
       smartContractAddress: "addr_test1contract",
     });
   });
 
   it("uses the Mainnet payment source configured for Mainnet requests", async () => {
-    const fundingWallet = {
-      id: "funding-mainnet",
-      walletVkey: "funding_vkey_mainnet",
-      walletAddress: "addr1funding",
+    const generatedWallet = {
+      walletMnemonic: "new mainnet inbox mnemonic",
+      walletVkey: "managed_vkey_mainnet",
+      walletAddress: "addr1managed",
+    };
+    const managedWallet = {
+      id: "managed-mainnet",
+      walletVkey: "managed_vkey_mainnet",
+      walletAddress: "addr1managed",
       collectionAddress: null,
-      note: "Funding wallet",
+      note: "Inbox agent: Mainnet inbox (selling)",
     };
     getPaymentSourcesMock.mockResolvedValue({
       PaymentSources: [
@@ -144,13 +161,18 @@ describe("prepareManagedInboxRegistration", () => {
           id: "payment-source-mainnet",
           network: "Mainnet",
           smartContractAddress: "addr1contract",
-          SellingWallets: [fundingWallet],
+          SellingWallets: [],
           PurchasingWallets: [],
         },
       ],
     });
-    resolveRegistrationFundingWalletMock.mockReturnValue({
-      wallet: fundingWallet,
+    generateWalletMock.mockResolvedValue(generatedWallet);
+    addWalletsToPaymentSourceMock.mockResolvedValue({
+      id: "payment-source-mainnet",
+      network: "Mainnet",
+      smartContractAddress: "addr1contract",
+      SellingWallets: [managedWallet],
+      PurchasingWallets: [],
     });
 
     const { prepareManagedInboxRegistration } = await import("./server");
@@ -160,11 +182,10 @@ describe("prepareManagedInboxRegistration", () => {
     });
 
     expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Mainnet");
-    expect(generateWalletMock).not.toHaveBeenCalled();
-    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
+    expect(generateWalletMock).toHaveBeenCalledWith("Mainnet");
     expect(result).toStrictEqual({
       success: true,
-      executingWallet: fundingWallet,
+      executingWallet: managedWallet,
       paymentSourceId: "payment-source-mainnet",
       smartContractAddress: "addr1contract",
     });
@@ -265,49 +286,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     });
   });
 
-  it("lists legacy inboxes owned by scoped recipient wallets without persisting them", async () => {
-    const legacyEntry = makeInboxEntry({
-      id: "legacy-1",
-      RecipientWallet: {
-        walletVkey: "legacy_recipient_vkey",
-        walletAddress: "addr_test1recipient",
-      },
-    });
-    const legacyGetRegistryInboxMock = vi.fn().mockResolvedValue({
-      Assets: [legacyEntry],
-    });
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getApiKeyStatus: vi.fn().mockResolvedValue({
-        WalletScopes: [{ hotWalletId: "managed-1" }],
-      }),
-      getRegistryInbox: legacyGetRegistryInboxMock,
-    });
-    getPaymentSourcesMock.mockResolvedValue({
-      PaymentSources: [
-        {
-          id: "payment-source-1",
-          network: "Preprod",
-          smartContractAddress: "addr_test1contract",
-          SellingWallets: [
-            {
-              id: "funding-1",
-              walletVkey: "funding_vkey",
-              walletAddress: "addr_test1funding",
-              collectionAddress: null,
-              note: "Funding wallet",
-            },
-            {
-              id: "managed-1",
-              walletVkey: "legacy_recipient_vkey",
-              walletAddress: "addr_test1recipient",
-              collectionAddress: null,
-              note: "Legacy inbox recipient",
-            },
-          ],
-          PurchasingWallets: [],
-        },
-      ],
-    });
+  it("returns an empty list without payment-node lookup when no DB ownership references exist", async () => {
     inboxAgentReferenceFindManyMock.mockResolvedValue([]);
 
     const { listOwnedInboxAgentsForUser } = await import("./server");
@@ -317,78 +296,14 @@ describe("listOwnedInboxAgentsForUser", () => {
       take: 10,
     });
 
-    expect(legacyGetRegistryInboxMock).toHaveBeenCalledWith({
-      network: "Preprod",
-      cursorId: undefined,
-      limit: 100,
-    });
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
-    expect(result.Assets).toHaveLength(1);
-    expect(result.Assets[0]?.id).toBe("legacy-1");
-  });
-
-  it("does not backfill inboxes without a scoped legacy recipient wallet", async () => {
-    const sharedRecipientEntry = makeInboxEntry({
-      id: "shared-recipient",
-    });
-    const unscopedRecipientEntry = makeInboxEntry({
-      id: "unscoped-recipient",
-      RecipientWallet: {
-        walletVkey: "other_recipient_vkey",
-        walletAddress: "addr_test1other",
-      },
-    });
-    const legacyGetRegistryInboxMock = vi.fn().mockResolvedValue({
-      Assets: [sharedRecipientEntry, unscopedRecipientEntry],
-    });
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getApiKeyStatus: vi.fn().mockResolvedValue({
-        WalletScopes: [{ hotWalletId: "managed-1" }],
-      }),
-      getRegistryInbox: legacyGetRegistryInboxMock,
-    });
-    getPaymentSourcesMock.mockResolvedValue({
-      PaymentSources: [
-        {
-          id: "payment-source-1",
-          network: "Preprod",
-          smartContractAddress: "addr_test1contract",
-          SellingWallets: [
-            {
-              id: "funding-1",
-              walletVkey: "funding_vkey",
-              walletAddress: "addr_test1funding",
-              collectionAddress: null,
-              note: "Funding wallet",
-            },
-            {
-              id: "other-managed",
-              walletVkey: "other_recipient_vkey",
-              walletAddress: "addr_test1other",
-              collectionAddress: null,
-              note: "Another user's legacy inbox recipient",
-            },
-          ],
-          PurchasingWallets: [],
-        },
-      ],
-    });
-    inboxAgentReferenceFindManyMock.mockResolvedValue([]);
-
-    const { listOwnedInboxAgentsForUser } = await import("./server");
-    const result = await listOwnedInboxAgentsForUser({
-      userId: "user-1",
-      network: "Preprod",
-      take: 10,
-    });
-
-    expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
     expect(result.Assets).toStrictEqual([]);
+    expect(result.nextCursor).toBeNull();
   });
 
   it("applies status, search, and cursor pagination after refresh", async () => {
-    getPaymentNodeClientForUserMock.mockResolvedValue(null);
     getRegistryInboxByIdMock.mockImplementation(async ({ id }) =>
       makeInboxEntry({
         id,
@@ -397,6 +312,9 @@ describe("listOwnedInboxAgentsForUser", () => {
           id === "third" ? "RegistrationInitiated" : "RegistrationConfirmed",
       }),
     );
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getRegistryInboxById: getRegistryInboxByIdMock,
+    });
     const first = makeReference({
       id: "first",
       name: "Support alpha",
@@ -442,7 +360,6 @@ describe("listOwnedInboxAgentsForUser", () => {
   });
 
   it("rejects stale cursors when refresh moves the cursor entry out of the filtered list", async () => {
-    getPaymentNodeClientForUserMock.mockResolvedValue(null);
     getRegistryInboxByIdMock.mockImplementation(async ({ id }) =>
       makeInboxEntry({
         id,
@@ -452,6 +369,9 @@ describe("listOwnedInboxAgentsForUser", () => {
             : "RegistrationInitiated",
       }),
     );
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getRegistryInboxById: getRegistryInboxByIdMock,
+    });
     const cursorEntry = makeReference({
       id: "cursor-entry",
       name: "Support cursor",
@@ -492,86 +412,37 @@ describe("getOwnedInboxAgentForUser", () => {
     });
   });
 
-  it("finds legacy wallet-owned inboxes without persisting them", async () => {
-    const legacyEntry = makeInboxEntry({
-      id: "legacy-1",
-      RecipientWallet: {
-        walletVkey: "legacy_recipient_vkey",
-        walletAddress: "addr_test1recipient",
-      },
-    });
-    const legacyGetRegistryInboxMock = vi.fn().mockResolvedValue({
-      Assets: [legacyEntry],
-    });
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getApiKeyStatus: vi.fn().mockResolvedValue({
-        WalletScopes: [{ hotWalletId: "managed-1" }],
-      }),
-      getRegistryInbox: legacyGetRegistryInboxMock,
-    });
-    getPaymentSourcesMock.mockResolvedValue({
-      PaymentSources: [
-        {
-          id: "payment-source-1",
-          network: "Preprod",
-          smartContractAddress: "addr_test1contract",
-          SellingWallets: [
-            {
-              id: "funding-1",
-              walletVkey: "funding_vkey",
-              walletAddress: "addr_test1funding",
-              collectionAddress: null,
-              note: "Funding wallet",
-            },
-            {
-              id: "managed-1",
-              walletVkey: "legacy_recipient_vkey",
-              walletAddress: "addr_test1recipient",
-              collectionAddress: null,
-              note: "Legacy inbox recipient",
-            },
-          ],
-          PurchasingWallets: [],
-        },
-      ],
-    });
-
+  it("returns null without payment-node lookup when no DB ownership reference exists", async () => {
     const { getOwnedInboxAgentForUser } = await import("./server");
     const result = await getOwnedInboxAgentForUser({
       userId: "user-1",
       network: "Preprod",
-      inboxAgentId: "legacy-1",
+      inboxAgentId: "missing-1",
     });
 
     expect(inboxAgentReferenceFindFirstMock).toHaveBeenCalledWith({
       where: {
         userId: "user-1",
         networkIdentifier: "Preprod",
-        paymentNodeId: "legacy-1",
+        paymentNodeId: "missing-1",
       },
     });
-    expect(result).toStrictEqual({
-      source: "legacy-wallet",
-      reference: null,
-      entry: legacyEntry,
-      executingWallet: {
-        id: "funding-1",
-        walletVkey: "funding_vkey",
-        walletAddress: "addr_test1funding",
-      },
-      smartContractAddress: "addr_test1contract",
-    });
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(result).toBeNull();
     expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
   });
 
-  it("keeps DB-owned stale inboxes manageable when the payment-node row is missing", async () => {
+  it("keeps DB-owned references local when the user lookup misses", async () => {
     const reference = makeReference({
       id: "stale-1",
       state: "RegistrationInitiated",
     });
     inboxAgentReferenceFindFirstMock.mockResolvedValue(reference);
     getRegistryInboxByIdMock.mockResolvedValue(null);
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getRegistryInboxById: getRegistryInboxByIdMock,
+    });
 
     const { getOwnedInboxAgentForUser } = await import("./server");
     const result = await getOwnedInboxAgentForUser({
@@ -597,50 +468,26 @@ describe("getOwnedInboxAgentForUser", () => {
         walletAddress: "addr_test1funding",
       },
       smartContractAddress: "addr_test1contract",
-      remoteMissing: true,
     });
   });
 
-  it("does not treat shared-wallet visibility as ownership", async () => {
-    const sharedEntry = makeInboxEntry({
-      id: "shared-1",
-    });
-    const legacyGetRegistryInboxMock = vi.fn().mockResolvedValue({
-      Assets: [sharedEntry],
-    });
-    getPaymentNodeClientForUserMock.mockResolvedValue({
-      getApiKeyStatus: vi.fn().mockResolvedValue({
-        WalletScopes: [{ hotWalletId: "funding-1" }],
-      }),
-      getRegistryInbox: legacyGetRegistryInboxMock,
-    });
-    getPaymentSourcesMock.mockResolvedValue({
-      PaymentSources: [
-        {
-          id: "payment-source-1",
-          network: "Preprod",
-          smartContractAddress: "addr_test1contract",
-          SellingWallets: [
-            {
-              id: "funding-1",
-              walletVkey: "funding_vkey",
-              walletAddress: "addr_test1funding",
-              collectionAddress: null,
-              note: "Funding wallet",
-            },
-          ],
-          PurchasingWallets: [],
-        },
-      ],
-    });
-
-    const { getOwnedInboxAgentForUser } = await import("./server");
-    const result = await getOwnedInboxAgentForUser({
+  it("returns null by agent identifier without payment-node lookup when no DB ownership reference exists", async () => {
+    const { getOwnedInboxAgentByAgentIdentifierForUser } =
+      await import("./server");
+    const result = await getOwnedInboxAgentByAgentIdentifierForUser({
       userId: "user-1",
       network: "Preprod",
-      inboxAgentId: "shared-1",
+      agentIdentifier: "policy.asset",
     });
 
+    expect(inboxAgentReferenceFindFirstMock).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        networkIdentifier: "Preprod",
+        agentIdentifier: "policy.asset",
+      },
+    });
+    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
     expect(result).toBeNull();
   });
 });
