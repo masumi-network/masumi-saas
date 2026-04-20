@@ -1,12 +1,15 @@
 import "server-only";
 
 import prisma from "@masumi/database/client";
+import type { BetterAuthPlugin } from "better-auth";
 import { APIError, betterAuth } from "better-auth";
+import { getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import {
   admin,
   apiKey,
   bearer,
+  createAuthMiddleware,
   deviceAuthorization,
   emailOTP,
   jwt,
@@ -59,6 +62,60 @@ import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
 const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
 const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
+const ADMIN_IMPERSONATION_TARGET_ERROR = "Admin users cannot be impersonated.";
+
+function isAdminImpersonationTarget(user: {
+  id: string;
+  role?: string | null;
+}): boolean {
+  return user.role === "admin" || getBootstrapAdminIds().includes(user.id);
+}
+
+const adminImpersonationGuardPlugin = {
+  id: "admin-impersonation-guard",
+  hooks: {
+    before: [
+      {
+        matcher(context) {
+          return context.path === "/admin/impersonate-user";
+        },
+        handler: createAuthMiddleware(async (ctx) => {
+          const currentSession = await getSessionFromCtx(ctx);
+          if (
+            !currentSession?.user ||
+            !isAdminImpersonationTarget(currentSession.user)
+          ) {
+            return;
+          }
+
+          const targetUserId =
+            typeof ctx.body?.userId === "string"
+              ? ctx.body.userId
+              : ctx.body?.userId != null
+                ? String(ctx.body.userId)
+                : null;
+
+          if (!targetUserId) {
+            return;
+          }
+
+          const targetUser = await prisma.user.findUnique({
+            where: { id: targetUserId },
+            select: { id: true, role: true },
+          });
+
+          if (!targetUser || !isAdminImpersonationTarget(targetUser)) {
+            return;
+          }
+
+          throw new APIError("FORBIDDEN", {
+            message: ADMIN_IMPERSONATION_TARGET_ERROR,
+          });
+        }),
+      },
+    ],
+  },
+} satisfies BetterAuthPlugin;
 
 /**
  * Caps how many auth emails (magic-link + verification codes) any single
@@ -589,6 +646,7 @@ export const auth = betterAuth({
       issuer: "Masumi",
       skipVerificationOnEnable: false,
     }),
+    adminImpersonationGuardPlugin,
     admin({
       defaultRole: "user",
       adminUserIds: getBootstrapAdminIds(),
