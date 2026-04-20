@@ -41,12 +41,6 @@ export async function terminateConnectedAppAction(
       parsed.data.clientId,
     );
 
-    console.info("[connected apps] revoked", {
-      userId: user.id,
-      clientId: parsed.data.clientId,
-      ...result,
-    });
-
     revalidatePath("/account");
 
     return {

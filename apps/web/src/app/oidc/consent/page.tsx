@@ -69,13 +69,13 @@ function normalizeScopes(value: string | undefined): string[] {
 
 function getClientLabel(clientId: string | undefined): string {
   if (!clientId) {
-    return "Agent Messenger";
+    return "Masumi Agent Messenger";
   }
 
   const client = getTrustedOidcClients().find(
     (item) => item.clientId === clientId,
   );
-  return client?.name ?? "Agent Messenger";
+  return client?.name ?? "Masumi Agent Messenger";
 }
 
 function buildConsentCallbackUrl(searchParams: {
