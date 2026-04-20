@@ -12,7 +12,6 @@ const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
 const saveInboxAgentReferenceMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
-const ensureUserPaymentNodeKeyScopedToWalletsMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
@@ -41,8 +40,11 @@ vi.mock("@/lib/payment-node/get-user-client", () => ({
 }));
 
 vi.mock("@/lib/payment-node/wallet-scopes", () => ({
-  ensureUserPaymentNodeKeyScopedToWallets:
-    ensureUserPaymentNodeKeyScopedToWalletsMock,
+  ensureUserPaymentNodeKeyScopedToWallets: () => {
+    throw new Error(
+      "Inbox registration must not scope funding wallets to users",
+    );
+  },
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
@@ -104,7 +106,6 @@ describe("/api/masumi/inbox-agent/register", () => {
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     getPaymentNodeClientForUserMock.mockResolvedValue({});
-    ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
@@ -143,11 +144,11 @@ describe("/api/masumi/inbox-agent/register", () => {
     prepareManagedInboxRegistrationMock.mockResolvedValue({
       success: true,
       executingWallet: {
-        id: "managed-1",
-        walletVkey: "managed_vkey",
-        walletAddress: "addr_test1managed",
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
         collectionAddress: null,
-        note: "Inbox agent: Support inbox (selling)",
+        note: "Funding wallet",
       },
       paymentSourceId: "payment-source-1",
       smartContractAddress: "addr_test1contract",
@@ -173,16 +174,12 @@ describe("/api/masumi/inbox-agent/register", () => {
       name: "Support inbox",
       network: "Preprod",
     });
-    expect(ensureUserPaymentNodeKeyScopedToWalletsMock).toHaveBeenCalledWith({
-      userId: "user-1",
-      walletIds: ["managed-1"],
-    });
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
-      sellingWalletVkey: "managed_vkey",
-      recipientWalletAddress: "addr_test1managed",
+      sellingWalletVkey: "funding_vkey",
+      recipientWalletAddress: "addr_test1funding",
       name: "Support inbox",
       description: "Routes support requests",
       agentSlug: "support-inbox",
@@ -192,11 +189,11 @@ describe("/api/masumi/inbox-agent/register", () => {
       network: "Preprod",
       entry: createdInboxAgent,
       executingWallet: {
-        id: "managed-1",
-        walletVkey: "managed_vkey",
-        walletAddress: "addr_test1managed",
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
         collectionAddress: null,
-        note: "Inbox agent: Support inbox (selling)",
+        note: "Funding wallet",
       },
       smartContractAddress: "addr_test1contract",
     });

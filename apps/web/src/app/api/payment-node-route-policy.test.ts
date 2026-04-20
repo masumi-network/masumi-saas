@@ -73,24 +73,25 @@ describe("payment-node route API-key policy", () => {
     expect(source).not.toContain("refundConsumedCredit");
   });
 
-  it("allows inbox registration to use the admin client after user wallet scoping", () => {
+  it("allows inbox registration to use the admin client without user wallet scoping", () => {
     const source = readRoute("v1/inbox-agents/route.ts");
-    const scopeCall = source.indexOf(
-      "await ensureUserPaymentNodeKeyScopedToWallets",
+    const apiScopeCheck = source.indexOf("requireNetworkedOidcApiScope(");
+    const preparedRegistration = source.indexOf(
+      "const managedRegistration = await prepareManagedInboxRegistration",
     );
     const adminClientCall = source.indexOf(
       "const client = createInboxAdminPaymentNodeClient()",
-      scopeCall,
+      preparedRegistration,
     );
 
     expect(source).toContain("createInboxAdminPaymentNodeClient");
-    expect(scopeCall).toBeGreaterThanOrEqual(0);
+    expect(apiScopeCheck).toBeGreaterThanOrEqual(0);
+    expect(preparedRegistration).toBeGreaterThanOrEqual(0);
     expect(adminClientCall).toBeGreaterThanOrEqual(0);
-    expect(scopeCall).toBeLessThan(adminClientCall);
-    expect(source).toContain(
-      "walletIds: [managedRegistration.executingWallet.id]",
-    );
-    expect(source).toContain("RemoveSellingWallets");
+    expect(apiScopeCheck).toBeLessThan(adminClientCall);
+    expect(preparedRegistration).toBeLessThan(adminClientCall);
+    expect(source).not.toContain("ensureUserPaymentNodeKeyScopedToWallets");
+    expect(source).not.toContain("RemoveSellingWallets");
   });
 
   it("allows inbox delete to use the admin client after ownership and state checks", () => {

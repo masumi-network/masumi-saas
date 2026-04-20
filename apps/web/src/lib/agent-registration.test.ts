@@ -208,18 +208,24 @@ describe("startAgentRegistration", () => {
       walletAddress: "addr_test1selling",
       walletVkey: "selling-vkey",
     });
-    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({
-      id: "payment-source-preprod",
-      network: "Mainnet",
-      SellingWallets: [],
-      PurchasingWallets: [],
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-preprod",
+          network: "Mainnet",
+          SellingWallets: [],
+          PurchasingWallets: [],
+        },
+      ],
     });
+    const addWalletsToPaymentSourceMock = vi.fn();
 
     getPaymentNodeClientForUserMock.mockResolvedValue({
       createApiKey: vi.fn(),
     });
     getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     createPaymentNodeClientMock.mockReturnValue({
+      getPaymentSources: getPaymentSourcesMock,
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });
@@ -249,16 +255,8 @@ describe("startAgentRegistration", () => {
     );
 
     expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Preprod");
-    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
-      paymentSourceId: "payment-source-preprod",
-      AddSellingWallets: [
-        {
-          walletMnemonic: "selling mnemonic",
-          note: "Agent: Demo agent (selling)",
-          collectionAddress: null,
-        },
-      ],
-    });
+    expect(generateWalletMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
     expect(result).toStrictEqual({
       success: false,
       error:
@@ -272,18 +270,24 @@ describe("startAgentRegistration", () => {
       walletAddress: "addr1selling",
       walletVkey: "selling-vkey-mainnet",
     });
-    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({
-      id: "payment-source-mainnet",
-      network: "Preprod",
-      SellingWallets: [],
-      PurchasingWallets: [],
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-mainnet",
+          network: "Preprod",
+          SellingWallets: [],
+          PurchasingWallets: [],
+        },
+      ],
     });
+    const addWalletsToPaymentSourceMock = vi.fn();
 
     getPaymentNodeClientForUserMock.mockResolvedValue({
       createApiKey: vi.fn(),
     });
     getPaymentSourceIdMock.mockReturnValue("payment-source-mainnet");
     createPaymentNodeClientMock.mockReturnValue({
+      getPaymentSources: getPaymentSourcesMock,
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });
@@ -313,16 +317,8 @@ describe("startAgentRegistration", () => {
     );
 
     expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Mainnet");
-    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
-      paymentSourceId: "payment-source-mainnet",
-      AddSellingWallets: [
-        {
-          walletMnemonic: "selling mnemonic",
-          note: "Agent: Mainnet agent (selling)",
-          collectionAddress: null,
-        },
-      ],
-    });
+    expect(generateWalletMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
     expect(result).toStrictEqual({
       success: false,
       error:
@@ -404,12 +400,32 @@ describe("startAgentRegistration", () => {
       PurchasingWallets: [],
       smartContractAddress: "addr_test1contract",
     });
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-preprod",
+          network: "Preprod",
+          SellingWallets: [
+            {
+              id: "wallet-funding",
+              walletVkey: "funding-vkey",
+              walletAddress: "addr_test1funding",
+              collectionAddress: null,
+              note: "Funding",
+            },
+          ],
+          PurchasingWallets: [],
+          smartContractAddress: "addr_test1contract",
+        },
+      ],
+    });
 
     getPaymentNodeClientForUserMock.mockResolvedValue({
       createApiKey: vi.fn(),
     });
     getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     createPaymentNodeClientMock.mockReturnValue({
+      getPaymentSources: getPaymentSourcesMock,
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });
@@ -443,6 +459,18 @@ describe("startAgentRegistration", () => {
       userId: "user-1",
       walletIds: ["wallet-new"],
     });
+    expect(agentReferenceCreateMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        sellingWalletVkey: "selling-vkey",
+        sellingWalletId: "wallet-new",
+        metadata: expect.objectContaining({
+          sellingWalletAddress: "addr_test1selling",
+          fundingWalletId: "wallet-funding",
+          fundingWalletVkey: "funding-vkey",
+          fundingWalletAddress: "addr_test1funding",
+        }),
+      }),
+    });
   });
 });
 
@@ -458,7 +486,7 @@ describe("completeOnChainRegistration", () => {
     );
   });
 
-  it("submits agent registration with the admin key but only the generated selling wallet", async () => {
+  it("submits agent registration funded by the funding wallet and minted to the generated wallet", async () => {
     const userRegisteredAgentsByWalletMock = vi
       .fn()
       .mockResolvedValue({ Assets: [] });
@@ -486,6 +514,7 @@ describe("completeOnChainRegistration", () => {
         sellingWalletVkey: "selling-vkey",
         metadata: {
           sellingWalletAddress: "addr_test1selling",
+          fundingWalletVkey: "funding-vkey",
           registrationPayload: {
             exampleOutputs: [],
             capabilityName: "demo",
@@ -528,7 +557,7 @@ describe("completeOnChainRegistration", () => {
     expect(userRegisteredAgentsByWalletMock).not.toHaveBeenCalled();
     expect(adminRegisterAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
-      sellingWalletVkey: "selling-vkey",
+      sellingWalletVkey: "funding-vkey",
       recipientWalletAddress: "addr_test1selling",
       name: "Demo agent",
       apiBaseUrl: "https://agent.example.com",
@@ -546,6 +575,113 @@ describe("completeOnChainRegistration", () => {
         organization: undefined,
       },
       AgentPricing: { pricingType: "Free" },
+    });
+  });
+
+  it("resolves the configured funding wallet for pending legacy registrations", async () => {
+    const userRegisteredAgentsByWalletMock = vi
+      .fn()
+      .mockResolvedValue({ Assets: [] });
+    const adminRegisterAgentMock = vi.fn().mockResolvedValue({
+      id: "registry-entry-1",
+      state: "RegistrationInitiated",
+      agentIdentifier: null,
+    });
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-preprod",
+          network: "Preprod",
+          SellingWallets: [
+            {
+              id: "wallet-funding",
+              walletVkey: "funding-vkey",
+              walletAddress: "addr_test1funding",
+              collectionAddress: null,
+              note: "Funding",
+            },
+          ],
+          PurchasingWallets: [],
+          smartContractAddress: "addr_test1contract",
+        },
+      ],
+    });
+    const txQueryRawMock = vi.fn().mockResolvedValue([{ externalId: null }]);
+    const txAgentFindUniqueOrThrowMock = vi.fn().mockResolvedValue({
+      id: "agent-1",
+      registrationState: "RegistrationInitiated",
+    });
+    const agent = {
+      id: "agent-1",
+      userId: "user-1",
+      name: "Demo agent",
+      description: "Demo description",
+      apiUrl: "https://agent.example.com",
+      tags: ["demo"],
+      registrationState: "RegistrationRequested",
+      agentReference: {
+        externalId: null,
+        networkIdentifier: "Preprod",
+        sellingWalletVkey: "selling-vkey",
+        metadata: {
+          sellingWalletAddress: "addr_test1selling",
+          registrationPayload: {
+            exampleOutputs: [],
+            capabilityName: "demo",
+            capabilityVersion: "1.0.0",
+            authorName: "Taylor",
+            authorEmail: "taylor@example.com",
+            agentPricing: { pricingType: "Free" },
+          },
+        },
+      },
+    };
+
+    agentFindFirstMock.mockResolvedValue(agent);
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getRegisteredAgentsByWallet: userRegisteredAgentsByWalletMock,
+    });
+    getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
+    createPaymentNodeClientMock.mockReturnValue({
+      registerAgent: adminRegisterAgentMock,
+      getPaymentSources: getPaymentSourcesMock,
+    });
+    transactionMock.mockImplementation(async (callback) =>
+      callback({
+        $queryRaw: txQueryRawMock,
+        agent: {
+          findUniqueOrThrow: txAgentFindUniqueOrThrowMock,
+          update: agentUpdateMock,
+        },
+        agentReference: {
+          update: agentReferenceUpdateMock,
+        },
+      }),
+    );
+
+    const result = await completeOnChainRegistration("agent-1", "user-1");
+
+    expect(result).toStrictEqual({ status: "pending" });
+    expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Preprod");
+    expect(getPaymentSourcesMock).toHaveBeenCalledWith({
+      take: 100,
+      cursorId: undefined,
+    });
+    expect(adminRegisterAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        network: "Preprod",
+        sellingWalletVkey: "funding-vkey",
+        recipientWalletAddress: "addr_test1selling",
+      }),
+    );
+    expect(agentReferenceUpdateMock).toHaveBeenCalledWith({
+      where: { agentId: "agent-1" },
+      data: expect.objectContaining({
+        externalId: "registry-entry-1",
+        metadata: expect.objectContaining({
+          fundingWalletVkey: "funding-vkey",
+        }),
+      }),
     });
   });
 });

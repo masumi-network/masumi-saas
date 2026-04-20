@@ -8,6 +8,7 @@ const getAdminApiKeyMock = vi.fn();
 const getPaymentSourceIdMock = vi.fn();
 const getPaymentSourceIdEnvNameMock = vi.fn();
 const isWalletAddressCompatibleWithNetworkMock = vi.fn();
+const resolveRegistrationFundingWalletMock = vi.fn();
 
 const generateWalletMock = vi.fn();
 const addWalletsToPaymentSourceMock = vi.fn();
@@ -56,6 +57,7 @@ vi.mock("@/lib/payment-node/config", () => ({
 vi.mock("../payment-node/registration-wallets", () => ({
   isWalletAddressCompatibleWithNetwork:
     isWalletAddressCompatibleWithNetworkMock,
+  resolveRegistrationFundingWallet: resolveRegistrationFundingWalletMock,
 }));
 
 describe("prepareManagedInboxRegistration", () => {
@@ -80,18 +82,13 @@ describe("prepareManagedInboxRegistration", () => {
     });
   });
 
-  it("creates a managed inbox wallet and returns the new wallet identity", async () => {
-    const generatedWallet = {
-      walletMnemonic: "new inbox mnemonic",
-      walletVkey: "managed_vkey",
-      walletAddress: "addr_test1managed",
-    };
-    const managedWallet = {
-      id: "managed-1",
-      walletVkey: "managed_vkey",
-      walletAddress: "addr_test1managed",
+  it("uses the configured registration funding wallet as the inbox executing wallet", async () => {
+    const fundingWallet = {
+      id: "funding-1",
+      walletVkey: "funding_vkey",
+      walletAddress: "addr_test1funding",
       collectionAddress: null,
-      note: "Inbox agent: Support inbox (selling)",
+      note: "Funding wallet",
     };
     getPaymentSourcesMock.mockResolvedValue({
       PaymentSources: [
@@ -99,18 +96,13 @@ describe("prepareManagedInboxRegistration", () => {
           id: "payment-source-1",
           network: "Preprod",
           smartContractAddress: "addr_test1contract",
-          SellingWallets: [],
+          SellingWallets: [fundingWallet],
           PurchasingWallets: [],
         },
       ],
     });
-    generateWalletMock.mockResolvedValue(generatedWallet);
-    addWalletsToPaymentSourceMock.mockResolvedValue({
-      id: "payment-source-1",
-      network: "Preprod",
-      smartContractAddress: "addr_test1contract",
-      SellingWallets: [managedWallet],
-      PurchasingWallets: [],
+    resolveRegistrationFundingWalletMock.mockReturnValue({
+      wallet: fundingWallet,
     });
 
     const { prepareManagedInboxRegistration } = await import("./server");
@@ -119,42 +111,71 @@ describe("prepareManagedInboxRegistration", () => {
       network: "Preprod",
     });
 
-    expect(generateWalletMock).toHaveBeenCalledWith("Preprod");
-    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith({
+    expect(resolveRegistrationFundingWalletMock).toHaveBeenCalledWith({
+      network: "Preprod",
       paymentSourceId: "payment-source-1",
-      AddSellingWallets: [
-        {
-          walletMnemonic: "new inbox mnemonic",
-          note: "Inbox agent: Support inbox (selling)",
-          collectionAddress: null,
-        },
-      ],
+      sellingWallets: [fundingWallet],
     });
+    expect(generateWalletMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
     expect(getPaymentSourcesMock).toHaveBeenCalledWith({
       take: 100,
       cursorId: undefined,
     });
     expect(result).toStrictEqual({
       success: true,
-      executingWallet: managedWallet,
+      executingWallet: fundingWallet,
       paymentSourceId: "payment-source-1",
       smartContractAddress: "addr_test1contract",
     });
   });
 
-  it("uses the Mainnet payment source configured for Mainnet requests", async () => {
-    const generatedWallet = {
-      walletMnemonic: "new mainnet inbox mnemonic",
-      walletVkey: "managed_vkey_mainnet",
-      walletAddress: "addr1managed",
-    };
-    const managedWallet = {
-      id: "managed-mainnet",
-      walletVkey: "managed_vkey_mainnet",
-      walletAddress: "addr1managed",
+  it("uses the Mainnet payment source and Mainnet funding wallet for Mainnet requests", async () => {
+    const fundingWallet = {
+      id: "funding-mainnet",
+      walletVkey: "funding_vkey_mainnet",
+      walletAddress: "addr1funding",
       collectionAddress: null,
-      note: "Inbox agent: Mainnet inbox (selling)",
+      note: "Mainnet funding wallet",
     };
+    getPaymentSourcesMock.mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-mainnet",
+          network: "Mainnet",
+          smartContractAddress: "addr1contract",
+          SellingWallets: [fundingWallet],
+          PurchasingWallets: [],
+        },
+      ],
+    });
+    resolveRegistrationFundingWalletMock.mockReturnValue({
+      wallet: fundingWallet,
+    });
+
+    const { prepareManagedInboxRegistration } = await import("./server");
+    const result = await prepareManagedInboxRegistration({
+      name: "Mainnet inbox",
+      network: "Mainnet",
+    });
+
+    expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Mainnet");
+    expect(resolveRegistrationFundingWalletMock).toHaveBeenCalledWith({
+      network: "Mainnet",
+      paymentSourceId: "payment-source-mainnet",
+      sellingWallets: [fundingWallet],
+    });
+    expect(generateWalletMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
+    expect(result).toStrictEqual({
+      success: true,
+      executingWallet: fundingWallet,
+      paymentSourceId: "payment-source-mainnet",
+      smartContractAddress: "addr1contract",
+    });
+  });
+
+  it("returns the funding-wallet resolver error when no configured wallet matches", async () => {
     getPaymentSourcesMock.mockResolvedValue({
       PaymentSources: [
         {
@@ -166,13 +187,10 @@ describe("prepareManagedInboxRegistration", () => {
         },
       ],
     });
-    generateWalletMock.mockResolvedValue(generatedWallet);
-    addWalletsToPaymentSourceMock.mockResolvedValue({
-      id: "payment-source-mainnet",
-      network: "Mainnet",
-      smartContractAddress: "addr1contract",
-      SellingWallets: [managedWallet],
-      PurchasingWallets: [],
+    resolveRegistrationFundingWalletMock.mockReturnValue({
+      wallet: null,
+      error:
+        "None of the configured registration funding wallets matched a managed selling wallet on payment source payment-source-mainnet for Mainnet.",
     });
 
     const { prepareManagedInboxRegistration } = await import("./server");
@@ -181,14 +199,13 @@ describe("prepareManagedInboxRegistration", () => {
       network: "Mainnet",
     });
 
-    expect(getPaymentSourceIdMock).toHaveBeenCalledWith("Mainnet");
-    expect(generateWalletMock).toHaveBeenCalledWith("Mainnet");
     expect(result).toStrictEqual({
-      success: true,
-      executingWallet: managedWallet,
-      paymentSourceId: "payment-source-mainnet",
-      smartContractAddress: "addr1contract",
+      success: false,
+      error:
+        "None of the configured registration funding wallets matched a managed selling wallet on payment source payment-source-mainnet for Mainnet.",
     });
+    expect(generateWalletMock).not.toHaveBeenCalled();
+    expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
   });
 
   it("keeps base URL config errors on the generic fallback path", async () => {
