@@ -7,15 +7,22 @@
  * resolution) remain inline.
  */
 
-import {
-  MASUMI_IDENTITY_ENDPOINTS,
-  MasumiIdentity,
-} from "@masumi_network/identity-sdk";
+import { MasumiIdentity } from "@masumi_network/identity-sdk";
 
 import { veridianConfig } from "@/lib/config/veridian.config";
 
 let cachedSdk: MasumiIdentity | null = null;
 
+/**
+ * Build (or reuse) the SDK client.
+ *
+ * Fails fast when either VERIDIAN_CREDENTIAL_SERVER_URL or VERIDIAN_KERIA_URL
+ * is missing — matching the pre-SDK behavior. We intentionally do NOT fall
+ * back to the bundled production endpoints here: that would silently route
+ * development or staging traffic through live Masumi infrastructure. Apps
+ * that want the public defaults should import `MASUMI_IDENTITY_ENDPOINTS`
+ * from the SDK and wire them into their own env explicitly.
+ */
 function getSdk(): MasumiIdentity {
   if (cachedSdk) return cachedSdk;
 
@@ -24,11 +31,15 @@ function getSdk(): MasumiIdentity {
       "VERIDIAN_CREDENTIAL_SERVER_URL is required. Please set it in your .env file.",
     );
   }
+  if (!veridianConfig.keriaUrl) {
+    throw new Error(
+      "VERIDIAN_KERIA_URL is required. Please set it in your .env file. Use the KERIA connect URL (port 3901), not the boot URL.",
+    );
+  }
 
   cachedSdk = new MasumiIdentity({
     credentialServerUrl: veridianConfig.credentialServerUrl,
-    keriaUrl:
-      veridianConfig.keriaUrl ?? MASUMI_IDENTITY_ENDPOINTS.production.keriaUrl,
+    keriaUrl: veridianConfig.keriaUrl,
   });
 
   return cachedSdk;
