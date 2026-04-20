@@ -38,7 +38,7 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
     getPaymentNodeApiKeyTokenForUserMock.mockResolvedValue("user-key");
   });
 
-  it("enables wallet scope with known local agent wallets and requested wallet IDs", async () => {
+  it("enables wallet scope while preserving current payment-node wallet IDs", async () => {
     const getApiKeyStatusMock = vi.fn().mockResolvedValue({
       id: "api-key-1",
       token: "user-key",
@@ -84,8 +84,9 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
       id: "api-key-1",
       walletScopeEnabled: true,
       WalletScopeHotWalletIds: [
-        "wallet-known",
         "wallet-existing",
+        "wallet-admin-funding",
+        "wallet-known",
         "wallet-inbox",
         "wallet-new",
       ],

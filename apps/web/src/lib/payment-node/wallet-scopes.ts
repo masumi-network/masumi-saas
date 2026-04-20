@@ -76,6 +76,7 @@ export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
     getKnownInboxAgentWalletIdsForUser(params.userId),
   ]);
   const nextWalletIds = toUniqueWalletIds([
+    ...currentWalletIds,
     ...knownAgentWalletIds,
     ...knownInboxAgentWalletIds,
     ...requestedWalletIds,

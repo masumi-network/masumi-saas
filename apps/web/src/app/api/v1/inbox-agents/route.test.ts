@@ -153,6 +153,7 @@ describe("/pay/api/v1/inbox-agents", () => {
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     refundConsumedCreditMock.mockResolvedValue(undefined);
+    getPaymentNodeClientForUserMock.mockResolvedValue({});
     ensureUserPaymentNodeKeyScopedToWalletsMock.mockResolvedValue(undefined);
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
@@ -248,7 +249,7 @@ describe("/pay/api/v1/inbox-agents", () => {
       userId: "user-1",
       walletIds: ["managed-1"],
     });
-    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
@@ -283,6 +284,40 @@ describe("/pay/api/v1/inbox-agents", () => {
         authMethod: "session",
       },
     });
+  });
+
+  it("returns 403 before generating a managed wallet when the user payment-node key is unavailable", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue(null);
+    const registerInboxAgentMock = vi.fn();
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+      registerInboxAgent: registerInboxAgentMock,
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error: "Payment node not configured for user",
+    });
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
+    expect(ensureUserPaymentNodeKeyScopedToWalletsMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(registerInboxAgentMock).not.toHaveBeenCalled();
   });
 
   it("cleans up the payment-node entry when local ownership persistence fails", async () => {
@@ -414,7 +449,7 @@ describe("/pay/api/v1/inbox-agents", () => {
         "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
     });
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
-    expect(getPaymentNodeClientForUserMock).not.toHaveBeenCalled();
+    expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });

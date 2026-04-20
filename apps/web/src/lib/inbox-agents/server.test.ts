@@ -359,6 +359,103 @@ describe("listOwnedInboxAgentsForUser", () => {
     expect(result.nextCursor).toBe("second");
   });
 
+  it("falls back to stored references when individual refreshes fail", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      getRegistryInboxByIdMock.mockImplementation(async ({ id }) => {
+        if (id === "remote-fails") {
+          throw new Error("payment node unavailable");
+        }
+
+        return makeInboxEntry({
+          id,
+          name: `Remote ${id}`,
+          state: "RegistrationConfirmed",
+          createdAt:
+            id === "ok"
+              ? "2026-04-13T10:04:00.000Z"
+              : "2026-04-13T10:01:00.000Z",
+        });
+      });
+      inboxAgentReferenceCreateMock.mockImplementation(async ({ data }) => {
+        if (data.paymentNodeId === "write-fails") {
+          throw new Error("database unavailable");
+        }
+
+        return {
+          id: `ref-${data.paymentNodeId}`,
+          createdAt: new Date("2026-04-13T10:00:00.000Z"),
+          updatedAt: new Date("2026-04-13T10:01:00.000Z"),
+          ...data,
+        };
+      });
+      getPaymentNodeClientForUserMock.mockResolvedValue({
+        getRegistryInboxById: getRegistryInboxByIdMock,
+      });
+      const remoteFails = makeReference({
+        id: "remote-fails",
+        name: "Local remote failure",
+        agentSlug: "local-remote-failure",
+        state: "RegistrationInitiated",
+        createdAt: "2026-04-13T10:03:00.000Z",
+      });
+      const writeFails = makeReference({
+        id: "write-fails",
+        name: "Local write failure",
+        agentSlug: "local-write-failure",
+        state: "RegistrationInitiated",
+        createdAt: "2026-04-13T10:02:00.000Z",
+      });
+      const ok = makeReference({
+        id: "ok",
+        name: "Local ok",
+        agentSlug: "local-ok",
+        state: "RegistrationInitiated",
+        createdAt: "2026-04-13T10:00:00.000Z",
+      });
+      inboxAgentReferenceFindManyMock.mockResolvedValue([
+        remoteFails,
+        writeFails,
+        ok,
+      ]);
+
+      const { listOwnedInboxAgentsForUser } = await import("./server");
+      const result = await listOwnedInboxAgentsForUser({
+        userId: "user-1",
+        network: "Preprod",
+        take: 10,
+      });
+
+      expect(
+        result.Assets.map(({ id, name, state }) => ({ id, name, state })),
+      ).toStrictEqual([
+        {
+          id: "ok",
+          name: "Remote ok",
+          state: "RegistrationConfirmed",
+        },
+        {
+          id: "remote-fails",
+          name: "Local remote failure",
+          state: "RegistrationInitiated",
+        },
+        {
+          id: "write-fails",
+          name: "Local write failure",
+          state: "RegistrationInitiated",
+        },
+      ]);
+      expect(result.nextCursor).toBeNull();
+      expect(getRegistryInboxByIdMock).toHaveBeenCalledTimes(3);
+      expect(inboxAgentReferenceCreateMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({ paymentNodeId: "write-fails" }),
+      });
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
   it("rejects stale cursors when refresh moves the cursor entry out of the filtered list", async () => {
     getRegistryInboxByIdMock.mockImplementation(async ({ id }) =>
       makeInboxEntry({

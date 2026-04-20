@@ -23,6 +23,7 @@ import type {
   RegistryInboxEntry,
 } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 import {
   getCanonicalInboxAgentSlug,
@@ -193,6 +194,16 @@ export async function POST(request: NextRequest) {
       return contractJsonResponse(contract, "POST", 400, {
         success: false,
         error: slugValidationError,
+      });
+    }
+
+    const userPaymentNodeClient = await getPaymentNodeClientForUser(
+      authContext.user.id,
+    );
+    if (!userPaymentNodeClient) {
+      return contractJsonResponse(contract, "POST", 403, {
+        success: false,
+        error: "Payment node not configured for user",
       });
     }
 

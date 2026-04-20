@@ -470,32 +470,47 @@ export async function refreshInboxAgentReference(params: {
   reference: InboxAgentReference;
   client?: PaymentNodeClient | null;
 }): Promise<RegistryInboxEntry> {
+  const fallbackEntry = referenceToRegistryInboxEntry(params.reference);
+
   if (!isPendingRegistrationState(params.reference.state)) {
-    return referenceToRegistryInboxEntry(params.reference);
+    return fallbackEntry;
   }
 
   if (!params.client) {
-    return referenceToRegistryInboxEntry(params.reference);
+    return fallbackEntry;
   }
 
-  const remote = await params.client.getRegistryInboxById({
-    id: params.reference.paymentNodeId,
-    network: params.network,
-  });
+  try {
+    const remote = await params.client.getRegistryInboxById({
+      id: params.reference.paymentNodeId,
+      network: params.network,
+    });
 
-  if (!remote) {
-    return referenceToRegistryInboxEntry(params.reference);
+    if (!remote) {
+      return fallbackEntry;
+    }
+
+    const updated = await saveInboxAgentReference({
+      userId: params.userId,
+      network: params.network,
+      entry: remote,
+      executingWallet: getExecutingWalletFromReference(params.reference),
+      smartContractAddress: params.reference.smartContractAddress,
+    });
+
+    return referenceToRegistryInboxEntry(updated);
+  } catch (error) {
+    console.warn(
+      "[Inbox Agents] Failed to refresh inbox agent reference; using local data.",
+      {
+        error,
+        network: params.network,
+        paymentNodeId: params.reference.paymentNodeId,
+        referenceId: params.reference.id,
+      },
+    );
+    return fallbackEntry;
   }
-
-  const updated = await saveInboxAgentReference({
-    userId: params.userId,
-    network: params.network,
-    entry: remote,
-    executingWallet: getExecutingWalletFromReference(params.reference),
-    smartContractAddress: params.reference.smartContractAddress,
-  });
-
-  return referenceToRegistryInboxEntry(updated);
 }
 
 export async function listOwnedInboxAgentsForUser(params: {
