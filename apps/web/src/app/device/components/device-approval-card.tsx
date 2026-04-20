@@ -125,7 +125,8 @@ export function DeviceApprovalCard({
     normalizedUserCode.length > 0 &&
     normalizedUserCode === resolvedUserCode;
   const canApprove = canSubmitDecision && !requiresEmailVerification;
-  const resolvedClientLabel = clientLabel?.trim() || "Agent Messenger CLI";
+  const resolvedClientLabel =
+    clientLabel?.trim() || "Masumi Agent Messenger CLI";
 
   useEffect(() => {
     setUserCode(initialUserCode ?? "");

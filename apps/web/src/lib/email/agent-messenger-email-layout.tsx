@@ -66,7 +66,7 @@ export function AgentMessengerEmailLayout({
               >
                 <Img
                   src={resolvedLogoUrl}
-                  alt="Agent Messenger"
+                  alt="Masumi Agent Messenger"
                   width={44}
                   height={44}
                   className="mx-auto"

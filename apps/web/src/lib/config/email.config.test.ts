@@ -57,7 +57,7 @@ describe("emailConfig", () => {
     expect(emailConfig.postmarkFromName).toBe("Masumi");
     expect(emailConfig.postmarkFromHeader).toBe("Masumi <support@example.com>");
     expect(getPostmarkFromHeader("agentMessenger")).toBe(
-      "Agent Messenger <support@example.com>",
+      "Masumi Agent Messenger <support@example.com>",
     );
   });
 

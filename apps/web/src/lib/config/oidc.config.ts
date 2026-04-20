@@ -85,13 +85,14 @@ export const oidcEnvConfig = {
     process.env.OIDC_DEVICE_VERIFICATION_URI?.trim() || "/device",
   web: {
     clientId: process.env.OIDC_WEB_CLIENT_ID?.trim() || "masumi-spacetime-web",
-    clientName: process.env.OIDC_WEB_CLIENT_NAME?.trim() || "Agent Messenger",
+    clientName:
+      process.env.OIDC_WEB_CLIENT_NAME?.trim() || "Masumi Agent Messenger",
     redirectUrls: webRedirectUrls,
   },
   cli: {
     clientId: process.env.OIDC_CLI_CLIENT_ID?.trim() || "masumi-spacetime-cli",
     clientName:
-      process.env.OIDC_CLI_CLIENT_NAME?.trim() || "Agent Messenger CLI",
+      process.env.OIDC_CLI_CLIENT_NAME?.trim() || "Masumi Agent Messenger CLI",
     redirectUrls: cliRedirectUrls,
   },
 } as const;
