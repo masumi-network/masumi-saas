@@ -23,6 +23,15 @@ class InboxAgentOwnershipMismatchError extends Error {
   }
 }
 
+class StaleInboxAgentCursorError extends Error {
+  constructor() {
+    super(
+      "This page of inbox agents is out of date. Refresh to load the latest items.",
+    );
+    this.name = "StaleInboxAgentCursorError";
+  }
+}
+
 vi.mock("@/lib/auth/utils", () => ({
   getAuthenticatedOrThrow: getAuthenticatedOrThrowMock,
   handleAuthError: handleAuthErrorMock,
@@ -39,6 +48,8 @@ vi.mock("@/lib/inbox-agents/server", () => ({
   saveInboxAgentReference: saveInboxAgentReferenceMock,
   isInboxAgentOwnershipMismatchError: (error: unknown) =>
     error instanceof InboxAgentOwnershipMismatchError,
+  isStaleInboxAgentCursorError: (error: unknown) =>
+    error instanceof StaleInboxAgentCursorError,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -159,6 +170,27 @@ describe("/pay/api/v1/inbox-agents", () => {
       cursor: undefined,
       filterStatus: undefined,
       search: undefined,
+    });
+  });
+
+  it("returns 410 when a paginated list cursor is stale", async () => {
+    listOwnedInboxAgentsForUserMock.mockRejectedValue(
+      new StaleInboxAgentCursorError(),
+    );
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod&cursor=stale-cursor",
+      {
+        method: "GET",
+      },
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(410);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error:
+        "This page of inbox agents is out of date. Refresh to load the latest items.",
     });
   });
 

@@ -440,6 +440,44 @@ describe("listOwnedInboxAgentsForUser", () => {
     expect(result.Assets.map((asset) => asset.id)).toStrictEqual(["second"]);
     expect(result.nextCursor).toBe("second");
   });
+
+  it("rejects stale cursors when refresh moves the cursor entry out of the filtered list", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue(null);
+    getRegistryInboxByIdMock.mockImplementation(async ({ id }) =>
+      makeInboxEntry({
+        id,
+        state:
+          id === "cursor-entry"
+            ? "RegistrationConfirmed"
+            : "RegistrationInitiated",
+      }),
+    );
+    const cursorEntry = makeReference({
+      id: "cursor-entry",
+      name: "Support cursor",
+      agentSlug: "support-cursor",
+      state: "RegistrationInitiated",
+    });
+    const nextEntry = makeReference({
+      id: "next-entry",
+      name: "Support next",
+      agentSlug: "support-next",
+      state: "RegistrationInitiated",
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([cursorEntry, nextEntry]);
+
+    const { listOwnedInboxAgentsForUser, StaleInboxAgentCursorError } =
+      await import("./server");
+    await expect(
+      listOwnedInboxAgentsForUser({
+        userId: "user-1",
+        network: "Preprod",
+        filterStatus: "Pending",
+        cursor: "cursor-entry",
+        take: 1,
+      }),
+    ).rejects.toBeInstanceOf(StaleInboxAgentCursorError);
+  });
 });
 
 describe("getOwnedInboxAgentForUser", () => {

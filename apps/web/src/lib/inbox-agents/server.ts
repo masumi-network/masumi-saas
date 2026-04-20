@@ -84,6 +84,24 @@ export function isInboxAgentOwnershipMismatchError(
   return error instanceof InboxAgentOwnershipMismatchError;
 }
 
+export class StaleInboxAgentCursorError extends Error {
+  readonly cursor: string;
+
+  constructor(cursor: string) {
+    super(
+      "This page of inbox agents is out of date. Refresh to load the latest items.",
+    );
+    this.name = "StaleInboxAgentCursorError";
+    this.cursor = cursor;
+  }
+}
+
+export function isStaleInboxAgentCursorError(
+  error: unknown,
+): error is StaleInboxAgentCursorError {
+  return error instanceof StaleInboxAgentCursorError;
+}
+
 export type ListOwnedInboxAgentsResult = {
   Assets: RegistryInboxEntry[];
   nextCursor: string | null;
@@ -679,10 +697,18 @@ export async function listOwnedInboxAgentsForUser(params: {
     .filter((entry) => matchesSearch(entry, params.search))
     .filter((entry) => matchesFilterStatus(entry, params.filterStatus));
 
-  const startIndex = params.cursor
-    ? filteredAssets.findIndex((entry) => entry.id === params.cursor) + 1
-    : 0;
-  const safeStartIndex = startIndex > 0 ? startIndex : 0;
+  const safeStartIndex = (() => {
+    if (!params.cursor) return 0;
+
+    const cursorIndex = filteredAssets.findIndex(
+      (entry) => entry.id === params.cursor,
+    );
+    if (cursorIndex < 0) {
+      throw new StaleInboxAgentCursorError(params.cursor);
+    }
+
+    return cursorIndex + 1;
+  })();
   const Assets = filteredAssets.slice(
     safeStartIndex,
     safeStartIndex + params.take,

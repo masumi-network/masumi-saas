@@ -10,6 +10,7 @@ import {
 import {
   createInboxAdminPaymentNodeClient,
   isInboxAgentOwnershipMismatchError,
+  isStaleInboxAgentCursorError,
   listOwnedInboxAgentsForUser,
   prepareManagedInboxRegistration,
   saveInboxAgentReference,
@@ -150,6 +151,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isStaleInboxAgentCursorError(error)) {
+      return contractJsonResponse(contract, "GET", 410, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to get inbox agents:", error);
     return contractJsonResponse(contract, "GET", 500, {
       success: false,

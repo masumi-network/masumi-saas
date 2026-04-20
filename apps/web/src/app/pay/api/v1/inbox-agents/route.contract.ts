@@ -28,6 +28,7 @@ const contract = defineRouteContract({
       },
       responses: {
         200: jsonResponse("Inbox-agent list", inboxAgentsListSuccessSchema),
+        410: jsonResponse("Stale cursor", errBody),
         ...stdResponses,
       },
     },
