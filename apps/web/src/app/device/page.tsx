@@ -17,7 +17,7 @@ import { DeviceApprovalCard } from "./components/device-approval-card";
 
 export const metadata: Metadata = {
   title: "Masumi - Device Login",
-  description: "Approve Masumi CLI device authorization",
+  description: "Authorize Masumi Agent Messenger CLI device access",
 };
 
 interface DevicePageProps {
@@ -72,7 +72,7 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
 
   let lookupError: string | null = null;
   let isResolvedRequest = false;
-  let clientLabel = "Agent Messenger CLI";
+  let clientLabel = "Masumi Agent Messenger CLI";
   let identityScopeItems: ReturnType<typeof getOidcScopeDisplayItems> = [];
   let newApiPermissionGroups: ReturnType<
     typeof getGroupedOidcApiPermissionItems

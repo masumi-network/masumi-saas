@@ -115,6 +115,18 @@ function buildTxClient(state: MockState) {
       }),
     },
     creditLedgerEntry: {
+      findUnique: vi.fn(async ({ where, select }) => {
+        const key = where.userId_reason_reference;
+        if (!key) return null;
+        const match = state.ledger.find(
+          (entry) =>
+            entry.userId === key.userId &&
+            entry.reason === key.reason &&
+            entry.reference === key.reference,
+        );
+        if (!match) return null;
+        return pickSelected(match, select);
+      }),
       create: vi.fn(async ({ data }) => {
         const exists = state.ledger.some(
           (entry) =>
@@ -184,6 +196,7 @@ const {
   consumeCreditIfRequired,
   consumeCreditOrThrow,
   grantInitialCreditsIfNeeded,
+  refundConsumedCredit,
 } = await import("./service");
 
 describe("credit service", () => {
@@ -305,6 +318,91 @@ describe("credit service", () => {
       reason: "payment_proxy_write",
       reference: "payment:mainnet",
     });
+  });
+
+  it("refunds a Mainnet debit with a :refund ledger entry", async () => {
+    store.current = createState(1);
+
+    await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+      metadata: { network: "Mainnet" },
+    });
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+      metadata: { network: "Mainnet" },
+    });
+
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(2);
+    expect(store.current.ledger[1]).toMatchObject({
+      delta: CREDIT_COST,
+      balanceAfter: 1,
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet:refund",
+    });
+  });
+
+  it("is idempotent when refunded twice with the same reference", async () => {
+    store.current = createState(1);
+
+    await consumeCreditIfRequired({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
+
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(2);
+    expect(store.current.ledger[1]).toMatchObject({
+      reference: "payment:mainnet:refund",
+    });
+  });
+
+  it("does not refund when the original debit is missing", async () => {
+    store.current = createState(1);
+
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:mainnet",
+      network: "Mainnet",
+    });
+
+    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.ledger).toHaveLength(0);
+  });
+
+  it("skips refund entirely on Preprod", async () => {
+    store.current = createState(0);
+
+    await refundConsumedCredit({
+      userId: "user-1",
+      reason: "payment_proxy_write",
+      reference: "payment:preprod",
+      network: "Preprod",
+    });
+
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(0);
   });
 
   it("allows only one concurrent debit when one credit remains", async () => {

@@ -34,5 +34,6 @@ export type * from "./models/KycSubmission.js";
 export type * from "./models/KybSubmission.js";
 export type * from "./models/WalletCache.js";
 export type * from "./models/AgentReference.js";
+export type * from "./models/InboxAgentReference.js";
 export type * from "./models/VeridianCredential.js";
 export type * from "./commonInputTypes.js";

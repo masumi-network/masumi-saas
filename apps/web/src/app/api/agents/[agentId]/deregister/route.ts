@@ -72,7 +72,7 @@ export async function POST(
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     if (isPaymentNodeConfigError(error)) {
-      return contractJsonResponse(contract, "POST", 500, {
+      return contractJsonResponse(contract, "POST", 503, {
         success: false,
         error: error.message,
       });

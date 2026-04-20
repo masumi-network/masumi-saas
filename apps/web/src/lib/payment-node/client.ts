@@ -549,6 +549,8 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
             id: body.paymentSourceId,
             AddSellingWallets: body.AddSellingWallets,
             AddPurchasingWallets: body.AddPurchasingWallets,
+            RemoveSellingWallets: body.RemoveSellingWallets,
+            RemovePurchasingWallets: body.RemovePurchasingWallets,
           },
         },
         addWalletToSourceOutputSchema,

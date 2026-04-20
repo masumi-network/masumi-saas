@@ -46,8 +46,8 @@ type DeviceApprovalCardProps = {
 type ApprovalState = "idle" | "denied";
 
 const copy = {
-  title: "Authorize this device",
-  subtitle: "Do you want to authorize this device?",
+  titlePrefix: "Authorize",
+  descriptionPrefix: "Review the requested access before authorizing",
   codeLabel: "Device code",
   codeHint: "Dashes are optional. The code is not case sensitive.",
   codeLoadedHint: "Code verified. Edit to review a different device request.",
@@ -62,18 +62,35 @@ const copy = {
   existingPermissionsLabel: "Granted API permissions",
   defaultScope: "openid",
   denied: "Device request denied.",
-  pending: "A CLI is requesting access to your Masumi account.",
+  pendingSuffix: "is requesting access to your Masumi account.",
   noRequestLoaded:
-    "Enter the device code shown in your terminal to review the request before you approve it.",
-  verifyRequired: "Verify your email before approving this device login.",
+    "Enter the device code shown in your terminal to review the request before you authorize it.",
+  verifyRequired: "Verify your email before authorizing this device login.",
   backToDashboard: "Back to dashboard",
-  approve: "Approve",
+  approve: "Authorize",
   working: "Working...",
   deny: "Deny",
   switchAccount: "Switch account",
   switching: "Switching...",
   successRedirect: "/device/success",
 };
+
+function getDeviceClientLabel(clientLabel: string | null | undefined): string {
+  const trimmedClientLabel = clientLabel?.trim();
+
+  if (
+    !trimmedClientLabel ||
+    trimmedClientLabel.toLowerCase() === "agent messenger cli"
+  ) {
+    return "Masumi Agent Messenger CLI";
+  }
+
+  if (trimmedClientLabel.toLowerCase() === "agent messenger") {
+    return "Masumi Agent Messenger";
+  }
+
+  return trimmedClientLabel;
+}
 
 function getInitial(
   name: string | null | undefined,
@@ -125,7 +142,8 @@ export function DeviceApprovalCard({
     normalizedUserCode.length > 0 &&
     normalizedUserCode === resolvedUserCode;
   const canApprove = canSubmitDecision && !requiresEmailVerification;
-  const resolvedClientLabel = clientLabel?.trim() || "Agent Messenger CLI";
+  const resolvedClientLabel = getDeviceClientLabel(clientLabel);
+  const pendingMessage = `${resolvedClientLabel} ${copy.pendingSuffix}`;
 
   useEffect(() => {
     setUserCode(initialUserCode ?? "");
@@ -217,8 +235,8 @@ export function DeviceApprovalCard({
   return (
     <AuthorizationRequestCard
       icon={<Terminal className="h-6 w-6 text-primary" />}
-      title={copy.title}
-      description={`${copy.subtitle} Review the requested access for ${resolvedClientLabel}.`}
+      title={`${copy.titlePrefix} ${resolvedClientLabel}`}
+      description={`${copy.descriptionPrefix} ${resolvedClientLabel}.`}
       footer={
         isResolvedRequest ? (
           <div className="flex w-full flex-col gap-3">
@@ -233,7 +251,7 @@ export function DeviceApprovalCard({
             ) : (
               <>
                 <p className="text-center text-sm text-muted-foreground">
-                  {copy.pending}
+                  {pendingMessage}
                 </p>
                 {hasPendingCodeChange ? (
                   <div className="flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">

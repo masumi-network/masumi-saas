@@ -21,20 +21,21 @@ const contract = defineRouteContract({
     GET: {
       summary: "List inbox agents",
       description:
-        "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+        "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie. Continue pagination only with the same `network`, `filterStatus`, and `search`; changing any of them requires restarting without `cursor`, otherwise the endpoint may return HTTP 410.",
       security,
       request: {
         query: inboxAgentsListQuerySchema,
       },
       responses: {
         200: jsonResponse("Inbox-agent list", inboxAgentsListSuccessSchema),
+        410: jsonResponse("Stale cursor", errBody),
         ...stdResponses,
       },
     },
     POST: {
       summary: "Register inbox agent",
       description:
-        "Registers a new inbox agent through the authenticated user’s payment-node token. The server normalizes the slug, creates the managed recipient wallet, and overrides wallet selection so a configured funding wallet pays while the new inbox wallet receives the registration asset.",
+        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
       security,
       request: {
         body: jsonRequestBody(registerInboxAgentOpenApiBodySchema),
@@ -45,6 +46,7 @@ const contract = defineRouteContract({
           inboxAgentMutationSuccessSchema,
         ),
         402: insufficientCreditsResponse,
+        409: jsonResponse("Inbox agent already owned by another user", errBody),
         503: jsonResponse("Payment node unavailable", errBody),
         ...stdResponses,
       },

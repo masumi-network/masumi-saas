@@ -29,6 +29,13 @@ const contract = defineRouteContract({
           "Deregistration started",
           inboxAgentMutationSuccessSchema,
         ),
+        503: jsonResponse(
+          "Payment service unavailable",
+          z.object({
+            success: z.literal(false),
+            error: z.string(),
+          }),
+        ),
         ...stdResponses,
       },
     },

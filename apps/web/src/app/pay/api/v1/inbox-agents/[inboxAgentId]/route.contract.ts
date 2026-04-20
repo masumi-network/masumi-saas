@@ -26,6 +26,13 @@ const contract = defineRouteContract({
       request: { params: paramsSchema },
       responses: {
         200: jsonResponse("Deleted", inboxAgentMutationSuccessSchema),
+        503: jsonResponse(
+          "Payment service unavailable",
+          z.object({
+            success: z.literal(false),
+            error: z.string(),
+          }),
+        ),
         ...stdResponses,
       },
     },

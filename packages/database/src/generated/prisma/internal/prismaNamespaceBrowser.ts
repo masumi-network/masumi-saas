@@ -81,6 +81,7 @@ export const ModelName = {
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
+  InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -527,6 +528,28 @@ export const AgentReferenceScalarFieldEnum = {
 
 export type AgentReferenceScalarFieldEnum =
   (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
+
+export const InboxAgentReferenceScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  paymentNodeId: "paymentNodeId",
+  networkIdentifier: "networkIdentifier",
+  name: "name",
+  description: "description",
+  agentSlug: "agentSlug",
+  state: "state",
+  agentIdentifier: "agentIdentifier",
+  executingWalletId: "executingWalletId",
+  executingWalletVkey: "executingWalletVkey",
+  executingWalletAddress: "executingWalletAddress",
+  smartContractAddress: "smartContractAddress",
+  registryEntry: "registryEntry",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type InboxAgentReferenceScalarFieldEnum =
+  (typeof InboxAgentReferenceScalarFieldEnum)[keyof typeof InboxAgentReferenceScalarFieldEnum];
 
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",

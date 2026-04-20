@@ -469,6 +469,8 @@ export const addWalletToSourceInputSchema = z.object({
       }),
     )
     .optional(),
+  RemoveSellingWallets: z.array(z.object({ id: z.string() })).optional(),
+  RemovePurchasingWallets: z.array(z.object({ id: z.string() })).optional(),
 });
 export type AddWalletToSourceInput = z.infer<
   typeof addWalletToSourceInputSchema
