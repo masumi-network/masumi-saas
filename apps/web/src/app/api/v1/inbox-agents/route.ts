@@ -18,6 +18,7 @@ import {
 import { contractJsonResponse } from "@/lib/openapi/contracts";
 import type {
   PaymentNodeClient,
+  PaymentNodeNetwork,
   PaymentSourceWallet,
   RegistryInboxEntry,
 } from "@/lib/payment-node";
