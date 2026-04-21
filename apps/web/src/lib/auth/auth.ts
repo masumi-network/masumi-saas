@@ -29,7 +29,7 @@ import {
   deleteVerificationByIdentifier,
   securePrismaAuthAdapter,
 } from "@/lib/auth/auth-storage";
-import { getBootstrapAdminIds } from "@/lib/auth/config";
+import { getBootstrapAdminIds, isAdminUser } from "@/lib/auth/config";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import {
   checkAndIncrementEmailSendLimit,
@@ -63,13 +63,8 @@ import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
 const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
 const ADMIN_IMPERSONATION_TARGET_ERROR = "Admin users cannot be impersonated.";
-
-function isAdminImpersonationTarget(user: {
-  id: string;
-  role?: string | null;
-}): boolean {
-  return user.role === "admin" || getBootstrapAdminIds().includes(user.id);
-}
+const BANNED_IMPERSONATION_TARGET_ERROR =
+  "Banned users cannot be impersonated.";
 
 const adminImpersonationGuardPlugin = {
   id: "admin-impersonation-guard",
@@ -81,10 +76,7 @@ const adminImpersonationGuardPlugin = {
         },
         handler: createAuthMiddleware(async (ctx) => {
           const currentSession = await getSessionFromCtx(ctx);
-          if (
-            !currentSession?.user ||
-            !isAdminImpersonationTarget(currentSession.user)
-          ) {
+          if (!currentSession?.user || !isAdminUser(currentSession.user)) {
             return;
           }
 
@@ -101,10 +93,20 @@ const adminImpersonationGuardPlugin = {
 
           const targetUser = await prisma.user.findUnique({
             where: { id: targetUserId },
-            select: { id: true, role: true },
+            select: { banned: true, id: true, role: true },
           });
 
-          if (!targetUser || !isAdminImpersonationTarget(targetUser)) {
+          if (!targetUser) {
+            return;
+          }
+
+          if (targetUser.banned) {
+            throw new APIError("FORBIDDEN", {
+              message: BANNED_IMPERSONATION_TARGET_ERROR,
+            });
+          }
+
+          if (!isAdminUser(targetUser)) {
             return;
           }
 

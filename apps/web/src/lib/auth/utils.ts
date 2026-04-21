@@ -10,11 +10,13 @@ import { InsufficientCreditsError } from "@/lib/credits/service";
 
 import { auth } from "./auth";
 import { findOauthAccessTokenByAccessToken } from "./auth-storage";
-import { getBootstrapAdminIds } from "./config";
+import { isAdminUser } from "./config";
 import {
   getBetterAuthInnerSession,
   type SessionWithOrganization,
 } from "./session-types";
+
+export { isAdminUser } from "./config";
 
 /** Full session object from Better Auth after a successful lookup. */
 export type AuthSessionFull = NonNullable<
@@ -267,19 +269,6 @@ export function handleAuthError(error: unknown): NextResponse | null {
     );
   }
   return null;
-}
-
-/**
- * Centralized admin check. A user is admin if:
- * 1. Their DB role field is "admin", OR
- * 2. Their user ID is in the ADMIN_USER_IDS env var (bootstrap mechanism)
- */
-export function isAdminUser(user: {
-  id: string;
-  role?: string | null;
-}): boolean {
-  if (user.role === "admin") return true;
-  return getBootstrapAdminIds().includes(user.id);
 }
 
 /** Like getAuthContext() but also returns isAdmin flag */
