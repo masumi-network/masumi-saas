@@ -414,6 +414,7 @@ export async function handleMasumiAuthorizationCodeGrant(
     where: { id: verificationValue.userId },
     select: {
       id: true,
+      banned: true,
       email: true,
       emailVerified: true,
       name: true,
@@ -424,6 +425,10 @@ export async function handleMasumiAuthorizationCodeGrant(
 
   if (!user) {
     return createOauthJsonErrorResponse("invalid_grant", "user not found", 401);
+  }
+
+  if (user.banned) {
+    return createOauthJsonErrorResponse(OIDC_ACCESS_DENIED, "user_banned", 403);
   }
 
   const deletedVerification = await prisma.verification.deleteMany({
