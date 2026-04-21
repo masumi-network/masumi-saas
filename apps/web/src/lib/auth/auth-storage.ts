@@ -623,24 +623,39 @@ export function createOidcSessionId(options?: {
   return randomBytes(32).toString("base64url");
 }
 
+type OauthAccessTokenOidcSessionSource = {
+  id: string;
+  oidcSessionId: string | null;
+};
+
+function resolveOauthAccessTokenOidcSessionId(
+  token: OauthAccessTokenOidcSessionSource | null,
+): string | null {
+  if (!token) {
+    return null;
+  }
+
+  return token.oidcSessionId ?? createOidcSessionId({ tokenId: token.id });
+}
+
+export async function getOauthAccessTokenOidcSessionIdForRefreshToken(
+  refreshToken: string,
+): Promise<string | null> {
+  const token = await findOauthAccessTokenByRefreshToken(refreshToken, {
+    select: {
+      id: true,
+      oidcSessionId: true,
+    },
+  });
+
+  return resolveOauthAccessTokenOidcSessionId(token);
+}
+
 export async function carryForwardOauthAccessTokenOidcSessionId(options: {
-  previousRefreshToken: string;
+  previousOidcSessionId: string | null;
   rotatedRefreshToken: string;
 }): Promise<string | null> {
-  const previous = await findOauthAccessTokenByRefreshToken(
-    options.previousRefreshToken,
-    {
-      select: {
-        id: true,
-        oidcSessionId: true,
-      },
-    },
-  );
-
-  const oidcSessionId =
-    previous?.oidcSessionId ??
-    (previous?.id ? createOidcSessionId({ tokenId: previous.id }) : null);
-  if (!oidcSessionId) {
+  if (!options.previousOidcSessionId) {
     return null;
   }
 
@@ -649,10 +664,10 @@ export async function carryForwardOauthAccessTokenOidcSessionId(options: {
       "refreshToken",
       options.rotatedRefreshToken,
     ),
-    data: { oidcSessionId },
+    data: { oidcSessionId: options.previousOidcSessionId },
   });
 
-  return oidcSessionId;
+  return options.previousOidcSessionId;
 }
 
 export async function deleteSessionByRawToken(token: string) {

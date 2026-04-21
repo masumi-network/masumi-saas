@@ -1,6 +1,7 @@
 import {
   carryForwardOauthAccessTokenOidcSessionId,
   findDeviceCodeByDeviceCode,
+  getOauthAccessTokenOidcSessionIdForRefreshToken,
 } from "@/lib/auth/auth-storage";
 import {
   exchangeAuthForOidcTokenSet,
@@ -223,6 +224,24 @@ async function exchangeRefreshGrantForOidcToken(
   request: Request,
   body: Record<string, string>,
 ): Promise<Response> {
+  const previousRefreshToken =
+    typeof body.refresh_token === "string" ? body.refresh_token : null;
+  let previousOidcSessionId: string | null = null;
+
+  if (previousRefreshToken) {
+    try {
+      previousOidcSessionId =
+        await getOauthAccessTokenOidcSessionIdForRefreshToken(
+          previousRefreshToken,
+        );
+    } catch (error) {
+      console.error(
+        "[OIDC refresh grant] Failed to read previous oidcSessionId",
+        error,
+      );
+    }
+  }
+
   const refreshResponse = await authHandler.POST(request);
   if (!refreshResponse.ok) {
     return refreshResponse;
@@ -249,8 +268,6 @@ async function exchangeRefreshGrantForOidcToken(
     typeof refreshBody.refresh_token === "string"
       ? refreshBody.refresh_token
       : null;
-  const previousRefreshToken =
-    typeof body.refresh_token === "string" ? body.refresh_token : null;
 
   if (!refreshToken) {
     return Response.json(refreshBody, {
@@ -260,9 +277,9 @@ async function exchangeRefreshGrantForOidcToken(
   }
 
   try {
-    if (previousRefreshToken) {
+    if (previousOidcSessionId) {
       await carryForwardOauthAccessTokenOidcSessionId({
-        previousRefreshToken,
+        previousOidcSessionId,
         rotatedRefreshToken: refreshToken,
       });
     }
