@@ -256,6 +256,7 @@ model OauthAccessToken {
   refreshToken          String   @unique
   accessTokenExpiresAt  DateTime
   refreshTokenExpiresAt DateTime
+  oidcSessionId         String?
   clientId              String
   userId                String?
   user                  User?    @relation(fields: [userId], references: [id], onDelete: Cascade)

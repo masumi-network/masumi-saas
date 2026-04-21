@@ -1,4 +1,7 @@
-import { findDeviceCodeByDeviceCode } from "@/lib/auth/auth-storage";
+import {
+  carryForwardOauthAccessTokenOidcSessionId,
+  findDeviceCodeByDeviceCode,
+} from "@/lib/auth/auth-storage";
 import {
   exchangeAuthForOidcTokenSet,
   OidcTokenExchangeError,
@@ -218,6 +221,7 @@ async function exchangeDeviceGrantForOidcToken(
 
 async function exchangeRefreshGrantForOidcToken(
   request: Request,
+  body: Record<string, string>,
 ): Promise<Response> {
   const refreshResponse = await authHandler.POST(request);
   if (!refreshResponse.ok) {
@@ -245,6 +249,8 @@ async function exchangeRefreshGrantForOidcToken(
     typeof refreshBody.refresh_token === "string"
       ? refreshBody.refresh_token
       : null;
+  const previousRefreshToken =
+    typeof body.refresh_token === "string" ? body.refresh_token : null;
 
   if (!refreshToken) {
     return Response.json(refreshBody, {
@@ -254,6 +260,13 @@ async function exchangeRefreshGrantForOidcToken(
   }
 
   try {
+    if (previousRefreshToken) {
+      await carryForwardOauthAccessTokenOidcSessionId({
+        previousRefreshToken,
+        rotatedRefreshToken: refreshToken,
+      });
+    }
+
     const idToken = await createIdTokenForRefreshToken(refreshToken);
     if (idToken) {
       refreshBody.id_token = idToken;
@@ -338,7 +351,7 @@ export async function POST(request: Request): Promise<Response> {
       pathname === OAUTH_TOKEN_PATH &&
       body?.grant_type === REFRESH_TOKEN_GRANT
     ) {
-      return exchangeRefreshGrantForOidcToken(request);
+      return exchangeRefreshGrantForOidcToken(request, body);
     }
   }
 

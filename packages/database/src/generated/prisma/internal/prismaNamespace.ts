@@ -2926,6 +2926,7 @@ export const OauthAccessTokenScalarFieldEnum = {
   refreshToken: "refreshToken",
   accessTokenExpiresAt: "accessTokenExpiresAt",
   refreshTokenExpiresAt: "refreshTokenExpiresAt",
+  oidcSessionId: "oidcSessionId",
   clientId: "clientId",
   userId: "userId",
   scopes: "scopes",

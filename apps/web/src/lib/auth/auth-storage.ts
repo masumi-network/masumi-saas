@@ -558,6 +558,7 @@ type CreateOauthAccessTokenArgs = {
   refreshToken: string;
   accessTokenExpiresAt: Date;
   refreshTokenExpiresAt: Date;
+  oidcSessionId?: string | null;
   clientId: string;
   userId: string | null;
   scopes: string;
@@ -590,6 +591,68 @@ export async function createStoredOauthAccessToken(
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
   };
+}
+
+export function createOidcSessionId(options?: {
+  authTime?: unknown;
+  tokenId?: string | null;
+  userId?: string | null;
+}): string {
+  if (
+    options?.userId &&
+    (typeof options.authTime === "number" ||
+      typeof options.authTime === "string")
+  ) {
+    return createHmac("sha256", getHashKey())
+      .update("oidc-session-id", "utf8")
+      .update("\0")
+      .update(options.userId, "utf8")
+      .update("\0")
+      .update(String(options.authTime), "utf8")
+      .digest("base64url");
+  }
+
+  if (options?.tokenId) {
+    return createHmac("sha256", getHashKey())
+      .update("oidc-session-id-token", "utf8")
+      .update("\0")
+      .update(options.tokenId, "utf8")
+      .digest("base64url");
+  }
+
+  return randomBytes(32).toString("base64url");
+}
+
+export async function carryForwardOauthAccessTokenOidcSessionId(options: {
+  previousRefreshToken: string;
+  rotatedRefreshToken: string;
+}): Promise<string | null> {
+  const previous = await findOauthAccessTokenByRefreshToken(
+    options.previousRefreshToken,
+    {
+      select: {
+        id: true,
+        oidcSessionId: true,
+      },
+    },
+  );
+
+  const oidcSessionId =
+    previous?.oidcSessionId ??
+    (previous?.id ? createOidcSessionId({ tokenId: previous.id }) : null);
+  if (!oidcSessionId) {
+    return null;
+  }
+
+  await prisma.oauthAccessToken.updateMany({
+    where: buildStoredOauthAccessTokenWhere(
+      "refreshToken",
+      options.rotatedRefreshToken,
+    ),
+    data: { oidcSessionId },
+  });
+
+  return oidcSessionId;
 }
 
 export async function deleteSessionByRawToken(token: string) {
