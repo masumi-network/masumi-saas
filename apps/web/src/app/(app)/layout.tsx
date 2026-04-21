@@ -5,6 +5,7 @@ import { getMessages } from "next-intl/server";
 
 import { FooterSections } from "@/components/footer";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
 import { NotificationsProvider } from "@/lib/context/notifications-context";
@@ -15,6 +16,7 @@ import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { VerifyEmailBanner } from "./account/components/verify-email-banner";
 import Header from "./components/header";
+import { ImpersonationBanner } from "./components/impersonation-banner";
 import Sidebar from "./components/sidebar";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +43,8 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const initialPaymentNetwork = getInitialPaymentNetwork(cookieStore);
   const messages = await getMessages();
+  const innerSession = getBetterAuthInnerSession(authContext.session);
+  const isImpersonating = Boolean(innerSession?.impersonatedBy);
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -57,6 +61,14 @@ export default async function AppLayout({
                   <Header />
                   <div className="flex-1 min-h-0 overflow-y-auto">
                     <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+                      {isImpersonating && (
+                        <div className="mb-4">
+                          <ImpersonationBanner
+                            activeUserName={authContext.session.user.name}
+                            activeUserEmail={authContext.session.user.email}
+                          />
+                        </div>
+                      )}
                       {authConfig.emailAndPassword.requireEmailVerification &&
                         authContext.session.user.emailVerified !== true &&
                         authContext.session.user.email && (
