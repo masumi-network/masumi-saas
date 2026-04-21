@@ -276,14 +276,21 @@ async function exchangeRefreshGrantForOidcToken(
     });
   }
 
-  try {
-    if (previousOidcSessionId) {
+  if (previousOidcSessionId) {
+    try {
       await carryForwardOauthAccessTokenOidcSessionId({
         previousOidcSessionId,
         rotatedRefreshToken: refreshToken,
       });
+    } catch (error) {
+      console.error(
+        "[OIDC refresh grant] Failed to carry forward oidcSessionId",
+        error,
+      );
     }
+  }
 
+  try {
     const idToken = await createIdTokenForRefreshToken(refreshToken);
     if (idToken) {
       refreshBody.id_token = idToken;

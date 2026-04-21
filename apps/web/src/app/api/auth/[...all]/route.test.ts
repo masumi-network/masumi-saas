@@ -187,4 +187,60 @@ describe("/api/auth/oauth2/token", () => {
       "id-token:rotated-refresh-token",
     ]);
   });
+
+  it("still mints an id_token when OIDC session carry-forward fails", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    try {
+      mocks.getOauthAccessTokenOidcSessionIdForRefreshToken.mockResolvedValue(
+        "stable-sid",
+      );
+      mocks.authHandlerPost.mockResolvedValue(
+        Response.json({
+          access_token: "rotated-access-token",
+          refresh_token: "rotated-refresh-token",
+          token_type: "Bearer",
+        }),
+      );
+      mocks.carryForwardOauthAccessTokenOidcSessionId.mockRejectedValue(
+        new Error("temporary database failure"),
+      );
+      mocks.createIdTokenForRefreshToken.mockResolvedValue(
+        "refreshed-id-token",
+      );
+
+      const { POST } = await import("./route");
+      const response = await POST(
+        new Request("https://saas.example.com/api/auth/oauth2/token", {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: "masumi-spacetime-cli",
+            grant_type: "refresh_token",
+            refresh_token: "old-refresh-token",
+          }),
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({
+        access_token: "rotated-access-token",
+        refresh_token: "rotated-refresh-token",
+        id_token: "refreshed-id-token",
+      });
+      expect(mocks.createIdTokenForRefreshToken).toHaveBeenCalledWith(
+        "rotated-refresh-token",
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[OIDC refresh grant] Failed to carry forward oidcSessionId",
+        expect.any(Error),
+      );
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
+  });
 });
