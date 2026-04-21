@@ -34,6 +34,7 @@ const OIDC_SUPPORTED_CLAIMS = [
   "nbf",
   "iat",
   "jti",
+  "sid",
   "email",
   "email_verified",
   "name",

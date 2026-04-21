@@ -422,6 +422,9 @@ describe("SMOKE — OIDC discovery", () => {
     expect(body.token_endpoint).toBe(`${ISSUER_URL}/api/auth/oauth2/token`);
     expect(body.jwks_uri).toBe(`${ISSUER_URL}/jwks`);
     expect(body.id_token_signing_alg_values_supported).toContain("ES256");
+    expect(body.claims_supported).toEqual(
+      expect.arrayContaining(["jti", "sid"]),
+    );
   });
 
   it("GET /.well-known/oauth-authorization-server returns OAuth metadata", async () => {
@@ -586,6 +589,8 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(payload.iss).toBe(ISSUER_URL);
     expect(payload.sub).toBeDefined();
     expect(payload.aud).toBe(WEB_CLIENT_ID);
+    expect(typeof payload.jti).toBe("string");
+    expect(typeof payload.sid).toBe("string");
   });
 
   it("refresh grant returns a fresh id_token with updated claims", async () => {
@@ -612,6 +617,8 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
 
     const initialPayload = decodeJwtPayload(token.id_token as string);
     expect(initialPayload.email_verified).toBe(true);
+    expect(typeof initialPayload.jti).toBe("string");
+    expect(typeof initialPayload.sid).toBe("string");
 
     await prisma.user.update({
       where: { email },
@@ -638,6 +645,9 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(refreshedHeader.alg).toBe("ES256");
     expect(refreshedPayload.email_verified).toBe(false);
     expect(refreshedPayload.aud).toBe(WEB_CLIENT_ID);
+    expect(refreshedPayload.sid).toBe(initialPayload.sid);
+    expect(typeof refreshedPayload.jti).toBe("string");
+    expect(refreshedPayload.jti).not.toBe(initialPayload.jti);
   });
 
   it("OIDC consent page shows email verification gate for unverified users", async () => {
@@ -986,6 +996,8 @@ describe("SMOKE — OIDC device flow", () => {
     expect(payload.iss).toBe(ISSUER_URL);
     expect(payload.aud).toBe("masumi-spacetime-cli");
     expect(payload.sub).toBeDefined();
+    expect(typeof payload.jti).toBe("string");
+    expect(typeof payload.sid).toBe("string");
   });
 
   it("device approval upgrades stored grants and returns newly approved API scopes", async () => {

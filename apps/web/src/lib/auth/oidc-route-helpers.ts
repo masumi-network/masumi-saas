@@ -14,6 +14,7 @@ import {
 } from "../config/oidc-scopes.config";
 import { auth } from "./auth";
 import {
+  createOidcSessionId,
   createStoredOauthAccessToken,
   findDeviceCodeByUserCode,
   findVerificationByIdentifier,
@@ -45,6 +46,7 @@ const OIDC_REFRESH_TOKEN_EXPIRES_IN_SECONDS = 604800;
 
 type TrustedOidcClient = ReturnType<typeof getTrustedOidcClients>[number];
 type AuthorizationCodeVerificationValue = {
+  authTime?: unknown;
   clientId?: unknown;
   codeChallenge?: unknown;
   codeChallengeMethod?: unknown;
@@ -412,6 +414,7 @@ export async function handleMasumiAuthorizationCodeGrant(
     where: { id: verificationValue.userId },
     select: {
       id: true,
+      banned: true,
       email: true,
       emailVerified: true,
       name: true,
@@ -422,6 +425,10 @@ export async function handleMasumiAuthorizationCodeGrant(
 
   if (!user) {
     return createOauthJsonErrorResponse("invalid_grant", "user not found", 401);
+  }
+
+  if (user.banned) {
+    return createOauthJsonErrorResponse(OIDC_ACCESS_DENIED, "user_banned", 403);
   }
 
   const deletedVerification = await prisma.verification.deleteMany({
@@ -461,6 +468,10 @@ export async function handleMasumiAuthorizationCodeGrant(
     refreshToken,
     accessTokenExpiresAt,
     refreshTokenExpiresAt,
+    oidcSessionId: createOidcSessionId({
+      authTime: verificationValue.authTime,
+      userId: user.id,
+    }),
     clientId,
     userId: user.id,
     scopes: scopes.join(" "),

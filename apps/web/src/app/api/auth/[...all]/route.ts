@@ -1,4 +1,8 @@
-import { findDeviceCodeByDeviceCode } from "@/lib/auth/auth-storage";
+import {
+  carryForwardOauthAccessTokenOidcSessionId,
+  findDeviceCodeByDeviceCode,
+  getOauthAccessTokenOidcSessionIdForRefreshToken,
+} from "@/lib/auth/auth-storage";
 import {
   exchangeAuthForOidcTokenSet,
   OidcTokenExchangeError,
@@ -218,7 +222,26 @@ async function exchangeDeviceGrantForOidcToken(
 
 async function exchangeRefreshGrantForOidcToken(
   request: Request,
+  body: Record<string, string>,
 ): Promise<Response> {
+  const previousRefreshToken =
+    typeof body.refresh_token === "string" ? body.refresh_token : null;
+  let previousOidcSessionId: string | null = null;
+
+  if (previousRefreshToken) {
+    try {
+      previousOidcSessionId =
+        await getOauthAccessTokenOidcSessionIdForRefreshToken(
+          previousRefreshToken,
+        );
+    } catch (error) {
+      console.error(
+        "[OIDC refresh grant] Failed to read previous oidcSessionId",
+        error,
+      );
+    }
+  }
+
   const refreshResponse = await authHandler.POST(request);
   if (!refreshResponse.ok) {
     return refreshResponse;
@@ -251,6 +274,20 @@ async function exchangeRefreshGrantForOidcToken(
       status: refreshResponse.status,
       headers: new Headers(refreshResponse.headers),
     });
+  }
+
+  if (previousOidcSessionId) {
+    try {
+      await carryForwardOauthAccessTokenOidcSessionId({
+        previousOidcSessionId,
+        rotatedRefreshToken: refreshToken,
+      });
+    } catch (error) {
+      console.error(
+        "[OIDC refresh grant] Failed to carry forward oidcSessionId",
+        error,
+      );
+    }
   }
 
   try {
@@ -338,7 +375,7 @@ export async function POST(request: Request): Promise<Response> {
       pathname === OAUTH_TOKEN_PATH &&
       body?.grant_type === REFRESH_TOKEN_GRANT
     ) {
-      return exchangeRefreshGrantForOidcToken(request);
+      return exchangeRefreshGrantForOidcToken(request, body);
     }
   }
 

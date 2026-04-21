@@ -1,7 +1,12 @@
+import { randomUUID } from "node:crypto";
+
 import { getJwtToken, type JwtOptions } from "better-auth/plugins";
 
 import { auth } from "@/lib/auth/auth";
-import { findOauthAccessTokenByRefreshToken } from "@/lib/auth/auth-storage";
+import {
+  createOidcSessionId,
+  findOauthAccessTokenByRefreshToken,
+} from "@/lib/auth/auth-storage";
 import { authEnvConfig } from "@/lib/config/auth.config";
 import {
   OIDC_ID_TOKEN_SIGNING_ALG,
@@ -23,6 +28,7 @@ export type OidcAccessTokenRecord = {
   accessTokenExpiresAt: Date;
   clientId: string;
   createdAt: Date;
+  oidcSessionId: string | null;
   refreshToken: string;
   scopes: string;
   updatedAt: Date;
@@ -98,6 +104,10 @@ export async function createIdTokenForAccessTokenRecord(
 
   const payload = {
     acr: "urn:mace:incommon:iap:silver",
+    jti: randomUUID(),
+    sid:
+      tokenRecord.oidcSessionId ??
+      createOidcSessionId({ tokenId: tokenRecord.id }),
     ...(options?.nonce ? { nonce: options.nonce } : {}),
     ...buildOidcUserClaims(tokenRecord),
   };

@@ -94,7 +94,7 @@ or
 
 For CLI sign-in, request a device code from `POST /api/auth/device/code`, approve it via `/device` / `/device/approve`, and poll the standard token endpoint `POST /api/auth/oauth2/token` with `grant_type=urn:ietf:params:oauth:grant-type:device_code` to receive the OIDC token set (`access_token`, `id_token`, optional `refresh_token`) directly. The legacy alias `POST /api/auth/device/token` remains supported for compatibility, but new clients should use `/api/auth/oauth2/token`.
 
-Refresh-token exchanges also return a fresh `id_token`, so claims such as `email_verified` can change on refresh without requiring a full re-login.
+Refresh-token exchanges also return a fresh `id_token`, so claims such as `email_verified` can change on refresh without requiring a full re-login. Each issued `id_token` includes a unique `jti`; tokens in the same refresh chain share a stable `sid`.
 
 For external OIDC clients, Masumi SaaS also accepts `Authorization: Bearer <access_token>` on the scoped API routes. Standard identity scopes remain:
 
@@ -392,7 +392,7 @@ After promoting, admins can sign in at `/admin/signin`.
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
 - **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
 - **Bearer Plugin**: Session-token authentication for cross-domain clients and device flows
-- **OIDC Provider**: Public issuer metadata, JWKS, trusted first-party public clients, and JWT-signed `id_token`s for SpacetimeDB
+- **OIDC Provider**: Public issuer metadata, JWKS, trusted first-party public clients, and JWT-signed `id_token`s for SpacetimeDB with `jti` and `sid` claims
 - **Device Authorization**: CLI login with `/api/auth/device/code`, `/api/auth/oauth2/token`, `/device`, and `/device/approve`; token polling returns OIDC tokens directly, and the legacy `/api/auth/device/token` alias remains available
 - **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages

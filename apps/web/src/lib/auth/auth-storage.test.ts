@@ -11,9 +11,16 @@ const adapterMethods = {
   updateMany: vi.fn(),
 };
 
+const prismaMock = {
+  oauthAccessToken: {
+    findUnique: vi.fn(),
+    updateMany: vi.fn(),
+  },
+};
+
 vi.mock("@masumi/database/client", () => ({
   Prisma: {},
-  default: {},
+  default: prismaMock,
 }));
 
 vi.mock("better-auth/adapters/prisma", () => ({
@@ -45,6 +52,8 @@ describe("securePrismaAuthAdapter", () => {
   beforeEach(() => {
     process.env.BETTER_AUTH_SECRET = "test-auth-secret";
     Object.values(adapterMethods).forEach((mock) => mock.mockReset());
+    prismaMock.oauthAccessToken.findUnique.mockReset();
+    prismaMock.oauthAccessToken.updateMany.mockReset();
   });
 
   afterEach(() => {
@@ -143,5 +152,70 @@ describe("securePrismaAuthAdapter", () => {
       authStorageModule.decryptAuthSecret(storedPrivateKey, "jwks.privateKey"),
     ).resolves.toBe("super-secret-private-key");
     expect(created.privateKey).toBe("super-secret-private-key");
+  });
+
+  it("resolves an OIDC session id from a raw refresh token before rotation", async () => {
+    const authStorageModule = await import("./auth-storage");
+    prismaMock.oauthAccessToken.findUnique.mockResolvedValue({
+      id: "oauth-token-1",
+      oidcSessionId: "stable-sid",
+    });
+
+    await expect(
+      authStorageModule.getOauthAccessTokenOidcSessionIdForRefreshToken(
+        "raw-refresh-token",
+      ),
+    ).resolves.toBe("stable-sid");
+
+    expect(prismaMock.oauthAccessToken.findUnique).toHaveBeenCalledWith({
+      select: {
+        id: true,
+        oidcSessionId: true,
+      },
+      where: {
+        refreshToken: authStorageModule.hashAuthLookupValue(
+          "raw-refresh-token",
+          "oauthAccessToken.refreshToken",
+        ),
+      },
+    });
+  });
+
+  it("falls back to a deterministic OIDC session id for older token records", async () => {
+    const authStorageModule = await import("./auth-storage");
+    prismaMock.oauthAccessToken.findUnique.mockResolvedValue({
+      id: "oauth-token-1",
+      oidcSessionId: null,
+    });
+
+    await expect(
+      authStorageModule.getOauthAccessTokenOidcSessionIdForRefreshToken(
+        "raw-refresh-token",
+      ),
+    ).resolves.toBe(
+      authStorageModule.createOidcSessionId({ tokenId: "oauth-token-1" }),
+    );
+  });
+
+  it("writes a resolved OIDC session id to the rotated refresh token record", async () => {
+    const authStorageModule = await import("./auth-storage");
+    prismaMock.oauthAccessToken.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      authStorageModule.carryForwardOauthAccessTokenOidcSessionId({
+        previousOidcSessionId: "stable-sid",
+        rotatedRefreshToken: "rotated-refresh-token",
+      }),
+    ).resolves.toBe("stable-sid");
+
+    expect(prismaMock.oauthAccessToken.updateMany).toHaveBeenCalledWith({
+      where: {
+        refreshToken: authStorageModule.hashAuthLookupValue(
+          "rotated-refresh-token",
+          "oauthAccessToken.refreshToken",
+        ),
+      },
+      data: { oidcSessionId: "stable-sid" },
+    });
   });
 });

@@ -103,6 +103,8 @@ Important claims in the `id_token`:
 - `aud`: the OIDC client ID
 - `exp`
 - `iat`
+- `jti`: unique identifier for this specific issued `id_token`
+- `sid`: stable Masumi OIDC session identifier carried across refresh-token rotation
 - optional `nbf`
 - `email`
 - `email_verified`
@@ -201,7 +203,7 @@ client_id=masumi-spacetime-web
 refresh_token=...
 ```
 
-The refresh response includes a newly issued `id_token` in addition to the rotated `access_token` / `refresh_token`.
+The refresh response includes a newly issued `id_token` in addition to the rotated `access_token` / `refresh_token`. The refreshed `id_token` receives a new `jti` and keeps the same `sid` as the previous token in the refresh chain.
 
 ## SpacetimeDB Integration
 

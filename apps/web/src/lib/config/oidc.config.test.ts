@@ -37,4 +37,13 @@ describe("getPublicOidcMetadata", () => {
       getPublicOidcMetadata().id_token_signing_alg_values_supported,
     ).toEqual([OIDC_ID_TOKEN_SIGNING_ALG]);
   });
+
+  it("advertises token and session identifier claims", async () => {
+    process.env.BETTER_AUTH_URL = "https://saas.example.com";
+    const { getPublicOidcMetadata } = await import("./oidc.config");
+
+    expect(getPublicOidcMetadata().claims_supported).toEqual(
+      expect.arrayContaining(["jti", "sid"]),
+    );
+  });
 });
