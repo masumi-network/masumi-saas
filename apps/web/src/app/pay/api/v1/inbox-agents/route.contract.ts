@@ -6,8 +6,8 @@ import {
 import { inboxAgentsListQuerySchema } from "@/lib/schemas/inbox-agent";
 import {
   errBody,
-  inboxAgentRegisterConflictBody,
   inboxAgentMutationSuccessSchema,
+  inboxAgentRegisterConflictBody,
   inboxAgentsListSuccessSchema,
   insufficientCreditsResponse,
   registerInboxAgentOpenApiBodySchema,

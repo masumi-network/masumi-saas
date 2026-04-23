@@ -4,9 +4,8 @@ import {
   jsonResponse,
 } from "@/lib/openapi/contracts";
 import {
-  errBody,
-  inboxAgentRegisterConflictBody,
   inboxAgentMutationSuccessSchema,
+  inboxAgentRegisterConflictBody,
   insufficientCreditsResponse,
   registerInboxAgentOpenApiBodySchema,
   security,

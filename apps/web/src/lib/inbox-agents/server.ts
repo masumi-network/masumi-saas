@@ -1,6 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
-
 import "server-only";
+
+import { createHash, randomUUID } from "node:crypto";
 
 import type { InboxAgentReference, Prisma } from "@masumi/database";
 import prisma, { type RegistrationState } from "@masumi/database/client";
