@@ -290,7 +290,13 @@ describe("reserveInboxAgentReference", () => {
         networkIdentifier: "Preprod",
         agentSlug: "support-inbox",
         NOT: {
-          state: "DeregistrationConfirmed",
+          state: {
+            in: [
+              "DeregistrationConfirmed",
+              "RegistrationFailed",
+              "DeregistrationFailed",
+            ],
+          },
         },
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -850,6 +856,97 @@ describe("findInboxAgentSlugConflict", () => {
     expect(result).toBeNull();
   });
 
+  it("ignores failed local references when checking slug conflicts", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "failed-id",
+        paymentNodeId: "failed-id",
+        agentSlug: "support-inbox",
+        state: "RegistrationFailed",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("marks pending registrations as failed when the remote entry is already gone", async () => {
+    const pendingRegistration = makeReference({
+      id: "pending-missing",
+      paymentNodeId: "pending-missing",
+      agentSlug: "support-inbox",
+      state: "RegistrationRequested",
+      agentIdentifier: null,
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingRegistration]);
+    inboxAgentReferenceUpdateMock.mockImplementationOnce(
+      async ({ where, data }) => ({
+        ...pendingRegistration,
+        id: where.id,
+        ...data,
+      }),
+    );
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
+      id: "pending-missing",
+      network: "Preprod",
+    });
+    expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
+      where: { id: "pending-missing" },
+      data: { state: "RegistrationFailed" },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("treats local pending reservations as blocking conflicts", async () => {
+    const pendingReservation = makeReference({
+      id: "pending-lock",
+      paymentNodeId: "pending:reservation-1",
+      agentSlug: "support-inbox",
+      state: "RegistrationRequested",
+      agentIdentifier: null,
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingReservation]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).not.toHaveBeenCalled();
+    expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
+    expect(result).toStrictEqual({
+      source: "db",
+      state: "RegistrationRequested",
+      paymentNodeId: "pending:reservation-1",
+      agentIdentifier: null,
+    });
+  });
+
   it("marks pending deregistrations as deregistered when the remote entry is already gone", async () => {
     const pendingDeregistration = makeReference({
       id: "old-id",
@@ -947,6 +1044,30 @@ describe("findRegistryInboxAgentSlugConflict", () => {
       paymentNodeId: "remote-id",
       agentIdentifier: "policy.remote",
     });
+  });
+
+  it("ignores failed registry entries", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-failed",
+          agentSlug: "support-inbox",
+          state: "RegistrationFailed",
+          error: "mint failed",
+        }),
+      ],
+    });
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
   });
 });
 

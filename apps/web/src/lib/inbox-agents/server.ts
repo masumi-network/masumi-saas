@@ -151,10 +151,22 @@ function isDeregisteredState(state: RegistrationState): boolean {
   return state === "DeregistrationConfirmed";
 }
 
+function isFailedState(state: RegistrationState): boolean {
+  return state === "RegistrationFailed" || state === "DeregistrationFailed";
+}
+
+function isReusableState(state: RegistrationState): boolean {
+  return isDeregisteredState(state) || isFailedState(state);
+}
+
 function isPendingDeregistrationState(state: RegistrationState): boolean {
   return (
     state === "DeregistrationRequested" || state === "DeregistrationInitiated"
   );
+}
+
+function isLocalPendingReservation(reference: InboxAgentReference): boolean {
+  return reference.paymentNodeId.startsWith("pending:");
 }
 
 async function listPaymentSources(
@@ -633,7 +645,13 @@ async function findActiveLocalInboxAgentSlugConflict(params: {
       networkIdentifier: params.network,
       agentSlug: params.slug,
       NOT: {
-        state: "DeregistrationConfirmed",
+        state: {
+          in: [
+            "DeregistrationConfirmed",
+            "RegistrationFailed",
+            "DeregistrationFailed",
+          ],
+        },
       },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -667,6 +685,15 @@ export async function findInboxAgentSlugConflict(params: {
   for (const reference of references) {
     let resolvedReference = reference;
 
+    if (isLocalPendingReservation(reference)) {
+      return {
+        source: "db",
+        state: reference.state,
+        paymentNodeId: reference.paymentNodeId,
+        agentIdentifier: reference.agentIdentifier,
+      };
+    }
+
     if (isPendingRegistrationState(reference.state) && params.client) {
       const remote = await params.client.getRegistryInboxById({
         id: reference.paymentNodeId,
@@ -681,15 +708,19 @@ export async function findInboxAgentSlugConflict(params: {
           executingWallet: getExecutingWalletFromReference(reference),
           smartContractAddress: reference.smartContractAddress,
         });
-      } else if (isPendingDeregistrationState(reference.state)) {
+      } else {
         resolvedReference = await prisma.inboxAgentReference.update({
           where: { id: reference.id },
-          data: { state: "DeregistrationConfirmed" },
+          data: {
+            state: isPendingDeregistrationState(reference.state)
+              ? "DeregistrationConfirmed"
+              : "RegistrationFailed",
+          },
         });
       }
     }
 
-    if (!isDeregisteredState(resolvedReference.state)) {
+    if (!isReusableState(resolvedReference.state)) {
       return {
         source: "db",
         state: resolvedReference.state,
@@ -713,7 +744,11 @@ export async function findRegistryInboxAgentSlugConflict(params: {
     slug: params.slug,
   });
 
-  if (!remote || isDeregisteredState(remote.state as RegistrationState)) {
+  if (
+    !remote ||
+    isReusableState(remote.state as RegistrationState) ||
+    remote.error != null
+  ) {
     return null;
   }
 
