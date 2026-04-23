@@ -12427,7 +12427,7 @@
     "/api/masumi/inbox-agent/register": {
       "post": {
         "summary": "Register inbox agent",
-        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route.",
+        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
         "security": [
           {
             "apiKeyHeader": []
@@ -12825,7 +12825,7 @@
             }
           },
           "409": {
-            "description": "Inbox agent already owned by another user",
+            "description": "Inbox registration conflict",
             "content": {
               "application/json": {
                 "schema": {
@@ -12838,13 +12838,21 @@
                       ]
                     },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "enum": [
+                        "Inbox slug is already registered",
+                        "Inbox agent is already registered to another account"
+                      ]
                     }
                   },
                   "required": [
                     "success",
                     "error"
-                  ]
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Inbox slug is already registered"
+                  }
                 }
               }
             }
@@ -14417,7 +14425,7 @@
       },
       "post": {
         "summary": "Register inbox agent",
-        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
+        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
         "security": [
           {
             "apiKeyHeader": []
@@ -14815,7 +14823,7 @@
             }
           },
           "409": {
-            "description": "Inbox agent already owned by another user",
+            "description": "Inbox registration conflict",
             "content": {
               "application/json": {
                 "schema": {
@@ -14828,13 +14836,21 @@
                       ]
                     },
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "enum": [
+                        "Inbox slug is already registered",
+                        "Inbox agent is already registered to another account"
+                      ]
                     }
                   },
                   "required": [
                     "success",
                     "error"
-                  ]
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Inbox slug is already registered"
+                  }
                 }
               }
             }
