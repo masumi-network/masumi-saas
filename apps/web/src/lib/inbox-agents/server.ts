@@ -749,11 +749,7 @@ export async function findRegistryInboxAgentSlugConflict(params: {
     slug: params.slug,
   });
 
-  if (
-    !remote ||
-    isReusableState(remote.state as RegistrationState) ||
-    remote.error != null
-  ) {
+  if (!remote || isReusableState(remote.state as RegistrationState)) {
     return null;
   }
 

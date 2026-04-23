@@ -879,6 +879,30 @@ describe("findInboxAgentSlugConflict", () => {
     expect(result).toBeNull();
   });
 
+  it("ignores deregistration-failed local references and relies on registry checks", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "dereg-failed-id",
+        paymentNodeId: "dereg-failed-id",
+        agentSlug: "support-inbox",
+        state: "DeregistrationFailed",
+        agentIdentifier: "policy.still-active",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
   it("marks pending registrations as failed when the remote entry is already gone", async () => {
     const pendingRegistration = makeReference({
       id: "pending-missing",
@@ -1054,6 +1078,31 @@ describe("findRegistryInboxAgentSlugConflict", () => {
           agentSlug: "support-inbox",
           state: "RegistrationFailed",
           error: "mint failed",
+        }),
+      ],
+    });
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("ignores deregistration-failed registry entries", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-dereg-failed",
+          agentSlug: "support-inbox",
+          state: "DeregistrationFailed",
+          agentIdentifier: "policy.remote",
+          error: "deregistration failed",
         }),
       ],
     });
