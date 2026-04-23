@@ -9,19 +9,19 @@ import {
 } from "@/lib/credits/service";
 import {
   createInboxAdminPaymentNodeClient,
+  deleteInboxAgentReference,
+  finalizeInboxAgentReservation,
+  findInboxAgentSlugConflict,
+  findRegistryInboxAgentSlugConflict,
+  INBOX_AGENT_DUPLICATE_SLUG_ERROR,
+  INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR,
   isInboxAgentOwnershipMismatchError,
   isStaleInboxAgentCursorError,
   listOwnedInboxAgentsForUser,
   prepareManagedInboxRegistration,
-  saveInboxAgentReference,
+  reserveInboxAgentReference,
 } from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
-import type {
-  PaymentNodeClient,
-  PaymentNodeNetwork,
-  PaymentSourceWallet,
-  RegistryInboxEntry,
-} from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import {
@@ -33,76 +33,6 @@ import {
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 
 import contract from "../../../pay/api/v1/inbox-agents/route.contract";
-
-const INBOX_REFERENCE_SAVE_ATTEMPTS = 2;
-
-type ExecutingWalletIdentity = Pick<
-  PaymentSourceWallet,
-  "id" | "walletVkey" | "walletAddress"
->;
-
-type PersistResult =
-  | { status: "success" }
-  | { status: "ownership-mismatch" }
-  | { status: "error" };
-
-async function persistCreatedInboxAgentReference(params: {
-  client: PaymentNodeClient;
-  userId: string;
-  network: PaymentNodeNetwork;
-  entry: RegistryInboxEntry;
-  executingWallet: ExecutingWalletIdentity;
-  smartContractAddress: string;
-}): Promise<PersistResult> {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt < INBOX_REFERENCE_SAVE_ATTEMPTS; attempt += 1) {
-    try {
-      await saveInboxAgentReference({
-        userId: params.userId,
-        network: params.network,
-        entry: params.entry,
-        executingWallet: params.executingWallet,
-        smartContractAddress: params.smartContractAddress,
-      });
-      return { status: "success" };
-    } catch (error) {
-      if (isInboxAgentOwnershipMismatchError(error)) {
-        console.error(
-          "[Inbox Agents] Registered inbox collides with another user's ownership record; leaving remote entry intact:",
-          {
-            inboxAgentId: params.entry.id,
-            attemptedUserId: params.userId,
-            ownedByUserId: error.ownedByUserId,
-          },
-        );
-        return { status: "ownership-mismatch" };
-      }
-      lastError = error;
-    }
-  }
-
-  console.error("[Inbox Agents] Failed to persist created ownership record:", {
-    inboxAgentId: params.entry.id,
-    userId: params.userId,
-    error: lastError,
-  });
-
-  try {
-    await params.client.deleteRegistryInboxEntry(params.entry.id);
-  } catch (cleanupError) {
-    console.error(
-      "[Inbox Agents] Failed to clean up inbox registration after ownership persistence failed:",
-      {
-        inboxAgentId: params.entry.id,
-        userId: params.userId,
-        error: cleanupError,
-      },
-    );
-  }
-
-  return { status: "error" };
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -168,6 +98,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let creditRefund: (() => Promise<void>) | null = null;
+  let reservationId: string | null = null;
+  const cleanupReservation = async () => {
+    if (!reservationId) return;
+    const pendingReservationId = reservationId;
+    reservationId = null;
+    await deleteInboxAgentReference(pendingReservationId).catch(() => {});
+  };
+  const refundCreditAndCleanupReservation = async () => {
+    const refund = creditRefund;
+    creditRefund = null;
+    try {
+      if (refund) {
+        await refund();
+      }
+    } finally {
+      await cleanupReservation();
+    }
+  };
 
   try {
     const authContext = await getAuthenticatedOrThrow(request);
@@ -206,6 +154,59 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const client = createInboxAdminPaymentNodeClient();
+    const localSlugConflict = await findInboxAgentSlugConflict({
+      network,
+      slug: canonicalSlug,
+      client,
+    });
+    if (localSlugConflict) {
+      return contractJsonResponse(contract, "POST", 409, {
+        success: false,
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
+      });
+    }
+
+    const registrySlugConflict = await findRegistryInboxAgentSlugConflict({
+      network,
+      slug: canonicalSlug,
+      client,
+    });
+    if (registrySlugConflict) {
+      return contractJsonResponse(contract, "POST", 409, {
+        success: false,
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
+      });
+    }
+
+    const managedRegistration = await prepareManagedInboxRegistration({
+      name: validation.data.name.trim(),
+      network,
+    });
+    if (!managedRegistration.success) {
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: managedRegistration.error,
+      });
+    }
+
+    const reservationResult = await reserveInboxAgentReference({
+      userId: authContext.user.id,
+      network,
+      name: validation.data.name.trim(),
+      description: validation.data.description?.trim() || null,
+      slug: canonicalSlug,
+      executingWallet: managedRegistration.executingWallet,
+      smartContractAddress: managedRegistration.smartContractAddress,
+    });
+    if (reservationResult.status === "conflict") {
+      return contractJsonResponse(contract, "POST", 409, {
+        success: false,
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
+      });
+    }
+    reservationId = reservationResult.reservation.id;
+
     const creditReference = createCreditReference("inbox-agent-register");
     const creditMetadata = {
       name: validation.data.name.trim(),
@@ -229,20 +230,6 @@ export async function POST(request: NextRequest) {
         metadata: creditMetadata,
       });
 
-    const managedRegistration = await prepareManagedInboxRegistration({
-      name: validation.data.name.trim(),
-      network,
-    });
-    if (!managedRegistration.success) {
-      await creditRefund();
-      creditRefund = null;
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error: managedRegistration.error,
-      });
-    }
-    const client = createInboxAdminPaymentNodeClient();
-
     const created = await client.registerInboxAgent({
       network,
       sellingWalletVkey: managedRegistration.executingWallet.walletVkey,
@@ -252,25 +239,55 @@ export async function POST(request: NextRequest) {
       agentSlug: canonicalSlug,
     });
 
-    const persistResult = await persistCreatedInboxAgentReference({
-      client,
-      userId: authContext.user.id,
-      network,
-      entry: created,
-      executingWallet: managedRegistration.executingWallet,
-      smartContractAddress: managedRegistration.smartContractAddress,
-    });
-    if (persistResult.status === "ownership-mismatch") {
-      await creditRefund();
-      creditRefund = null;
-      return contractJsonResponse(contract, "POST", 409, {
-        success: false,
-        error: "Inbox agent is already registered to another account",
+    try {
+      await finalizeInboxAgentReservation({
+        reservationId,
+        userId: authContext.user.id,
+        network,
+        entry: created,
+        executingWallet: managedRegistration.executingWallet,
+        smartContractAddress: managedRegistration.smartContractAddress,
       });
-    }
-    if (persistResult.status === "error") {
-      await creditRefund();
-      creditRefund = null;
+    } catch (error) {
+      if (isInboxAgentOwnershipMismatchError(error)) {
+        console.error(
+          "[Inbox Agents] Registered inbox collides with another user's ownership record; leaving remote entry intact:",
+          {
+            inboxAgentId: created.id,
+            attemptedUserId: authContext.user.id,
+            ownedByUserId: error.ownedByUserId,
+          },
+        );
+        await refundCreditAndCleanupReservation();
+        return contractJsonResponse(contract, "POST", 409, {
+          success: false,
+          error: INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR,
+        });
+      }
+
+      console.error(
+        "[Inbox Agents] Failed to persist created ownership record:",
+        {
+          inboxAgentId: created.id,
+          userId: authContext.user.id,
+          error,
+        },
+      );
+
+      try {
+        await client.deleteRegistryInboxEntry(created.id);
+      } catch (cleanupError) {
+        console.error(
+          "[Inbox Agents] Failed to clean up inbox registration after ownership persistence failed:",
+          {
+            inboxAgentId: created.id,
+            userId: authContext.user.id,
+            error: cleanupError,
+          },
+        );
+      }
+
+      await refundCreditAndCleanupReservation();
       return contractJsonResponse(contract, "POST", 500, {
         success: false,
         error: "Failed to persist inbox agent ownership",
@@ -278,13 +295,17 @@ export async function POST(request: NextRequest) {
     }
 
     creditRefund = null;
+    reservationId = null;
     return contractJsonResponse(contract, "POST", 200, {
       success: true,
       data: created,
     });
   } catch (error) {
-    if (creditRefund) {
-      await creditRefund();
+    let cleanupError: unknown = null;
+    try {
+      await refundCreditAndCleanupReservation();
+    } catch (cleanupFailure) {
+      cleanupError = cleanupFailure;
     }
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
@@ -293,6 +314,12 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error.message,
       });
+    }
+    if (cleanupError) {
+      console.error(
+        "[Inbox Agents] Failed to refund consumed credit during registration cleanup:",
+        cleanupError,
+      );
     }
     console.error("Failed to register inbox agent:", error);
     return contractJsonResponse(contract, "POST", 500, {

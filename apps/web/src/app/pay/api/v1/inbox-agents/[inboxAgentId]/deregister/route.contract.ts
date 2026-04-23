@@ -21,12 +21,12 @@ const contract = defineRouteContract({
     POST: {
       summary: "Deregister inbox agent",
       description:
-        "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+        "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
       security,
       request: { params: paramsSchema },
       responses: {
         200: jsonResponse(
-          "Deregistration started",
+          "Deregistration requested",
           inboxAgentMutationSuccessSchema,
         ),
         503: jsonResponse(

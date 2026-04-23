@@ -156,7 +156,7 @@ describe("DELETE /pay/api/v1/inbox-agents/:id", () => {
     await expect(response.json()).resolves.toStrictEqual({
       success: false,
       error:
-        "Inbox agent can only be deleted after a failed registration or completed deregistration",
+        "Inbox agent can only be deleted after registration fails or deregistration is confirmed",
     });
     expect(deleteInboxAgentReferenceMock).not.toHaveBeenCalled();
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();

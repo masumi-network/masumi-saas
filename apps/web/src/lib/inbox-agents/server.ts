@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createHash, randomUUID } from "node:crypto";
+
 import type { InboxAgentReference, Prisma } from "@masumi/database";
 import prisma, { type RegistrationState } from "@masumi/database/client";
 
@@ -112,6 +114,28 @@ export type OwnedInboxAgent = {
   smartContractAddress: string | null;
 };
 
+export type InboxAgentSlugConflict = {
+  source: "db" | "registry";
+  state: RegistrationState;
+  paymentNodeId: string;
+  agentIdentifier: string | null;
+};
+
+export const INBOX_AGENT_DUPLICATE_SLUG_ERROR =
+  "Inbox slug is already in use on this network";
+export const INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR =
+  "Inbox agent is already owned by another account";
+
+function inboxAgentSlugToAdvisoryLockKeys(
+  network: PaymentNodeNetwork,
+  slug: string,
+): [number, number] {
+  const buf = createHash("sha256")
+    .update(`${network}:${slug}`, "utf8")
+    .digest();
+  return [buf.readInt32BE(0), buf.readInt32BE(4)];
+}
+
 export function createInboxAdminPaymentNodeClient(): PaymentNodeClient {
   return createPaymentNodeClient(
     paymentNodeConfig.getBaseUrl(),
@@ -126,6 +150,28 @@ function tryCreateInboxAdminPaymentNodeClient(): PaymentNodeClient | null {
     if (isPaymentNodeConfigError(error)) return null;
     throw error;
   }
+}
+
+function isDeregisteredState(state: RegistrationState): boolean {
+  return state === "DeregistrationConfirmed";
+}
+
+function isFailedState(state: RegistrationState): boolean {
+  return state === "RegistrationFailed" || state === "DeregistrationFailed";
+}
+
+function isReusableState(state: RegistrationState): boolean {
+  return isDeregisteredState(state) || isFailedState(state);
+}
+
+function isPendingDeregistrationState(state: RegistrationState): boolean {
+  return (
+    state === "DeregistrationRequested" || state === "DeregistrationInitiated"
+  );
+}
+
+function isLocalPendingReservation(reference: InboxAgentReference): boolean {
+  return reference.paymentNodeId.startsWith("pending:");
 }
 
 async function listPaymentSources(
@@ -562,6 +608,268 @@ export async function refreshInboxAgentReference(params: {
       },
     );
     return fallbackEntry;
+  }
+}
+
+async function getRegistryInboxByExactSlug(params: {
+  client: PaymentNodeClient;
+  network: PaymentNodeNetwork;
+  slug: string;
+}): Promise<RegistryInboxEntry | null> {
+  const MAX_PAGES = 20;
+  let cursorId: string | undefined;
+
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const { Assets } = await params.client.getRegistryInbox({
+      network: params.network,
+      cursorId,
+      limit: 100,
+      searchQuery: params.slug,
+    });
+
+    const match =
+      Assets.find((asset) => asset.agentSlug === params.slug) ?? null;
+    if (match) return match;
+    if (Assets.length === 0) return null;
+
+    const nextCursor = Assets.at(-1)?.id;
+    if (!nextCursor || nextCursor === cursorId) return null;
+    cursorId = nextCursor;
+  }
+
+  return null;
+}
+
+async function findActiveLocalInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  tx?: Prisma.TransactionClient;
+}): Promise<InboxAgentSlugConflict | null> {
+  const reference = await (params.tx ?? prisma).inboxAgentReference.findFirst({
+    where: {
+      networkIdentifier: params.network,
+      agentSlug: params.slug,
+      NOT: {
+        state: {
+          in: [
+            "DeregistrationConfirmed",
+            "RegistrationFailed",
+            "DeregistrationFailed",
+          ],
+        },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  if (!reference) {
+    return null;
+  }
+
+  return {
+    source: "db",
+    state: reference.state,
+    paymentNodeId: reference.paymentNodeId,
+    agentIdentifier: reference.agentIdentifier,
+  };
+}
+
+export async function findInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  client?: PaymentNodeClient | null;
+}): Promise<InboxAgentSlugConflict | null> {
+  const references = await prisma.inboxAgentReference.findMany({
+    where: {
+      networkIdentifier: params.network,
+      agentSlug: params.slug,
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  for (const reference of references) {
+    let resolvedReference = reference;
+
+    if (isLocalPendingReservation(reference)) {
+      return {
+        source: "db",
+        state: reference.state,
+        paymentNodeId: reference.paymentNodeId,
+        agentIdentifier: reference.agentIdentifier,
+      };
+    }
+
+    if (isPendingRegistrationState(reference.state) && params.client) {
+      const remote = await params.client.getRegistryInboxById({
+        id: reference.paymentNodeId,
+        network: params.network,
+      });
+
+      if (remote) {
+        resolvedReference = await saveInboxAgentReference({
+          userId: reference.userId,
+          network: params.network,
+          entry: remote,
+          executingWallet: getExecutingWalletFromReference(reference),
+          smartContractAddress: reference.smartContractAddress,
+        });
+      } else {
+        resolvedReference = await prisma.inboxAgentReference.update({
+          where: { id: reference.id },
+          data: {
+            state: isPendingDeregistrationState(reference.state)
+              ? "DeregistrationConfirmed"
+              : "RegistrationFailed",
+          },
+        });
+      }
+    }
+
+    if (!isReusableState(resolvedReference.state)) {
+      return {
+        source: "db",
+        state: resolvedReference.state,
+        paymentNodeId: resolvedReference.paymentNodeId,
+        agentIdentifier: resolvedReference.agentIdentifier,
+      };
+    }
+  }
+
+  return null;
+}
+
+export async function findRegistryInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  client: PaymentNodeClient;
+}): Promise<InboxAgentSlugConflict | null> {
+  const remote = await getRegistryInboxByExactSlug({
+    client: params.client,
+    network: params.network,
+    slug: params.slug,
+  });
+
+  if (!remote || isReusableState(remote.state as RegistrationState)) {
+    return null;
+  }
+
+  return {
+    source: "registry",
+    state: remote.state as RegistrationState,
+    paymentNodeId: remote.id,
+    agentIdentifier: remote.agentIdentifier,
+  };
+}
+
+export async function reserveInboxAgentReference(params: {
+  userId: string;
+  network: PaymentNodeNetwork;
+  name: string;
+  description?: string | null;
+  slug: string;
+  executingWallet: Pick<
+    PaymentSourceWallet,
+    "id" | "walletVkey" | "walletAddress"
+  >;
+  smartContractAddress?: string | null;
+}): Promise<
+  | { status: "reserved"; reservation: InboxAgentReference }
+  | { status: "conflict"; conflict: InboxAgentSlugConflict }
+> {
+  const [k1, k2] = inboxAgentSlugToAdvisoryLockKeys(
+    params.network,
+    params.slug,
+  );
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+
+    const conflict = await findActiveLocalInboxAgentSlugConflict({
+      network: params.network,
+      slug: params.slug,
+      tx,
+    });
+    if (conflict) {
+      return { status: "conflict", conflict };
+    }
+
+    const reservation = await tx.inboxAgentReference.create({
+      data: {
+        userId: params.userId,
+        paymentNodeId: `pending:${randomUUID()}`,
+        networkIdentifier: params.network,
+        name: params.name,
+        description: params.description ?? null,
+        agentSlug: params.slug,
+        state: "RegistrationRequested",
+        agentIdentifier: null,
+        executingWalletId: params.executingWallet.id,
+        executingWalletVkey: params.executingWallet.walletVkey,
+        executingWalletAddress: params.executingWallet.walletAddress,
+        smartContractAddress: params.smartContractAddress ?? null,
+        registryEntry: null,
+      },
+    });
+
+    return { status: "reserved", reservation };
+  });
+}
+
+export async function finalizeInboxAgentReservation(params: {
+  reservationId: string;
+  userId: string;
+  network: PaymentNodeNetwork;
+  entry: RegistryInboxEntry;
+  executingWallet: Pick<
+    PaymentSourceWallet,
+    "id" | "walletVkey" | "walletAddress"
+  >;
+  smartContractAddress?: string | null;
+}): Promise<InboxAgentReference> {
+  const data = getReferenceWriteData({
+    userId: params.userId,
+    network: params.network,
+    entry: params.entry,
+    executingWallet: params.executingWallet,
+    smartContractAddress: params.smartContractAddress,
+  });
+
+  try {
+    return await prisma.inboxAgentReference.update({
+      where: { id: params.reservationId },
+      data,
+    });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error != null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      const existing = await prisma.inboxAgentReference.findUnique({
+        where: {
+          networkIdentifier_paymentNodeId: {
+            networkIdentifier: params.network,
+            paymentNodeId: params.entry.id,
+          },
+        },
+      });
+      if (existing) {
+        if (existing.userId !== params.userId) {
+          throw new InboxAgentOwnershipMismatchError(existing.userId);
+        }
+        if (existing.id !== params.reservationId) {
+          await prisma.inboxAgentReference.delete({
+            where: { id: params.reservationId },
+          });
+        }
+        return prisma.inboxAgentReference.update({
+          where: { id: existing.id },
+          data,
+        });
+      }
+    }
+    throw error;
   }
 }
 

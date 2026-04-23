@@ -13,6 +13,7 @@ const resolveRegistrationFundingWalletMock = vi.fn();
 const generateWalletMock = vi.fn();
 const addWalletsToPaymentSourceMock = vi.fn();
 const getPaymentSourcesMock = vi.fn();
+const getRegistryInboxMock = vi.fn();
 const getRegistryInboxByIdMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const inboxAgentReferenceCreateMock = vi.fn();
@@ -21,9 +22,12 @@ const inboxAgentReferenceFindFirstMock = vi.fn();
 const inboxAgentReferenceFindManyMock = vi.fn();
 const inboxAgentReferenceFindUniqueMock = vi.fn();
 const inboxAgentReferenceUpdateMock = vi.fn();
+const prismaTransactionMock = vi.fn();
+const prismaExecuteRawMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
   default: {
+    $transaction: prismaTransactionMock,
     inboxAgentReference: {
       create: inboxAgentReferenceCreateMock,
       delete: inboxAgentReferenceDeleteMock,
@@ -63,6 +67,10 @@ vi.mock("../payment-node/registration-wallets", () => ({
 describe("prepareManagedInboxRegistration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaTransactionMock.mockImplementation(async (callback) =>
+      callback({ $executeRaw: prismaExecuteRawMock }),
+    );
+    prismaExecuteRawMock.mockResolvedValue(undefined);
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
     getPaymentSourceIdMock.mockImplementation((network: string) =>
@@ -78,6 +86,7 @@ describe("prepareManagedInboxRegistration", () => {
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
       getPaymentSources: getPaymentSourcesMock,
+      getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
   });
@@ -234,6 +243,122 @@ describe("prepareManagedInboxRegistration", () => {
   });
 });
 
+describe("reserveInboxAgentReference", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaTransactionMock.mockImplementation(async (callback) =>
+      callback({
+        $executeRaw: prismaExecuteRawMock,
+        inboxAgentReference: {
+          create: inboxAgentReferenceCreateMock,
+          findFirst: inboxAgentReferenceFindFirstMock,
+        },
+      }),
+    );
+    prismaExecuteRawMock.mockResolvedValue(undefined);
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(null);
+    inboxAgentReferenceCreateMock.mockImplementation(async ({ data }) => ({
+      id: "reservation-1",
+      createdAt: new Date("2026-04-13T10:00:00.000Z"),
+      updatedAt: new Date("2026-04-13T10:01:00.000Z"),
+      ...data,
+    }));
+  });
+
+  it("rechecks local DB under an advisory lock and creates a reservation row", async () => {
+    const executingWallet = {
+      id: "funding-1",
+      walletVkey: "funding_vkey",
+      walletAddress: "addr_test1funding",
+    };
+
+    const { reserveInboxAgentReference } = await import("./server");
+    const result = await reserveInboxAgentReference({
+      userId: "user-1",
+      network: "Preprod",
+      name: "Support inbox",
+      description: "Routes support requests",
+      slug: "support-inbox",
+      executingWallet,
+      smartContractAddress: "addr_test1contract",
+    });
+
+    expect(prismaTransactionMock).toHaveBeenCalledTimes(1);
+    expect(prismaExecuteRawMock).toHaveBeenCalledTimes(1);
+    expect(inboxAgentReferenceFindFirstMock).toHaveBeenCalledWith({
+      where: {
+        networkIdentifier: "Preprod",
+        agentSlug: "support-inbox",
+        NOT: {
+          state: {
+            in: [
+              "DeregistrationConfirmed",
+              "RegistrationFailed",
+              "DeregistrationFailed",
+            ],
+          },
+        },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+    expect(inboxAgentReferenceCreateMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        networkIdentifier: "Preprod",
+        name: "Support inbox",
+        description: "Routes support requests",
+        agentSlug: "support-inbox",
+        state: "RegistrationRequested",
+        executingWalletId: "funding-1",
+        executingWalletVkey: "funding_vkey",
+        executingWalletAddress: "addr_test1funding",
+        smartContractAddress: "addr_test1contract",
+      }),
+    });
+    expect(result).toMatchObject({
+      status: "reserved",
+      reservation: {
+        id: "reservation-1",
+      },
+    });
+  });
+
+  it("returns a conflict when the same-tx recheck finds an active slug", async () => {
+    inboxAgentReferenceFindFirstMock.mockResolvedValue(
+      makeReference({
+        id: "active-ref",
+        paymentNodeId: "active-id",
+        state: "RegistrationConfirmed",
+        agentSlug: "support-inbox",
+      }),
+    );
+
+    const { reserveInboxAgentReference } = await import("./server");
+    const result = await reserveInboxAgentReference({
+      userId: "user-1",
+      network: "Preprod",
+      name: "Support inbox",
+      slug: "support-inbox",
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+      },
+    });
+
+    expect(inboxAgentReferenceCreateMock).not.toHaveBeenCalled();
+    expect(result).toStrictEqual({
+      status: "conflict",
+      conflict: {
+        source: "db",
+        state: "RegistrationConfirmed",
+        paymentNodeId: "active-id",
+        agentIdentifier: "policy.asset",
+      },
+    });
+  });
+});
+
 function makeInboxEntry(overrides: Record<string, unknown> = {}) {
   return {
     error: null,
@@ -290,6 +415,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
     getRegistryInboxByIdMock.mockResolvedValue(null);
+    getRegistryInboxMock.mockResolvedValue({ Assets: [] });
     inboxAgentReferenceFindFirstMock.mockResolvedValue(null);
     inboxAgentReferenceFindUniqueMock.mockResolvedValue(null);
     inboxAgentReferenceCreateMock.mockImplementation(async ({ data }) => ({
@@ -300,6 +426,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     }));
     createPaymentNodeClientMock.mockReturnValue({
       getPaymentSources: getPaymentSourcesMock,
+      getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
   });
@@ -604,6 +731,395 @@ describe("listOwnedInboxAgentsForUser", () => {
   });
 });
 
+describe("findInboxAgentSlugConflict", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    inboxAgentReferenceFindManyMock.mockResolvedValue([]);
+    inboxAgentReferenceFindUniqueMock.mockResolvedValue(null);
+    inboxAgentReferenceUpdateMock.mockImplementation(
+      async ({ where, data }) => ({
+        id: where.id,
+        userId: "user-1",
+        createdAt: new Date("2026-04-13T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-13T10:01:00.000Z"),
+        ...data,
+      }),
+    );
+    getRegistryInboxByIdMock.mockResolvedValue(null);
+    getRegistryInboxMock.mockResolvedValue({ Assets: [] });
+  });
+
+  it("returns a DB conflict for a non-deregistered slug reference", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "existing-id",
+        paymentNodeId: "existing-id",
+        agentSlug: "support-inbox",
+        state: "RegistrationConfirmed",
+        agentIdentifier: "policy.existing",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toStrictEqual({
+      source: "db",
+      state: "RegistrationConfirmed",
+      paymentNodeId: "existing-id",
+      agentIdentifier: "policy.existing",
+    });
+    expect(getRegistryInboxByIdMock).not.toHaveBeenCalled();
+    expect(getRegistryInboxMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshes pending DB references and updates agent identifiers before deciding", async () => {
+    const pendingReference = makeReference({
+      id: "pending-id",
+      paymentNodeId: "pending-id",
+      userId: "owner-1",
+      agentSlug: "support-inbox",
+      state: "RegistrationRequested",
+      agentIdentifier: null,
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingReference]);
+    inboxAgentReferenceFindUniqueMock.mockResolvedValue(pendingReference);
+    getRegistryInboxByIdMock.mockResolvedValue(
+      makeInboxEntry({
+        id: "pending-id",
+        agentSlug: "support-inbox",
+        state: "RegistrationConfirmed",
+        agentIdentifier: "policy.updated",
+      }),
+    );
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
+      id: "pending-id",
+      network: "Preprod",
+    });
+    expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
+      where: { id: "pending-id" },
+      data: expect.objectContaining({
+        paymentNodeId: "pending-id",
+        agentSlug: "support-inbox",
+        state: "RegistrationConfirmed",
+        agentIdentifier: "policy.updated",
+      }),
+    });
+    expect(result).toStrictEqual({
+      source: "db",
+      state: "RegistrationConfirmed",
+      paymentNodeId: "pending-id",
+      agentIdentifier: "policy.updated",
+    });
+  });
+
+  it("allows re-registration after a deregistered DB reference when the registry is clear", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "old-id",
+        paymentNodeId: "old-id",
+        agentSlug: "support-inbox",
+        state: "DeregistrationConfirmed",
+        agentIdentifier: "policy.old",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxMock).not.toHaveBeenCalled();
+    expect(result).toBeNull();
+  });
+
+  it("ignores failed local references when checking slug conflicts", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "failed-id",
+        paymentNodeId: "failed-id",
+        agentSlug: "support-inbox",
+        state: "RegistrationFailed",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("ignores deregistration-failed local references and relies on registry checks", async () => {
+    inboxAgentReferenceFindManyMock.mockResolvedValue([
+      makeReference({
+        id: "dereg-failed-id",
+        paymentNodeId: "dereg-failed-id",
+        agentSlug: "support-inbox",
+        state: "DeregistrationFailed",
+        agentIdentifier: "policy.still-active",
+      }),
+    ]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("marks pending registrations as failed when the remote entry is already gone", async () => {
+    const pendingRegistration = makeReference({
+      id: "pending-missing",
+      paymentNodeId: "pending-missing",
+      agentSlug: "support-inbox",
+      state: "RegistrationRequested",
+      agentIdentifier: null,
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingRegistration]);
+    inboxAgentReferenceUpdateMock.mockImplementationOnce(
+      async ({ where, data }) => ({
+        ...pendingRegistration,
+        id: where.id,
+        ...data,
+      }),
+    );
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
+      id: "pending-missing",
+      network: "Preprod",
+    });
+    expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
+      where: { id: "pending-missing" },
+      data: { state: "RegistrationFailed" },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("treats local pending reservations as blocking conflicts", async () => {
+    const pendingReservation = makeReference({
+      id: "pending-lock",
+      paymentNodeId: "pending:reservation-1",
+      agentSlug: "support-inbox",
+      state: "RegistrationRequested",
+      agentIdentifier: null,
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingReservation]);
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).not.toHaveBeenCalled();
+    expect(inboxAgentReferenceUpdateMock).not.toHaveBeenCalled();
+    expect(result).toStrictEqual({
+      source: "db",
+      state: "RegistrationRequested",
+      paymentNodeId: "pending:reservation-1",
+      agentIdentifier: null,
+    });
+  });
+
+  it("marks pending deregistrations as deregistered when the remote entry is already gone", async () => {
+    const pendingDeregistration = makeReference({
+      id: "old-id",
+      paymentNodeId: "old-id",
+      agentSlug: "support-inbox",
+      state: "DeregistrationRequested",
+      agentIdentifier: "policy.old",
+    });
+    inboxAgentReferenceFindManyMock.mockResolvedValue([pendingDeregistration]);
+    inboxAgentReferenceUpdateMock.mockImplementationOnce(
+      async ({ where, data }) => ({
+        ...pendingDeregistration,
+        id: where.id,
+        ...data,
+      }),
+    );
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
+      id: "old-id",
+      network: "Preprod",
+    });
+    expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
+      where: { id: "old-id" },
+      data: { state: "DeregistrationConfirmed" },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("ignores registry-only matches because this helper only checks local state", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-id",
+          agentSlug: "support-inbox",
+          state: "RegistrationConfirmed",
+          agentIdentifier: "policy.remote",
+        }),
+      ],
+    });
+
+    const { findInboxAgentSlugConflict } = await import("./server");
+    const result = await findInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInboxById: getRegistryInboxByIdMock,
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("findRegistryInboxAgentSlugConflict", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getRegistryInboxMock.mockResolvedValue({ Assets: [] });
+  });
+
+  it("returns a registry conflict when the remote slug exists and is not deregistered", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-id",
+          agentSlug: "support-inbox",
+          state: "RegistrationConfirmed",
+          agentIdentifier: "policy.remote",
+        }),
+      ],
+    });
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toStrictEqual({
+      source: "registry",
+      state: "RegistrationConfirmed",
+      paymentNodeId: "remote-id",
+      agentIdentifier: "policy.remote",
+    });
+  });
+
+  it("ignores failed registry entries", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-failed",
+          agentSlug: "support-inbox",
+          state: "RegistrationFailed",
+          error: "mint failed",
+        }),
+      ],
+    });
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("ignores deregistration-failed registry entries", async () => {
+    getRegistryInboxMock.mockResolvedValue({
+      Assets: [
+        makeInboxEntry({
+          id: "remote-dereg-failed",
+          agentSlug: "support-inbox",
+          state: "DeregistrationFailed",
+          agentIdentifier: "policy.remote",
+          error: "deregistration failed",
+        }),
+      ],
+    });
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: {
+        getRegistryInbox: getRegistryInboxMock,
+      } as never,
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
 describe("getOwnedInboxAgentForUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -612,6 +1128,7 @@ describe("getOwnedInboxAgentForUser", () => {
     inboxAgentReferenceFindFirstMock.mockResolvedValue(null);
     createPaymentNodeClientMock.mockReturnValue({
       getPaymentSources: getPaymentSourcesMock,
+      getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
   });

@@ -1156,6 +1156,21 @@ const errBody = z.object({
   error: z.string(),
 });
 
+const inboxAgentRegisterConflictBody = z
+  .object({
+    success: z.literal(false),
+    error: z.enum([
+      "Inbox slug is already in use on this network",
+      "Inbox agent is already owned by another account",
+    ]),
+  })
+  .openapi({
+    example: {
+      success: false,
+      error: "Inbox slug is already in use on this network",
+    },
+  });
+
 const insufficientCreditsSchema = z
   .object({
     success: z.literal(false),
@@ -1851,8 +1866,11 @@ registry.registerPath({
     ),
     402: insufficientCreditsResponse,
     409: {
-      description: "Inbox agent already owned by another user",
-      content: { "application/json": { schema: errBody } },
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
     },
     ...stdResponses,
   },
@@ -1882,8 +1900,11 @@ registry.registerPath({
     ),
     402: insufficientCreditsResponse,
     409: {
-      description: "Inbox agent already owned by another user",
-      content: { "application/json": { schema: errBody } },
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
     },
     ...stdResponses,
   },
@@ -1918,7 +1939,7 @@ registry.registerPath({
   tags: ["Inbox agents"],
   summary: "Deregister inbox agent",
   description:
-    "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+    "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
   servers: prefixedWrapperServers,
   security,
   request: {
@@ -1931,7 +1952,7 @@ registry.registerPath({
   },
   responses: {
     200: okWithSchema(
-      "Deregistration started",
+      "Deregistration requested",
       inboxAgentMutationSuccessSchema,
     ),
     ...stdResponses,
@@ -2135,6 +2156,7 @@ export {
   healthServiceUnavailableSchema,
   healthSuccessSchema,
   inboxAgentMutationSuccessSchema,
+  inboxAgentRegisterConflictBody,
   inboxAgentsListSuccessSchema,
   insufficientCreditsResponse,
   noSecurity,
