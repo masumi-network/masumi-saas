@@ -12,6 +12,7 @@ const findInboxAgentSlugConflictMock = vi.fn();
 const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
 const saveInboxAgentReferenceMock = vi.fn();
+const withInboxAgentSlugRegistrationLockMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const refundConsumedCreditMock = vi.fn();
 
@@ -49,6 +50,7 @@ vi.mock("@/lib/inbox-agents/server", () => ({
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
   saveInboxAgentReference: saveInboxAgentReferenceMock,
+  withInboxAgentSlugRegistrationLock: withInboxAgentSlugRegistrationLockMock,
   isInboxAgentOwnershipMismatchError: (error: unknown) =>
     error instanceof InboxAgentOwnershipMismatchError,
   isStaleInboxAgentCursorError: (error: unknown) =>
@@ -159,6 +161,9 @@ describe("/pay/api/v1/inbox-agents", () => {
     refundConsumedCreditMock.mockResolvedValue(undefined);
     getPaymentNodeClientForUserMock.mockResolvedValue({});
     findInboxAgentSlugConflictMock.mockResolvedValue(null);
+    withInboxAgentSlugRegistrationLockMock.mockImplementation(
+      async ({ run }: { run: () => Promise<unknown> }) => run(),
+    );
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
@@ -251,6 +256,11 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
+    expect(withInboxAgentSlugRegistrationLockMock).toHaveBeenCalledWith({
+      network: "Preprod",
+      slug: "support-inbox",
+      run: expect.any(Function),
+    });
     expect(findInboxAgentSlugConflictMock).toHaveBeenCalledWith({
       network: "Preprod",
       slug: "support-inbox",

@@ -22,9 +22,12 @@ const inboxAgentReferenceFindFirstMock = vi.fn();
 const inboxAgentReferenceFindManyMock = vi.fn();
 const inboxAgentReferenceFindUniqueMock = vi.fn();
 const inboxAgentReferenceUpdateMock = vi.fn();
+const prismaTransactionMock = vi.fn();
+const prismaExecuteRawMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
   default: {
+    $transaction: prismaTransactionMock,
     inboxAgentReference: {
       create: inboxAgentReferenceCreateMock,
       delete: inboxAgentReferenceDeleteMock,
@@ -64,6 +67,10 @@ vi.mock("../payment-node/registration-wallets", () => ({
 describe("prepareManagedInboxRegistration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaTransactionMock.mockImplementation(async (callback) =>
+      callback({ $executeRaw: prismaExecuteRawMock }),
+    );
+    prismaExecuteRawMock.mockResolvedValue(undefined);
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
     getPaymentSourceIdMock.mockImplementation((network: string) =>
@@ -233,6 +240,32 @@ describe("prepareManagedInboxRegistration", () => {
       success: false,
       error: "Something went wrong. Please try again later.",
     });
+  });
+});
+
+describe("withInboxAgentSlugRegistrationLock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaTransactionMock.mockImplementation(async (callback) =>
+      callback({ $executeRaw: prismaExecuteRawMock }),
+    );
+    prismaExecuteRawMock.mockResolvedValue(undefined);
+  });
+
+  it("holds a postgres advisory lock while running the registration critical section", async () => {
+    const runMock = vi.fn().mockResolvedValue("ok");
+
+    const { withInboxAgentSlugRegistrationLock } = await import("./server");
+    const result = await withInboxAgentSlugRegistrationLock({
+      network: "Preprod",
+      slug: "support-inbox",
+      run: runMock,
+    });
+
+    expect(prismaTransactionMock).toHaveBeenCalledTimes(1);
+    expect(prismaExecuteRawMock).toHaveBeenCalledTimes(1);
+    expect(runMock).toHaveBeenCalledTimes(1);
+    expect(result).toBe("ok");
   });
 });
 

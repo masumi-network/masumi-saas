@@ -15,6 +15,7 @@ import {
   listOwnedInboxAgentsForUser,
   prepareManagedInboxRegistration,
   saveInboxAgentReference,
+  withInboxAgentSlugRegistrationLock,
 } from "@/lib/inbox-agents/server";
 import { contractJsonResponse } from "@/lib/openapi/contracts";
 import type {
@@ -208,91 +209,99 @@ export async function POST(request: NextRequest) {
     }
 
     const client = createInboxAdminPaymentNodeClient();
-    const slugConflict = await findInboxAgentSlugConflict({
+
+    return await withInboxAgentSlugRegistrationLock({
       network,
       slug: canonicalSlug,
-      client,
-    });
-    if (slugConflict) {
-      return contractJsonResponse(contract, "POST", 409, {
-        success: false,
-        error: "Inbox slug is already registered",
-      });
-    }
+      run: async () => {
+        const slugConflict = await findInboxAgentSlugConflict({
+          network,
+          slug: canonicalSlug,
+          client,
+        });
+        if (slugConflict) {
+          return contractJsonResponse(contract, "POST", 409, {
+            success: false,
+            error: "Inbox slug is already registered",
+          });
+        }
 
-    const creditReference = createCreditReference("inbox-agent-register");
-    const creditMetadata = {
-      name: validation.data.name.trim(),
-      agentSlug: canonicalSlug,
-      network,
-      authMethod: authContext.authMethod,
-    };
-    await consumeCreditIfRequired({
-      userId: authContext.user.id,
-      reason: "inbox_agent_register",
-      reference: creditReference,
-      network,
-      metadata: creditMetadata,
-    });
-    creditRefund = () =>
-      refundConsumedCredit({
-        userId: authContext.user.id,
-        reason: "inbox_agent_register",
-        reference: creditReference,
-        network,
-        metadata: creditMetadata,
-      });
+        const creditReference = createCreditReference("inbox-agent-register");
+        const creditMetadata = {
+          name: validation.data.name.trim(),
+          agentSlug: canonicalSlug,
+          network,
+          authMethod: authContext.authMethod,
+        };
+        await consumeCreditIfRequired({
+          userId: authContext.user.id,
+          reason: "inbox_agent_register",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+        creditRefund = () =>
+          refundConsumedCredit({
+            userId: authContext.user.id,
+            reason: "inbox_agent_register",
+            reference: creditReference,
+            network,
+            metadata: creditMetadata,
+          });
 
-    const managedRegistration = await prepareManagedInboxRegistration({
-      name: validation.data.name.trim(),
-      network,
-    });
-    if (!managedRegistration.success) {
-      await creditRefund();
-      creditRefund = null;
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error: managedRegistration.error,
-      });
-    }
-    const created = await client.registerInboxAgent({
-      network,
-      sellingWalletVkey: managedRegistration.executingWallet.walletVkey,
-      recipientWalletAddress: managedRegistration.executingWallet.walletAddress,
-      name: validation.data.name.trim(),
-      description: validation.data.description?.trim() || undefined,
-      agentSlug: canonicalSlug,
-    });
+        const managedRegistration = await prepareManagedInboxRegistration({
+          name: validation.data.name.trim(),
+          network,
+        });
+        if (!managedRegistration.success) {
+          await creditRefund();
+          creditRefund = null;
+          return contractJsonResponse(contract, "POST", 400, {
+            success: false,
+            error: managedRegistration.error,
+          });
+        }
+        const created = await client.registerInboxAgent({
+          network,
+          sellingWalletVkey: managedRegistration.executingWallet.walletVkey,
+          recipientWalletAddress:
+            managedRegistration.executingWallet.walletAddress,
+          name: validation.data.name.trim(),
+          description: validation.data.description?.trim() || undefined,
+          agentSlug: canonicalSlug,
+        });
 
-    const persistResult = await persistCreatedInboxAgentReference({
-      client,
-      userId: authContext.user.id,
-      network,
-      entry: created,
-      executingWallet: managedRegistration.executingWallet,
-      smartContractAddress: managedRegistration.smartContractAddress,
-    });
-    if (persistResult.status === "ownership-mismatch") {
-      await creditRefund();
-      creditRefund = null;
-      return contractJsonResponse(contract, "POST", 409, {
-        success: false,
-        error: "Inbox agent is already registered to another account",
-      });
-    }
-    if (persistResult.status === "error") {
-      await creditRefund();
-      creditRefund = null;
-      return contractJsonResponse(contract, "POST", 500, {
-        success: false,
-        error: "Failed to persist inbox agent ownership",
-      });
-    }
+        const persistResult = await persistCreatedInboxAgentReference({
+          client,
+          userId: authContext.user.id,
+          network,
+          entry: created,
+          executingWallet: managedRegistration.executingWallet,
+          smartContractAddress: managedRegistration.smartContractAddress,
+        });
+        if (persistResult.status === "ownership-mismatch") {
+          await creditRefund();
+          creditRefund = null;
+          return contractJsonResponse(contract, "POST", 409, {
+            success: false,
+            error: "Inbox agent is already registered to another account",
+          });
+        }
+        if (persistResult.status === "error") {
+          await creditRefund();
+          creditRefund = null;
+          return contractJsonResponse(contract, "POST", 500, {
+            success: false,
+            error: "Failed to persist inbox agent ownership",
+          });
+        }
 
-    creditRefund = null;
-    return contractJsonResponse(contract, "POST", 200, {
-      success: true,
-      data: created,
+        creditRefund = null;
+        return contractJsonResponse(contract, "POST", 200, {
+          success: true,
+          data: created,
+        });
+      },
     });
   } catch (error) {
     if (creditRefund) {

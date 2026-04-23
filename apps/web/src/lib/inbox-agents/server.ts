@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import "server-only";
 
 import type { InboxAgentReference, Prisma } from "@masumi/database";
@@ -119,6 +121,16 @@ export type InboxAgentSlugConflict = {
   agentIdentifier: string | null;
 };
 
+function inboxAgentSlugToAdvisoryLockKeys(
+  network: PaymentNodeNetwork,
+  slug: string,
+): [number, number] {
+  const buf = createHash("sha256")
+    .update(`${network}:${slug}`, "utf8")
+    .digest();
+  return [buf.readInt32BE(0), buf.readInt32BE(4)];
+}
+
 export function createInboxAdminPaymentNodeClient(): PaymentNodeClient {
   return createPaymentNodeClient(
     paymentNodeConfig.getBaseUrl(),
@@ -137,6 +149,22 @@ function tryCreateInboxAdminPaymentNodeClient(): PaymentNodeClient | null {
 
 function isDeregisteredState(state: RegistrationState): boolean {
   return state === "DeregistrationConfirmed";
+}
+
+export async function withInboxAgentSlugRegistrationLock<T>(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  run: () => Promise<T>;
+}): Promise<T> {
+  const [k1, k2] = inboxAgentSlugToAdvisoryLockKeys(
+    params.network,
+    params.slug,
+  );
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+    return params.run();
+  });
 }
 
 async function listPaymentSources(
