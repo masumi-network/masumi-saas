@@ -99,6 +99,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let creditRefund: (() => Promise<void>) | null = null;
   let reservationId: string | null = null;
+  const cleanupReservation = async () => {
+    if (!reservationId) return;
+    const pendingReservationId = reservationId;
+    reservationId = null;
+    await deleteInboxAgentReference(pendingReservationId).catch(() => {});
+  };
+  const refundCreditAndCleanupReservation = async () => {
+    const refund = creditRefund;
+    creditRefund = null;
+    try {
+      if (refund) {
+        await refund();
+      }
+    } finally {
+      await cleanupReservation();
+    }
+  };
 
   try {
     const authContext = await getAuthenticatedOrThrow(request);
@@ -241,12 +258,7 @@ export async function POST(request: NextRequest) {
             ownedByUserId: error.ownedByUserId,
           },
         );
-        await creditRefund();
-        creditRefund = null;
-        if (reservationId) {
-          await deleteInboxAgentReference(reservationId).catch(() => {});
-          reservationId = null;
-        }
+        await refundCreditAndCleanupReservation();
         return contractJsonResponse(contract, "POST", 409, {
           success: false,
           error: INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR,
@@ -275,12 +287,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await creditRefund();
-      creditRefund = null;
-      if (reservationId) {
-        await deleteInboxAgentReference(reservationId).catch(() => {});
-        reservationId = null;
-      }
+      await refundCreditAndCleanupReservation();
       return contractJsonResponse(contract, "POST", 500, {
         success: false,
         error: "Failed to persist inbox agent ownership",
@@ -294,11 +301,11 @@ export async function POST(request: NextRequest) {
       data: created,
     });
   } catch (error) {
-    if (creditRefund) {
-      await creditRefund();
-    }
-    if (reservationId) {
-      await deleteInboxAgentReference(reservationId).catch(() => {});
+    let cleanupError: unknown = null;
+    try {
+      await refundCreditAndCleanupReservation();
+    } catch (cleanupFailure) {
+      cleanupError = cleanupFailure;
     }
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
@@ -307,6 +314,12 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error.message,
       });
+    }
+    if (cleanupError) {
+      console.error(
+        "[Inbox Agents] Failed to refund consumed credit during registration cleanup:",
+        cleanupError,
+      );
     }
     console.error("Failed to register inbox agent:", error);
     return contractJsonResponse(contract, "POST", 500, {

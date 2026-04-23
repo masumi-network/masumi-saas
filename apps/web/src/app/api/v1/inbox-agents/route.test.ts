@@ -557,6 +557,52 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
   });
 
+  it("deletes the local reservation even when credit refund fails during cleanup", async () => {
+    const registerInboxAgentMock = vi
+      .fn()
+      .mockRejectedValue(new Error("registry unavailable"));
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+      registerInboxAgent: registerInboxAgentMock,
+    });
+    refundConsumedCreditMock.mockRejectedValue(new Error("refund unavailable"));
+    prepareManagedInboxRegistrationMock.mockResolvedValue({
+      success: true,
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+        collectionAddress: null,
+        note: "Funding wallet",
+      },
+      paymentSourceId: "payment-source-1",
+      smartContractAddress: "addr_test1contract",
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error: "Failed to register inbox agent",
+    });
+    expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledTimes(1);
+  });
+
   it("returns 503 when Mainnet payment-source config is missing", async () => {
     const { PaymentNodeConfigError } =
       await import("@/lib/payment-node/config");
