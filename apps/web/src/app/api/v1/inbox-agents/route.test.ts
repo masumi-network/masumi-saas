@@ -52,9 +52,10 @@ vi.mock("@/lib/inbox-agents/server", () => ({
   finalizeInboxAgentReservation: finalizeInboxAgentReservationMock,
   findInboxAgentSlugConflict: findInboxAgentSlugConflictMock,
   findRegistryInboxAgentSlugConflict: findRegistryInboxAgentSlugConflictMock,
-  INBOX_AGENT_DUPLICATE_SLUG_ERROR: "Inbox slug is already registered",
+  INBOX_AGENT_DUPLICATE_SLUG_ERROR:
+    "Inbox slug is already in use on this network",
   INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR:
-    "Inbox agent is already registered to another account",
+    "Inbox agent is already owned by another account",
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
   reserveInboxAgentReference: reserveInboxAgentReferenceMock,
@@ -406,7 +407,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toStrictEqual({
       success: false,
-      error: "Inbox slug is already registered",
+      error: "Inbox slug is already in use on this network",
     });
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
@@ -504,7 +505,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toStrictEqual({
       success: false,
-      error: "Inbox agent is already registered to another account",
+      error: "Inbox agent is already owned by another account",
     });
     expect(finalizeInboxAgentReservationMock).toHaveBeenCalledTimes(1);
     expect(deleteRegistryInboxEntryMock).not.toHaveBeenCalled();

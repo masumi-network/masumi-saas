@@ -184,6 +184,11 @@ describe("POST /pay/api/v1/inbox-agents/:id/deregister", () => {
     );
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error:
+        "Inbox agent can only be deregistered when registration is confirmed",
+    });
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
   });
 

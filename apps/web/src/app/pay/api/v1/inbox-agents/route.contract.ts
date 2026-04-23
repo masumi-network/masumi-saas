@@ -36,7 +36,7 @@ const contract = defineRouteContract({
     POST: {
       summary: "Register inbox agent",
       description:
-        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
       security,
       request: {
         body: jsonRequestBody(registerInboxAgentOpenApiBodySchema),

@@ -59,7 +59,7 @@ export async function POST(
       return contractJsonResponse(contract, "POST", 400, {
         success: false,
         error:
-          "Inbox agent can only be deregistered after registration is confirmed",
+          "Inbox agent can only be deregistered when registration is confirmed",
       });
     }
 

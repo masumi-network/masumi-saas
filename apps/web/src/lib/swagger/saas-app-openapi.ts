@@ -1160,14 +1160,14 @@ const inboxAgentRegisterConflictBody = z
   .object({
     success: z.literal(false),
     error: z.enum([
-      "Inbox slug is already registered",
-      "Inbox agent is already registered to another account",
+      "Inbox slug is already in use on this network",
+      "Inbox agent is already owned by another account",
     ]),
   })
   .openapi({
     example: {
       success: false,
-      error: "Inbox slug is already registered",
+      error: "Inbox slug is already in use on this network",
     },
   });
 
@@ -1939,7 +1939,7 @@ registry.registerPath({
   tags: ["Inbox agents"],
   summary: "Deregister inbox agent",
   description:
-    "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+    "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
   servers: prefixedWrapperServers,
   security,
   request: {
@@ -1952,7 +1952,7 @@ registry.registerPath({
   },
   responses: {
     200: okWithSchema(
-      "Deregistration started",
+      "Deregistration requested",
       inboxAgentMutationSuccessSchema,
     ),
     ...stdResponses,

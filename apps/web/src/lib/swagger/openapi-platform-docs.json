@@ -12427,7 +12427,7 @@
     "/api/masumi/inbox-agent/register": {
       "post": {
         "summary": "Register inbox agent",
-        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
         "security": [
           {
             "apiKeyHeader": []
@@ -12840,8 +12840,8 @@
                     "error": {
                       "type": "string",
                       "enum": [
-                        "Inbox slug is already registered",
-                        "Inbox agent is already registered to another account"
+                        "Inbox slug is already in use on this network",
+                        "Inbox agent is already owned by another account"
                       ]
                     }
                   },
@@ -12851,7 +12851,7 @@
                   ],
                   "example": {
                     "success": false,
-                    "error": "Inbox slug is already registered"
+                    "error": "Inbox slug is already in use on this network"
                   }
                 }
               }
@@ -13239,7 +13239,7 @@
     "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister": {
       "post": {
         "summary": "Deregister inbox agent",
-        "description": "Starts deregistration for an inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract.",
+        "description": "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
         "security": [
           {
             "apiKeyHeader": []
@@ -13265,7 +13265,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Deregistration started",
+            "description": "Deregistration requested",
             "content": {
               "application/json": {
                 "schema": {
@@ -14425,7 +14425,7 @@
       },
       "post": {
         "summary": "Register inbox agent",
-        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
         "security": [
           {
             "apiKeyHeader": []
@@ -14838,8 +14838,8 @@
                     "error": {
                       "type": "string",
                       "enum": [
-                        "Inbox slug is already registered",
-                        "Inbox agent is already registered to another account"
+                        "Inbox slug is already in use on this network",
+                        "Inbox agent is already owned by another account"
                       ]
                     }
                   },
@@ -14849,7 +14849,7 @@
                   ],
                   "example": {
                     "success": false,
-                    "error": "Inbox slug is already registered"
+                    "error": "Inbox slug is already in use on this network"
                   }
                 }
               }

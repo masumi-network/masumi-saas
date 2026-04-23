@@ -122,9 +122,9 @@ export type InboxAgentSlugConflict = {
 };
 
 export const INBOX_AGENT_DUPLICATE_SLUG_ERROR =
-  "Inbox slug is already registered";
+  "Inbox slug is already in use on this network";
 export const INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR =
-  "Inbox agent is already registered to another account";
+  "Inbox agent is already owned by another account";
 
 function inboxAgentSlugToAdvisoryLockKeys(
   network: PaymentNodeNetwork,

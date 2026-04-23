@@ -61,7 +61,7 @@ export async function DELETE(
       return contractJsonResponse(contract, "DELETE", 400, {
         success: false,
         error:
-          "Inbox agent can only be deleted after a failed registration or completed deregistration",
+          "Inbox agent can only be deleted after registration fails or deregistration is confirmed",
       });
     }
 
