@@ -846,12 +846,7 @@ describe("findInboxAgentSlugConflict", () => {
       } as never,
     });
 
-    expect(getRegistryInboxMock).toHaveBeenCalledWith({
-      network: "Preprod",
-      cursorId: undefined,
-      limit: 100,
-      searchQuery: "support-inbox",
-    });
+    expect(getRegistryInboxMock).not.toHaveBeenCalled();
     expect(result).toBeNull();
   });
 

@@ -166,6 +166,18 @@ describe("/pay/api/v1/inbox-agents", () => {
     getPaymentNodeClientForUserMock.mockResolvedValue({});
     findInboxAgentSlugConflictMock.mockResolvedValue(null);
     findRegistryInboxAgentSlugConflictMock.mockResolvedValue(null);
+    prepareManagedInboxRegistrationMock.mockResolvedValue({
+      success: true,
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+        collectionAddress: null,
+        note: "Funding wallet",
+      },
+      paymentSourceId: "payment-source-1",
+      smartContractAddress: "addr_test1contract",
+    });
     reserveInboxAgentReferenceMock.mockResolvedValue({
       status: "reserved",
       reservation: {
