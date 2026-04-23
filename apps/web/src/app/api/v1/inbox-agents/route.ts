@@ -9,6 +9,7 @@ import {
 } from "@/lib/credits/service";
 import {
   createInboxAdminPaymentNodeClient,
+  findInboxAgentSlugConflict,
   isInboxAgentOwnershipMismatchError,
   isStaleInboxAgentCursorError,
   listOwnedInboxAgentsForUser,
@@ -206,6 +207,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const client = createInboxAdminPaymentNodeClient();
+    const slugConflict = await findInboxAgentSlugConflict({
+      network,
+      slug: canonicalSlug,
+      client,
+    });
+    if (slugConflict) {
+      return contractJsonResponse(contract, "POST", 409, {
+        success: false,
+        error: "Inbox slug is already registered",
+      });
+    }
+
     const creditReference = createCreditReference("inbox-agent-register");
     const creditMetadata = {
       name: validation.data.name.trim(),
@@ -241,8 +255,6 @@ export async function POST(request: NextRequest) {
         error: managedRegistration.error,
       });
     }
-    const client = createInboxAdminPaymentNodeClient();
-
     const created = await client.registerInboxAgent({
       network,
       sellingWalletVkey: managedRegistration.executingWallet.walletVkey,

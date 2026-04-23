@@ -112,6 +112,13 @@ export type OwnedInboxAgent = {
   smartContractAddress: string | null;
 };
 
+export type InboxAgentSlugConflict = {
+  source: "db" | "registry";
+  state: RegistrationState;
+  paymentNodeId: string;
+  agentIdentifier: string | null;
+};
+
 export function createInboxAdminPaymentNodeClient(): PaymentNodeClient {
   return createPaymentNodeClient(
     paymentNodeConfig.getBaseUrl(),
@@ -126,6 +133,10 @@ function tryCreateInboxAdminPaymentNodeClient(): PaymentNodeClient | null {
     if (isPaymentNodeConfigError(error)) return null;
     throw error;
   }
+}
+
+function isDeregisteredState(state: RegistrationState): boolean {
+  return state === "DeregistrationConfirmed";
 }
 
 async function listPaymentSources(
@@ -563,6 +574,100 @@ export async function refreshInboxAgentReference(params: {
     );
     return fallbackEntry;
   }
+}
+
+async function getRegistryInboxByExactSlug(params: {
+  client: PaymentNodeClient;
+  network: PaymentNodeNetwork;
+  slug: string;
+}): Promise<RegistryInboxEntry | null> {
+  const MAX_PAGES = 20;
+  let cursorId: string | undefined;
+
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const { Assets } = await params.client.getRegistryInbox({
+      network: params.network,
+      cursorId,
+      limit: 100,
+      searchQuery: params.slug,
+    });
+
+    const match =
+      Assets.find((asset) => asset.agentSlug === params.slug) ?? null;
+    if (match) return match;
+    if (Assets.length === 0) return null;
+
+    const nextCursor = Assets.at(-1)?.id;
+    if (!nextCursor || nextCursor === cursorId) return null;
+    cursorId = nextCursor;
+  }
+
+  return null;
+}
+
+export async function findInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  client?: PaymentNodeClient | null;
+}): Promise<InboxAgentSlugConflict | null> {
+  const references = await prisma.inboxAgentReference.findMany({
+    where: {
+      networkIdentifier: params.network,
+      agentSlug: params.slug,
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  for (const reference of references) {
+    let resolvedReference = reference;
+
+    if (isPendingRegistrationState(reference.state) && params.client) {
+      const remote = await params.client.getRegistryInboxById({
+        id: reference.paymentNodeId,
+        network: params.network,
+      });
+
+      if (remote) {
+        resolvedReference = await saveInboxAgentReference({
+          userId: reference.userId,
+          network: params.network,
+          entry: remote,
+          executingWallet: getExecutingWalletFromReference(reference),
+          smartContractAddress: reference.smartContractAddress,
+        });
+      }
+    }
+
+    if (!isDeregisteredState(resolvedReference.state)) {
+      return {
+        source: "db",
+        state: resolvedReference.state,
+        paymentNodeId: resolvedReference.paymentNodeId,
+        agentIdentifier: resolvedReference.agentIdentifier,
+      };
+    }
+  }
+
+  if (!params.client) {
+    return null;
+  }
+
+  const remote = await getRegistryInboxByExactSlug({
+    client: params.client,
+    network: params.network,
+    slug: params.slug,
+  });
+
+  if (!remote || isDeregisteredState(remote.state as RegistrationState)) {
+    return null;
+  }
+
+  return {
+    source: "registry",
+    state: remote.state as RegistrationState,
+    paymentNodeId: remote.id,
+    agentIdentifier: remote.agentIdentifier,
+  };
 }
 
 export async function listOwnedInboxAgentsForUser(params: {

@@ -8,6 +8,7 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const createInboxAdminPaymentNodeClientMock = vi.fn();
+const findInboxAgentSlugConflictMock = vi.fn();
 const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
 const saveInboxAgentReferenceMock = vi.fn();
@@ -44,6 +45,7 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 
 vi.mock("@/lib/inbox-agents/server", () => ({
   createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
+  findInboxAgentSlugConflict: findInboxAgentSlugConflictMock,
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
   saveInboxAgentReference: saveInboxAgentReferenceMock,
@@ -156,6 +158,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     refundConsumedCreditMock.mockResolvedValue(undefined);
     getPaymentNodeClientForUserMock.mockResolvedValue({});
+    findInboxAgentSlugConflictMock.mockResolvedValue(null);
     saveInboxAgentReferenceMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
@@ -248,6 +251,11 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
+    expect(findInboxAgentSlugConflictMock).toHaveBeenCalledWith({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: expect.any(Object),
+    });
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
       sellingWalletVkey: "funding_vkey",
@@ -311,9 +319,48 @@ describe("/pay/api/v1/inbox-agents", () => {
       error: "Payment node not configured for user",
     });
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(findInboxAgentSlugConflictMock).not.toHaveBeenCalled();
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 before credit consumption when the inbox slug is already registered", async () => {
+    const registerInboxAgentMock = vi.fn();
+    createInboxAdminPaymentNodeClientMock.mockReturnValue({
+      registerInboxAgent: registerInboxAgentMock,
+    });
+    findInboxAgentSlugConflictMock.mockResolvedValue({
+      source: "registry",
+      state: "RegistrationConfirmed",
+      paymentNodeId: "inbox-existing",
+      agentIdentifier: "policy.existing",
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/pay/api/v1/inbox-agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Support inbox",
+          description: "Routes support requests",
+          agentSlug: "Support Inbox",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toStrictEqual({
+      success: false,
+      error: "Inbox slug is already registered",
+    });
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
+    expect(registerInboxAgentMock).not.toHaveBeenCalled();
+    expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
   });
 
   it("cleans up the payment-node entry when local ownership persistence fails", async () => {
@@ -490,7 +537,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
-    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
@@ -561,7 +608,7 @@ describe("/pay/api/v1/inbox-agents", () => {
 
     expect(response.status).toBe(402);
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
-    expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
+    expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
   });
 });
