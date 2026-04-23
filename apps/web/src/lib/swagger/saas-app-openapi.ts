@@ -1156,6 +1156,21 @@ const errBody = z.object({
   error: z.string(),
 });
 
+const inboxAgentRegisterConflictBody = z
+  .object({
+    success: z.literal(false),
+    error: z.enum([
+      "Inbox slug is already registered",
+      "Inbox agent is already registered to another account",
+    ]),
+  })
+  .openapi({
+    example: {
+      success: false,
+      error: "Inbox slug is already registered",
+    },
+  });
+
 const insufficientCreditsSchema = z
   .object({
     success: z.literal(false),
@@ -1851,8 +1866,11 @@ registry.registerPath({
     ),
     402: insufficientCreditsResponse,
     409: {
-      description: "Inbox agent already owned by another user",
-      content: { "application/json": { schema: errBody } },
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
     },
     ...stdResponses,
   },
@@ -1882,8 +1900,11 @@ registry.registerPath({
     ),
     402: insufficientCreditsResponse,
     409: {
-      description: "Inbox agent already owned by another user",
-      content: { "application/json": { schema: errBody } },
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
     },
     ...stdResponses,
   },
@@ -2134,6 +2155,7 @@ export {
   errBodyWithOptionalDetails,
   healthServiceUnavailableSchema,
   healthSuccessSchema,
+  inboxAgentRegisterConflictBody,
   inboxAgentMutationSuccessSchema,
   inboxAgentsListSuccessSchema,
   insufficientCreditsResponse,

@@ -52,6 +52,9 @@ vi.mock("@/lib/inbox-agents/server", () => ({
   finalizeInboxAgentReservation: finalizeInboxAgentReservationMock,
   findInboxAgentSlugConflict: findInboxAgentSlugConflictMock,
   findRegistryInboxAgentSlugConflict: findRegistryInboxAgentSlugConflictMock,
+  INBOX_AGENT_DUPLICATE_SLUG_ERROR: "Inbox slug is already registered",
+  INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR:
+    "Inbox agent is already registered to another account",
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
   reserveInboxAgentReference: reserveInboxAgentReferenceMock,

@@ -6,6 +6,7 @@ import {
 import { inboxAgentsListQuerySchema } from "@/lib/schemas/inbox-agent";
 import {
   errBody,
+  inboxAgentRegisterConflictBody,
   inboxAgentMutationSuccessSchema,
   inboxAgentsListSuccessSchema,
   insufficientCreditsResponse,
@@ -35,7 +36,7 @@ const contract = defineRouteContract({
     POST: {
       summary: "Register inbox agent",
       description:
-        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
+        "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
       security,
       request: {
         body: jsonRequestBody(registerInboxAgentOpenApiBodySchema),
@@ -46,7 +47,10 @@ const contract = defineRouteContract({
           inboxAgentMutationSuccessSchema,
         ),
         402: insufficientCreditsResponse,
-        409: jsonResponse("Inbox agent already owned by another user", errBody),
+        409: jsonResponse(
+          "Inbox registration conflict",
+          inboxAgentRegisterConflictBody,
+        ),
         503: jsonResponse("Payment node unavailable", errBody),
         ...stdResponses,
       },

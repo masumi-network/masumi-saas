@@ -13,6 +13,8 @@ import {
   finalizeInboxAgentReservation,
   findInboxAgentSlugConflict,
   findRegistryInboxAgentSlugConflict,
+  INBOX_AGENT_DUPLICATE_SLUG_ERROR,
+  INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR,
   isInboxAgentOwnershipMismatchError,
   isStaleInboxAgentCursorError,
   listOwnedInboxAgentsForUser,
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
     if (localSlugConflict) {
       return contractJsonResponse(contract, "POST", 409, {
         success: false,
-        error: "Inbox slug is already registered",
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
       });
     }
 
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
     if (registrySlugConflict) {
       return contractJsonResponse(contract, "POST", 409, {
         success: false,
-        error: "Inbox slug is already registered",
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
       });
     }
 
@@ -183,7 +185,7 @@ export async function POST(request: NextRequest) {
     if (reservationResult.status === "conflict") {
       return contractJsonResponse(contract, "POST", 409, {
         success: false,
-        error: "Inbox slug is already registered",
+        error: INBOX_AGENT_DUPLICATE_SLUG_ERROR,
       });
     }
     reservationId = reservationResult.reservation.id;
@@ -247,7 +249,7 @@ export async function POST(request: NextRequest) {
         }
         return contractJsonResponse(contract, "POST", 409, {
           success: false,
-          error: "Inbox agent is already registered to another account",
+          error: INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR,
         });
       }
 
