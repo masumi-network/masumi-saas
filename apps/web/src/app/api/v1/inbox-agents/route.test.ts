@@ -9,10 +9,12 @@ const requireNetworkedOidcApiScopeMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const createInboxAdminPaymentNodeClientMock = vi.fn();
 const findInboxAgentSlugConflictMock = vi.fn();
+const findRegistryInboxAgentSlugConflictMock = vi.fn();
 const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
-const saveInboxAgentReferenceMock = vi.fn();
-const withInboxAgentSlugRegistrationLockMock = vi.fn();
+const reserveInboxAgentReferenceMock = vi.fn();
+const finalizeInboxAgentReservationMock = vi.fn();
+const deleteInboxAgentReferenceMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 const refundConsumedCreditMock = vi.fn();
 
@@ -46,11 +48,13 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 
 vi.mock("@/lib/inbox-agents/server", () => ({
   createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
+  deleteInboxAgentReference: deleteInboxAgentReferenceMock,
+  finalizeInboxAgentReservation: finalizeInboxAgentReservationMock,
   findInboxAgentSlugConflict: findInboxAgentSlugConflictMock,
+  findRegistryInboxAgentSlugConflict: findRegistryInboxAgentSlugConflictMock,
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
-  saveInboxAgentReference: saveInboxAgentReferenceMock,
-  withInboxAgentSlugRegistrationLock: withInboxAgentSlugRegistrationLockMock,
+  reserveInboxAgentReference: reserveInboxAgentReferenceMock,
   isInboxAgentOwnershipMismatchError: (error: unknown) =>
     error instanceof InboxAgentOwnershipMismatchError,
   isStaleInboxAgentCursorError: (error: unknown) =>
@@ -161,13 +165,18 @@ describe("/pay/api/v1/inbox-agents", () => {
     refundConsumedCreditMock.mockResolvedValue(undefined);
     getPaymentNodeClientForUserMock.mockResolvedValue({});
     findInboxAgentSlugConflictMock.mockResolvedValue(null);
-    withInboxAgentSlugRegistrationLockMock.mockImplementation(
-      async ({ run }: { run: () => Promise<unknown> }) => run(),
-    );
-    saveInboxAgentReferenceMock.mockResolvedValue({
+    findRegistryInboxAgentSlugConflictMock.mockResolvedValue(null);
+    reserveInboxAgentReferenceMock.mockResolvedValue({
+      status: "reserved",
+      reservation: {
+        id: "reservation-1",
+      },
+    });
+    finalizeInboxAgentReservationMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
     });
+    deleteInboxAgentReferenceMock.mockResolvedValue(undefined);
     listOwnedInboxAgentsForUserMock.mockResolvedValue({
       Assets: [inboxAgent],
       nextCursor: null,
@@ -256,15 +265,30 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
-    expect(withInboxAgentSlugRegistrationLockMock).toHaveBeenCalledWith({
-      network: "Preprod",
-      slug: "support-inbox",
-      run: expect.any(Function),
-    });
     expect(findInboxAgentSlugConflictMock).toHaveBeenCalledWith({
       network: "Preprod",
       slug: "support-inbox",
       client: expect.any(Object),
+    });
+    expect(findRegistryInboxAgentSlugConflictMock).toHaveBeenCalledWith({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: expect.any(Object),
+    });
+    expect(reserveInboxAgentReferenceMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      network: "Preprod",
+      name: "Support inbox",
+      description: "Routes support requests",
+      slug: "support-inbox",
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+        collectionAddress: null,
+        note: "Funding wallet",
+      },
+      smartContractAddress: "addr_test1contract",
     });
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
@@ -274,7 +298,8 @@ describe("/pay/api/v1/inbox-agents", () => {
       description: "Routes support requests",
       agentSlug: "support-inbox",
     });
-    expect(saveInboxAgentReferenceMock).toHaveBeenCalledWith({
+    expect(finalizeInboxAgentReservationMock).toHaveBeenCalledWith({
+      reservationId: "reservation-1",
       userId: "user-1",
       network: "Preprod",
       entry: inboxAgent,
@@ -330,6 +355,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     });
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
     expect(findInboxAgentSlugConflictMock).not.toHaveBeenCalled();
+    expect(findRegistryInboxAgentSlugConflictMock).not.toHaveBeenCalled();
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
     expect(createInboxAdminPaymentNodeClientMock).not.toHaveBeenCalled();
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
@@ -370,7 +396,7 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
     expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
-    expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
+    expect(finalizeInboxAgentReservationMock).not.toHaveBeenCalled();
   });
 
   it("cleans up the payment-node entry when local ownership persistence fails", async () => {
@@ -380,7 +406,9 @@ describe("/pay/api/v1/inbox-agents", () => {
       registerInboxAgent: registerInboxAgentMock,
       deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
     });
-    saveInboxAgentReferenceMock.mockRejectedValue(new Error("DB unavailable"));
+    finalizeInboxAgentReservationMock.mockRejectedValue(
+      new Error("DB unavailable"),
+    );
     prepareManagedInboxRegistrationMock.mockResolvedValue({
       success: true,
       executingWallet: {
@@ -414,8 +442,9 @@ describe("/pay/api/v1/inbox-agents", () => {
       success: false,
       error: "Failed to persist inbox agent ownership",
     });
-    expect(saveInboxAgentReferenceMock).toHaveBeenCalledTimes(2);
+    expect(finalizeInboxAgentReservationMock).toHaveBeenCalledTimes(1);
     expect(deleteRegistryInboxEntryMock).toHaveBeenCalledWith("inbox-1");
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
@@ -426,7 +455,7 @@ describe("/pay/api/v1/inbox-agents", () => {
       registerInboxAgent: registerInboxAgentMock,
       deleteRegistryInboxEntry: deleteRegistryInboxEntryMock,
     });
-    saveInboxAgentReferenceMock.mockRejectedValue(
+    finalizeInboxAgentReservationMock.mockRejectedValue(
       new InboxAgentOwnershipMismatchError("other-user"),
     );
     prepareManagedInboxRegistrationMock.mockResolvedValue({
@@ -462,8 +491,9 @@ describe("/pay/api/v1/inbox-agents", () => {
       success: false,
       error: "Inbox agent is already registered to another account",
     });
-    expect(saveInboxAgentReferenceMock).toHaveBeenCalledTimes(1);
+    expect(finalizeInboxAgentReservationMock).toHaveBeenCalledTimes(1);
     expect(deleteRegistryInboxEntryMock).not.toHaveBeenCalled();
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
@@ -508,7 +538,8 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(registerInboxAgentMock).toHaveBeenCalledTimes(1);
     expect(addWalletsToPaymentSourceMock).not.toHaveBeenCalled();
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
-    expect(saveInboxAgentReferenceMock).not.toHaveBeenCalled();
+    expect(finalizeInboxAgentReservationMock).not.toHaveBeenCalled();
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
   });
 
   it("returns 503 when Mainnet payment-source config is missing", async () => {
@@ -548,7 +579,8 @@ describe("/pay/api/v1/inbox-agents", () => {
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
-    expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+    expect(refundConsumedCreditMock).not.toHaveBeenCalled();
+    expect(deleteInboxAgentReferenceMock).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported wallet and top-up fields from the register schema", async () => {
@@ -617,8 +649,12 @@ describe("/pay/api/v1/inbox-agents", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(402);
-    expect(prepareManagedInboxRegistrationMock).not.toHaveBeenCalled();
+    expect(prepareManagedInboxRegistrationMock).toHaveBeenCalledWith({
+      name: "Support inbox",
+      network: "Preprod",
+    });
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
     expect(registerInboxAgentMock).not.toHaveBeenCalled();
+    expect(deleteInboxAgentReferenceMock).toHaveBeenCalledWith("reservation-1");
   });
 });

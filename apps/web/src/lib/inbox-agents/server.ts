@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import "server-only";
 
@@ -151,20 +151,10 @@ function isDeregisteredState(state: RegistrationState): boolean {
   return state === "DeregistrationConfirmed";
 }
 
-export async function withInboxAgentSlugRegistrationLock<T>(params: {
-  network: PaymentNodeNetwork;
-  slug: string;
-  run: () => Promise<T>;
-}): Promise<T> {
-  const [k1, k2] = inboxAgentSlugToAdvisoryLockKeys(
-    params.network,
-    params.slug,
+function isPendingDeregistrationState(state: RegistrationState): boolean {
+  return (
+    state === "DeregistrationRequested" || state === "DeregistrationInitiated"
   );
-
-  return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
-    return params.run();
-  });
 }
 
 async function listPaymentSources(
@@ -633,6 +623,34 @@ async function getRegistryInboxByExactSlug(params: {
   return null;
 }
 
+async function findActiveLocalInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  tx?: Prisma.TransactionClient;
+}): Promise<InboxAgentSlugConflict | null> {
+  const reference = await (params.tx ?? prisma).inboxAgentReference.findFirst({
+    where: {
+      networkIdentifier: params.network,
+      agentSlug: params.slug,
+      NOT: {
+        state: "DeregistrationConfirmed",
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  if (!reference) {
+    return null;
+  }
+
+  return {
+    source: "db",
+    state: reference.state,
+    paymentNodeId: reference.paymentNodeId,
+    agentIdentifier: reference.agentIdentifier,
+  };
+}
+
 export async function findInboxAgentSlugConflict(params: {
   network: PaymentNodeNetwork;
   slug: string;
@@ -663,6 +681,11 @@ export async function findInboxAgentSlugConflict(params: {
           executingWallet: getExecutingWalletFromReference(reference),
           smartContractAddress: reference.smartContractAddress,
         });
+      } else if (isPendingDeregistrationState(reference.state)) {
+        resolvedReference = await prisma.inboxAgentReference.update({
+          where: { id: reference.id },
+          data: { state: "DeregistrationConfirmed" },
+        });
       }
     }
 
@@ -676,10 +699,14 @@ export async function findInboxAgentSlugConflict(params: {
     }
   }
 
-  if (!params.client) {
-    return null;
-  }
+  return null;
+}
 
+export async function findRegistryInboxAgentSlugConflict(params: {
+  network: PaymentNodeNetwork;
+  slug: string;
+  client: PaymentNodeClient;
+}): Promise<InboxAgentSlugConflict | null> {
   const remote = await getRegistryInboxByExactSlug({
     client: params.client,
     network: params.network,
@@ -696,6 +723,118 @@ export async function findInboxAgentSlugConflict(params: {
     paymentNodeId: remote.id,
     agentIdentifier: remote.agentIdentifier,
   };
+}
+
+export async function reserveInboxAgentReference(params: {
+  userId: string;
+  network: PaymentNodeNetwork;
+  name: string;
+  description?: string | null;
+  slug: string;
+  executingWallet: Pick<
+    PaymentSourceWallet,
+    "id" | "walletVkey" | "walletAddress"
+  >;
+  smartContractAddress?: string | null;
+}): Promise<
+  | { status: "reserved"; reservation: InboxAgentReference }
+  | { status: "conflict"; conflict: InboxAgentSlugConflict }
+> {
+  const [k1, k2] = inboxAgentSlugToAdvisoryLockKeys(
+    params.network,
+    params.slug,
+  );
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+
+    const conflict = await findActiveLocalInboxAgentSlugConflict({
+      network: params.network,
+      slug: params.slug,
+      tx,
+    });
+    if (conflict) {
+      return { status: "conflict", conflict };
+    }
+
+    const reservation = await tx.inboxAgentReference.create({
+      data: {
+        userId: params.userId,
+        paymentNodeId: `pending:${randomUUID()}`,
+        networkIdentifier: params.network,
+        name: params.name,
+        description: params.description ?? null,
+        agentSlug: params.slug,
+        state: "RegistrationRequested",
+        agentIdentifier: null,
+        executingWalletId: params.executingWallet.id,
+        executingWalletVkey: params.executingWallet.walletVkey,
+        executingWalletAddress: params.executingWallet.walletAddress,
+        smartContractAddress: params.smartContractAddress ?? null,
+        registryEntry: null,
+      },
+    });
+
+    return { status: "reserved", reservation };
+  });
+}
+
+export async function finalizeInboxAgentReservation(params: {
+  reservationId: string;
+  userId: string;
+  network: PaymentNodeNetwork;
+  entry: RegistryInboxEntry;
+  executingWallet: Pick<
+    PaymentSourceWallet,
+    "id" | "walletVkey" | "walletAddress"
+  >;
+  smartContractAddress?: string | null;
+}): Promise<InboxAgentReference> {
+  const data = getReferenceWriteData({
+    userId: params.userId,
+    network: params.network,
+    entry: params.entry,
+    executingWallet: params.executingWallet,
+    smartContractAddress: params.smartContractAddress,
+  });
+
+  try {
+    return await prisma.inboxAgentReference.update({
+      where: { id: params.reservationId },
+      data,
+    });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error != null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      const existing = await prisma.inboxAgentReference.findUnique({
+        where: {
+          networkIdentifier_paymentNodeId: {
+            networkIdentifier: params.network,
+            paymentNodeId: params.entry.id,
+          },
+        },
+      });
+      if (existing) {
+        if (existing.userId !== params.userId) {
+          throw new InboxAgentOwnershipMismatchError(existing.userId);
+        }
+        if (existing.id !== params.reservationId) {
+          await prisma.inboxAgentReference.delete({
+            where: { id: params.reservationId },
+          });
+        }
+        return prisma.inboxAgentReference.update({
+          where: { id: existing.id },
+          data,
+        });
+      }
+    }
+    throw error;
+  }
 }
 
 export async function listOwnedInboxAgentsForUser(params: {
