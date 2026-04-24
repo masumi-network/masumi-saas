@@ -95,14 +95,14 @@ export default function Header({ className }: HeaderProps) {
                 asChild
                 className="hidden md:flex"
               >
-                <Link
-                  href="https://www.masumi.network/contact"
+                <a
+                  href="https://discord.com/invite/aj4QfnTS92"
                   target="_blank"
                   className="flex items-center gap-2"
                 >
                   <MessageSquare className="h-4 w-4" />
                   {t("support")}
-                </Link>
+                </a>
               </Button>
               <div className="hidden md:flex">
                 <NotificationsDialog />

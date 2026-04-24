@@ -50,23 +50,25 @@ export function Header() {
               asChild
               className="hidden md:flex"
             >
-              <Link
-                href="https://www.masumi.network/contact"
+              <a
+                href="https://discord.com/invite/aj4QfnTS92"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2"
               >
                 <MessageSquare className="h-4 w-4" />
                 {t("support")}
-              </Link>
+              </a>
             </Button>
             <Button variant="outline" size="icon" asChild className="md:hidden">
-              <Link
-                href="https://www.masumi.network/contact"
+              <a
+                href="https://discord.com/invite/aj4QfnTS92"
                 target="_blank"
+                rel="noopener noreferrer"
                 aria-label={t("support")}
               >
                 <MessageSquare className="h-4 w-4" />
-              </Link>
+              </a>
             </Button>
           </div>
         </div>
