@@ -195,6 +195,7 @@ const {
   InsufficientCreditsError,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
+  grantCreditTopUpFromCheckoutSession,
   grantInitialCreditsIfNeeded,
   refundConsumedCredit,
 } = await import("./service");
@@ -429,5 +430,31 @@ describe("credit service", () => {
     expect(rejected[0]?.reason).toBeInstanceOf(InsufficientCreditsError);
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(1);
+  });
+
+  it("idempotently grants stripe checkout credits per session id", async () => {
+    store.current = createState(0);
+
+    const first = await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_123",
+    });
+    expect(first.granted).toBe(true);
+    expect(first.balanceAfter).toBe(10);
+
+    const second = await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_123",
+    });
+    expect(second.granted).toBe(false);
+    expect(second.balanceAfter).toBe(10);
+    expect(store.current.ledger).toHaveLength(1);
+    expect(store.current.ledger[0]).toMatchObject({
+      reason: "stripe_checkout",
+      reference: "cs_test_123",
+      delta: 10,
+    });
   });
 });

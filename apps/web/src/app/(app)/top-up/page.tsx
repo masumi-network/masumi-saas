@@ -23,6 +23,13 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { formatCreditAmount } from "@/lib/credits/format";
 import { getCreditBalance } from "@/lib/credits/service";
+import {
+  getCreditUnitAmountCents,
+  isStripeTopUpEnabled,
+} from "@/lib/stripe/config";
+
+import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
+import { TopUpReturnAlerts } from "./components/top-up-return-alerts";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("App.TopUp");
@@ -32,13 +39,41 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function TopUpPage() {
+function formatMinorUnitsAsUsd(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+}
+
+type PageProps = {
+  searchParams: Promise<{ session_id?: string; canceled?: string }>;
+};
+
+export default async function TopUpPage({ searchParams }: PageProps) {
   const t = await getTranslations("App.TopUp");
+  const params = await searchParams;
+  const sessionIdRaw = params.session_id;
+  const sessionId = Array.isArray(sessionIdRaw)
+    ? sessionIdRaw[0]
+    : sessionIdRaw;
+  const canceledRaw = params.canceled;
+  const canceledParam = Array.isArray(canceledRaw)
+    ? canceledRaw[0]
+    : canceledRaw;
+  const canceled = canceledParam === "1" || canceledParam === "true";
+
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
   });
   const balance = await getCreditBalance(user.id);
   const formattedCredits = formatCreditAmount(balance.creditsRemaining);
+  const topUpEnabled = isStripeTopUpEnabled();
+  const unitCents = getCreditUnitAmountCents();
+  const unitLabel =
+    topUpEnabled && unitCents > 0
+      ? t("unitLabel", { price: formatMinorUnitsAsUsd(unitCents) })
+      : "";
 
   const roadmapItems = [
     { icon: CreditCard, label: t("roadmapBilling") },
@@ -53,13 +88,15 @@ export default async function TopUpPage() {
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
           <Badge variant="outline-muted">
             <Clock3 className="mr-1 h-3 w-3" />
-            {t("status")}
+            {topUpEnabled ? t("statusReady") : t("status")}
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm leading-6">
           {t("description")}
         </p>
       </div>
+
+      <TopUpReturnAlerts sessionId={sessionId} canceled={canceled} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
         <div className="space-y-6">
@@ -99,16 +136,37 @@ export default async function TopUpPage() {
                     </div>
                   </div>
                 </div>
+
+                {topUpEnabled && unitCents > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("purchaseTitle")}
+                    </p>
+                    <TopUpPurchaseForm unitLabel={unitLabel} />
+                    <p className="text-xs text-muted-foreground">
+                      {t("purchaseFootnote")}
+                    </p>
+                  </div>
+                ) : null}
               </CardContent>
 
               <CardFooter className="flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <Button disabled className="w-full sm:w-auto">
-                  <PlusCircle className="h-4 w-4" />
-                  {t("cta")}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {t("comingSoon")}
-                </p>
+                {!topUpEnabled ? (
+                  <>
+                    <Button disabled className="w-full sm:w-auto">
+                      <PlusCircle className="h-4 w-4" />
+                      {t("cta")}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      {t("comingSoon")}
+                    </p>
+                  </>
+                ) : null}
+                {topUpEnabled ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("webhookNote")}
+                  </p>
+                ) : null}
               </CardFooter>
             </Card>
           </div>

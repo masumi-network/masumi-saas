@@ -11,7 +11,8 @@ export type CreditLedgerReason =
   | "initial_grant"
   | "agent_register"
   | "inbox_agent_register"
-  | "payment_proxy_write";
+  | "payment_proxy_write"
+  | "stripe_checkout";
 
 export type CreditBalance = {
   creditsRemaining: number;
@@ -179,6 +180,69 @@ export async function consumeCreditIfRequired(params: {
     reason: params.reason,
     reference: params.reference,
     metadata: params.metadata,
+  });
+}
+
+/**
+ * Idempotent credit grant for Stripe Checkout (`checkout.session.completed`).
+ * Same `checkoutSessionId` only applies once (unique userId + reason + reference).
+ */
+export async function grantCreditTopUpFromCheckoutSession(params: {
+  userId: string;
+  credits: number;
+  checkoutSessionId: string;
+  metadata?: CreditMetadata;
+}): Promise<{ granted: boolean; balanceAfter: number }> {
+  if (params.credits <= 0) {
+    throw new Error(
+      "grantCreditTopUpFromCheckoutSession: credits must be positive",
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.creditLedgerEntry.findUnique({
+      where: {
+        userId_reason_reference: {
+          userId: params.userId,
+          reason: "stripe_checkout",
+          reference: params.checkoutSessionId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      const u = await tx.user.findUniqueOrThrow({
+        where: { id: params.userId },
+        select: { creditsRemaining: true },
+      });
+      return { granted: false, balanceAfter: u.creditsRemaining };
+    }
+
+    const user = await tx.user.update({
+      where: { id: params.userId },
+      data: {
+        creditsRemaining: {
+          increment: params.credits,
+        },
+      },
+      select: { creditsRemaining: true },
+    });
+
+    await tx.creditLedgerEntry.create({
+      data: {
+        userId: params.userId,
+        delta: params.credits,
+        balanceAfter: user.creditsRemaining,
+        reason: "stripe_checkout",
+        reference: params.checkoutSessionId,
+        ...(params.metadata
+          ? { metadata: toJsonMetadata(params.metadata) }
+          : {}),
+      },
+    });
+
+    return { granted: true, balanceAfter: user.creditsRemaining };
   });
 }
 
