@@ -13,14 +13,31 @@ function readOptionalTrimmed(name: string): string | null {
   return t ? t : null;
 }
 
-/** All required for Checkout + webhooks. When false, top-up UI stays disabled. */
+/**
+ * Env names / hints still needed for Checkout + webhooks. Empty means top-up is ready.
+ * Production and local dev are expected to set these; the UI calls this out if not.
+ */
+export function getStripeTopUpConfigurationGaps(): string[] {
+  const missing: string[] = [];
+  if (readOptionalTrimmed("STRIPE_SECRET_KEY") == null) {
+    missing.push("STRIPE_SECRET_KEY");
+  }
+  if (readOptionalTrimmed("STRIPE_WEBHOOK_SECRET") == null) {
+    missing.push("STRIPE_WEBHOOK_SECRET");
+  }
+  if (readOptionalTrimmed("STRIPE_CREDIT_PRODUCT_ID") == null) {
+    missing.push("STRIPE_CREDIT_PRODUCT_ID");
+  }
+  if (getCreditUnitAmountCents() <= 0) {
+    missing.push(
+      "STRIPE_CREDIT_UNIT_AMOUNT_CENTS (positive integer, cents per credit)",
+    );
+  }
+  return missing;
+}
+
 export function isStripeTopUpEnabled(): boolean {
-  return (
-    readOptionalTrimmed("STRIPE_SECRET_KEY") != null &&
-    readOptionalTrimmed("STRIPE_WEBHOOK_SECRET") != null &&
-    readOptionalTrimmed("STRIPE_CREDIT_PRODUCT_ID") != null &&
-    getCreditUnitAmountCents() > 0
-  );
+  return getStripeTopUpConfigurationGaps().length === 0;
 }
 
 export function getAppBaseUrlForStripe(): string {

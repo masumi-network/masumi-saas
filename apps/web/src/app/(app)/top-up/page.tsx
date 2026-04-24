@@ -1,17 +1,9 @@
-import {
-  Bell,
-  Clock3,
-  Coins,
-  CreditCard,
-  History,
-  PlusCircle,
-  ShieldCheck,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Coins, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -25,6 +17,7 @@ import { formatCreditAmount } from "@/lib/credits/format";
 import { getCreditBalance } from "@/lib/credits/service";
 import {
   getCreditUnitAmountCents,
+  getStripeTopUpConfigurationGaps,
   isStripeTopUpEnabled,
 } from "@/lib/stripe/config";
 
@@ -69,17 +62,12 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   const balance = await getCreditBalance(user.id);
   const formattedCredits = formatCreditAmount(balance.creditsRemaining);
   const topUpEnabled = isStripeTopUpEnabled();
+  const configGaps = getStripeTopUpConfigurationGaps();
   const unitCents = getCreditUnitAmountCents();
   const unitLabel =
     topUpEnabled && unitCents > 0
       ? t("unitLabel", { price: formatMinorUnitsAsUsd(unitCents) })
       : "";
-
-  const roadmapItems = [
-    { icon: CreditCard, label: t("roadmapBilling") },
-    { icon: History, label: t("roadmapHistory") },
-    { icon: Bell, label: t("roadmapAlerts") },
-  ];
 
   return (
     <div className="space-y-8 animate-page-in">
@@ -87,18 +75,27 @@ export default async function TopUpPage({ searchParams }: PageProps) {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
           <Badge variant="outline-muted">
-            <Clock3 className="mr-1 h-3 w-3" />
-            {topUpEnabled ? t("statusReady") : t("status")}
+            {topUpEnabled ? (
+              <>
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                {t("statusReady")}
+              </>
+            ) : (
+              <>
+                <AlertCircle className="mr-1 h-3 w-3" />
+                {t("statusSetupRequired")}
+              </>
+            )}
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
+          {topUpEnabled ? t("description") : t("descriptionMisconfigured")}
         </p>
       </div>
 
       <TopUpReturnAlerts sessionId={sessionId} canceled={canceled} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
+      <div className="grid gap-6 lg:max-w-3xl">
         <div className="space-y-6">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
             <Card className="overflow-hidden pt-0">
@@ -122,6 +119,20 @@ export default async function TopUpPage({ searchParams }: PageProps) {
                 <p className="text-sm leading-6 text-muted-foreground">
                   {t("balanceDescription")}
                 </p>
+
+                {!topUpEnabled ? (
+                  <Alert>
+                    <AlertTitle>{t("misconfiguredTitle")}</AlertTitle>
+                    <AlertDescription>
+                      <p className="mb-2">{t("misconfiguredDescription")}</p>
+                      <ul className="list-inside list-disc space-y-1 font-mono text-xs text-muted-foreground">
+                        {configGaps.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
 
                 <div className="rounded-xl border bg-muted/30 p-4">
                   <div className="flex items-start gap-3">
@@ -151,17 +162,6 @@ export default async function TopUpPage({ searchParams }: PageProps) {
               </CardContent>
 
               <CardFooter className="flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                {!topUpEnabled ? (
-                  <>
-                    <Button disabled className="w-full sm:w-auto">
-                      <PlusCircle className="h-4 w-4" />
-                      {t("cta")}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      {t("comingSoon")}
-                    </p>
-                  </>
-                ) : null}
                 {topUpEnabled ? (
                   <p className="text-xs text-muted-foreground">
                     {t("webhookNote")}
@@ -170,33 +170,6 @@ export default async function TopUpPage({ searchParams }: PageProps) {
               </CardFooter>
             </Card>
           </div>
-        </div>
-
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
-          <Card className="h-full shadow-none">
-            <CardHeader>
-              <div className="space-y-2">
-                <CardTitle className="text-base">{t("roadmapTitle")}</CardTitle>
-                <CardDescription className="leading-6">
-                  {t("roadmapDescription")}
-                </CardDescription>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-3">
-              {roadmapItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 rounded-lg border bg-muted/20 p-4"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <item.icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium">{item.label}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

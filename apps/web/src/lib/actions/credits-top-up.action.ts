@@ -25,7 +25,10 @@ export async function startCreditTopUp(
   formData: FormData,
 ): Promise<StartCreditTopUpState> {
   if (!isStripeTopUpEnabled()) {
-    return { ok: false, error: "Top-up is not available" };
+    return {
+      ok: false,
+      error: "Stripe is not fully configured (set required STRIPE_* env vars).",
+    };
   }
 
   const parsed = startTopUpSchema.safeParse({

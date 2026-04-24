@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   if (!isStripeTopUpEnabled()) {
     return NextResponse.json(
-      { error: "Stripe top-up is not configured" },
+      { error: "Required STRIPE_* environment variables are not set" },
       { status: 503 },
     );
   }
