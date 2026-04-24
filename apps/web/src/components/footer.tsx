@@ -52,7 +52,7 @@ export function FooterSections({ className }: FooterSectionsProps) {
           rel="noopener noreferrer"
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
-          Discord
+          {t("discord")}
         </Link>
         <Link
           href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
