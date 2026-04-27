@@ -43,6 +43,8 @@ import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When false, Top up is omitted from navigation (Stripe not configured). */
+  stripeTopUpEnabled: boolean;
 }
 
 interface NavigationItem {
@@ -123,12 +125,24 @@ const externalLinks: NavigationItem[] = [
   },
 ];
 
-export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
+export function SearchDialog({
+  open,
+  onOpenChange,
+  stripeTopUpEnabled,
+}: SearchDialogProps) {
   const t = useTranslations("App.Search");
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [, startTransition] = useTransition();
+
+  const navigationItemsForSearch = useMemo(
+    () =>
+      stripeTopUpEnabled
+        ? navigationItems
+        : navigationItems.filter((item) => item.key !== "topUp"),
+    [stripeTopUpEnabled],
+  );
 
   const handleSelect = useCallback(
     (href: string) => {
@@ -215,7 +229,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           className="animate-list-item-in"
           style={{ animationDelay: "50ms" }}
         >
-          {navigationItems.map((item) => (
+          {navigationItemsForSearch.map((item) => (
             <CommandItem
               key={item.key}
               value={item.key}

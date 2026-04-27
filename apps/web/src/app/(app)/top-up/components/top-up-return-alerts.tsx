@@ -2,7 +2,6 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { isStripeTopUpEnabled } from "@/lib/stripe/config";
 import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
 
 type TopUpReturnAlertsProps = {
@@ -30,7 +29,7 @@ export async function TopUpReturnAlerts({
     );
   }
 
-  if (!sessionId || !isStripeTopUpEnabled()) {
+  if (!sessionId) {
     return null;
   }
 
