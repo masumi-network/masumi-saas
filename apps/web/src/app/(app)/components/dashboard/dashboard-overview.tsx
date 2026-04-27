@@ -2,6 +2,7 @@ import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -12,6 +13,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 import { formatPricingDisplay, getGreeting } from "@/lib/utils";
+import {
+  getRegistrationStatusBadgeVariant,
+  getRegistrationStatusKey,
+} from "@/lib/utils/agent-utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
 import { DashboardActivitySummaryCard } from "./dashboard-activity-summary-card";
@@ -26,6 +31,9 @@ export default async function DashboardOverview({
   data: DashboardOverview;
 }) {
   const t = await getTranslations("App.Home.Dashboard");
+  const tRegistrationStatus = await getTranslations(
+    "App.Agents.registrationStatus",
+  );
 
   const { user, agents, apiKeys, organizationCount, apiKeyCount, agentCount } =
     data;
@@ -139,15 +147,23 @@ export default async function DashboardOverview({
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                           <Bot className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <p
-                            className="min-w-0 truncate text-sm font-medium"
-                            title={agent.name}
-                          >
-                            {agent.name}
-                          </p>
-                        </div>
+                        <p
+                          className="min-w-0 truncate text-sm font-medium"
+                          title={agent.name}
+                        >
+                          {agent.name}
+                        </p>
                       </div>
+                      <Badge
+                        variant={getRegistrationStatusBadgeVariant(
+                          agent.registrationState,
+                        )}
+                        className="shrink-0"
+                      >
+                        {tRegistrationStatus(
+                          getRegistrationStatusKey(agent.registrationState),
+                        )}
+                      </Badge>
                       <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
                         {formatPricingDisplay(agent.pricing)}
                       </span>
