@@ -50,6 +50,13 @@ export async function startCreditTopUp(
 
   const rl = await checkCreditTopUpSessionLimit(user.id);
   if (!rl.allowed) {
+    if (rl.reason === "backend_unavailable") {
+      return {
+        ok: false,
+        error:
+          "Checkout is temporarily unavailable. Please try again in a few minutes.",
+      };
+    }
     return {
       ok: false,
       error: "Too many checkout attempts. Please try again in a few minutes.",

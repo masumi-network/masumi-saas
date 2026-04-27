@@ -161,8 +161,9 @@ const CREDIT_TOP_UP_WINDOW_MS = 15 * 60 * 1000;
 
 /**
  * Limits how often a user can start Stripe Checkout for credit top-up.
- * Uses Upstash when configured; otherwise in-memory per instance (adequate for
- * abuse reduction; not a global cap without Redis).
+ * Uses Upstash when configured. In production, matches {@link checkRateLimit}:
+ * if Upstash is missing, fails closed (same as other rate limits). In
+ * non-production, falls back to in-memory per instance.
  */
 export async function checkCreditTopUpSessionLimit(
   userId: string,
@@ -181,6 +182,18 @@ export async function checkCreditTopUpSessionLimit(
       resetAt: result.reset,
     };
   }
+
+  if (!allowInMemoryFallback) {
+    reportMissingRateLimitBackend();
+    return {
+      allowed: false,
+      limit: CREDIT_TOP_UP_MAX_SESSIONS,
+      remaining: 0,
+      resetAt: Date.now() + CREDIT_TOP_UP_WINDOW_MS,
+      reason: "backend_unavailable",
+    };
+  }
+
   return checkInMemory(
     key,
     CREDIT_TOP_UP_MAX_SESSIONS,
