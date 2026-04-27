@@ -210,7 +210,7 @@ importers:
         specifier: 2.0.7
         version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       stripe:
-        specifier: ^17.7.0
+        specifier: 17.7.0
         version: 17.7.0
       swagger-ui-react:
         specifier: 5.31.0

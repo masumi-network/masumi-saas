@@ -2,6 +2,8 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
+import { serverLog } from "@/lib/server/logger";
+
 import { parseNetwork } from "../schemas/api-query";
 
 export const CREDIT_COST = 1;
@@ -32,6 +34,17 @@ export class InsufficientCreditsError extends Error {
     this.requiredCredits = requiredCredits;
   }
 }
+
+/** Raised when granting credits would exceed {@link MAX_USER_CREDITS_REMAINING}. */
+export class CreditBalanceCapExceededError extends Error {
+  constructor() {
+    super("Credit balance would exceed configured maximum");
+    this.name = "CreditBalanceCapExceededError";
+  }
+}
+
+/** Stay below Postgres `Int` max (2_147_483_647) with headroom. */
+const MAX_USER_CREDITS_REMAINING = 2_000_000_000;
 
 function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -219,6 +232,14 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
       return { granted: false, balanceAfter: u.creditsRemaining };
     }
 
+    const before = await tx.user.findUniqueOrThrow({
+      where: { id: params.userId },
+      select: { creditsRemaining: true },
+    });
+    if (before.creditsRemaining > MAX_USER_CREDITS_REMAINING - params.credits) {
+      throw new CreditBalanceCapExceededError();
+    }
+
     const user = await tx.user.update({
       where: { id: params.userId },
       data: {
@@ -305,11 +326,11 @@ export async function refundConsumedCredit(params: {
     });
   } catch (error) {
     if (isUniqueConstraintError(error)) return;
-    console.error("[Credits] Failed to refund consumed credit:", {
+    serverLog.error("[Credits] Failed to refund consumed credit", {
       userId: params.userId,
       reason: params.reason,
       reference: params.reference,
-      error,
+      err: error,
     });
   }
 }

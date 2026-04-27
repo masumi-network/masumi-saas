@@ -2,6 +2,8 @@ import * as Sentry from "@sentry/nextjs";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
+import { serverLog } from "@/lib/server/logger";
+
 export type RateLimitResult = {
   allowed: boolean;
   limit: number;
@@ -105,7 +107,7 @@ function reportMissingRateLimitBackend() {
     "Upstash rate limit backend is not configured in production.",
   );
 
-  console.error("[rate-limit] backend unavailable", {
+  serverLog.error("[rate-limit] backend unavailable", {
     code: "rate_limit_backend_unavailable",
     nodeEnv: process.env.NODE_ENV,
   });
@@ -152,4 +154,36 @@ export async function checkRateLimit(
   }
 
   return checkInMemory(key, maxRequests, windowMs);
+}
+
+const CREDIT_TOP_UP_MAX_SESSIONS = 5;
+const CREDIT_TOP_UP_WINDOW_MS = 15 * 60 * 1000;
+
+/**
+ * Limits how often a user can start Stripe Checkout for credit top-up.
+ * Uses Upstash when configured; otherwise in-memory per instance (adequate for
+ * abuse reduction; not a global cap without Redis).
+ */
+export async function checkCreditTopUpSessionLimit(
+  userId: string,
+): Promise<RateLimitResult> {
+  const key = `credit-topup-session:${userId}`;
+  if (hasUpstash) {
+    const limiter = getUpstashLimiter(
+      CREDIT_TOP_UP_MAX_SESSIONS,
+      CREDIT_TOP_UP_WINDOW_MS,
+    );
+    const result = await limiter.limit(key);
+    return {
+      allowed: result.success,
+      limit: result.limit,
+      remaining: result.remaining,
+      resetAt: result.reset,
+    };
+  }
+  return checkInMemory(
+    key,
+    CREDIT_TOP_UP_MAX_SESSIONS,
+    CREDIT_TOP_UP_WINDOW_MS,
+  );
 }

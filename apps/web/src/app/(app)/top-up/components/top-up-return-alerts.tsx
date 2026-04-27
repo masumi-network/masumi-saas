@@ -2,16 +2,17 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { isStripeTopUpEnabled } from "@/lib/stripe/config";
 import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
 
 type TopUpReturnAlertsProps = {
+  userId: string;
   sessionId?: string;
   canceled?: boolean;
 };
 
 export async function TopUpReturnAlerts({
+  userId,
   sessionId,
   canceled,
 }: TopUpReturnAlertsProps) {
@@ -33,11 +34,8 @@ export async function TopUpReturnAlerts({
     return null;
   }
 
-  const { user } = await getAuthenticatedOrThrow({
-    requireEmailVerified: false,
-  });
   const info = await verifyTopUpReturnSession({
-    userId: user.id,
+    userId,
     sessionId,
   });
 

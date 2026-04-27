@@ -19,6 +19,7 @@ import {
   getCreditUnitAmountCents,
   getStripeTopUpConfigurationGaps,
   isStripeTopUpEnabled,
+  STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
 
 import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
@@ -32,10 +33,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function formatMinorUnitsAsUsd(cents: number): string {
+function formatMinorUnitsForCheckout(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: STRIPE_CHECKOUT_CURRENCY.toUpperCase(),
   }).format(cents / 100);
 }
 
@@ -46,14 +47,8 @@ type PageProps = {
 export default async function TopUpPage({ searchParams }: PageProps) {
   const t = await getTranslations("App.TopUp");
   const params = await searchParams;
-  const sessionIdRaw = params.session_id;
-  const sessionId = Array.isArray(sessionIdRaw)
-    ? sessionIdRaw[0]
-    : sessionIdRaw;
-  const canceledRaw = params.canceled;
-  const canceledParam = Array.isArray(canceledRaw)
-    ? canceledRaw[0]
-    : canceledRaw;
+  const sessionId = params.session_id;
+  const canceledParam = params.canceled;
   const canceled = canceledParam === "1" || canceledParam === "true";
 
   const { user } = await getAuthenticatedOrThrow({
@@ -66,7 +61,7 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   const unitCents = getCreditUnitAmountCents();
   const unitLabel =
     topUpEnabled && unitCents > 0
-      ? t("unitLabel", { price: formatMinorUnitsAsUsd(unitCents) })
+      ? t("unitLabel", { price: formatMinorUnitsForCheckout(unitCents) })
       : "";
 
   return (
@@ -93,7 +88,11 @@ export default async function TopUpPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <TopUpReturnAlerts sessionId={sessionId} canceled={canceled} />
+      <TopUpReturnAlerts
+        userId={user.id}
+        sessionId={sessionId}
+        canceled={canceled}
+      />
 
       <div className="grid gap-6 lg:max-w-3xl">
         <div className="space-y-6">

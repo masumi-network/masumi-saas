@@ -192,6 +192,7 @@ vi.mock("@masumi/database/client", () => ({
 
 const {
   CREDIT_COST,
+  CreditBalanceCapExceededError,
   InsufficientCreditsError,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
@@ -456,5 +457,17 @@ describe("credit service", () => {
       reference: "cs_test_123",
       delta: 10,
     });
+  });
+
+  it("rejects stripe top-up when balance would exceed configured maximum", async () => {
+    store.current = createState(2_000_000_000);
+
+    await expect(
+      grantCreditTopUpFromCheckoutSession({
+        userId: "user-1",
+        credits: 10,
+        checkoutSessionId: "cs_test_cap",
+      }),
+    ).rejects.toBeInstanceOf(CreditBalanceCapExceededError);
   });
 });

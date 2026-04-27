@@ -1,7 +1,7 @@
 import "server-only";
 
 import prisma from "@masumi/database/client";
-import type { Stripe } from "stripe";
+import type Stripe from "stripe";
 
 import {
   getAppBaseUrlForStripe,
@@ -9,6 +9,7 @@ import {
   getCreditUnitAmountCents,
   getStripeClient,
   MASUMI_CHECKOUT_METADATA_PURPOSE,
+  STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
 import type { TopUpCredits } from "@/lib/stripe/top-up-constants";
 
@@ -19,28 +20,51 @@ function expectedAmountTotalCents(credits: number): number {
 export async function getOrCreateStripeCustomerId(
   userId: string,
 ): Promise<string> {
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { id: true, email: true, name: true, stripeCustomerId: true },
-  });
+  const maxAttempts = 5;
 
-  if (user.stripeCustomerId) {
-    return user.stripeCustomerId;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, stripeCustomerId: true },
+    });
+
+    if (user.stripeCustomerId) {
+      return user.stripeCustomerId;
+    }
+
+    const stripe = getStripeClient();
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name,
+      metadata: { masumiUserId: user.id },
+    });
+
+    const assigned = await prisma.user.updateMany({
+      where: { id: userId, stripeCustomerId: null },
+      data: { stripeCustomerId: customer.id },
+    });
+
+    if (assigned.count === 1) {
+      return customer.id;
+    }
+
+    try {
+      await stripe.customers.del(customer.id);
+    } catch {
+      // Best-effort cleanup of orphan test-mode customer; ignore secondary failures
+    }
   }
 
-  const stripe = getStripeClient();
-  const customer = await stripe.customers.create({
-    email: user.email,
-    name: user.name,
-    metadata: { masumiUserId: user.id },
-  });
-
-  await prisma.user.update({
+  const final = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    data: { stripeCustomerId: customer.id },
+    select: { stripeCustomerId: true },
   });
-
-  return customer.id;
+  if (!final.stripeCustomerId) {
+    throw new Error(
+      "getOrCreateStripeCustomerId: could not assign Stripe customer",
+    );
+  }
+  return final.stripeCustomerId;
 }
 
 export async function createTopUpCheckoutSession(params: {
@@ -60,12 +84,19 @@ export async function createTopUpCheckoutSession(params: {
 
   return stripe.checkout.sessions.create({
     mode: "payment",
+    /**
+     * Card-only: immediate `payment_status: paid` on `checkout.session.completed`.
+     * Other methods (ACH, SEPA, …) can be `processing` until a later event — we
+     * do not enable them here, so customers are not left without a matching grant
+     * until async events (see `checkout.session.async_payment_succeeded` in webhook).
+     */
+    payment_method_types: ["card"],
     customer: customerId,
     line_items: [
       {
         quantity: 1,
         price_data: {
-          currency: "usd",
+          currency: STRIPE_CHECKOUT_CURRENCY,
           product: productId,
           unit_amount: totalCents,
         },
@@ -82,10 +113,4 @@ export async function createTopUpCheckoutSession(params: {
   });
 }
 
-export function isExpectedCheckoutAmount(params: {
-  credits: number;
-  amountTotal: number | null;
-}): boolean {
-  if (params.amountTotal == null) return false;
-  return params.amountTotal === expectedAmountTotalCents(params.credits);
-}
+export { isExpectedCheckoutAmount } from "@/lib/stripe/checkout-amounts";

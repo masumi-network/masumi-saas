@@ -3,12 +3,14 @@
 import prisma from "@masumi/database/client";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
+import { checkCreditTopUpSessionLimit } from "@/lib/api/rate-limit";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { serverLog } from "@/lib/server/logger";
 import { isStripeTopUpEnabled } from "@/lib/stripe/config";
 import { isValidTopUpCredits } from "@/lib/stripe/top-up-constants";
 import { createTopUpCheckoutSession } from "@/lib/stripe/top-up-session";
+import { z } from "@/lib/zod-openapi";
 
 const startTopUpSchema = z.object({
   credits: z.coerce.number().int().positive().max(1_000_000),
@@ -46,6 +48,14 @@ export async function startCreditTopUp(
     requireEmailVerified: true,
   });
 
+  const rl = await checkCreditTopUpSessionLimit(user.id);
+  if (!rl.allowed) {
+    return {
+      ok: false,
+      error: "Too many checkout attempts. Please try again in a few minutes.",
+    };
+  }
+
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: { banned: true },
@@ -67,7 +77,7 @@ export async function startCreditTopUp(
     if (isRedirectError(err)) {
       throw err;
     }
-    console.error("[credits top-up] createTopUpCheckoutSession", err);
+    serverLog.error("[credits top-up] createTopUpCheckoutSession", { err });
     return { ok: false, error: "Could not start checkout. Please try again." };
   }
 }

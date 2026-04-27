@@ -1,10 +1,16 @@
 import "server-only";
 
+import { isExpectedCheckoutAmount } from "@/lib/stripe/checkout-amounts";
 import {
   getStripeClient,
   MASUMI_CHECKOUT_METADATA_PURPOSE,
 } from "@/lib/stripe/config";
-import { isExpectedCheckoutAmount } from "@/lib/stripe/top-up-session";
+
+const STRIPE_CHECKOUT_SESSION_ID = /^cs_(test|live)_[A-Za-z0-9]+$/;
+
+export function isValidStripeCheckoutSessionId(id: string): boolean {
+  return STRIPE_CHECKOUT_SESSION_ID.test(id);
+}
 
 export type TopUpReturnSessionInfo =
   | { ok: true; credits: number; paymentStatus: string }
@@ -18,6 +24,10 @@ export async function verifyTopUpReturnSession(params: {
   userId: string;
   sessionId: string;
 }): Promise<TopUpReturnSessionInfo> {
+  if (!isValidStripeCheckoutSessionId(params.sessionId)) {
+    return { ok: false, reason: "invalid" };
+  }
+
   const stripe = getStripeClient();
   let session: Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
   try {

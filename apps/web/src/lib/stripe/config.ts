@@ -4,7 +4,14 @@ import Stripe from "stripe";
 
 import { authEnvConfig } from "@/lib/config/auth.config";
 
+/** Pin to the API version this library’s types target — avoids dashboard drift. */
+const STRIPE_API_VERSION =
+  "2025-02-24.acacia" satisfies Stripe.LatestApiVersion;
+
 const LOG_PREFIX = "[stripe]";
+
+/** ISO 4217 (lowercase) for Checkout `line_items`; keep in sync with display formatting. */
+export const STRIPE_CHECKOUT_CURRENCY = "usd" as const;
 
 function readOptionalTrimmed(name: string): string | null {
   const v = process.env[name];
@@ -54,7 +61,10 @@ export function getStripeClient(): Stripe {
   if (!key) {
     throw new Error(`${LOG_PREFIX} STRIPE_SECRET_KEY is not configured`);
   }
-  stripeSingleton = new Stripe(key, { typescript: true });
+  stripeSingleton = new Stripe(key, {
+    apiVersion: STRIPE_API_VERSION,
+    typescript: true,
+  });
   return stripeSingleton;
 }
 
