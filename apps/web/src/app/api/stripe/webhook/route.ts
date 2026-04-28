@@ -7,7 +7,7 @@ import {
   grantCreditTopUpFromCheckoutSession,
 } from "@/lib/credits/service";
 import { serverLog } from "@/lib/server/logger";
-import { isExpectedCheckoutAmount } from "@/lib/stripe/checkout-amounts";
+import { isPaidTopUpAmountConsistentWithCredits } from "@/lib/stripe/checkout-amounts";
 import {
   getStripeClient,
   getWebhookSecretOrThrow,
@@ -179,13 +179,13 @@ async function processTopUpCheckoutSession(
   }
 
   if (
-    !isExpectedCheckoutAmount({
+    !isPaidTopUpAmountConsistentWithCredits({
       credits,
       amountTotal: session.amount_total,
     })
   ) {
     captureWebhookIntegrityFailure(
-      "[stripe webhook] amount_total does not match configured pricing",
+      "[stripe webhook] amount_total is not consistent with metadata credits",
       {
         sessionId: session.id,
         credits,

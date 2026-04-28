@@ -1,6 +1,6 @@
 import "server-only";
 
-import { isExpectedCheckoutAmount } from "@/lib/stripe/checkout-amounts";
+import { isPaidTopUpAmountConsistentWithCredits } from "@/lib/stripe/checkout-amounts";
 import {
   getStripeClient,
   MASUMI_CHECKOUT_METADATA_PURPOSE,
@@ -57,7 +57,10 @@ export async function verifyTopUpReturnSession(params: {
   }
 
   if (
-    !isExpectedCheckoutAmount({ credits, amountTotal: session.amount_total })
+    !isPaidTopUpAmountConsistentWithCredits({
+      credits,
+      amountTotal: session.amount_total,
+    })
   ) {
     return { ok: false, reason: "invalid" };
   }
