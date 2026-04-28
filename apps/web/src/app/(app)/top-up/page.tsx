@@ -134,13 +134,15 @@ export default async function TopUpPage({ searchParams }: PageProps) {
             <Card className="gap-0 overflow-hidden pt-0">
               <CardHeader className="rounded-t-xl bg-masumi-gradient pb-4 pt-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
+                  <div className="min-w-0 flex-1 space-y-2">
                     <CardDescription className="text-foreground/70">
                       {t("balanceLabel")}
                     </CardDescription>
-                    <CardTitle className="font-mono text-5xl font-semibold tracking-tight">
-                      {formattedCredits}
-                    </CardTitle>
+                    <div className="min-w-0 max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <CardTitle className="font-mono text-[clamp(1.625rem,7vw,3rem)] font-semibold tabular-nums tracking-tight whitespace-nowrap">
+                        {formattedCredits}
+                      </CardTitle>
+                    </div>
                   </div>
                   <div className="rounded-full border border-foreground/10 bg-background/70 p-3 backdrop-blur-sm">
                     <Coins className="h-5 w-5" />
