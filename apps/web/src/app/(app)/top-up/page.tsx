@@ -1,9 +1,9 @@
-import { CheckCircle2, Coins, ShieldCheck } from "lucide-react";
+import { Coins, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -20,9 +20,12 @@ import {
   isStripeTopUpEnabled,
   STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
+import { TOP_UP_PRESET_CREDIT_AMOUNTS } from "@/lib/stripe/top-up-constants";
+import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
 
 import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
-import { TopUpReturnAlerts } from "./components/top-up-return-alerts";
+import { TopUpCanceledBanner } from "./components/top-up-return-alerts";
+import { TopUpStripSessionQuery } from "./components/top-up-strip-session-query";
 
 export async function generateMetadata(): Promise<Metadata> {
   if (!isStripeTopUpEnabled()) {
@@ -60,6 +63,14 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
   });
+
+  if (sessionId && !canceled) {
+    await verifyTopUpReturnSession({
+      userId: user.id,
+      sessionId,
+    });
+  }
+
   const balance = await getCreditBalance(user.id);
   const formattedCredits = formatCreditAmount(balance.creditsRemaining);
   const unitCents = getCreditUnitAmountCents();
@@ -67,33 +78,34 @@ export default async function TopUpPage({ searchParams }: PageProps) {
     unitCents > 0
       ? t("unitLabel", { price: formatMinorUnitsForCheckout(unitCents) })
       : "";
+  const purchaseTiers =
+    unitCents > 0
+      ? TOP_UP_PRESET_CREDIT_AMOUNTS.map((credits) => ({
+          credits,
+          totalFormatted: formatMinorUnitsForCheckout(credits * unitCents),
+        }))
+      : [];
 
   return (
-    <div className="space-y-8 animate-page-in">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="animate-page-in">
+      <div className="mx-auto w-full max-w-3xl space-y-8">
+        <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <Badge variant="outline-muted">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            {t("statusReady")}
-          </Badge>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {t("description")}
+          </p>
         </div>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
-      </div>
 
-      <TopUpReturnAlerts
-        userId={user.id}
-        sessionId={sessionId}
-        canceled={canceled}
-      />
-
-      <div className="grid gap-6 lg:max-w-3xl">
         <div className="space-y-6">
+          <Suspense fallback={null}>
+            <TopUpStripSessionQuery />
+          </Suspense>
+
+          {canceled ? <TopUpCanceledBanner /> : null}
+
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
-            <Card className="overflow-hidden pt-0">
-              <CardHeader className="rounded-t-xl bg-masumi-gradient pb-6 pt-6">
+            <Card className="gap-0 overflow-hidden pt-0">
+              <CardHeader className="rounded-t-xl bg-masumi-gradient pb-4 pt-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <CardDescription className="text-foreground/70">
@@ -109,7 +121,7 @@ export default async function TopUpPage({ searchParams }: PageProps) {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="space-y-4 pt-4">
                 <p className="text-sm leading-6 text-muted-foreground">
                   {t("balanceDescription")}
                 </p>
@@ -129,19 +141,16 @@ export default async function TopUpPage({ searchParams }: PageProps) {
                 </div>
 
                 {unitCents > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">
-                      {t("purchaseTitle")}
-                    </p>
-                    <TopUpPurchaseForm unitLabel={unitLabel} />
-                    <p className="text-xs text-muted-foreground">
-                      {t("purchaseFootnote")}
-                    </p>
-                  </div>
+                  <TopUpPurchaseForm
+                    purchaseTiers={purchaseTiers}
+                    stripeCheckoutCurrencyUpper={STRIPE_CHECKOUT_CURRENCY.toUpperCase()}
+                    unitAmountCents={unitCents}
+                    unitLabel={unitLabel}
+                  />
                 ) : null}
               </CardContent>
 
-              <CardFooter className="flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <CardFooter className="flex flex-col mt-6 items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
                   {t("webhookNote")}
                 </p>

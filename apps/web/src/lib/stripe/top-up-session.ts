@@ -11,7 +11,6 @@ import {
   MASUMI_CHECKOUT_METADATA_PURPOSE,
   STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
-import type { TopUpCredits } from "@/lib/stripe/top-up-constants";
 
 function expectedAmountTotalCents(credits: number): number {
   return credits * getCreditUnitAmountCents();
@@ -69,7 +68,8 @@ export async function getOrCreateStripeCustomerId(
 
 export async function createTopUpCheckoutSession(params: {
   userId: string;
-  credits: TopUpCredits;
+  /** Whole credits after validation (preset or custom amount). */
+  credits: number;
 }): Promise<Stripe.Response<Stripe.Checkout.Session>> {
   const unitCents = getCreditUnitAmountCents();
   const totalCents = expectedAmountTotalCents(params.credits);

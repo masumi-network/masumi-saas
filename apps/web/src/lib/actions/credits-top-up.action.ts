@@ -8,12 +8,19 @@ import { checkCreditTopUpSessionLimit } from "@/lib/api/rate-limit";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { serverLog } from "@/lib/server/logger";
 import { isStripeTopUpEnabled } from "@/lib/stripe/config";
-import { isValidTopUpCredits } from "@/lib/stripe/top-up-constants";
+import {
+  CREDIT_TOP_UP_AMOUNT_MAX,
+  CREDIT_TOP_UP_AMOUNT_MIN,
+} from "@/lib/stripe/top-up-constants";
 import { createTopUpCheckoutSession } from "@/lib/stripe/top-up-session";
 import { z } from "@/lib/zod-openapi";
 
 const startTopUpSchema = z.object({
-  credits: z.coerce.number().int().positive().max(1_000_000),
+  credits: z.coerce
+    .number()
+    .int()
+    .min(CREDIT_TOP_UP_AMOUNT_MIN)
+    .max(CREDIT_TOP_UP_AMOUNT_MAX),
 });
 
 export type StartCreditTopUpState = { ok: true } | { ok: false; error: string };
@@ -37,11 +44,10 @@ export async function startCreditTopUp(
     credits: formData.get("credits"),
   });
   if (!parsed.success) {
-    return { ok: false, error: "Invalid credit amount" };
-  }
-
-  if (!isValidTopUpCredits(parsed.data.credits)) {
-    return { ok: false, error: "Choose one of the listed packages" };
+    return {
+      ok: false,
+      error: `Enter a whole number between ${CREDIT_TOP_UP_AMOUNT_MIN.toLocaleString()} and ${CREDIT_TOP_UP_AMOUNT_MAX.toLocaleString()} credits.`,
+    };
   }
 
   const { user } = await getAuthenticatedOrThrow({
