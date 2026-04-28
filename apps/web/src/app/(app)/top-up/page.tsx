@@ -66,6 +66,7 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   const canceledParam = params.canceled;
   const canceled = canceledParam === "1" || canceledParam === "true";
 
+  /** Balance + return verification; submitting checkout still requires verified email (server action). */
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
   });

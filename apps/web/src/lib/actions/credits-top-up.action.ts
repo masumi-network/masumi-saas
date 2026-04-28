@@ -3,9 +3,14 @@
 import prisma from "@masumi/database/client";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { checkCreditTopUpSessionLimit } from "@/lib/api/rate-limit";
-import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  EmailNotVerifiedError,
+  getAuthenticatedOrThrow,
+  UnauthorizedError,
+} from "@/lib/auth/utils";
 import { serverLog } from "@/lib/server/logger";
 import { isStripeTopUpEnabled } from "@/lib/stripe/config";
 import {
@@ -28,6 +33,10 @@ export type StartCreditTopUpState = { ok: true } | { ok: false; error: string };
 /**
  * Creates a Stripe Checkout session and redirects the browser. Only runs when
  * Stripe env is configured; otherwise returns an error state (caller may ignore).
+ *
+ * Requires verified email for checkout; `/top-up` may still load with
+ * `getAuthenticatedOrThrow({ requireEmailVerified: false })` so users see
+ * balance and the verify banner—unverified submitters get a structured error.
  */
 export async function startCreditTopUp(
   _prev: StartCreditTopUpState | undefined,
@@ -50,9 +59,30 @@ export async function startCreditTopUp(
     };
   }
 
-  const { user } = await getAuthenticatedOrThrow({
-    requireEmailVerified: true,
-  });
+  const tTopUp = await getTranslations("App.TopUp");
+
+  let auth: Awaited<ReturnType<typeof getAuthenticatedOrThrow>>;
+  try {
+    auth = await getAuthenticatedOrThrow({
+      requireEmailVerified: true,
+    });
+  } catch (err) {
+    if (err instanceof EmailNotVerifiedError) {
+      return {
+        ok: false,
+        error: tTopUp("emailVerificationRequired"),
+      };
+    }
+    if (err instanceof UnauthorizedError) {
+      return {
+        ok: false,
+        error: tTopUp("signInRequiredForPurchase"),
+      };
+    }
+    throw err;
+  }
+
+  const { user } = auth;
 
   const rl = await checkCreditTopUpSessionLimit(user.id);
   if (!rl.allowed) {

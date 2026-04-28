@@ -516,7 +516,9 @@
       "successTitle": "Payment received",
       "successDescription": "We’re adding {credits} credits to your balance. It may take a moment to appear.",
       "cancelTitle": "Checkout canceled",
-      "cancelDescription": "No payment was made. You can try again whenever you’re ready."
+      "cancelDescription": "No payment was made. You can try again whenever you’re ready.",
+      "emailVerificationRequired": "Verify your email address before purchasing credits.",
+      "signInRequiredForPurchase": "Sign in to purchase credits."
     },
     "Withdraw": {
       "title": "Withdraw",
