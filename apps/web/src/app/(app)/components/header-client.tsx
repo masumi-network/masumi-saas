@@ -74,9 +74,10 @@ export function HeaderClient({
             </div>
 
             <div className="flex items-center gap-2">
-              {stripeTopUpEnabled ? (
-                <CreditBalanceLink className="shrink-0" />
-              ) : null}
+              <CreditBalanceLink
+                className="shrink-0"
+                balanceLinkToTopUp={stripeTopUpEnabled}
+              />
 
               <Button
                 variant="outline"

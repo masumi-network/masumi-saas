@@ -1,7 +1,7 @@
 import { Coins, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import {
@@ -15,6 +15,7 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { formatCreditAmount } from "@/lib/credits/format";
 import { getCreditBalance } from "@/lib/credits/service";
+import { serverLog } from "@/lib/server/logger";
 import {
   getCreditUnitAmountCents,
   isStripeTopUpEnabled,
@@ -25,6 +26,7 @@ import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
 
 import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
 import { TopUpCanceledBanner } from "./components/top-up-return-alerts";
+import { TopUpReturnSuccessBanner } from "./components/top-up-return-success";
 import { TopUpStripSessionQuery } from "./components/top-up-strip-session-query";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,8 +40,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function formatMinorUnitsForCheckout(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
+function formatMinorUnitsForCheckout(
+  cents: number,
+  numberLocale: string,
+): string {
+  return new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency: STRIPE_CHECKOUT_CURRENCY.toUpperCase(),
   }).format(cents / 100);
@@ -55,6 +60,7 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   }
 
   const t = await getTranslations("App.TopUp");
+  const numberLocale = await getLocale();
   const params = await searchParams;
   const sessionId = params.session_id;
   const canceledParam = params.canceled;
@@ -64,11 +70,23 @@ export default async function TopUpPage({ searchParams }: PageProps) {
     requireEmailVerified: false,
   });
 
+  /** Verified paid session from Stripe redirect (`?session_id=`); stripped next tick client-side. */
+  let stripeReturnCreditsVerified: number | null = null;
+
   if (sessionId && !canceled) {
-    await verifyTopUpReturnSession({
+    const returnInfo = await verifyTopUpReturnSession({
       userId: user.id,
       sessionId,
     });
+    if (returnInfo.ok) {
+      stripeReturnCreditsVerified = returnInfo.credits;
+    } else {
+      serverLog.warn("Stripe top-up return session verification failed", {
+        userId: user.id,
+        sessionIdSuffix: sessionId.slice(-12),
+        reason: returnInfo.reason,
+      });
+    }
   }
 
   const balance = await getCreditBalance(user.id);
@@ -76,13 +94,18 @@ export default async function TopUpPage({ searchParams }: PageProps) {
   const unitCents = getCreditUnitAmountCents();
   const unitLabel =
     unitCents > 0
-      ? t("unitLabel", { price: formatMinorUnitsForCheckout(unitCents) })
+      ? t("unitLabel", {
+          price: formatMinorUnitsForCheckout(unitCents, numberLocale),
+        })
       : "";
   const purchaseTiers =
     unitCents > 0
       ? TOP_UP_PRESET_CREDIT_AMOUNTS.map((credits) => ({
           credits,
-          totalFormatted: formatMinorUnitsForCheckout(credits * unitCents),
+          totalFormatted: formatMinorUnitsForCheckout(
+            credits * unitCents,
+            numberLocale,
+          ),
         }))
       : [];
 
@@ -102,6 +125,10 @@ export default async function TopUpPage({ searchParams }: PageProps) {
           </Suspense>
 
           {canceled ? <TopUpCanceledBanner /> : null}
+
+          {stripeReturnCreditsVerified !== null ? (
+            <TopUpReturnSuccessBanner credits={stripeReturnCreditsVerified} />
+          ) : null}
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
             <Card className="gap-0 overflow-hidden pt-0">
@@ -146,6 +173,7 @@ export default async function TopUpPage({ searchParams }: PageProps) {
                     stripeCheckoutCurrencyUpper={STRIPE_CHECKOUT_CURRENCY.toUpperCase()}
                     unitAmountCents={unitCents}
                     unitLabel={unitLabel}
+                    numberLocale={numberLocale}
                   />
                 ) : null}
               </CardContent>

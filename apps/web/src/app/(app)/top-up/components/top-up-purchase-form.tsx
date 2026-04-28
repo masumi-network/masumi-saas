@@ -89,6 +89,8 @@ type TopUpPurchaseFormProps = {
   stripeCheckoutCurrencyUpper: string;
   unitAmountCents: number;
   unitLabel: string;
+  /** `Intl.NumberFormat` locale for currency previews (matches next-intl). */
+  numberLocale: string;
 };
 
 export function TopUpPurchaseForm({
@@ -96,6 +98,7 @@ export function TopUpPurchaseForm({
   stripeCheckoutCurrencyUpper,
   unitAmountCents,
   unitLabel,
+  numberLocale,
 }: TopUpPurchaseFormProps) {
   const t = useTranslations("App.TopUp");
   const [state, formAction, isPending] = useActionState<
@@ -126,6 +129,15 @@ export function TopUpPurchaseForm({
     }, 200);
   };
 
+  useEffect(() => {
+    return () => {
+      const id = closeTimerRef.current;
+      if (id != null) {
+        window.clearTimeout(id);
+      }
+    };
+  }, []);
+
   const [credits, setCredits] = useState(25);
   const clampCredits = useCallback((n: number) => {
     const r = Math.round(n);
@@ -145,22 +157,18 @@ export function TopUpPurchaseForm({
 
   const [manualDraft, setManualDraft] = useState<string | null>(null);
 
-  const creditsAllowed =
-    credits !== null && isAllowedCreditTopUpAmount(credits);
+  const creditsAllowed = isAllowedCreditTopUpAmount(credits);
   const canSubmit = creditsAllowed && !isPending;
 
-  const hiddenCreditsValue =
-    credits !== null && isAllowedCreditTopUpAmount(credits)
-      ? String(credits)
-      : "";
+  const hiddenCreditsValue = creditsAllowed ? String(credits) : "";
 
   const formatCheckoutMoney = useCallback(
     (minorUnitsCents: number) =>
-      new Intl.NumberFormat("en-US", {
+      new Intl.NumberFormat(numberLocale, {
         style: "currency",
         currency: stripeCheckoutCurrencyUpper,
       }).format(minorUnitsCents / 100),
-    [stripeCheckoutCurrencyUpper],
+    [numberLocale, stripeCheckoutCurrencyUpper],
   );
 
   const estimatedTotalFormatted =
@@ -186,8 +194,7 @@ export function TopUpPurchaseForm({
     manualDraft !== null &&
     manualPeek !== "" &&
     (parsedManualPeek === null ||
-      (parsedManualPeek !== null &&
-        !isAllowedCreditTopUpAmount(parsedManualPeek)));
+      !isAllowedCreditTopUpAmount(parsedManualPeek));
 
   /** True when credits aren’t a committed preset (slider/exact ≠ quick button). */
   const hasCommittedCustomAmount =
