@@ -95,6 +95,17 @@
 }
 
 @layer utilities {
+  /* Global cursor pointer for all interactive elements */
+  a,
+  button,
+  [role="button"],
+  [onclick],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    @apply cursor-pointer;
+  }
+
   .max-w-container {
     max-width: var(--max-width-container);
   }
