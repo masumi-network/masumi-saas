@@ -8164,35 +8164,68 @@
                     "maxLength": 2000
                   },
                   "pricing": {
-                    "type": "object",
-                    "properties": {
-                      "pricingType": {
-                        "type": "string",
-                        "enum": [
-                          "Free",
-                          "Fixed"
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Free"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
                         ]
                       },
-                      "prices": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "amount": {
-                              "type": "string"
-                            },
-                            "currency": {
-                              "type": "string"
-                            }
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Fixed"
+                            ]
                           },
-                          "required": [
-                            "amount"
-                          ]
-                        }
+                          "prices": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "amount": {
+                                  "type": "string"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "amount"
+                              ]
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "pricingType",
+                          "prices"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Dynamic"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
+                        ]
                       }
-                    },
-                    "required": [
-                      "pricingType"
                     ]
                   },
                   "termsOfUseUrl": {
