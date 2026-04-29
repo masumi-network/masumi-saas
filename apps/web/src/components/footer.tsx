@@ -47,10 +47,12 @@ export function FooterSections({ className }: FooterSectionsProps) {
       </div>
       <div className="flex flex-wrap items-center flex-1 justify-end gap-4">
         <Link
-          href="https://www.masumi.network/about"
+          href="https://discord.com/invite/aj4QfnTS92"
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
-          {t("about")}
+          {t("discord")}
         </Link>
         <Link
           href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
@@ -59,7 +61,7 @@ export function FooterSections({ className }: FooterSectionsProps) {
           {t("privacyPolicy")}
         </Link>
         <Link
-          href="https://www.masumi.network/legal"
+          href="https://www.masumi.network/imprint"
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("legal")}
