@@ -54,19 +54,54 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { key: "dashboard", href: "/", icon: LayoutDashboard },
-  { key: "agents", href: "/ai-agents", icon: Bot },
-  { key: "inboxAgents", href: "/inbox-agents", icon: Inbox },
-  { key: "activity", href: "/activity", icon: Activity },
-  { key: "earnings", href: "/earnings", icon: TrendingUp },
+  {
+    key: "dashboard",
+    href: "/",
+    icon: LayoutDashboard,
+    searchKeywords: ["home", "dashboard"],
+  },
+  {
+    key: "agents",
+    href: "/ai-agents",
+    icon: Bot,
+    searchKeywords: ["ai", "agents", "artificial intelligence"],
+  },
+  {
+    key: "inboxAgents",
+    href: "/inbox-agents",
+    icon: Inbox,
+    searchKeywords: ["inbox", "messages", "inboxes"],
+  },
+  {
+    key: "activity",
+    href: "/activity",
+    icon: Activity,
+    searchKeywords: ["activity", "history", "events", "transactions"],
+  },
+  {
+    key: "earnings",
+    href: "/earnings",
+    icon: TrendingUp,
+    searchKeywords: ["earnings", "revenue", "income", "money"],
+  },
   {
     key: "topUp",
     href: "/top-up",
     icon: CircleDollarSign,
-    searchKeywords: ["credits", "balance", "billing", "funds"],
+    searchKeywords: ["credits", "balance", "billing", "funds", "topup"],
   },
-  { key: "organizations", href: "/organizations", icon: Building2 },
-  { key: "apiKeys", href: "/api-keys", icon: Key },
+  {
+    key: "organizations",
+    href: "/organizations",
+    icon: Building2,
+    searchKeywords: ["organizations", "teams", "workspace"],
+  },
+  {
+    key: "apiKeys",
+    href: "/api-keys",
+    icon: Key,
+    searchKeywords: ["api", "keys", "token", "authentication"],
+  },
   {
     key: "developers",
     href: "/developers",
@@ -83,7 +118,12 @@ const navigationItems: NavigationItem[] = [
       "developers",
     ],
   },
-  { key: "account", href: "/account", icon: User },
+  {
+    key: "account",
+    href: "/account",
+    icon: User,
+    searchKeywords: ["account", "profile", "settings", "user"],
+  },
 ];
 
 const quickActions: NavigationItem[] = [
