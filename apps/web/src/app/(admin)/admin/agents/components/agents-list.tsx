@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useTransition } from "react";
@@ -200,7 +201,12 @@ export default function AgentsList({
                   {agents.map((agent) => (
                     <TableRow key={agent.id}>
                       <TableCell className="font-medium">
-                        {agent.name}
+                        <Link
+                          href={`/admin/agents/${agent.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {agent.name}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <span className="block truncate max-w-[200px]">

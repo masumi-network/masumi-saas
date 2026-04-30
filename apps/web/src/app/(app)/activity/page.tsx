@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { getAdminAuthContext } from "@/lib/auth/utils";
+
 import { ActivityPageContent } from "./activity-page-content";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ActivityPage() {
   const t = await getTranslations("App.Activity");
+  const { isAdmin } = await getAdminAuthContext();
 
   return (
     <div className="space-y-8 animate-page-in">
@@ -22,7 +25,7 @@ export default async function ActivityPage() {
           {t("description")}
         </p>
       </div>
-      <ActivityPageContent />
+      <ActivityPageContent linkAgentsInAdmin={isAdmin} />
     </div>
   );
 }

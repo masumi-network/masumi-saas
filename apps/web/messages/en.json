@@ -336,7 +336,16 @@
       "verificationRevoked": "Revoked",
       "verificationExpired": "Expired",
       "copyIdentifier": "Copy agent identifier",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "agentDetail": {
+        "backToList": "← Back to agents",
+        "subtitle": "Platform agent overview (admin).",
+        "overviewTitle": "Overview",
+        "apiUrl": "API URL",
+        "openInApp": "Open in app",
+        "notFoundTitle": "Agent not found",
+        "metaDescription": "Admin view for agent {name}"
+      }
     }
   },
   "App": {
@@ -602,6 +611,7 @@
       "details": "Details",
       "lifecycle": "Lifecycle",
       "transactionHash": "Transaction Hash",
+      "agentIdentifier": "Agent identifier",
       "searchPlaceholder": "Search by agent, type, status, amount...",
       "searchShortcut": "F",
       "noSearchResults": "No results match your search.",

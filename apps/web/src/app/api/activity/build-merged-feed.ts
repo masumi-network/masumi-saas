@@ -450,6 +450,7 @@ export async function loadActivityTransactionFeedPart(params: {
         type,
         agentId: agent?.id ?? null,
         agentName: agent?.name ?? null,
+        agentIdentifier: p.agentIdentifier ?? null,
         amount: formatRequestedAmount(fundsForAmount),
         status: String(status),
         txHash: p.CurrentTransaction?.txHash ?? null,

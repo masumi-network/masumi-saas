@@ -4136,6 +4136,10 @@
                                         "type": "string",
                                         "nullable": true
                                       },
+                                      "agentIdentifier": {
+                                        "type": "string",
+                                        "nullable": true
+                                      },
                                       "amount": {
                                         "type": "string"
                                       },
@@ -4154,6 +4158,7 @@
                                       "type",
                                       "agentId",
                                       "agentName",
+                                      "agentIdentifier",
                                       "amount",
                                       "status",
                                       "txHash"
@@ -4230,6 +4235,7 @@
                           "type": "payment",
                           "agentId": "cmlf6gswz0000x1uctad958tq",
                           "agentName": "Research assistant",
+                          "agentIdentifier": "agent123policy456name789",
                           "amount": "10 ADA",
                           "status": "FundsLocked",
                           "txHash": "abc123…"

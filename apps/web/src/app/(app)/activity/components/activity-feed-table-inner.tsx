@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Activity as ActivityIcon, Receipt, Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -30,7 +31,12 @@ import {
   useActivityFeedInfiniteQuery,
 } from "@/lib/hooks/use-activity-feed-infinite-query";
 import type { ActivityFeedItem, ActivityTabFilter } from "@/lib/types/activity";
-import { cn, formatDate, formatRelativeDate } from "@/lib/utils";
+import {
+  cn,
+  formatDate,
+  formatRelativeDate,
+  shortenAddress,
+} from "@/lib/utils";
 
 import { LIFECYCLE_LABELS } from "./activity-feed-shared";
 import { ActivityTransactionDetailsDialog } from "./activity-transaction-details-dialog";
@@ -70,6 +76,7 @@ function filterItemsBySearch(
     return (
       item.type.toLowerCase().includes(q) ||
       (item.agentName ?? "").toLowerCase().includes(q) ||
+      (item.agentIdentifier ?? "").toLowerCase().includes(q) ||
       (item.amount ?? "").toLowerCase().includes(q) ||
       item.status.toLowerCase().includes(q) ||
       statusFormatted.toLowerCase().includes(q) ||
@@ -88,11 +95,23 @@ export interface ActivityFeedTableProps {
   searchQuery?: string;
   refreshKey?: number;
   onFilteredItemsChange?: (items: ActivityFeedItem[]) => void;
+  /** When true (platform admin), agent links target `/admin/agents/[id]` instead of `/ai-agents/[id]`. */
+  linkAgentsInAdmin?: boolean;
 }
 
 type ActivityFeedTableInnerProps = ActivityFeedTableProps & {
   imperativeRef: React.Ref<ActivityFeedTableHandle>;
 };
+
+function agentDetailHref(
+  agentId: string | null,
+  linkAgentsInAdmin: boolean,
+): string | null {
+  if (!agentId) return null;
+  return linkAgentsInAdmin
+    ? `/admin/agents/${agentId}`
+    : `/ai-agents/${agentId}`;
+}
 
 type TransactionDetailsSelection = {
   id: string;
@@ -107,6 +126,7 @@ export function ActivityFeedTableInner({
   refreshKey,
   onFilteredItemsChange,
   imperativeRef,
+  linkAgentsInAdmin = false,
 }: ActivityFeedTableInnerProps) {
   const { network } = usePaymentNetwork();
   const queryClient = useQueryClient();
@@ -234,6 +254,7 @@ export function ActivityFeedTableInner({
               <TableRow className="hover:bg-transparent">
                 <TableHead>{t("type")}</TableHead>
                 <TableHead>{t("transactionHash")}</TableHead>
+                <TableHead>{t("agentIdentifier")}</TableHead>
                 <TableHead>{t("agent")}</TableHead>
                 <TableHead>{t("amount")}</TableHead>
                 <TableHead>{t("status")}</TableHead>
@@ -251,6 +272,9 @@ export function ActivityFeedTableInner({
                         <Skeleton className="h-4 w-32" />
                       </TableCell>
                       <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
                         <Skeleton className="h-4 w-24" />
                       </TableCell>
                       <TableCell>
@@ -266,8 +290,12 @@ export function ActivityFeedTableInner({
                   ))
                 : filteredItems.map((item, index) => {
                     const agentId = item.agentId ?? null;
-                    const lifecycleRowClick = agentId
-                      ? () => router.push(`/ai-agents/${agentId}`)
+                    const detailHref = agentDetailHref(
+                      agentId,
+                      linkAgentsInAdmin,
+                    );
+                    const lifecycleRowClick = detailHref
+                      ? () => router.push(detailHref)
                       : undefined;
                     const rowStyle = {
                       animationDelay: `${Math.min(index, 9) * 40}ms`,
@@ -298,6 +326,9 @@ export function ActivityFeedTableInner({
                             {EMPTY_CELL}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
+                            {EMPTY_CELL}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
                             {item.agentName ?? EMPTY_CELL}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
@@ -318,11 +349,16 @@ export function ActivityFeedTableInner({
                         type,
                         agentName,
                         agentId,
+                        agentIdentifier,
                         txHash,
                         amount,
                         status,
                         date,
                       } = item;
+                      const idHref = agentDetailHref(
+                        agentId,
+                        linkAgentsInAdmin,
+                      );
                       return (
                         <TableRow
                           key={rowKey}
@@ -351,6 +387,29 @@ export function ActivityFeedTableInner({
                             {txHash
                               ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}`
                               : EMPTY_CELL}
+                          </TableCell>
+                          <TableCell className="max-w-[140px]">
+                            {!agentIdentifier ? (
+                              <span className="text-muted-foreground">
+                                {EMPTY_CELL}
+                              </span>
+                            ) : idHref ? (
+                              <Link
+                                href={idHref}
+                                className="font-mono text-xs text-primary hover:underline"
+                                title={agentIdentifier}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {shortenAddress(agentIdentifier, 8)}
+                              </Link>
+                            ) : (
+                              <span
+                                className="break-all font-mono text-xs text-muted-foreground"
+                                title={agentIdentifier}
+                              >
+                                {agentIdentifier}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {agentName ?? EMPTY_CELL}
@@ -405,6 +464,7 @@ export function ActivityFeedTableInner({
         transactionType={transactionDetails?.type ?? null}
         agentName={transactionDetails?.agentName ?? null}
         agentId={transactionDetails?.agentId ?? null}
+        linkAgentsInAdmin={linkAgentsInAdmin}
       />
     </>
   );

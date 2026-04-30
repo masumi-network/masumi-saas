@@ -29,7 +29,11 @@ const TAB_KEYS: ActivityTabFilter[] = [
   "disputes",
 ];
 
-export function ActivityPageContent() {
+export function ActivityPageContent({
+  linkAgentsInAdmin = false,
+}: {
+  linkAgentsInAdmin?: boolean;
+}) {
   const t = useTranslations("App.Activity");
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +91,7 @@ export function ActivityPageContent() {
     const headers = [
       t("type"),
       t("transactionHash"),
+      t("agentIdentifier"),
       t("agent"),
       t("amount"),
       t("status"),
@@ -98,6 +103,7 @@ export function ActivityPageContent() {
         return [
           t("lifecycle"),
           "",
+          "",
           item.agentName ?? "",
           "",
           LIFECYCLE_LABELS[item.type] ?? item.type,
@@ -107,6 +113,7 @@ export function ActivityPageContent() {
       return [
         item.type,
         item.txHash ?? "",
+        item.agentIdentifier ?? "",
         item.agentName ?? "",
         item.amount,
         item.status.replace(/([A-Z])/g, " $1").trim(),
@@ -201,6 +208,7 @@ export function ActivityPageContent() {
           searchQuery={searchQuery}
           refreshKey={refreshKey}
           onFilteredItemsChange={handleFilteredItemsChange}
+          linkAgentsInAdmin={linkAgentsInAdmin}
         />
       </div>
     </div>
