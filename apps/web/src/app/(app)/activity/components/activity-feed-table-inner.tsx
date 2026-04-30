@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
   getActivityInfiniteQueryKey,
@@ -102,16 +103,6 @@ export interface ActivityFeedTableProps {
 type ActivityFeedTableInnerProps = ActivityFeedTableProps & {
   imperativeRef: React.Ref<ActivityFeedTableHandle>;
 };
-
-function agentDetailHref(
-  agentId: string | null,
-  linkAgentsInAdmin: boolean,
-): string | null {
-  if (!agentId) return null;
-  return linkAgentsInAdmin
-    ? `/admin/agents/${agentId}`
-    : `/ai-agents/${agentId}`;
-}
 
 type TransactionDetailsSelection = {
   id: string;

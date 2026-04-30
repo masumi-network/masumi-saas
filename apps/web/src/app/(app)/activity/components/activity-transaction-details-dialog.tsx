@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
@@ -80,16 +81,6 @@ function humanizeOnChainState(state: string | null | undefined): string {
     pretty[lower] ??
     state.charAt(0).toUpperCase() + state.slice(1).replace(/([A-Z])/g, " $1")
   );
-}
-
-function agentDetailHref(
-  agentId: string | null,
-  linkAgentsInAdmin: boolean,
-): string | null {
-  if (!agentId) return null;
-  return linkAgentsInAdmin
-    ? `/admin/agents/${agentId}`
-    : `/ai-agents/${agentId}`;
 }
 
 type TransactionDetailPayload = {
