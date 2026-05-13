@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -5,11 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Three tabs: OpenAPI, Schema Validator, Testing — widths approximate label length to limit CLS.
  */
 export function DevelopersPageSkeleton() {
+  const t = useTranslations("Developers");
   return (
     <div
       className="min-w-0 space-y-6"
       aria-busy="true"
-      aria-label="Loading developers tools"
+      aria-label={t("skeletonAriaLabel")}
     >
       <div className="w-full min-w-0 -mx-px">
         <div className="flex gap-6 border-b border-border pb-4">

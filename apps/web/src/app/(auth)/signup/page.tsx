@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { getTranslations } from "next-intl/server";
 
 import {
   type AuthPageSearchParams,
@@ -8,10 +9,13 @@ import {
 
 import SignUpForm from "./components/form";
 
-export const metadata: Metadata = {
-  title: "Masumi - Register",
-  description: "Register for a Masumi account",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Auth.SignUp");
+  return {
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
+  };
+}
 
 function getEnabledOAuthProviders(): ("google" | "github" | "microsoft")[] {
   const providers: ("google" | "github" | "microsoft")[] = [];

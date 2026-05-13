@@ -218,7 +218,7 @@ function PricingFields({
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="0.00"
+                      placeholder={pricingT("amountPlaceholder")}
                       min="0"
                       step="0.01"
                       {...amountField}
