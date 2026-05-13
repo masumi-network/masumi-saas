@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("App.Verification");
   return {
     title: `Masumi - ${t("title")}`,
+    description: t("description"),
   };
 }
 

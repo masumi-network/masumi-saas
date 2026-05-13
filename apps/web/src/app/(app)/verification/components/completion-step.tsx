@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 interface CompletionStepProps {
   verificationCompleted: boolean;
@@ -22,6 +23,7 @@ export function CompletionStep({
 }: CompletionStepProps) {
   const t = useTranslations("App.Verification.Completion");
   const tStatus = useTranslations("App.Home.KycStatus");
+  const { formatDateTime } = useFormatDate();
   const router = useRouter();
 
   if (kycStatus === "REJECTED") {
@@ -62,7 +64,7 @@ export function CompletionStep({
           <p className="text-muted-foreground mt-2">
             {kycCompletedAt
               ? tStatus("approved.descriptionWithDate", {
-                  date: new Date(kycCompletedAt).toLocaleString(),
+                  date: formatDateTime(new Date(kycCompletedAt)),
                 })
               : tStatus("approved.description")}
           </p>

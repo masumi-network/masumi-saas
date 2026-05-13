@@ -44,6 +44,7 @@ import {
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFormatDate } from "@/hooks/use-format-date";
 import {
   registryDiscoveryClient,
   type RegistryEntry,
@@ -51,7 +52,7 @@ import {
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { formatUnitAmount } from "@/lib/payment-node/format";
-import { formatRelativeDate, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -307,6 +308,7 @@ function RegistryEntryDetailsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
 
   if (!entry) return null;
 
@@ -448,6 +450,7 @@ function RegistryAgentListItem({
   onViewDetails: () => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
   const tags = entry.tags ?? [];
   const capabilityLabel = entry.Capability?.name
     ? entry.Capability.version

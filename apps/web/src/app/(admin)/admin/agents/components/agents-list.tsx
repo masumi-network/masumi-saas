@@ -18,8 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { formatDate } from "@/lib/utils";
 
 import { AdminPaginationBar } from "../../components/admin-pagination-bar";
 import {
@@ -64,6 +64,7 @@ export default function AgentsList({
   currentSearch,
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
+  const { formatDate } = useFormatDate();
   const router = useRouter();
   const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const [paramsPending, startTransition] = useTransition();

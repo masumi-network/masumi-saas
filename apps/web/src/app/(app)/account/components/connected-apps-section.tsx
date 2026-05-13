@@ -29,10 +29,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { terminateConnectedAppAction } from "@/lib/actions/connected-apps.action";
 import type { ConnectedOidcClient } from "@/lib/auth/connected-oidc-clients";
 import { cn } from "@/lib/utils";
-import { formatRelativeDate } from "@/lib/utils/format-date";
 
 /**
  * Client-safe shape for connected OIDC clients. Dates are serialized to ISO
@@ -151,6 +151,7 @@ export function ConnectedAppsSection({ clients }: ConnectedAppsSectionProps) {
 
 function ConnectedAppRow({ client }: { client: SerializedConnectedClient }) {
   const t = useTranslations("App.Account.Connected");
+  const { formatRelativeDate } = useFormatDate();
   const router = useRouter();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();

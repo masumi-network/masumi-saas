@@ -3,6 +3,7 @@
     "Loading": "Loading...",
     "Error": "Error",
     "Success": "Success",
+    "dismiss": "Dismiss",
     "ErrorBoundary": {
       "title": "Something went wrong",
       "descriptionRoot": "An unexpected error occurred. Please try again.",
@@ -950,7 +951,8 @@
         "credentialTitle": "Veridian Credential",
         "credential": "Upon successful verification, a Veridian credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
         "consentLabel": "I understand and consent to the identity verification process.",
-        "startButton": "Start Verification"
+        "startButton": "Start Verification",
+        "metaTitle": "Identity Verification"
       },
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
@@ -1171,7 +1173,8 @@
         "progressStep1": "Creating agent and wallets",
         "progressStep2": "Funding wallet",
         "progressStep3": "Registering on network",
-        "registrationStarted": "Registration started. We'll notify you when it's done."
+        "registrationStarted": "Registration started. We'll notify you when it's done.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Edit Agent",
@@ -1227,7 +1230,7 @@
         "cancel": "Cancel",
         "networkMismatch": {
           "title": "Switch Network",
-          "description": "This agent is on <strong>{agentNetwork}</strong>, but you\u2019re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
+          "description": "This agent is on <strong>{agentNetwork}</strong>, but you’re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
           "confirm": "Switch to {network}",
           "back": "Go back"
         },
@@ -1374,7 +1377,24 @@
           "nextDisabledReasonTestingEndpoint": "Verifying endpoint... Please wait.",
           "nextDisabledReasonLoadingSetup": "Loading verification setup. Please wait.",
           "nextDisabledReasonKycRequired": "Complete KYC verification first to proceed.",
-          "help": "Help"
+          "help": "Help",
+          "toasts": {
+            "challengeFailed": "Failed to get verification challenge",
+            "connectWalletFirst": "Please connect your Veridian wallet first",
+            "walletNotConnected": "Veridian wallet not connected",
+            "signingUnavailable": "Signing not available in this wallet",
+            "signingDeclined": "Message signing declined",
+            "signingFailed": "Failed to sign message. Please try again.",
+            "regenerateChallengeFailed": "Failed to generate new challenge",
+            "endpointTestFailed": "Endpoint test failed",
+            "kycFirst": "Please complete your KYC verification first",
+            "connectionError": "Connection error: {error}",
+            "challengeNotReady": "Verification challenge not ready. Please wait or try again."
+          },
+          "secretToggle": {
+            "show": "Show secret",
+            "hide": "Hide secret"
+          }
         }
       }
     },
@@ -1410,6 +1430,7 @@
         "resendError": "Failed to send verification email. Please try again."
       },
       "activeWorkspace": "Active workspace:",
+      "languageAndAppearance": "Language & appearance",
       "Name": {
         "title": "Change Name",
         "description": "Update your display name.",
@@ -1499,7 +1520,8 @@
         },
         "regenerateSuccess": "Backup codes regenerated",
         "downloadNote1": "Each code can only be used once.",
-        "downloadNote2": "Store these codes in a safe place."
+        "downloadNote2": "Store these codes in a safe place.",
+        "verifyCodePlaceholder": "000000"
       },
       "Connected": {
         "sectionLabel": "Connections",
@@ -1524,6 +1546,89 @@
         "error": "Failed to terminate session. Please try again.",
         "refresh": "Refresh",
         "refreshed": "Connections refreshed"
+      }
+    },
+    "InboxAgents": {
+      "metadataPageTitle": "Inboxes",
+      "metadataPageDescription": "Manage inbox registrations in Masumi SaaS.",
+      "title": "Inboxes",
+      "tabs": {
+        "all": "All",
+        "registered": "Registered",
+        "deregistered": "Deregistered",
+        "pending": "Pending",
+        "failed": "Failed"
+      },
+      "sections": {
+        "manage": "Manage",
+        "discovery": "Discovery"
+      },
+      "manageDescription": "Inspect, deregister, and clean up inbox registrations on {network}.",
+      "discoveryDescription": "Browse the latest pending and verified inboxes published to the Masumi registry on {network}.",
+      "searchPlaceholder": "Search by name, slug, identifier, wallet, or state...",
+      "noDescription": "No description",
+      "noDescriptionProvided": "No description provided.",
+      "noIdentifier": "No on-chain identifier yet.",
+      "notCheckedYet": "Not checked yet",
+      "usesRegistrationWallet": "Uses the registration wallet",
+      "awaitingConfirmation": "Awaiting confirmation",
+      "noTransactionHash": "No transaction hash yet.",
+      "noActiveTransaction": "No active transaction.",
+      "rawLookup": "Raw lookup",
+      "close": "Close",
+      "delete": "Delete",
+      "deregister": "Deregister",
+      "confirm": "Confirm",
+      "deleteInboxAgent": "Delete inbox",
+      "deregisterInboxAgent": "Deregister inbox",
+      "deleteInboxAgentDescription": "Delete {name}? This removes the registration record from your inbox list.",
+      "deregisterInboxAgentDescription": "Deregister {name}? This starts the on-chain deregistration flow.",
+      "details": "Details",
+      "emptyTitle": "No inboxes found",
+      "emptyDescription": "Try a broader search or switch tabs.",
+      "loadingPage": "Loading page...",
+      "regWalletPrefix": "Reg:",
+      "fundWalletPrefix": "Fund:",
+      "table": {
+        "name": "Name",
+        "added": "Added",
+        "inboxSlug": "Inbox slug",
+        "agentId": "Agent ID",
+        "wallets": "Wallets",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "detail": {
+        "inboxSlug": "Inbox slug:",
+        "description": "Description",
+        "agentIdentifier": "Agent identifier",
+        "metadataVersion": "Metadata version",
+        "created": "Created",
+        "updated": "Updated",
+        "lastChecked": "Last checked",
+        "registrationWallet": "Registration wallet",
+        "fundingWallet": "Funding wallet",
+        "currentTransaction": "Current transaction",
+        "failure": "Failure"
+      },
+      "actionFailed": "Failed to {action} inbox",
+      "deletedToast": "Inbox deleted",
+      "deregistrationStartedToast": "Inbox deregistration started",
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "previousAriaLabel": "Go to previous page",
+        "nextAriaLabel": "Go to next page",
+        "morePages": "More pages"
+      },
+      "status": {
+        "pending": "Pending",
+        "registering": "Registering",
+        "registered": "Registered",
+        "registrationFailed": "Registration failed",
+        "deregistering": "Deregistering",
+        "deregistered": "Deregistered",
+        "deregistrationFailed": "Deregistration failed"
       }
     }
   },
@@ -1559,6 +1664,21 @@
       "title": "Sidebar",
       "description": "Displays the mobile sidebar.",
       "toggleSidebar": "Toggle Sidebar"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Language"
+    },
+    "Pagination": {
+      "ariaLabel": "Pagination"
+    },
+    "RichTextEditor": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Loading user profile"
     }
   },
   "Email": {
@@ -1818,6 +1938,7 @@
         "badgeError": "Error",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Loading developers tools"
   }
 }

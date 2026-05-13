@@ -8,9 +8,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs } from "@/components/ui/tabs";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
 import type { ActivityFeedItem } from "@/lib/types/activity";
-import { formatDate } from "@/lib/utils";
 
 import {
   ActivityFeedTable,
@@ -31,6 +31,7 @@ const TAB_KEYS: ActivityTabFilter[] = [
 
 export function ActivityPageContent() {
   const t = useTranslations("App.Activity");
+  const { formatDate } = useFormatDate();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<ActivityTabFilter>("all");
@@ -127,7 +128,7 @@ export function ActivityPageContent() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(blobUrl);
-  }, [t, activeTab]);
+  }, [t, activeTab, formatDate]);
 
   const tabConfig = useMemo(
     () => [

@@ -1,17 +1,25 @@
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 
 import { type ButtonProps, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
-  <nav
-    role="navigation"
-    aria-label="pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-);
+const Pagination = ({
+  className,
+  "aria-label": ariaLabel,
+  ...props
+}: React.ComponentProps<"nav">) => {
+  const t = useTranslations("Components.Pagination");
+  return (
+    <nav
+      role="navigation"
+      aria-label={ariaLabel ?? t("ariaLabel")}
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  );
+};
 Pagination.displayName = "Pagination";
 
 const PaginationContent = React.forwardRef<

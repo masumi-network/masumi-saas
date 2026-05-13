@@ -31,16 +31,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useFormatDate } from "@/hooks/use-format-date";
 import type { ApiKeyListItem } from "@/lib/actions/auth.action";
 import { authClient } from "@/lib/auth/auth.client";
 
 import { CreateApiKeyDialog } from "../../components/dashboard/create-api-key-dialog";
-import { formatRelativeDate } from "./format-relative-date";
 
 const EMPTY_CELL = "\u2014";
 
 export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
   const t = useTranslations("App.ApiKeys");
+  const { formatRelativeDate } = useFormatDate();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
