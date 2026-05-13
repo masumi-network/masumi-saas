@@ -64,7 +64,7 @@ const prefixedWrapperServers = [{ url: "/", description: "This app" }];
 /** Same validation as `POST /api/agents` — documented shape + Try-it-out example. */
 const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
   description:
-    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`).',
+    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).',
   example: {
     name: "Research assistant",
     description: "Helps with literature review",
