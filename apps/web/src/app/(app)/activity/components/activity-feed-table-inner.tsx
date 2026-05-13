@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
@@ -32,15 +33,12 @@ import {
   useActivityFeedInfiniteQuery,
 } from "@/lib/hooks/use-activity-feed-infinite-query";
 import type { ActivityFeedItem, ActivityTabFilter } from "@/lib/types/activity";
-import {
-  cn,
-  formatDate,
-  formatRelativeDate,
-  shortenAddress,
-} from "@/lib/utils";
+import { cn, shortenAddress } from "@/lib/utils";
 
 import { LIFECYCLE_LABELS } from "./activity-feed-shared";
 import { ActivityTransactionDetailsDialog } from "./activity-transaction-details-dialog";
+
+type DateFormatter = (date: Date | string) => string;
 
 const EMPTY_CELL = "\u2014";
 
@@ -51,7 +49,12 @@ function activityFeedItemDedupeKey(it: ActivityFeedItem): string {
   return `transaction:${it.type}:${it.id}`;
 }
 
-function activityDateMatchesSearch(iso: string, q: string): boolean {
+function activityDateMatchesSearch(
+  iso: string,
+  q: string,
+  formatDate: DateFormatter,
+  formatRelativeDate: DateFormatter,
+): boolean {
   const haystack =
     `${formatRelativeDate(iso)} ${formatDate(iso)}`.toLowerCase();
   return haystack.includes(q);
@@ -61,6 +64,8 @@ function filterItemsBySearch(
   items: ActivityFeedItem[],
   searchText: string,
   lifecycleLabels: Record<string, string>,
+  formatDate: DateFormatter,
+  formatRelativeDate: DateFormatter,
 ): ActivityFeedItem[] {
   const q = searchText.trim().toLowerCase();
   if (!q) return items;
@@ -70,7 +75,7 @@ function filterItemsBySearch(
       return (
         typeLabel.toLowerCase().includes(q) ||
         (item.agentName ?? "").toLowerCase().includes(q) ||
-        activityDateMatchesSearch(item.date, q)
+        activityDateMatchesSearch(item.date, q, formatDate, formatRelativeDate)
       );
     }
     const statusFormatted = item.status.replace(/([A-Z])/g, " $1").trim();
@@ -82,7 +87,7 @@ function filterItemsBySearch(
       item.status.toLowerCase().includes(q) ||
       statusFormatted.toLowerCase().includes(q) ||
       (item.txHash ?? "").toLowerCase().includes(q) ||
-      activityDateMatchesSearch(item.date, q)
+      activityDateMatchesSearch(item.date, q, formatDate, formatRelativeDate)
     );
   });
 }
@@ -133,6 +138,7 @@ export function ActivityFeedTableInner({
   );
 
   const t = useTranslations("App.Activity");
+  const { formatDate, formatRelativeDate } = useFormatDate();
   const router = useRouter();
   const exportDataRef = useRef<ActivityFeedItem[]>([]);
   const [transactionDetails, setTransactionDetails] =
@@ -186,8 +192,16 @@ export function ActivityFeedTableInner({
 
   const filteredItems = useMemo(
     () =>
-      error ? [] : filterItemsBySearch(items, searchQuery, LIFECYCLE_LABELS),
-    [error, items, searchQuery],
+      error
+        ? []
+        : filterItemsBySearch(
+            items,
+            searchQuery,
+            LIFECYCLE_LABELS,
+            formatDate,
+            formatRelativeDate,
+          ),
+    [error, items, searchQuery, formatDate, formatRelativeDate],
   );
 
   useEffect(() => {

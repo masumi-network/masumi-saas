@@ -17,9 +17,12 @@ import { getAuthContext } from "@/lib/auth/utils";
 
 import { AcceptInvitationContent } from "./components/accept-invitation-content";
 
-export const metadata: Metadata = {
-  title: "Masumi - Organization Invitation",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("App.Organizations.AcceptInvitation");
+  return {
+    title: `Masumi - ${t("title")}`,
+  };
+}
 
 interface AcceptInvitationPageProps {
   params: Promise<{ invitationId: string }>;

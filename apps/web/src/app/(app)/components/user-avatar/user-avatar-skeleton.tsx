@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,11 +12,12 @@ interface UserAvatarSkeletonProps {
 export default function UserAvatarSkeleton({
   noAnimation,
 }: UserAvatarSkeletonProps) {
+  const t = useTranslations("Components.UserAvatar");
   return (
     <Button
       variant="ghost"
       className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
-      aria-label="Loading user profile"
+      aria-label={t("loadingAriaLabel")}
       disabled
     >
       <UserAvatarContent

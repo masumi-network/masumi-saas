@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import ResetPasswordForm from "./components/form";
 
-export const metadata: Metadata = {
-  title: "Masumi - Reset Password",
-  description: "Reset your password to regain access to your account",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Auth.ResetPassword");
+  return {
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
+  };
+}
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{ token?: string }>;

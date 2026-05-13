@@ -2,6 +2,7 @@
 
 import { ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export function DashboardKycBanner({
   startKycPrompt,
   startKyc,
 }: DashboardKycBannerProps) {
+  const tCommon = useTranslations("Common");
   const [isDismissed, setIsDismissed] = useState(true);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function DashboardKycBanner({
         size="icon"
         className="absolute top-2 right-2 h-5 w-5 shrink-0"
         onClick={handleDismiss}
-        aria-label="Dismiss"
+        aria-label={tCommon("dismiss")}
       >
         <X className="h-2.5 w-2.5" />
       </Button>

@@ -41,6 +41,9 @@ jobs:
           set -e
           pnpm lint
 
+      - name: Validate i18n catalogs
+        run: pnpm --filter web run i18n:validate
+
       - name: Check workflow policy
         run: pnpm run ci:check-workflows
 

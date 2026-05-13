@@ -1,7 +1,7 @@
 import gravatarUrl from "gravatar-url";
 import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ export async function UserProfileCard() {
 
   const t = await getTranslations("App.Home.KycStatus");
   const tStatus = await getTranslations("App.Agents");
+  const format = await getFormatter();
 
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
@@ -74,7 +75,10 @@ export async function UserProfileCard() {
       title: t("approved.title"),
       description: kycCompletedAt
         ? t("approved.descriptionWithDate", {
-            date: new Date(kycCompletedAt).toLocaleString(),
+            date: format.dateTime(new Date(kycCompletedAt), {
+              dateStyle: "short",
+              timeStyle: "short",
+            }),
           })
         : t("approved.description"),
       action: null,

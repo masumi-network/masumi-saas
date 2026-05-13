@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { getAdminAgentDetail } from "@/lib/api/admin.server";
-import { formatDate } from "@/lib/utils";
 
 type PageProps = {
   params: Promise<{ agentId: string }>;
@@ -34,6 +33,7 @@ export default async function AdminAgentDetailPage({ params }: PageProps) {
   const result = await getAdminAgentDetail(agentId);
   const t = await getTranslations("Admin.Agents.agentDetail");
   const tList = await getTranslations("Admin.Agents");
+  const format = await getFormatter();
 
   if (!result.success) {
     notFound();
@@ -134,7 +134,11 @@ export default async function AdminAgentDetailPage({ params }: PageProps) {
               <p className="text-xs font-medium text-muted-foreground">
                 {tList("createdAt")}
               </p>
-              <p className="mt-1 text-sm">{formatDate(agent.createdAt)}</p>
+              <p className="mt-1 text-sm">
+                {format.dateTime(new Date(agent.createdAt), {
+                  dateStyle: "long",
+                })}
+              </p>
             </div>
           </div>
         </CardContent>

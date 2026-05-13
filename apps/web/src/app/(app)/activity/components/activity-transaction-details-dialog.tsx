@@ -14,11 +14,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
 import { shortenAddress } from "@/lib/utils";
+
+type TimestampFormatter = (date: Date) => string;
 
 function cardanoTxExplorerUrl(network: string, txHash: string): string {
   const host =
@@ -26,15 +29,18 @@ function cardanoTxExplorerUrl(network: string, txHash: string): string {
   return `https://${host}/transaction/${txHash}`;
 }
 
-function formatActivityTimestamp(value: unknown): string {
+function formatActivityTimestamp(
+  value: unknown,
+  fmt: TimestampFormatter,
+): string {
   if (value == null || value === "") return "—";
   if (typeof value === "string" && /^\d+$/.test(value)) {
     const n = Number(value);
     const d = new Date(n > 1e12 ? n : n * 1000);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    return Number.isNaN(d.getTime()) ? "—" : fmt(d);
   }
   const d = new Date(String(value));
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? "—" : fmt(d);
 }
 
 function humanizeNextAction(action: string | null | undefined): string {
@@ -109,6 +115,7 @@ export function ActivityTransactionDetailsDialog({
   linkAgentsInAdmin = false,
 }: ActivityTransactionDetailsDialogProps) {
   const t = useTranslations("App.Activity.transactionDetails");
+  const { formatDateTime } = useFormatDate();
   const { network } = usePaymentNetwork();
 
   const primaryAgentHref = agentDetailHref(agentId, linkAgentsInAdmin);
@@ -253,7 +260,7 @@ export function ActivityTransactionDetailsDialog({
                 <div>
                   <h4 className="mb-1 text-sm font-semibold">{t("created")}</h4>
                   <p className="text-sm">
-                    {formatActivityTimestamp(item.createdAt)}
+                    {formatActivityTimestamp(item.createdAt, formatDateTime)}
                   </p>
                 </div>
               </div>
@@ -331,25 +338,36 @@ export function ActivityTransactionDetailsDialog({
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("lastUpdated")}
                     </p>
-                    <p>{formatActivityTimestamp(item.updatedAt)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.updatedAt, formatDateTime)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("submitResultBy")}
                     </p>
-                    <p>{formatActivityTimestamp(item.submitResultTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(
+                        item.submitResultTime,
+                        formatDateTime,
+                      )}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("unlockTime")}
                     </p>
-                    <p>{formatActivityTimestamp(item.unlockTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.unlockTime, formatDateTime)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("payBy")}
                     </p>
-                    <p>{formatActivityTimestamp(item.payByTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.payByTime, formatDateTime)}
+                    </p>
                   </div>
                   {extended.externalDisputeUnlockTime != null ? (
                     <div className="col-span-2">
@@ -359,6 +377,7 @@ export function ActivityTransactionDetailsDialog({
                       <p>
                         {formatActivityTimestamp(
                           extended.externalDisputeUnlockTime,
+                          formatDateTime,
                         )}
                       </p>
                     </div>
@@ -368,7 +387,12 @@ export function ActivityTransactionDetailsDialog({
                       <p className="text-xs font-medium text-muted-foreground">
                         {t("lastChecked")}
                       </p>
-                      <p>{formatActivityTimestamp(extended.lastCheckedAt)}</p>
+                      <p>
+                        {formatActivityTimestamp(
+                          extended.lastCheckedAt,
+                          formatDateTime,
+                        )}
+                      </p>
                     </div>
                   ) : null}
                 </div>
