@@ -59,6 +59,9 @@ importers:
       "@masumi/database":
         specifier: workspace:*
         version: link:../../packages/database
+      "@masumi_network/identity-sdk":
+        specifier: ^0.1.0
+        version: 0.1.0
       "@monaco-editor/react":
         specifier: 4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1702,6 +1705,13 @@ packages:
       {
         integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==,
       }
+
+  "@masumi_network/identity-sdk@0.1.0":
+    resolution:
+      {
+        integrity: sha512-hDeSLXIgL4QVTvbczEBVB26VhzcpNO1SOWwavo2WuYZLB4lj5CDO6mtlmQcy42JQxUi2Gtmk71q1PGSl4dJiHQ==,
+      }
+    engines: { node: ">=20" }
 
   "@monaco-editor/loader@1.7.0":
     resolution:
@@ -13379,6 +13389,10 @@ snapshots:
     dependencies:
       "@jridgewell/resolve-uri": 3.1.2
       "@jridgewell/sourcemap-codec": 1.5.5
+
+  "@masumi_network/identity-sdk@0.1.0":
+    dependencies:
+      zod: 3.25.76
 
   "@monaco-editor/loader@1.7.0":
     dependencies:
