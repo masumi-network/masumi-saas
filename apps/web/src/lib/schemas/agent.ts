@@ -7,20 +7,31 @@ import { z } from "@/lib/zod-openapi";
  * Keep in sync with Prisma Agent model constraints.
  */
 /** POST /api/agents `pricing` — discriminated by `pricingType` (matches payment-node registration). */
-export const registerAgentPricingSchema = z.discriminatedUnion("pricingType", [
-  z.object({ pricingType: z.literal("Free") }),
-  z.object({
-    pricingType: z.literal("Fixed"),
-    prices: z
-      .array(
-        z.object({
-          amount: z.string(),
-          currency: z.string().optional(),
-        }),
-      )
-      .min(1, "At least one price amount is required for fixed pricing"),
-  }),
-  z.object({ pricingType: z.literal("Dynamic") }),
+const registerAgentPricingSchema = z.discriminatedUnion("pricingType", [
+  z
+    .object({ pricingType: z.literal("Free") })
+    .openapi({ example: { pricingType: "Free" } }),
+  z
+    .object({
+      pricingType: z.literal("Fixed"),
+      prices: z
+        .array(
+          z.object({
+            amount: z.string(),
+            currency: z.string().optional(),
+          }),
+        )
+        .min(1, "At least one price amount is required for fixed pricing"),
+    })
+    .openapi({
+      example: {
+        pricingType: "Fixed",
+        prices: [{ amount: "5", currency: "USD" }],
+      },
+    }),
+  z
+    .object({ pricingType: z.literal("Dynamic") })
+    .openapi({ example: { pricingType: "Dynamic" } }),
 ]);
 
 const exampleOutputSchema = z.object({

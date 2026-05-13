@@ -8177,7 +8177,10 @@
                         },
                         "required": [
                           "pricingType"
-                        ]
+                        ],
+                        "example": {
+                          "pricingType": "Free"
+                        }
                       },
                       {
                         "type": "object",
@@ -8210,7 +8213,16 @@
                         "required": [
                           "pricingType",
                           "prices"
-                        ]
+                        ],
+                        "example": {
+                          "pricingType": "Fixed",
+                          "prices": [
+                            {
+                              "amount": "5",
+                              "currency": "USD"
+                            }
+                          ]
+                        }
                       },
                       {
                         "type": "object",
@@ -8224,7 +8236,10 @@
                         },
                         "required": [
                           "pricingType"
-                        ]
+                        ],
+                        "example": {
+                          "pricingType": "Dynamic"
+                        }
                       }
                     ]
                   },
