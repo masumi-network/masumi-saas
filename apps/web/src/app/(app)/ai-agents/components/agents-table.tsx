@@ -23,13 +23,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import {
-  formatPricingDisplay,
-  formatRelativeDate,
-  shortenAddress,
-  stripHtml,
-} from "@/lib/utils";
+import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
@@ -52,6 +48,7 @@ export function AgentsTable({
   const t = useTranslations("App.Agents");
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
+  const { formatRelativeDate } = useFormatDate();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);

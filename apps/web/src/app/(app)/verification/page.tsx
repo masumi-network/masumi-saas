@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("App.Verification.Intro");
   return {
-    title: "Masumi - Identity Verification",
+    title: `Masumi - ${t("metaTitle")}`,
     description: t("purpose"),
   };
 }

@@ -29,14 +29,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
 import { appConfig } from "@/lib/config/app.config";
-import {
-  formatDate,
-  formatPricingDisplay,
-  formatRelativeDate,
-} from "@/lib/utils";
+import { formatPricingDisplay } from "@/lib/utils";
 
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
@@ -68,6 +65,8 @@ export function AgentDetails({
   }, []);
   const t = useTranslations("App.Agents.Details");
   const tVerification = useTranslations("App.Agents.Details.Verification");
+  const tCommon = useTranslations("Common");
+  const { formatDate, formatRelativeDate } = useFormatDate();
   const [kycStatus, setKycStatus] = useState<
     "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
   >(null);
@@ -144,7 +143,7 @@ export function AgentDetails({
               size="icon"
               className="absolute top-2 right-2 h-5 w-5 shrink-0"
               onClick={handleDismissVerificationBanner}
-              aria-label="Dismiss"
+              aria-label={tCommon("dismiss")}
             >
               <X className="h-2.5 w-2.5" />
             </Button>

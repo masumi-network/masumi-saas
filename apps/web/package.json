@@ -34,7 +34,8 @@
     "i18n:audit:ja": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/ja.json",
     "i18n:audit:fr": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/fr.json",
     "i18n:audit:es": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/es.json",
-    "i18n:audit": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale"
+    "i18n:audit": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale",
+    "i18n:validate": "node scripts/validate-i18n.mjs"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "8.4.0",

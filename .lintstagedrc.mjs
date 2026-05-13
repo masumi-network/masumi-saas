@@ -50,8 +50,17 @@ function formatJson(filenames) {
   return [`prettier --write ${rest.join(" ")}`];
 }
 
+function validateI18n(filenames) {
+  if (filenames.length === 0) return [];
+  return [
+    `prettier --write ${filenames.join(" ")}`,
+    "pnpm --filter web run i18n:validate",
+  ];
+}
+
 export default {
   "**/*.{ts,tsx}": lintTs,
+  "apps/web/messages/*.json": validateI18n,
   "**/*.json": formatJson,
   "**/*.{js,jsx,mjs,cjs,md,yml,yaml}": ["prettier --write"],
 };

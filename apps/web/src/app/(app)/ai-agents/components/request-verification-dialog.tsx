@@ -137,12 +137,12 @@ export function RequestVerificationDialog({
           setChallenge(result.data.challenge);
           setSecret(result.data.secret);
         } else {
-          toast.error(result.error || "Failed to get verification challenge");
+          toast.error(result.error || t("toasts.challengeFailed"));
         }
       })
       .catch(() => {
         if (!cancelled) {
-          toast.error("Failed to get verification challenge");
+          toast.error(t("toasts.challengeFailed"));
         }
       })
       .finally(() => {
@@ -152,7 +152,7 @@ export function RequestVerificationDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, agent.id, kycStatus]);
+  }, [open, agent.id, kycStatus, t]);
 
   // Poll for credential acceptance after issue (timeout so user is not trapped)
   const pollAttemptsRef = useRef(0);
@@ -272,14 +272,14 @@ export function RequestVerificationDialog({
     message: string;
   } | null> => {
     if (!aid) {
-      toast.error("Please connect your Veridian wallet first");
+      toast.error(t("toasts.connectWalletFirst"));
       return null;
     }
 
     if (
       !(window as { cardano?: Record<string, unknown> }).cardano?.["idw_p2p"]
     ) {
-      toast.error("Veridian wallet not connected");
+      toast.error(t("toasts.walletNotConnected"));
       return null;
     }
 
@@ -287,7 +287,7 @@ export function RequestVerificationDialog({
     try {
       const cardano = (window as { cardano?: Record<string, unknown> }).cardano;
       if (!cardano) {
-        toast.error("Veridian wallet not connected");
+        toast.error(t("toasts.walletNotConnected"));
         return null;
       }
       const api = cardano["idw_p2p"] as {
@@ -304,7 +304,7 @@ export function RequestVerificationDialog({
       const enabledApi = await api.enable();
 
       if (!enabledApi.experimental?.signKeri) {
-        toast.error("Signing not available in this wallet");
+        toast.error(t("toasts.signingUnavailable"));
         return null;
       }
 
@@ -315,11 +315,9 @@ export function RequestVerificationDialog({
       if (typeof signature === "object" && "error" in signature) {
         const error = signature.error as { code?: number; info?: string };
         if (error.code === 2) {
-          toast.error("Message signing declined");
+          toast.error(t("toasts.signingDeclined"));
         } else {
-          toast.error(
-            error.info || "Failed to sign message. Please try again.",
-          );
+          toast.error(error.info || t("toasts.signingFailed"));
         }
         return null;
       }
@@ -328,9 +326,9 @@ export function RequestVerificationDialog({
     } catch (error) {
       const err = error as { code?: number; info?: string };
       if (err.code === 2) {
-        toast.error("Message signing declined");
+        toast.error(t("toasts.signingDeclined"));
       } else {
-        toast.error(err.info || "Failed to sign message. Please try again.");
+        toast.error(err.info || t("toasts.signingFailed"));
       }
       console.error("Failed to sign message:", error);
       return null;
@@ -351,7 +349,7 @@ export function RequestVerificationDialog({
       setSecret(result.data.secret);
       toast.success(t("challengeRegenerated"));
     } else {
-      toast.error(result.error || "Failed to generate new challenge");
+      toast.error(result.error || t("toasts.regenerateChallengeFailed"));
     }
     setIsRegeneratingChallenge(false);
   };
@@ -365,7 +363,7 @@ export function RequestVerificationDialog({
       toast.success(t("testEndpointSuccess"));
       return true;
     }
-    toast.error(result.error || "Endpoint test failed");
+    toast.error(result.error || t("toasts.endpointTestFailed"));
     return false;
   };
 
@@ -384,19 +382,17 @@ export function RequestVerificationDialog({
 
   const handleSubmit = async () => {
     if (kycStatus !== "APPROVED") {
-      toast.error("Please complete your KYC verification first");
+      toast.error(t("toasts.kycFirst"));
       return;
     }
 
     if (!aid) {
-      toast.error("Please connect your Veridian wallet first");
+      toast.error(t("toasts.connectWalletFirst"));
       return;
     }
 
     if (!challenge) {
-      toast.error(
-        "Verification challenge not ready. Please wait or try again.",
-      );
+      toast.error(t("toasts.challengeNotReady"));
       return;
     }
 
@@ -634,9 +630,11 @@ export function RequestVerificationDialog({
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => setShowSecret((v) => !v)}
-                                aria-label={
-                                  showSecret ? "Hide secret" : "Show secret"
-                                }
+                                aria-label={t(
+                                  showSecret
+                                    ? "secretToggle.hide"
+                                    : "secretToggle.show",
+                                )}
                               >
                                 {showSecret ? (
                                   <EyeOff className="h-4 w-4" />
@@ -755,7 +753,7 @@ export function RequestVerificationDialog({
                   onConnect={handleWalletConnect}
                   onAddressChange={handleAddressChange}
                   onError={(error) => {
-                    toast.error(`Connection error: ${error}`);
+                    toast.error(t("toasts.connectionError", { error }));
                   }}
                 />
                 {aid && (

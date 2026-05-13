@@ -33,6 +33,9 @@ jobs:
           set -e
           pnpm lint
 
+      - name: Validate i18n catalogs
+        run: pnpm --filter web run i18n:validate
+
       - name: Verify checked-in OpenAPI JSON
         run: pnpm --filter web run check-openapi-json
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 
 import {
@@ -34,6 +35,7 @@ export function LocaleSwitcher({
   currentLocale,
   className,
 }: LocaleSwitcherProps) {
+  const t = useTranslations("Components.LocaleSwitcher");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -59,7 +61,7 @@ export function LocaleSwitcher({
       disabled={isPending}
     >
       <SelectTrigger
-        aria-label="Language"
+        aria-label={t("ariaLabel")}
         className={cn(
           "h-8 w-fit max-w-64 flex items-center gap-2 [&>svg]:shrink-0",
           className,

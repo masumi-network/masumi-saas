@@ -2,7 +2,8 @@
   "Common": {
     "Loading": "Loading...",
     "Error": "Error",
-    "Success": "Success"
+    "Success": "Success",
+    "dismiss": "Dismiss"
   },
   "Auth": {
     "Errors": {
@@ -762,7 +763,8 @@
         "credentialTitle": "Veridian Credential",
         "credential": "Upon successful verification, a Veridian credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
         "consentLabel": "I understand and consent to the identity verification process.",
-        "startButton": "Start Verification"
+        "startButton": "Start Verification",
+        "metaTitle": "Identity Verification"
       },
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
@@ -917,7 +919,8 @@
         "progressStep1": "Creating agent and wallets",
         "progressStep2": "Funding wallet",
         "progressStep3": "Registering on network",
-        "registrationStarted": "Registration started. We'll notify you when it's done."
+        "registrationStarted": "Registration started. We'll notify you when it's done.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Edit Agent",
@@ -973,7 +976,7 @@
         "cancel": "Cancel",
         "networkMismatch": {
           "title": "Switch Network",
-          "description": "This agent is on <strong>{agentNetwork}</strong>, but you\u2019re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
+          "description": "This agent is on <strong>{agentNetwork}</strong>, but you’re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
           "confirm": "Switch to {network}",
           "back": "Go back"
         },
@@ -1120,7 +1123,24 @@
           "nextDisabledReasonTestingEndpoint": "Verifying endpoint... Please wait.",
           "nextDisabledReasonLoadingSetup": "Loading verification setup. Please wait.",
           "nextDisabledReasonKycRequired": "Complete KYC verification first to proceed.",
-          "help": "Help"
+          "help": "Help",
+          "toasts": {
+            "challengeFailed": "Failed to get verification challenge",
+            "connectWalletFirst": "Please connect your Veridian wallet first",
+            "walletNotConnected": "Veridian wallet not connected",
+            "signingUnavailable": "Signing not available in this wallet",
+            "signingDeclined": "Message signing declined",
+            "signingFailed": "Failed to sign message. Please try again.",
+            "regenerateChallengeFailed": "Failed to generate new challenge",
+            "endpointTestFailed": "Endpoint test failed",
+            "kycFirst": "Please complete your KYC verification first",
+            "connectionError": "Connection error: {error}",
+            "challengeNotReady": "Verification challenge not ready. Please wait or try again."
+          },
+          "secretToggle": {
+            "show": "Show secret",
+            "hide": "Hide secret"
+          }
         }
       }
     },
@@ -1246,7 +1266,8 @@
         },
         "regenerateSuccess": "Backup codes regenerated",
         "downloadNote1": "Each code can only be used once.",
-        "downloadNote2": "Store these codes in a safe place."
+        "downloadNote2": "Store these codes in a safe place.",
+        "verifyCodePlaceholder": "000000"
       }
     }
   },
@@ -1282,6 +1303,21 @@
       "title": "Sidebar",
       "description": "Displays the mobile sidebar.",
       "toggleSidebar": "Toggle Sidebar"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Language"
+    },
+    "Pagination": {
+      "ariaLabel": "Pagination"
+    },
+    "RichTextEditor": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Loading user profile"
     }
   },
   "Email": {
@@ -1498,6 +1534,7 @@
         "badgeError": "Error",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Loading developers tools"
   }
 }

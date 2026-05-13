@@ -2,7 +2,8 @@
   "Common": {
     "Loading": "読み込み中...",
     "Error": "エラー",
-    "Success": "成功"
+    "Success": "成功",
+    "dismiss": "閉じる"
   },
   "Auth": {
     "Errors": {
@@ -168,13 +169,13 @@
       "bannedStatus": "禁止",
       "activeStatus": "アクティブ",
       "banDialogTitle": "ユーザーを禁止する",
-      "banDialogDescription": "«0› を禁止してもよろしいですか?これにより、すべてのセッションが直ちに取り消され、プラットフォームにアクセスできなくなります。",
+      "banDialogDescription": "{name} を禁止してもよろしいですか?これにより、すべてのセッションが直ちに取り消され、プラットフォームにアクセスできなくなります。",
       "banReasonLabel": "禁止の理由",
       "banReasonPlaceholder": "このユーザーを禁止する理由を入力してください...",
       "cancel": "キャンセル",
       "confirmBan": "ユーザーを禁止する",
       "unbanDialogTitle": "ユーザーの禁止を解除する",
-      "unbanDialogDescription": "«0› の禁止を解除してもよろしいですか?彼らはプラットフォームへのアクセスを回復します。",
+      "unbanDialogDescription": "{name} の禁止を解除してもよろしいですか?彼らはプラットフォームへのアクセスを回復します。",
       "confirmUnban": "ユーザーの禁止を解除する",
       "filterAll": "全て",
       "filterVerified": "メール認証済み",
@@ -217,7 +218,7 @@
       "noSearchResults": "検索に一致するエージェントはありません",
       "noSearchResultsDescription": "検索を調整してみてください",
       "clearSearch": "検索をクリア",
-      "showingRange": "«2› のエージェント中 «0›–——1› を表示中",
+      "showingRange": "{total} のエージェント中 {start}–{end} を表示中",
       "previous": "前の",
       "next": "次",
       "paginationPrevious": "前のページに戻る",
@@ -262,7 +263,7 @@
         "approved": {
           "title": "本人確認済み",
           "description": "あなたの身元は正常に確認されました。",
-          "descriptionWithDate": "KYCステータスは「0」で確認されました。"
+          "descriptionWithDate": "KYCステータスは{date}で確認されました。"
         },
         "rejected": {
           "title": "検証が拒否されました",
@@ -271,7 +272,7 @@
         }
       },
       "Dashboard": {
-        "greeting": "良い «0›, «1›",
+        "greeting": "良い {time}, {name}",
         "subtitle": "エージェント、組織、API キーを 1 か所から管理します。",
         "kycStatus": {
           "pending": "保留中",
@@ -283,7 +284,7 @@
           "expired": "期限切れ"
         },
         "identityStatus": "身元",
-        "identityStatusWithLabel": "アイデンティティ: «0»",
+        "identityStatusWithLabel": "アイデンティティ: {status}",
         "emailVerified": "メール認証済み",
         "emailNotVerified": "メールが認証されていません",
         "verifyEmail": "メールの確認",
@@ -310,22 +311,22 @@
           "periodAll": "オールタイム",
           "topUp": "補充する",
           "withdraw": "撤回する",
-          "agentsCardAria": "エージェントを表示、<0> 登録済み",
+          "agentsCardAria": "エージェントを表示、{count} 登録済み",
           "runningAgents": "{count} ランニング",
           "pendingAgents": "{count} 保留中",
-          "failedAgents": "«0› 失敗しました",
-          "organizationsCardAria": "組織、<0> ワークスペースを表示",
+          "failedAgents": "{count} 失敗しました",
+          "organizationsCardAria": "組織、{count} ワークスペースを表示",
           "apiKeys": "APIキー",
           "totalTransactions": "合計トランザクション数",
           "totalTransactionsDescription": "エージェント間での支払いと購入",
-          "activitySummaryCardAria": "アクティビティ、«0› トランザクションを表示",
+          "activitySummaryCardAria": "アクティビティ、{count} トランザクションを表示",
           "newTransactions": "新規取引",
           "newTransactionsDescription": "新しい支払いと購入アクティビティ",
-          "newTransactionsCardAria": "アクティビティを表示、<0> 新しいトランザクション",
+          "newTransactionsCardAria": "アクティビティを表示、{count} 新しいトランザクション",
           "viewAll": "すべて見る",
           "vsPreviousPeriod": "対前期間"
         },
-        "networkHint": "«0» のデータ。",
+        "networkHint": "{network} のデータ。",
         "networkHintChange": "変化",
         "networkHintChangeAria": "ネットワークまたは支払い元を変更する",
         "recentActivity": "最近の活動",
@@ -351,7 +352,7 @@
         "agentsSectionTitle": "AIエージェント",
         "agentsSectionDescription": "AI エージェントとその構成を管理します。",
         "noAgentsYet": "まだエージェントはいません。まずは登録してください。",
-        "agentLinkAria": "エージェントを見る «0›",
+        "agentLinkAria": "エージェントを見る {name}",
         "registerAgent": "エージェントを登録する",
         "createApiKey": "APIキーの作成",
         "apiKeysSectionDescription": "アプリケーションを認証するための API キー",
@@ -552,7 +553,7 @@
       },
       "Detail": {
         "title": "組織",
-        "description": "«0›を管理する",
+        "description": "{name}を管理する",
         "back": "組織に戻る",
         "backToDashboard": "ダッシュボードに戻る",
         "current": "現在",
@@ -592,7 +593,7 @@
           "linkedAgentsDescription": "この組織に登録されているエージェント",
           "linkedAgentsAria": "{count} リンクされたエージェント",
           "apiKeys": "APIキー",
-          "apiKeysDescription": "«0› アクティブ",
+          "apiKeysDescription": "{active} アクティブ",
           "apiKeysAria": "{count} API キー",
           "members": "メンバー",
           "membersDescription": "この組織の人々",
@@ -621,16 +622,16 @@
           "columnRole": "役割",
           "columnJoined": "参加しました",
           "pendingInvitations": "保留中の招待状",
-          "expiresDate": "有効期限が切れます «0›",
+          "expiresDate": "有効期限が切れます {date}",
           "cancelInvitation": "キャンセル",
           "cancelInvitationConfirmTitle": "招待をキャンセルする",
-          "cancelInvitationConfirmDescription": "«0› への招待をキャンセルしますか?彼らはもう参加できなくなります。",
+          "cancelInvitationConfirmDescription": "{email} への招待をキャンセルしますか?彼らはもう参加できなくなります。",
           "cancelInvitationSuccess": "招待がキャンセルされました",
           "cancelInvitationError": "招待をキャンセルできませんでした",
           "roleUpdated": "役割が更新されました",
           "roleUpdateError": "役割の更新に失敗しました",
           "removeConfirmTitle": "メンバーの削除",
-          "removeConfirmDescription": "«0› をこの組織から削除しますか?これを元に戻すことはできません。",
+          "removeConfirmDescription": "{name} をこの組織から削除しますか?これを元に戻すことはできません。",
           "removeConfirm": "取り除く",
           "removeSuccess": "メンバーが削除されました",
           "removeError": "メンバーの削除に失敗しました"
@@ -660,15 +661,15 @@
       "AcceptInvitation": {
         "title": "組織への招待",
         "invitedToJoin": "参加するよう招待されました",
-        "invitedAs": "«0›として",
-        "invitedBy": "«0› からの招待",
-        "expires": "有効期限が切れます «0›",
+        "invitedAs": "{role}として",
+        "invitedBy": "{name} からの招待",
+        "expires": "有効期限が切れます {date}",
         "accept": "招待を承諾する",
         "decline": "衰退",
         "invalidTitle": "無効な招待状",
         "invalidDescription": "この招待リンクは無効になっているか、すでに使用されています。",
         "wrongAccountTitle": "間違ったアカウント",
-        "wrongAccountDescription": "この招待状は «0› に送信されました。受け入れるには、そのアカウントでサインインします。",
+        "wrongAccountDescription": "この招待状は {email} に送信されました。受け入れるには、そのアカウントでサインインします。",
         "backToHome": "家に帰る",
         "acceptError": "招待を承諾できませんでした",
         "declineError": "招待を断れませんでした"
@@ -762,7 +763,8 @@
         "credentialTitle": "ベリディアンの資格情報",
         "credential": "検証が成功すると、Veridian 認証情報がアカウントに発行されます。この資格情報により高度な機能を使用できるようになり、同意を得て共有することができます。",
         "consentLabel": "私は本人確認プロセスを理解し、同意します。",
-        "startButton": "検証の開始"
+        "startButton": "検証の開始",
+        "metaTitle": "本人確認"
       },
       "Verification": {
         "description": "以下の確認手順を完了してください。身分証明書をアップロードし、自撮り写真を撮る必要があります。",
@@ -852,7 +854,7 @@
       "deleteSuccess": "エージェントは正常に削除されました",
       "deleteError": "エージェントの削除に失敗しました",
       "deleteConfirmTitle": "エージェントの削除",
-      "deleteConfirmDescription": "«0› を削除してもよろしいですか?この操作は元に戻すことができません。",
+      "deleteConfirmDescription": "{name} を削除してもよろしいですか?この操作は元に戻すことができません。",
       "Register": {
         "title": "新しいエージェントを登録する",
         "icon": "アイコン",
@@ -917,7 +919,8 @@
         "progressStep1": "エージェントとウォレットの作成",
         "progressStep2": "資金調達ウォレット",
         "progressStep3": "ネットワークに登録する",
-        "registrationStarted": "登録を開始しました。完了したらお知らせします。"
+        "registrationStarted": "登録を開始しました。完了したらお知らせします。",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "エージェントの編集",
@@ -960,21 +963,21 @@
         "deregisterConfirmed": "エージェントは正常に登録解除されました。",
         "deregisterError": "エージェントの登録解除に失敗しました。もう一度試してください。",
         "deregisterConfirmTitle": "エージェントの登録を解除する",
-        "deregisterConfirmDescription": "«0› を登録解除してもよろしいですか?マーケットプレイスから削除され、新しい支払いの受け付けが停止されます。",
+        "deregisterConfirmDescription": "{name} を登録解除してもよろしいですか?マーケットプレイスから削除され、新しい支払いの受け付けが停止されます。",
         "delete": "エージェントの削除",
         "deleteDescription": "エージェントを削除すると、元に戻すことはできません。",
         "deleteStuckDescription": "エージェントが登録で行き詰まっているようです。削除して再試行できます。",
         "deleteSuccess": "エージェントは正常に削除されました",
         "deleteError": "エージェントの削除に失敗しました",
         "deleteConfirmTitle": "エージェントの削除",
-        "deleteConfirmDescription": "«0› を削除してもよろしいですか?この操作は元に戻すことができません。",
+        "deleteConfirmDescription": "{name} を削除してもよろしいですか?この操作は元に戻すことができません。",
         "deleteConfirmTypeToConfirm": "<bold>{name}</bold> と入力して確認します",
         "deleteConfirmPlaceholder": "エージェント名",
         "cancel": "キャンセル",
         "networkMismatch": {
           "title": "スイッチネットワーク",
           "description": "このエージェントは <strong>{agentNetwork}</strong> にいますが、あなたは現在 <strong>{currentNetwork}</strong> にいます。このエージェントを表示するにはネットワークを切り替えてください。",
-          "confirm": "«0› に切り替えます",
+          "confirm": "{network} に切り替えます",
           "back": "戻る"
         },
         "Transactions": {
@@ -1120,7 +1123,24 @@
           "nextDisabledReasonTestingEndpoint": "エンドポイントを確認しています...お待ちください。",
           "nextDisabledReasonLoadingSetup": "検証セットアップをロードしています。お待ちください。",
           "nextDisabledReasonKycRequired": "続行するには、まず KYC 検証を完了してください。",
-          "help": "ヘルプ"
+          "help": "ヘルプ",
+          "toasts": {
+            "challengeFailed": "検証チャレンジの取得に失敗しました",
+            "connectWalletFirst": "最初にVeridianウォレットを接続してください",
+            "walletNotConnected": "Veridianウォレットが接続されていません",
+            "signingUnavailable": "このウォレットでは署名できません",
+            "signingDeclined": "メッセージへの署名が拒否されました",
+            "signingFailed": "メッセージへの署名に失敗しました。もう一度お試しください。",
+            "regenerateChallengeFailed": "新しいチャレンジの生成に失敗しました",
+            "endpointTestFailed": "エンドポイントテストに失敗しました",
+            "kycFirst": "最初にKYC検証を完了してください",
+            "connectionError": "接続エラー: {error}",
+            "challengeNotReady": "検証チャレンジの準備ができていません。お待ちいただくか、もう一度お試しください。"
+          },
+          "secretToggle": {
+            "show": "シークレットを表示",
+            "hide": "シークレットを非表示"
+          }
         }
       }
     },
@@ -1151,7 +1171,7 @@
         "title": "メールアドレスを確認してください",
         "description": "あなたの電子メールに確認リンクを送信しました。リンクをクリックして確認するか、受信していない場合は再送信してください。",
         "resendButton": "確認リンクを再送信する",
-        "resendIn": "«0› 秒以内に再送信してください",
+        "resendIn": "{seconds} 秒以内に再送信してください",
         "resendSuccess": "確認メールが送信されました。受信箱を確認してください。",
         "resendError": "確認メールの送信に失敗しました。もう一度試してください。"
       },
@@ -1176,7 +1196,7 @@
         "error": "メールの更新に失敗しました。もう一度試してください。",
         "notImplemented": "電子メール変更機能はまだ実装されていません。",
         "confirmTitle": "メールアドレス変更の確認",
-        "confirmDescription": "メールアドレスを「0」から「1」に変更してもよろしいですか?新しいアドレスに確認メールが送信されます。",
+        "confirmDescription": "メールアドレスを{oldEmail}から{newEmail}に変更してもよろしいですか?新しいアドレスに確認メールが送信されます。",
         "confirm": "確認する",
         "cancel": "キャンセル",
         "currentEmailFallback": "現在のメールアドレス"
@@ -1246,7 +1266,8 @@
         },
         "regenerateSuccess": "バックアップコードが再生成されました",
         "downloadNote1": "各コードは 1 回のみ使用できます。",
-        "downloadNote2": "これらのコードは安全な場所に保管してください。"
+        "downloadNote2": "これらのコードは安全な場所に保管してください。",
+        "verifyCodePlaceholder": "000000"
       }
     }
   },
@@ -1282,13 +1303,28 @@
       "title": "サイドバー",
       "description": "モバイルサイドバーを表示します。",
       "toggleSidebar": "サイドバーの切り替え"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "言語"
+    },
+    "Pagination": {
+      "ariaLabel": "ページネーション"
+    },
+    "RichTextEditor": {
+      "bold": "太字",
+      "italic": "斜体",
+      "bulletList": "箇条書き",
+      "numberedList": "番号付きリスト"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "ユーザープロファイルを読み込み中"
     }
   },
   "Email": {
     "ResetPassword": {
       "preview": "真澄のパスワードをリセットする",
       "title": "パスワードをリセットする",
-      "greeting": "«0› さん、こんにちは。",
+      "greeting": "{name} さん、こんにちは。",
       "message": "パスワードをリセットするリクエストを受け取りました。新しいパスワードを作成するには、下のボタンをクリックしてください。",
       "button": "パスワードをリセットする",
       "linkText": "または、このリンクをコピーしてブラウザに貼り付けます。",
@@ -1297,7 +1333,7 @@
     "Verification": {
       "preview": "真澄のメールアドレスを確認してください",
       "title": "メールアドレスを確認してください",
-      "greeting": "«0› さん、こんにちは。",
+      "greeting": "{name} さん、こんにちは。",
       "message": "下のボタンをクリックしてメールアドレスを確認してください。",
       "button": "メールの確認",
       "linkText": "または、このリンクをコピーしてブラウザに貼り付けます。",
@@ -1305,7 +1341,7 @@
     },
     "Invitation": {
       "preview": "真澄の {organization} に招待されました",
-      "title": "«0› に参加するよう招待されています",
+      "title": "{organization} に参加するよう招待されています",
       "greeting": "{inviter} が、あなたを {organization} に {role} として参加するよう招待しました。",
       "message": "下のボタンをクリックして招待を承諾し、開始してください。",
       "button": "招待を承諾する",
@@ -1368,136 +1404,137 @@
     },
     "testing": {
       "cards": {
-        "comingSoon": "Coming soon",
+        "comingSoon": "近日公開",
         "testPayment": {
-          "title": "Test payment",
-          "description": "Create a single test payment to simulate a seller-side payment request via the Masumi SaaS API proxy."
+          "title": "テスト支払い",
+          "description": "Masumi SaaS APIプロキシ経由で売り手側の支払いリクエストをシミュレートする単一のテスト支払いを作成します。"
         },
         "testPurchase": {
-          "title": "Test purchase",
-          "description": "Create a single test purchase to simulate a buyer-side purchase request."
+          "title": "テスト購入",
+          "description": "買い手側の購入リクエストをシミュレートする単一のテスト購入を作成します。"
         },
         "fullCycle": {
-          "title": "Full payment cycle",
-          "description": "Run a complete payment-to-purchase cycle in one step for end-to-end testing."
+          "title": "完全な支払いサイクル",
+          "description": "エンドツーエンドのテストのために、支払いから購入までの完全なサイクルを1ステップで実行します。"
         }
       },
       "dialog": {
-        "title": "Create test payment",
-        "description": "Creates a payment request through your configured payment node (same as POST /api/v1/payment with session or API key).",
-        "cancel": "Cancel",
-        "submit": "Create payment",
-        "creating": "Creating…",
-        "successToast": "Test payment created",
-        "createdPaymentSectionTitle": "Created payment",
+        "title": "テスト支払いを作成",
+        "description": "設定された支払いノードを経由して支払いリクエストを作成します(セッションまたはAPIキーによるPOST /api/v1/paymentと同等)。",
+        "cancel": "キャンセル",
+        "submit": "支払いを作成",
+        "creating": "作成中…",
+        "successToast": "テスト支払いを作成しました",
+        "createdPaymentSectionTitle": "作成された支払い",
         "errors": {
-          "generic": "Failed to create payment",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})"
+          "generic": "支払いの作成に失敗しました",
+          "emptyResponse": "サーバーからの無効な応答 — データが返されませんでした",
+          "requestFailed": "リクエストが失敗しました ({status})"
         }
       },
       "purchaseDialog": {
-        "title": "Create test purchase",
-        "description": "Creates a purchase through your payment node (POST /api/v1/purchase). Paste the JSON from a test payment response to pre-fill fields, or enter them manually.",
-        "pasteLabel": "Paste create-payment response (JSON)",
-        "pastePlaceholder": "Paste the payment JSON (raw object or nested under a data key)",
-        "applyPaste": "Apply pasted JSON",
-        "pasteSuccess": "Fields updated from pasted payment",
-        "pasteError": "Could not read payment JSON. Paste the response body from Create test payment.",
-        "agentFromPaste": "From pasted JSON",
-        "blockchainIdentifierLabel": "Blockchain identifier",
-        "sellerVkeyLabel": "Seller verification key",
-        "payByTimeLabel": "Pay by time (unix ms)",
-        "submitResultTimeLabel": "Submit result time (unix ms)",
-        "unlockTimeLabel": "Unlock time (unix ms)",
-        "externalDisputeUnlockTimeLabel": "External dispute unlock (unix ms)",
-        "createdSectionTitle": "Created purchase",
-        "cancel": "Cancel",
-        "submit": "Create purchase",
-        "creating": "Creating…",
-        "successToast": "Test purchase created",
+        "title": "テスト購入を作成",
+        "description": "支払いノードを通じて購入を作成します(POST /api/v1/purchase)。テスト支払い応答のJSONを貼り付けてフィールドを事前入力するか、手動で入力してください。",
+        "pasteLabel": "支払い作成応答を貼り付け(JSON)",
+        "pastePlaceholder": "支払いJSONを貼り付け(生のオブジェクトまたはdataキーの下にネストされたもの)",
+        "applyPaste": "貼り付けたJSONを適用",
+        "pasteSuccess": "貼り付けた支払いからフィールドを更新しました",
+        "pasteError": "支払いJSONを読み取れませんでした。「テスト支払いを作成」の応答本文を貼り付けてください。",
+        "agentFromPaste": "貼り付けたJSONから",
+        "blockchainIdentifierLabel": "ブロックチェーン識別子",
+        "sellerVkeyLabel": "売り手の検証鍵",
+        "payByTimeLabel": "支払期限(unix ms)",
+        "submitResultTimeLabel": "結果送信時刻(unix ms)",
+        "unlockTimeLabel": "ロック解除時刻(unix ms)",
+        "externalDisputeUnlockTimeLabel": "外部紛争ロック解除(unix ms)",
+        "createdSectionTitle": "作成された購入",
+        "cancel": "キャンセル",
+        "submit": "購入を作成",
+        "creating": "作成中…",
+        "successToast": "テスト購入を作成しました",
         "errors": {
-          "generic": "Failed to create purchase",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})",
-          "blockchainIdentifier": "Blockchain identifier is required",
-          "sellerVkey": "Seller verification key is required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "agentIdentifier": "Agent identifier must be at least 57 characters",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "timeRequired": "Required (numeric unix time in milliseconds)"
+          "generic": "購入の作成に失敗しました",
+          "emptyResponse": "サーバーからの無効な応答 — データが返されませんでした",
+          "requestFailed": "リクエストが失敗しました ({status})",
+          "blockchainIdentifier": "ブロックチェーン識別子は必須です",
+          "sellerVkey": "売り手の検証鍵は必須です",
+          "inputHashLength": "入力ハッシュは64文字である必要があります",
+          "inputHashHex": "有効な16進数である必要があります",
+          "agentIdentifier": "エージェント識別子は57文字以上である必要があります",
+          "identifierMin": "最小14文字",
+          "identifierMax": "最大26文字",
+          "identifierHex": "有効な16進数である必要があります",
+          "timeRequired": "必須(ミリ秒単位のunix時刻の数値)"
         }
       },
       "fullCycleDialog": {
-        "title": "Full payment cycle",
-        "intro": "Creates a payment, then automatically creates the matching purchase using the payment response (same flow as the payment service testing UI).",
-        "stepPayment": "Payment",
-        "stepPurchase": "Purchase",
-        "done": "Done",
-        "cancel": "Cancel",
-        "start": "Start full cycle",
-        "close": "Close",
-        "creatingPayment": "Creating payment…",
-        "creatingPurchase": "Creating purchase…",
-        "paymentSectionTitle": "Payment",
-        "purchaseSuccessTitle": "Purchase created",
-        "purchaseFailedTitle": "Purchase failed",
-        "successPaymentToast": "Payment created",
-        "successPurchaseToast": "Full cycle complete — purchase created",
+        "title": "完全な支払いサイクル",
+        "intro": "支払いを作成し、その応答を使用して対応する購入を自動的に作成します(支払いサービスのテストUIと同じフロー)。",
+        "stepPayment": "支払い",
+        "stepPurchase": "購入",
+        "done": "完了",
+        "cancel": "キャンセル",
+        "start": "完全サイクルを開始",
+        "close": "閉じる",
+        "creatingPayment": "支払いを作成中…",
+        "creatingPurchase": "購入を作成中…",
+        "paymentSectionTitle": "支払い",
+        "purchaseSuccessTitle": "購入を作成しました",
+        "purchaseFailedTitle": "購入に失敗しました",
+        "successPaymentToast": "支払いを作成しました",
+        "successPurchaseToast": "完全サイクル完了 — 購入を作成しました",
         "errors": {
-          "paymentGeneric": "Failed to create payment",
-          "paymentRequestFailed": "Payment request failed ({status})",
-          "emptyPaymentResponse": "Invalid payment response — no data returned",
-          "missingSellerOrTimes": "Payment response is missing seller key or pay-by time. Ensure the payment was created successfully.",
-          "purchaseGeneric": "Failed to create purchase",
-          "purchaseRequestFailed": "Purchase request failed ({status})",
-          "emptyPurchaseResponse": "Invalid purchase response — no data returned"
+          "paymentGeneric": "支払いの作成に失敗しました",
+          "paymentRequestFailed": "支払いリクエストが失敗しました ({status})",
+          "emptyPaymentResponse": "無効な支払い応答 — データが返されませんでした",
+          "missingSellerOrTimes": "支払い応答に売り手の鍵または支払期限がありません。支払いが正常に作成されたことを確認してください。",
+          "purchaseGeneric": "購入の作成に失敗しました",
+          "purchaseRequestFailed": "購入リクエストが失敗しました ({status})",
+          "emptyPurchaseResponse": "無効な購入応答 — データが返されませんでした"
         }
       },
       "form": {
-        "agentLabel": "Agent",
-        "loadingAgents": "Loading agents…",
-        "noPaidAgents": "No paid agents available",
-        "selectAgent": "Select a paid agent",
-        "freeAgentsHint": "No paid agents available. Free agents cannot be used with the payment flow.",
-        "purchaserIdLabel": "Purchaser identifier",
-        "purchaserIdPlaceholder": "14–26 character hex string",
-        "regenerate": "Regenerate",
-        "mip004Blurb": "Input hashed per <link>MIP-004</link> — SHA-256(identifier + \";\" + JCS(input_data))",
-        "loadPreset": "Load preset…",
-        "inputDataLabel": "Input data",
-        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
-        "inputHashLabel": "Input hash",
-        "inputHashPlaceholder": "Generated from input data",
-        "metadataLabel": "Metadata (optional)",
-        "metadataPlaceholder": "Optional metadata for the payment",
+        "agentLabel": "エージェント",
+        "loadingAgents": "エージェントを読み込み中…",
+        "noPaidAgents": "利用可能な有料エージェントがありません",
+        "selectAgent": "有料エージェントを選択",
+        "freeAgentsHint": "利用可能な有料エージェントがありません。無料エージェントは支払いフローでは使用できません。",
+        "purchaserIdLabel": "購入者識別子",
+        "purchaserIdPlaceholder": "14〜26文字の16進文字列",
+        "regenerate": "再生成",
+        "mip004Blurb": "<link>MIP-004</link>に従ってハッシュ化された入力 — SHA-256(識別子 + \";\" + JCS(input_data))",
+        "loadPreset": "プリセットを読み込み…",
+        "inputDataLabel": "入力データ",
+        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputHashLabel": "入力ハッシュ",
+        "inputHashPlaceholder": "入力データから生成",
+        "metadataLabel": "メタデータ(オプション)",
+        "metadataPlaceholder": "支払いのオプションのメタデータ",
         "presets": {
-          "textPrompt": "Text prompt",
-          "emailAnalysis": "Email analysis",
-          "documentProcessing": "Document processing",
-          "multiFieldForm": "Multi-field form"
+          "textPrompt": "テキストプロンプト",
+          "emailAnalysis": "メール分析",
+          "documentProcessing": "ドキュメント処理",
+          "multiFieldForm": "複数フィールドフォーム"
         },
         "required": "*",
         "errors": {
-          "agentIdentifier": "Agent identifier required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "inputDataObject": "Input data must be a JSON object",
-          "invalidJson": "Invalid JSON"
+          "agentIdentifier": "エージェント識別子が必要です",
+          "inputHashLength": "入力ハッシュは64文字である必要があります",
+          "inputHashHex": "有効な16進数である必要があります",
+          "identifierMin": "最小14文字",
+          "identifierMax": "最大26文字",
+          "identifierHex": "有効な16進数である必要があります",
+          "inputDataObject": "入力データはJSONオブジェクトである必要があります",
+          "invalidJson": "無効なJSON"
         }
       },
       "curlViewer": {
         "curlTitle": "cURL",
-        "response": "Response",
-        "badgeError": "Error",
+        "response": "応答",
+        "badgeError": "エラー",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "開発者ツールを読み込み中"
   }
 }

@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 import { AdminPaginationBar } from "../../components/admin-pagination-bar";
 import {
@@ -63,6 +63,7 @@ export default function AgentsList({
   currentSearch,
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
+  const { formatDate } = useFormatDate();
   const router = useRouter();
   const [paramsPending, startTransition] = useTransition();
   const skipNextSearchPushRef = useRef(false);

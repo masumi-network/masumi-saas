@@ -2,7 +2,8 @@
   "Common": {
     "Loading": "Cargando...",
     "Error": "Error",
-    "Success": "Éxito"
+    "Success": "Éxito",
+    "dismiss": "Descartar"
   },
   "Auth": {
     "Errors": {
@@ -145,7 +146,7 @@
       "email": "Correo electrónico",
       "emailVerified": "Correo electrónico verificado",
       "kycStatus": "Estado KYC",
-      "role": "Role",
+      "role": "Rol",
       "banned": "Estado",
       "createdAt": "Creado",
       "actions": "Comportamiento",
@@ -577,7 +578,7 @@
           "inviteDialogDescription": "Envíe una invitación para agregar a alguien a esta organización.",
           "inviteEmailLabel": "Dirección de correo electrónico",
           "inviteEmailPlaceholder": "colega@ejemplo.com",
-          "inviteRoleLabel": "Role",
+          "inviteRoleLabel": "Rol",
           "inviteRoleMember": "Miembro",
           "inviteRoleAdmin": "Administración",
           "inviteSubmit": "Enviar invitación",
@@ -618,7 +619,7 @@
           "description": "Personas que forman parte de esta organización",
           "empty": "Aún no hay miembros",
           "columnMember": "Miembro",
-          "columnRole": "Role",
+          "columnRole": "Rol",
           "columnJoined": "Unido",
           "pendingInvitations": "Invitaciones pendientes",
           "expiresDate": "Caduca {date}",
@@ -762,7 +763,8 @@
         "credentialTitle": "Credencial Veridian",
         "credential": "Tras la verificación exitosa, se emitirá una credencial de Veridian a su cuenta. Esta credencial le permite utilizar funciones avanzadas y puede compartirse con su consentimiento.",
         "consentLabel": "Entiendo y doy mi consentimiento al proceso de verificación de identidad.",
-        "startButton": "Iniciar verificación"
+        "startButton": "Iniciar verificación",
+        "metaTitle": "Verificación de identidad"
       },
       "Verification": {
         "description": "Complete los pasos de verificación a continuación. Deberás cargar un documento de identidad y tomarte una selfie.",
@@ -917,7 +919,8 @@
         "progressStep1": "Creando agentes y billeteras",
         "progressStep2": "Cartera de financiación",
         "progressStep3": "Registrarse en la red",
-        "registrationStarted": "Se inició el registro. Te avisaremos cuando esté hecho."
+        "registrationStarted": "Se inició el registro. Te avisaremos cuando esté hecho.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Editar agente",
@@ -1120,7 +1123,24 @@
           "nextDisabledReasonTestingEndpoint": "Verificando punto final... Espere.",
           "nextDisabledReasonLoadingSetup": "Cargando configuración de verificación. Espere por favor.",
           "nextDisabledReasonKycRequired": "Primero complete la verificación KYC para continuar.",
-          "help": "Ayuda"
+          "help": "Ayuda",
+          "toasts": {
+            "challengeFailed": "No se pudo obtener el desafío de verificación",
+            "connectWalletFirst": "Conecta primero tu billetera Veridian",
+            "walletNotConnected": "Billetera Veridian no conectada",
+            "signingUnavailable": "Firma no disponible en esta billetera",
+            "signingDeclined": "Firma del mensaje rechazada",
+            "signingFailed": "No se pudo firmar el mensaje. Inténtalo de nuevo.",
+            "regenerateChallengeFailed": "No se pudo generar un nuevo desafío",
+            "endpointTestFailed": "La prueba del endpoint falló",
+            "kycFirst": "Completa primero la verificación KYC",
+            "connectionError": "Error de conexión: {error}",
+            "challengeNotReady": "El desafío de verificación no está listo. Espera o inténtalo de nuevo."
+          },
+          "secretToggle": {
+            "show": "Mostrar secreto",
+            "hide": "Ocultar secreto"
+          }
         }
       }
     },
@@ -1246,7 +1266,8 @@
         },
         "regenerateSuccess": "Códigos de respaldo regenerados",
         "downloadNote1": "Cada código sólo se puede utilizar una vez.",
-        "downloadNote2": "Guarde estos códigos en un lugar seguro."
+        "downloadNote2": "Guarde estos códigos en un lugar seguro.",
+        "verifyCodePlaceholder": "000000"
       }
     }
   },
@@ -1282,6 +1303,21 @@
       "title": "Barra lateral",
       "description": "Muestra la barra lateral móvil.",
       "toggleSidebar": "Alternar barra lateral"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Idioma"
+    },
+    "Pagination": {
+      "ariaLabel": "Paginación"
+    },
+    "RichTextEditor": {
+      "bold": "Negrita",
+      "italic": "Cursiva",
+      "bulletList": "Lista con viñetas",
+      "numberedList": "Lista numerada"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Cargando perfil de usuario"
     }
   },
   "Email": {
@@ -1498,6 +1534,7 @@
         "badgeError": "Error",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Cargando herramientas para desarrolladores"
   }
 }

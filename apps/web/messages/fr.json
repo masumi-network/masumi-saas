@@ -2,7 +2,8 @@
   "Common": {
     "Loading": "Chargement...",
     "Error": "Erreur",
-    "Success": "Succès"
+    "Success": "Succès",
+    "dismiss": "Ignorer"
   },
   "Auth": {
     "Errors": {
@@ -694,7 +695,7 @@
       "agents": "Agents",
       "navigation": "Navigation",
       "quickActions": "Actions rapides",
-      "links": "Links",
+      "links": "Liens",
       "items": {
         "dashboard": "Tableau de bord",
         "agents": "Agents",
@@ -762,7 +763,8 @@
         "credentialTitle": "Identifiant Veridian",
         "credential": "Une fois la vérification réussie, un identifiant Veridian sera émis sur votre compte. Cet identifiant vous permet d'utiliser des fonctionnalités avancées et peut être partagé avec votre consentement.",
         "consentLabel": "Je comprends et j'accepte le processus de vérification d'identité.",
-        "startButton": "Commencer la vérification"
+        "startButton": "Commencer la vérification",
+        "metaTitle": "Vérification d'identité"
       },
       "Verification": {
         "description": "Veuillez suivre les étapes de vérification ci-dessous. Vous devrez télécharger une pièce d'identité et prendre un selfie.",
@@ -917,7 +919,8 @@
         "progressStep1": "Agent de création et portefeuilles",
         "progressStep2": "Portefeuille de financement",
         "progressStep3": "Inscription sur le réseau",
-        "registrationStarted": "Les inscriptions ont commencé. Nous vous informerons lorsque ce sera fait."
+        "registrationStarted": "Les inscriptions ont commencé. Nous vous informerons lorsque ce sera fait.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Modifier l'agent",
@@ -1120,7 +1123,24 @@
           "nextDisabledReasonTestingEndpoint": "Vérification du point de terminaison... Veuillez patienter.",
           "nextDisabledReasonLoadingSetup": "Chargement de la configuration de vérification. S'il vous plaît, attendez.",
           "nextDisabledReasonKycRequired": "Effectuez d’abord la vérification KYC pour continuer.",
-          "help": "Aide"
+          "help": "Aide",
+          "toasts": {
+            "challengeFailed": "Échec de l'obtention du défi de vérification",
+            "connectWalletFirst": "Veuillez d'abord connecter votre portefeuille Veridian",
+            "walletNotConnected": "Portefeuille Veridian non connecté",
+            "signingUnavailable": "Signature non disponible dans ce portefeuille",
+            "signingDeclined": "Signature du message refusée",
+            "signingFailed": "Échec de la signature du message. Veuillez réessayer.",
+            "regenerateChallengeFailed": "Échec de la génération d'un nouveau défi",
+            "endpointTestFailed": "Le test du point d'accès a échoué",
+            "kycFirst": "Veuillez d'abord compléter votre vérification KYC",
+            "connectionError": "Erreur de connexion : {error}",
+            "challengeNotReady": "Le défi de vérification n'est pas prêt. Veuillez patienter ou réessayer."
+          },
+          "secretToggle": {
+            "show": "Afficher le secret",
+            "hide": "Masquer le secret"
+          }
         }
       }
     },
@@ -1246,7 +1266,8 @@
         },
         "regenerateSuccess": "Codes de sauvegarde régénérés",
         "downloadNote1": "Chaque code ne peut être utilisé qu'une seule fois.",
-        "downloadNote2": "Conservez ces codes dans un endroit sûr."
+        "downloadNote2": "Conservez ces codes dans un endroit sûr.",
+        "verifyCodePlaceholder": "000000"
       }
     }
   },
@@ -1282,6 +1303,21 @@
       "title": "Barre latérale",
       "description": "Affiche la barre latérale mobile.",
       "toggleSidebar": "Basculer la barre latérale"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Langue"
+    },
+    "Pagination": {
+      "ariaLabel": "Pagination"
+    },
+    "RichTextEditor": {
+      "bold": "Gras",
+      "italic": "Italique",
+      "bulletList": "Liste à puces",
+      "numberedList": "Liste numérotée"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Chargement du profil utilisateur"
     }
   },
   "Email": {
@@ -1368,136 +1404,137 @@
     },
     "testing": {
       "cards": {
-        "comingSoon": "Coming soon",
+        "comingSoon": "Bientôt disponible",
         "testPayment": {
-          "title": "Test payment",
-          "description": "Create a single test payment to simulate a seller-side payment request via the Masumi SaaS API proxy."
+          "title": "Tester un paiement",
+          "description": "Créez un paiement de test unique pour simuler une demande de paiement côté vendeur via le proxy de l'API Masumi SaaS."
         },
         "testPurchase": {
-          "title": "Test purchase",
-          "description": "Create a single test purchase to simulate a buyer-side purchase request."
+          "title": "Tester un achat",
+          "description": "Créez un achat de test unique pour simuler une demande d'achat côté acheteur."
         },
         "fullCycle": {
-          "title": "Full payment cycle",
-          "description": "Run a complete payment-to-purchase cycle in one step for end-to-end testing."
+          "title": "Cycle de paiement complet",
+          "description": "Exécutez un cycle paiement-vers-achat complet en une étape pour des tests de bout en bout."
         }
       },
       "dialog": {
-        "title": "Create test payment",
-        "description": "Creates a payment request through your configured payment node (same as POST /api/v1/payment with session or API key).",
-        "cancel": "Cancel",
-        "submit": "Create payment",
-        "creating": "Creating…",
-        "successToast": "Test payment created",
-        "createdPaymentSectionTitle": "Created payment",
+        "title": "Créer un paiement de test",
+        "description": "Crée une demande de paiement via votre nœud de paiement configuré (équivalent à POST /api/v1/payment avec session ou clé API).",
+        "cancel": "Annuler",
+        "submit": "Créer le paiement",
+        "creating": "Création…",
+        "successToast": "Paiement de test créé",
+        "createdPaymentSectionTitle": "Paiement créé",
         "errors": {
-          "generic": "Failed to create payment",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})"
+          "generic": "Échec de la création du paiement",
+          "emptyResponse": "Réponse du serveur invalide — aucune donnée renvoyée",
+          "requestFailed": "Échec de la requête ({status})"
         }
       },
       "purchaseDialog": {
-        "title": "Create test purchase",
-        "description": "Creates a purchase through your payment node (POST /api/v1/purchase). Paste the JSON from a test payment response to pre-fill fields, or enter them manually.",
-        "pasteLabel": "Paste create-payment response (JSON)",
-        "pastePlaceholder": "Paste the payment JSON (raw object or nested under a data key)",
-        "applyPaste": "Apply pasted JSON",
-        "pasteSuccess": "Fields updated from pasted payment",
-        "pasteError": "Could not read payment JSON. Paste the response body from Create test payment.",
-        "agentFromPaste": "From pasted JSON",
-        "blockchainIdentifierLabel": "Blockchain identifier",
-        "sellerVkeyLabel": "Seller verification key",
-        "payByTimeLabel": "Pay by time (unix ms)",
-        "submitResultTimeLabel": "Submit result time (unix ms)",
-        "unlockTimeLabel": "Unlock time (unix ms)",
-        "externalDisputeUnlockTimeLabel": "External dispute unlock (unix ms)",
-        "createdSectionTitle": "Created purchase",
-        "cancel": "Cancel",
-        "submit": "Create purchase",
-        "creating": "Creating…",
-        "successToast": "Test purchase created",
+        "title": "Créer un achat de test",
+        "description": "Crée un achat via votre nœud de paiement (POST /api/v1/purchase). Collez le JSON d'une réponse de paiement de test pour préremplir les champs, ou saisissez-les manuellement.",
+        "pasteLabel": "Coller la réponse de création de paiement (JSON)",
+        "pastePlaceholder": "Collez le JSON du paiement (objet brut ou imbriqué sous une clé data)",
+        "applyPaste": "Appliquer le JSON collé",
+        "pasteSuccess": "Champs mis à jour depuis le paiement collé",
+        "pasteError": "Impossible de lire le JSON du paiement. Collez le corps de la réponse de « Créer un paiement de test ».",
+        "agentFromPaste": "Depuis le JSON collé",
+        "blockchainIdentifierLabel": "Identifiant blockchain",
+        "sellerVkeyLabel": "Clé de vérification du vendeur",
+        "payByTimeLabel": "Date limite de paiement (unix ms)",
+        "submitResultTimeLabel": "Heure d'envoi du résultat (unix ms)",
+        "unlockTimeLabel": "Heure de déverrouillage (unix ms)",
+        "externalDisputeUnlockTimeLabel": "Déverrouillage externe en cas de litige (unix ms)",
+        "createdSectionTitle": "Achat créé",
+        "cancel": "Annuler",
+        "submit": "Créer l'achat",
+        "creating": "Création…",
+        "successToast": "Achat de test créé",
         "errors": {
-          "generic": "Failed to create purchase",
-          "emptyResponse": "Invalid response from server — no data returned",
-          "requestFailed": "Request failed ({status})",
-          "blockchainIdentifier": "Blockchain identifier is required",
-          "sellerVkey": "Seller verification key is required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "agentIdentifier": "Agent identifier must be at least 57 characters",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "timeRequired": "Required (numeric unix time in milliseconds)"
+          "generic": "Échec de la création de l'achat",
+          "emptyResponse": "Réponse du serveur invalide — aucune donnée renvoyée",
+          "requestFailed": "Échec de la requête ({status})",
+          "blockchainIdentifier": "L'identifiant blockchain est requis",
+          "sellerVkey": "La clé de vérification du vendeur est requise",
+          "inputHashLength": "Le hash d'entrée doit comporter 64 caractères",
+          "inputHashHex": "Doit être un hex valide",
+          "agentIdentifier": "L'identifiant de l'agent doit comporter au moins 57 caractères",
+          "identifierMin": "Minimum 14 caractères",
+          "identifierMax": "Maximum 26 caractères",
+          "identifierHex": "Doit être un hex valide",
+          "timeRequired": "Requis (temps unix numérique en millisecondes)"
         }
       },
       "fullCycleDialog": {
-        "title": "Full payment cycle",
-        "intro": "Creates a payment, then automatically creates the matching purchase using the payment response (same flow as the payment service testing UI).",
-        "stepPayment": "Payment",
-        "stepPurchase": "Purchase",
-        "done": "Done",
-        "cancel": "Cancel",
-        "start": "Start full cycle",
-        "close": "Close",
-        "creatingPayment": "Creating payment…",
-        "creatingPurchase": "Creating purchase…",
-        "paymentSectionTitle": "Payment",
-        "purchaseSuccessTitle": "Purchase created",
-        "purchaseFailedTitle": "Purchase failed",
-        "successPaymentToast": "Payment created",
-        "successPurchaseToast": "Full cycle complete — purchase created",
+        "title": "Cycle de paiement complet",
+        "intro": "Crée un paiement, puis crée automatiquement l'achat correspondant en utilisant la réponse de paiement (même flux que l'interface de test du service de paiement).",
+        "stepPayment": "Paiement",
+        "stepPurchase": "Achat",
+        "done": "Terminé",
+        "cancel": "Annuler",
+        "start": "Démarrer le cycle complet",
+        "close": "Fermer",
+        "creatingPayment": "Création du paiement…",
+        "creatingPurchase": "Création de l'achat…",
+        "paymentSectionTitle": "Paiement",
+        "purchaseSuccessTitle": "Achat créé",
+        "purchaseFailedTitle": "Échec de l'achat",
+        "successPaymentToast": "Paiement créé",
+        "successPurchaseToast": "Cycle complet terminé — achat créé",
         "errors": {
-          "paymentGeneric": "Failed to create payment",
-          "paymentRequestFailed": "Payment request failed ({status})",
-          "emptyPaymentResponse": "Invalid payment response — no data returned",
-          "missingSellerOrTimes": "Payment response is missing seller key or pay-by time. Ensure the payment was created successfully.",
-          "purchaseGeneric": "Failed to create purchase",
-          "purchaseRequestFailed": "Purchase request failed ({status})",
-          "emptyPurchaseResponse": "Invalid purchase response — no data returned"
+          "paymentGeneric": "Échec de la création du paiement",
+          "paymentRequestFailed": "Échec de la requête de paiement ({status})",
+          "emptyPaymentResponse": "Réponse de paiement invalide — aucune donnée renvoyée",
+          "missingSellerOrTimes": "La réponse de paiement n'a pas de clé vendeur ou d'heure limite de paiement. Assurez-vous que le paiement a été créé avec succès.",
+          "purchaseGeneric": "Échec de la création de l'achat",
+          "purchaseRequestFailed": "Échec de la requête d'achat ({status})",
+          "emptyPurchaseResponse": "Réponse d'achat invalide — aucune donnée renvoyée"
         }
       },
       "form": {
         "agentLabel": "Agent",
-        "loadingAgents": "Loading agents…",
-        "noPaidAgents": "No paid agents available",
-        "selectAgent": "Select a paid agent",
-        "freeAgentsHint": "No paid agents available. Free agents cannot be used with the payment flow.",
-        "purchaserIdLabel": "Purchaser identifier",
-        "purchaserIdPlaceholder": "14–26 character hex string",
-        "regenerate": "Regenerate",
-        "mip004Blurb": "Input hashed per <link>MIP-004</link> — SHA-256(identifier + \";\" + JCS(input_data))",
-        "loadPreset": "Load preset…",
-        "inputDataLabel": "Input data",
-        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
-        "inputHashLabel": "Input hash",
-        "inputHashPlaceholder": "Generated from input data",
-        "metadataLabel": "Metadata (optional)",
-        "metadataPlaceholder": "Optional metadata for the payment",
+        "loadingAgents": "Chargement des agents…",
+        "noPaidAgents": "Aucun agent payant disponible",
+        "selectAgent": "Sélectionnez un agent payant",
+        "freeAgentsHint": "Aucun agent payant disponible. Les agents gratuits ne peuvent pas être utilisés avec le flux de paiement.",
+        "purchaserIdLabel": "Identifiant de l'acheteur",
+        "purchaserIdPlaceholder": "Chaîne hex de 14 à 26 caractères",
+        "regenerate": "Régénérer",
+        "mip004Blurb": "Entrée hashée selon <link>MIP-004</link> — SHA-256(identifiant + \";\" + JCS(input_data))",
+        "loadPreset": "Charger un préréglage…",
+        "inputDataLabel": "Données d'entrée",
+        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputHashLabel": "Hash d'entrée",
+        "inputHashPlaceholder": "Généré à partir des données d'entrée",
+        "metadataLabel": "Métadonnées (optionnel)",
+        "metadataPlaceholder": "Métadonnées optionnelles pour le paiement",
         "presets": {
-          "textPrompt": "Text prompt",
-          "emailAnalysis": "Email analysis",
-          "documentProcessing": "Document processing",
-          "multiFieldForm": "Multi-field form"
+          "textPrompt": "Invite texte",
+          "emailAnalysis": "Analyse d'e-mail",
+          "documentProcessing": "Traitement de document",
+          "multiFieldForm": "Formulaire multi-champs"
         },
         "required": "*",
         "errors": {
-          "agentIdentifier": "Agent identifier required",
-          "inputHashLength": "Input hash must be 64 characters",
-          "inputHashHex": "Must be valid hex",
-          "identifierMin": "Minimum 14 characters",
-          "identifierMax": "Maximum 26 characters",
-          "identifierHex": "Must be valid hex",
-          "inputDataObject": "Input data must be a JSON object",
-          "invalidJson": "Invalid JSON"
+          "agentIdentifier": "Identifiant de l'agent requis",
+          "inputHashLength": "Le hash d'entrée doit comporter 64 caractères",
+          "inputHashHex": "Doit être un hex valide",
+          "identifierMin": "Minimum 14 caractères",
+          "identifierMax": "Maximum 26 caractères",
+          "identifierHex": "Doit être un hex valide",
+          "inputDataObject": "Les données d'entrée doivent être un objet JSON",
+          "invalidJson": "JSON invalide"
         }
       },
       "curlViewer": {
         "curlTitle": "cURL",
-        "response": "Response",
-        "badgeError": "Error",
+        "response": "Réponse",
+        "badgeError": "Erreur",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Chargement des outils développeurs"
   }
 }

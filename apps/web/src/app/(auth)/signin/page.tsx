@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import SignInForm from "./components/form";
 
-export const metadata: Metadata = {
-  title: "Masumi - Login",
-  description: "Login to access the Masumi dashboard",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Auth.SignIn");
+  return {
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
+  };
+}
 
 function getEnabledOAuthProviders(): ("google" | "github" | "microsoft")[] {
   const providers: ("google" | "github" | "microsoft")[] = [];

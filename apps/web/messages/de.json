@@ -2,7 +2,8 @@
   "Common": {
     "Loading": "Laden...",
     "Error": "Fehler",
-    "Success": "Erfolg"
+    "Success": "Erfolg",
+    "dismiss": "Schließen"
   },
   "Auth": {
     "Errors": {
@@ -27,14 +28,14 @@
       "emailFormDivider": "oder weitermachen"
     },
     "SignIn": {
-      "title": "Login",
+      "title": "Anmelden",
       "description": "Für den Zugriff auf das Dashboard sind Ihre Anmeldedaten erforderlich. Dies ist erforderlich, um Ihre KI-Agenten und Zahlungseinstellungen zu verwalten und Transaktionen anzuzeigen.",
       "continueWithGoogle": "Weiter mit Google",
       "continueWithGithub": "Fahren Sie mit GitHub fort",
       "continueWithMicrosoft": "Weiter mit Microsoft",
       "email": "E-Mail",
       "password": "Passwort",
-      "submit": "Login",
+      "submit": "Anmelden",
       "submitting": "Validierung...",
       "noAccount": "Sie haben noch kein Konto?",
       "register": "Registrieren",
@@ -53,7 +54,7 @@
       "termsAccepted": "Ich stimme dem zu",
       "privacyPolicy": "Datenschutzrichtlinie",
       "hasAccount": "Sie haben bereits ein Konto?",
-      "login": "Login",
+      "login": "Anmelden",
       "success": "Konto erfolgreich erstellt!"
     },
     "ForgotPassword": {
@@ -66,7 +67,7 @@
       "error": "E-Mail zum Zurücksetzen des Passworts konnte nicht gesendet werden",
       "successMessage": "Wenn mit dieser E-Mail ein Konto vorhanden ist, erhalten Sie einen Link zum Zurücksetzen des Passworts.",
       "rememberPassword": "Erinnern Sie sich an Ihr Passwort?",
-      "login": "Login",
+      "login": "Anmelden",
       "checkEmail": {
         "title": "Überprüfen Sie Ihre E-Mails",
         "description": "Wir haben einen Link zum Zurücksetzen des Passworts an Ihre E-Mail-Adresse gesendet. Bitte überprüfen Sie Ihren Posteingang und befolgen Sie die Anweisungen zum Zurücksetzen Ihres Passworts.",
@@ -83,7 +84,7 @@
       "success": "Passwort erfolgreich zurückgesetzt!",
       "error": "Passwort konnte nicht zurückgesetzt werden. Der Link ist möglicherweise abgelaufen.",
       "rememberPassword": "Erinnern Sie sich an Ihr Passwort?",
-      "login": "Login"
+      "login": "Anmelden"
     },
     "TwoFactor": {
       "title": "Zwei-Faktor-Authentifizierung",
@@ -680,7 +681,7 @@
       "organizations": "Organisationen",
       "personalAccount": "Persönliches Konto",
       "clearOrganization": "Klare Organisation",
-      "credits": "Credits",
+      "credits": "Guthaben",
       "mcp": "MCP",
       "documentation": "Dokumentation",
       "support": "Unterstützung",
@@ -762,7 +763,8 @@
         "credentialTitle": "Veridian-Ausweis",
         "credential": "Nach erfolgreicher Verifizierung wird Ihrem Konto ein Veridian-Zugangsdaten ausgestellt. Mit diesem Berechtigungsnachweis können Sie erweiterte Funktionen nutzen und können mit Ihrer Zustimmung weitergegeben werden.",
         "consentLabel": "Ich verstehe und stimme dem Identitätsüberprüfungsprozess zu.",
-        "startButton": "Verifizierung starten"
+        "startButton": "Verifizierung starten",
+        "metaTitle": "Identitätsverifizierung"
       },
       "Verification": {
         "description": "Bitte führen Sie die folgenden Verifizierungsschritte aus. Sie müssen ein Ausweisdokument hochladen und ein Selfie machen.",
@@ -917,7 +919,8 @@
         "progressStep1": "Erstellen von Agenten und Wallets",
         "progressStep2": "Funding-Wallet",
         "progressStep3": "Registrierung im Netzwerk",
-        "registrationStarted": "Die Registrierung hat begonnen. Wir benachrichtigen Sie, wenn es fertig ist."
+        "registrationStarted": "Die Registrierung hat begonnen. Wir benachrichtigen Sie, wenn es fertig ist.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Agent bearbeiten",
@@ -1120,7 +1123,24 @@
           "nextDisabledReasonTestingEndpoint": "Endpunkt wird überprüft... Bitte warten.",
           "nextDisabledReasonLoadingSetup": "Verifizierungs-Setup wird geladen. Bitte warten.",
           "nextDisabledReasonKycRequired": "Schließen Sie zunächst die KYC-Überprüfung ab, um fortzufahren.",
-          "help": "Helfen"
+          "help": "Helfen",
+          "toasts": {
+            "challengeFailed": "Verifizierungs-Challenge konnte nicht abgerufen werden",
+            "connectWalletFirst": "Bitte verbinden Sie zuerst Ihre Veridian-Wallet",
+            "walletNotConnected": "Veridian-Wallet nicht verbunden",
+            "signingUnavailable": "Signieren in dieser Wallet nicht verfügbar",
+            "signingDeclined": "Signieren der Nachricht abgelehnt",
+            "signingFailed": "Nachricht konnte nicht signiert werden. Bitte versuchen Sie es erneut.",
+            "regenerateChallengeFailed": "Neue Challenge konnte nicht generiert werden",
+            "endpointTestFailed": "Endpoint-Test fehlgeschlagen",
+            "kycFirst": "Bitte schließen Sie zuerst Ihre KYC-Verifizierung ab",
+            "connectionError": "Verbindungsfehler: {error}",
+            "challengeNotReady": "Verifizierungs-Challenge nicht bereit. Bitte warten Sie oder versuchen Sie es erneut."
+          },
+          "secretToggle": {
+            "show": "Geheimnis anzeigen",
+            "hide": "Geheimnis ausblenden"
+          }
         }
       }
     },
@@ -1246,7 +1266,8 @@
         },
         "regenerateSuccess": "Backup-Codes neu generiert",
         "downloadNote1": "Jeder Code kann nur einmal verwendet werden.",
-        "downloadNote2": "Bewahren Sie diese Codes an einem sicheren Ort auf."
+        "downloadNote2": "Bewahren Sie diese Codes an einem sicheren Ort auf.",
+        "verifyCodePlaceholder": "000000"
       }
     }
   },
@@ -1267,7 +1288,7 @@
     "Header": {
       "documentation": "Dokumentation",
       "support": "Unterstützung",
-      "legal": "Legal"
+      "legal": "Rechtliches"
     },
     "ThemeToggle": {
       "toggleTheme": "Thema umschalten"
@@ -1282,6 +1303,21 @@
       "title": "Seitenleiste",
       "description": "Zeigt die mobile Seitenleiste an.",
       "toggleSidebar": "Seitenleiste umschalten"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Sprache"
+    },
+    "Pagination": {
+      "ariaLabel": "Seitennummerierung"
+    },
+    "RichTextEditor": {
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "bulletList": "Aufzählung",
+      "numberedList": "Nummerierte Liste"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Benutzerprofil wird geladen"
     }
   },
   "Email": {
@@ -1336,7 +1372,7 @@
     },
     "about": "Um",
     "privacyPolicy": "Datenschutzrichtlinie",
-    "legal": "Legal",
+    "legal": "Rechtliches",
     "changelog": "Änderungsprotokoll"
   },
   "NotFound": {
@@ -1498,6 +1534,7 @@
         "badgeError": "Fehler",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Entwickler-Tools werden geladen"
   }
 }
