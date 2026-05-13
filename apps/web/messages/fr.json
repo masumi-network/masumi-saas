@@ -319,7 +319,16 @@
       "verificationRevoked": "Révoqué",
       "verificationExpired": "Expiré",
       "copyIdentifier": "Copier l'identifiant de l'agent",
-      "copied": "Copié dans le presse-papiers"
+      "copied": "Copié dans le presse-papiers",
+      "agentDetail": {
+        "backToList": "← Retour aux agents",
+        "subtitle": "Aperçu de l'agent de la plateforme (admin).",
+        "overviewTitle": "Aperçu",
+        "apiUrl": "URL d'API",
+        "openInApp": "Ouvrir dans l'application",
+        "notFoundTitle": "Agent introuvable",
+        "metaDescription": "Vue admin pour l'agent {name}"
+      }
     },
     "OidcGrants": {
       "title": "Autorisations API OIDC",
@@ -581,7 +590,8 @@
       },
       "loadMore": "Charger plus",
       "loadMoreLoading": "Chargement…",
-      "endOfResults": "Fin des résultats"
+      "endOfResults": "Fin des résultats",
+      "agentIdentifier": "Identifiant d'agent"
     },
     "Sidebar": {
       "network": "Réseau",

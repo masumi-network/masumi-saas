@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFormatDate } from "@/hooks/use-format-date";
+import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
@@ -100,6 +101,8 @@ export interface ActivityTransactionDetailsDialogProps {
   transactionType: "payment" | "purchase" | null;
   agentName: string | null;
   agentId: string | null;
+  /** When true, primary agent navigation uses `/admin/agents/[id]`. */
+  linkAgentsInAdmin?: boolean;
 }
 
 export function ActivityTransactionDetailsDialog({
@@ -109,10 +112,13 @@ export function ActivityTransactionDetailsDialog({
   transactionType,
   agentName,
   agentId,
+  linkAgentsInAdmin = false,
 }: ActivityTransactionDetailsDialogProps) {
   const t = useTranslations("App.Activity.transactionDetails");
   const { formatDateTime } = useFormatDate();
   const { network } = usePaymentNetwork();
+
+  const primaryAgentHref = agentDetailHref(agentId, linkAgentsInAdmin);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["activity-transaction", transactionId, transactionType, network],
@@ -226,7 +232,19 @@ export function ActivityTransactionDetailsDialog({
                       {t("agentIdentifier")}
                     </h4>
                     <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-                      <span>{shortenAddress(item.agentIdentifier, 8)}</span>
+                      {primaryAgentHref ? (
+                        <Link
+                          href={primaryAgentHref}
+                          className="text-primary hover:underline"
+                          onClick={onClose}
+                        >
+                          {shortenAddress(item.agentIdentifier, 8)}
+                        </Link>
+                      ) : (
+                        <span className="break-all">
+                          {item.agentIdentifier}
+                        </span>
+                      )}
                       <CopyButton value={item.agentIdentifier} />
                     </div>
                   </div>
@@ -438,9 +456,9 @@ export function ActivityTransactionDetailsDialog({
         </div>
 
         <DialogFooter className="shrink-0 flex-col gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-between">
-          {agentId ? (
+          {primaryAgentHref ? (
             <Button variant="outline" asChild className="w-full sm:w-auto">
-              <Link href={`/ai-agents/${agentId}`} onClick={onClose}>
+              <Link href={primaryAgentHref} onClick={onClose}>
                 {t("viewAgent")}
               </Link>
             </Button>

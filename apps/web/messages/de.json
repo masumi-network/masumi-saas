@@ -319,7 +319,16 @@
       "verificationRevoked": "Widerrufen",
       "verificationExpired": "Abgelaufen",
       "copyIdentifier": "Bezeichner des Kopieragenten",
-      "copied": "In die Zwischenablage kopiert"
+      "copied": "In die Zwischenablage kopiert",
+      "agentDetail": {
+        "backToList": "← Zurück zu den Agenten",
+        "subtitle": "Plattform-Agent-Übersicht (Admin).",
+        "overviewTitle": "Übersicht",
+        "apiUrl": "API-URL",
+        "openInApp": "In App öffnen",
+        "notFoundTitle": "Agent nicht gefunden",
+        "metaDescription": "Admin-Ansicht für Agent {name}"
+      }
     },
     "OidcGrants": {
       "title": "OIDC-API-Berechtigungen",
@@ -581,7 +590,8 @@
       },
       "loadMore": "Mehr laden",
       "loadMoreLoading": "Wird geladen…",
-      "endOfResults": "Ende der Ergebnisse"
+      "endOfResults": "Ende der Ergebnisse",
+      "agentIdentifier": "Agent-Kennung"
     },
     "Sidebar": {
       "network": "Netzwerk",

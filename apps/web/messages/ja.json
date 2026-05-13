@@ -319,7 +319,16 @@
       "verificationRevoked": "取り消されました",
       "verificationExpired": "期限切れ",
       "copyIdentifier": "エージェント識別子のコピー",
-      "copied": "クリップボードにコピーされました"
+      "copied": "クリップボードにコピーされました",
+      "agentDetail": {
+        "backToList": "← エージェント一覧に戻る",
+        "subtitle": "プラットフォームエージェント概要（管理者）。",
+        "overviewTitle": "概要",
+        "apiUrl": "API URL",
+        "openInApp": "アプリで開く",
+        "notFoundTitle": "エージェントが見つかりません",
+        "metaDescription": "エージェント {name} の管理者ビュー"
+      }
     },
     "OidcGrants": {
       "title": "OIDC API 権限",
@@ -581,7 +590,8 @@
       },
       "loadMore": "さらに読み込む",
       "loadMoreLoading": "読み込み中…",
-      "endOfResults": "結果の末尾"
+      "endOfResults": "結果の末尾",
+      "agentIdentifier": "エージェント識別子"
     },
     "Sidebar": {
       "network": "ネットワーク",

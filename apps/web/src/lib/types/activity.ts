@@ -24,6 +24,8 @@ export type ActivityFeedItem =
       type: "payment" | "purchase";
       agentId: string | null;
       agentName: string | null;
+      /** On-chain registry identifier from the payment node (may be set when `agentId` is still unknown). */
+      agentIdentifier: string | null;
       amount: string;
       status: string;
       txHash: string | null;

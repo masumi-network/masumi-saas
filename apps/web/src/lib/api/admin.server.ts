@@ -134,4 +134,57 @@ export async function getAdminAgents(
   }
 }
 
+export type GetAdminAgentDetailResult =
+  | { success: true; agent: AdminAgentRow }
+  | { success: false; error: string };
+
+/**
+ * Single agent for admin detail page. Caller should enforce admin via layout;
+ * this still verifies admin for defense in depth.
+ */
+export async function getAdminAgentDetail(
+  agentId: string,
+): Promise<GetAdminAgentDetailResult> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
+    if (!isAdminUser({ id: user.id, role: dbUser?.role ?? undefined })) {
+      return { success: false, error: "Forbidden" };
+    }
+
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: agentSelect,
+    });
+    if (!agent) {
+      return { success: false, error: "Not found" };
+    }
+
+    const row: AdminAgentRow = {
+      id: agent.id,
+      name: agent.name,
+      apiUrl: agent.apiUrl,
+      registrationState: agent.registrationState,
+      verificationStatus: agent.verificationStatus,
+      agentIdentifier: agent.agentIdentifier,
+      createdAt: agent.createdAt.toISOString(),
+      ownerName: agent.user.name ?? "",
+      ownerEmail: agent.user.email ?? "",
+    };
+
+    return { success: true, agent: row };
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Failed to load agent" };
+  }
+}
+
 export { getAdminAgentsQuerySchema };
