@@ -37,13 +37,14 @@ import {
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFormatDate } from "@/hooks/use-format-date";
 import {
   type InboxAgentRegistration,
   type InboxAgentRegistrationFilter,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { formatRelativeDate, getInitials, shortenAddress } from "@/lib/utils";
+import { getInitials, shortenAddress } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -272,6 +273,7 @@ function InboxAgentDetailsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
 
   if (!registration) return null;
 
@@ -398,6 +400,7 @@ function InboxAgentListItem({
   onViewDetails: () => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
   const policyId = registration.RegistrySource.policyId;
   const shortDescription = registration.description?.trim();
 

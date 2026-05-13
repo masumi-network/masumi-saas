@@ -3,7 +3,13 @@
     "Loading": "Chargement...",
     "Error": "Erreur",
     "Success": "Succès",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "ErrorBoundary": {
+      "title": "Une erreur est survenue",
+      "descriptionRoot": "Une erreur inattendue est survenue. Veuillez réessayer.",
+      "descriptionApp": "Une erreur inattendue est survenue lors du chargement de cette page.",
+      "retry": "Réessayer"
+    }
   },
   "Auth": {
     "Errors": {
@@ -17,12 +23,18 @@
       "AccountExists": "Un compte avec cette adresse e-mail existe déjà",
       "AccountCreationFailed": "Échec de la création du compte",
       "TwoFactorRequired": "Vérification à deux facteurs requise",
-      "InvalidTwoFactorCode": "Code de vérification invalide. Veuillez réessayer."
+      "InvalidTwoFactorCode": "Code de vérification invalide. Veuillez réessayer.",
+      "MagicLinkRequestFailed": "Échec de l'envoi du lien magique",
+      "InvalidMagicLinkCode": "Code de connexion invalide.",
+      "ExpiredMagicLinkCode": "Code de connexion expiré. Demandez un nouvel e-mail.",
+      "TooManyMagicLinkCodeAttempts": "Trop de tentatives échouées. Demandez un nouvel e-mail.",
+      "TooManyEmailRequests": "Trop de demandes d'e-mail. Vous pouvez envoyer jusqu'à 5 e-mails par 30 minutes. Veuillez patienter et réessayer."
     },
     "Results": {
       "SignInSuccess": "Connecté avec succès !",
       "SignUpSuccess": "Compte créé avec succès !",
-      "PasswordResetSent": "Si un compte existe avec cet e-mail, vous recevrez un lien de réinitialisation du mot de passe."
+      "PasswordResetSent": "Si un compte existe avec cet e-mail, vous recevrez un lien de réinitialisation du mot de passe.",
+      "MagicLinkSent": "Lien magique envoyé. Vérifiez vos e-mails."
     },
     "Social": {
       "emailFormDivider": "ou continuez avec"
@@ -40,7 +52,20 @@
       "noAccount": "Vous n'avez pas de compte ?",
       "register": "Registre",
       "forgotPassword": "Mot de passe oublié ?",
-      "success": "Connecté avec succès !"
+      "success": "Connecté avec succès !",
+      "magicLinkDescription": "Entrez votre e-mail et nous vous enverrons un lien de connexion à usage unique.",
+      "magicLinkSubmit": "M'envoyer un lien magique",
+      "magicLinkSubmitting": "Envoi du lien...",
+      "magicLinkSuccess": "Vérifiez vos e-mails pour le lien magique.",
+      "usePassword": "Utiliser un mot de passe à la place",
+      "useMagicLink": "Utiliser un lien magique à la place (recommandé)",
+      "login": "Se connecter",
+      "checkEmail": {
+        "title": "Vérifiez vos e-mails",
+        "description": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour vous connecter à votre tableau de bord.",
+        "oidcDescription": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour poursuivre la connexion avec votre compte Masumi.",
+        "tryAnother": "Utiliser une autre adresse e-mail"
+      }
     },
     "SignUp": {
       "title": "Registre",
@@ -55,7 +80,19 @@
       "privacyPolicy": "politique de confidentialité",
       "hasAccount": "Vous avez déjà un compte ?",
       "login": "Se connecter",
-      "success": "Compte créé avec succès !"
+      "success": "Compte créé avec succès !",
+      "magicLinkDescription": "Sautez le mot de passe pour l'instant et nous vous enverrons un lien de connexion à usage unique.",
+      "magicLinkSubmit": "M'envoyer un lien magique",
+      "magicLinkSubmitting": "Envoi du lien...",
+      "magicLinkSuccess": "Vérifiez vos e-mails pour le lien magique.",
+      "usePassword": "Utiliser un mot de passe à la place",
+      "useMagicLink": "Utiliser un lien magique à la place (recommandé)",
+      "checkEmail": {
+        "title": "Vérifiez vos e-mails",
+        "description": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour terminer l'inscription et accéder à votre tableau de bord.",
+        "oidcDescription": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour terminer l'inscription et continuer avec votre compte Masumi.",
+        "tryAnother": "Utiliser une autre adresse e-mail"
+      }
     },
     "ForgotPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -98,11 +135,42 @@
       "useBackupCode": "Utiliser un code de secours",
       "useAuthenticator": "Utiliser l'application d'authentification",
       "backToLogin": "Retour à la connexion"
+    },
+    "OidcVerifyEmail": {
+      "title": "Vérifiez votre e-mail pour continuer",
+      "description": "Avant que cette application puisse utiliser votre compte Masumi, vérifiez l'adresse e-mail ci-dessous.",
+      "emailLabel": "Adresse e-mail",
+      "codeLabel": "Code par e-mail",
+      "codePlaceholder": "000000",
+      "submit": "Vérifier l'e-mail",
+      "submitting": "Vérification...",
+      "resendCode": "Envoyer un nouveau code",
+      "resendLink": "Envoyer le lien de vérification",
+      "resendIn": "Nouveau code dans {seconds}s",
+      "resendCodeSuccess": "Code de vérification envoyé.",
+      "resendCodeError": "Échec de l'envoi du code de vérification.",
+      "resendLinkSuccess": "Lien de vérification envoyé.",
+      "resendLinkError": "Échec de l'envoi du lien de vérification.",
+      "verified": "E-mail vérifié. Vous pouvez maintenant continuer.",
+      "invalidCode": "Code de vérification invalide.",
+      "expiredCode": "Code de vérification expiré. Demandez-en un nouveau.",
+      "tooManyAttempts": "Trop de tentatives échouées. Demandez un nouveau code.",
+      "verifyRequired": "Vérifiez votre e-mail avant de continuer.",
+      "genericError": "Échec de la vérification de votre e-mail."
+    },
+    "MagicLinkCode": {
+      "title": "Vérifier avec un code",
+      "description": "Utilisez le code à 6 chiffres du même e-mail si vous ne souhaitez pas ouvrir le lien.",
+      "codeLabel": "Code de connexion",
+      "codePlaceholder": "000000",
+      "submit": "Autoriser avec un code",
+      "submitting": "Vérification du code...",
+      "success": "Code accepté. Autorisation..."
     }
   },
   "Admin": {
     "portalTitle": "Portail d'administration",
-    "badge": "Administrateur",
+    "badge": "Admin",
     "Auth": {
       "SignIn": {
         "title": "Portail d'administration",
@@ -153,7 +221,7 @@
       "setRole": "Définir le rôle",
       "ban": "Interdire l'utilisateur",
       "unban": "Annuler le bannissement d'un utilisateur",
-      "roleAdmin": "Administrateur",
+      "roleAdmin": "Admin",
       "roleUser": "Utilisateur",
       "noUsers": "Aucun utilisateur trouvé.",
       "searchPlaceholder": "Rechercher des utilisateurs...",
@@ -202,7 +270,17 @@
       "loading": "Chargement...",
       "errorLoadingUsers": "Échec du chargement des utilisateurs. Veuillez essayer d'actualiser la page.",
       "errorDescription": "Une erreur s'est produite lors du chargement des données utilisateur. Il s'agit peut-être d'un problème temporaire.",
-      "tryAgain": "Essayer à nouveau"
+      "tryAgain": "Essayer à nouveau",
+      "impersonate": "Usurper l'identité",
+      "impersonateAria": "Usurper l'identité de {email}",
+      "cannotImpersonateBanned": "Vous ne pouvez pas usurper l'identité d'un utilisateur banni",
+      "cannotImpersonateAdmin": "Vous ne pouvez pas usurper l'identité d'un administrateur",
+      "impersonateDialogTitle": "Usurper l'identité de l'utilisateur",
+      "impersonateDialogDescription": "Vous êtes sur le point d'agir en tant que {name} ({email}). Les actions que vous effectuez s'appliqueront au compte de cet utilisateur jusqu'à ce que vous arrêtiez l'usurpation d'identité.",
+      "confirmImpersonate": "Démarrer l'usurpation",
+      "impersonateSuccess": "Vous usurpez maintenant {email}",
+      "impersonateError": "Échec du démarrage de l'usurpation. Veuillez réessayer.",
+      "oidcGrants": "Autorisations OIDC"
     },
     "Agents": {
       "title": "Agents",
@@ -242,6 +320,24 @@
       "verificationExpired": "Expiré",
       "copyIdentifier": "Copier l'identifiant de l'agent",
       "copied": "Copié dans le presse-papiers"
+    },
+    "OidcGrants": {
+      "title": "Autorisations API OIDC",
+      "description": "Contrôlez les portées d'API que cet utilisateur peut recevoir dans les jetons d'accès OIDC.",
+      "badge": "Interne",
+      "verified": "E-mail vérifié",
+      "unverified": "E-mail non vérifié",
+      "backToUsers": "Retour aux utilisateurs",
+      "saved": "Autorisations OIDC mises à jour.",
+      "alwaysIncludedTitle": "Toujours inclus",
+      "alwaysIncludedDescription": "Ces portées d'identité OIDC standard sont toujours disponibles et ne sont pas gérées ici.",
+      "presetsTitle": "Préréglages rapides",
+      "presetsDescription": "Appliquez l'ensemble complet d'autorisations API de première partie sans cocher chaque portée à la main.",
+      "grantAllWeb": "Tout accorder pour le web",
+      "grantAllCli": "Tout accorder pour la CLI",
+      "grantAllFirstParty": "Accorder toutes les portées de première partie",
+      "clientDescription": "ID client : {clientId}",
+      "saveButton": "Enregistrer les autorisations"
     }
   },
   "App": {
@@ -371,7 +467,8 @@
           "step1": "1",
           "step2": "2",
           "step3": "3",
-          "step4": "4"
+          "step4": "4",
+          "createOrgOptional": "Créez votre première organisation (facultatif)"
         },
         "ApiKey": {
           "title": "Créer une clé API",
@@ -392,12 +489,24 @@
     "TopUp": {
       "title": "Recharger",
       "description": "Ajoutez des fonds à votre portefeuille pour payer l'utilisation de l'agent.",
-      "comingSoon": "La recharge arrive bientôt."
+      "comingSoon": "La recharge arrive bientôt.",
+      "status": "Bientôt disponible",
+      "balanceLabel": "Crédits disponibles",
+      "balanceDescription": "Votre solde actuel est prêt à être utilisé lorsque vous effectuez des actions facturées sur Mainnet.",
+      "mainnetOnlyTitle": "Seule l'activité Mainnet utilise des crédits",
+      "mainnetOnlyDescription": "Preprod et les valeurs de réseau manquantes ou invalides ne déduisent jamais de crédits. Votre solde ne diminue que pour les opérations d'écriture sur Mainnet.",
+      "cta": "Ajouter des crédits",
+      "roadmapTitle": "À quoi s'attendre",
+      "roadmapDescription": "Nous préparons un flux de rechargement en libre-service directement dans Masumi.",
+      "roadmapBilling": "Paiement sécurisé avec livraison instantanée des crédits",
+      "roadmapHistory": "Historique du solde et reçus de rechargement",
+      "roadmapAlerts": "Rappels de solde faible avant que vous ne soyez à court"
     },
     "Withdraw": {
       "title": "Retirer",
       "description": "Retirez vos gains vers votre méthode de paiement préférée.",
-      "comingSoon": "Les retraits arrivent bientôt."
+      "comingSoon": "Les retraits arrivent bientôt.",
+      "status": "Bientôt disponible"
     },
     "Analytics": {
       "title": "Analytique",
@@ -486,7 +595,10 @@
         "paymentMethods": "Méthodes de paiement",
         "apiKeys": "Clés API",
         "developers": "Développeurs",
-        "account": "Compte"
+        "account": "Compte",
+        "inboxAgents": "Boîtes de réception",
+        "earnings": "Revenus",
+        "topUp": "Recharger"
       }
     },
     "ApiKeys": {
@@ -516,17 +628,17 @@
       "permission": "Autorisation",
       "permissionRead": "Lire",
       "permissionReadAndPay": "Lire et payer",
-      "permissionAdmin": "Administrateur",
+      "permissionAdmin": "Admin",
       "networks": "Réseaux",
       "preprod": "Préproduction",
-      "mainnet": "Réseau principal",
+      "mainnet": "Mainnet",
       "limitUsage": "Limiter l'utilisation",
       "create": "Créer",
       "creating": "Création...",
       "tabAll": "Tous",
       "tabRead": "Lire",
       "tabReadAndPay": "Lire et payer",
-      "tabAdmin": "Administrateur",
+      "tabAdmin": "Admin",
       "permissionColumn": "Autorisation",
       "networksColumn": "Réseaux",
       "usageColumn": "Usage",
@@ -548,7 +660,7 @@
       "listDescription": "Organisations auxquelles vous appartenez",
       "Role": {
         "owner": "Propriétaire",
-        "admin": "Administrateur",
+        "admin": "Admin",
         "member": "Membre"
       },
       "Detail": {
@@ -580,7 +692,7 @@
           "inviteEmailPlaceholder": "collègue@exemple.com",
           "inviteRoleLabel": "Rôle",
           "inviteRoleMember": "Membre",
-          "inviteRoleAdmin": "Administrateur",
+          "inviteRoleAdmin": "Admin",
           "inviteSubmit": "Envoyer une invitation",
           "inviteSubmitting": "Envoi...",
           "inviteCancel": "Annuler",
@@ -713,7 +825,10 @@
         "discord": "Discorde",
         "about": "À propos",
         "privacyPolicy": "politique de confidentialité",
-        "changelog": "Journal des modifications"
+        "changelog": "Journal des modifications",
+        "inboxAgents": "Boîtes de réception",
+        "earnings": "Revenus",
+        "topUp": "Recharger"
       }
     },
     "Notifications": {
@@ -725,7 +840,8 @@
       "agentRegistrationComplete": "Agent enregistré avec succès",
       "registrationFailed": "L'inscription a échoué",
       "registrationTimedOut": "L'inscription a expiré",
-      "viewAgent": "Afficher l'agent"
+      "viewAgent": "Afficher l'agent",
+      "emptyHint": "Les mises à jour d'agents, les alertes de transactions et les invitations apparaîtront ici."
     },
     "UserProfile": {
       "unavailable": "Utilisateur indisponible"
@@ -920,7 +1036,7 @@
         "progressStep2": "Portefeuille de financement",
         "progressStep3": "Inscription sur le réseau",
         "registrationStarted": "Les inscriptions ont commencé. Nous vous informerons lorsque ce sera fait.",
-        "amountPlaceholder": "0.00"
+        "amountPlaceholder": "0,00"
       },
       "Edit": {
         "title": "Modifier l'agent",
@@ -1142,6 +1258,72 @@
             "hide": "Masquer le secret"
           }
         }
+      },
+      "sections": {
+        "manage": "Gérer",
+        "discovery": "Découverte"
+      },
+      "Discovery": {
+        "title": "Découverte du registre",
+        "description": "Parcourez ici les derniers agents Masumi sains.",
+        "agentsDescription": "Derniers agents sains renvoyés par la route standard de découverte d'agents.",
+        "inboxDescription": "Boîtes de réception en attente et vérifiées renvoyées par la route de découverte du registre.",
+        "views": {
+          "agents": "Agents",
+          "inbox": "Boîte de réception"
+        },
+        "searchPlaceholder": "Rechercher agents, tags, capacités ou IDs...",
+        "inboxSearchPlaceholder": "Rechercher par nom de boîte, slug ou e-mail lié...",
+        "resultsSummary": "{visibleCount, plural, one {# agent affiché} other {# agents affichés}} sur cette page",
+        "sortHint": "Trié par mises à jour les plus récentes",
+        "page": "Page {page}",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "paginationPrevious": "Aller à la page précédente",
+        "paginationNext": "Aller à la page suivante",
+        "paginationMore": "Plus de pages",
+        "onlineOnly": "En ligne uniquement",
+        "verifiedOnly": "Vérifiés uniquement",
+        "pendingAndVerified": "En attente + vérifiés",
+        "updated": "Mis à jour",
+        "verifiedUpdated": "Statut mis à jour",
+        "added": "Ajouté",
+        "health": "État",
+        "healthValue": "{uptimeCount}/{uptimeCheckCount} vérifications réussies",
+        "publisher": "Éditeur",
+        "capability": "Capacité",
+        "paymentType": "Type de paiement",
+        "source": "Source",
+        "policyId": "ID de politique",
+        "inboxSlug": "Slug de la boîte",
+        "authorFallback": "Éditeur indépendant",
+        "noCapability": "Capacité non listée",
+        "noTags": "Aucun tag",
+        "noPolicyId": "Aucun ID de politique",
+        "noSourceUrl": "Aucune URL source",
+        "moreTags": "plus",
+        "tagsLabel": "tags",
+        "inboxSource": "Boîte de réception Masumi",
+        "metadataVersion": "Métadonnées v{version}",
+        "latestHealthy": "Dernière entrée saine du registre",
+        "verifiedInboxRegistration": "Dernier enregistrement de boîte vérifié",
+        "viewDetails": "Voir les détails",
+        "openEndpoint": "Ouvrir le point d'accès",
+        "openSource": "Ouvrir la source",
+        "empty": "Aucun agent du registre trouvé pour l'instant.",
+        "emptySearch": "Aucun agent découvert sur cette page ne correspond à votre recherche. Essayez une recherche plus large ou changez de page.",
+        "inboxEmpty": "Aucune boîte de réception en attente ou vérifiée trouvée pour l'instant.",
+        "inboxEmptySearch": "Aucune boîte en attente ou vérifiée ne correspond à ce nom, slug ou e-mail lié. Essayez une autre recherche.",
+        "error": "Échec du chargement des résultats de découverte. Veuillez réessayer.",
+        "pricing": {
+          "free": "Gratuit",
+          "dynamic": "Tarification dynamique",
+          "unavailable": "Tarification indisponible"
+        },
+        "payment": {
+          "cardano": "Cardano",
+          "none": "Aucun paiement on-chain"
+        }
       }
     },
     "Components": {
@@ -1268,6 +1450,185 @@
         "downloadNote1": "Chaque code ne peut être utilisé qu'une seule fois.",
         "downloadNote2": "Conservez ces codes dans un endroit sûr.",
         "verifyCodePlaceholder": "000000"
+      },
+      "Connected": {
+        "sectionLabel": "Connexions",
+        "title": "Applications connectées",
+        "description": "Applications que vous avez autorisées à accéder à votre compte Masumi. Terminez une session pour révoquer l'accès et exiger une nouvelle autorisation la prochaine fois.",
+        "descriptionTooltipLabel": "À propos des applications connectées",
+        "emptyTitle": "Aucune connexion pour l'instant",
+        "emptyDescription": "Les applications que vous autorisez avec votre compte Masumi apparaîtront ici.",
+        "firstParty": "Première partie",
+        "activeSession": "Session active",
+        "activeSessions": "{count} sessions actives",
+        "noActiveSessions": "Aucune session active",
+        "connectedOn": "Connecté {date}",
+        "lastUsed": "Dernière utilisation {date}",
+        "scopesCount": "{count, plural, one {# autorisation} other {# autorisations}}",
+        "terminate": "Terminer la session",
+        "confirmTitle": "Terminer {name} ?",
+        "confirmDescription": "Cela déconnecte {name} de votre compte Masumi sur tous les appareils et supprime ses permissions enregistrées. Vous devrez ré-autoriser à la prochaine connexion.",
+        "confirm": "Oui, terminer la session",
+        "cancel": "Annuler",
+        "success": "Accès de {name} terminé",
+        "error": "Échec de la fin de session. Veuillez réessayer.",
+        "refresh": "Actualiser",
+        "refreshed": "Connexions actualisées"
+      }
+    },
+    "Earnings": {
+      "title": "Revenus",
+      "description": "Suivez les revenus, remboursements et paiements en attente pour un agent à la fois sur le réseau sélectionné.",
+      "filtersTitle": "Filtres de revenus",
+      "filtersDescription": "Choisissez un agent éligible et une fenêtre temporelle. Le réseau provient du sélecteur global dans la barre latérale.",
+      "agentLabel": "Agent",
+      "rangeLabel": "Plage",
+      "selectAgent": "Sélectionnez un agent",
+      "searchAgentsPlaceholder": "Rechercher des agents par nom ou identifiant...",
+      "searchAgentsEmpty": "Aucun agent correspondant trouvé.",
+      "missingIdentifier": "Identifiant de l'agent indisponible",
+      "applyCustomRange": "Appliquer la plage",
+      "startDateLabel": "Date de début",
+      "endDateLabel": "Date de fin",
+      "loadAgentsError": "Échec du chargement des agents éligibles.",
+      "loadAgentsHelp": "Essayez d'actualiser ou de changer de réseau si vous vous attendez à ce que cet agent soit visible ailleurs.",
+      "loadEarningsError": "Échec du chargement des revenus.",
+      "loadEarningsHelp": "Actualisez la page ou choisissez une plage différente pour réessayer.",
+      "tryAgain": "Réessayer",
+      "emptyTitle": "Aucun agent éligible sur ce réseau",
+      "emptyDescription": "Ce réseau n'a pas encore d'agents propriétaires de portefeuilles avec un historique de revenus. Enregistrez un agent ou changez de réseau pour continuer.",
+      "emptyCta": "Aller aux agents",
+      "cards": {
+        "income": "Revenus",
+        "refunded": "Remboursé",
+        "pending": "En attente",
+        "transactions": "Transactions"
+      },
+      "metric": {
+        "income": "Revenus",
+        "refunded": "Remboursé",
+        "pending": "En attente"
+      },
+      "granularity": {
+        "day": "Vue journalière",
+        "month": "Vue mensuelle"
+      },
+      "range": {
+        "7d": "7 derniers jours",
+        "30d": "30 derniers jours",
+        "90d": "90 derniers jours",
+        "all": "Tout le temps",
+        "custom": "Plage personnalisée"
+      },
+      "network": {
+        "preprod": "Preprod",
+        "mainnet": "Mainnet"
+      },
+      "feesLabel": "Frais de blockchain : {fees}",
+      "transactionsHint": "Demandes de paiement incluses dans cette période",
+      "noDataTitle": "Pas encore de revenus dans cette période",
+      "noDataDescription": "Lorsque cet agent commencera à recevoir des paiements, la métrique sélectionnée apparaîtra ici avec une chronologie et une ventilation.",
+      "mixedUnitsTitle": "Graphique indisponible pour les unités de paiement mixtes",
+      "mixedUnitsDescription": "Cette métrique inclut à la fois des stablecoins USD et de l'ADA pour la période sélectionnée. Utilisez le tableau de ventilation ci-dessous pour vérifier les montants exacts.",
+      "breakdownTitle": "Ventilation de {metric}",
+      "breakdownEmpty": "Aucune donnée de ventilation pour cette métrique pour l'instant.",
+      "table": {
+        "period": "Période",
+        "amount": "Montant",
+        "fees": "Frais",
+        "raw": "Unités brutes"
+      }
+    },
+    "ImpersonationBanner": {
+      "title": "Vous usurpez l'identité de {user}",
+      "description": "Les actions s'appliquent à ce compte jusqu'à ce que vous arrêtiez.",
+      "stop": "Arrêter l'usurpation",
+      "stopping": "Arrêt...",
+      "stopSuccess": "Retour à votre session admin",
+      "stopError": "Échec de l'arrêt de l'usurpation. Veuillez réessayer.",
+      "unknownUser": "cet utilisateur"
+    },
+    "InboxAgents": {
+      "metadataPageTitle": "Boîtes de réception",
+      "metadataPageDescription": "Gérez les enregistrements de boîtes de réception dans Masumi SaaS.",
+      "title": "Boîtes de réception",
+      "tabs": {
+        "all": "Tous",
+        "registered": "Enregistrés",
+        "deregistered": "Désinscrits",
+        "pending": "En attente",
+        "failed": "Échoués"
+      },
+      "sections": {
+        "manage": "Gérer",
+        "discovery": "Découverte"
+      },
+      "manageDescription": "Inspectez, désinscrivez et nettoyez les enregistrements de boîtes de réception sur {network}.",
+      "discoveryDescription": "Parcourez les boîtes de réception en attente et vérifiées les plus récentes publiées dans le registre Masumi sur {network}.",
+      "searchPlaceholder": "Rechercher par nom, slug, identifiant, portefeuille ou état...",
+      "noDescription": "Aucune description",
+      "noDescriptionProvided": "Aucune description fournie.",
+      "noIdentifier": "Pas encore d'identifiant on-chain.",
+      "notCheckedYet": "Pas encore vérifié",
+      "usesRegistrationWallet": "Utilise le portefeuille d'enregistrement",
+      "awaitingConfirmation": "En attente de confirmation",
+      "noTransactionHash": "Pas encore de hash de transaction.",
+      "noActiveTransaction": "Aucune transaction active.",
+      "rawLookup": "Requête brute",
+      "close": "Fermer",
+      "delete": "Supprimer",
+      "deregister": "Désinscrire",
+      "confirm": "Confirmer",
+      "deleteInboxAgent": "Supprimer la boîte de réception",
+      "deregisterInboxAgent": "Désinscrire la boîte de réception",
+      "deleteInboxAgentDescription": "Supprimer {name} ? Cela retire l'entrée d'enregistrement de votre liste de boîtes de réception.",
+      "deregisterInboxAgentDescription": "Désinscrire {name} ? Cela démarre le flux de désinscription on-chain.",
+      "details": "Détails",
+      "emptyTitle": "Aucune boîte de réception trouvée",
+      "emptyDescription": "Essayez une recherche plus large ou changez d'onglet.",
+      "loadingPage": "Chargement de la page...",
+      "regWalletPrefix": "Enr. :",
+      "fundWalletPrefix": "Fond. :",
+      "table": {
+        "name": "Nom",
+        "added": "Ajouté",
+        "inboxSlug": "Slug de la boîte",
+        "agentId": "ID de l'agent",
+        "wallets": "Portefeuilles",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "detail": {
+        "inboxSlug": "Slug de la boîte :",
+        "description": "Description",
+        "agentIdentifier": "Identifiant de l'agent",
+        "metadataVersion": "Version des métadonnées",
+        "created": "Créé",
+        "updated": "Mis à jour",
+        "lastChecked": "Dernière vérification",
+        "registrationWallet": "Portefeuille d'enregistrement",
+        "fundingWallet": "Portefeuille de financement",
+        "currentTransaction": "Transaction actuelle",
+        "failure": "Échec"
+      },
+      "actionFailed": "Impossible de {action} la boîte de réception",
+      "deletedToast": "Boîte de réception supprimée",
+      "deregistrationStartedToast": "Désinscription de la boîte de réception lancée",
+      "pagination": {
+        "previous": "Précédent",
+        "next": "Suivant",
+        "previousAriaLabel": "Aller à la page précédente",
+        "nextAriaLabel": "Aller à la page suivante",
+        "morePages": "Plus de pages"
+      },
+      "status": {
+        "pending": "En attente",
+        "registering": "Enregistrement",
+        "registered": "Enregistré",
+        "registrationFailed": "Échec de l'enregistrement",
+        "deregistering": "Désinscription",
+        "deregistered": "Désinscrit",
+        "deregistrationFailed": "Échec de la désinscription"
       }
     }
   },
@@ -1337,7 +1698,10 @@
       "message": "Veuillez vérifier votre adresse e-mail en cliquant sur le bouton ci-dessous.",
       "button": "Vérifier l'e-mail",
       "linkText": "Ou copiez et collez ce lien dans votre navigateur :",
-      "footer": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail en toute sécurité."
+      "footer": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail en toute sécurité.",
+      "codeLabel": "Code de vérification",
+      "codeExpiry": "Ce code expire dans 5 minutes.",
+      "codeHelp": "Vous pouvez entrer ce code dans Masumi si vous préférez vérifier par code."
     },
     "Invitation": {
       "preview": "Vous avez été invité à rejoindre {organization} sur Masumi",
@@ -1347,6 +1711,45 @@
       "button": "Accepter l'invitation",
       "linkText": "Ou copiez et collez ce lien dans votre navigateur :",
       "footer": "Si vous ne vous attendiez pas à cette invitation, vous pouvez ignorer cet e-mail en toute sécurité."
+    },
+    "VerificationCode": {
+      "preview": "Votre code de vérification Masumi",
+      "title": "Vérifiez votre adresse e-mail",
+      "greeting": "Bonjour {name},",
+      "message": "Entrez ce code dans Masumi pour vérifier votre adresse e-mail et poursuivre la connexion.",
+      "codeLabel": "Code de vérification",
+      "expiry": "Ce code expire dans 5 minutes.",
+      "footer": "Si vous n'avez pas demandé ce code, vous pouvez ignorer cet e-mail."
+    },
+    "MagicLink": {
+      "preview": "Votre lien d'accès Masumi",
+      "title": "Continuer vers Masumi",
+      "greeting": "Bonjour {name},",
+      "message": "Utilisez le bouton ci-dessous pour continuer vers Masumi. Si vous préférez, vous pouvez utiliser le code affiché en dessous.",
+      "consentBefore": "Si c'est votre première visite, l'utilisation de ce lien pour accéder à Masumi signifie que vous acceptez notre ",
+      "consentPrivacyLabel": "Politique de confidentialité",
+      "consentAfter": ".",
+      "button": "Continuer vers Masumi",
+      "codeLabel": "Code d'accès",
+      "codeExpiry": "Ce code expire dans 5 minutes.",
+      "codeHelp": "Vous pouvez entrer ce code dans Masumi si vous préférez ne pas ouvrir le lien.",
+      "linkText": "Lien d'accès de secours",
+      "footer": "Si vous n'avez pas demandé cet e-mail, vous pouvez l'ignorer."
+    },
+    "MagicLinkOidc": {
+      "preview": "Votre lien d'accès Agent Messenger",
+      "title": "Continuer vers Agent Messenger",
+      "greeting": "Bonjour {name},",
+      "message": "Utilisez le bouton ci-dessous pour continuer vers Agent Messenger. Si vous préférez, vous pouvez utiliser le code affiché en dessous.",
+      "consentBefore": "Si c'est votre première visite, l'utilisation de ce lien pour accéder à Agent Messenger signifie que vous acceptez notre ",
+      "consentPrivacyLabel": "Politique de confidentialité",
+      "consentAfter": ".",
+      "button": "Continuer vers Agent Messenger",
+      "codeLabel": "Code d'accès",
+      "codeExpiry": "Ce code expire dans 5 minutes.",
+      "codeHelp": "Vous pouvez entrer ce code dans Agent Messenger si vous préférez ne pas ouvrir le lien.",
+      "linkText": "Lien de secours Agent Messenger",
+      "footer": "Si vous n'avez pas demandé cet e-mail, vous pouvez l'ignorer."
     }
   },
   "Footer": {
@@ -1373,7 +1776,8 @@
     "about": "À propos",
     "privacyPolicy": "politique de confidentialité",
     "legal": "Légal",
-    "changelog": "Journal des modifications"
+    "changelog": "Journal des modifications",
+    "discord": "Discord"
   },
   "NotFound": {
     "title": "404",

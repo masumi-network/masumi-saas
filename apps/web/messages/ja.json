@@ -3,7 +3,13 @@
     "Loading": "読み込み中...",
     "Error": "エラー",
     "Success": "成功",
-    "dismiss": "閉じる"
+    "dismiss": "閉じる",
+    "ErrorBoundary": {
+      "title": "問題が発生しました",
+      "descriptionRoot": "予期しないエラーが発生しました。もう一度お試しください。",
+      "descriptionApp": "このページの読み込み中に予期しないエラーが発生しました。",
+      "retry": "再試行"
+    }
   },
   "Auth": {
     "Errors": {
@@ -17,12 +23,18 @@
       "AccountExists": "このメールアドレスを持つアカウントはすでに存在します",
       "AccountCreationFailed": "アカウントの作成に失敗しました",
       "TwoFactorRequired": "2要素認証が必要です",
-      "InvalidTwoFactorCode": "無効な確認コードです。もう一度試してください。"
+      "InvalidTwoFactorCode": "無効な確認コードです。もう一度試してください。",
+      "MagicLinkRequestFailed": "マジックリンクの送信に失敗しました",
+      "InvalidMagicLinkCode": "サインインコードが無効です。",
+      "ExpiredMagicLinkCode": "サインインコードの有効期限が切れました。新しいメールを要求してください。",
+      "TooManyMagicLinkCodeAttempts": "失敗した試行が多すぎます。新しいメールを要求してください。",
+      "TooManyEmailRequests": "メールリクエストが多すぎます。30分間に最大5通のメールを送信できます。お待ちいただいてから再度お試しください。"
     },
     "Results": {
       "SignInSuccess": "ログインに成功しました！",
       "SignUpSuccess": "アカウントが正常に作成されました。",
-      "PasswordResetSent": "このメールにアカウントが存在する場合は、パスワード リセット リンクが届きます。"
+      "PasswordResetSent": "このメールにアカウントが存在する場合は、パスワード リセット リンクが届きます。",
+      "MagicLinkSent": "マジックリンクを送信しました。メールを確認してください。"
     },
     "Social": {
       "emailFormDivider": "または続行してください"
@@ -40,7 +52,20 @@
       "noAccount": "アカウントをお持ちでない場合は、",
       "register": "登録する",
       "forgotPassword": "パスワードをお忘れですか？",
-      "success": "ログインに成功しました！"
+      "success": "ログインに成功しました！",
+      "magicLinkDescription": "メールアドレスを入力すると、ワンタイムのサインインリンクを送信します。",
+      "magicLinkSubmit": "マジックリンクをメールで送信",
+      "magicLinkSubmitting": "リンクを送信中...",
+      "magicLinkSuccess": "メールを確認してマジックリンクをご利用ください。",
+      "usePassword": "代わりにパスワードを使用",
+      "useMagicLink": "代わりにマジックリンクを使用 (推奨)",
+      "login": "サインイン",
+      "checkEmail": {
+        "title": "メールを確認してください",
+        "description": "{email} にマジックリンクを送信しました。リンクを開いてダッシュボードにサインインしてください。",
+        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて Masumi アカウントでサインインを続行してください。",
+        "tryAnother": "別のメールアドレスを使用"
+      }
     },
     "SignUp": {
       "title": "登録する",
@@ -55,7 +80,19 @@
       "privacyPolicy": "プライバシーポリシー",
       "hasAccount": "すでにアカウントをお持ちですか?",
       "login": "ログイン",
-      "success": "アカウントが正常に作成されました。"
+      "success": "アカウントが正常に作成されました。",
+      "magicLinkDescription": "今はパスワードを省略して、ワンタイムのサインインリンクをメールで送信します。",
+      "magicLinkSubmit": "マジックリンクをメールで送信",
+      "magicLinkSubmitting": "リンクを送信中...",
+      "magicLinkSuccess": "メールを確認してマジックリンクをご利用ください。",
+      "usePassword": "代わりにパスワードを使用",
+      "useMagicLink": "代わりにマジックリンクを使用 (推奨)",
+      "checkEmail": {
+        "title": "メールを確認してください",
+        "description": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、ダッシュボードにアクセスしてください。",
+        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、Masumi アカウントで続行してください。",
+        "tryAnother": "別のメールアドレスを使用"
+      }
     },
     "ForgotPassword": {
       "title": "パスワードのリセット",
@@ -98,6 +135,37 @@
       "useBackupCode": "バックアップコードを使用する",
       "useAuthenticator": "認証アプリを使用する",
       "backToLogin": "ログインに戻る"
+    },
+    "OidcVerifyEmail": {
+      "title": "続行するにはメールアドレスを確認してください",
+      "description": "このアプリが Masumi アカウントを使用する前に、以下のメールアドレスを確認してください。",
+      "emailLabel": "メールアドレス",
+      "codeLabel": "メールコード",
+      "codePlaceholder": "000000",
+      "submit": "メールを確認",
+      "submitting": "確認中...",
+      "resendCode": "新しいコードを送信",
+      "resendLink": "確認リンクを送信",
+      "resendIn": "{seconds} 秒で新しいコードを送信",
+      "resendCodeSuccess": "確認コードを送信しました。",
+      "resendCodeError": "確認コードの送信に失敗しました。",
+      "resendLinkSuccess": "確認リンクを送信しました。",
+      "resendLinkError": "確認リンクの送信に失敗しました。",
+      "verified": "メールが確認されました。続行できます。",
+      "invalidCode": "確認コードが無効です。",
+      "expiredCode": "確認コードの有効期限が切れました。新しいコードを要求してください。",
+      "tooManyAttempts": "失敗した試行が多すぎます。新しいコードを要求してください。",
+      "verifyRequired": "続行する前にメールを確認してください。",
+      "genericError": "メールの確認に失敗しました。"
+    },
+    "MagicLinkCode": {
+      "title": "コードで確認",
+      "description": "リンクを開きたくない場合は、同じメールに記載された6桁のコードを使用してください。",
+      "codeLabel": "サインインコード",
+      "codePlaceholder": "000000",
+      "submit": "コードで認証",
+      "submitting": "コードを確認中...",
+      "success": "コードが承認されました。認証中..."
     }
   },
   "Admin": {
@@ -147,7 +215,7 @@
       "emailVerified": "メール認証済み",
       "kycStatus": "KYCステータス",
       "role": "役割",
-      "banned": "状態",
+      "banned": "ステータス",
       "createdAt": "作成されました",
       "actions": "アクション",
       "setRole": "役割を設定する",
@@ -202,7 +270,17 @@
       "loading": "読み込み中...",
       "errorLoadingUsers": "ユーザーのロードに失敗しました。ページを更新してみてください。",
       "errorDescription": "ユーザーデータのロード中に問題が発生しました。これは一時的な問題である可能性があります。",
-      "tryAgain": "もう一度やり直してください"
+      "tryAgain": "もう一度やり直してください",
+      "impersonate": "なりすまし",
+      "impersonateAria": "{email} になりすまし",
+      "cannotImpersonateBanned": "禁止されたユーザーになりすますことはできません",
+      "cannotImpersonateAdmin": "管理者ユーザーになりすますことはできません",
+      "impersonateDialogTitle": "ユーザーになりすまし",
+      "impersonateDialogDescription": "{name} ({email}) として操作しようとしています。なりすましを停止するまで、行ったアクションはこのユーザーのアカウントに適用されます。",
+      "confirmImpersonate": "なりすましを開始",
+      "impersonateSuccess": "{email} になりすまし中",
+      "impersonateError": "なりすましの開始に失敗しました。もう一度お試しください。",
+      "oidcGrants": "OIDC 権限"
     },
     "Agents": {
       "title": "エージェント",
@@ -210,7 +288,7 @@
       "name": "エージェント",
       "owner": "所有者",
       "agentIdentifier": "エージェント識別子",
-      "status": "状態",
+      "status": "ステータス",
       "verificationStatus": "検証",
       "createdAt": "作成されました",
       "searchPlaceholder": "エージェント名または所有者のメールアドレスで検索...",
@@ -242,6 +320,24 @@
       "verificationExpired": "期限切れ",
       "copyIdentifier": "エージェント識別子のコピー",
       "copied": "クリップボードにコピーされました"
+    },
+    "OidcGrants": {
+      "title": "OIDC API 権限",
+      "description": "このユーザーが OIDC アクセストークンで受け取れる API スコープを制御します。",
+      "badge": "内部",
+      "verified": "メール確認済み",
+      "unverified": "メール未確認",
+      "backToUsers": "ユーザーに戻る",
+      "saved": "OIDC 権限を更新しました。",
+      "alwaysIncludedTitle": "常に含まれる",
+      "alwaysIncludedDescription": "これらの標準 OIDC アイデンティティスコープは常に利用可能で、ここでは管理されません。",
+      "presetsTitle": "クイックプリセット",
+      "presetsDescription": "すべてのスコープを手動でチェックすることなく、ファーストパーティ API 権限セット全体を適用します。",
+      "grantAllWeb": "Web 用にすべて付与",
+      "grantAllCli": "CLI 用にすべて付与",
+      "grantAllFirstParty": "すべてのファーストパーティスコープを付与",
+      "clientDescription": "クライアント ID: {clientId}",
+      "saveButton": "権限を保存"
     }
   },
   "App": {
@@ -371,7 +467,8 @@
           "step1": "1",
           "step2": "2",
           "step3": "3",
-          "step4": "4"
+          "step4": "4",
+          "createOrgOptional": "最初の組織を作成 (オプション)"
         },
         "ApiKey": {
           "title": "APIキーの作成",
@@ -392,12 +489,24 @@
     "TopUp": {
       "title": "補充する",
       "description": "ウォレットに資金を追加して、エージェントの使用料金を支払います。",
-      "comingSoon": "すぐにトップアップが来ます。"
+      "comingSoon": "すぐにトップアップが来ます。",
+      "status": "近日公開",
+      "balanceLabel": "利用可能なクレジット",
+      "balanceDescription": "現在の残高は、Mainnet でクレジット支払いアクションを実行するときにいつでも利用できます。",
+      "mainnetOnlyTitle": "クレジットを使用するのは Mainnet のアクティビティのみです",
+      "mainnetOnlyDescription": "Preprod、欠落・無効なネットワーク値はクレジットを消費しません。Mainnet での書き込み操作でのみ残高が減少します。",
+      "cta": "クレジットを追加",
+      "roadmapTitle": "今後の予定",
+      "roadmapDescription": "Masumi 内で直接利用できるセルフサービスのトップアップフローを準備中です。",
+      "roadmapBilling": "クレジットの即時配信を伴う安全な決済",
+      "roadmapHistory": "残高履歴とトップアップの領収書",
+      "roadmapAlerts": "残高が不足する前に低残高をお知らせするリマインダー"
     },
     "Withdraw": {
       "title": "撤回する",
       "description": "収益をご希望の支払い方法に出金してください。",
-      "comingSoon": "もうすぐ引き出しが始まります。"
+      "comingSoon": "もうすぐ引き出しが始まります。",
+      "status": "近日公開"
     },
     "Analytics": {
       "title": "分析",
@@ -426,7 +535,7 @@
       "type": "タイプ",
       "agent": "エージェント",
       "amount": "額",
-      "status": "状態",
+      "status": "ステータス",
       "date": "日付",
       "details": "詳細",
       "lifecycle": "ライフサイクル",
@@ -486,7 +595,10 @@
         "paymentMethods": "お支払い方法",
         "apiKeys": "APIキー",
         "developers": "開発者",
-        "account": "アカウント"
+        "account": "アカウント",
+        "inboxAgents": "受信箱",
+        "earnings": "収益",
+        "topUp": "チャージ"
       }
     },
     "ApiKeys": {
@@ -519,13 +631,13 @@
       "permissionAdmin": "管理者",
       "networks": "ネットワーク",
       "preprod": "プリプロド",
-      "mainnet": "メインネット",
+      "mainnet": "Mainnet",
       "limitUsage": "使用量を制限する",
       "create": "作成する",
       "creating": "作成...",
       "tabAll": "全て",
       "tabRead": "読む",
-      "tabReadAndPay": "読んで支払う",
+      "tabReadAndPay": "読み取り & 支払い",
       "tabAdmin": "管理者",
       "permissionColumn": "許可",
       "networksColumn": "ネットワーク",
@@ -713,7 +825,10 @@
         "discord": "不和",
         "about": "について",
         "privacyPolicy": "プライバシーポリシー",
-        "changelog": "変更履歴"
+        "changelog": "変更履歴",
+        "inboxAgents": "受信箱",
+        "earnings": "収益",
+        "topUp": "チャージ"
       }
     },
     "Notifications": {
@@ -725,7 +840,8 @@
       "agentRegistrationComplete": "エージェントが正常に登録されました",
       "registrationFailed": "登録に失敗しました",
       "registrationTimedOut": "登録がタイムアウトしました",
-      "viewAgent": "エージェントを見る"
+      "viewAgent": "エージェントを見る",
+      "emptyHint": "エージェントの更新、トランザクションの通知、招待がここに表示されます。"
     },
     "UserProfile": {
       "unavailable": "ユーザーが使用不可"
@@ -845,7 +961,7 @@
         "added": "追加した",
         "agentId": "エージェントID",
         "price": "価格",
-        "status": "状態",
+        "status": "ステータス",
         "tags": "タグ",
         "actions": "アクション"
       },
@@ -994,7 +1110,7 @@
           "transactionHash": "トランザクションハッシュ",
           "amount": "額",
           "network": "ネットワーク",
-          "status": "状態",
+          "status": "ステータス",
           "unlockTime": "ロック解除時間",
           "date": "日付",
           "noTransactions": "まだ取引はありません"
@@ -1142,6 +1258,72 @@
             "hide": "シークレットを非表示"
           }
         }
+      },
+      "sections": {
+        "manage": "管理",
+        "discovery": "ディスカバリー"
+      },
+      "Discovery": {
+        "title": "レジストリディスカバリー",
+        "description": "最新の正常な Masumi エージェントをここで閲覧します。",
+        "agentsDescription": "標準のエージェントディスカバリールートから返される最新の正常なエージェント。",
+        "inboxDescription": "レジストリディスカバリールートから返される保留中および検証済みの受信箱。",
+        "views": {
+          "agents": "エージェント",
+          "inbox": "受信箱"
+        },
+        "searchPlaceholder": "エージェント、タグ、機能、または ID を検索...",
+        "inboxSearchPlaceholder": "受信箱名、スラッグ、またはリンクされたメールで検索...",
+        "resultsSummary": "このページに {visibleCount, plural, one {# 個のエージェント} other {# 個のエージェント}} を表示",
+        "sortHint": "最新の更新順で並べ替え",
+        "page": "{page} ページ",
+        "previous": "前へ",
+        "next": "次へ",
+        "paginationPrevious": "前のページへ",
+        "paginationNext": "次のページへ",
+        "paginationMore": "他のページ",
+        "onlineOnly": "オンラインのみ",
+        "verifiedOnly": "認証済みのみ",
+        "pendingAndVerified": "保留中 + 認証済み",
+        "updated": "更新済み",
+        "verifiedUpdated": "ステータス更新済み",
+        "added": "追加済み",
+        "health": "ヘルス",
+        "healthValue": "{uptimeCount}/{uptimeCheckCount} 件の成功チェック",
+        "publisher": "発行者",
+        "capability": "機能",
+        "paymentType": "支払いタイプ",
+        "source": "ソース",
+        "policyId": "ポリシー ID",
+        "inboxSlug": "受信箱スラッグ",
+        "authorFallback": "独立した発行者",
+        "noCapability": "機能が記載されていません",
+        "noTags": "タグなし",
+        "noPolicyId": "ポリシー ID なし",
+        "noSourceUrl": "ソース URL なし",
+        "moreTags": "他",
+        "tagsLabel": "タグ",
+        "inboxSource": "Masumi 受信箱",
+        "metadataVersion": "メタデータ v{version}",
+        "latestHealthy": "最新の正常なレジストリエントリ",
+        "verifiedInboxRegistration": "最新の検証済み受信箱登録",
+        "viewDetails": "詳細を表示",
+        "openEndpoint": "エンドポイントを開く",
+        "openSource": "ソースを開く",
+        "empty": "レジストリエージェントはまだ見つかりません。",
+        "emptySearch": "このページで検索に一致する発見されたエージェントはありません。より広い検索を試すか、ページを切り替えてください。",
+        "inboxEmpty": "保留中または検証済みの受信箱はまだ見つかりません。",
+        "inboxEmptySearch": "その名前、スラッグ、またはリンクされたメールに一致する保留中または検証済みの受信箱はありません。別の検索をお試しください。",
+        "error": "ディスカバリーの結果を読み込めませんでした。もう一度お試しください。",
+        "pricing": {
+          "free": "無料",
+          "dynamic": "動的価格設定",
+          "unavailable": "価格情報なし"
+        },
+        "payment": {
+          "cardano": "Cardano",
+          "none": "オンチェーン支払いなし"
+        }
       }
     },
     "Components": {
@@ -1268,6 +1450,185 @@
         "downloadNote1": "各コードは 1 回のみ使用できます。",
         "downloadNote2": "これらのコードは安全な場所に保管してください。",
         "verifyCodePlaceholder": "000000"
+      },
+      "Connected": {
+        "sectionLabel": "接続",
+        "title": "接続済みアプリケーション",
+        "description": "Masumi アカウントへのアクセスを承認したアプリケーション。セッションを終了するとアクセスが取り消され、次回は再認証が必要になります。",
+        "descriptionTooltipLabel": "接続済みアプリケーションについて",
+        "emptyTitle": "まだ接続がありません",
+        "emptyDescription": "Masumi アカウントで承認したアプリがここに表示されます。",
+        "firstParty": "ファーストパーティ",
+        "activeSession": "アクティブセッション",
+        "activeSessions": "{count} 件のアクティブセッション",
+        "noActiveSessions": "アクティブセッションなし",
+        "connectedOn": "接続日: {date}",
+        "lastUsed": "最終使用: {date}",
+        "scopesCount": "{count, plural, one {# 件の権限} other {# 件の権限}}",
+        "terminate": "セッションを終了",
+        "confirmTitle": "{name} を終了しますか?",
+        "confirmDescription": "これにより、{name} はすべてのデバイスで Masumi アカウントからサインアウトされ、保存された権限が削除されます。次回サインイン時に再認証が必要です。",
+        "confirm": "はい、セッションを終了",
+        "cancel": "キャンセル",
+        "success": "{name} のアクセスを終了しました",
+        "error": "セッションの終了に失敗しました。もう一度お試しください。",
+        "refresh": "更新",
+        "refreshed": "接続を更新しました"
+      }
+    },
+    "Earnings": {
+      "title": "収益",
+      "description": "選択したネットワークで、エージェントごとに収入、返金、保留中の支払いを追跡します。",
+      "filtersTitle": "収益フィルター",
+      "filtersDescription": "対象となるエージェントと期間を選択します。ネットワークはサイドバーのグローバル切替器から取得されます。",
+      "agentLabel": "エージェント",
+      "rangeLabel": "範囲",
+      "selectAgent": "エージェントを選択",
+      "searchAgentsPlaceholder": "名前または識別子でエージェントを検索...",
+      "searchAgentsEmpty": "一致するエージェントが見つかりません。",
+      "missingIdentifier": "エージェント識別子が利用できません",
+      "applyCustomRange": "範囲を適用",
+      "startDateLabel": "開始日",
+      "endDateLabel": "終了日",
+      "loadAgentsError": "対象となるエージェントを読み込めませんでした。",
+      "loadAgentsHelp": "このエージェントが他の場所に表示されることを期待している場合は、更新するかネットワークを切り替えてください。",
+      "loadEarningsError": "収益を読み込めませんでした。",
+      "loadEarningsHelp": "ページを更新するか、別の範囲を選択して再試行してください。",
+      "tryAgain": "再試行",
+      "emptyTitle": "このネットワークに対象のエージェントはありません",
+      "emptyDescription": "このネットワークには、収益履歴のあるウォレット所有エージェントがまだありません。続行するには、エージェントを登録するかネットワークを切り替えてください。",
+      "emptyCta": "エージェントへ",
+      "cards": {
+        "income": "収入",
+        "refunded": "返金済み",
+        "pending": "保留中",
+        "transactions": "トランザクション"
+      },
+      "metric": {
+        "income": "収入",
+        "refunded": "返金済み",
+        "pending": "保留中"
+      },
+      "granularity": {
+        "day": "日別表示",
+        "month": "月別表示"
+      },
+      "range": {
+        "7d": "過去7日間",
+        "30d": "過去30日間",
+        "90d": "過去90日間",
+        "all": "全期間",
+        "custom": "カスタム範囲"
+      },
+      "network": {
+        "preprod": "Preprod",
+        "mainnet": "Mainnet"
+      },
+      "feesLabel": "ブロックチェーン手数料: {fees}",
+      "transactionsHint": "この期間に含まれる支払いリクエスト",
+      "noDataTitle": "この期間にはまだ収益がありません",
+      "noDataDescription": "このエージェントが支払いを受け取り始めると、選択したメトリクスがタイムラインと内訳とともにここに表示されます。",
+      "mixedUnitsTitle": "混合支払い単位のグラフは利用できません",
+      "mixedUnitsDescription": "このメトリクスには、選択した期間内の USD ステーブルコインと ADA の両方が含まれます。下の内訳表で正確な金額を確認してください。",
+      "breakdownTitle": "{metric} の内訳",
+      "breakdownEmpty": "このメトリクスの内訳データはまだありません。",
+      "table": {
+        "period": "期間",
+        "amount": "金額",
+        "fees": "手数料",
+        "raw": "未加工単位"
+      }
+    },
+    "ImpersonationBanner": {
+      "title": "{user} になりすまし中",
+      "description": "停止するまで、操作はこのアカウントに適用されます。",
+      "stop": "なりすましを停止",
+      "stopping": "停止中...",
+      "stopSuccess": "管理者セッションに戻りました",
+      "stopError": "なりすましの停止に失敗しました。もう一度お試しください。",
+      "unknownUser": "このユーザー"
+    },
+    "InboxAgents": {
+      "metadataPageTitle": "受信箱",
+      "metadataPageDescription": "Masumi SaaS で受信箱登録を管理します。",
+      "title": "受信箱",
+      "tabs": {
+        "all": "すべて",
+        "registered": "登録済み",
+        "deregistered": "登録解除済み",
+        "pending": "保留中",
+        "failed": "失敗"
+      },
+      "sections": {
+        "manage": "管理",
+        "discovery": "ディスカバリー"
+      },
+      "manageDescription": "{network} 上の受信箱登録を確認、登録解除、整理します。",
+      "discoveryDescription": "{network} 上で Masumi レジストリに公開された最新の保留中および検証済み受信箱を閲覧します。",
+      "searchPlaceholder": "名前、スラッグ、識別子、ウォレット、または状態で検索...",
+      "noDescription": "説明なし",
+      "noDescriptionProvided": "説明が提供されていません。",
+      "noIdentifier": "オンチェーン識別子はまだありません。",
+      "notCheckedYet": "未チェック",
+      "usesRegistrationWallet": "登録ウォレットを使用",
+      "awaitingConfirmation": "確認待ち",
+      "noTransactionHash": "トランザクションハッシュはまだありません。",
+      "noActiveTransaction": "アクティブなトランザクションはありません。",
+      "rawLookup": "ローレベル参照",
+      "close": "閉じる",
+      "delete": "削除",
+      "deregister": "登録解除",
+      "confirm": "確認",
+      "deleteInboxAgent": "受信箱を削除",
+      "deregisterInboxAgent": "受信箱を登録解除",
+      "deleteInboxAgentDescription": "{name} を削除しますか?これにより、受信箱リストから登録レコードが削除されます。",
+      "deregisterInboxAgentDescription": "{name} を登録解除しますか?オンチェーン登録解除フローが開始されます。",
+      "details": "詳細",
+      "emptyTitle": "受信箱が見つかりません",
+      "emptyDescription": "検索範囲を広げるか、タブを切り替えてください。",
+      "loadingPage": "ページを読み込み中...",
+      "regWalletPrefix": "登録:",
+      "fundWalletPrefix": "資金:",
+      "table": {
+        "name": "名前",
+        "added": "追加",
+        "inboxSlug": "受信箱スラッグ",
+        "agentId": "エージェント ID",
+        "wallets": "ウォレット",
+        "status": "ステータス",
+        "actions": "操作"
+      },
+      "detail": {
+        "inboxSlug": "受信箱スラッグ:",
+        "description": "説明",
+        "agentIdentifier": "エージェント識別子",
+        "metadataVersion": "メタデータバージョン",
+        "created": "作成日時",
+        "updated": "更新日時",
+        "lastChecked": "最終チェック日時",
+        "registrationWallet": "登録ウォレット",
+        "fundingWallet": "資金ウォレット",
+        "currentTransaction": "現在のトランザクション",
+        "failure": "失敗"
+      },
+      "actionFailed": "受信箱を{action}できませんでした",
+      "deletedToast": "受信箱を削除しました",
+      "deregistrationStartedToast": "受信箱の登録解除を開始しました",
+      "pagination": {
+        "previous": "前へ",
+        "next": "次へ",
+        "previousAriaLabel": "前のページへ",
+        "nextAriaLabel": "次のページへ",
+        "morePages": "他のページ"
+      },
+      "status": {
+        "pending": "保留中",
+        "registering": "登録中",
+        "registered": "登録済み",
+        "registrationFailed": "登録失敗",
+        "deregistering": "登録解除中",
+        "deregistered": "登録解除済み",
+        "deregistrationFailed": "登録解除失敗"
       }
     }
   },
@@ -1337,7 +1698,10 @@
       "message": "下のボタンをクリックしてメールアドレスを確認してください。",
       "button": "メールの確認",
       "linkText": "または、このリンクをコピーしてブラウザに貼り付けます。",
-      "footer": "アカウントを作成していない場合は、このメールを無視しても問題ありません。"
+      "footer": "アカウントを作成していない場合は、このメールを無視しても問題ありません。",
+      "codeLabel": "確認コード",
+      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeHelp": "コードによる確認を希望する場合は、このコードを Masumi に入力できます。"
     },
     "Invitation": {
       "preview": "真澄の {organization} に招待されました",
@@ -1347,6 +1711,45 @@
       "button": "招待を承諾する",
       "linkText": "または、このリンクをコピーしてブラウザに貼り付けます。",
       "footer": "この招待を予期していなかった場合は、このメールを無視しても問題ありません。"
+    },
+    "VerificationCode": {
+      "preview": "Masumi 確認コード",
+      "title": "メールアドレスを確認してください",
+      "greeting": "{name} さん、こんにちは。",
+      "message": "このコードを Masumi に入力して、メールアドレスを確認しサインインを続行してください。",
+      "codeLabel": "確認コード",
+      "expiry": "このコードは 5 分で有効期限が切れます。",
+      "footer": "このコードを要求していない場合は、このメールを無視してかまいません。"
+    },
+    "MagicLink": {
+      "preview": "Masumi アクセスリンク",
+      "title": "Masumi に続行",
+      "greeting": "{name} さん、こんにちは。",
+      "message": "下のボタンを使用して Masumi に進んでください。または、以下に表示されているコードを使用することもできます。",
+      "consentBefore": "ここを初めて利用する場合、このリンクを使用して Masumi にアクセスすると、当社の",
+      "consentPrivacyLabel": "プライバシーポリシー",
+      "consentAfter": ".",
+      "button": "Masumi に続行",
+      "codeLabel": "アクセスコード",
+      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeHelp": "リンクを開きたくない場合は、このコードを Masumi に入力できます。",
+      "linkText": "バックアップアクセスリンク",
+      "footer": "このメールを要求していない場合は、無視してかまいません。"
+    },
+    "MagicLinkOidc": {
+      "preview": "Agent Messenger アクセスリンク",
+      "title": "Agent Messenger に続行",
+      "greeting": "{name} さん、こんにちは。",
+      "message": "下のボタンを使用して Agent Messenger に進んでください。または、以下に表示されているコードを使用することもできます。",
+      "consentBefore": "ここを初めて利用する場合、このリンクを使用して Agent Messenger にアクセスすると、当社の",
+      "consentPrivacyLabel": "プライバシーポリシー",
+      "consentAfter": ".",
+      "button": "Agent Messenger に続行",
+      "codeLabel": "アクセスコード",
+      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeHelp": "リンクを開きたくない場合は、このコードを Agent Messenger に入力できます。",
+      "linkText": "バックアップ Agent Messenger リンク",
+      "footer": "このメールを要求していない場合は、無視してかまいません。"
     }
   },
   "Footer": {
@@ -1373,7 +1776,8 @@
     "about": "について",
     "privacyPolicy": "プライバシーポリシー",
     "legal": "法律上の",
-    "changelog": "変更履歴"
+    "changelog": "変更履歴",
+    "discord": "Discord"
   },
   "NotFound": {
     "title": "404",
