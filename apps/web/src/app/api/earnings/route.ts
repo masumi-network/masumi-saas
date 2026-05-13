@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import {
   type DashboardEarningsAmountUnit,
   dashboardEarningsUnitFromTotals,
@@ -9,6 +9,8 @@ import {
 } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 /**
  * Must match `getPaymentIncome({ timeZone })`. Bucket keys in `DailyIncome` are calendar days in this zone
@@ -114,7 +116,7 @@ function primaryAmountFromUnits(
 
 export async function GET(request: Request) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -124,19 +126,21 @@ export async function GET(request: Request) {
       network: searchParams.get("network"),
     });
     if (!queryResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryResult.error.issues.map((i) => i.message).join("; "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryResult.error.issues.map((i) => i.message).join("; "),
+      });
     }
     const { period, network } = queryResult.data;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "earnings",
+      action: "read",
+      network,
+    });
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           earnings: [],
@@ -209,7 +213,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         earnings,
@@ -222,9 +226,9 @@ export async function GET(request: Request) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get earnings:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load earnings" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load earnings",
+    });
   }
 }

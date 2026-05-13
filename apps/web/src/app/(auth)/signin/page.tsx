@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+
+import {
+  type AuthPageSearchParams,
+  resolveAuthPageCallbackUrl,
+} from "@/lib/auth/auth-page-callback-url";
+import { getAuthContext } from "@/lib/auth/utils";
 
 import SignInForm from "./components/form";
 
@@ -26,11 +34,21 @@ function getEnabledOAuthProviders(): ("google" | "github" | "microsoft")[] {
 }
 
 interface SignInPageProps {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<AuthPageSearchParams>;
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
-  const { callbackUrl } = await searchParams;
+  const cookieStore = await cookies();
+  const callbackUrl = resolveAuthPageCallbackUrl(
+    await searchParams,
+    cookieStore.get("oidc_login_prompt")?.value,
+  );
+  const authContext = await getAuthContext();
+
+  if (authContext.isAuthenticated) {
+    redirect(callbackUrl ?? "/");
+  }
+
   return (
     <SignInForm
       oauthProviders={getEnabledOAuthProviders()}

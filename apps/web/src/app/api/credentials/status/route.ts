@@ -1,17 +1,34 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { credentialStatusQuerySchema } from "@/lib/schemas";
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
 } from "@/lib/veridian";
 
+import contract from "./route.contract";
+
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+        undefined,
+        { contract, method: "GET" },
+      );
+    }
+
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -23,21 +40,26 @@ export async function GET(request: NextRequest) {
         queryResult.error.issues.map((i) => i.message).join("; ") ||
           "Invalid query",
         400,
+        undefined,
+        { contract, method: "GET" },
       );
     }
     const { id } = queryResult.data;
 
     const pendingCredential = await prisma.veridianCredential.findFirst({
-      where: { id, userId: user.id },
+      where: { id, userId: authContext.user.id },
     });
 
     if (!pendingCredential) {
-      return apiError("Credential not found", 404);
+      return apiError("Credential not found", 404, undefined, {
+        contract,
+        method: "GET",
+      });
     }
 
     // Already resolved — return current state immediately
     if (pendingCredential.status !== "PENDING") {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           id: pendingCredential.id,
@@ -54,9 +76,14 @@ export async function GET(request: NextRequest) {
     const agent = agentId
       ? await prisma.agent.findFirst({
           where: { id: agentId },
-          select: { agentIdentifier: true },
+          select: { agentIdentifier: true, networkIdentifier: true },
         })
       : null;
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "read",
+      network: agent?.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     // Check Veridian for the accepted credential
     const credentials = await fetchContactCredentials(aid);
@@ -73,7 +100,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (matchingCredentials.length === 0) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { id: pendingCredential.id, status: "PENDING" },
       });
@@ -86,7 +113,7 @@ export async function GET(request: NextRequest) {
     })[0];
 
     if (!issuedCredential?.sad?.d) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { id: pendingCredential.id, status: "PENDING" },
       });
@@ -109,7 +136,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         id: updated.id,
@@ -126,6 +153,8 @@ export async function GET(request: NextRequest) {
         ? `Failed to check credential status: ${error.message}`
         : "Failed to check credential status",
       500,
+      undefined,
+      { contract, method: "GET" },
     );
   }
 }

@@ -1,7 +1,6 @@
 import "server-only";
 
-import prisma from "@masumi/database/client";
-
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import type { Agent } from "@/lib/api/agent.types";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
@@ -22,12 +21,9 @@ export async function getAgent(agentId: string): Promise<GetAgentResult> {
       requireEmailVerified: false,
     });
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
-      include: { agentReference: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: user.id,
+      agentId,
     });
 
     if (!agent) {

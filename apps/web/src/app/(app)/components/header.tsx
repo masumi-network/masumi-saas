@@ -9,6 +9,7 @@ import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 
+import { CreditBalanceLink } from "./credit-balance-link";
 import { NotificationsDialog } from "./notifications-dialog";
 import { SearchDialog } from "./search-dialog";
 
@@ -69,6 +70,8 @@ export default function Header({ className }: HeaderProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <CreditBalanceLink className="shrink-0" />
+
               <Button
                 variant="outline"
                 size="sm"
@@ -92,14 +95,14 @@ export default function Header({ className }: HeaderProps) {
                 asChild
                 className="hidden md:flex"
               >
-                <Link
-                  href="https://www.masumi.network/contact"
+                <a
+                  href="https://discord.com/invite/aj4QfnTS92"
                   target="_blank"
                   className="flex items-center gap-2"
                 >
                   <MessageSquare className="h-4 w-4" />
                   {t("support")}
-                </Link>
+                </a>
               </Button>
               <div className="hidden md:flex">
                 <NotificationsDialog />
@@ -120,6 +123,7 @@ export default function Header({ className }: HeaderProps) {
                   <BookOpen className="h-4 w-4" />
                 </a>
               </Button>
+
               <Button
                 variant="outline"
                 size="icon"

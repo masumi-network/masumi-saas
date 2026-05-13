@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
+
+import {
+  type AuthPageSearchParams,
+  resolveAuthPageCallbackUrl,
+} from "@/lib/auth/auth-page-callback-url";
 
 import SignUpForm from "./components/form";
 
@@ -25,6 +31,21 @@ function getEnabledOAuthProviders(): ("google" | "github" | "microsoft")[] {
   return providers;
 }
 
-export default function SignUpPage() {
-  return <SignUpForm oauthProviders={getEnabledOAuthProviders()} />;
+interface SignUpPageProps {
+  searchParams: Promise<AuthPageSearchParams>;
+}
+
+export default async function SignUpPage({ searchParams }: SignUpPageProps) {
+  const cookieStore = await cookies();
+  const callbackUrl = resolveAuthPageCallbackUrl(
+    await searchParams,
+    cookieStore.get("oidc_login_prompt")?.value,
+  );
+
+  return (
+    <SignUpForm
+      oauthProviders={getEnabledOAuthProviders()}
+      callbackUrl={callbackUrl}
+    />
+  );
 }

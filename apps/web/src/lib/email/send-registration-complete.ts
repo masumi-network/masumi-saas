@@ -1,7 +1,7 @@
 import prisma from "@masumi/database/client";
 
 import { authEnvConfig } from "@/lib/config/auth.config";
-import { emailConfig } from "@/lib/config/email.config";
+import { getPostmarkFromHeader } from "@/lib/config/email.config";
 import { reactAgentRegistrationCompleteEmail } from "@/lib/email/agent-registration-complete";
 import { postmarkClient } from "@/lib/email/postmark";
 
@@ -45,7 +45,7 @@ export async function sendAgentRegistrationCompleteEmail(
 
   try {
     await postmarkClient.sendEmail({
-      From: emailConfig.postmarkFromEmail,
+      From: getPostmarkFromHeader("agentRegistration"),
       To: user.email,
       Tag: "agent-registration-complete",
       Subject: DEFAULT_MESSAGES.title,

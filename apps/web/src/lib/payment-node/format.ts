@@ -1,6 +1,6 @@
 /** Shared payment-node display helpers used by activity, transactions, and earnings API routes. */
 
-import { USDM } from "@/lib/payment-node/tokens";
+import { getKnownStableTokenByUnit, getKnownTokenByUnit } from "./tokens";
 
 export type Network = "Mainnet" | "Preprod";
 
@@ -8,26 +8,38 @@ export function toNetwork(n: string | null): Network {
   return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
 }
 
-/** Format a single unit+amount; known stablecoins (USDM/tUSDM) use 6 decimals. */
-function formatOneUnitAmount(unit: string, amount: number | string): string {
+function formatDecimal(
+  value: number,
+  minimumFractionDigits: number,
+  maximumFractionDigits: number,
+): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(value);
+}
+
+/** Format a single unit+amount; known stablecoins use 6 decimals. */
+export function formatUnitAmount(
+  unit: string,
+  amount: number | string,
+): string {
   // BigInt() throws on fractional numbers; round when amount is from API (number)
   const amountStr =
     typeof amount === "number" ? String(Math.round(amount)) : String(amount);
-  if (unit === "") {
+  if (unit === "" || unit === "lovelace") {
     const lovelace = BigInt(amountStr);
     const ada = Number(lovelace) / 1_000_000;
-    return ada.toFixed(6) + " ADA";
+    return formatDecimal(ada, 0, 6) + " ADA";
   }
-  if (unit === USDM.Preprod.unit) {
+
+  const knownToken = getKnownTokenByUnit(unit);
+  if (knownToken) {
     const raw = Number(BigInt(amountStr));
-    const value = raw / 10 ** USDM.Preprod.decimals;
-    return value.toFixed(2) + " " + USDM.Preprod.symbol;
+    const value = raw / 10 ** knownToken.decimals;
+    return formatDecimal(value, 2, 2) + " " + knownToken.symbol;
   }
-  if (unit === USDM.Mainnet.unit) {
-    const raw = Number(BigInt(amountStr));
-    const value = raw / 10 ** USDM.Mainnet.decimals;
-    return value.toFixed(2) + " " + USDM.Mainnet.symbol;
-  }
+
   return `${amountStr} ${unit.slice(0, 8)}`;
 }
 
@@ -36,7 +48,7 @@ export function formatRequestedAmount(
 ): string {
   if (!requestedFunds?.length) return "—";
   const first = requestedFunds[0]!;
-  return formatOneUnitAmount(first.unit, first.amount);
+  return formatUnitAmount(first.unit, first.amount);
 }
 
 /** Format earnings-style units (amount as number); empty unit = ADA (lovelace). */
@@ -44,10 +56,10 @@ export function formatUnits(
   units: Array<{ unit: string; amount: number }>,
 ): string {
   if (!units.length) return "0";
-  return units.map((u) => formatOneUnitAmount(u.unit, u.amount)).join(", ");
+  return units.map((u) => formatUnitAmount(u.unit, u.amount)).join(", ");
 }
 
-/** Format earnings as USD when units are USDM/tUSDM (matches dashboard revenue card). Falls back to formatUnits for ADA/other. */
+/** Format earnings as USD when units are supported stablecoins. Falls back to formatUnits for ADA/other. */
 export function formatEarningsAsUsd(
   units: Array<{ unit: string; amount: number }>,
 ): string {
@@ -55,17 +67,13 @@ export function formatEarningsAsUsd(
   let usdCents = 0;
   const other: Array<{ unit: string; amount: number }> = [];
   for (const u of units) {
-    if (u.unit === USDM.Preprod.unit) {
-      usdCents += Math.round(
-        Number(u.amount) / 10 ** (USDM.Preprod.decimals - 2),
-      );
-    } else if (u.unit === USDM.Mainnet.unit) {
-      usdCents += Math.round(
-        Number(u.amount) / 10 ** (USDM.Mainnet.decimals - 2),
-      );
-    } else {
+    const stableToken = getKnownStableTokenByUnit(u.unit);
+    if (!stableToken) {
       other.push(u);
+      continue;
     }
+
+    usdCents += Math.round(Number(u.amount) / 10 ** (stableToken.decimals - 2));
   }
   const usdFormatted = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -74,9 +82,7 @@ export function formatEarningsAsUsd(
     maximumFractionDigits: 2,
   }).format(usdCents / 100);
   if (other.length === 0) return usdFormatted;
-  const rest = other
-    .map((u) => formatOneUnitAmount(u.unit, u.amount))
-    .join(", ");
+  const rest = other.map((u) => formatUnitAmount(u.unit, u.amount)).join(", ");
   return usdCents > 0 ? `${usdFormatted} + ${rest}` : rest;
 }
 
@@ -84,22 +90,24 @@ export function formatEarningsAsUsd(
 export type DashboardEarningsAmountUnit = "USD" | "ADA";
 
 /**
- * Split payment-node income `Units` into USDM/tUSDM (as USD float) and ADA (from lovelace).
- * Unknown units are ignored for the dashboard aggregate.
+ * Split payment-node income `Units` into supported stablecoins (as USD float)
+ * and ADA (from lovelace). Unknown units are ignored for the dashboard aggregate.
  */
 export function splitIncomeUnitsStablecoinUsdAndAda(
   units: Array<{ unit: string; amount: number }>,
   network: Network,
 ): { usd: number; ada: number } {
-  const stableUnit = USDM[network].unit;
-  const decimals = USDM[network].decimals;
   let usd = 0;
   let ada = 0;
   for (const u of units) {
-    if (u.unit === stableUnit) {
-      usd += Number(u.amount) / 10 ** decimals;
-    } else if (u.unit === "" || u.unit === "lovelace") {
+    if (u.unit === "" || u.unit === "lovelace") {
       ada += Number(u.amount) / 1_000_000;
+      continue;
+    }
+
+    const stableToken = getKnownStableTokenByUnit(u.unit, network);
+    if (stableToken) {
+      usd += Number(u.amount) / 10 ** stableToken.decimals;
     }
   }
   return { usd, ada };

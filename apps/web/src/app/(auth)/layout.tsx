@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import gridSvg from "@/assets/grid.svg";
@@ -13,20 +14,26 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }) {
   const authContext = await getAuthContext();
+  const cookieStore = await cookies();
+  const hasOidcLoginPrompt = cookieStore.has("oidc_login_prompt");
 
-  if (authContext.isAuthenticated) {
+  if (authContext.isAuthenticated && !hasOidcLoginPrompt) {
     redirect("/");
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       <div
-        className="absolute inset-0 opacity-40 animate-grid-glide"
+        className="absolute inset-0 opacity-25 animate-grid-glide"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
           backgroundPosition: "center",
+          maskImage:
+            "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 25%, black 70%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 25%, black 70%)",
         }}
       />
       <div className="relative z-10">

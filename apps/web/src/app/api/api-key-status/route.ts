@@ -1,15 +1,23 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
+import { rejectOidcAccessTokenAuth } from "@/lib/auth/oidc-api-permissions";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
+
+import contract from "./route.contract";
 
 export async function GET(request: NextRequest) {
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
+    rejectOidcAccessTokenAuth(
+      authContext,
+      "OIDC access tokens are not supported for /api/api-key-status",
+    );
 
     const sess = getBetterAuthInnerSession(authContext.session);
     const token = sess?.token;
@@ -32,13 +40,13 @@ export async function GET(request: NextRequest) {
       });
 
       if (!keyRow) {
-        return NextResponse.json(
-          { success: false, error: "API key not found" },
-          { status: 404 },
-        );
+        return contractJsonResponse(contract, "GET", 404, {
+          success: false,
+          error: "API key not found",
+        });
       }
 
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           authMethod: "apiKey" as const,
@@ -56,7 +64,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         authMethod: "session" as const,
@@ -67,9 +75,9 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("GET /api/api-key-status:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load API key status" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load API key status",
+    });
   }
 }

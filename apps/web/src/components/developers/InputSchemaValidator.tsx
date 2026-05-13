@@ -224,8 +224,9 @@ const EXAMPLES = [
 export function InputSchemaValidator() {
   const { resolvedTheme } = useTheme();
   return (
-    <div className="schema-playground-wrapper relative min-h-[540px]">
+    <div className="schema-playground-wrapper relative min-h-[min(540px,85svh)] w-full min-w-0">
       <SchemaPlayground
+        className="grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-4"
         initialSchema={EXAMPLES[0].value}
         examples={EXAMPLES}
         theme={resolvedTheme === "dark" ? "dark" : "light"}

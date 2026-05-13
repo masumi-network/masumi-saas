@@ -1,3 +1,5 @@
+import type { RegistrationState, VerificationStatus } from "@masumi/database";
+
 export type DashboardOverview = {
   user: {
     id: string;
@@ -28,8 +30,8 @@ export type DashboardOverview = {
     id: string;
     name: string;
     icon: string | null;
-    registrationState: string;
-    verificationStatus: string | null;
+    registrationState: RegistrationState;
+    verificationStatus: VerificationStatus | null;
     pricing?: Record<string, unknown> | null;
   }>;
   apiKeys: Array<{

@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
@@ -24,6 +25,10 @@ import {
 import { getInitials } from "@/lib/utils/format-name";
 
 export async function UserProfileCard() {
+  if (!isKycVerificationEnabled()) {
+    return null;
+  }
+
   const t = await getTranslations("App.Home.KycStatus");
   const tStatus = await getTranslations("App.Agents");
   const format = await getFormatter();

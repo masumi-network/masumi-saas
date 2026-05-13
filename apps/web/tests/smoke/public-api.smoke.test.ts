@@ -105,6 +105,11 @@ describe("SMOKE — Public API /api/v1/", () => {
     expect(b.openapi).toBeDefined();
     expect(b.info).toBeDefined();
     expect(b.paths).toBeDefined();
+    const paths = b.paths as Record<string, unknown>;
+    expect(paths["/api/v1/agents"]).toBeDefined();
+    expect(paths["/api/v1/agents/{agentId}"]).toBeDefined();
+    expect(paths["/api/v1/agents/verify"]).toBeDefined();
+    expect(paths["/agents"]).toBeUndefined();
   });
 
   it("CORS headers present on public API response", async () => {
@@ -120,33 +125,106 @@ describe("SMOKE — Public API /api/v1/", () => {
       res.headers.get("ratelimit-limit") !== null;
     expect(hasRateLimit).toBe(true);
   });
+
+  it("public /api/v1/openapi stays limited to public discovery routes", async () => {
+    const res = await request("/api/v1/openapi");
+    expect(res.status).toBe(200);
+    const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/api/v1/agents/verify"]).toBeDefined();
+    expect(b.paths?.["/registry-entry"]).toBeUndefined();
+    expect(b.paths?.["/registry-diff"]).toBeUndefined();
+  });
 });
 
-describe("SMOKE — Payment node proxy /api/v1/", () => {
-  it("GET /api/v1/registry without auth → 401", async () => {
-    const res = await request("/api/v1/registry?network=Preprod");
+describe("SMOKE — Authenticated payment/registry wrappers", () => {
+  it("GET /pay/api/v1/registry without auth → 401", async () => {
+    const res = await request("/pay/api/v1/registry?network=Preprod");
     expect(res.status).toBe(401);
   });
 
-  it("GET /api/v1/admin — not in allowlist → 403", async () => {
+  it("GET /pay/api/v1/inbox-agents without auth → 401", async () => {
+    const res = await request("/pay/api/v1/inbox-agents?network=Preprod");
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /registry/api/v1/registry-entry without auth → 401", async () => {
+    const res = await request(
+      "/registry/api/v1/registry-entry?network=Preprod",
+      {
+        method: "POST",
+        body: { limit: 1, network: "Preprod" },
+      },
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /registry/api/v1/inbox-agent-registration-search without auth → 401", async () => {
+    const res = await request(
+      "/registry/api/v1/inbox-agent-registration-search?network=Preprod",
+      {
+        method: "POST",
+        body: {
+          limit: 1,
+          network: "Preprod",
+          query: "agent@example.com",
+        },
+      },
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("GET /api/v1/admin — not exposed → 404", async () => {
     const { CookieJar, signIn } = await import("../helpers");
     const jar = await signIn();
     const res = await request("/api/v1/admin", { jar });
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /registry/api/v1/registry-source without admin → 403", async () => {
+    const { signIn } = await import("../helpers");
+    const jar = await signIn();
+    const res = await request("/registry/api/v1/registry-source", { jar });
     expect(res.status).toBe(403);
   });
 
-  it("URL-encoded path traversal (%2e%2e) — proxy allowlist must block or Next.js must reject", async () => {
-    // %2e%2e = '..' URL-encoded — known bypass: Next.js decodes it and routes to /api/auth/get-session
-    // SECURITY BUG: currently returns 200 (null session body) — proxy allowlist does not catch encoded traversal
-    // This test locks in the current behavior so any change (fix or regression) is caught immediately
+  it("URL-encoded path traversal (%2e%2e) is not routable → 404", async () => {
     const res = await request("/api/v1/%2e%2e/auth/get-session");
-    // Known current behavior: Next.js decodes traversal and reaches the auth endpoint → 200 with null body
-    // If this suddenly returns 403/404 → traversal was fixed (update test to expect 403/404)
-    // If this returns 200 with a real user session → severity escalated (traversal now leaks session data)
-    expect([200, 403, 404]).toContain(res.status);
-    if (res.status === 200) {
-      // Safe only if session body is null (unauthenticated request returns null session)
-      expect(res.body).toBeNull();
-    }
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /api/openapi includes proxied registry lookup routes", async () => {
+    const res = await request("/api/openapi");
+    expect(res.status).toBe(200);
+    const b = res.body as { paths?: Record<string, unknown> };
+    expect(b.paths?.["/api/agents"]).toBeDefined();
+    expect(b.paths?.["/api/dashboard/overview"]).toBeDefined();
+    expect(b.paths?.["/api/credentials/schema-said"]).toBeDefined();
+    expect(b.paths?.["/api/activity/transaction"]).toBeDefined();
+    expect(b.paths?.["/api/earnings/agent"]).toBeDefined();
+    expect(b.paths?.["/api/earnings/agents"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-entry"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-entry-search"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-diff"]).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/capability"]).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration-search"],
+    ).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration"],
+    ).toBeDefined();
+    expect(
+      b.paths?.["/registry/api/v1/inbox-agent-registration-diff"],
+    ).toBeDefined();
+    expect(b.paths?.["/registry/api/v1/registry-source"]).toBeDefined();
+    expect(b.paths?.["/pay/api/v1/payment"]).toBeDefined();
+    expect(b.paths?.["/pay/api/v1/inbox-agents"]).toBeDefined();
+    expect(b.paths?.["/api/masumi/inbox-agent/register"]).toBeDefined();
+    expect(b.paths?.["/api/credits"]).toBeDefined();
+    expect(b.paths?.["/agents"]).toBeUndefined();
+    expect(b.paths?.["/dashboard/overview"]).toBeUndefined();
+    expect(b.paths?.["/activity"]).toBeUndefined();
+    expect(b.paths?.["/earnings"]).toBeUndefined();
+    expect(b.paths?.["/v1/registry-entry"]).toBeUndefined();
+    expect(b.paths?.["/inbox-agents"]).toBeUndefined();
   });
 });

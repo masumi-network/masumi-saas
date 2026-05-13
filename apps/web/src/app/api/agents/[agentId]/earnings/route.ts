@@ -1,10 +1,18 @@
-import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  fetchNormalizedAgentPaymentIncome,
+  hasAgentEarningsData,
+} from "@/lib/earnings/agent-income";
+import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { agentEarningsQuerySchema } from "@/lib/schemas";
+
+import contract from "./route.contract";
 
 function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;
@@ -39,43 +47,34 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      select: {
-        agentIdentifier: true,
-        networkIdentifier: true,
-        registrationState: true,
-      },
+    const agent = await getUserOwnedAgentForEarnings({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: "Agent not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
+    const network = toNetwork(
+      agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
+    );
 
-    // Agents must have been on-chain to have earnings. Exclude: not yet registered
-    // (RegistrationRequested, RegistrationInitiated) or failed (RegistrationFailed).
-    // Include: RegistrationConfirmed and all deregistration states (they have
-    // historical earnings even while/after deregistering).
-    const statesWithEarnings = new Set([
-      "RegistrationConfirmed",
-      "DeregistrationRequested",
-      "DeregistrationInitiated",
-      "DeregistrationConfirmed",
-      "DeregistrationFailed",
-    ]);
-    const hasEarningsData =
-      !!agent.agentIdentifier &&
-      statesWithEarnings.has(agent.registrationState);
-    if (!hasEarningsData) {
-      return NextResponse.json({
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network,
+    });
+
+    if (!hasAgentEarningsData(agent)) {
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           totalTransactions: 0,
@@ -93,19 +92,16 @@ export async function GET(
       period: searchParams.get("period") ?? undefined,
     });
     if (!queryResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryResult.error.issues.map((i) => i.message).join("; "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryResult.error.issues.map((i) => i.message).join("; "),
+      });
     }
     const period = queryResult.data.period;
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: {
           totalTransactions: 0,
@@ -118,58 +114,37 @@ export async function GET(
       });
     }
 
-    const network = toNetwork(agent.networkIdentifier);
     const { startDate, endDate } = periodToDateRange(period);
 
-    const income = await client.getPaymentIncome({
+    const income = await fetchNormalizedAgentPaymentIncome({
+      client,
       network,
-      agentIdentifier: agent.agentIdentifier ?? undefined,
+      agentIdentifier: agent.agentIdentifier!,
       startDate,
       endDate,
       timeZone: "Etc/UTC",
     });
 
-    // Map payment node PascalCase/Units to frontend camelCase/units
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: {
         totalTransactions: income.totalTransactions,
-        totalIncome: {
-          units: income.TotalIncome.Units,
-          blockchainFees: income.TotalIncome.blockchainFees,
-        },
-        totalRefunded: {
-          units: income.TotalRefunded.Units,
-          blockchainFees: income.TotalRefunded.blockchainFees,
-        },
-        totalPending: {
-          units: income.TotalPending.Units,
-          blockchainFees: income.TotalPending.blockchainFees,
-        },
+        totalIncome: income.totalIncome,
+        totalRefunded: income.totalRefunded,
+        totalPending: income.totalPending,
         periodStart: income.periodStart,
         periodEnd: income.periodEnd,
-        dailyIncome: income.DailyIncome.map((d) => ({
-          day: d.day,
-          month: d.month,
-          year: d.year,
-          units: d.Units,
-          blockchainFees: d.blockchainFees,
-        })),
-        monthlyIncome: income.MonthlyIncome.map((m) => ({
-          month: m.month,
-          year: m.year,
-          units: m.Units,
-          blockchainFees: m.blockchainFees,
-        })),
+        dailyIncome: income.dailyIncome,
+        monthlyIncome: income.monthlyIncome,
       },
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agent earnings:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load earnings" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load earnings",
+    });
   }
 }

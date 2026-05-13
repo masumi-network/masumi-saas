@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Search } from "lucide-react";
+import { Check, Search, UserRoundCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
@@ -51,6 +52,7 @@ interface User {
   emailVerified: boolean;
   kycStatus: string | null;
   role: string;
+  isAdmin: boolean;
   banned: boolean;
   banReason: string | null;
   createdAt: string;
@@ -78,6 +80,7 @@ export default function UsersList({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [unbanDialogOpen, setUnbanDialogOpen] = useState(false);
+  const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [banReason, setBanReason] = useState("");
   const skipNextSearchPushRef = useRef(false);
@@ -157,6 +160,53 @@ export default function UsersList({
     } else {
       setBanReason("");
       setBanDialogOpen(true);
+    }
+  };
+
+  const handleImpersonateClick = (user: User) => {
+    if (user.id === currentUserId) {
+      toast.error(t("cannotModifySelf"));
+      return;
+    }
+
+    if (user.banned) {
+      toast.error(t("cannotImpersonateBanned"));
+      return;
+    }
+
+    if (user.isAdmin) {
+      toast.error(t("cannotImpersonateAdmin"));
+      return;
+    }
+
+    setSelectedUser(user);
+    setImpersonateDialogOpen(true);
+  };
+
+  const handleImpersonateConfirm = async () => {
+    if (!selectedUser) return;
+
+    setIsSubmitting(true);
+    setLoading(selectedUser.id);
+
+    try {
+      const result = await authClient.admin.impersonateUser({
+        userId: selectedUser.id,
+      });
+
+      if (result.error) {
+        toast.error(t("impersonateError"));
+        return;
+      }
+
+      toast.success(t("impersonateSuccess", { email: selectedUser.email }));
+      setImpersonateDialogOpen(false);
+      window.location.assign("/");
+    } catch {
+      toast.error(t("impersonateError"));
+    } finally {
+      setLoading(null);
+      setIsSubmitting(false);
     }
   };
 
@@ -414,14 +464,49 @@ export default function UsersList({
                           }).format(new Date(user.createdAt))}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant={user.banned ? "outline" : "destructive"}
-                            size="sm"
-                            onClick={() => handleBanClick(user)}
-                            disabled={isRowLoading || isCurrentUser}
-                          >
-                            {user.banned ? t("unban") : t("ban")}
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <Link
+                                href={`/admin/users/${user.id}/oidc-grants`}
+                              >
+                                {t("oidcGrants")}
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleImpersonateClick(user)}
+                              disabled={
+                                isRowLoading ||
+                                isCurrentUser ||
+                                user.banned ||
+                                user.isAdmin
+                              }
+                              aria-label={t("impersonateAria", {
+                                email: user.email,
+                              })}
+                              title={
+                                isCurrentUser
+                                  ? t("cannotModifySelf")
+                                  : user.banned
+                                    ? t("cannotImpersonateBanned")
+                                    : user.isAdmin
+                                      ? t("cannotImpersonateAdmin")
+                                      : undefined
+                              }
+                            >
+                              <UserRoundCheck className="h-3 w-3" />
+                              {t("impersonate")}
+                            </Button>
+                            <Button
+                              variant={user.banned ? "outline" : "destructive"}
+                              size="sm"
+                              onClick={() => handleBanClick(user)}
+                              disabled={isRowLoading || isCurrentUser}
+                            >
+                              {user.banned ? t("unban") : t("ban")}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -567,6 +652,45 @@ export default function UsersList({
             </Button>
             <Button onClick={handleUnbanConfirm} disabled={isSubmitting}>
               {isSubmitting ? t("loading") : t("confirmUnban")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Impersonate confirmation dialog */}
+      <Dialog
+        open={impersonateDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && isSubmitting) return;
+          setImpersonateDialogOpen(open);
+          if (!open) {
+            setSelectedUser(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("impersonateDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("impersonateDialogDescription", {
+                name: selectedUser?.name || selectedUser?.email || "",
+                email: selectedUser?.email || "",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => {
+                setImpersonateDialogOpen(false);
+                setSelectedUser(null);
+              }}
+            >
+              {t("cancel")}
+            </Button>
+            <Button onClick={handleImpersonateConfirm} disabled={isSubmitting}>
+              {isSubmitting ? t("loading") : t("confirmImpersonate")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -218,6 +218,346 @@ export interface paths {
     };
     trace?: never;
   };
+  "/wallet/low-balance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List wallet low-balance rules. (read access required)
+     * @description Lists low-balance monitoring rules for wallets
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Optional: filter rules by wallet id */
+          walletId?: string;
+          /** @description Optional: filter rules by payment source id */
+          paymentSourceId?: string;
+          /** @description Whether to return only rules currently in low state */
+          onlyLow?: string;
+          /** @description Whether to include disabled rules */
+          includeDisabled?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Wallet low-balance rules */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {string} */
+              status: "success";
+              data: {
+                Rules: {
+                  /** @description Unique identifier for the low-balance rule */
+                  id: string;
+                  /** @description Raw on-chain asset unit, for example lovelace or a full policy+asset identifier */
+                  assetUnit: string;
+                  /** @description Threshold in raw on-chain units used to determine low balance */
+                  thresholdAmount: string;
+                  /** @description Whether the rule is active */
+                  enabled: boolean;
+                  /**
+                   * @description Current deduped state of the rule
+                   * @enum {string}
+                   */
+                  status: "Unknown" | "Healthy" | "Low";
+                  /** @description Last observed balance for this asset in raw on-chain units. Null if never checked */
+                  lastKnownAmount: string | null;
+                  /**
+                   * Format: date-time
+                   * @description Timestamp when the rule was last evaluated. Null if never checked
+                   */
+                  lastCheckedAt: string | null;
+                  /**
+                   * Format: date-time
+                   * @description Timestamp when the wallet last entered low balance for this rule. Null if never alerted
+                   */
+                  lastAlertedAt: string | null;
+                  /** @description Hot wallet id the rule belongs to */
+                  walletId: string;
+                  /** @description Wallet verification key */
+                  walletVkey: string;
+                  /** @description Wallet address */
+                  walletAddress: string;
+                  /**
+                   * @description Hot wallet type
+                   * @enum {string}
+                   */
+                  walletType: "Selling" | "Purchasing";
+                  /** @description Payment source id owning the wallet */
+                  paymentSourceId: string;
+                  /**
+                   * @description Wallet network
+                   * @enum {string}
+                   */
+                  network: "Preprod" | "Mainnet";
+                }[];
+              };
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    /**
+     * Create a wallet low-balance rule. (admin access required)
+     * @description Creates a wallet low-balance monitoring rule
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      /** @description Low-balance rule to create */
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @description Hot wallet id to attach the rule to */
+            walletId: string;
+            /** @description Raw on-chain asset unit, for example lovelace or a policy+asset identifier */
+            assetUnit: string;
+            /** @description Threshold in raw on-chain units. Example: 5000000 for 5 ADA */
+            thresholdAmount: string;
+            /**
+             * @description Whether the rule should start enabled
+             * @default true
+             */
+            enabled?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Wallet low-balance rule created */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {string} */
+              status: "success";
+              data: {
+                /** @description Unique identifier for the low-balance rule */
+                id: string;
+                /** @description Raw on-chain asset unit, for example lovelace or a full policy+asset identifier */
+                assetUnit: string;
+                /** @description Threshold in raw on-chain units used to determine low balance */
+                thresholdAmount: string;
+                /** @description Whether the rule is active */
+                enabled: boolean;
+                /**
+                 * @description Current deduped state of the rule
+                 * @enum {string}
+                 */
+                status: "Unknown" | "Healthy" | "Low";
+                /** @description Last observed balance for this asset in raw on-chain units. Null if never checked */
+                lastKnownAmount: string | null;
+                /**
+                 * Format: date-time
+                 * @description Timestamp when the rule was last evaluated. Null if never checked
+                 */
+                lastCheckedAt: string | null;
+                /**
+                 * Format: date-time
+                 * @description Timestamp when the wallet last entered low balance for this rule. Null if never alerted
+                 */
+                lastAlertedAt: string | null;
+                /** @description Hot wallet id the rule belongs to */
+                walletId: string;
+                /** @description Wallet verification key */
+                walletVkey: string;
+                /** @description Wallet address */
+                walletAddress: string;
+                /**
+                 * @description Hot wallet type
+                 * @enum {string}
+                 */
+                walletType: "Selling" | "Purchasing";
+                /** @description Payment source id owning the wallet */
+                paymentSourceId: string;
+                /**
+                 * @description Wallet network
+                 * @enum {string}
+                 */
+                network: "Preprod" | "Mainnet";
+              };
+            };
+          };
+        };
+        /** @description Wallet not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Low-balance rule already exists for this wallet and asset */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    /**
+     * Delete a wallet low-balance rule. (admin access required)
+     * @description Deletes a wallet low-balance monitoring rule
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      /** @description Low-balance rule to delete */
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @description Low-balance rule id to delete */
+            ruleId: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Wallet low-balance rule deleted */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {string} */
+              status: "success";
+              data: {
+                /** @description Deleted rule id */
+                ruleId: string;
+                /**
+                 * Format: date-time
+                 * @description Timestamp when the rule was deleted
+                 */
+                deletedAt: string;
+              };
+            };
+          };
+        };
+        /** @description Low-balance rule not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    /**
+     * Update a wallet low-balance rule. (admin access required)
+     * @description Updates a wallet low-balance monitoring rule
+     */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      /** @description Low-balance rule update */
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @description Low-balance rule id to update */
+            ruleId: string;
+            /** @description Updated threshold in raw on-chain units */
+            thresholdAmount?: string;
+            /** @description Updated enabled state */
+            enabled?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Wallet low-balance rule updated */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {string} */
+              status: "success";
+              data: {
+                /** @description Unique identifier for the low-balance rule */
+                id: string;
+                /** @description Raw on-chain asset unit, for example lovelace or a full policy+asset identifier */
+                assetUnit: string;
+                /** @description Threshold in raw on-chain units used to determine low balance */
+                thresholdAmount: string;
+                /** @description Whether the rule is active */
+                enabled: boolean;
+                /**
+                 * @description Current deduped state of the rule
+                 * @enum {string}
+                 */
+                status: "Unknown" | "Healthy" | "Low";
+                /** @description Last observed balance for this asset in raw on-chain units. Null if never checked */
+                lastKnownAmount: string | null;
+                /**
+                 * Format: date-time
+                 * @description Timestamp when the rule was last evaluated. Null if never checked
+                 */
+                lastCheckedAt: string | null;
+                /**
+                 * Format: date-time
+                 * @description Timestamp when the wallet last entered low balance for this rule. Null if never alerted
+                 */
+                lastAlertedAt: string | null;
+                /** @description Hot wallet id the rule belongs to */
+                walletId: string;
+                /** @description Wallet verification key */
+                walletVkey: string;
+                /** @description Wallet address */
+                walletAddress: string;
+                /**
+                 * @description Hot wallet type
+                 * @enum {string}
+                 */
+                walletType: "Selling" | "Purchasing";
+                /** @description Payment source id owning the wallet */
+                paymentSourceId: string;
+                /**
+                 * @description Wallet network
+                 * @enum {string}
+                 */
+                network: "Preprod" | "Mainnet";
+              };
+            };
+          };
+        };
+        /** @description Low-balance rule not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    trace?: never;
+  };
   "/signature/verify/reveal-data": {
     parameters: {
       query?: never;
@@ -335,8 +675,8 @@ export interface paths {
         query?: {
           /** @description The number of API keys to return */
           take?: number;
-          /** @description Used to paginate through the API keys */
-          cursorToken?: string;
+          /** @description Used to paginate through the API keys (provide the id of the last returned key) */
+          cursorId?: string;
         };
         header?: never;
         path?: never;
@@ -418,11 +758,17 @@ export interface paths {
              */
             NetworkLimit?: ("Preprod" | "Mainnet")[];
             /**
-             * @description The permission of the API key
+             * @description [DEPRECATED] The permission of the API key. Use canRead/canPay/canAdmin flags instead. Will be removed in a future version.
              * @default Read
              * @enum {string}
              */
             permission?: "Read" | "ReadAndPay" | "Admin";
+            /** @description Whether this API key can access read endpoints */
+            canRead?: boolean;
+            /** @description Whether this API key can access payment/purchase endpoints */
+            canPay?: boolean;
+            /** @description Whether this API key has admin access */
+            canAdmin?: boolean;
             /**
              * @description Whether to enable wallet scope filtering for this API key
              * @default false
@@ -577,6 +923,12 @@ export interface paths {
             walletScopeEnabled?: boolean;
             /** @description List of hot wallet IDs to scope this API key to. Replaces existing scopes when provided */
             WalletScopeHotWalletIds?: string[];
+            /** @description Whether this API key can access read endpoints */
+            canRead?: boolean;
+            /** @description Whether this API key can access payment/purchase endpoints */
+            canPay?: boolean;
+            /** @description Whether this API key has admin access */
+            canAdmin?: boolean;
           };
         };
       };
@@ -1272,6 +1624,11 @@ export interface paths {
                 /** @description Identifier of the agent that is being paid */
                 agentIdentifier: string | null;
                 /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
+                /**
                  * Format: date-time
                  * @description Timestamp when the payment was last checked on-chain. Null if never checked
                  */
@@ -1899,6 +2256,11 @@ export interface paths {
                 /** @description Identifier of the agent that is being paid */
                 agentIdentifier: string | null;
                 /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
+                /**
                  * Format: date-time
                  * @description Timestamp when the payment was last checked on-chain. Null if never checked
                  */
@@ -2203,6 +2565,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being paid */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the payment was last checked on-chain. Null if never checked
@@ -2512,6 +2879,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being paid */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the payment was last checked on-chain. Null if never checked
@@ -2843,6 +3215,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being purchased */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the purchase was last checked on-chain. Null if never checked
@@ -3908,6 +4285,11 @@ export interface paths {
                 /** @description Identifier of the agent that is being purchased */
                 agentIdentifier: string | null;
                 /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
+                /**
                  * Format: date-time
                  * @description Timestamp when the purchase was last checked on-chain. Null if never checked
                  */
@@ -4132,6 +4514,7 @@ export interface paths {
              *         "id": "cuid_v2_auto_generated",
              *         "blockchainIdentifier": "blockchain_identifier",
              *         "agentIdentifier": "agent_identifier",
+             *         "pricingType": "Fixed",
              *         "createdAt": "1970-01-20T20:00:36.260Z",
              *         "updatedAt": "1970-01-20T20:00:36.260Z",
              *         "lastCheckedAt": null,
@@ -4200,6 +4583,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being purchased */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the purchase was last checked on-chain. Null if never checked
@@ -4642,6 +5030,95 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/payment/x402": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Build an unsigned x402 funds-locking transaction for a payment. (+READ access required)
+     * @description Builds an unsigned Cardano funds-locking transaction for an existing payment request. The seller calls this on behalf of the buyer (x402 protocol). No state is saved — the returned CBOR must be signed by the buyer and submitted to the network.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /**
+             * @description The Cardano network
+             * @enum {string}
+             */
+            network: "Preprod" | "Mainnet";
+            /** @description The blockchainIdentifier from the PaymentRequest */
+            blockchainIdentifier: string;
+            /** @description The buyer's bech32 Cardano wallet address. UTxOs fetched from this address to build the unsigned tx. */
+            buyerAddress: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Unsigned transaction CBOR ready for buyer to sign and submit */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              data: {
+                /** @description Hex-encoded unsigned transaction CBOR. Sign with buyer wallet and submit. */
+                unsignedTxCbor: string;
+                /** @description Extra lovelace included for min-UTXO. Buyer receives this back as change after result submission. */
+                collateralReturnLovelace: string;
+              };
+              status: string;
+            };
+          };
+        };
+        /** @description Bad Request (invalid buyer address, expired payment, or insufficient buyer funds) */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthorized */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Payment not found or not in a buildable state */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Internal Server Error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/purchase/request-refund": {
     parameters: {
       query?: never;
@@ -4700,6 +5177,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being purchased */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the purchase was last checked on-chain. Null if never checked
@@ -4995,6 +5477,11 @@ export interface paths {
                 blockchainIdentifier: string;
                 /** @description Identifier of the agent that is being purchased */
                 agentIdentifier: string | null;
+                /**
+                 * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+                 * @enum {string}
+                 */
+                pricingType: "Fixed" | "Free" | "Dynamic";
                 /**
                  * Format: date-time
                  * @description Timestamp when the purchase was last checked on-chain. Null if never checked
@@ -5661,6 +6148,13 @@ export interface paths {
                    * @enum {string}
                    */
                   pricingType: "Free";
+                }
+              | {
+                  /**
+                   * @description Pricing type for the agent. Amounts are provided per payment/purchase request
+                   * @enum {string}
+                   */
+                  pricingType: "Dynamic";
                 };
             /** @description Legal information about the agent */
             Legal?: {
@@ -6761,6 +7255,7 @@ export interface paths {
                     | "PAYMENT_ON_CHAIN_STATUS_CHANGED"
                     | "PURCHASE_ON_ERROR"
                     | "PAYMENT_ON_ERROR"
+                    | "WALLET_LOW_BALANCE"
                   )[];
                   name: string | null;
                   isActive: boolean;
@@ -6776,7 +7271,7 @@ export interface paths {
                   disabledAt: string | null;
                   CreatedBy: {
                     apiKeyId: string;
-                    apiKeyToken: string;
+                    apiKeyToken: string | null;
                   } | null;
                 }[];
               };
@@ -6828,6 +7323,7 @@ export interface paths {
               | "PAYMENT_ON_CHAIN_STATUS_CHANGED"
               | "PURCHASE_ON_ERROR"
               | "PAYMENT_ON_ERROR"
+              | "WALLET_LOW_BALANCE"
             )[];
             /** @description Human-readable name for the webhook */
             name?: string;
@@ -6853,6 +7349,7 @@ export interface paths {
                   | "PAYMENT_ON_CHAIN_STATUS_CHANGED"
                   | "PURCHASE_ON_ERROR"
                   | "PAYMENT_ON_ERROR"
+                  | "WALLET_LOW_BALANCE"
                 )[];
                 name: string | null;
                 isActive: boolean;
@@ -7237,10 +7734,16 @@ export interface components {
       /** @description The API key token */
       token: string;
       /**
-       * @description Permission level of the API key
+       * @description Permission level of the API key DEPRECATED (computed from flags for backward compatibility)
        * @enum {string}
        */
       permission: "Read" | "ReadAndPay" | "Admin";
+      /** @description Whether this API key can access read endpoints */
+      canRead: boolean;
+      /** @description Whether this API key can access payment/purchase endpoints */
+      canPay: boolean;
+      /** @description Whether this API key has admin access */
+      canAdmin: boolean;
       /** @description Whether the API key has usage limits */
       usageLimited: boolean;
       /** @description List of Cardano networks this API key is allowed to access */
@@ -7309,6 +7812,46 @@ export interface components {
       walletAddress: string;
       /** @description Collection address for this wallet. Null if not set */
       collectionAddress: string | null;
+      /** @description Aggregated low-balance state for this wallet */
+      LowBalanceSummary: {
+        /** @description Whether any enabled low-balance rule for this wallet is currently below threshold */
+        isLow: boolean;
+        /** @description How many enabled rules for this wallet are currently in low state */
+        lowRuleCount: number;
+        /**
+         * Format: date-time
+         * @description Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked
+         */
+        lastCheckedAt: string | null;
+      };
+      /** @description Configured low-balance rules for this wallet, including current deduped state */
+      LowBalanceRules: {
+        /** @description Unique identifier for the low-balance rule */
+        id: string;
+        /** @description Raw on-chain asset unit, for example lovelace or a full policy+asset identifier */
+        assetUnit: string;
+        /** @description Threshold in raw on-chain units used to determine low balance */
+        thresholdAmount: string;
+        /** @description Whether the rule is active */
+        enabled: boolean;
+        /**
+         * @description Current deduped state of the rule
+         * @enum {string}
+         */
+        status: "Unknown" | "Healthy" | "Low";
+        /** @description Last observed balance for this asset in raw on-chain units. Null if never checked */
+        lastKnownAmount: string | null;
+        /**
+         * Format: date-time
+         * @description Timestamp when the rule was last evaluated. Null if never checked
+         */
+        lastCheckedAt: string | null;
+        /**
+         * Format: date-time
+         * @description Timestamp when the wallet last entered low balance for this rule. Null if never alerted
+         */
+        lastAlertedAt: string | null;
+      }[];
     };
     GeneratedWalletSecret: {
       /** @description 24-word mnemonic phrase for the newly generated wallet. IMPORTANT: Backup this mnemonic securely */
@@ -7335,6 +7878,11 @@ export interface components {
       blockchainIdentifier: string;
       /** @description Identifier of the agent that is being paid */
       agentIdentifier: string | null;
+      /**
+       * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+       * @enum {string}
+       */
+      pricingType: "Fixed" | "Free" | "Dynamic";
       /**
        * Format: date-time
        * @description Timestamp when the payment was last checked on-chain. Null if never checked
@@ -7660,6 +8208,11 @@ export interface components {
       blockchainIdentifier: string;
       /** @description Identifier of the agent that is being purchased */
       agentIdentifier: string | null;
+      /**
+       * @description Pricing type of the agent (Fixed, Free, or Dynamic)
+       * @enum {string}
+       */
+      pricingType: "Fixed" | "Free" | "Dynamic";
       /**
        * Format: date-time
        * @description Timestamp when the purchase was last checked on-chain. Null if never checked
@@ -8009,7 +8562,7 @@ export interface components {
         AgentPricing:
           | {
               /**
-               * @description Pricing type for the agent (Fixed)
+               * @description Pricing type for the agent (Fixed or Free)
                * @enum {string}
                */
               pricingType: "Fixed";
@@ -8027,6 +8580,13 @@ export interface components {
                * @enum {string}
                */
               pricingType: "Free";
+            }
+          | {
+              /**
+               * @description Pricing type for the agent (Dynamic)
+               * @enum {string}
+               */
+              pricingType: "Dynamic";
             };
         /** @description URL to the agent image/logo */
         image: string;
@@ -8109,6 +8669,13 @@ export interface components {
                * @enum {string}
                */
               pricingType: "Free";
+            }
+          | {
+              /**
+               * @description Pricing type for the agent (Dynamic). Amounts are provided per payment/purchase request
+               * @enum {string}
+               */
+              pricingType: "Dynamic";
             };
         /** @description URL to the agent image/logo */
         image: string;
@@ -8217,6 +8784,13 @@ export interface components {
              * @enum {string}
              */
             pricingType: "Free";
+          }
+        | {
+            /**
+             * @description Pricing type for the agent. Amounts are provided per payment/purchase request
+             * @enum {string}
+             */
+            pricingType: "Dynamic";
           };
       /** @description Smart contract wallet managing this agent registration */
       SmartContractWallet: {
@@ -8308,6 +8882,18 @@ export interface components {
       collectionAddress: string | null;
       /** @description Optional note about this wallet. Null if not set */
       note: string | null;
+      /** @description Aggregated low-balance status for the wallet */
+      LowBalanceSummary: {
+        /** @description Whether any enabled low-balance rule for this wallet is currently below threshold */
+        isLow: boolean;
+        /** @description How many enabled rules for this wallet are currently in low state */
+        lowRuleCount: number;
+        /**
+         * Format: date-time
+         * @description Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked
+         */
+        lastCheckedAt: string | null;
+      };
     };
     SellingWallet: {
       /** @description Unique identifier for the selling wallet */
@@ -8320,6 +8906,18 @@ export interface components {
       collectionAddress: string | null;
       /** @description Optional note about this wallet. Null if not set */
       note: string | null;
+      /** @description Aggregated low-balance status for the wallet */
+      LowBalanceSummary: {
+        /** @description Whether any enabled low-balance rule for this wallet is currently below threshold */
+        isLow: boolean;
+        /** @description How many enabled rules for this wallet are currently in low state */
+        lowRuleCount: number;
+        /**
+         * Format: date-time
+         * @description Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked
+         */
+        lastCheckedAt: string | null;
+      };
     };
     PaymentSourceExtended: {
       /** @description Unique identifier for the payment source */
@@ -8381,6 +8979,18 @@ export interface components {
         collectionAddress: string | null;
         /** @description Optional note about this wallet. Null if not set */
         note: string | null;
+        /** @description Aggregated low-balance status for the wallet */
+        LowBalanceSummary: {
+          /** @description Whether any enabled low-balance rule for this wallet is currently below threshold */
+          isLow: boolean;
+          /** @description How many enabled rules for this wallet are currently in low state */
+          lowRuleCount: number;
+          /**
+           * Format: date-time
+           * @description Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked
+           */
+          lastCheckedAt: string | null;
+        };
       }[];
       /** @description List of wallets used for selling (seller side) */
       SellingWallets: {
@@ -8394,6 +9004,18 @@ export interface components {
         collectionAddress: string | null;
         /** @description Optional note about this wallet. Null if not set */
         note: string | null;
+        /** @description Aggregated low-balance status for the wallet */
+        LowBalanceSummary: {
+          /** @description Whether any enabled low-balance rule for this wallet is currently below threshold */
+          isLow: boolean;
+          /** @description How many enabled rules for this wallet are currently in low state */
+          lowRuleCount: number;
+          /**
+           * Format: date-time
+           * @description Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked
+           */
+          lastCheckedAt: string | null;
+        };
       }[];
       /** @description Wallet that receives network fees from transactions */
       FeeReceiverNetworkWallet: {

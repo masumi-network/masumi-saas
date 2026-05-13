@@ -1,11 +1,16 @@
-import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+
+import contract from "./route.contract";
 
 function mapItem(
   item: PaymentOrPurchaseItem,
@@ -39,48 +44,57 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, userId: user.id },
-      select: { agentIdentifier: true, networkIdentifier: true },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: "Agent not found" },
-        { status: 404 },
-      );
+      return contractJsonResponse(contract, "GET", 404, {
+        success: false,
+        error: "Agent not found",
+      });
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (!agent.agentIdentifier) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { transactions: [] },
       });
     }
 
-    const client = await getPaymentNodeClientForUser(user.id);
+    const client = await getPaymentNodeClientForUser(authContext.user.id);
     if (!client) {
-      return NextResponse.json({
-        success: true,
-        data: { transactions: [] },
-      });
-    }
-
-    const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(client, user.id);
-    if (!smartContractAddress) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { transactions: [] },
       });
     }
 
     const network = toNetwork(agent.networkIdentifier);
+
+    const smartContractAddress =
+      await getSmartContractAddressForConfiguredSource(
+        client,
+        authContext.user.id,
+        network,
+      );
+    if (!smartContractAddress) {
+      return contractJsonResponse(contract, "GET", 200, {
+        success: true,
+        data: { transactions: [] },
+      });
+    }
 
     const [paymentsRes, purchasesRes] = await Promise.all([
       client.listPayments({
@@ -115,17 +129,23 @@ export async function GET(
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: { transactions },
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return contractJsonResponse(contract, "GET", 503, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to get agent transactions:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load transactions" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to load transactions",
+    });
   }
 }

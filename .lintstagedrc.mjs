@@ -15,10 +15,20 @@ function toWebRelative(path) {
   return match ? match[1] : path.replace(/^.*?apps\/web\/?/, "");
 }
 
+/** Generator-owned files must not be touched by Prettier or ESLint autofix —
+ * both produce a different format from the generator script and cause
+ * `openapi:manifest:verify` to fail in CI. */
+function isGeneratedTsFile(f) {
+  const n = f.replace(/\\/g, "/");
+  return n.includes("/apps/web/src/lib/openapi/generated/");
+}
+
 function lintTs(filenames) {
-  const webFiles = filenames.filter(isWebFile);
-  const otherFiles = filenames.filter((f) => !isWebFile(f));
-  const commands = ["prettier --write " + filenames.join(" ")];
+  const files = filenames.filter((f) => !isGeneratedTsFile(f));
+  if (files.length === 0) return [];
+  const webFiles = files.filter(isWebFile);
+  const otherFiles = files.filter((f) => !isWebFile(f));
+  const commands = ["prettier --write " + files.join(" ")];
   if (webFiles.length) {
     const webPaths = webFiles.map(toWebRelative);
     commands.push(

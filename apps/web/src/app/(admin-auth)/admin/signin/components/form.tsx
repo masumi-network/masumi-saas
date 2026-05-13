@@ -1,5 +1,6 @@
 "use client";
 
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -64,9 +65,8 @@ export default function AdminSignInForm() {
         setIsLoading(false);
       }
     } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        // Next.js redirect - don't reset loading
-        return;
+      if (isRedirectError(error)) {
+        throw error;
       }
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
@@ -118,35 +118,35 @@ export default function AdminSignInForm() {
               <FormItem className="w-full">
                 <FormLabel className="sr-only">{t("password")}</FormLabel>
                 <FormControl>
-                  <div className="flex gap-4 items-center w-full">
-                    <Input
-                      type="password"
-                      placeholder={t("password")}
-                      autoComplete="current-password"
-                      className="flex-1 bg-background"
-                      {...field}
-                    />
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={isLoading}
-                      size="lg"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Spinner size={16} className="mr-2" />
-                          {t("submitting")}
-                        </>
-                      ) : (
-                        t("submit")
-                      )}
-                    </Button>
-                  </div>
+                  <Input
+                    type="password"
+                    placeholder={t("password")}
+                    autoComplete="current-password"
+                    className="bg-background"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isLoading}
+            size="lg"
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Spinner size={16} className="mr-2" />
+                {t("submitting")}
+              </>
+            ) : (
+              t("submit")
+            )}
+          </Button>
         </form>
       </Form>
     </div>

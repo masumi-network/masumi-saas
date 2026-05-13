@@ -1,6 +1,6 @@
 /**
  * Downloads the latest payment node OpenAPI JSON (default: production /api-docs).
- * Override URL: PAYMENT_NODE_OPENAPI_URL=https://localhost:3001/api-docs node scripts/...
+ * Override URL: PAYMENT_NODE_OPENAPI_URL=https://localhost:2999/api-docs node scripts/...
  */
 
 import fs from "node:fs";

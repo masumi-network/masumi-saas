@@ -2,6 +2,7 @@ import prisma from "@masumi/database/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { verifySumsubWebhookSignature } from "@/lib/sumsub";
 import { parseReviewResult } from "@/lib/sumsub/verification-utils";
 
@@ -34,6 +35,14 @@ type SumsubWebhookPayload = z.infer<typeof sumsubWebhookSchema>;
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!isKycVerificationEnabled()) {
+      return NextResponse.json({
+        success: true,
+        disabled: true,
+        message: "Sumsub verification is currently disabled.",
+      });
+    }
+
     const body = await request.text();
     const signature = request.headers.get("X-Payload-Digest");
     const timestamp = request.headers.get("X-Payload-Digest-Ts");

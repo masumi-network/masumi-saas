@@ -10,7 +10,7 @@ import { paymentNodeConfig } from "./config";
 export type PaymentNodeHealthResult = {
   ok: boolean;
   error?: string;
-  /** Env vars (BASE_URL, ADMIN_API_KEY, PAYMENT_SOURCE_ID) are missing */
+  /** Env vars (BASE_URL, ADMIN_API_KEY, PAYMENT_SOURCE_ID_PREPROD) are missing */
   configMissing?: boolean;
   /** Payment node did not respond (network error, timeout) */
   unreachable?: boolean;
@@ -19,6 +19,40 @@ export type PaymentNodeHealthResult = {
 };
 
 const NETWORK_FOR_CHECK: PaymentNodeNetwork = "Preprod";
+
+function normalizeUrl(value: string): URL | null {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function appOriginsForPaymentNodeChecks(): string[] {
+  const candidates = [
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ].filter((value): value is string => Boolean(value?.trim()));
+
+  return candidates
+    .map((value) => normalizeUrl(value))
+    .filter((value): value is URL => value !== null)
+    .map((value) => value.origin);
+}
+
+export function isSelfReferentialPaymentNodeBaseUrl(baseUrl: string): boolean {
+  const parsedBaseUrl = normalizeUrl(baseUrl);
+  if (!parsedBaseUrl) {
+    return false;
+  }
+
+  const normalizedPath = parsedBaseUrl.pathname.replace(/\/+$/, "");
+  if (normalizedPath !== "/api/v1") {
+    return false;
+  }
+
+  return appOriginsForPaymentNodeChecks().includes(parsedBaseUrl.origin);
+}
 
 /**
  * Validates that payment node env is set and optionally checks reachability and API key.
@@ -33,7 +67,7 @@ export async function checkPaymentNodeHealth(): Promise<PaymentNodeHealthResult>
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
-    paymentNodeConfig.getPaymentSourceId(); // ensure all required env is present
+    paymentNodeConfig.getPaymentSourceId(NETWORK_FOR_CHECK);
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Payment node config missing";
@@ -77,7 +111,7 @@ export function isPaymentNodeConfigured(): boolean {
   try {
     paymentNodeConfig.getBaseUrl();
     paymentNodeConfig.getAdminApiKey();
-    paymentNodeConfig.getPaymentSourceId();
+    paymentNodeConfig.getPaymentSourceId(NETWORK_FOR_CHECK);
     return true;
   } catch {
     return false;

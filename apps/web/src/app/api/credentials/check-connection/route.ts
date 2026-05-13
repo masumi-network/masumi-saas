@@ -1,17 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextRequest } from "next/server";
 
 import { apiError } from "@/lib/api/error";
+import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { checkContactExists } from "@/lib/veridian";
 
-const checkConnectionSchema = z.object({
-  aid: z.string().min(1, "AID is required"),
-});
+import contract, { checkConnectionSchema } from "./route.contract";
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedOrThrow(request);
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+        undefined,
+        { contract, method: "POST" },
+      );
+    }
+
+    const authContext = await getAuthenticatedOrThrow(request);
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "read",
+    });
 
     const body = await request.json().catch(() => ({}));
     const validation = checkConnectionSchema.safeParse(body);
@@ -21,6 +37,7 @@ export async function POST(request: NextRequest) {
         "Invalid request",
         400,
         validation.error.issues.map((issue) => issue.message),
+        { contract, method: "POST" },
       );
     }
 
@@ -28,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const exists = await checkContactExists(aid);
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "POST", 200, {
       success: true,
       data: { exists },
     });
@@ -39,6 +56,8 @@ export async function POST(request: NextRequest) {
     return apiError(
       error instanceof Error ? error.message : "Failed to check connection",
       500,
+      undefined,
+      { contract, method: "POST" },
     );
   }
 }

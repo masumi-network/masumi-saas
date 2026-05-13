@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Receipt } from "lucide-react";
+import { Activity as ActivityIcon, Receipt, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -224,7 +224,10 @@ export function ActivityFeedTableInner({
 
   if (!showInitialSkeleton && items.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-muted-surface/50 p-8 text-center">
+      <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <ActivityIcon className="h-6 w-6 text-muted-foreground" />
+        </div>
         <p className="text-sm text-muted-foreground">{t("noActivity")}</p>
       </div>
     );
@@ -232,7 +235,10 @@ export function ActivityFeedTableInner({
 
   if (!showInitialSkeleton && filteredItems.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-muted-surface/50 p-8 text-center">
+      <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Search className="h-6 w-6 text-muted-foreground" />
+        </div>
         <p className="text-sm text-muted-foreground">{t("noSearchResults")}</p>
       </div>
     );

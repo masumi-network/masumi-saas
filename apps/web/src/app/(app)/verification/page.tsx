@@ -4,16 +4,17 @@ import { getTranslations } from "next-intl/server";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthContextWithHeaders } from "@/lib/auth/utils";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 
 import { VerificationWizard } from "./components/verification-wizard";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("App.Verification.Intro");
+  const t = await getTranslations("App.Verification");
   return {
-    title: `Masumi - ${t("metaTitle")}`,
-    description: t("purpose"),
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
   };
 }
 
@@ -24,23 +25,26 @@ export default async function VerificationPage() {
     redirect("/signin");
   }
 
+  if (!isKycVerificationEnabled()) {
+    redirect("/");
+  }
+
   const result = await getKycStatusAction();
-
-  if (!result.success || !result.data) {
-    redirect("/");
-  }
-
-  const { kycStatus, kycCompletedAt, kycRejectionReason } = result.data;
-
-  if (kycStatus === "APPROVED") {
-    redirect("/");
-  }
+  const kycStatus = result.success
+    ? (result.data?.kycStatus ?? "PENDING")
+    : "PENDING";
+  const rejectionReason = result.success
+    ? (result.data?.kycRejectionReason ?? null)
+    : null;
+  const kycCompletedAt = result.success
+    ? (result.data?.kycCompletedAt ?? null)
+    : null;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full">
+    <div className="container py-8">
       <VerificationWizard
-        kycStatus={kycStatus as "PENDING" | "APPROVED" | "REJECTED" | "REVIEW"}
-        rejectionReason={kycRejectionReason}
+        kycStatus={kycStatus}
+        rejectionReason={rejectionReason}
         kycCompletedAt={kycCompletedAt}
       />
     </div>

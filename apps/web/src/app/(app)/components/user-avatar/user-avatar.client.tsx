@@ -6,6 +6,7 @@ import {
   Building2,
   Check,
   ChevronsUpDown,
+  Key,
   LogOut,
   MessageSquare,
   Plus,
@@ -72,6 +73,7 @@ export default function UserAvatarClient({
   sessionUser,
 }: UserAvatarClientProps) {
   const t = useTranslations("App.Header");
+  const tNav = useTranslations("App.Sidebar.MenuItems");
   const tCreate = useTranslations("App.Organizations.Create");
   const { showLogoutModal } = useGlobalModalsContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -159,8 +161,8 @@ export default function UserAvatarClient({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="relative h-8 w-8 rounded-full px-2 md:h-10 md:w-10 md:px-4"
+                  variant="ghost"
+                  className="relative h-auto min-h-14 w-full justify-start rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/20 px-2.5 py-2.5 text-left shadow-none transition-colors hover:bg-sidebar-accent/45 hover:border-sidebar-border group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:w-11 group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-sidebar-accent/30"
                   aria-label={`User profile for ${sessionUser.name ?? "current user"}`}
                 >
                   <UserAvatarContent
@@ -173,7 +175,17 @@ export default function UserAvatarClient({
                     }
                     imageAlt={sessionUser.name ?? "User avatar"}
                     fallbackName={sessionUser.name ?? sessionUser.email}
+                    className="!h-8 !w-8 md:!h-8 md:!w-8 text-xs"
                   />
+                  <span className="ml-2.5 min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                    <span className="block truncate text-sm font-semibold leading-tight text-sidebar-foreground">
+                      {sessionUser.name || sessionUser.email || "User"}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {sessionUser.email}
+                    </span>
+                  </span>
+                  <ChevronsUpDown className="ml-2 size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
@@ -183,7 +195,13 @@ export default function UserAvatarClient({
           </Tooltip>
         </TooltipProvider>
 
-        <DropdownMenuContent className="w-72" align="end" collisionPadding={8}>
+        <DropdownMenuContent
+          className="w-72"
+          align="start"
+          side="top"
+          sideOffset={8}
+          collisionPadding={8}
+        >
           {/* Workspace switcher - active workspace + popover trigger */}
           <DropdownMenuGroup>
             <Popover
@@ -326,6 +344,13 @@ export default function UserAvatarClient({
             >
               <Building2 className="text-muted-foreground" />
               {t("organizations")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2"
+              onClick={(e) => handleClick(e, "/api-keys")}
+            >
+              <Key className="text-muted-foreground" />
+              {tNav("apiKeys")}
             </DropdownMenuItem>
           </DropdownMenuGroup>
 

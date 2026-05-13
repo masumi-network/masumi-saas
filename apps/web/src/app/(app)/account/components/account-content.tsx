@@ -10,6 +10,10 @@ import type { Locale } from "@/i18n/config";
 import { auth } from "@/lib/auth/auth";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
+import {
+  ConnectedAppsSection,
+  type SerializedConnectedClient,
+} from "./connected-apps-section";
 import { DeleteAccountForm } from "./delete-account-form";
 import { EmailForm } from "./email-form";
 import { NameForm } from "./name-form";
@@ -36,12 +40,14 @@ interface AccountContentProps {
     email: string | null;
     emailVerified?: boolean;
   };
+  connectedClients: SerializedConnectedClient[];
   userProfileCard: React.ReactNode;
 }
 
 export function AccountContent({
   accounts,
   user: _user,
+  connectedClients,
   userProfileCard,
 }: AccountContentProps) {
   const t = useTranslations("App.Account");
@@ -52,7 +58,7 @@ export function AccountContent({
   );
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 animate-page-in">
       <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
         <div className="space-y-2 min-w-0">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
@@ -87,7 +93,9 @@ export function AccountContent({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <ConnectedAppsSection clients={connectedClients} />
+
+        <div className="flex flex-col gap-2 pt-8">
           <div className="flex items-center gap-4">
             <Separator className="flex-1" />
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">

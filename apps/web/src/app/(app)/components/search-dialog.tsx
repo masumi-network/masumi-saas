@@ -5,13 +5,16 @@ import {
   BookOpen,
   Bot,
   Building2,
+  CircleDollarSign,
   Code,
   ExternalLink,
   History,
+  Inbox,
   Key,
   LayoutDashboard,
   MessageSquare,
   Shield,
+  TrendingUp,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,11 +54,54 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { key: "dashboard", href: "/", icon: LayoutDashboard },
-  { key: "agents", href: "/ai-agents", icon: Bot },
-  { key: "activity", href: "/activity", icon: Activity },
-  { key: "organizations", href: "/organizations", icon: Building2 },
-  { key: "apiKeys", href: "/api-keys", icon: Key },
+  {
+    key: "dashboard",
+    href: "/",
+    icon: LayoutDashboard,
+    searchKeywords: ["home", "dashboard"],
+  },
+  {
+    key: "agents",
+    href: "/ai-agents",
+    icon: Bot,
+    searchKeywords: ["ai", "agents", "artificial intelligence"],
+  },
+  {
+    key: "inboxAgents",
+    href: "/inbox-agents",
+    icon: Inbox,
+    searchKeywords: ["inbox", "messages", "inboxes"],
+  },
+  {
+    key: "activity",
+    href: "/activity",
+    icon: Activity,
+    searchKeywords: ["activity", "history", "events", "transactions"],
+  },
+  {
+    key: "earnings",
+    href: "/earnings",
+    icon: TrendingUp,
+    searchKeywords: ["earnings", "revenue", "income", "money"],
+  },
+  {
+    key: "topUp",
+    href: "/top-up",
+    icon: CircleDollarSign,
+    searchKeywords: ["credits", "balance", "billing", "funds", "topup"],
+  },
+  {
+    key: "organizations",
+    href: "/organizations",
+    icon: Building2,
+    searchKeywords: ["organizations", "teams", "workspace"],
+  },
+  {
+    key: "apiKeys",
+    href: "/api-keys",
+    icon: Key,
+    searchKeywords: ["api", "keys", "token", "authentication"],
+  },
   {
     key: "developers",
     href: "/developers",
@@ -72,7 +118,12 @@ const navigationItems: NavigationItem[] = [
       "developers",
     ],
   },
-  { key: "account", href: "/account", icon: User },
+  {
+    key: "account",
+    href: "/account",
+    icon: User,
+    searchKeywords: ["account", "profile", "settings", "user"],
+  },
 ];
 
 const quickActions: NavigationItem[] = [
@@ -176,7 +227,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         <CommandEmpty>{t("noResults")}</CommandEmpty>
         {agentResults.length > 0 && (
           <>
-            <CommandGroup heading={t("agents")}>
+            <CommandGroup
+              heading={t("agents")}
+              className="animate-list-item-in"
+              style={{ animationDelay: "0ms" }}
+            >
               {agentResults.map((agent) => (
                 <CommandItem
                   key={agent.id}
@@ -195,7 +250,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             <CommandSeparator />
           </>
         )}
-        <CommandGroup heading={t("navigation")}>
+        <CommandGroup
+          heading={t("navigation")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "50ms" }}
+        >
           {navigationItems.map((item) => (
             <CommandItem
               key={item.key}
@@ -209,7 +268,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           ))}
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading={t("quickActions")}>
+        <CommandGroup
+          heading={t("quickActions")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "100ms" }}
+        >
           {quickActions.map((item) => (
             <CommandItem
               key={item.key}
@@ -222,7 +285,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           ))}
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading={t("links")}>
+        <CommandGroup
+          heading={t("links")}
+          className="animate-list-item-in"
+          style={{ animationDelay: "150ms" }}
+        >
           {externalLinks.map((item) => (
             <CommandItem
               key={item.key}

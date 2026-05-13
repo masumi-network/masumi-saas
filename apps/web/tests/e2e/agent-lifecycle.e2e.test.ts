@@ -4,8 +4,8 @@
  * Covers: register → complete-registration poll → verify state → deregister (when working)
  *
  * NOTE: Registration involves an async on-chain transaction. The test polls
- * complete-registration for up to 90s. Wallet funding depends on the Preprod
- * dispenser being available.
+ * complete-registration for up to 90s and depends on the payment source having
+ * a valid configured registration funding wallet.
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -52,7 +52,7 @@ describe("E2E — Agent Registration Flow", () => {
   it("complete-registration returns 202 while wallet is pending", async () => {
     const agentId = await getOrCreateAgent(jar);
     if (!agentId) {
-      console.warn("Skipping — dispenser unavailable");
+      console.warn("Skipping — registration funding wallet unavailable");
       return;
     }
     const res = await request(`/api/agents/${agentId}/complete-registration`, {
@@ -68,7 +68,7 @@ describe("E2E — Agent Registration Flow", () => {
   it("agent GET reflects state after registration attempt", async () => {
     const agentId = await getOrCreateAgent(jar);
     if (!agentId) {
-      console.warn("Skipping — dispenser unavailable");
+      console.warn("Skipping — registration funding wallet unavailable");
       return;
     }
     const res = await request(`/api/agents/${agentId}`, { jar });
@@ -87,7 +87,7 @@ describe("E2E — Agent Registration Flow", () => {
   it("full registration flow: create → poll until confirmed (up to 90s)", async () => {
     const agentId = await getOrCreateAgent(jar);
     if (!agentId) {
-      console.warn("Skipping — dispenser unavailable");
+      console.warn("Skipping — registration funding wallet unavailable");
       return;
     }
     const outcome = await pollCompleteRegistration(jar, agentId, 30, 3000);
@@ -103,9 +103,9 @@ describe("E2E — Agent Registration Flow", () => {
       expect(data.registrationState).toBe("RegistrationConfirmed");
       console.log(`✅ Agent ${agentId} confirmed on-chain`);
     } else {
-      // Dispenser might be slow — log but don't hard-fail
+      // Registration may still be pending on-chain — log but don't hard-fail
       console.warn(
-        `⏳ Agent ${agentId} still pending after polling — dispenser may be slow`,
+        `⏳ Agent ${agentId} still pending after polling — registration may still be confirming`,
       );
       expect(["RegistrationRequested", "RegistrationInitiated"]).toContain(
         data.registrationState,

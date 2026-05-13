@@ -19,6 +19,7 @@ export async function checkRateLimitOrRespond(
   request: NextRequest,
   keyPrefix: string,
   rateOptions?: RateLimitOptionsInput,
+  corsMethods?: readonly string[],
 ): Promise<
   { response: NextResponse } | { allowed: true; rl: RateLimitResult }
 > {
@@ -27,6 +28,22 @@ export async function checkRateLimitOrRespond(
     typeof rateOptions === "function" ? rateOptions(ip) : rateOptions;
   const rl = await checkRateLimit(`${keyPrefix}:${ip}`, resolved);
   if (!rl.allowed) {
+    if (rl.reason === "backend_unavailable") {
+      return {
+        response: addCorsHeaders(
+          NextResponse.json(
+            {
+              success: false,
+              error: "rate_limit_backend_unavailable",
+            },
+            { status: 503 },
+          ),
+          request,
+          corsMethods,
+        ),
+      };
+    }
+
     const res = NextResponse.json(
       {
         success: false,
@@ -40,7 +57,7 @@ export async function checkRateLimitOrRespond(
     );
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", "0");
-    return { response: addCorsHeaders(res, request) };
+    return { response: addCorsHeaders(res, request, corsMethods) };
   }
   return { allowed: true, rl };
 }

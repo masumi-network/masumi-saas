@@ -1,9 +1,15 @@
-import prisma from "@masumi/database/client";
-import { NextResponse } from "next/server";
-
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
+import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
+
+import contract from "./route.contract";
 
 /**
  * POST /api/agents/[agentId]/test-verification-endpoint
@@ -14,24 +20,41 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> },
 ) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+        undefined,
+        { contract, method: "POST" },
+      );
+    }
+
+    const authContext = await getAuthenticatedOrThrow(request);
     const { agentId } = await params;
 
-    const agent = await prisma.agent.findFirst({
-      where: {
-        id: agentId,
-        userId: user.id,
-      },
+    const agent = await getWalletOwnedAgentForUser({
+      userId: authContext.user.id,
+      agentId,
     });
 
     if (!agent) {
-      return apiError("Agent not found", 404);
+      return apiError("Agent not found", 404, undefined, {
+        contract,
+        method: "POST",
+      });
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     if (agent.registrationState !== "RegistrationConfirmed") {
       return apiError(
         `Agent must be registered. Current state: ${agent.registrationState}`,
         400,
+        undefined,
+        { contract, method: "POST" },
       );
     }
 
@@ -42,6 +65,8 @@ export async function POST(
       return apiError(
         "No verification challenge or secret. Generate one from the dialog first.",
         400,
+        undefined,
+        { contract, method: "POST" },
       );
     }
 
@@ -52,10 +77,13 @@ export async function POST(
     );
 
     if (!result.success) {
-      return apiError(result.error, 400);
+      return apiError(result.error, 400, undefined, {
+        contract,
+        method: "POST",
+      });
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "POST", 200, {
       success: true,
       data: { message: "Endpoint is working correctly." },
     });
@@ -68,6 +96,8 @@ export async function POST(
         ? error.message
         : "Failed to test verification endpoint",
       500,
+      undefined,
+      { contract, method: "POST" },
     );
   }
 }

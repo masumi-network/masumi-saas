@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import {
   checkPaymentNodeLiveness,
   isPaymentNodeConfigured,
 } from "@/lib/payment-node/health";
+
+import contract from "./route.contract";
 
 function parsePositiveEnvInt(
   raw: string | undefined,
@@ -67,33 +70,27 @@ export async function GET(request: NextRequest) {
   const configured = isPaymentNodeConfigured();
 
   if (!configured) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: publicHealthPaymentNodeMessage(
-          "Payment node is not configured (required for this deployment)",
-        ),
-        data: { status: "degraded", paymentNode: { ok: false } },
-      },
-      { status: 503 },
-    );
+    return contractJsonResponse(contract, "GET", 503, {
+      success: false,
+      error: publicHealthPaymentNodeMessage(
+        "Payment node is not configured (required for this deployment)",
+      ),
+      data: { status: "degraded", paymentNode: { ok: false } },
+    });
   }
 
   const result = await checkPaymentNodeLiveness();
   if (!result.ok) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: publicHealthPaymentNodeMessage(
-          result.error ?? "Payment node unhealthy",
-        ),
-        data: { status: "degraded", paymentNode: { ok: false } },
-      },
-      { status: 503 },
-    );
+    return contractJsonResponse(contract, "GET", 503, {
+      success: false,
+      error: publicHealthPaymentNodeMessage(
+        result.error ?? "Payment node unhealthy",
+      ),
+      data: { status: "degraded", paymentNode: { ok: false } },
+    });
   }
 
-  return NextResponse.json({
+  return contractJsonResponse(contract, "GET", 200, {
     success: true,
     data: {
       status: "ok",

@@ -1,18 +1,36 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { apiError } from "@/lib/api/error";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import {
+  isAgentVerificationFlowEnabled,
+  verificationFeatureCopy,
+} from "@/lib/config/verification.config";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
 } from "@/lib/veridian";
 
+import contract from "./route.contract";
+
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request);
+    if (!isAgentVerificationFlowEnabled()) {
+      return apiError(
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
+        503,
+        undefined,
+        { contract, method: "GET" },
+      );
+    }
+
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user } = authContext;
 
     const queryResult = credentialReconcileQuerySchema.safeParse({
       agentId: request.nextUrl.searchParams.get("agentId"),
@@ -22,6 +40,8 @@ export async function GET(request: NextRequest) {
         queryResult.error.issues.map((i) => i.message).join("; ") ||
           "Invalid query",
         400,
+        undefined,
+        { contract, method: "GET" },
       );
     }
     const { agentId } = queryResult.data;
@@ -29,19 +49,27 @@ export async function GET(request: NextRequest) {
     // Verify the agent belongs to this user
     const agent = await prisma.agent.findFirst({
       where: { id: agentId, userId: user.id },
-      select: { id: true, agentIdentifier: true },
+      select: { id: true, agentIdentifier: true, networkIdentifier: true },
     });
 
     if (!agent) {
-      return apiError("Agent not found", 404);
+      return apiError("Agent not found", 404, undefined, {
+        contract,
+        method: "GET",
+      });
     }
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "credentials",
+      action: "write",
+      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+    });
 
     const pendingCredentials = await prisma.veridianCredential.findMany({
       where: { agentId, userId: user.id, status: "PENDING" },
     });
 
     if (pendingCredentials.length === 0) {
-      return NextResponse.json({
+      return contractJsonResponse(contract, "GET", 200, {
         success: true,
         data: { resolved: false },
       });
@@ -101,7 +129,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
       data: { resolved },
     });
@@ -114,6 +142,8 @@ export async function GET(request: NextRequest) {
         ? `Failed to reconcile credentials: ${error.message}`
         : "Failed to reconcile credentials",
       500,
+      undefined,
+      { contract, method: "GET" },
     );
   }
 }

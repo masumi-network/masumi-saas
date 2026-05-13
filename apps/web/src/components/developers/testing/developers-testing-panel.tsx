@@ -1,19 +1,15 @@
 "use client";
 
-import { ArrowRightLeft, CreditCard, ShoppingCart } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { FullPaymentCycleDialog } from "@/components/developers/testing/full-payment-cycle-dialog";
 import { TestPaymentDialog } from "@/components/developers/testing/test-payment-dialog";
-import { TestPurchaseDialog } from "@/components/developers/testing/test-purchase-dialog";
 import { usePaidAgentsForTesting } from "@/components/developers/testing/use-paid-agents-for-testing";
 
 export function DevelopersTestingPanel() {
   const t = useTranslations("Developers.testing");
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [purchaseOpen, setPurchaseOpen] = useState(false);
-  const [fullCycleOpen, setFullCycleOpen] = useState(false);
   const { agents, isLoading, error } = usePaidAgentsForTesting();
 
   return (
@@ -24,7 +20,7 @@ export function DevelopersTestingPanel() {
             {error}
           </p>
         ) : null}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-1">
           <button
             type="button"
             onClick={() => setPaymentOpen(true)}
@@ -41,58 +37,12 @@ export function DevelopersTestingPanel() {
               {t("cards.testPayment.description")}
             </p>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setPurchaseOpen(true)}
-            className="group border rounded-lg p-6 text-left transition-all duration-200 hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] animate-fade-in-up opacity-0"
-            style={{ animationDelay: "75ms" }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors duration-200">
-                <ShoppingCart className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
-              </div>
-              <h2 className="font-medium">{t("cards.testPurchase.title")}</h2>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("cards.testPurchase.description")}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFullCycleOpen(true)}
-            className="group border rounded-lg p-6 text-left transition-all duration-200 hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] animate-fade-in-up opacity-0"
-            style={{ animationDelay: "150ms" }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors duration-200">
-                <ArrowRightLeft className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
-              </div>
-              <h2 className="font-medium">{t("cards.fullCycle.title")}</h2>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("cards.fullCycle.description")}
-            </p>
-          </button>
         </div>
       </div>
 
       <TestPaymentDialog
         open={paymentOpen}
         onClose={() => setPaymentOpen(false)}
-        paidAgents={agents}
-        isLoadingAgents={isLoading}
-      />
-      <TestPurchaseDialog
-        open={purchaseOpen}
-        onClose={() => setPurchaseOpen(false)}
-        paidAgents={agents}
-        isLoadingAgents={isLoading}
-      />
-      <FullPaymentCycleDialog
-        open={fullCycleOpen}
-        onClose={() => setFullCycleOpen(false)}
         paidAgents={agents}
         isLoadingAgents={isLoading}
       />

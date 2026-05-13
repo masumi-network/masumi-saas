@@ -14,15 +14,27 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
-import type { PaymentSourceWallet } from "@/lib/payment-node/client";
+import type {
+  PaymentSourceInfo,
+  PaymentSourceWallet,
+} from "@/lib/payment-node/client";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { USDM } from "@/lib/payment-node/tokens";
+import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
+
+import {
+  isWalletAddressCompatibleWithNetwork,
+  resolveRegistrationFundingWallet,
+} from "./payment-node/registration-wallets";
 
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const REGISTER_AGENT_HTTP_TIMEOUT_MS = 60_000;
 const REGISTER_AGENT_RETRY_COOLDOWN_MS = 2 * 60_000;
+const PAYMENT_SOURCE_PAGE_SIZE = 100;
+const MAX_PAYMENT_SOURCE_PAGES = 10;
 
 export type AgentPricing =
   | { pricingType: "Free" }
@@ -65,6 +77,9 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
+  fundingWalletId?: string;
+  fundingWalletVkey?: string;
+  fundingWalletAddress?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
   lastRegisterAttemptAt?: string;
@@ -83,15 +98,6 @@ type RegistrationPayloadStored = {
   };
 };
 
-function isWalletAddressCompatibleWithNetwork(
-  address: string,
-  network: PaymentNodeNetwork,
-): boolean {
-  if (network === "Preprod") return address.startsWith("addr_test");
-  if (network === "Mainnet") return address.startsWith("addr1");
-  return true;
-}
-
 function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   if (!lastRegisterAttemptAt) return false;
   const ms = Date.parse(lastRegisterAttemptAt);
@@ -99,24 +105,100 @@ function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   return Date.now() - ms < REGISTER_AGENT_RETRY_COOLDOWN_MS;
 }
 
+export function shouldCheckRecipientWalletForRegisteredAssets(
+  lastRegisterAttemptAt?: string,
+): boolean {
+  if (!lastRegisterAttemptAt) return false;
+  return !Number.isNaN(Date.parse(lastRegisterAttemptAt));
+}
+
+function shouldTreatWalletRegistryLookupAsPending(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.startsWith("404: asset not found") ||
+    normalized.startsWith("404: stake address not found") ||
+    normalized.includes("requested component has not been found")
+  );
+}
+
+async function getConfiguredPaymentSource(
+  client: ReturnType<typeof createPaymentNodeClient>,
+  paymentSourceId: string,
+): Promise<PaymentSourceInfo | null> {
+  let cursorId: string | undefined;
+
+  for (let page = 0; page < MAX_PAYMENT_SOURCE_PAGES; page += 1) {
+    const result = await client.getPaymentSources({
+      take: PAYMENT_SOURCE_PAGE_SIZE,
+      cursorId,
+    });
+    const match =
+      result.PaymentSources.find((source) => source.id === paymentSourceId) ??
+      null;
+    if (match) return match;
+
+    if (result.PaymentSources.length < PAYMENT_SOURCE_PAGE_SIZE) {
+      break;
+    }
+
+    const nextCursor = result.PaymentSources.at(-1)?.id;
+    if (!nextCursor || nextCursor === cursorId) {
+      break;
+    }
+    cursorId = nextCursor;
+  }
+
+  return null;
+}
+
+function getPaymentSourceMismatchError(params: {
+  paymentSourceId: string;
+  expectedNetwork: PaymentNodeNetwork;
+  actualNetwork: PaymentNodeNetwork;
+}): string {
+  return `Configured payment source ${params.paymentSourceId} is on ${params.actualNetwork}, but agent registration is using ${params.expectedNetwork}. Update ${paymentNodeConfig.getPaymentSourceIdEnvName(params.expectedNetwork)} to a ${params.expectedNetwork} payment source.`;
+}
+
+function validateRegistrationFundingWalletNetwork(params: {
+  fundingWallet: PaymentSourceWallet;
+  network: PaymentNodeNetwork;
+}): string | null {
+  if (
+    isWalletAddressCompatibleWithNetwork(
+      params.fundingWallet.walletAddress,
+      params.network,
+    )
+  ) {
+    return null;
+  }
+
+  console.error(
+    "[Payment Node] Registration funding wallet network mismatch:",
+    {
+      walletAddress: params.fundingWallet.walletAddress,
+      expectedNetwork: params.network,
+    },
+  );
+  return `Configured registration funding wallet address does not match ${params.network}. Please verify ${params.network} payment-node wallet configuration and try again.`;
+}
+
 /**
- * Fast path: create agent, wallets, ref, fund via dispenser; return agentId immediately.
- * Completion (UTXO wait + registerAgent) is done by POST /api/agents/:id/complete-registration (client or background).
+ * Fast path: create agent wallet, ref, and persist funding-wallet context; return agentId immediately.
+ * Completion (registerAgent + confirmation polling) is done by POST /api/agents/:id/complete-registration.
  */
 export async function startAgentRegistration(
   ctx: RegisterAgentContext,
   params: RegisterAgentParams,
 ): Promise<StartAgentRegistrationResult> {
-  const result = await registerAgentOnChainUntilDispenser(ctx, params);
+  const result = await registerAgentOnChainUntilSetup(ctx, params);
   if (!result.success) return result;
   return { success: true, agentId: result.agentId };
 }
 
 /**
- * Internal: does validation, wallets, dispenser, agent + ref creation; returns agentId for either
- * full flow (then continues) or fast path (caller returns 202).
+ * Internal: does validation, wallet setup, funding-wallet resolution, agent + ref creation; returns agentId.
  */
-async function registerAgentOnChainUntilDispenser(
+async function registerAgentOnChainUntilSetup(
   ctx: RegisterAgentContext,
   params: RegisterAgentParams,
 ): Promise<
@@ -139,11 +221,16 @@ async function registerAgentOnChainUntilDispenser(
   let baseUrl: string;
   let adminKey: string;
   let paymentSourceId: string;
+  const paymentSourceEnvName =
+    paymentNodeConfig.getPaymentSourceIdEnvName(network);
   try {
     baseUrl = paymentNodeConfig.getBaseUrl();
     adminKey = paymentNodeConfig.getAdminApiKey();
-    paymentSourceId = paymentNodeConfig.getPaymentSourceId();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
   } catch (e) {
+    if (isPaymentNodeConfigError(e) && e.envName === paymentSourceEnvName) {
+      throw e;
+    }
     console.error("Payment node config missing:", e);
     return {
       success: false,
@@ -151,34 +238,67 @@ async function registerAgentOnChainUntilDispenser(
     };
   }
 
-  if (network === "Mainnet") {
+  const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+
+  const configuredPaymentSource = await getConfiguredPaymentSource(
+    adminClient,
+    paymentSourceId,
+  );
+  if (!configuredPaymentSource) {
     return {
       success: false,
-      error:
-        "Agent registration on Mainnet is not available yet. Please use Preprod for now.",
+      error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
     };
   }
 
-  const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+  if (
+    configuredPaymentSource.network &&
+    configuredPaymentSource.network !== network
+  ) {
+    console.error("[Payment Node] Payment source network mismatch:", {
+      paymentSourceId,
+      expectedNetwork: network,
+      actualNetwork: configuredPaymentSource.network,
+    });
+    return {
+      success: false,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: configuredPaymentSource.network,
+      }),
+    };
+  }
 
-  const [sellingWallet, buyingWallet] = await Promise.all([
-    adminClient.generateWallet(network),
-    adminClient.generateWallet(network),
-  ]);
+  const fundingWalletResult = resolveRegistrationFundingWallet({
+    network,
+    paymentSourceId,
+    sellingWallets: configuredPaymentSource.SellingWallets,
+  });
+  if (!fundingWalletResult.wallet) {
+    return {
+      success: false,
+      error:
+        fundingWalletResult.error ??
+        "No registration funding wallet is available for agent registration.",
+    };
+  }
 
+  const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
+    fundingWallet: fundingWalletResult.wallet,
+    network,
+  });
+  if (fundingWalletNetworkError) {
+    return { success: false, error: fundingWalletNetworkError };
+  }
+
+  const sellingWallet = await adminClient.generateWallet(network);
   const paymentSource = await adminClient.addWalletsToPaymentSource({
     paymentSourceId,
     AddSellingWallets: [
       {
         walletMnemonic: sellingWallet.walletMnemonic,
         note: `Agent: ${params.name} (selling)`,
-        collectionAddress: null,
-      },
-    ],
-    AddPurchasingWallets: [
-      {
-        walletMnemonic: buyingWallet.walletMnemonic,
-        note: `Agent: ${params.name} (buying)`,
         collectionAddress: null,
       },
     ],
@@ -192,7 +312,11 @@ async function registerAgentOnChainUntilDispenser(
     });
     return {
       success: false,
-      error: `Configured payment source ${paymentSourceId} is on ${paymentSource.network}, but agent registration is using ${network}. Update PAYMENT_NODE_PAYMENT_SOURCE_ID to a ${network} payment source.`,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: paymentSource.network,
+      }),
     };
   }
 
@@ -213,53 +337,37 @@ async function registerAgentOnChainUntilDispenser(
     paymentSource.SellingWallets.find(
       (w: PaymentSourceWallet) => w.walletVkey === sellingWallet.walletVkey,
     )?.id ?? null;
-
-  if (network === "Preprod") {
-    const DISPENSER_TIMEOUT_MS = 15_000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      DISPENSER_TIMEOUT_MS,
+  if (!sellingWalletId) {
+    console.error(
+      "[Payment Node] Could not resolve managed selling wallet ID:",
+      {
+        walletVkey: sellingWallet.walletVkey,
+        paymentSourceId,
+      },
     );
-    try {
-      const res = await fetch(
-        "https://dispenser.masumi.network/submit_transaction",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            network: "testnet",
-            receiverAddress: sellingWallet.walletAddress,
-            lovelaceAmount: 10_000_000,
-            assetAmount: 1_000_000,
-            testnet_collateral: false,
-          }),
-          signal: controller.signal,
-        },
-      );
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.warn("[Dispenser] Non-OK response:", res.status, text);
-        return {
-          success: false,
-          error:
-            "Wallet funding request failed. The dispenser may be unavailable — please try again.",
-        };
-      }
-    } catch (dispenserErr) {
-      clearTimeout(timeoutId);
-      const msg =
-        dispenserErr instanceof Error
-          ? dispenserErr.message
-          : String(dispenserErr);
-      console.warn("[Dispenser] Failed to fund selling wallet:", msg);
-      return {
-        success: false,
-        error:
-          "Could not reach the wallet dispenser. Please try again in a moment.",
-      };
-    }
+    return {
+      success: false,
+      error:
+        "Could not attach the new agent wallet to your payment permissions. Please try again.",
+    };
+  }
+
+  try {
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: user.id,
+      walletIds: [sellingWalletId],
+    });
+  } catch (error) {
+    console.error("[Payment Node] Failed to scope user key for agent wallet:", {
+      userId: user.id,
+      sellingWalletId,
+      error,
+    });
+    return {
+      success: false,
+      error:
+        "Could not update the payment permissions for the new agent wallet. Please try again.",
+    };
   }
 
   const agentMetadata: Record<string, unknown> = {
@@ -320,13 +428,18 @@ async function registerAgentOnChainUntilDispenser(
       agentId: agent.id,
       sellingWalletVkey: sellingWallet.walletVkey,
       sellingWalletId,
-      buyingWalletVkey: buyingWallet.walletVkey,
       networkIdentifier: network,
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
-        ...(paymentSource.smartContractAddress && {
-          smartContractAddress: paymentSource.smartContractAddress,
+        fundingWalletId: fundingWalletResult.wallet.id,
+        fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
+        fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
+        ...((paymentSource.smartContractAddress ||
+          configuredPaymentSource.smartContractAddress) && {
+          smartContractAddress:
+            paymentSource.smartContractAddress ??
+            configuredPaymentSource.smartContractAddress,
         }),
         registrationPayload,
       },
@@ -339,7 +452,7 @@ async function registerAgentOnChainUntilDispenser(
 }
 
 /**
- * Complete on-chain registration for an agent that is in WALLET_FUNDING_PENDING.
+ * Complete on-chain registration for an agent that is waiting on registry submission or confirmation.
  * Caller must ensure the agent belongs to userId (e.g. from getAuthenticatedOrThrow).
  */
 export async function completeOnChainRegistration(
@@ -431,19 +544,62 @@ export async function completeOnChainRegistration(
   if (!userClient) {
     return { status: "error", error: "Payment node unavailable" };
   }
-  const sellingWalletVkey = ref.sellingWalletVkey;
-  if (!sellingWalletVkey) {
+  const recipientWalletVkey = ref.sellingWalletVkey;
+  if (!recipientWalletVkey) {
     return { status: "error", error: "Missing wallet key" };
   }
+  let adminClient: ReturnType<typeof createPaymentNodeClient>;
+  let fundingWalletVkey =
+    typeof meta.fundingWalletVkey === "string"
+      ? meta.fundingWalletVkey.trim()
+      : "";
+  let paymentSourceId: string | null = null;
   try {
-    const { Utxos } = await userClient.getUtxos({ address, network });
-    if (Utxos.length === 0) {
-      return { status: "pending" };
+    adminClient = createPaymentNodeClient(
+      paymentNodeConfig.getBaseUrl(),
+      paymentNodeConfig.getAdminApiKey(),
+    );
+    if (!fundingWalletVkey) {
+      paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
     }
-  } catch (utxoErr) {
-    const msg = utxoErr instanceof Error ? utxoErr.message : String(utxoErr);
-    if (msg.startsWith("404")) return { status: "pending" };
-    return { status: "error", error: msg };
+  } catch (error) {
+    if (isPaymentNodeConfigError(error)) {
+      return { status: "error", error: error.message };
+    }
+    throw error;
+  }
+  if (!fundingWalletVkey) {
+    const configuredPaymentSource = await getConfiguredPaymentSource(
+      adminClient,
+      paymentSourceId!,
+    );
+    if (!configuredPaymentSource) {
+      return {
+        status: "error",
+        error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+      };
+    }
+    const fundingWalletResult = resolveRegistrationFundingWallet({
+      network,
+      paymentSourceId: paymentSourceId!,
+      sellingWallets: configuredPaymentSource.SellingWallets,
+    });
+    if (!fundingWalletResult.wallet) {
+      return {
+        status: "error",
+        error:
+          fundingWalletResult.error ??
+          "No registration funding wallet is available for agent registration.",
+      };
+    }
+    const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
+      fundingWallet: fundingWalletResult.wallet,
+      network,
+    });
+    if (fundingWalletNetworkError) {
+      return { status: "error", error: fundingWalletNetworkError };
+    }
+    fundingWalletVkey = fundingWalletResult.wallet.walletVkey;
   }
 
   const updatedAgent = await prisma.$transaction(async (tx) => {
@@ -459,11 +615,31 @@ export async function completeOnChainRegistration(
     }
     const existingMeta = (ref.metadata as Record<string, unknown> | null) ?? {};
 
-    const { Assets: walletAssets } =
-      await userClient.getRegisteredAgentsByWallet({
-        walletVkey: sellingWalletVkey,
-        network,
-      });
+    let walletAssets: Awaited<
+      ReturnType<typeof userClient.getRegisteredAgentsByWallet>
+    >["Assets"] = [];
+    const shouldCheckWalletAssets =
+      shouldCheckRecipientWalletForRegisteredAssets(
+        typeof meta.lastRegisterAttemptAt === "string"
+          ? meta.lastRegisterAttemptAt
+          : undefined,
+      );
+    if (shouldCheckWalletAssets) {
+      try {
+        const response = await userClient.getRegisteredAgentsByWallet({
+          walletVkey: recipientWalletVkey,
+          network,
+        });
+        walletAssets = response.Assets;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (shouldTreatWalletRegistryLookupAsPending(message)) {
+          walletAssets = [];
+        } else {
+          throw error;
+        }
+      }
+    }
     const walletMatch =
       walletAssets.find(
         (asset) => asset.Metadata.apiBaseUrl === agent.apiUrl,
@@ -513,9 +689,10 @@ export async function completeOnChainRegistration(
       return { agent: existing, eventType: null, pending: true };
     }
 
-    const registerPromise = userClient.registerAgent({
+    const registerPromise = adminClient.registerAgent({
       network,
-      sellingWalletVkey,
+      sellingWalletVkey: fundingWalletVkey,
+      recipientWalletAddress: address,
       name: agent.name,
       apiBaseUrl: agent.apiUrl,
       description: agent.description?.trim() ?? "",
@@ -560,6 +737,9 @@ export async function completeOnChainRegistration(
           externalId: registryEntry.id,
           metadata: {
             ...existingMeta,
+            ...(typeof existingMeta.fundingWalletVkey !== "string" && {
+              fundingWalletVkey,
+            }),
             ...(registryEntry.agentIdentifier && {
               agentIdentifier: registryEntry.agentIdentifier,
             }),
@@ -589,7 +769,7 @@ export async function completeOnChainRegistration(
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes("Network and Address combination not supported")) {
         throw new Error(
-          `Payment source and wallet network mismatch. Registration is using ${network}. Check that PAYMENT_NODE_PAYMENT_SOURCE_ID points to a ${network} payment source.`,
+          `Payment source and wallet network mismatch. Registration is using ${network}. Check that ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} points to a ${network} payment source.`,
         );
       }
       if (message.includes("Registration request timed out")) {
@@ -598,6 +778,9 @@ export async function completeOnChainRegistration(
           data: {
             metadata: {
               ...existingMeta,
+              ...(typeof existingMeta.fundingWalletVkey !== "string" && {
+                fundingWalletVkey,
+              }),
               lastRegisterAttemptAt: new Date().toISOString(),
             },
           },

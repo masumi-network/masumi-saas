@@ -1,94 +1,112 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
+import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import type { MagicLinkSignUpInput, SignUpInput } from "@/lib/schemas";
+
+import { MagicLinkCodePanel } from "../../components/magic-link-code-panel";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { signUpAction } from "@/lib/actions/auth.action";
-import { zodResolver } from "@/lib/form-zod-resolver";
-import { type SignUpInput, signUpSchema } from "@/lib/schemas";
+  SignupMagicLinkForm,
+  type SignupMagicLinkFormHandle,
+} from "./signup-magic-link-form";
+import {
+  SignupPasswordForm,
+  type SignupPasswordFormHandle,
+} from "./signup-password-form";
 
 interface SignUpFormProps {
   oauthProviders?: ("google" | "github" | "microsoft")[];
+  callbackUrl?: string;
 }
 
-export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
+export default function SignUpForm({
+  oauthProviders = [],
+  callbackUrl,
+}: SignUpFormProps) {
   const t = useTranslations("Auth.SignUp");
-  const tErrors = useTranslations("Auth.Errors");
-  const tResults = useTranslations("Auth.Results");
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
+  const isOidcFlow =
+    safeCallbackUrl?.startsWith("/api/auth/oauth2/authorize") ?? false;
+  const [usePassword, setUsePassword] = useState(false);
+  const [magicLinkEmail, setMagicLinkEmail] = useState<string | null>(null);
+  const [seedPassword, setSeedPassword] = useState<Partial<SignUpInput> | null>(
+    null,
+  );
+  const [seedMagic, setSeedMagic] =
+    useState<Partial<MagicLinkSignUpInput> | null>(null);
+  const [magicFormKey, setMagicFormKey] = useState(0);
 
-  const form = useForm<SignUpInput>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      termsAccepted: false,
-    },
-  });
+  const passwordRef = useRef<SignupPasswordFormHandle>(null);
+  const magicRef = useRef<SignupMagicLinkFormHandle>(null);
 
-  const termsAccepted = useWatch({
-    control: form.control,
-    name: "termsAccepted",
-  });
+  function showPasswordFields() {
+    const v = magicRef.current?.getValues();
+    setSeedPassword(
+      v
+        ? { name: v.name, email: v.email, termsAccepted: v.termsAccepted }
+        : null,
+    );
+    setUsePassword(true);
+  }
 
-  async function onSubmit(data: SignUpInput) {
-    setIsLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("email", data.email);
-      formData.append("password", data.password);
-      formData.append("confirmPassword", data.confirmPassword);
-      formData.append("termsAccepted", data.termsAccepted ? "true" : "false");
+  function hidePasswordFields() {
+    const v = passwordRef.current?.getValues();
+    setSeedMagic(
+      v
+        ? { name: v.name, email: v.email, termsAccepted: v.termsAccepted }
+        : null,
+    );
+    setUsePassword(false);
+  }
 
-      const result = await signUpAction(formData);
+  if (magicLinkEmail) {
+    return (
+      <div className="w-full max-w-form space-y-6 animate-page-in">
+        <div className="text-center">
+          <h1 className="text-4xl font-light tracking-tight mb-4">
+            {t("checkEmail.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
+            {t(
+              isOidcFlow
+                ? "checkEmail.oidcDescription"
+                : "checkEmail.description",
+              { email: magicLinkEmail },
+            )}
+          </p>
+        </div>
 
-      if (result?.error) {
-        const errorMessage = result.errorKey
-          ? tErrors(result.errorKey)
-          : result.error;
-        toast.error(errorMessage);
-        setIsLoading(false);
-      } else if (result?.success) {
-        const successMessage = result.resultKey
-          ? tResults(result.resultKey)
-          : t("success");
-        toast.success(successMessage);
-        router.push("/");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        return;
-      }
-      toast.error(
-        error instanceof Error ? error.message : "An unexpected error occurred",
-      );
-      setIsLoading(false);
-    }
+        <MagicLinkCodePanel
+          email={magicLinkEmail}
+          callbackUrl={safeCallbackUrl}
+        />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setMagicLinkEmail(null);
+              setUsePassword(false);
+              setSeedMagic(null);
+              setMagicFormKey((k) => k + 1);
+            }}
+          >
+            {t("checkEmail.tryAnother")}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
+    <div className="w-full max-w-form space-y-6 animate-page-in">
       <div className="text-center">
         <h1 className="text-4xl font-light tracking-tight mb-4">
           {t("title")}
@@ -99,151 +117,49 @@ export default function SignUpForm({ oauthProviders = [] }: SignUpFormProps) {
       </div>
 
       {oauthProviders.length > 0 && (
-        <SocialAuthButtons providers={oauthProviders} />
+        <SocialAuthButtons
+          providers={oauthProviders}
+          callbackURL={safeCallbackUrl}
+        />
       )}
 
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col items-center gap-2 w-full"
+      {usePassword ? (
+        <SignupPasswordForm
+          ref={passwordRef}
+          seedFromMagicLink={seedPassword}
+          safeCallbackUrl={safeCallbackUrl}
+        />
+      ) : (
+        <SignupMagicLinkForm
+          key={magicFormKey}
+          ref={magicRef}
+          seedFromPassword={seedMagic}
+          safeCallbackUrl={safeCallbackUrl}
+          onMagicLinkSent={(email) => setMagicLinkEmail(email)}
+        />
+      )}
+
+      <div className="flex flex-col gap-3 w-full">
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto justify-start px-0"
+          onClick={usePassword ? hidePasswordFields : showPasswordFields}
         >
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">{t("name")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    placeholder={t("name")}
-                    autoComplete="name"
-                    className="bg-background"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {usePassword ? t("useMagicLink") : t("usePassword")}
+        </Button>
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">{t("email")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder={t("email")}
-                    autoComplete="email"
-                    className="bg-background"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">{t("password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t("password")}
-                    autoComplete="new-password"
-                    className="bg-background"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel className="sr-only">
-                  {t("confirmPassword")}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t("confirmPassword")}
-                    autoComplete="new-password"
-                    className="bg-background"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="termsAccepted"
-            render={({ field }) => (
-              <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-normal">
-                    {t("termsAccepted")}{" "}
-                    <Link
-                      href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
-                      target="_blank"
-                      className="underline hover:text-foreground"
-                    >
-                      {t("privacyPolicy")}
-                    </Link>
-                  </FormLabel>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="flex gap-4 items-center w-full mt-4">
-            <Button
-              type="submit"
-              variant="primary"
-              className="flex-1"
-              disabled={isLoading || !termsAccepted}
-              size="lg"
-            >
-              {isLoading ? (
-                <>
-                  <Spinner size={16} className="mr-2" />
-                  {t("submitting")}
-                </>
-              ) : (
-                t("submit")
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-
-      <p className="text-center text-sm text-muted-foreground">
-        {t("hasAccount")}{" "}
-        <Link href="/signin" className="underline hover:text-foreground">
-          {t("login")}
-        </Link>
-      </p>
+        <p className="text-center text-sm text-muted-foreground">
+          {t("hasAccount")}{" "}
+          <Link
+            href={buildAuthPageHref("/signin", safeCallbackUrl)}
+            className="underline hover:text-foreground"
+          >
+            {t("login")}
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export default async function OrganizationsPage() {
   const organizations = result.success ? result.data : [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-page-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>

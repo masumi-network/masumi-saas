@@ -52,7 +52,70 @@ Authenticated routes require either:
 
 Unauthenticated requests receive `401 Unauthorized` with `{"success":false,"error":"Unauthorized"}`.
 
-### Authenticated routes (session or API key)
+### OIDC / SpacetimeDB Authentication
+
+Masumi SaaS can also act as an OIDC issuer for external apps and SpacetimeDB:
+
+Detailed handoff doc for the external webapp repo:
+
+- [docs/external-webapp-oidc-integration.md](docs/external-webapp-oidc-integration.md)
+
+- **Discovery**: `GET /.well-known/openid-configuration`
+- **OAuth metadata**: `GET /.well-known/oauth-authorization-server`
+- **JWKS**: `GET /jwks`
+- **OIDC auth endpoints**: `/api/auth/oauth2/*`
+- **CLI device verification UI**: `/device`
+- **Device authorization endpoint**: `POST /api/auth/device/code`
+
+Trusted first-party client IDs default to:
+
+- `masumi-spacetime-web`
+- `masumi-spacetime-cli`
+
+SpacetimeDB reducers should validate:
+
+- `iss === <your public issuer>`
+- `aud` contains one of the trusted client IDs above
+- signature against Masumi JWKS, which now publishes `ES256` keys for SpacetimeDB compatibility
+
+If you are upgrading from an older local setup that issued `EdDSA` tokens, clear or recreate the auth database so Better Auth generates a fresh `ES256` JWK. Better Auth will otherwise continue reusing the latest stored signing key.
+
+For browser flows that authenticate directly against Better Auth, use `POST /api/oidc/spacetimedb/token` to exchange the current authenticated browser session for an issuer-signed OIDC token set suitable for SpacetimeDB. This bridge is session-cookie only and rejects API-key or bearer-token callers. The bridge accepts origins configured via `OIDC_WEB_REDIRECT_URLS` in addition to `CORS_ALLOWED_ORIGINS`. Request body:
+
+```json
+{ "client": "web" }
+```
+
+or
+
+```json
+{ "client": "cli" }
+```
+
+For CLI sign-in, request a device code from `POST /api/auth/device/code`, approve it via `/device` / `/device/approve`, and poll the standard token endpoint `POST /api/auth/oauth2/token` with `grant_type=urn:ietf:params:oauth:grant-type:device_code` to receive the OIDC token set (`access_token`, `id_token`, optional `refresh_token`) directly. The legacy alias `POST /api/auth/device/token` remains supported for compatibility, but new clients should use `/api/auth/oauth2/token`.
+
+Refresh-token exchanges also return a fresh `id_token`, so claims such as `email_verified` can change on refresh without requiring a full re-login. Each issued `id_token` includes a unique `jti`; tokens in the same refresh chain share a stable `sid`.
+
+For external OIDC clients, Masumi SaaS also accepts `Authorization: Bearer <access_token>` on the scoped API routes. Standard identity scopes remain:
+
+- `openid`
+- `profile`
+- `email`
+- `offline_access`
+
+Current Masumi API permission scopes are:
+
+- `agents:read:preprod`, `agents:write:preprod`, `agents:read:mainnet`, `agents:write:mainnet`
+- `credentials:read:preprod`, `credentials:write:preprod`, `credentials:read:mainnet`, `credentials:write:mainnet`
+- `activity:read:preprod`, `activity:read:mainnet`
+- `earnings:read:preprod`, `earnings:read:mainnet`
+- `dashboard:read:preprod`, `dashboard:read:mainnet`
+
+Granted API scopes in an issued `access_token` are:
+
+`requested scopes ∩ stored user grants ∩ client allowlist`
+
+### Authenticated routes (session, API key, or scoped OIDC access token)
 
 | Path                          | Description                                           |
 | ----------------------------- | ----------------------------------------------------- |
@@ -67,14 +130,15 @@ Unauthenticated requests receive `401 Unauthorized` with `{"success":false,"erro
 
 The **v1** namespace exposes read-only, rate-limited endpoints for agent discovery. No API key required.
 
-| Path                      | Description                                                                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/agents`      | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
-| `GET /api/v1/agents/[id]` | Get a single agent by ID.                                                                                                     |
+| Path                        | Description                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/agents`        | List agents by verification status. Query: `status` (PENDING, VERIFIED, REVOKED, EXPIRED; default VERIFIED), `page`, `limit`. |
+| `GET /api/v1/agents/[id]`   | Get a single agent by ID.                                                                                                     |
+| `GET /api/v1/agents/verify` | Verify an agent identifier and return current credential status.                                                              |
 
 OpenAPI JSON for this surface: **`GET /api/v1/openapi`** (Swagger UI: **`/docs/openapi`**).
 
-**Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, allow-listed `/api/v1/*` proxy paths, etc. — not the public catalog above.
+**Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes explicit runtime paths like `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, plus allow-listed `/pay/api/v1/*` and `/registry/api/v1/*` wrapper paths — not the public catalog above.
 
 **Documentation:** header **Documentation** opens **[docs.masumi.network](https://docs.masumi.network/)**. **`/docs`** redirects there with **307** (temporary) so browsers/CDNs do not cache a permanent hop if the external docs URL changes. **Developers** (signed-in) → **`/developers`**: **Schema Validator** and **OpenAPI**; OpenAPI iframe is **`/docs/saas-openapi`**. **Public** discovery: **`/docs/openapi`**. Old paths **`/docs/api`** and **`/docs/saas-api`** **308** to **`/docs/saas-openapi`**.
 
@@ -84,21 +148,30 @@ Example:
 curl "https://your-domain.com/api/v1/agents?status=VERIFIED&limit=10"
 ```
 
-### Payment Node Proxy (authenticated)
+### External Service Proxy (authenticated)
 
-The **v1** namespace proxies **only exact paths** listed in code (no prefix/root wildcards). New payment-node routes stay **403** until added to that set. Use app authentication (session or API key); the user's payment node key is used server-side. Anything not literally in `ALLOWED_PROXY_PATHS` (including paths containing `..`) gets **403** before `fetch`.
+The authenticated **v1** namespace proxies a curated set of routes to external Masumi services. Route exposure is generated from checked-in upstream OpenAPI specs and matched on **method + normalized path**. New upstream routes stay **403** until added to the safe manifest. Use app authentication (session or API key); SaaS forwards either the user's payment-service token or a shared registry-service token server-side. Paths containing traversal or malformed segments are rejected before `fetch`.
 
-| Path                               | Description                                 |
-| ---------------------------------- | ------------------------------------------- |
-| `GET/POST /api/v1/purchase`        | Create or list purchases                    |
-| `GET/POST /api/v1/payment`         | Create or list payments                     |
-| `GET/POST /api/v1/registry`        | Register agents, list registry, deregister  |
-| `GET /api/v1/api-key-status`       | API key status                              |
-| `GET /api/v1/payment-source`       | List payment sources                        |
-| `GET/POST/DELETE /api/v1/webhooks` | Webhooks                                    |
-| …                                  | See `ALLOWED_PROXY_PATHS` in the route file |
+| Path                                                     | Description                                  |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `GET/POST /pay/api/v1/payment`                           | Create or list payments                      |
+| `GET /pay/api/v1/payment-source`                         | List payment sources                         |
+| `GET/POST/DELETE /pay/api/v1/registry`                   | Register agents, list registry, deregister   |
+| `GET/POST /pay/api/v1/inbox-agents`                      | List or register inbox agents                |
+| `DELETE /pay/api/v1/inbox-agents/{id}`                   | Delete an inbox agent entry                  |
+| `POST /pay/api/v1/inbox-agents/{id}/deregister`          | Deregister an inbox agent                    |
+| `POST /registry/api/v1/registry-entry`                   | Query registry-service agent lookup entries  |
+| `POST /registry/api/v1/registry-entry-search`            | Search registry-service agent lookup entries |
+| `POST /registry/api/v1/registry-diff`                    | Query registry-service diffs                 |
+| `GET /registry/api/v1/payment-information`               | Payment information for one agent            |
+| `GET /registry/api/v1/capability`                        | Registry-service capability lookup           |
+| `POST /registry/api/v1/inbox-agent-registration`         | Inbox agent registration lookup              |
+| `POST /registry/api/v1/inbox-agent-registration-diff`    | Inbox registration diffs                     |
+| `POST /registry/api/v1/inbox-agent-registration-search`  | Inbox registration search                    |
+| `GET/POST/PATCH/DELETE /registry/api/v1/registry-source` | Manage registry sources (admin only)         |
+| …                                                        | See the generated proxy manifest             |
 
-Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_PATHS`).
+Implementation: `apps/web/src/app/pay/api/v1/*`, `apps/web/src/app/registry/api/v1/*`, and `apps/web/src/lib/v1-proxy/manifest.ts`.
 
 **Regenerate checked-in OpenAPI JSON** (same workflow as masumi-payment-service `pnpm run swagger-json`): from the monorepo root run `pnpm --filter web run swagger-json` (alias: `swagger:generate`). Writes:
 
@@ -109,6 +182,8 @@ Implementation: `apps/web/src/app/api/v1/[[...path]]/route.ts` (`ALLOWED_PROXY_P
 `GET /api/v1/openapi` and `GET /api/openapi` still build the spec at request time; commit the JSON when you change the Zod registries so diffs are reviewable.
 
 To regenerate the payment node client: `pnpm --filter web run payment-node:generate` (fetches latest OpenAPI from `https://payment.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `PAYMENT_NODE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run payment-node:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run payment-node:generate:local`.
+
+To regenerate the registry service client: `pnpm --filter web run registry-service:generate` (fetches latest OpenAPI from `https://registry.masumi.network/api-docs`, then runs `openapi-typescript`). Override the spec URL: `REGISTRY_SERVICE_OPENAPI_URL=https://your-host/api-docs pnpm --filter web run registry-service:fetch-spec`. To typegen only from the committed JSON (offline): `pnpm --filter web run registry-service:generate:local`.
 
 ## Project Structure
 
@@ -179,7 +254,19 @@ masumi-saas/
      - Generate one with: `openssl rand -base64 32`
 
    - **BETTER_AUTH_URL**: Your application's base URL
-     - For local development: `http://localhost:3000`
+     - For local development: `http://localhost:2999`
+
+   - **OIDC_PUBLIC_ISSUER_URL** _(optional)_: Public OIDC issuer URL
+     - Defaults to `BETTER_AUTH_URL`
+
+   - **OIDC_WEB_CLIENT_ID** / **OIDC_WEB_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the external webapp
+     - Local default redirect: `http://localhost:3002/auth/callback` (avoids clashing with this app on port 2999)
+
+   - **OIDC_CLI_CLIENT_ID** / **OIDC_CLI_REDIRECT_URLS** _(optional)_: Trusted public OIDC client for the CLI device flow
+     - Local default redirect: `http://127.0.0.1:43110/callback`
+
+   - **OIDC_DEVICE_VERIFICATION_URI** _(optional)_: OIDC device flow verification page path or absolute URL
+     - Defaults to `/device`
 
    - **NEXT_PUBLIC_APP_URL**: Full base URL for server-side API calls (optional)
      - Falls back to request headers if not set
@@ -187,8 +274,15 @@ masumi-saas/
    - **NEXT_PUBLIC_SOKOSUMI_MARKETPLACE_URL**: Sokosumi marketplace base URL (optional)
      - Defaults to `https://app.sokosumi.com`
 
-   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL**: Postmark credentials (optional)
+   - **POSTMARK_SERVER_ID** / **POSTMARK_FROM_EMAIL** / **POSTMARK_FROM_NAME**: Postmark sender config (optional)
      - If not set, emails are logged to console in development
+     - Uses per-email sender names like `Masumi Verification <support@masumi.network>` and `Agent Messenger <support@masumi.network>` for OIDC magic links
+     - Rewrites `no-reply` / `noreply` local parts to `support@...`
+
+   - **EMAIL_BRAND_LOGO_URL** _(optional)_: Absolute URL of the Masumi logo used in transactional emails and the "Powered by Masumi" footer in Agent Messenger OIDC emails. Defaults to the app logo asset if unset.
+   - **EMAIL_AGENT_MESSENGER_LOGO_URL** _(optional)_: Absolute URL of the logo shown at the top of Agent Messenger OIDC magic-link emails. Defaults to `EMAIL_BRAND_LOGO_URL` if unset.
+
+   - **NEXT_PUBLIC_PRIVACY_POLICY_URL** _(optional)_: Privacy policy URL used by signup forms (checkbox link) and the consent line in magic-link emails when the address is not yet registered. Defaults to the House of Communication policy URL if unset.
 
    - **NEXT_PUBLIC_SENTRY_DSN** / **SENTRY_AUTH_TOKEN** / **SENTRY_PROJECT**: Sentry config (optional)
 
@@ -201,13 +295,21 @@ masumi-saas/
    - **VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID**: Schema SAID for agent verification credentials
 
    - **PAYMENT_NODE_BASE_URL**: Base URL of the Masumi payment node API, including the version path
-     - e.g. `https://payment.masumi.network/api/v1` or `http://localhost:3001/api/v1`
+     - e.g. `https://payment.masumi.network/api/v1`
+     - local app-only dev may use `http://localhost:2999/api/v1`; startup validation now skips that self-proxy so boot does not hang
    - **PAYMENT_NODE_ADMIN_API_KEY**: Admin API key for the payment node (server-side only, never exposed to client)
      - Used to generate wallets and create per-user API keys
    - **PAYMENT_NODE_PAYMENT_SOURCE_ID**: Shared payment source ID for adding wallets
+   - **PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_PREPROD** / **PAYMENT_NODE_REGISTRATION_FUNDING_WALLETS_MAINNET**: Comma-separated managed selling wallet addresses on that payment source used to fund agent registration transactions
    - **PAYMENT_NODE_ENCRYPTION_KEY**: Encryption key for storing per-user payment node API keys (min 32 chars)
      - Generate with: `openssl rand -base64 32`
    - **PAYMENT_NODE_STRICT_STARTUP** _(optional)_: Set to `1` to throw on startup if payment node is unreachable
+   - **REGISTRY_SERVICE_BASE_URL**: Base URL of the Masumi registry service API, including the version path
+     - e.g. `https://registry.masumi.network/api/v1`
+   - **REGISTRY_SERVICE_API_KEY**: Shared server-side API key for safe registry lookup and discovery proxy routes
+     - Used for `/registry/api/v1/registry-entry`, capability lookup, inbox registration lookup, and similar read-only registry routes
+   - **REGISTRY_SERVICE_OPENAPI_URL** _(optional)_: Override URL for fetching the registry service OpenAPI document during type generation
+     - Defaults to `https://registry.masumi.network/api-docs`
 
 3. **Configure Sumsub Webhook** (required for automatic KYC status updates):
    - Go to your [Sumsub Dashboard](https://sumsub.com/) → Settings → Webhooks
@@ -286,8 +388,12 @@ After promoting, admins can sign in at `/admin/signin`.
 ## Better Auth Features
 
 - **Email/Password Authentication**: Sign up and sign in with email and password
+- **Magic link**: Passwordless sign-in link; new email addresses receive a short Privacy Policy consent line in the email body (existing accounts do not). Display names default from the email local part when no name is provided.
 - **Organization Plugin**: Multi-tenant support with organizations, members, and invitations
 - **API Key Plugin**: Generate and manage API keys; use them to authenticate API routes (`Authorization: Bearer` or `x-api-key` header) with rate limiting
+- **Bearer Plugin**: Session-token authentication for cross-domain clients and device flows
+- **OIDC Provider**: Public issuer metadata, JWKS, trusted first-party public clients, and JWT-signed `id_token`s for SpacetimeDB with `jti` and `sid` claims
+- **Device Authorization**: CLI login with `/api/auth/device/code`, `/api/auth/oauth2/token`, `/device`, and `/device/approve`; token polling returns OIDC tokens directly, and the legacy `/api/auth/device/token` alias remains available
 - **Two-Factor Authentication**: TOTP-based 2FA support
 - **Localization**: Built-in support for multiple languages
 

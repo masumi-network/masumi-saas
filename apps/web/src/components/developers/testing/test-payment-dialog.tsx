@@ -131,7 +131,7 @@ export function TestPaymentDialog({
           typeof window !== "undefined" ? window.location.origin : "";
         setCurlCommand(generateSaasPaymentCurl(origin, requestBody));
 
-        const res = await fetch("/api/v1/payment", {
+        const res = await fetch("/pay/api/v1/payment", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

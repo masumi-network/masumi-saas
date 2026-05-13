@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
-import { generateSaaSAppOpenAPISpec } from "@/lib/swagger/saas-app-openapi";
+import fallbackSaaSAppOpenApiSpec from "@/lib/swagger/openapi-platform-docs.json";
+import { generateSaaSAppOpenAPISpec } from "@/lib/swagger/saas-app-openapi-generator";
 
 /**
  * OpenAPI 3.0 JSON for the **Masumi SaaS** HTTP API (`/api/*` authenticated surface).
@@ -12,7 +13,17 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const spec = generateSaaSAppOpenAPISpec();
+  const spec = (() => {
+    try {
+      return generateSaaSAppOpenAPISpec();
+    } catch (error) {
+      console.error(
+        "Failed to generate /api/openapi spec, serving checked-in snapshot:",
+        error,
+      );
+      return fallbackSaaSAppOpenApiSpec;
+    }
+  })();
   const response = NextResponse.json(spec);
   response.headers.set("Cache-Control", "private, no-store, must-revalidate");
   return addCorsHeaders(response, request);

@@ -3,7 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { auth } from "@/lib/auth/auth";
+import { listConnectedOidcClients } from "@/lib/auth/connected-oidc-clients";
 import { getRequestHeaders } from "@/lib/auth/utils";
+import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 
 import {
   UserProfileCard,
@@ -34,15 +36,26 @@ export default async function AccountPage() {
     return null;
   }
 
+  const connectedClients = await listConnectedOidcClients(session.user.id);
+  const serializedConnectedClients = connectedClients.map((client) => ({
+    ...client,
+    lastTokenIssuedAt: client.lastTokenIssuedAt?.toISOString() ?? null,
+    firstConnectedAt: client.firstConnectedAt?.toISOString() ?? null,
+    lastConnectedAt: client.lastConnectedAt?.toISOString() ?? null,
+  }));
+
   return (
     <div>
       <AccountContent
         accounts={accounts}
         user={session.user}
+        connectedClients={serializedConnectedClients}
         userProfileCard={
-          <Suspense fallback={<UserProfileCardSkeleton />}>
-            <UserProfileCard />
-          </Suspense>
+          isKycVerificationEnabled() ? (
+            <Suspense fallback={<UserProfileCardSkeleton />}>
+              <UserProfileCard />
+            </Suspense>
+          ) : null
         }
       />
     </div>

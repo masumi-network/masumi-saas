@@ -77,7 +77,7 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
               "pb-4 relative text-sm transition-colors duration-200 whitespace-nowrap shrink-0",
               getTabValue(tab) === activeTab
                 ? "text-primary"
-                : "text-muted-foreground",
+                : "text-muted-foreground hover:text-foreground",
               tab.disabled && "cursor-not-allowed opacity-50",
             )}
           >

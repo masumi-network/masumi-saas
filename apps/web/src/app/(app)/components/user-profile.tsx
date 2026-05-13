@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 
 import { Session } from "@/lib/auth/auth";
-import { formatName } from "@/lib/utils";
 
 import UserAvatar from "./user-avatar/user-avatar";
 
@@ -22,15 +21,8 @@ export default function UserProfile({ session }: UserProfileProps) {
   }
 
   return (
-    <div className="flex md:flex-1 flex-col-reverse gap-4 md:flex-initial md:flex-row md:items-center">
-      <div className="flex items-center gap-2">
-        <UserAvatar session={session} />
-        <div className="flex-col gap-0.5 md:flex md:items-end group-data-[collapsible=icon]:hidden">
-          <div className="text-sm font-semibold truncate">
-            {formatName(user.name) || user.email || "User"}
-          </div>
-        </div>
-      </div>
+    <div className="flex min-w-0 w-full items-center gap-2">
+      <UserAvatar session={session} />
     </div>
   );
 }

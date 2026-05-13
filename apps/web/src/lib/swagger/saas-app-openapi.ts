@@ -19,11 +19,24 @@ import {
   verifyAgentBodySchema,
 } from "@/lib/schemas/agent";
 import {
+  activityTransactionQuerySchema,
+  agentAnalyticsQuerySchema,
   agentCountsQuerySchema,
   agentEarningsQuerySchema,
+  credentialReconcileQuerySchema,
+  credentialStatusQuerySchema,
   dashboardOverviewQuerySchema,
   earningsQuerySchema,
 } from "@/lib/schemas/api-query";
+import {
+  registerByEmailApiBodySchema,
+  registerByEmailApiSuccessSchema,
+} from "@/lib/schemas/auth-api";
+import {
+  inboxAgentsListQuerySchema,
+  registerInboxAgentBodySchema,
+} from "@/lib/schemas/inbox-agent";
+import { injectProxyRoutesIntoOpenApiDocument } from "@/lib/v1-proxy/manifest";
 
 import { z } from "./zod-openapi";
 
@@ -45,6 +58,8 @@ const security: SecurityRequirementObject[] = [{ apiKeyHeader: [] }];
 
 /** Public operations (no API key in Try it out). */
 const noSecurity: SecurityRequirementObject[] = [];
+
+const prefixedWrapperServers = [{ url: "/", description: "This app" }];
 
 /** Same validation as `POST /api/agents` — documented shape + Try-it-out example. */
 const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
@@ -82,6 +97,17 @@ const verifyAgentOpenApiBodySchema = verifyAgentBodySchema.openapi({
   example: { aid: "EXAMPLE_AID", schemaSaid: "optional_schema_said" },
 });
 
+const registerInboxAgentOpenApiBodySchema =
+  registerInboxAgentBodySchema.openapi({
+    description:
+      "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
+    example: {
+      name: "Support inbox",
+      description: "Routes support requests into the Masumi inbox registry",
+      agentSlug: "support-inbox",
+    },
+  });
+
 const verificationChallengePostBodySchema = z
   .object({
     regenerate: z.boolean().optional().openapi({
@@ -111,7 +137,11 @@ const agentListItemSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   extendedDescription: z.string().nullable(),
-  apiUrl: z.string(),
+  apiUrl: z.string().openapi({
+    description:
+      "Agent API base URL. In production it must be a public HTTPS endpoint.",
+    example: "https://agent.example.com/mip",
+  }),
   organizationId: z.string().nullable(),
   registrationState: z.string(),
   verificationStatus: z
@@ -225,6 +255,134 @@ const agentDetailSuccessSchema = z
 const agentDeletedSuccessSchema = z
   .object({ success: z.literal(true) })
   .openapi({ example: { success: true } });
+
+const inboxAgentStateSchema = z.enum([
+  "RegistrationRequested",
+  "RegistrationInitiated",
+  "RegistrationConfirmed",
+  "RegistrationFailed",
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+  "DeregistrationConfirmed",
+  "DeregistrationFailed",
+]);
+
+const inboxWalletIdentitySchema = z.object({
+  walletVkey: z.string(),
+  walletAddress: z.string(),
+});
+
+const inboxCurrentTransactionSchema = z.object({
+  txHash: z.string().nullable(),
+  status: z.enum([
+    "Pending",
+    "Confirmed",
+    "FailedViaTimeout",
+    "FailedViaManualReset",
+    "RolledBack",
+  ]),
+  confirmations: z.number().nullable(),
+  fees: z.string().nullable(),
+  blockHeight: z.number().nullable(),
+  blockTime: z.number().nullable(),
+});
+
+const inboxAgentItemSchema = z.object({
+  error: z.string().nullable(),
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  agentSlug: z.string(),
+  state: inboxAgentStateSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastCheckedAt: z.string().nullable(),
+  agentIdentifier: z.string().nullable(),
+  metadataVersion: z.number(),
+  sendFundingLovelace: z.string().nullable(),
+  SmartContractWallet: inboxWalletIdentitySchema,
+  RecipientWallet: inboxWalletIdentitySchema.nullable(),
+  CurrentTransaction: inboxCurrentTransactionSchema.nullable(),
+});
+
+const inboxAgentsListSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.array(inboxAgentItemSchema),
+    nextCursor: z.string().nullable(),
+  })
+  .openapi({
+    example: {
+      success: true,
+      nextCursor: "cm_inbox_2",
+      data: [
+        {
+          id: "cm_inbox_1",
+          name: "Support inbox",
+          description: "Routes support requests into the Masumi inbox registry",
+          agentSlug: "support-inbox",
+          state: "RegistrationConfirmed",
+          error: null,
+          createdAt: "2026-04-10T10:00:00.000Z",
+          updatedAt: "2026-04-10T10:10:00.000Z",
+          lastCheckedAt: "2026-04-10T10:12:00.000Z",
+          agentIdentifier: "policy.asset",
+          metadataVersion: 1,
+          sendFundingLovelace: null,
+          SmartContractWallet: {
+            walletVkey: "wallet_vkey_123",
+            walletAddress: "addr_test1mint...",
+          },
+          RecipientWallet: {
+            walletVkey: "wallet_vkey_456",
+            walletAddress: "addr_test1recipient...",
+          },
+          CurrentTransaction: {
+            txHash: "abc123",
+            status: "Confirmed",
+            confirmations: 12,
+            fees: "170000",
+            blockHeight: 123,
+            blockTime: 1_744_277_200,
+          },
+        },
+      ],
+    },
+  });
+
+const inboxAgentMutationSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: inboxAgentItemSchema,
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        id: "cm_inbox_1",
+        name: "Support inbox",
+        description: "Routes support requests into the Masumi inbox registry",
+        agentSlug: "support-inbox",
+        state: "RegistrationConfirmed",
+        error: null,
+        createdAt: "2026-04-10T10:00:00.000Z",
+        updatedAt: "2026-04-10T10:10:00.000Z",
+        lastCheckedAt: "2026-04-10T10:12:00.000Z",
+        agentIdentifier: "policy.asset",
+        metadataVersion: 1,
+        sendFundingLovelace: null,
+        SmartContractWallet: {
+          walletVkey: "wallet_vkey_123",
+          walletAddress: "addr_test1mint...",
+        },
+        RecipientWallet: {
+          walletVkey: "wallet_vkey_456",
+          walletAddress: "addr_test1recipient...",
+        },
+        CurrentTransaction: null,
+      },
+    },
+  });
 
 const agentCountsSuccessSchema = z
   .object({
@@ -626,10 +784,408 @@ const userEarningsSuccessSchema = z
     },
   });
 
+const credentialStatusValueSchema = z.enum([
+  "PENDING",
+  "ISSUED",
+  "REVOKED",
+  "EXPIRED",
+]);
+
+const issuedCredentialSummarySchema = z
+  .object({
+    id: z.string(),
+    credentialId: z.string(),
+    schemaSaid: z.string(),
+    aid: z.string(),
+    status: credentialStatusValueSchema,
+    issuedAt: z.string(),
+    expiresAt: z.string().nullable(),
+  })
+  .openapi({
+    example: {
+      id: "cred_123",
+      credentialId: "pending-550e8400-e29b-41d4-a716-446655440000",
+      schemaSaid: "EM0example_schema_said",
+      aid: "EXAMPLE_AID",
+      status: "PENDING",
+      issuedAt: "2026-04-15T12:00:00.000Z",
+      expiresAt: null,
+    },
+  });
+
+const credentialCheckConnectionBodySchema = z
+  .object({
+    aid: z.string().min(1),
+  })
+  .openapi({
+    example: {
+      aid: "EXAMPLE_AID",
+    },
+  });
+
+const credentialIssueBodySchema = z
+  .object({
+    aid: z.string().min(1),
+    oobi: z.string().optional(),
+    attributes: z.record(z.string(), z.any()).optional(),
+    agentId: z.string().min(1),
+    organizationId: z.string().optional(),
+    expiresAt: z
+      .string()
+      .datetime({ offset: true })
+      .openapi({
+        format: "date-time",
+        example: "2026-12-31T23:59:59.000Z",
+      })
+      .optional(),
+    signature: z.string().min(1),
+    signedMessage: z.string().min(1),
+  })
+  .openapi({
+    example: {
+      aid: "EXAMPLE_AID",
+      oobi: "http://veridian.example/oobi/aid/EXAMPLE_AID",
+      agentId: "cmlf6gswz0000x1uctad958tq",
+      attributes: {
+        tier: "gold",
+      },
+      signature: "base64-signature",
+      signedMessage: "challenge text",
+    },
+  });
+
+const credentialCheckConnectionSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      exists: z.boolean(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: { exists: true },
+    },
+  });
+
+const credentialIssueSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: issuedCredentialSummarySchema,
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        id: "cred_123",
+        credentialId: "pending-550e8400-e29b-41d4-a716-446655440000",
+        schemaSaid: "EM0example_schema_said",
+        aid: "EXAMPLE_AID",
+        status: "PENDING",
+        issuedAt: "2026-04-15T12:00:00.000Z",
+        expiresAt: null,
+      },
+    },
+  });
+
+const credentialIssuerOobiSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      oobi: z.string(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: { oobi: "http://veridian.example/oobi/issuer" },
+    },
+  });
+
+const credentialSchemaSaidSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      schemaSaid: z.string(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: { schemaSaid: "EM0example_schema_said" },
+    },
+  });
+
+const credentialStatusSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      id: z.string(),
+      credentialId: z.string().optional(),
+      status: credentialStatusValueSchema,
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        id: "cred_123",
+        credentialId: "pending-550e8400-e29b-41d4-a716-446655440000",
+        status: "PENDING",
+      },
+    },
+  });
+
+const credentialReconcileSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      resolved: z.boolean(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: { resolved: true },
+    },
+  });
+
+const activityTransactionSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      type: z.enum(["payment", "purchase"]),
+      item: z.any().openapi({
+        description:
+          "Underlying payment-node transaction payload for the requested payment or purchase.",
+      }),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        type: "payment",
+        item: {
+          id: "txn-1",
+          status: "FundsLocked",
+          txHash: "abc123",
+        },
+      },
+    },
+  });
+
+const earningsAgentsSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        icon: z.string().nullable(),
+        agentIdentifier: z.string(),
+        registrationState: z.string(),
+        network: z.enum(["Mainnet", "Preprod"]),
+      }),
+    ),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: [
+        {
+          id: "agent-1",
+          name: "Alpha",
+          icon: null,
+          agentIdentifier: "agent-alpha",
+          registrationState: "RegistrationConfirmed",
+          network: "Preprod",
+        },
+      ],
+    },
+  });
+
+const analyticsUnitAmountSchema = z.object({
+  unit: z.string(),
+  amount: z.number(),
+});
+
+const agentAnalyticsDisplaySchema = z.object({
+  usdAmount: z.number(),
+  adaAmount: z.number(),
+  displayUnit: z.enum(["USD", "ADA"]),
+  displayAmount: z.number(),
+  hasMixedUnits: z.boolean(),
+});
+
+const agentAnalyticsSummarySchema = agentAnalyticsDisplaySchema.extend({
+  units: z.array(analyticsUnitAmountSchema),
+  blockchainFees: z.number(),
+});
+
+const agentAnalyticsSeriesPointSchema = agentAnalyticsDisplaySchema.extend({
+  key: z.string(),
+  label: z.string(),
+  amount: z.number(),
+  units: z.array(analyticsUnitAmountSchema),
+  blockchainFees: z.number(),
+});
+
+const agentAnalyticsSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      agent: z.object({
+        id: z.string(),
+        name: z.string(),
+        icon: z.string().nullable(),
+        agentIdentifier: z.string().nullable(),
+        network: z.enum(["Mainnet", "Preprod"]),
+      }),
+      period: z.object({
+        range: z.enum(["7d", "30d", "90d", "all", "custom"]),
+        granularity: z.enum(["day", "month"]),
+        startDate: z.string(),
+        endDate: z.string(),
+        periodStart: z.string().nullable(),
+        periodEnd: z.string().nullable(),
+        timeZone: z.string(),
+      }),
+      totalTransactions: z.number(),
+      displayUnit: z.enum(["USD", "ADA"]),
+      totals: z.object({
+        income: agentAnalyticsSummarySchema,
+        refunded: agentAnalyticsSummarySchema,
+        pending: agentAnalyticsSummarySchema,
+      }),
+      series: z.object({
+        income: z.array(agentAnalyticsSeriesPointSchema),
+        refunded: z.array(agentAnalyticsSeriesPointSchema),
+        pending: z.array(agentAnalyticsSeriesPointSchema),
+      }),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        agent: {
+          id: "agent-1",
+          name: "Alpha",
+          icon: null,
+          agentIdentifier: "agent-alpha",
+          network: "Preprod",
+        },
+        period: {
+          range: "30d",
+          granularity: "day",
+          startDate: "2026-03-17",
+          endDate: "2026-04-15",
+          periodStart: "2026-03-17T00:00:00.000Z",
+          periodEnd: "2026-04-15T23:59:59.000Z",
+          timeZone: "Etc/UTC",
+        },
+        totalTransactions: 5,
+        displayUnit: "USD",
+        totals: {
+          income: {
+            usdAmount: 2.5,
+            adaAmount: 0,
+            displayUnit: "USD",
+            displayAmount: 2.5,
+            hasMixedUnits: false,
+            units: [{ unit: "USDM", amount: 2500000 }],
+            blockchainFees: 350000,
+          },
+          refunded: {
+            usdAmount: 0,
+            adaAmount: 0,
+            displayUnit: "USD",
+            displayAmount: 0,
+            hasMixedUnits: false,
+            units: [],
+            blockchainFees: 0,
+          },
+          pending: {
+            usdAmount: 0,
+            adaAmount: 4,
+            displayUnit: "ADA",
+            displayAmount: 4,
+            hasMixedUnits: false,
+            units: [{ unit: "", amount: 4000000 }],
+            blockchainFees: 0,
+          },
+        },
+        series: {
+          income: [
+            {
+              key: "2026-04-10",
+              label: "Apr 10",
+              amount: 1,
+              usdAmount: 1,
+              adaAmount: 0,
+              displayUnit: "USD",
+              displayAmount: 1,
+              hasMixedUnits: false,
+              units: [{ unit: "USDM", amount: 1000000 }],
+              blockchainFees: 100000,
+            },
+          ],
+          refunded: [],
+          pending: [
+            {
+              key: "2026-04-11",
+              label: "Apr 11",
+              amount: 4,
+              usdAmount: 0,
+              adaAmount: 4,
+              displayUnit: "ADA",
+              displayAmount: 4,
+              hasMixedUnits: false,
+              units: [{ unit: "", amount: 4000000 }],
+              blockchainFees: 0,
+            },
+          ],
+        },
+      },
+    },
+  });
+
 const errBody = z.object({
   success: z.literal(false),
   error: z.string(),
 });
+
+const inboxAgentRegisterConflictBody = z
+  .object({
+    success: z.literal(false),
+    error: z.enum([
+      "Inbox slug is already in use on this network",
+      "Inbox agent is already owned by another account",
+    ]),
+  })
+  .openapi({
+    example: {
+      success: false,
+      error: "Inbox slug is already in use on this network",
+    },
+  });
+
+const insufficientCreditsSchema = z
+  .object({
+    success: z.literal(false),
+    error: z.literal("Insufficient credits"),
+    creditsRemaining: z.number(),
+    requiredCredits: z.literal(1),
+  })
+  .openapi({
+    example: {
+      success: false,
+      error: "Insufficient credits",
+      creditsRemaining: 0,
+      requiredCredits: 1,
+    },
+  });
 
 /**
  * Verify (and similar) 400 bodies: `details` may be a string[] (Zod issues) or a
@@ -674,6 +1230,11 @@ function okWithSchema(description: string, schema: z.ZodType) {
     content: { "application/json": { schema } },
   };
 }
+
+const insufficientCreditsResponse = {
+  description: "Insufficient credits",
+  content: { "application/json": { schema: insufficientCreditsSchema } },
+} as const;
 
 const healthSuccessDataSchema = z.object({
   status: z.literal("ok"),
@@ -763,11 +1324,67 @@ const apiKeyStatusKeySchema = z
     },
   });
 
+const creditsBalanceSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      creditsRemaining: z.number(),
+      updatedAt: z.string(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: {
+        creditsRemaining: 20,
+        updatedAt: "2026-04-13T10:30:00.000Z",
+      },
+    },
+  });
+
 // ── System ─────────────────────────────────────────────────────────────────
 
 registry.registerPath({
+  method: "post",
+  path: "/api/register/email",
+  tags: ["Auth"],
+  summary: "Register with email",
+  description:
+    "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+  security: noSecurity,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: registerByEmailApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    202: okWithSchema(
+      "Magic link accepted for delivery",
+      registerByEmailApiSuccessSchema,
+    ),
+    400: {
+      description: "Invalid request body",
+      content: { "application/json": { schema: errBody } },
+    },
+    429: {
+      description: "Too many registration requests from this client",
+      content: { "application/json": { schema: errBody } },
+    },
+    500: {
+      description: "Registration email could not be queued or sent",
+      content: { "application/json": { schema: errBody } },
+    },
+  },
+});
+
+registry.registerPath({
   method: "get",
-  path: "/health",
+  path: "/api/health",
   tags: ["System"],
   summary: "Health check",
   description:
@@ -794,7 +1411,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/api-key-status",
+  path: "/api/api-key-status",
   tags: ["API keys"],
   summary: "API key status",
   description:
@@ -814,11 +1431,170 @@ registry.registerPath({
   },
 });
 
-// ── Agents ─────────────────────────────────────────────────────────────────
+registry.registerPath({
+  method: "get",
+  path: "/api/credits",
+  tags: ["Credits"],
+  summary: "Get remaining credits",
+  description:
+    "Canonical credits endpoint for the authenticated SaaS API. Returns the authenticated user’s remaining write credits.",
+  security,
+  responses: {
+    200: okWithSchema("Current balance", creditsBalanceSuccessSchema),
+    ...stdResponses,
+  },
+});
 
 registry.registerPath({
   method: "get",
-  path: "/agents",
+  path: "/credits",
+  tags: ["Credits"],
+  summary: "Get remaining credits",
+  description:
+    "Compatibility alias for `/api/credits`. Returns the authenticated user’s remaining write credits. New users start with 1 credit; existing users stay at 0 until credits are granted outside this v1 flow.",
+  security,
+  responses: {
+    200: okWithSchema("Current balance", creditsBalanceSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+// ── Agents ─────────────────────────────────────────────────────────────────
+
+const verificationUnavailableResponse = {
+  description:
+    "Agent verification flows are temporarily disabled in this environment.",
+  content: { "application/json": { schema: errBody } },
+} as const;
+
+registry.registerPath({
+  method: "post",
+  path: "/api/credentials/check-connection",
+  tags: ["Credentials"],
+  summary: "Check recipient AID connection",
+  description:
+    "Validates whether Veridian already knows the recipient AID before issuing a credential.",
+  security,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: credentialCheckConnectionBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: okWithSchema(
+      "Recipient AID connection status",
+      credentialCheckConnectionSuccessSchema,
+    ),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/credentials/issue",
+  tags: ["Credentials"],
+  summary: "Issue verification credential",
+  description:
+    "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+  security,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: credentialIssueBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: okWithSchema("Credential issued", credentialIssueSuccessSchema),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/credentials/issuer-oobi",
+  tags: ["Credentials"],
+  summary: "Get issuer OOBI",
+  description:
+    "Returns the Veridian issuer OOBI that agents can resolve before credential issuance.",
+  security,
+  responses: {
+    200: okWithSchema("Issuer OOBI", credentialIssuerOobiSuccessSchema),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/credentials/reconcile",
+  tags: ["Credentials"],
+  summary: "Reconcile pending credentials",
+  description:
+    "Checks pending credentials for an owned agent and marks the first matching issued credential as resolved.",
+  security,
+  request: {
+    query: credentialReconcileQuerySchema,
+  },
+  responses: {
+    200: okWithSchema(
+      "Credential reconciliation result",
+      credentialReconcileSuccessSchema,
+    ),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/credentials/schema-said",
+  tags: ["Credentials"],
+  summary: "Get verification schema SAID",
+  description:
+    "Returns the configured Veridian schema SAID for agent verification credentials.",
+  security,
+  responses: {
+    200: okWithSchema(
+      "Verification schema SAID",
+      credentialSchemaSaidSuccessSchema,
+    ),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/credentials/status",
+  tags: ["Credentials"],
+  summary: "Get credential status",
+  description:
+    "Polls the current credential state for a pending or issued verification credential owned by the caller.",
+  security,
+  request: {
+    query: credentialStatusQuerySchema,
+  },
+  responses: {
+    200: okWithSchema("Credential status", credentialStatusSuccessSchema),
+    503: verificationUnavailableResponse,
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/agents",
   tags: ["Agents"],
   summary: "List agents",
   description:
@@ -835,7 +1611,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents",
+  path: "/api/agents",
   tags: ["Agents"],
   summary: "Start agent registration",
   description:
@@ -852,13 +1628,14 @@ registry.registerPath({
   },
   responses: {
     200: okWithSchema("Registration started", startRegistrationSuccessSchema),
+    402: insufficientCreditsResponse,
     ...stdResponses,
   },
 });
 
 registry.registerPath({
   method: "get",
-  path: "/agents/{agentId}",
+  path: "/api/agents/{agentId}",
   tags: ["Agents"],
   summary: "Get agent",
   security,
@@ -871,7 +1648,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "delete",
-  path: "/agents/{agentId}",
+  path: "/api/agents/{agentId}",
   tags: ["Agents"],
   summary: "Delete agent",
   security,
@@ -884,7 +1661,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/agents/counts",
+  path: "/api/agents/counts",
   tags: ["Agents"],
   summary: "Aggregate agent counts",
   description: "Counts by status and network for the current user.",
@@ -900,7 +1677,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/agents/{agentId}/transactions",
+  path: "/api/agents/{agentId}/transactions",
   tags: ["Agents"],
   summary: "Agent transactions",
   description: "Payment and purchase activity for one agent.",
@@ -914,7 +1691,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/agents/{agentId}/earnings",
+  path: "/api/agents/{agentId}/earnings",
   tags: ["Agents"],
   summary: "Agent earnings",
   security,
@@ -930,7 +1707,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents/{agentId}/verify",
+  path: "/api/agents/{agentId}/verify",
   tags: ["Agents"],
   summary: "Verify agent (credential flow)",
   security,
@@ -959,7 +1736,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/agents/{agentId}/verification-challenge",
+  path: "/api/agents/{agentId}/verification-challenge",
   tags: ["Agents"],
   summary: "Get verification challenge",
   description: "Returns the current verification challenge for the agent.",
@@ -973,7 +1750,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents/{agentId}/verification-challenge",
+  path: "/api/agents/{agentId}/verification-challenge",
   tags: ["Agents"],
   summary: "Refresh verification challenge",
   description:
@@ -997,7 +1774,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents/{agentId}/test-verification-endpoint",
+  path: "/api/agents/{agentId}/test-verification-endpoint",
   tags: ["Agents"],
   summary: "Test agent verification URL",
   security,
@@ -1010,7 +1787,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents/{agentId}/complete-registration",
+  path: "/api/agents/{agentId}/complete-registration",
   tags: ["Agents"],
   summary: "Complete on-chain registration",
   security,
@@ -1023,7 +1800,7 @@ registry.registerPath({
     ),
     202: {
       description:
-        "Registration still pending (e.g. wallet funding); poll again shortly.",
+        "Registration still pending (e.g. registry submission or blockchain confirmation); poll again shortly.",
       content: {
         "application/json": { schema: completeRegistrationPendingSchema },
       },
@@ -1033,7 +1810,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/agents/{agentId}/deregister",
+  path: "/api/agents/{agentId}/deregister",
   tags: ["Agents"],
   summary: "Deregister agent on-chain",
   security,
@@ -1044,11 +1821,149 @@ registry.registerPath({
   },
 });
 
+// ── Inbox agents ───────────────────────────────────────────────────────────
+
+registry.registerPath({
+  method: "get",
+  path: "/pay/api/v1/inbox-agents",
+  tags: ["Inbox agents"],
+  summary: "List inbox agents",
+  description:
+    "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie.",
+  servers: prefixedWrapperServers,
+  security,
+  request: {
+    query: inboxAgentsListQuerySchema,
+  },
+  responses: {
+    200: okWithSchema("Inbox-agent list", inboxAgentsListSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/pay/api/v1/inbox-agents",
+  tags: ["Inbox agents"],
+  summary: "Register inbox agent",
+  description:
+    "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user.",
+  servers: prefixedWrapperServers,
+  security,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registerInboxAgentOpenApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: okWithSchema(
+      "Inbox-agent registration created",
+      inboxAgentMutationSuccessSchema,
+    ),
+    402: insufficientCreditsResponse,
+    409: {
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
+    },
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/masumi/inbox-agent/register",
+  tags: ["Inbox agents"],
+  summary: "Register inbox agent",
+  description:
+    "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route.",
+  security,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registerInboxAgentOpenApiBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: okWithSchema(
+      "Inbox-agent registration created",
+      inboxAgentMutationSuccessSchema,
+    ),
+    402: insufficientCreditsResponse,
+    409: {
+      description:
+        "Inbox registration conflict. Returned when the slug is already active or pending on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+      content: {
+        "application/json": { schema: inboxAgentRegisterConflictBody },
+      },
+    },
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/pay/api/v1/inbox-agents/{inboxAgentId}",
+  tags: ["Inbox agents"],
+  summary: "Delete inbox agent",
+  description:
+    "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+  servers: prefixedWrapperServers,
+  security,
+  request: {
+    params: z.object({
+      inboxAgentId: z.string().openapi({
+        description: "Inbox agent request ID (CUID)",
+        example: "cm_inbox_1",
+      }),
+    }),
+  },
+  responses: {
+    200: okWithSchema("Deleted", inboxAgentMutationSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister",
+  tags: ["Inbox agents"],
+  summary: "Deregister inbox agent",
+  description:
+    "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
+  servers: prefixedWrapperServers,
+  security,
+  request: {
+    params: z.object({
+      inboxAgentId: z.string().openapi({
+        description: "Inbox agent request ID (CUID)",
+        example: "cm_inbox_1",
+      }),
+    }),
+  },
+  responses: {
+    200: okWithSchema(
+      "Deregistration requested",
+      inboxAgentMutationSuccessSchema,
+    ),
+    ...stdResponses,
+  },
+});
+
 // ── Dashboard & activity ───────────────────────────────────────────────────
 
 registry.registerPath({
   method: "get",
-  path: "/dashboard/overview",
+  path: "/api/dashboard/overview",
   tags: ["Dashboard"],
   summary: "Dashboard overview",
   description:
@@ -1065,7 +1980,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/activity",
+  path: "/api/activity",
   tags: ["Activity"],
   summary: "Activity feed",
   description:
@@ -1082,7 +1997,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/earnings",
+  path: "/api/earnings",
   tags: ["Earnings"],
   summary: "User earnings summary",
   security,
@@ -1091,6 +2006,74 @@ registry.registerPath({
   },
   responses: {
     200: okWithSchema("Earnings / payouts summary", userEarningsSuccessSchema),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/activity/transaction",
+  tags: ["Activity"],
+  summary: "Get activity transaction",
+  description:
+    "Loads a single payment or purchase visible to the caller by ID and transaction type.",
+  security,
+  request: {
+    query: activityTransactionQuerySchema,
+  },
+  responses: {
+    200: okWithSchema("Transaction detail", activityTransactionSuccessSchema),
+    503: {
+      description:
+        "Payment node is not configured or the active payment source is unavailable for the requested network.",
+      content: { "application/json": { schema: errBody } },
+    },
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/earnings/agent",
+  tags: ["Earnings"],
+  summary: "Get per-agent earnings analytics",
+  description:
+    "Returns earnings analytics, time-bucketed series, and display-unit totals for one owned agent on the selected network.",
+  security,
+  request: {
+    query: agentAnalyticsQuerySchema,
+  },
+  responses: {
+    200: okWithSchema(
+      "Per-agent earnings analytics",
+      agentAnalyticsSuccessSchema,
+    ),
+    ...stdResponses,
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/earnings/agents",
+  tags: ["Earnings"],
+  summary: "List agents eligible for earnings analytics",
+  description:
+    "Returns owned agents that have a payment identifier and a registration state eligible for earnings reporting.",
+  security,
+  request: {
+    query: z.object({
+      network: z.enum(["Mainnet", "Preprod"]).optional().openapi({
+        description:
+          "Target payment network. Defaults to `Preprod` when omitted.",
+        example: "Preprod",
+      }),
+    }),
+  },
+  responses: {
+    200: okWithSchema(
+      "Agents eligible for earnings reporting",
+      earningsAgentsSuccessSchema,
+    ),
     ...stdResponses,
   },
 });
@@ -1106,26 +2089,87 @@ export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
   if (cachedSaaSAppOpenAPISpec !== undefined) {
     return cachedSaaSAppOpenAPISpec;
   }
-  cachedSaaSAppOpenAPISpec = new OpenApiGeneratorV3(
-    registry.definitions,
-  ).generateDocument({
-    openapi: "3.0.0",
-    info: {
-      version: "1.0.0",
-      title: "Masumi SaaS API",
-      description: [
-        "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
-      ].join("\n"),
-    },
-    servers: [{ url: "/api", description: "This app" }],
-    tags: [
-      { name: "System", description: "Health and availability" },
-      { name: "API keys", description: "Masumi SaaS API key introspection" },
-      { name: "Agents", description: "Your agents" },
-      { name: "Dashboard", description: "Overview and account data" },
-      { name: "Activity", description: "What happened across your agents" },
-      { name: "Earnings", description: "Earnings and payouts" },
-    ],
-  });
+  cachedSaaSAppOpenAPISpec = injectProxyRoutesIntoOpenApiDocument(
+    new OpenApiGeneratorV3(registry.definitions).generateDocument({
+      openapi: "3.0.0",
+      info: {
+        version: "1.0.0",
+        title: "Masumi SaaS API",
+        description: [
+          "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
+        ].join("\n"),
+      },
+      servers: [{ url: "/", description: "This app" }],
+      tags: [
+        {
+          name: "Auth",
+          description: "Public registration and authentication bootstrap flows",
+        },
+        { name: "System", description: "Health and availability" },
+        { name: "API keys", description: "Masumi SaaS API key introspection" },
+        { name: "Credits", description: "Credit balances and compatibility" },
+        {
+          name: "Credentials",
+          description: "Veridian credential issuance and polling",
+        },
+        { name: "Agents", description: "Your agents" },
+        {
+          name: "Inbox agents",
+          description: "Managed inbox-agent registration flows",
+        },
+        { name: "Dashboard", description: "Overview and account data" },
+        { name: "Activity", description: "What happened across your agents" },
+        { name: "Earnings", description: "Earnings and payouts" },
+      ],
+    }),
+  );
   return cachedSaaSAppOpenAPISpec;
 }
+
+export {
+  activitySuccessSchema,
+  activityTransactionSuccessSchema,
+  agentAnalyticsSuccessSchema,
+  agentCountsSuccessSchema,
+  agentDeletedSuccessSchema,
+  agentDetailSuccessSchema,
+  agentEarningsSuccessSchema,
+  agentsListSuccessSchema,
+  agentTransactionsSuccessSchema,
+  apiKeyStatusKeySchema,
+  apiKeyStatusSessionSchema,
+  completeRegistrationPendingSchema,
+  completeRegistrationSuccessSchema,
+  credentialCheckConnectionBodySchema,
+  credentialCheckConnectionSuccessSchema,
+  credentialIssueBodySchema,
+  credentialIssuerOobiSuccessSchema,
+  credentialIssueSuccessSchema,
+  credentialReconcileSuccessSchema,
+  credentialSchemaSaidSuccessSchema,
+  credentialStatusSuccessSchema,
+  creditsBalanceSuccessSchema,
+  dashboardOverviewSuccessSchema,
+  earningsAgentsSuccessSchema,
+  errBody,
+  errBodyWithOptionalDetails,
+  healthServiceUnavailableSchema,
+  healthSuccessSchema,
+  inboxAgentMutationSuccessSchema,
+  inboxAgentRegisterConflictBody,
+  inboxAgentsListSuccessSchema,
+  insufficientCreditsResponse,
+  noSecurity,
+  registerAgentOpenApiBodySchema,
+  registerInboxAgentOpenApiBodySchema,
+  security,
+  startRegistrationSuccessSchema,
+  stdResponses,
+  testVerificationEndpointSuccessSchema,
+  userEarningsSuccessSchema,
+  verificationChallengePostBodySchema,
+  verificationChallengeSuccessSchema,
+  verificationUnavailableResponse,
+  verifyAgentOpenApiBodySchema,
+  verifyAgentSuccessSchema,
+};

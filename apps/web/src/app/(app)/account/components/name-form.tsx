@@ -87,7 +87,12 @@ export function NameForm() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={isSubmitting} className="w-full">
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={isSubmitting}
+                className="w-full"
+              >
                 {isSubmitting && <Spinner size={16} className="mr-2" />}
                 {t("submit")}
               </Button>

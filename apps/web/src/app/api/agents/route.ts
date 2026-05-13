@@ -1,22 +1,90 @@
 import prisma, { RegistrationState } from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   buildAgentPricing,
   type RegisterAgentParams,
   startAgentRegistration,
 } from "@/lib/agent-registration";
+import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { parseNetwork } from "@/lib/schemas";
 import {
-  agentsListQuerySchema,
-  registerAgentBodySchema,
-} from "@/lib/schemas/agent";
+  consumeCreditIfRequired,
+  createCreditReference,
+} from "@/lib/credits/service";
+import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { parseNetwork } from "@/lib/schemas";
+import { agentsListQuerySchema } from "@/lib/schemas/agent";
+import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
+
+import contract, { registerAgentBodySchema } from "./route.contract";
+
+function matchesAgentSearch(
+  agent: {
+    name: string;
+    description: string | null;
+    extendedDescription: string | null;
+    apiUrl: string;
+    tags: string[];
+  },
+  search?: string,
+): boolean {
+  const query = search?.trim().toLowerCase();
+  if (!query) return true;
+
+  return (
+    agent.name.toLowerCase().includes(query) ||
+    agent.description?.toLowerCase().includes(query) === true ||
+    agent.extendedDescription?.toLowerCase().includes(query) === true ||
+    agent.apiUrl.toLowerCase().includes(query) ||
+    agent.tags.some((tag) => tag.toLowerCase().includes(query))
+  );
+}
+
+function matchesVerificationFilter(
+  agent: { verificationStatus: string | null },
+  options: {
+    verificationStatus?: string | null;
+    unverified?: boolean;
+  },
+): boolean {
+  if (options.unverified) {
+    return agent.verificationStatus !== "VERIFIED";
+  }
+  if (options.verificationStatus) {
+    return agent.verificationStatus === options.verificationStatus;
+  }
+  return true;
+}
+
+function matchesRegistrationFilter(
+  agent: { registrationState: string },
+  options: {
+    registrationState?: string;
+    registrationStateIn?: string | null;
+  },
+): boolean {
+  if (options.registrationStateIn) {
+    const states = options.registrationStateIn
+      .split(",")
+      .map((state) => state.trim())
+      .filter(Boolean);
+    if (states.length > 0) {
+      return states.includes(agent.registrationState);
+    }
+  }
+  if (options.registrationState) {
+    return agent.registrationState === options.registrationState;
+  }
+  return true;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
     });
 
@@ -25,13 +93,10 @@ export async function GET(request: NextRequest) {
     );
     const queryValidation = agentsListQuerySchema.safeParse(rawParams);
     if (!queryValidation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryValidation.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "GET", 400, {
+        success: false,
+        error: queryValidation.error.issues.map((e) => e.message).join(", "),
+      });
     }
 
     const {
@@ -45,99 +110,65 @@ export async function GET(request: NextRequest) {
     } = queryValidation.data;
 
     const network = getNetworkFromRequest(request);
-
-    const searchTrimmed = search?.trim();
-
-    const verificationFilter = unverified
-      ? { verificationStatus: { not: "VERIFIED" as const } }
-      : verificationStatus
-        ? { verificationStatus }
-        : {};
-
-    const validStates = Object.values(RegistrationState) as string[];
-    const registrationFilter = (() => {
-      if (registrationStateIn) {
-        const states = registrationStateIn
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => validStates.includes(s)) as RegistrationState[];
-        if (states.length > 0) return { registrationState: { in: states } };
-      }
-      if (registrationState && validStates.includes(registrationState)) {
-        return { registrationState: registrationState as RegistrationState };
-      }
-      return {};
-    })();
-
-    const searchFilter =
-      searchTrimmed && searchTrimmed.length > 0
-        ? {
-            OR: [
-              {
-                name: { contains: searchTrimmed, mode: "insensitive" as const },
-              },
-              {
-                description: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                extendedDescription: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                apiUrl: {
-                  contains: searchTrimmed,
-                  mode: "insensitive" as const,
-                },
-              },
-              { tags: { hasSome: [searchTrimmed] } },
-            ],
-          }
-        : undefined;
-
-    const baseWhere = {
-      userId: user.id,
-      ...verificationFilter,
-      ...registrationFilter,
-      networkIdentifier: network,
-    };
-
-    const finalWhere =
-      searchFilter !== undefined
-        ? { AND: [baseWhere, searchFilter] }
-        : baseWhere;
-
-    const agents = await prisma.agent.findMany({
-      where: finalWhere,
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: take + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "read",
+      network,
     });
 
-    const hasMore = agents.length > take;
-    const page = hasMore ? agents.slice(0, take) : agents;
-    const nextCursor =
-      hasMore && page.length > 0 ? page[page.length - 1]!.id : null;
+    const validStates = new Set(Object.values(RegistrationState) as string[]);
+    const normalizedRegistrationStateIn = registrationStateIn
+      ? registrationStateIn
+          .split(",")
+          .map((state) => state.trim())
+          .filter((state) => validStates.has(state))
+          .join(",")
+      : null;
+    const normalizedRegistrationState =
+      registrationState && validStates.has(registrationState)
+        ? registrationState
+        : undefined;
 
-    return NextResponse.json({
+    const walletOwnedAgents = await listWalletOwnedAgentsForUser({
+      userId: authContext.user.id,
+      network,
+    });
+
+    const filteredAgents = walletOwnedAgents.filter(
+      (agent) =>
+        matchesVerificationFilter(agent, {
+          verificationStatus,
+          unverified,
+        }) &&
+        matchesRegistrationFilter(agent, {
+          registrationState: normalizedRegistrationState,
+          registrationStateIn: normalizedRegistrationStateIn,
+        }) &&
+        matchesAgentSearch(agent, search),
+    );
+
+    const startIndex = cursor
+      ? filteredAgents.findIndex((agent) => agent.id === cursor) + 1
+      : 0;
+    const safeStartIndex = startIndex > 0 ? startIndex : 0;
+    const page = filteredAgents.slice(safeStartIndex, safeStartIndex + take);
+    const hasMore = safeStartIndex + take < filteredAgents.length;
+    const nextCursor =
+      hasMore && page.length > 0 ? (page[page.length - 1]?.id ?? null) : null;
+
+    return contractJsonResponse(contract, "GET", 200, {
       success: true,
-      data: page,
+      data: page.map(({ agentReference: _agentReference, ...agent }) => agent),
       nextCursor,
     });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error("Failed to get agents:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to get agents" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "GET", 500, {
+      success: false,
+      error: "Failed to get agents",
+    });
   }
 }
 
@@ -149,19 +180,16 @@ function getNetworkFromRequest(request: NextRequest): "Mainnet" | "Preprod" {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, activeOrganizationId } =
-      await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(request);
+    const { user, activeOrganizationId } = authContext;
 
     const body = await request.json();
     const validation = registerAgentBodySchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: validation.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: validation.error.issues.map((e) => e.message).join(", "),
+      });
     }
 
     const {
@@ -188,14 +216,48 @@ export async function POST(request: NextRequest) {
       : [];
 
     if (tagsArray.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "At least one tag is required." },
-        { status: 400 },
-      );
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: "At least one tag is required.",
+      });
     }
 
     const network = getNetworkFromRequest(request);
+    requireNetworkedOidcApiScope(authContext, {
+      resource: "agents",
+      action: "write",
+      network,
+    });
+
+    try {
+      await assertAllowedAgentApiUrl(apiUrl);
+    } catch (error) {
+      if (error instanceof Error) {
+        return contractJsonResponse(contract, "POST", 400, {
+          success: false,
+          error: error.message,
+        });
+      }
+      return contractJsonResponse(contract, "POST", 400, {
+        success: false,
+        error: "Invalid API URL",
+      });
+    }
+
     const agentPricing = buildAgentPricing(network, pricing ?? undefined);
+
+    await consumeCreditIfRequired({
+      userId: user.id,
+      reason: "agent_register",
+      reference: createCreditReference("agent-register"),
+      network,
+      metadata: {
+        name,
+        apiUrl,
+        network,
+        authMethod: authContext.authMethod,
+      },
+    });
 
     const params: RegisterAgentParams = {
       name,
@@ -234,28 +296,35 @@ export async function POST(request: NextRequest) {
         include: { agentReference: true },
       });
       if (!agent) {
-        return NextResponse.json(
-          { success: false, error: "Failed to load created agent" },
-          { status: 500 },
-        );
+        return contractJsonResponse(contract, "POST", 500, {
+          success: false,
+          error: "Failed to load created agent",
+        });
       }
       const data = shapeAgentWithMergedMetadata(agent);
-      return NextResponse.json(
-        { success: true, data, agentId: result.agentId },
-        { status: 200 },
-      );
+      return contractJsonResponse(contract, "POST", 200, {
+        success: true,
+        data,
+        agentId: result.agentId,
+      });
     }
-    return NextResponse.json(
-      { success: false, error: result.error },
-      { status: 400 },
-    );
+    return contractJsonResponse(contract, "POST", 400, {
+      success: false,
+      error: result.error,
+    });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
+    if (isPaymentNodeConfigError(error)) {
+      return contractJsonResponse(contract, "POST", 503, {
+        success: false,
+        error: error.message,
+      });
+    }
     console.error("Failed to register agent:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to register agent" },
-      { status: 500 },
-    );
+    return contractJsonResponse(contract, "POST", 500, {
+      success: false,
+      error: "Failed to register agent",
+    });
   }
 }

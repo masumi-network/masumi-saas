@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { getAdminAuthContext } from "@/lib/auth/utils";
+import { getAdminAuthContext, isAdminUser } from "@/lib/auth/utils";
 
 import UsersList from "./components/users-list";
 
@@ -142,6 +142,7 @@ export default async function AdminUsersPage({
             emailVerified: u.emailVerified,
             kycStatus: u.kycVerification?.status ?? null,
             role: u.role || "user",
+            isAdmin: isAdminUser({ id: u.id, role: u.role }),
             banned: u.banned,
             banReason: u.banReason,
             createdAt: u.createdAt.toISOString(),

@@ -1,14 +1,13 @@
 "use server";
 
-import prisma from "@masumi/database/client";
-import { zfd } from "zod-form-data";
-
 import { auth } from "@/lib/auth/auth";
+import { deleteSessionByRawToken } from "@/lib/auth/auth-storage";
+import { classifyAuthError } from "@/lib/auth/error-results";
 import { isAdminUser } from "@/lib/auth/utils";
-import { signInSchema } from "@/lib/schemas";
+import { signInFormDataSchema } from "@/lib/schemas";
 
 export async function adminSignInAction(formData: FormData) {
-  const validation = zfd.formData(signInSchema).safeParse(formData);
+  const validation = signInFormDataSchema.safeParse(formData);
   if (!validation.success) {
     return {
       error: validation.error.issues[0]?.message || "Invalid input",
@@ -47,9 +46,7 @@ export async function adminSignInAction(formData: FormData) {
         // the session record is also removed from the database
         if (result.token) {
           try {
-            await prisma.session.deleteMany({
-              where: { token: result.token },
-            });
+            await deleteSessionByRawToken(result.token);
           } catch {
             // Session cleanup failed - log but don't expose to client
             console.error(
@@ -68,41 +65,19 @@ export async function adminSignInAction(formData: FormData) {
     // User is authenticated AND admin - success
     return { success: true, resultKey: "AdminSignInSuccess" };
   } catch (error) {
-    if (error instanceof Error) {
-      const errorMessage = error.message.toLowerCase();
-      if (
-        errorMessage.includes("denied access") ||
-        errorMessage.includes("database") ||
-        errorMessage.includes("connection") ||
-        errorMessage.includes("not available")
-      ) {
-        return {
-          error:
-            "Database connection error. Please check your database configuration.",
-          errorKey: "DatabaseError",
-        };
-      }
-      if (
-        errorMessage.includes("invalid") ||
-        errorMessage.includes("password") ||
-        errorMessage.includes("email") ||
-        errorMessage.includes("credentials") ||
-        errorMessage.includes("banned")
-      ) {
-        return {
+    return classifyAuthError(error, [
+      {
+        matches: (message) =>
+          message.includes("invalid") ||
+          message.includes("password") ||
+          message.includes("email") ||
+          message.includes("credentials") ||
+          message.includes("banned"),
+        result: {
           error: "Invalid email or password",
-          errorKey: "InvalidCredentials",
-        };
-      }
-      // M3 FIX: Don't leak raw error.message to client
-      return {
-        error: "An unexpected error occurred",
-        errorKey: "UnexpectedError",
-      };
-    }
-    return {
-      error: "An unexpected error occurred",
-      errorKey: "UnexpectedError",
-    };
+          errorKey: "InvalidCredentials" as const,
+        },
+      },
+    ]);
   }
 }

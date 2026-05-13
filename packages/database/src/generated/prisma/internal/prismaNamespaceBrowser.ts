@@ -64,7 +64,15 @@ export const ModelName = {
   Member: "Member",
   Invitation: "Invitation",
   Apikey: "Apikey",
+  OauthApplication: "OauthApplication",
+  OauthAccessToken: "OauthAccessToken",
+  OauthConsent: "OauthConsent",
+  OidcUserGrant: "OidcUserGrant",
+  CreditLedgerEntry: "CreditLedgerEntry",
+  DeviceCode: "DeviceCode",
+  Jwks: "Jwks",
   RateLimit: "RateLimit",
+  EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
   AgentActivityEvent: "AgentActivityEvent",
@@ -73,6 +81,7 @@ export const ModelName = {
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
+  InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
 } as const;
 
@@ -97,6 +106,7 @@ export const UserScalarFieldEnum = {
   name: "name",
   email: "email",
   emailVerified: "emailVerified",
+  creditsRemaining: "creditsRemaining",
   image: "image",
   imageHash: "imageHash",
   createdAt: "createdAt",
@@ -255,6 +265,107 @@ export const ApikeyScalarFieldEnum = {
 export type ApikeyScalarFieldEnum =
   (typeof ApikeyScalarFieldEnum)[keyof typeof ApikeyScalarFieldEnum];
 
+export const OauthApplicationScalarFieldEnum = {
+  id: "id",
+  clientId: "clientId",
+  clientSecret: "clientSecret",
+  type: "type",
+  name: "name",
+  icon: "icon",
+  metadata: "metadata",
+  redirectUrls: "redirectUrls",
+  disabled: "disabled",
+  userId: "userId",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OauthApplicationScalarFieldEnum =
+  (typeof OauthApplicationScalarFieldEnum)[keyof typeof OauthApplicationScalarFieldEnum];
+
+export const OauthAccessTokenScalarFieldEnum = {
+  id: "id",
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
+  accessTokenExpiresAt: "accessTokenExpiresAt",
+  refreshTokenExpiresAt: "refreshTokenExpiresAt",
+  oidcSessionId: "oidcSessionId",
+  clientId: "clientId",
+  userId: "userId",
+  scopes: "scopes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OauthAccessTokenScalarFieldEnum =
+  (typeof OauthAccessTokenScalarFieldEnum)[keyof typeof OauthAccessTokenScalarFieldEnum];
+
+export const OauthConsentScalarFieldEnum = {
+  id: "id",
+  clientId: "clientId",
+  userId: "userId",
+  scopes: "scopes",
+  consentGiven: "consentGiven",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OauthConsentScalarFieldEnum =
+  (typeof OauthConsentScalarFieldEnum)[keyof typeof OauthConsentScalarFieldEnum];
+
+export const OidcUserGrantScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  clientId: "clientId",
+  scopes: "scopes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type OidcUserGrantScalarFieldEnum =
+  (typeof OidcUserGrantScalarFieldEnum)[keyof typeof OidcUserGrantScalarFieldEnum];
+
+export const CreditLedgerEntryScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  delta: "delta",
+  balanceAfter: "balanceAfter",
+  reason: "reason",
+  reference: "reference",
+  metadata: "metadata",
+  createdAt: "createdAt",
+} as const;
+
+export type CreditLedgerEntryScalarFieldEnum =
+  (typeof CreditLedgerEntryScalarFieldEnum)[keyof typeof CreditLedgerEntryScalarFieldEnum];
+
+export const DeviceCodeScalarFieldEnum = {
+  id: "id",
+  deviceCode: "deviceCode",
+  userCode: "userCode",
+  userId: "userId",
+  expiresAt: "expiresAt",
+  status: "status",
+  lastPolledAt: "lastPolledAt",
+  pollingInterval: "pollingInterval",
+  clientId: "clientId",
+  scope: "scope",
+} as const;
+
+export type DeviceCodeScalarFieldEnum =
+  (typeof DeviceCodeScalarFieldEnum)[keyof typeof DeviceCodeScalarFieldEnum];
+
+export const JwksScalarFieldEnum = {
+  id: "id",
+  publicKey: "publicKey",
+  privateKey: "privateKey",
+  createdAt: "createdAt",
+  expiresAt: "expiresAt",
+} as const;
+
+export type JwksScalarFieldEnum =
+  (typeof JwksScalarFieldEnum)[keyof typeof JwksScalarFieldEnum];
+
 export const RateLimitScalarFieldEnum = {
   id: "id",
   key: "key",
@@ -264,6 +375,17 @@ export const RateLimitScalarFieldEnum = {
 
 export type RateLimitScalarFieldEnum =
   (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum];
+
+export const EmailSendRateLimitScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  count: "count",
+  windowStart: "windowStart",
+  updatedAt: "updatedAt",
+} as const;
+
+export type EmailSendRateLimitScalarFieldEnum =
+  (typeof EmailSendRateLimitScalarFieldEnum)[keyof typeof EmailSendRateLimitScalarFieldEnum];
 
 export const KycVerificationScalarFieldEnum = {
   id: "id",
@@ -407,6 +529,28 @@ export const AgentReferenceScalarFieldEnum = {
 
 export type AgentReferenceScalarFieldEnum =
   (typeof AgentReferenceScalarFieldEnum)[keyof typeof AgentReferenceScalarFieldEnum];
+
+export const InboxAgentReferenceScalarFieldEnum = {
+  id: "id",
+  userId: "userId",
+  paymentNodeId: "paymentNodeId",
+  networkIdentifier: "networkIdentifier",
+  name: "name",
+  description: "description",
+  agentSlug: "agentSlug",
+  state: "state",
+  agentIdentifier: "agentIdentifier",
+  executingWalletId: "executingWalletId",
+  executingWalletVkey: "executingWalletVkey",
+  executingWalletAddress: "executingWalletAddress",
+  smartContractAddress: "smartContractAddress",
+  registryEntry: "registryEntry",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type InboxAgentReferenceScalarFieldEnum =
+  (typeof InboxAgentReferenceScalarFieldEnum)[keyof typeof InboxAgentReferenceScalarFieldEnum];
 
 export const VeridianCredentialScalarFieldEnum = {
   id: "id",

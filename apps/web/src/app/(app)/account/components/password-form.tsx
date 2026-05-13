@@ -121,7 +121,7 @@ export function PasswordForm() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full">
+              <Button type="submit" variant="outline" className="w-full">
                 {isSubmitting && <Spinner size={16} className="mr-2" />}
                 {t("submit")}
               </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, Trash2, Unplug } from "lucide-react";
+import { Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
@@ -49,6 +50,7 @@ export function AgentsTable({
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const { formatRelativeDate } = useFormatDate();
+  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
@@ -170,14 +172,12 @@ export function AgentsTable({
                       <span className="text-sm font-medium truncate">
                         {agent.name}
                       </span>
-                      {agent.verificationStatus === "VERIFIED" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>{"Verified agent"}</TooltipContent>
-                        </Tooltip>
-                      )}
+                      {agentVerificationUiEnabled &&
+                        agent.verificationStatus === "VERIFIED" && (
+                          <span className="sr-only">
+                            {t("status.verified")}
+                          </span>
+                        )}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {agent.description ??
@@ -270,6 +270,7 @@ export function AgentsTable({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={tDetails("deregister")}
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={(e) => handleDeregisterClick(e, agent)}
                           >
@@ -287,6 +288,7 @@ export function AgentsTable({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={tDetails("delete")}
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={(e) => handleDeleteClick(e, agent)}
                           >

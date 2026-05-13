@@ -28,9 +28,12 @@ export function NotificationsDialog() {
         <Button variant="outline" size="icon" className="h-8 w-8 relative">
           <Bell className="h-4 w-4" />
           {notifications.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
-              {notifications.length > 99 ? "99+" : notifications.length}
-            </span>
+            <>
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                {notifications.length > 99 ? "99+" : notifications.length}
+              </span>
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary/40 animate-ping" />
+            </>
           )}
         </Button>
       </PopoverTrigger>
@@ -57,16 +60,20 @@ export function NotificationsDialog() {
               <Bell className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground">{t("empty")}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              {t("emptyHint")}
+            </p>
           </div>
         ) : (
           <ul className="max-h-[min(70vh,24rem)] overflow-y-auto">
-            {notifications.map((notification) => {
+            {notifications.map((notification, index) => {
               const Icon = NOTIFICATION_ICONS[notification.type];
               const title = t(notification.titleKey);
               return (
                 <li
                   key={notification.id}
-                  className="border-b border-border/60 last:border-b-0"
+                  className="border-b border-border/60 last:border-b-0 animate-list-item-in"
+                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div className="flex gap-3 px-4 py-3 hover:bg-muted/40">
                     <div className="shrink-0 mt-0.5">
