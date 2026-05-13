@@ -11,7 +11,6 @@ import { z } from "zod";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
@@ -38,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { cn } from "@/lib/utils";
 
 import { AgentIconPicker } from "./agent-icon-picker";
 
@@ -51,11 +51,13 @@ interface RegisterAgentDialogProps {
   onSuccess: () => void;
 }
 
+type PricingMode = "Free" | "Fixed" | "Dynamic";
+
 type AgentFormFields = {
   name: string;
   description?: string;
   extendedDescription?: string;
-  isFree: boolean;
+  pricingType: PricingMode;
   prices: Array<{ amount: string }>;
   tags?: string;
   icon?: string;
@@ -170,12 +172,13 @@ function ExampleOutputsFields({
 function PricingFields({
   form: pricingForm,
   t: pricingT,
-  isFree,
+  pricingMode,
 }: {
   form: UseFormReturn<AgentFormFields>;
   t: (key: string) => string;
-  isFree: boolean;
+  pricingMode: PricingMode;
 }) {
+  const fixedLocked = pricingMode !== "Fixed";
   const { fields, append, remove } = useFieldArray({
     control: pricingForm.control,
     name: "prices",
@@ -185,8 +188,8 @@ function PricingFields({
     <div
       className="space-y-3 transition-opacity duration-200"
       style={{
-        opacity: isFree ? 0.4 : 1,
-        pointerEvents: isFree ? "none" : undefined,
+        opacity: fixedLocked ? 0.4 : 1,
+        pointerEvents: fixedLocked ? "none" : undefined,
       }}
     >
       <div className="flex items-center justify-between">
@@ -195,7 +198,7 @@ function PricingFields({
           type="button"
           variant="outline"
           size="sm"
-          disabled={isFree}
+          disabled={fixedLocked}
           onClick={() => append({ amount: "" })}
         >
           {pricingT("addPrice")}
@@ -219,7 +222,7 @@ function PricingFields({
                       min="0"
                       step="0.01"
                       {...amountField}
-                      disabled={isFree}
+                      disabled={fixedLocked}
                       className="h-11"
                       onChange={(e) => amountField.onChange(e.target.value)}
                     />
@@ -233,7 +236,7 @@ function PricingFields({
                 type="button"
                 variant="ghost"
                 size="icon"
-                disabled={isFree}
+                disabled={fixedLocked}
                 onClick={() => remove(index)}
                 className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
@@ -311,7 +314,7 @@ export function RegisterAgentDialog({
             message: t("apiUrlProtocol"),
           },
         ),
-      isFree: z.boolean(),
+      pricingType: z.enum(["Free", "Fixed", "Dynamic"]),
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
@@ -336,7 +339,7 @@ export function RegisterAgentDialog({
     })
     .refine(
       (data) => {
-        if (data.isFree) return true;
+        if (data.pricingType !== "Fixed") return true;
         const filled = (data.prices ?? []).filter((p) => p.amount?.trim());
         return filled.length > 0;
       },
@@ -350,7 +353,7 @@ export function RegisterAgentDialog({
       description: "",
       extendedDescription: "",
       apiUrl: "",
-      isFree: false,
+      pricingType: "Fixed",
       prices: [{ amount: "" }],
       tags: "",
       icon: "bot",
@@ -363,9 +366,11 @@ export function RegisterAgentDialog({
     },
   });
 
-  const isFree =
-    useWatch({ control: form.control, name: "isFree", defaultValue: false }) ===
-    true;
+  const pricingType = useWatch({
+    control: form.control,
+    name: "pricingType",
+    defaultValue: "Fixed",
+  }) as PricingMode;
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
@@ -389,7 +394,7 @@ export function RegisterAgentDialog({
       description: "",
       extendedDescription: "",
       apiUrl: "",
-      isFree: false,
+      pricingType: "Fixed",
       prices: [{ amount: "" }],
       tags: "",
       icon: "bot",
@@ -421,16 +426,24 @@ export function RegisterAgentDialog({
     setIsLoading(true);
     const submitId = ++submitIdRef.current;
     try {
-      const pricingType = data.isFree ? "Free" : "Fixed";
-      const prices =
-        !data.isFree && (data.prices ?? []).length > 0
-          ? (data.prices ?? [])
-              .filter((p) => p.amount?.trim())
-              .map((p) => ({ amount: p.amount.trim(), currency: "USD" }))
-          : undefined;
       const exampleOutputs = (data.exampleOutputs ?? []).filter(
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
+
+      const pricingBody =
+        data.pricingType === "Free"
+          ? { pricingType: "Free" as const }
+          : data.pricingType === "Dynamic"
+            ? { pricingType: "Dynamic" as const }
+            : {
+                pricingType: "Fixed" as const,
+                prices: (data.prices ?? [])
+                  .filter((p) => p.amount?.trim())
+                  .map((p) => ({
+                    amount: p.amount.trim(),
+                    currency: "USD",
+                  })),
+              };
 
       const body = {
         name: data.name,
@@ -439,10 +452,7 @@ export function RegisterAgentDialog({
         apiUrl: data.apiUrl,
         tags: tags.join(", "),
         icon: data.icon?.trim() ?? "",
-        pricing:
-          pricingType === "Fixed" && prices && prices.length > 0
-            ? { pricingType: "Fixed" as const, prices }
-            : { pricingType: "Free" as const },
+        pricing: pricingBody,
         termsOfUseUrl: data.termsOfUseUrl?.trim() ?? "",
         privacyPolicyUrl: data.privacyPolicyUrl?.trim() ?? "",
         otherUrl: data.otherUrl?.trim() ?? "",
@@ -664,28 +674,76 @@ export function RegisterAgentDialog({
 
                   <FormField
                     control={form.control}
-                    name="isFree"
+                    name="pricingType"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                      <FormItem>
+                        <FormLabel>{t("pricingModel")}</FormLabel>
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked === true)
-                            }
-                          />
+                          <div
+                            className="grid gap-3 sm:grid-cols-3"
+                            role="radiogroup"
+                            aria-label={t("pricingModel")}
+                          >
+                            {(
+                              [
+                                {
+                                  value: "Free" as const,
+                                  titleKey: "pricingFreeTitle",
+                                  descKey: "pricingFreeDescription",
+                                },
+                                {
+                                  value: "Fixed" as const,
+                                  titleKey: "pricingFixedTitle",
+                                  descKey: "pricingFixedDescription",
+                                },
+                                {
+                                  value: "Dynamic" as const,
+                                  titleKey: "pricingDynamicTitle",
+                                  descKey: "pricingDynamicDescription",
+                                },
+                              ] as const
+                            ).map((opt) => {
+                              const selected = field.value === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={selected}
+                                  className={cn(
+                                    "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                    selected
+                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      : "border-border/80 bg-muted/20 hover:bg-muted/40",
+                                  )}
+                                  onClick={() => field.onChange(opt.value)}
+                                >
+                                  <p className="text-sm font-medium">
+                                    {t(opt.titleKey)}
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                                    {t(opt.descKey)}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          {t("isFree")}
-                        </FormLabel>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
 
+                  {pricingType === "Dynamic" && (
+                    <div className="rounded-lg border border-dashed border-primary/35 bg-muted/30 px-4 py-3 text-sm text-muted-foreground leading-relaxed">
+                      {t("pricingDynamicContext")}
+                    </div>
+                  )}
+
                   <PricingFields
                     form={form as unknown as UseFormReturn<AgentFormFields>}
                     t={t}
-                    isFree={isFree}
+                    pricingMode={pricingType}
                   />
                 </div>
 

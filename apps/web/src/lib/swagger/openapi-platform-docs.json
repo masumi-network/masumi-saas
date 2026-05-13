@@ -8164,35 +8164,83 @@
                     "maxLength": 2000
                   },
                   "pricing": {
-                    "type": "object",
-                    "properties": {
-                      "pricingType": {
-                        "type": "string",
-                        "enum": [
-                          "Free",
-                          "Fixed"
-                        ]
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Free"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
+                        ],
+                        "example": {
+                          "pricingType": "Free"
+                        }
                       },
-                      "prices": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "amount": {
-                              "type": "string"
-                            },
-                            "currency": {
-                              "type": "string"
-                            }
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Fixed"
+                            ]
                           },
-                          "required": [
-                            "amount"
+                          "prices": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "amount": {
+                                  "type": "string"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "amount"
+                              ]
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "pricingType",
+                          "prices"
+                        ],
+                        "example": {
+                          "pricingType": "Fixed",
+                          "prices": [
+                            {
+                              "amount": "5",
+                              "currency": "USD"
+                            }
                           ]
                         }
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Dynamic"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
+                        ],
+                        "example": {
+                          "pricingType": "Dynamic"
+                        }
                       }
-                    },
-                    "required": [
-                      "pricingType"
                     ]
                   },
                   "termsOfUseUrl": {
@@ -8301,7 +8349,7 @@
                   "name",
                   "apiUrl"
                 ],
-                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`).",
+                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).",
                 "example": {
                   "name": "Research assistant",
                   "description": "Helps with literature review",

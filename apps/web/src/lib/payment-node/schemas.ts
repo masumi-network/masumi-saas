@@ -43,6 +43,9 @@ const agentPricingFixedSchema = z.object({
   pricingType: z.literal("Fixed"),
   Pricing: z.array(unitAmountSchema),
 });
+const agentPricingDynamicSchema = z.object({
+  pricingType: z.literal("Dynamic"),
+});
 const agentPricingFreeSchema = z.object({
   pricingType: z.literal("Free"),
 });
@@ -53,6 +56,7 @@ const agentPricingUnknownSchema = z
   .passthrough();
 const agentPricingSchema = z.union([
   agentPricingFreeSchema,
+  agentPricingDynamicSchema,
   agentPricingFixedSchema,
   agentPricingUnknownSchema,
 ]);
@@ -189,6 +193,7 @@ export const registerAgentInputSchema = z.object({
     .optional(),
   AgentPricing: z.union([
     z.object({ pricingType: z.literal("Free") }),
+    z.object({ pricingType: z.literal("Dynamic") }),
     z.object({
       pricingType: z.literal("Fixed"),
       Pricing: z.array(unitAmountSchema),

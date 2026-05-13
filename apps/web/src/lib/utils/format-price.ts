@@ -13,6 +13,7 @@ export function formatBalance(balance: string | number): string {
 
 export type AgentPricing =
   | { pricingType: "Free" }
+  | { pricingType: "Dynamic" }
   | {
       pricingType: "Fixed";
       prices: Array<{ amount: string; currency?: string }>;
@@ -27,6 +28,7 @@ export function formatPricingDisplay(
 ): string {
   if (!pricing || typeof pricing !== "object") return "—";
   if ((pricing as AgentPricing).pricingType === "Free") return "Free";
+  if ((pricing as AgentPricing).pricingType === "Dynamic") return "Dynamic";
   const fixed = pricing as {
     pricingType?: string;
     prices?: Array<{ amount: string }>;
