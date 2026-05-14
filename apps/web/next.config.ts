@@ -57,7 +57,7 @@ function buildContentSecurityPolicy(options: {
     connectSrc.add(options.sentryOrigin);
   }
 
-  if (options.route === "verification" && options.sumsubOrigin) {
+  if (options.sumsubOrigin) {
     connectSrc.add(options.sumsubOrigin);
     frameSrc.add(options.sumsubOrigin);
   }
