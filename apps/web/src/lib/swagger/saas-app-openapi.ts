@@ -527,18 +527,20 @@ const verifyAgentSuccessSchema = z
     },
   });
 
-/** Public doc omits `secret` (still returned by the API once for HMAC setup). */
+/** `secret` must stay in this schema: `contractJsonResponse` parses with Zod and drops unknown keys. */
 const verificationChallengeSuccessSchema = z
   .object({
     success: z.literal(true),
     data: z
       .object({
         challenge: z.string(),
+        /** 64-char hex for `MASUMI_VERIFICATION_SECRET`; confidential. */
+        secret: z.string(),
         generatedAt: z.string().nullable(),
       })
       .openapi({
         description:
-          "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs.",
+          "`secret` configures the agent HMAC; never log, commit, or expose publicly.",
       }),
   })
   .openapi({
@@ -546,6 +548,8 @@ const verificationChallengeSuccessSchema = z
       success: true,
       data: {
         challenge: "550e8400-e29b-41d4-a716-446655440000",
+        secret:
+          "0000000000000000000000000000000000000000000000000000000000000000",
         generatedAt: "2025-01-20T11:00:00.000Z",
       },
     },
