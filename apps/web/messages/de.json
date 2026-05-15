@@ -1177,6 +1177,7 @@
           },
           "loading": "Laden...",
           "requestVerification": "Ausweis anfordern",
+          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Ein Ausweis kann erst nach bestätigter Registrierung angefordert werden.",
           "requestDescription": "Überprüfen Sie die folgenden Informationen und bestätigen Sie, dass Sie für diesen Agenten einen überprüfbaren Ausweis ausstellen möchten.",
           "agentInformation": "Agenteninformationen",
           "agentName": "Agentenname",

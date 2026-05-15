@@ -1177,6 +1177,7 @@
           },
           "loading": "Chargement...",
           "requestVerification": "Demander un identifiant",
+          "tooltipRequestCredentialRequiresRegistration": "Finalisez d'abord l'enregistrement on-chain de cet agent. Vous ne pouvez demander un identifiant qu'une fois l'enregistrement confirmé.",
           "requestDescription": "Examinez les informations ci-dessous et confirmez l'émission d'informations d'identification vérifiables pour cet agent.",
           "agentInformation": "Informations sur les agents",
           "agentName": "Nom de l'agent",

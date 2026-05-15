@@ -1177,6 +1177,7 @@
           },
           "loading": "読み込み中...",
           "requestVerification": "認証情報の要求",
+          "tooltipRequestCredentialRequiresRegistration": "まずこのエージェントのオンチェーン登録を完了してください。登録が確認されてからでないと認証情報をリクエストできません。",
           "requestDescription": "以下の情報を確認し、このエージェントの検証可能な資格情報を発行することを確認します。",
           "agentInformation": "エージェント情報",
           "agentName": "エージェント名",

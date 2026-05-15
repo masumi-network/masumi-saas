@@ -13,6 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getKycStatusAction } from "@/lib/actions";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -39,6 +44,8 @@ export function AgentVerificationCard({
   const [, startTransition] = useTransition();
 
   const status = agent.verificationStatus || "PENDING";
+  const isRegistrationConfirmed =
+    agent.registrationState === "RegistrationConfirmed";
 
   useEffect(() => {
     if (!agentVerificationEnabled) {
@@ -108,6 +115,24 @@ export function AgentVerificationCard({
             <Button variant="primary" className="w-full" disabled>
               {t("loading")}
             </Button>
+          ) : kycStatus === "APPROVED" && !isRegistrationConfirmed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="block w-full cursor-not-allowed">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full pointer-events-none"
+                    disabled
+                  >
+                    {t("requestVerification")}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                {t("tooltipRequestCredentialRequiresRegistration")}
+              </TooltipContent>
+            </Tooltip>
           ) : kycStatus === "APPROVED" ? (
             <Button
               variant="primary"

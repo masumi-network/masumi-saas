@@ -1315,6 +1315,7 @@
           },
           "loading": "Loading...",
           "requestVerification": "Request Credential",
+          "tooltipRequestCredentialRequiresRegistration": "Finish on-chain registration for this agent first. You can request a credential only after registration is confirmed.",
           "requestDescription": "Review the information below and confirm to issue a Verifiable Credential for this agent.",
           "agentInformation": "Agent Information",
           "agentName": "Agent Name",
