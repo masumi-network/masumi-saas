@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { HtmlContent } from "@/components/html-content";
 import { Markdown } from "@/components/markdown";
@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
-import { getKycStatusAction } from "@/lib/actions";
+import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import { type Agent } from "@/lib/api/agent.client";
 import { appConfig } from "@/lib/config/app.config";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -68,13 +68,11 @@ export function AgentDetails({
   const tVerification = useTranslations("App.Agents.Details.Verification");
   const tCommon = useTranslations("Common");
   const { formatDate, formatRelativeDate } = useFormatDate();
-  const [kycStatus, setKycStatus] = useState<
-    "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
-  >(null);
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
-  const [isLoadingKyc, setIsLoadingKyc] = useState(agentVerificationEnabled);
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
-  const [, startTransition] = useTransition();
+  const { kycStatus, isLoadingKyc } = useKycStatusWithPolling(
+    agentVerificationEnabled,
+  );
 
   const isVerified = agent.verificationStatus === "VERIFIED";
   const isRegistrationConfirmed =
@@ -100,18 +98,6 @@ export function AgentDetails({
     localStorage.setItem(key, "1");
     setIsVerificationBannerDismissed(true);
   }, [agent.id]);
-
-  useEffect(() => {
-    if (!agentVerificationEnabled) return;
-
-    startTransition(async () => {
-      const result = await getKycStatusAction();
-      if (result.success && result.data) {
-        setKycStatus(result.data.kycStatus);
-      }
-      setIsLoadingKyc(false);
-    });
-  }, [agentVerificationEnabled, startTransition]);
 
   const sokosumiUrl = `${appConfig.sokosumiMarketplaceUrl}/${agent.agentIdentifier ?? agent.id}`;
 

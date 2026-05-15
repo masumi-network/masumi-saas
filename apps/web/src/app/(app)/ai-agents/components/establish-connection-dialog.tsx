@@ -36,6 +36,11 @@ export function EstablishConnectionDialog({
   );
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const lastCheckedAidRef = useRef<string | null>(null);
+  /** Stop hammering the API if the credential server never registers this AID (misconfigured env / wrong QR). */
+  const pollAttemptsRef = useRef(0);
+
+  const POLL_INTERVAL_MS = 3000;
+  const MAX_POLL_ATTEMPTS = 100;
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false) => {
@@ -96,8 +101,34 @@ export function EstablishConnectionDialog({
       setIssuerOobi(null);
       setConnectionExists(null);
       lastCheckedAidRef.current = null;
+      pollAttemptsRef.current = 0;
     }
   }, [open, aid, checkConnection]);
+
+  /**
+   * After the user scans the issuer QR, the credential server often updates
+   * slightly later than the first check. Poll until connected, capped.
+   */
+  useEffect(() => {
+    // Only poll after we know the server responded "not connected" yet — avoids
+    // stacking requests while the first check is still in flight (null).
+    if (!open || !aid || connectionExists !== false) {
+      return;
+    }
+
+    pollAttemptsRef.current = 0;
+
+    const id = window.setInterval(() => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current > MAX_POLL_ATTEMPTS) {
+        window.clearInterval(id);
+        return;
+      }
+      void checkConnection(aid, true);
+    }, POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(id);
+  }, [open, aid, connectionExists, checkConnection]);
 
   if (!aid) {
     return null;

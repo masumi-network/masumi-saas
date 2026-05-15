@@ -3,7 +3,7 @@
 import { AlertCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getKycStatusAction } from "@/lib/actions";
+import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { cn } from "@/lib/utils";
@@ -37,29 +37,13 @@ export function AgentVerificationCard({
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [kycStatus, setKycStatus] = useState<
-    "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null
-  >(null);
-  const [isLoadingKyc, setIsLoadingKyc] = useState(agentVerificationEnabled);
-  const [, startTransition] = useTransition();
+  const { kycStatus, isLoadingKyc } = useKycStatusWithPolling(
+    agentVerificationEnabled,
+  );
 
   const status = agent.verificationStatus || "PENDING";
   const isRegistrationConfirmed =
     agent.registrationState === "RegistrationConfirmed";
-
-  useEffect(() => {
-    if (!agentVerificationEnabled) {
-      return;
-    }
-
-    startTransition(async () => {
-      const result = await getKycStatusAction();
-      if (result.success && result.data) {
-        setKycStatus(result.data.kycStatus);
-      }
-      setIsLoadingKyc(false);
-    });
-  }, [agentVerificationEnabled, startTransition]);
 
   if (!agentVerificationEnabled) {
     return null;

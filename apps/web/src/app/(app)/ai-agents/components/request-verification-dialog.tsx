@@ -803,6 +803,15 @@ export function RequestVerificationDialog({
                         >
                           {t("establishConnection")}
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => aid && checkConnection(aid, true)}
+                          disabled={isCheckingConnection}
+                          className="w-full"
+                        >
+                          {t("checkConnectionAgain")}
+                        </Button>
                       </div>
                     ) : connectionExists === true ? (
                       <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
@@ -847,7 +856,12 @@ export function RequestVerificationDialog({
 
         <EstablishConnectionDialog
           open={establishConnectionDialogOpen}
-          onOpenChange={setEstablishConnectionDialogOpen}
+          onOpenChange={(nextOpen) => {
+            setEstablishConnectionDialogOpen(nextOpen);
+            if (!nextOpen && aid) {
+              checkConnection(aid, true);
+            }
+          }}
           aid={aid}
           onConnectionEstablished={() => {
             if (aid) {
