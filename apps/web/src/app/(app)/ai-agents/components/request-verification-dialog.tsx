@@ -352,24 +352,23 @@ export function RequestVerificationDialog({
     }
 
     connPollAttemptsRef.current = 0;
-    const interval = {
-      id: undefined as ReturnType<typeof setInterval> | undefined,
-    };
+    /** Browser timer id (`window.setInterval` returns `number` in DOM types). */
+    let intervalId: number | undefined;
 
     const tick = async () => {
       connPollAttemptsRef.current += 1;
       if (connPollAttemptsRef.current > CONNECTION_POLL_MAX) {
-        if (interval.id !== undefined) window.clearInterval(interval.id);
+        if (intervalId !== undefined) window.clearInterval(intervalId);
         return;
       }
       await checkConnectionRef.current(derivedAid, true);
     };
 
     void tick();
-    interval.id = window.setInterval(() => void tick(), CONNECTION_POLL_MS);
+    intervalId = window.setInterval(() => void tick(), CONNECTION_POLL_MS);
 
     return () => {
-      if (interval.id !== undefined) window.clearInterval(interval.id);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
     };
   }, [step, derivedAid, invalidOobiPaste, connectionExists]);
 
