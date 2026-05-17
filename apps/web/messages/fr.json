@@ -886,8 +886,8 @@
         "gdpr": "Nous suivons les principes du RGPD et ne collectons que le minimum de données nécessaires à la vérification. Vos données sont traitées de manière sécurisée et seront conservées conformément à notre politique de confidentialité.",
         "biometricTitle": "Consentement biométrique",
         "biometric": "Le processus de vérification comprend des contrôles biométriques (détection de selfie et de vivacité) pour garantir que vous êtes une personne réelle correspondant à vos documents d'identité.",
-        "credentialTitle": "Identifiant Veridian",
-        "credential": "Une fois la vérification réussie, un identifiant Veridian sera émis sur votre compte. Cet identifiant vous permet d'utiliser des fonctionnalités avancées et peut être partagé avec votre consentement.",
+        "credentialTitle": "Justificatif de vérification",
+        "credential": "Une fois la vérification réussie, un justificatif sera émis sur votre compte. Ce justificatif vous permet d'utiliser des fonctionnalités avancées et peut être partagé avec votre consentement.",
         "consentLabel": "Je comprends et j'accepte le processus de vérification d'identité.",
         "startButton": "Commencer la vérification",
         "metaTitle": "Vérification d'identité"
@@ -948,6 +948,8 @@
       },
       "status": {
         "verified": "Vérifié",
+        "verifiedShieldAriaSummary": "Authenticité de l'agent vérifiée via une Agent Identity.",
+        "verifiedShieldTooltip": "L'authenticité de cet agent est vérifiée via une Agent Identity. <docsLink>En savoir plus</docsLink> sur les Agent Identities.",
         "rejected": "Rejeté",
         "underReview": "En cours de révision",
         "pending": "En attente",
@@ -1149,7 +1151,7 @@
         "Verification": {
           "pending": {
             "title": "Aucun justificatif délivré",
-            "description": "Cet agent n'a pas encore d'identifiant Veridian. Demandez un identifiant pour lier votre statut KYC vérifié à cet agent."
+            "description": "Cet agent n'a pas encore été vérifié. Demandez une vérification pour lier votre identité vérifiée à cet agent."
           },
           "review": {
             "title": "Vérification en cours d'examen",
@@ -1161,15 +1163,47 @@
           },
           "verified": {
             "title": "Agent vérifié",
-            "description": "Cet agent a été vérifié avec succès avec un identifiant Veridian."
+            "description": "L'identité de cet agent a été vérifiée sur le réseau Masumi."
           },
           "revoked": {
-            "title": "Identifiant révoqué",
-            "description": "Les informations d'identification de cet agent ont été révoquées. Vous pouvez demander un nouvel identifiant."
+            "title": "Vérification révoquée",
+            "description": "La vérification de cet agent a été révoquée. Vous pouvez demander une nouvelle vérification."
           },
           "expired": {
-            "title": "Identifiant expiré",
-            "description": "Les informations d'identification de cet agent ont expiré. Vous pouvez demander un nouvel identifiant."
+            "title": "Vérification expirée",
+            "description": "La vérification de cet agent a expiré. Vous pouvez demander une nouvelle vérification."
+          },
+          "credentialStatuses": {
+            "PENDING": "En attente — acceptation du wallet",
+            "ISSUED": "Émis",
+            "REVOKED": "Révoqué",
+            "EXPIRED": "Expiré"
+          },
+          "credentialSummary": {
+            "sectionTitle": "Détails de la vérification",
+            "loadError": "Impossible de charger les détails de la vérification. Réessayez après actualisation.",
+            "emptyHint": "Aucune métadonnée d'identifiant enregistrée pour cet agent.",
+            "pendingPlaceholder": "Cet enregistrement attend la finalisation de l'émission.",
+            "credentialDbStatus": "Statut de l'identifiant",
+            "credentialId": "ID d'identifiant (SAID)",
+            "schemaSaid": "SAID du schéma",
+            "recipientAid": "AID du destinataire",
+            "localRecordId": "ID d'enregistrement interne",
+            "credentialAgentDisplayName": "Nom d'agent (dans le VC)",
+            "credentialAgentApiUrl": "URL d'API agent (dans le VC)",
+            "claimedRegistryAgentId": "ID agent registry revendiqué dans le VC",
+            "currentRegistryAgentId": "ID agent registry on-chain actuel",
+            "registryMatch": "L'ID registry du VC correspond à cet agent.",
+            "registryMismatch": "L'ID registry du VC diffère — les métadonnées ont peut‑être changé.",
+            "issuedAt": "Émis le",
+            "expiresAt": "Expire le",
+            "expiresNever": "Sans date d'expiration",
+            "revokedAt": "Révoqué le",
+            "revokedNever": "Non révoqué",
+            "lastUpdated": "Dernière synchro de l'enregistrement",
+            "identityDocsLink": "À propos des Agent Identities (doc)",
+            "notProvided": "absent du VC",
+            "notRegisteredYet": "pas encore défini"
           },
           "rejected": {
             "title": "Vérification rejetée",
@@ -1194,10 +1228,21 @@
           "requestSuccess": "Identifiant délivré avec succès !",
           "requestError": "Échec de la délivrance des informations d'identification. Veuillez réessayer.",
           "acceptanceTimeout": "Délai d'attente d'acceptation dans le portefeuille dépassé. Vous pouvez fermer et réessayer.",
+          "waitingForIssuanceSubmit": "Patientez…",
           "waitingForWalletAcceptance": "En attente de l'acceptation du portefeuille",
           "waitingForWalletDescription": "Veuillez ouvrir votre portefeuille Veridian et accepter l'offre d'identification entrante.",
           "completeKyc": "Vérification KYC complète",
-          "veridianWalletConnection": "Connexion au portefeuille Veridian",
+          "connectCredentialServer": "Connexion au serveur d'informations d'identification",
+          "credentialServerInstructions": "Scannez le code QR de l'émetteur dans Veridian (Menu → Cardano Connect → Connect). Collez ensuite l'OOBI copiée depuis votre portefeuille ci-dessous. Si le portefeuille est déjà lié, saisissez uniquement votre AID.",
+          "pasteOobi": "Collez l'OOBI de votre portefeuille",
+          "oobiPlaceholder": "ex. https://exemple.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "Déjà lié ? Entrez uniquement votre AID",
+          "useOobiPaste": "Coller une OOBI à la place",
+          "pasteAid": "Collez votre AID",
+          "aidPlaceholder": "ex. EL9oOWU…",
+          "parsedAid": "AID détectée",
+          "invalidOobi": "Impossible d’extraire une AID depuis cette OOBI. Vérifiez le format de l’URL.",
+          "veridianWalletConnection": "Connexion au serveur d'informations d'identification",
           "fetchingCredentials": "Récupération des informations d'identification...",
           "identifierAid": "Identifiant (AID)",
           "credentialsFound": "{count} identifiant(s) trouvé(s)",
@@ -1239,19 +1284,19 @@
           "tooltipIntegrationCode": "Ajoutez ce point de terminaison à votre agent. Il reçoit un défi et renvoie HMAC-SHA256 (défi, secret) pour prouver que vous contrôlez le backend.",
           "tooltipGenerateNewSecret": "À utiliser si le secret a été révélé ou si vous devez le faire pivoter. Mettez à jour l'environnement de votre agent avec le nouveau secret.",
           "tooltipKycStatus": "Votre identité doit être vérifiée avant que nous puissions émettre un identifiant vous reliant à cet agent.",
-          "tooltipVeridianWalletConnection": "Connectez le portefeuille qui recevra les informations d'identification de vérification. Les informations d'identification prouvent que vous contrôlez à la fois l'agent et ce portefeuille.",
+          "tooltipVeridianWalletConnection": "Associez le portefeuille Veridian : scannez le QR de l’émetteur, collez l’OOBI ou, si déjà lié, collez uniquement l’AID.",
           "tooltipIdentifierAid": "Votre identifiant unique (AID) dans le système Veridian. Utilisé pour émettre et vérifier les informations d'identification.",
-          "tooltipEstablishConnection": "Le serveur d'informations d'identification doit connaître votre AID avant de pouvoir émettre des informations d'identification. Scannez le code QR avec votre portefeuille Veridian.",
+          "tooltipEstablishConnection": "Le serveur doit connaître votre AID. Le QR de l’émetteur et la résolution de votre OOBI établissent cette liaison mutuelle.",
           "tooltipWhatWillBeIssued": "Un identifiant Veridian qui relie votre identité vérifiée à cet agent. D'autres peuvent vérifier que l'agent est authentique.",
           "stepEndpoint": "Point de terminaison",
           "stepEndpointDescription": "Ajoutez le secret de vérification à votre agent et implémentez le point de terminaison.",
           "stepWallet": "Portefeuille",
-          "stepWalletDescription": "Connectez votre portefeuille Veridian via CIP-45 P2P, puis établissez une connexion avec le serveur d'informations d'identification.",
+          "stepWalletDescription": "Associez le portefeuille au serveur en scannant le QR de l’émetteur et en collant votre OOBI — ou saisissez votre AID si vous êtes déjà lié.",
           "stepSubmit": "Soumettre",
-          "stepSubmitDescription": "Examinez et soumettez votre demande d’accréditation. Vous signerez un message pour confirmer.",
+          "stepSubmitDescription": "Vérifiez puis envoyez la demande. Acceptez l'émission dans Veridian lorsqu'elle est proposée.",
           "next": "Suivant",
           "prev": "Précédent",
-          "nextDisabledReasonConnectWallet": "Connectez votre portefeuille Veridian en scannant le code QR pour continuer.",
+          "nextDisabledReasonPasteOobiOrAid": "Collez l’OOBI ou l’AID (ou passez à la saisie directe de l’AID) puis attendez l’état connecté.",
           "nextDisabledReasonEstablishConnection": "Établissez la connexion avec le serveur d'informations d'identification. Scannez le code QR de l'émetteur avec votre portefeuille.",
           "nextDisabledReasonCheckingConnection": "Vérification de la connexion... Veuillez patienter.",
           "nextDisabledReasonTestingEndpoint": "Vérification du point de terminaison... Veuillez patienter.",
@@ -1269,6 +1314,7 @@
             "endpointTestFailed": "Le test du point d'accès a échoué",
             "kycFirst": "Veuillez d'abord compléter votre vérification KYC",
             "connectionError": "Erreur de connexion : {error}",
+            "needCredentialConnection": "Collez une OOBI ou une AID valide et attendez que le serveur indique « connecté ».",
             "challengeNotReady": "Le défi de vérification n'est pas prêt. Veuillez patienter ou réessayer."
           },
           "secretToggle": {

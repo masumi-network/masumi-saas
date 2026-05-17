@@ -527,20 +527,19 @@ const verifyAgentSuccessSchema = z
     },
   });
 
-/** `secret` must stay in this schema: `contractJsonResponse` parses with Zod and drops unknown keys. */
+/** `contractJsonResponse` strips unknown keys; `.passthrough()` on `data` keeps server-only fields in JSON without documenting them in OpenAPI. */
 const verificationChallengeSuccessSchema = z
   .object({
     success: z.literal(true),
     data: z
       .object({
         challenge: z.string(),
-        /** 64-char hex for `MASUMI_VERIFICATION_SECRET`; confidential. */
-        secret: z.string(),
         generatedAt: z.string().nullable(),
       })
+      .passthrough()
       .openapi({
         description:
-          "`secret` configures the agent HMAC; never log, commit, or expose publicly.",
+          "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here.",
       }),
   })
   .openapi({
@@ -548,8 +547,6 @@ const verificationChallengeSuccessSchema = z
       success: true,
       data: {
         challenge: "550e8400-e29b-41d4-a716-446655440000",
-        secret:
-          "0000000000000000000000000000000000000000000000000000000000000000",
         generatedAt: "2025-01-20T11:00:00.000Z",
       },
     },
@@ -844,8 +841,8 @@ const credentialIssueBodySchema = z
         example: "2026-12-31T23:59:59.000Z",
       })
       .optional(),
-    signature: z.string().min(1),
-    signedMessage: z.string().min(1),
+    signature: z.string().min(1).optional(),
+    signedMessage: z.string().min(1).optional(),
   })
   .openapi({
     example: {
@@ -855,8 +852,6 @@ const credentialIssueBodySchema = z
       attributes: {
         tier: "gold",
       },
-      signature: "base64-signature",
-      signedMessage: "challenge text",
     },
   });
 
@@ -1507,7 +1502,7 @@ registry.registerPath({
   tags: ["Credentials"],
   summary: "Issue verification credential",
   description:
-    "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+    "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
   security,
   request: {
     body: {

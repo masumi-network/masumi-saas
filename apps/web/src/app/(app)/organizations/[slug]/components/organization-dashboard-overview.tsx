@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { AgentVerifiedShield } from "@/components/agent-verified-shield";
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -300,12 +301,27 @@ export function OrganizationDashboardOverview({
                       role="button"
                       tabIndex={0}
                     >
-                      <p
-                        className="min-w-0 truncate text-sm font-medium"
-                        title={agent.name}
-                      >
-                        {agent.name}
-                      </p>
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <p
+                          className="min-w-0 truncate text-sm font-medium"
+                          title={agent.name}
+                        >
+                          {agent.name}
+                        </p>
+                        {agent.verificationStatus === "VERIFIED" ? (
+                          <span
+                            className="inline-flex shrink-0"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.stopPropagation();
+                              }
+                            }}
+                          >
+                            <AgentVerifiedShield className="-mt-px" />
+                          </span>
+                        ) : null}
+                      </div>
                       <Badge
                         variant={
                           agentVerificationUiEnabled &&

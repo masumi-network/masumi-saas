@@ -44,9 +44,6 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "8.4.0",
-    "@cardano-foundation/cardano-connect-with-wallet": "0.2.15",
-    "@cardano-foundation/cardano-connect-with-wallet-core": "0.2.8",
-    "@fabianbormann/cardano-peer-connect": "1.2.18",
     "@hookform/resolvers": "5.2.2",
     "@masumi/database": "workspace:*",
     "@masumi_network/identity-sdk": "^0.1.0",

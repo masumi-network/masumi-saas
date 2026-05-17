@@ -886,8 +886,8 @@
         "gdpr": "当社は GDPR の原則に従い、検証に必要な最小限のデータのみを収集します。お客様のデータは安全に処理され、当社のプライバシー ポリシーに従って保管されます。",
         "biometricTitle": "生体認証による同意",
         "biometric": "検証プロセスには、本人確認書類と一致する本人であることを確認するための生体認証チェック (自撮り写真と生体検出) が含まれます。",
-        "credentialTitle": "ベリディアンの資格情報",
-        "credential": "検証が成功すると、Veridian 認証情報がアカウントに発行されます。この資格情報により高度な機能を使用できるようになり、同意を得て共有することができます。",
+        "credentialTitle": "検証クレデンシャル",
+        "credential": "検証が成功すると、クレデンシャルがアカウントに発行されます。このクレデンシャルにより高度な機能を使用できるようになり、同意を得て共有することができます。",
         "consentLabel": "私は本人確認プロセスを理解し、同意します。",
         "startButton": "検証の開始",
         "metaTitle": "本人確認"
@@ -948,6 +948,8 @@
       },
       "status": {
         "verified": "確認済み",
+        "verifiedShieldAriaSummary": "Agent Identityにより、このエージェントの真正性が確認されています。",
+        "verifiedShieldTooltip": "このエージェントの真正性は Agent Identity によって確認されています。<docsLink>詳しく見る</docsLink> Agent Identities について。",
         "rejected": "拒否されました",
         "underReview": "検討中",
         "pending": "保留中",
@@ -1149,7 +1151,7 @@
         "Verification": {
           "pending": {
             "title": "認証情報が発行されていません",
-            "description": "このエージェントはまだ Veridian 資格情報を持っていません。認証済みの KYC ステータスをこのエージェントにリンクするための資格情報をリクエストします。"
+            "description": "このエージェントはまだ検証されていません。検証をリクエストして、認証済みの本人確認をこのエージェントにリンクしてください。"
           },
           "review": {
             "title": "検証中",
@@ -1161,15 +1163,47 @@
           },
           "verified": {
             "title": "エージェントの確認済み",
-            "description": "このエージェントは Veridian 資格情報で正常に検証されました。"
+            "description": "このエージェントの本人確認は Masumi ネットワークで検証されました。"
           },
           "revoked": {
-            "title": "資格情報が取り消されました",
-            "description": "このエージェントの資格情報は取り消されました。新しい認証情報をリクエストできます。"
+            "title": "検証が取り消されました",
+            "description": "このエージェントの検証は取り消されました。新しい検証をリクエストできます。"
           },
           "expired": {
-            "title": "資格情報の期限が切れました",
-            "description": "このエージェントの資格情報の有効期限が切れています。新しい認証情報をリクエストできます。"
+            "title": "検証の有効期限切れ",
+            "description": "このエージェントの検証の有効期限が切れています。新しい検証をリクエストできます。"
+          },
+          "credentialStatuses": {
+            "PENDING": "保留 — ウォレットでの受諾を待機中",
+            "ISSUED": "発行済み",
+            "REVOKED": "取り消し",
+            "EXPIRED": "期限切れ"
+          },
+          "credentialSummary": {
+            "sectionTitle": "検証の詳細",
+            "loadError": "検証の詳細を読み込めませんでした。ページを更新してください。",
+            "emptyHint": "このエージェントの保存済みクレデンシャル メタデータが見つかりませんでした。",
+            "pendingPlaceholder": "発行処理の完了を待っているレコードです。",
+            "credentialDbStatus": "クレデンシャル状態",
+            "credentialId": "クレデンシャル ID (SAID)",
+            "schemaSaid": "スキーマ SAID",
+            "recipientAid": "受領者 AID",
+            "localRecordId": "内部レコード ID",
+            "credentialAgentDisplayName": "エージェント表示名（VC 内）",
+            "credentialAgentApiUrl": "エージェント API URL（VC 内）",
+            "claimedRegistryAgentId": "VC に記載のレジストリエージェント ID",
+            "currentRegistryAgentId": "現在のオンチェーン／レジストリエージェント ID",
+            "registryMatch": "VC のレジストリ ID がこのエージェントと一致しています。",
+            "registryMismatch": "VC のレジストリ ID が異なります（発行後にメタデータが変わった可能性があります）。",
+            "issuedAt": "発行日時",
+            "expiresAt": "有効期限",
+            "expiresNever": "期限なし",
+            "revokedAt": "取り消し日時",
+            "revokedNever": "取り消しなし",
+            "lastUpdated": "レコード最終同期",
+            "identityDocsLink": "Agent Identitiesについて（ドキュメント）",
+            "notProvided": "VC に含まれません",
+            "notRegisteredYet": "未設定"
           },
           "rejected": {
             "title": "検証が拒否されました",
@@ -1194,10 +1228,21 @@
           "requestSuccess": "認証情報が正常に発行されました。",
           "requestError": "資格情報の発行に失敗しました。もう一度試してください。",
           "acceptanceTimeout": "ウォレットでの受け入れを待機中にタイムアウトしました。閉じて再試行できます。",
+          "waitingForIssuanceSubmit": "待機中…",
           "waitingForWalletAcceptance": "ウォレットの受け入れを待っています",
           "waitingForWalletDescription": "Veridian ウォレットを開いて、受信した認証情報のオファーを受け入れてください。",
           "completeKyc": "KYC検証を完了する",
-          "veridianWalletConnection": "Veridian ウォレット接続",
+          "connectCredentialServer": "クレデンシャルサーバーへの接続",
+          "credentialServerInstructions": "Veridian で発行者 QR をスキャン（メニュー → Cardano Connect → 接続）し、ウォレットからコピーした OOBI を下に貼り付けます。既にリンク済みの場合は AID のみ入力してください。",
+          "pasteOobi": "ウォレットの OOBI を貼り付ける",
+          "oobiPlaceholder": "例：https://example.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "既にリンク済みですか？AID のみ入力",
+          "useOobiPaste": "ウォレットの OOBI を貼り付ける",
+          "pasteAid": "AID を貼り付ける",
+          "aidPlaceholder": "例：EL9oOWU…",
+          "parsedAid": "検出された AID",
+          "invalidOobi": "その OOBI から AID を取得できませんでした。URL 形式を確認してください。",
+          "veridianWalletConnection": "クレデンシャルサーバーへの接続",
           "fetchingCredentials": "認証情報を取得しています...",
           "identifierAid": "識別子 (AID)",
           "credentialsFound": "{count} 認証情報が見つかりました",
@@ -1239,19 +1284,19 @@
           "tooltipIntegrationCode": "このエンドポイントをエージェントに追加します。チャレンジを受信し、バックエンドを制御していることを証明するために HMAC-SHA256(チャレンジ、シークレット) を返します。",
           "tooltipGenerateNewSecret": "シークレットが公開された場合、またはシークレットをローテーションする必要がある場合に使用します。新しいシークレットを使用してエージェントの環境を更新します。",
           "tooltipKycStatus": "このエージェントにリンクする資格情報を発行するには、あなたの身元が確認される必要があります。",
-          "tooltipVeridianWalletConnection": "検証資格情報を受け取るウォレットを接続します。資格情報は、エージェントとこのウォレットの両方を制御していることを証明します。",
+          "tooltipVeridianWalletConnection": "Veridian ウォレットを関連付けます：発行者 QR をスキャンするか OOBI を貼り付けるか、または既にリンク済みなら AID のみ入力します。",
           "tooltipIdentifierAid": "Veridian システムの一意の識別子 (AID)。資格情報の発行と検証に使用されます。",
-          "tooltipEstablishConnection": "資格情報サーバーは、資格情報を発行する前に AID を認識する必要があります。 Veridian ウォレットで QR コードをスキャンします。",
+          "tooltipEstablishConnection": "クレデンシャルサーバーは AID を認識する必要があります。発行者 QR と OOBI の解決で相互接続が確立されます。",
           "tooltipWhatWillBeIssued": "検証済みの ID をこのエージェントにリンクする Veridian 資格情報。他の人はエージェントが本物であることを確認できます。",
           "stepEndpoint": "終点",
           "stepEndpointDescription": "検証シークレットをエージェントに追加し、エンドポイントを実装します。",
           "stepWallet": "財布",
-          "stepWalletDescription": "CIP-45 P2P 経由で Veridian ウォレットに接続し、資格情報サーバーとの接続を確立します。",
+          "stepWalletDescription": "発行者 QR をスキャンして OOBI を貼り付け、サーバーとウォレットを関連付けます。既にリンク済みなら AID を入力してください。",
           "stepSubmit": "提出する",
-          "stepSubmitDescription": "資格情報リクエストを確認して送信します。確認のためにメッセージに署名します。",
+          "stepSubmitDescription": "内容を確認して送信してください。資格情報の発行提案が表示されたら Veridian で受け入れてください。",
           "next": "次",
           "prev": "前の",
-          "nextDisabledReasonConnectWallet": "QR コードをスキャンして Veridian ウォレットに接続して続行します。",
+          "nextDisabledReasonPasteOobiOrAid": "OOBI または AID を貼り付け（AID 直接入力に切り替え可）、接続済みになるまでお待ちください。",
           "nextDisabledReasonEstablishConnection": "資格情報サーバーとの接続を確立します。ウォレットで発行者の QR コードをスキャンします。",
           "nextDisabledReasonCheckingConnection": "接続を確認しています...しばらくお待ちください。",
           "nextDisabledReasonTestingEndpoint": "エンドポイントを確認しています...お待ちください。",
@@ -1269,6 +1314,7 @@
             "endpointTestFailed": "エンドポイントテストに失敗しました",
             "kycFirst": "最初にKYC検証を完了してください",
             "connectionError": "接続エラー: {error}",
+            "needCredentialConnection": "有効な OOBI または AID を貼り付け、サーバーが接続済みと報告するまでお待ちください。",
             "challengeNotReady": "検証チャレンジの準備ができていません。お待ちいただくか、もう一度お試しください。"
           },
           "secretToggle": {

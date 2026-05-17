@@ -958,8 +958,8 @@
         "gdpr": "We follow GDPR principles and only collect the minimum data necessary for verification. Your data is processed securely and will be retained according to our privacy policy.",
         "biometricTitle": "Biometric Consent",
         "biometric": "The verification process includes biometric checks (selfie and liveness detection) to ensure you are a real person matching your identity documents.",
-        "credentialTitle": "Veridian Credential",
-        "credential": "Upon successful verification, a Veridian credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
+        "credentialTitle": "Verification Credential",
+        "credential": "Upon successful verification, a credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
         "consentLabel": "I understand and consent to the identity verification process.",
         "startButton": "Start Verification",
         "metaTitle": "Identity Verification"
@@ -1086,6 +1086,8 @@
       },
       "status": {
         "verified": "Verified",
+        "verifiedShieldAriaSummary": "Agent authenticity verified through an Agent Identity.",
+        "verifiedShieldTooltip": "This agent's authenticity is verified through an Agent Identity. <docsLink>Learn more</docsLink> about Agent Identities.",
         "rejected": "Rejected",
         "underReview": "Under Review",
         "pending": "Pending",
@@ -1287,7 +1289,7 @@
         "Verification": {
           "pending": {
             "title": "No Credential Issued",
-            "description": "This agent does not have a Veridian credential yet. Request a credential to link your verified KYC status to this agent."
+            "description": "This agent has not been verified yet. Request verification to link your verified identity to this agent."
           },
           "review": {
             "title": "Verification Under Review",
@@ -1299,15 +1301,47 @@
           },
           "verified": {
             "title": "Agent Verified",
-            "description": "This agent has been successfully verified with a Veridian credential."
+            "description": "This agent's identity has been verified on the Masumi network."
           },
           "revoked": {
-            "title": "Credential Revoked",
-            "description": "The credential for this agent has been revoked. You can request a new credential."
+            "title": "Verification Revoked",
+            "description": "The verification for this agent has been revoked. You can request new verification."
           },
           "expired": {
-            "title": "Credential Expired",
-            "description": "The credential for this agent has expired. You can request a new credential."
+            "title": "Verification Expired",
+            "description": "The verification for this agent has expired. You can request new verification."
+          },
+          "credentialStatuses": {
+            "PENDING": "Pending — await wallet acceptance",
+            "ISSUED": "Issued",
+            "REVOKED": "Revoked",
+            "EXPIRED": "Expired"
+          },
+          "credentialSummary": {
+            "sectionTitle": "Verification details",
+            "loadError": "Could not load verification details. Try refreshing the page.",
+            "emptyHint": "No stored credential metadata was found for this agent.",
+            "pendingPlaceholder": "This credential row is waiting for issuance to complete.",
+            "credentialDbStatus": "Credential status",
+            "credentialId": "Credential ID (SAID)",
+            "schemaSaid": "Schema SAID",
+            "recipientAid": "Recipient AID",
+            "localRecordId": "Credential record ID",
+            "credentialAgentDisplayName": "Agent display name (in VC)",
+            "credentialAgentApiUrl": "Agent API URL (in VC)",
+            "claimedRegistryAgentId": "Registry agent ID claimed in VC",
+            "currentRegistryAgentId": "Current on-chain/registry agent ID",
+            "registryMatch": "Registry agent ID in the VC matches this agent.",
+            "registryMismatch": "Registry agent ID in the VC differs from this agent — metadata may have changed since issuance.",
+            "issuedAt": "Issued",
+            "expiresAt": "Expires",
+            "expiresNever": "No expiry set",
+            "revokedAt": "Revoked at",
+            "revokedNever": "Not revoked",
+            "lastUpdated": "Record last synced",
+            "identityDocsLink": "About Agent Identities (docs)",
+            "notProvided": "not in VC",
+            "notRegisteredYet": "not assigned yet"
           },
           "rejected": {
             "title": "Verification Rejected",
@@ -1332,10 +1366,21 @@
           "requestSuccess": "Credential issued successfully!",
           "requestError": "Failed to issue credential. Please try again.",
           "acceptanceTimeout": "Timed out waiting for acceptance in wallet. You can close and try again.",
+          "waitingForIssuanceSubmit": "Waiting…",
           "waitingForWalletAcceptance": "Waiting for wallet acceptance",
           "waitingForWalletDescription": "Please open your Veridian wallet and accept the incoming credential offer.",
           "completeKyc": "Complete KYC Verification",
-          "veridianWalletConnection": "Veridian Wallet Connection",
+          "connectCredentialServer": "Credential server connection",
+          "credentialServerInstructions": "Scan the issuer QR code in Veridian (Menu → Cardano Connect → Connect). Then paste the OOBI copied from your wallet below. If you already linked this wallet to the issuer, switch to paste your AID only.",
+          "pasteOobi": "Paste your wallet OOBI",
+          "oobiPlaceholder": "e.g. https://example.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "Already linked? Enter AID directly",
+          "useOobiPaste": "Paste OOBI from wallet instead",
+          "pasteAid": "Paste your AID",
+          "aidPlaceholder": "e.g. EL9oOWU…",
+          "parsedAid": "Detected AID",
+          "invalidOobi": "Could not parse an AID from that OOBI. Check the URL format.",
+          "veridianWalletConnection": "Credential server connection",
           "fetchingCredentials": "Fetching credentials...",
           "identifierAid": "Identifier (AID)",
           "credentialsFound": "{count} credential(s) found",
@@ -1377,19 +1422,19 @@
           "tooltipIntegrationCode": "Add this endpoint to your agent. It receives a challenge and returns HMAC-SHA256(challenge, secret) to prove you control the backend.",
           "tooltipGenerateNewSecret": "Use if the secret was exposed or you need to rotate it. Update your agent's environment with the new secret.",
           "tooltipKycStatus": "Your identity must be verified before we can issue a credential linking you to this agent.",
-          "tooltipVeridianWalletConnection": "Connect the wallet that will receive the verification credential. The credential proves you control both the agent and this wallet.",
+          "tooltipVeridianWalletConnection": "Link the Veridian wallet that will receive the credential: scan the issuer QR, paste your OOBI, or paste your AID if already linked.",
           "tooltipIdentifierAid": "Your unique identifier (AID) in the Veridian system. Used to issue and verify credentials.",
-          "tooltipEstablishConnection": "The credential server needs to know your AID before it can issue credentials. Scan the QR code with your Veridian wallet.",
+          "tooltipEstablishConnection": "The credential server must recognize your AID before issuing. Scanning the issuer QR and resolving your OOBI establishes that mutual connection.",
           "tooltipWhatWillBeIssued": "A Veridian credential that links your verified identity to this agent. Others can verify the agent is authentic.",
           "stepEndpoint": "Endpoint",
           "stepEndpointDescription": "Add the verification secret to your agent and implement the endpoint.",
           "stepWallet": "Wallet",
-          "stepWalletDescription": "Connect your Veridian wallet via CIP-45 P2P, then establish connection with the credential server.",
+          "stepWalletDescription": "Link your wallet to the credential server by scanning the issuer QR code and pasting your OOBI—or enter your AID if you're already linked.",
           "stepSubmit": "Submit",
-          "stepSubmitDescription": "Review and submit your credential request. You'll sign a message to confirm.",
+          "stepSubmitDescription": "Review and submit your request. Confirm acceptance in Veridian when the credential is offered.",
           "next": "Next",
           "prev": "Previous",
-          "nextDisabledReasonConnectWallet": "Connect your Veridian wallet by scanning the QR code to proceed.",
+          "nextDisabledReasonPasteOobiOrAid": "Paste your OOBI or AID (or enter AID if already linked) and wait until connected.",
           "nextDisabledReasonEstablishConnection": "Establish connection with the credential server. Scan the issuer QR code with your wallet.",
           "nextDisabledReasonCheckingConnection": "Checking connection... Please wait.",
           "nextDisabledReasonTestingEndpoint": "Verifying endpoint... Please wait.",
@@ -1407,6 +1452,7 @@
             "endpointTestFailed": "Endpoint test failed",
             "kycFirst": "Please complete your KYC verification first",
             "connectionError": "Connection error: {error}",
+            "needCredentialConnection": "Paste a valid OOBI or AID and wait until the credential server reports connected.",
             "challengeNotReady": "Verification challenge not ready. Please wait or try again."
           },
           "secretToggle": {

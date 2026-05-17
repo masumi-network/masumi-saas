@@ -2,7 +2,6 @@
 
 import {
   DollarSign,
-  ExternalLink,
   FileText,
   Fingerprint,
   Link2,
@@ -32,10 +31,13 @@ import {
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import { type Agent } from "@/lib/api/agent.client";
-import { appConfig } from "@/lib/config/app.config";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { formatPricingDisplay } from "@/lib/utils";
 
+import {
+  getRegistrationStatusBadgeVariant,
+  getRegistrationStatusKey,
+} from "../../../components/agent-utils";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
 interface AgentDetailsProps {
@@ -65,6 +67,7 @@ export function AgentDetails({
     };
   }, []);
   const t = useTranslations("App.Agents.Details");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tVerification = useTranslations("App.Agents.Details.Verification");
   const tCommon = useTranslations("Common");
   const { formatDate, formatRelativeDate } = useFormatDate();
@@ -77,6 +80,9 @@ export function AgentDetails({
   const isVerified = agent.verificationStatus === "VERIFIED";
   const isRegistrationConfirmed =
     agent.registrationState === "RegistrationConfirmed";
+  const registrationBadgeVariant = isRegistrationConfirmed
+    ? ("success" as const)
+    : getRegistrationStatusBadgeVariant(agent.registrationState);
   const showVerificationCta =
     agentVerificationEnabled && !isVerified && isRegistrationConfirmed;
 
@@ -98,8 +104,6 @@ export function AgentDetails({
     localStorage.setItem(key, "1");
     setIsVerificationBannerDismissed(true);
   }, [agent.id]);
-
-  const sokosumiUrl = `${appConfig.sokosumiMarketplaceUrl}/${agent.agentIdentifier ?? agent.id}`;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -143,10 +147,15 @@ export function AgentDetails({
 
       <div className="flex flex-col gap-2">
         <Card className="overflow-hidden gap-0 py-0">
-          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
+            <Badge variant={registrationBadgeVariant} className="shrink-0">
+              {tRegistrationStatus(
+                getRegistrationStatusKey(agent.registrationState),
+              )}
+            </Badge>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Description (short) */}
@@ -282,35 +291,6 @@ export function AgentDetails({
                 </div>
               </div>
             </div>
-
-            {isRegistrationConfirmed && (
-              <>
-                <Separator />
-                {/* Hire in Sokosumi */}
-                <div className="flex gap-3 min-w-0">
-                  <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("hireInSokosumi")}
-                    </p>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Link
-                        href={sokosumiUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
-                      >
-                        {sokosumiUrl}
-                      </Link>
-                      <CopyButton
-                        value={sokosumiUrl}
-                        className="h-7 w-7 shrink-0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
 
             {/* Request verification CTA */}
             {showVerificationCta && onVerificationSuccess && (
