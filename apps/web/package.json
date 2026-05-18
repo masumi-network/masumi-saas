@@ -17,7 +17,7 @@
     "openapi:manifest:verify": "node --experimental-strip-types src/lib/openapi/generate-route-app-manifest.ts && git diff --exit-code -- src/lib/openapi/generated/ || (echo '\\nRoute app manifest is out of sync with route.ts files.\\nRun: pnpm --filter web run openapi:manifest\\nThen commit the result.\\n' >&2 && exit 1)",
     "swagger-json": "pnpm run openapi:manifest && node --require ./scripts/server-only-shim.cjs --import tsx src/lib/swagger/cli.ts",
     "swagger:generate": "pnpm run swagger-json",
-    "check-openapi-json": "pnpm run openapi:manifest:verify && node --import tsx src/lib/swagger/verify-openapi-json-sync.ts",
+    "check-openapi-json": "pnpm run openapi:manifest:verify && node --require ./scripts/server-only-shim.cjs --import tsx src/lib/swagger/verify-openapi-json-sync.ts",
     "payment-node:fetch-spec": "node scripts/fetch-payment-node-openapi.mjs",
     "payment-node:generate": "pnpm run payment-node:fetch-spec && openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
     "payment-node:generate:local": "openapi-typescript scripts/specs/payment-node-openapi.json -o src/lib/payment-node/generated/paths.d.ts",
