@@ -116,6 +116,8 @@ export function RequestVerificationDialog({
   const lastCheckedAidRef = useRef<string | null>(null);
   const prevDerivedAidRef = useRef<string | null>(null);
   const connPollAttemptsRef = useRef(0);
+  /** Only reset poll counter when this key changes — not when connection state flaps during polling */
+  const connPollSessionKeyRef = useRef<string>("");
   const onSuccessRef = useRef(onSuccess);
   const onOpenChangeRef = useRef(onOpenChange);
   useEffect(() => {
@@ -161,6 +163,7 @@ export function RequestVerificationDialog({
       prevDerivedAidRef.current = null;
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
+      connPollSessionKeyRef.current = "";
       setChallenge(null);
       setSecret(null);
       setShowSecret(false);
@@ -355,6 +358,12 @@ export function RequestVerificationDialog({
 
   // Poll credential server connection while not yet established (or initial check failed)
   useEffect(() => {
+    const sessionKey = `${step}:${derivedAid ?? ""}:${invalidOobiPaste}`;
+    if (connPollSessionKeyRef.current !== sessionKey) {
+      connPollSessionKeyRef.current = sessionKey;
+      connPollAttemptsRef.current = 0;
+    }
+
     if (
       step !== 2 ||
       !derivedAid ||
@@ -365,7 +374,6 @@ export function RequestVerificationDialog({
       return;
     }
 
-    connPollAttemptsRef.current = 0;
     const intervalHolder: { id: number | undefined } = { id: undefined };
 
     const tick = async () => {
