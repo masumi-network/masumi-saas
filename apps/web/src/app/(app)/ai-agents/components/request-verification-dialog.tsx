@@ -97,6 +97,8 @@ export function RequestVerificationDialog({
   const [connectionExists, setConnectionExists] = useState<boolean | null>(
     null,
   );
+  /** True after {@link credentialApiClient.checkConnection} fails (network/API) — mirrors `connectionExists===false` for polling + retry UI. */
+  const [connectionCheckFailed, setConnectionCheckFailed] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -155,6 +157,7 @@ export function RequestVerificationDialog({
       setAidDirectInput("");
       setIssuerOobi(null);
       setConnectionExists(null);
+      setConnectionCheckFailed(false);
       prevDerivedAidRef.current = null;
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
@@ -303,14 +306,17 @@ export function RequestVerificationDialog({
         if (result.success) {
           setConnectionExists(result.data.exists);
           lastCheckedAidRef.current = aidToCheck;
+          setConnectionCheckFailed(false);
         } else {
           console.error("Failed to check connection:", result.error);
           setConnectionExists(null);
+          setConnectionCheckFailed(true);
           lastCheckedAidRef.current = null;
         }
       } catch (error) {
         console.error("Failed to check connection:", error);
         setConnectionExists(null);
+        setConnectionCheckFailed(true);
         lastCheckedAidRef.current = null;
       } finally {
         setIsCheckingConnection(false);
@@ -330,6 +336,7 @@ export function RequestVerificationDialog({
     }
     if (!derivedAid || invalidOobiPaste) {
       setConnectionExists(null);
+      setConnectionCheckFailed(false);
       prevDerivedAidRef.current = null;
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
@@ -339,19 +346,21 @@ export function RequestVerificationDialog({
     if (prevDerivedAidRef.current !== derivedAid) {
       prevDerivedAidRef.current = derivedAid;
       setConnectionExists(null);
+      setConnectionCheckFailed(false);
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
     }
     void checkConnectionRef.current(derivedAid, true);
   }, [step, derivedAid, invalidOobiPaste]);
 
-  // Poll credential server connection while not yet established
+  // Poll credential server connection while not yet established (or initial check failed)
   useEffect(() => {
     if (
       step !== 2 ||
       !derivedAid ||
       invalidOobiPaste ||
-      connectionExists !== false
+      connectionExists === true ||
+      !(connectionExists === false || connectionCheckFailed)
     ) {
       return;
     }
@@ -379,7 +388,13 @@ export function RequestVerificationDialog({
       if (intervalHolder.id !== undefined)
         window.clearInterval(intervalHolder.id);
     };
-  }, [step, derivedAid, invalidOobiPaste, connectionExists]);
+  }, [
+    step,
+    derivedAid,
+    invalidOobiPaste,
+    connectionExists,
+    connectionCheckFailed,
+  ]);
 
   const handleRegenerateChallenge = async () => {
     setIsRegeneratingChallenge(true);
@@ -1033,11 +1048,13 @@ export function RequestVerificationDialog({
                           {t("checkingConnection")}
                         </p>
                       </div>
-                    ) : connectionExists === false ? (
+                    ) : connectionExists === false || connectionCheckFailed ? (
                       <div className="space-y-2">
                         <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
                           <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                            {t("connectionNotEstablished")}
+                            {connectionCheckFailed
+                              ? t("failedToCheckConnection")
+                              : t("connectionNotEstablished")}
                           </p>
                         </div>
                         <Button
