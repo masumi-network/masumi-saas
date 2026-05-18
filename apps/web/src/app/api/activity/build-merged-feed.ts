@@ -679,11 +679,13 @@ export async function getActivityMergedFeedCached(
       userId: params.userId,
       network: params.network,
     });
-    await maybeBackfillMissingAgentVerifiedActivity({
-      userId: params.userId,
-      network: params.network,
-    });
   }
+
+  /** Not gated on `needLifecycle`: ensures {@link AgentActivityEventType.AgentVerified} rows exist before any merged-request path might surface lifecycle data elsewhere (transactions-only callers still amortize DB work via in-process TTL). */
+  await maybeBackfillMissingAgentVerifiedActivity({
+    userId: params.userId,
+    network: params.network,
+  });
 
   const { agents, lifecycleItems } = await loadActivityDbSnapshot({
     userId: params.userId,
