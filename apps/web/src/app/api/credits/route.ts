@@ -1,32 +1,54 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { getCreditBalance } from "@/lib/credits/service";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import {
+  creditsBalanceSuccessSchema,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "./route.contract";
+const app = createApiApp("/api/credits");
 
-export async function GET(request: NextRequest) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Credits"],
+    summary: "Get remaining credits",
+    description:
+      "Canonical credits endpoint for the authenticated SaaS API. Returns the authenticated user’s remaining write credits.",
+    security,
+    responses: {
+      200: {
+        description: "Current balance",
+        content: {
+          "application/json": { schema: creditsBalanceSuccessSchema },
+        },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     const balance = await getCreditBalance(authContext.user.id);
 
-    return contractJsonResponse(contract, "GET", 200, {
-      success: true,
-      data: {
-        creditsRemaining: balance.creditsRemaining,
-        updatedAt: balance.updatedAt.toISOString(),
+    return c.json(
+      {
+        success: true as const,
+        data: {
+          creditsRemaining: balance.creditsRemaining,
+          updatedAt: balance.updatedAt.toISOString(),
+        },
       },
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("GET /api/credits:", error);
-    return contractJsonResponse(contract, "GET", 500, {
-      success: false,
-      error: "Failed to load credits",
-    });
-  }
-}
+      200,
+    );
+  },
+);
+
+export const { GET } = nextHandlers(app);
+export default app;

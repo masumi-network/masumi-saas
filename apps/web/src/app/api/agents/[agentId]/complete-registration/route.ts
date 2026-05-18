@@ -1,67 +1,116 @@
+import { createRoute } from "@hono/zod-openapi";
+
 import { completeOnChainRegistration } from "@/lib/agent-registration";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
+import {
+  completeRegistrationPendingSchema,
+  completeRegistrationSuccessSchema,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "./route.contract";
+const app = createApiApp("/api/agents/{agentId}/complete-registration");
 
-export async function POST(
-  _request: Request,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(_request);
-    const { agentId } = await params;
-    const agent = await getWalletOwnedAgentForUser({
-      userId: authContext.user.id,
-      agentId,
-    });
-    if (!agent) {
-      return contractJsonResponse(contract, "POST", 404, {
-        success: false,
-        error: "Agent not found",
+const paramsSchema = z.object({
+  agentId: agentIdRouteParamSchema.openapi({
+    param: { name: "agentId", in: "path" },
+    description: "Agent ID (CUID)",
+    example: "cmlf6gswz0000x1uctad958tq",
+  }),
+});
+
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Complete on-chain registration",
+    security,
+    request: { params: paramsSchema },
+    responses: {
+      ...stdResponses,
+      200: {
+        description: "Registration completed on-chain",
+        content: {
+          "application/json": { schema: completeRegistrationSuccessSchema },
+        },
+      },
+      202: {
+        description:
+          "Registration still pending (e.g. registry submission or blockchain confirmation); poll again shortly.",
+        content: {
+          "application/json": { schema: completeRegistrationPendingSchema },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw);
+    const { agentId } = c.req.valid("param");
+
+    try {
+      const agent = await getWalletOwnedAgentForUser({
+        userId: authContext.user.id,
+        agentId,
       });
-    }
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "agents",
-      action: "write",
-      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
-    });
-
-    const result = await completeOnChainRegistration(
-      agentId,
-      authContext.user.id,
-    );
-
-    if (result.status === "registered") {
-      return contractJsonResponse(contract, "POST", 200, {
-        success: true,
-        data: result.data,
-        status: "registered",
+      if (!agent) {
+        throw new ApiError(404, "Agent not found");
+      }
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "write",
+        network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
-    }
-    if (result.status === "pending") {
-      return contractJsonResponse(contract, "POST", 202, {
-        success: true,
-        status: "pending",
-        message: "Wallet not yet funded. Poll again in a few seconds.",
-      });
-    }
-    return contractJsonResponse(contract, "POST", 400, {
-      success: false,
-      error: result.error,
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to complete agent registration:", error);
-    return contractJsonResponse(contract, "POST", 500, {
-      success: false,
-      error:
+
+      const result = await completeOnChainRegistration(
+        agentId,
+        authContext.user.id,
+      );
+
+      if (result.status === "registered") {
+        // Prisma types are looser than the OpenAPI response schema. Cast.
+        type RegisteredData = z.infer<
+          typeof completeRegistrationSuccessSchema
+        >["data"];
+        return c.json(
+          {
+            success: true as const,
+            data: result.data as unknown as RegisteredData,
+            status: "registered" as const,
+          },
+          200,
+        );
+      }
+      if (result.status === "pending") {
+        return c.json(
+          {
+            success: true as const,
+            status: "pending" as const,
+            message: "Wallet not yet funded. Poll again in a few seconds.",
+          },
+          202,
+        );
+      }
+      throw new ApiError(400, result.error);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error("Failed to complete agent registration:", error);
+      throw new ApiError(
+        500,
         error instanceof Error
           ? error.message
           : "Failed to complete registration",
-    });
-  }
-}
+      );
+    }
+  },
+);
+
+export const { POST } = nextHandlers(app);
+export default app;

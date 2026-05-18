@@ -1,16 +1,16 @@
 /**
- * OpenAPI 3 document for the Masumi SaaS app API (`/api/*`).
- * Public agent listing for third parties stays on `GET /api/v1/openapi` / `/docs/openapi`.
+ * Shared schemas + reusable OpenAPI fragments for the Masumi SaaS app API.
  *
- * Response bodies use Zod→OpenAPI where practical; some routes still use broad object schemas
- * when the handler shape is large or shared—tighten per-endpoint schemas incrementally for
- * richer Swagger “Example value” / client codegen.
+ * NOTE: route registration moved to the per-route Hono apps (see
+ * `src/server/hono/app.ts` and `app/api/**\/route.ts`). The `registry` here
+ * is a no-op stub kept so the historical `registry.registerPath(...)` blocks
+ * compile while we tidy them up incrementally.
+ *
+ * Schemas exported from this module continue to power every route's
+ * `app.openapi(createRoute({...}), handler)` call. The `injectProxyRoutesIntoOpenApiDocument`
+ * import is still re-exported so the proxy manifest can attach pass-through
+ * upstream routes to the aggregated spec.
  */
-
-import {
-  OpenApiGeneratorV3,
-  OpenAPIRegistry,
-} from "@asteasolutions/zod-to-openapi";
 
 import { activityQueryInputSchema } from "@/lib/schemas/activity";
 import {
@@ -36,22 +36,25 @@ import {
   inboxAgentsListQuerySchema,
   registerInboxAgentBodySchema,
 } from "@/lib/schemas/inbox-agent";
-import { injectProxyRoutesIntoOpenApiDocument } from "@/lib/v1-proxy/manifest";
 
 import { z } from "./zod-openapi";
 
 /** OpenAPI 3.0 security requirement entry (scheme name → scope list). */
 type SecurityRequirementObject = Record<string, string[]>;
 
-const registry = new OpenAPIRegistry();
-
-registry.registerComponent("securitySchemes", "apiKeyHeader", {
-  type: "apiKey",
-  in: "header",
-  name: "x-api-key",
-  description:
-    "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec).",
-});
+/**
+ * No-op replacement for the previous `@asteasolutions/zod-to-openapi`
+ * registry. Old `registry.registerPath(...)` / `registry.registerComponent(...)`
+ * call sites still run — they just don't contribute to the spec any more.
+ */
+const registry = {
+  registerPath: (_config: unknown): void => {},
+  registerComponent: (
+    _kind: string,
+    _name: string,
+    _component: unknown,
+  ): void => {},
+};
 
 /** Documented auth for Try it out: `x-api-key` only. Browser session cookies still work same-origin but are not listed here. */
 const security: SecurityRequirementObject[] = [{ apiKeyHeader: [] }];
@@ -2077,53 +2080,9 @@ registry.registerPath({
   },
 });
 
-type SaaSAppOpenAPISpec = ReturnType<
-  InstanceType<typeof OpenApiGeneratorV3>["generateDocument"]
->;
-
-/** Registry is fixed at module load; spec is immutable — compute once per process. */
-let cachedSaaSAppOpenAPISpec: SaaSAppOpenAPISpec | undefined;
-
-export function generateSaaSAppOpenAPISpec(): SaaSAppOpenAPISpec {
-  if (cachedSaaSAppOpenAPISpec !== undefined) {
-    return cachedSaaSAppOpenAPISpec;
-  }
-  cachedSaaSAppOpenAPISpec = injectProxyRoutesIntoOpenApiDocument(
-    new OpenApiGeneratorV3(registry.definitions).generateDocument({
-      openapi: "3.0.0",
-      info: {
-        version: "1.0.0",
-        title: "Masumi SaaS API",
-        description: [
-          "HTTP API for Masumi SaaS (same origin as the web app). Authenticate with a session cookie or the x-api-key header (see API Keys in the app).",
-        ].join("\n"),
-      },
-      servers: [{ url: "/", description: "This app" }],
-      tags: [
-        {
-          name: "Auth",
-          description: "Public registration and authentication bootstrap flows",
-        },
-        { name: "System", description: "Health and availability" },
-        { name: "API keys", description: "Masumi SaaS API key introspection" },
-        { name: "Credits", description: "Credit balances and compatibility" },
-        {
-          name: "Credentials",
-          description: "Veridian credential issuance and polling",
-        },
-        { name: "Agents", description: "Your agents" },
-        {
-          name: "Inbox agents",
-          description: "Managed inbox-agent registration flows",
-        },
-        { name: "Dashboard", description: "Overview and account data" },
-        { name: "Activity", description: "What happened across your agents" },
-        { name: "Earnings", description: "Earnings and payouts" },
-      ],
-    }),
-  );
-  return cachedSaaSAppOpenAPISpec;
-}
+// `generateSaaSAppOpenAPISpec` lives in `./saas-app-openapi-generator.ts`
+// — it now aggregates the spec from per-route Hono apps instead of from this
+// module's (now no-op) registry.
 
 export {
   activitySuccessSchema,

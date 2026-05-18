@@ -1,62 +1,55 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
 
 import {
   getAdminAgentsData,
   getAdminAgentsQuerySchema,
 } from "@/lib/api/admin.server";
-import {
-  getAuthenticatedOrThrow,
-  handleAuthError,
-  isAdminUser,
-} from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, isAdminUser } from "@/lib/auth/utils";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
-export async function GET(request: NextRequest) {
-  try {
-    const { user } = await getAuthenticatedOrThrow(request, {
-      requireEmailVerified: false,
-    });
+const app = createApiApp("/api/admin/agents");
 
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    });
-    if (!isAdminUser({ id: user.id, role: dbUser?.role ?? undefined })) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
-    }
+app.get("/", async (c) => {
+  const { user } = await getAuthenticatedOrThrow(c.req.raw, {
+    requireEmailVerified: false,
+  });
 
-    const rawParams = Object.fromEntries(
-      request.nextUrl.searchParams.entries(),
-    );
-    const queryResult = getAdminAgentsQuerySchema.safeParse(rawParams);
-    if (!queryResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: queryResult.error.issues.map((e) => e.message).join(", "),
-        },
-        { status: 400 },
-      );
-    }
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  });
+  if (!isAdminUser({ id: user.id, role: dbUser?.role ?? undefined })) {
+    return c.json({ success: false as const, error: "Forbidden" }, 403);
+  }
 
-    const result = await getAdminAgentsData(queryResult.data);
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json(result);
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to fetch admin agents:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to load agents" },
-      { status: 500 },
+  const url = new URL(c.req.url);
+  const rawParams = Object.fromEntries(url.searchParams.entries());
+  const queryResult = getAdminAgentsQuerySchema.safeParse(rawParams);
+  if (!queryResult.success) {
+    return c.json(
+      {
+        success: false as const,
+        error: queryResult.error.issues.map((e) => e.message).join(", "),
+      },
+      400,
     );
   }
-}
+
+  try {
+    const result = await getAdminAgentsData(queryResult.data);
+    if (!result.success) {
+      return c.json({ success: false as const, error: result.error }, 500);
+    }
+    return c.json(result, 200);
+  } catch (error) {
+    console.error("Failed to fetch admin agents:", error);
+    return c.json(
+      { success: false as const, error: "Failed to load agents" },
+      500,
+    );
+  }
+});
+
+export const { GET } = nextHandlers(app);
+export default app;

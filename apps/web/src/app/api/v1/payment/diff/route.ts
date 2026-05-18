@@ -1,29 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
-  consumeCreditIfRequired,
-  createCreditReference,
-} from "@/lib/credits/service";
-import {
   buildUpstreamHeaders,
   getEffectivePaymentNetwork,
-  readOptionalRequestBody,
   resolvePaymentUserTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "payment/diff";
 const UPSTREAM_PATH = "/payment/diff";
 
-export async function GET(request: NextRequest) {
-  return handleRequest(request, "GET");
-}
+const app = createApiApp("/");
 
-async function handleRequest(request: NextRequest, method: string) {
+app.get("*", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     requireNetworkedOidcApiScope(authContext, {
@@ -34,38 +30,18 @@ async function handleRequest(request: NextRequest, method: string) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
-    if (method !== "GET") {
-      const network = getEffectivePaymentNetwork(request);
-      await consumeCreditIfRequired({
-        userId: authContext.user.id,
-        reason: "payment_proxy_write",
-        reference: createCreditReference("payment-proxy-write"),
-        network,
-        metadata: {
-          method,
-          route: ROUTE_PATH,
-          upstreamPath: UPSTREAM_PATH,
-          network,
-          authMethod: authContext.authMethod,
-        },
-      });
-    }
-
     const headers = buildUpstreamHeaders(request, upstream.token);
-    const body =
-      method === "GET" ? undefined : await readOptionalRequestBody(request);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
-        method,
+        method: "GET",
         headers,
-        body,
       },
     );
 
@@ -74,9 +50,12 @@ async function handleRequest(request: NextRequest, method: string) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
+
+export const { GET } = nextHandlers(app);
+export default app;

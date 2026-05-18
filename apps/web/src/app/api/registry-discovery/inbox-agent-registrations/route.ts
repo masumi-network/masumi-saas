@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
   getEffectivePaymentNetwork,
@@ -9,10 +9,15 @@ import {
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const UPSTREAM_PATH = "/inbox-agent-registration/";
 
-export async function POST(request: NextRequest) {
+const app = createApiApp("/api/registry-discovery/inbox-agent-registrations");
+
+app.post("/", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -26,9 +31,9 @@ export async function POST(request: NextRequest) {
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as 503,
       );
     }
 
@@ -44,12 +49,13 @@ export async function POST(request: NextRequest) {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
     console.error("[Registry Discovery:inbox-agent-registrations]", error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
+
+export const { POST } = nextHandlers(app);
+export default app;

@@ -1,3 +1,4 @@
+import { createRoute } from "@hono/zod-openapi";
 import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -7,85 +8,117 @@ import {
   deleteInboxAgentReference,
   getOwnedInboxAgentForUser,
 } from "@/lib/inbox-agents/server";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
+import {
+  errBody,
+  inboxAgentMutationSuccessSchema,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "../../../../pay/api/v1/inbox-agents/[inboxAgentId]/route.contract";
+export const routeMeta = { documents: ["platform"] as const };
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ inboxAgentId: string }> },
-) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request);
-    const network = getEffectivePaymentNetwork(request);
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "inbox-agents",
-      action: "write",
-      network,
-    });
+const paramsSchema = z.object({
+  inboxAgentId: inboxAgentIdRouteParamSchema.openapi({
+    param: { name: "inboxAgentId", in: "path" },
+    description: "Inbox agent request ID (CUID)",
+    example: "cm_inbox_1",
+  }),
+});
 
-    const { inboxAgentId: rawInboxAgentId } = await params;
-    const inboxAgentIdResult =
-      inboxAgentIdRouteParamSchema.safeParse(rawInboxAgentId);
-    if (!inboxAgentIdResult.success) {
-      return contractJsonResponse(contract, "DELETE", 400, {
-        success: false,
-        error:
-          inboxAgentIdResult.error.issues
-            .map((issue) => issue.message)
-            .join(", ") || "Invalid inbox agent ID",
+const app = createApiApp("/api/v1/inbox-agents/{inboxAgentId}");
+
+app.openapi(
+  createRoute({
+    method: "delete",
+    path: "/",
+    tags: ["Inbox agents"],
+    summary: "Delete inbox agent",
+    description:
+      "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+    security,
+    request: { params: paramsSchema },
+    responses: {
+      200: {
+        description: "Deleted",
+        content: {
+          "application/json": { schema: inboxAgentMutationSuccessSchema },
+        },
+      },
+      503: {
+        description: "Payment service unavailable",
+        content: { "application/json": { schema: errBody } },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    try {
+      const authContext = await getAuthenticatedOrThrow(c.req.raw);
+      const request = new NextRequest(c.req.raw);
+      const network = getEffectivePaymentNetwork(request);
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "inbox-agents",
+        action: "write",
+        network,
       });
-    }
 
-    const ownedInboxAgent = await getOwnedInboxAgentForUser({
-      userId: authContext.user.id,
-      network,
-      inboxAgentId: inboxAgentIdResult.data,
-    });
-    if (!ownedInboxAgent) {
-      return contractJsonResponse(contract, "DELETE", 404, {
-        success: false,
-        error: "Inbox agent not found",
+      const { inboxAgentId } = c.req.valid("param");
+
+      const ownedInboxAgent = await getOwnedInboxAgentForUser({
+        userId: authContext.user.id,
+        network,
+        inboxAgentId,
       });
-    }
+      if (!ownedInboxAgent) {
+        throw new ApiError(404, "Inbox agent not found");
+      }
 
-    const inboxAgent = ownedInboxAgent.entry;
-
-    if (
-      inboxAgent.state !== "RegistrationFailed" &&
-      inboxAgent.state !== "DeregistrationConfirmed"
-    ) {
-      return contractJsonResponse(contract, "DELETE", 400, {
-        success: false,
-        error:
+      const inboxAgent = ownedInboxAgent.entry;
+      if (
+        inboxAgent.state !== "RegistrationFailed" &&
+        inboxAgent.state !== "DeregistrationConfirmed"
+      ) {
+        throw new ApiError(
+          400,
           "Inbox agent can only be deleted after registration fails or deregistration is confirmed",
-      });
-    }
+        );
+      }
 
-    const client = createInboxAdminPaymentNodeClient();
-    const deleted = await client.deleteRegistryInboxEntry(inboxAgent.id);
-    await deleteInboxAgentReference(ownedInboxAgent.reference.id);
+      const client = createInboxAdminPaymentNodeClient();
+      const deleted = await client.deleteRegistryInboxEntry(inboxAgent.id);
+      await deleteInboxAgentReference(ownedInboxAgent.reference.id);
 
-    return contractJsonResponse(contract, "DELETE", 200, {
-      success: true,
-      data: deleted,
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    if (isPaymentNodeConfigError(error)) {
-      return contractJsonResponse(contract, "DELETE", 503, {
-        success: false,
-        error: error.message,
-      });
+      return c.json(
+        {
+          success: true as const,
+          data: deleted as unknown as z.infer<
+            typeof inboxAgentMutationSuccessSchema
+          >["data"],
+        },
+        200,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (isPaymentNodeConfigError(error)) {
+        throw new ApiError(503, error.message);
+      }
+      const authResponse = handleAuthError(error);
+      if (authResponse) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return authResponse as any;
+      }
+      console.error("Failed to delete inbox agent:", error);
+      throw new ApiError(500, "Failed to delete inbox agent");
     }
-    console.error("Failed to delete inbox agent:", error);
-    return contractJsonResponse(contract, "DELETE", 500, {
-      success: false,
-      error: "Failed to delete inbox agent",
-    });
-  }
-}
+  },
+);
+
+export const { DELETE } = nextHandlers(app);
+export default app;

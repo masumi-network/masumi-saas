@@ -1,6 +1,7 @@
+import { createRoute } from "@hono/zod-openapi";
+
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   type DashboardEarningsAmountUnit,
   dashboardEarningsUnitFromTotals,
@@ -9,8 +10,14 @@ import {
 } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { type EarningsPeriod, earningsQuerySchema } from "@/lib/schemas";
-
-import contract from "./route.contract";
+import {
+  security,
+  stdResponses,
+  userEarningsSuccessSchema,
+} from "@/lib/swagger/saas-app-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 /**
  * Must match `getPaymentIncome({ timeZone })`. Bucket keys in `DailyIncome` are calendar days in this zone
@@ -114,121 +121,137 @@ function primaryAmountFromUnits(
   return unit === "USD" ? usd : ada;
 }
 
-export async function GET(request: Request) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+const app = createApiApp("/api/earnings");
+
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Earnings"],
+    summary: "User earnings summary",
+    security,
+    request: {
+      query: earningsQuerySchema,
+    },
+    responses: {
+      200: {
+        description: "Earnings / payouts summary",
+        content: {
+          "application/json": { schema: userEarningsSuccessSchema },
+        },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
 
-    const { searchParams } = new URL(request.url);
-    const queryResult = earningsQuerySchema.safeParse({
-      period: searchParams.get("period") ?? undefined,
-      network: searchParams.get("network"),
-    });
-    if (!queryResult.success) {
-      return contractJsonResponse(contract, "GET", 400, {
-        success: false,
-        error: queryResult.error.issues.map((i) => i.message).join("; "),
-      });
-    }
-    const { period, network } = queryResult.data;
+    const { period, network } = c.req.valid("query");
     requireNetworkedOidcApiScope(authContext, {
       resource: "earnings",
       action: "read",
       network,
     });
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: {
-          earnings: [],
-          total: 0,
-          amountUnit: "USD",
-        },
-      } satisfies EarningsApiResponse);
-    }
+    try {
+      const client = await getPaymentNodeClientForUser(authContext.user.id);
+      if (!client) {
+        return c.json(
+          {
+            success: true as const,
+            data: {
+              earnings: [],
+              total: 0,
+              amountUnit: "USD" as const,
+            },
+          } satisfies EarningsApiResponse,
+          200,
+        );
+      }
 
-    const { current, previous } = getDashboardPeriodWindows(period);
+      const { current, previous } = getDashboardPeriodWindows(period);
 
-    const [currentIncome, previousIncome] = await Promise.all([
-      client.getPaymentIncome({
+      const [currentIncome, previousIncome] = await Promise.all([
+        client.getPaymentIncome({
+          network,
+          agentIdentifier: null,
+          startDate: current.startDate,
+          endDate: current.endDate,
+          timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
+        }),
+        previous
+          ? client.getPaymentIncome({
+              network,
+              agentIdentifier: null,
+              startDate: previous.startDate,
+              endDate: previous.endDate,
+              timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
+            })
+          : Promise.resolve(null),
+      ]);
+
+      const totalsCurrent = splitIncomeUnitsStablecoinUsdAndAda(
+        currentIncome.TotalIncome.Units,
         network,
-        agentIdentifier: null,
-        startDate: current.startDate,
-        endDate: current.endDate,
-        timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
-      }),
-      previous
-        ? client.getPaymentIncome({
-            network,
-            agentIdentifier: null,
-            startDate: previous.startDate,
-            endDate: previous.endDate,
-            timeZone: EARNINGS_PAYMENT_INCOME_TIMEZONE,
-          })
-        : Promise.resolve(null),
-    ]);
-
-    const totalsCurrent = splitIncomeUnitsStablecoinUsdAndAda(
-      currentIncome.TotalIncome.Units,
-      network,
-    );
-    const amountUnit = dashboardEarningsUnitFromTotals(totalsCurrent);
-    const total = primaryAmountFromUnits(
-      currentIncome.TotalIncome.Units,
-      network,
-      amountUnit,
-    );
-
-    const dayAmount = new Map<string, number>();
-    for (const row of currentIncome.DailyIncome) {
-      const key = dailyIncomeDayKey(row);
-      const prev = dayAmount.get(key) ?? 0;
-      const add = primaryAmountFromUnits(row.Units, network, amountUnit);
-      dayAmount.set(key, prev + add);
-    }
-
-    const chartStartYmd = ymdInIncomeTimeZone(
-      currentIncome.periodStart,
-      EARNINGS_PAYMENT_INCOME_TIMEZONE,
-    );
-    const chartEndYmd = ymdInIncomeTimeZone(
-      currentIncome.periodEnd,
-      EARNINGS_PAYMENT_INCOME_TIMEZONE,
-    );
-    const chartDays = enumerateInclusiveDaysYmd(chartStartYmd, chartEndYmd);
-    const earnings: EarningsDataPoint[] = chartDays.map((date) => ({
-      date,
-      amount: dayAmount.get(date) ?? 0,
-    }));
-
-    let previousTotal: number | undefined;
-    if (previousIncome) {
-      previousTotal = primaryAmountFromUnits(
-        previousIncome.TotalIncome.Units,
+      );
+      const amountUnit = dashboardEarningsUnitFromTotals(totalsCurrent);
+      const total = primaryAmountFromUnits(
+        currentIncome.TotalIncome.Units,
         network,
         amountUnit,
       );
-    }
 
-    return contractJsonResponse(contract, "GET", 200, {
-      success: true,
-      data: {
-        earnings,
-        total,
-        amountUnit,
-        ...(previousTotal !== undefined ? { previousTotal } : {}),
-      },
-    } satisfies EarningsApiResponse);
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to get earnings:", error);
-    return contractJsonResponse(contract, "GET", 500, {
-      success: false,
-      error: "Failed to load earnings",
-    });
-  }
-}
+      const dayAmount = new Map<string, number>();
+      for (const row of currentIncome.DailyIncome) {
+        const key = dailyIncomeDayKey(row);
+        const prev = dayAmount.get(key) ?? 0;
+        const add = primaryAmountFromUnits(row.Units, network, amountUnit);
+        dayAmount.set(key, prev + add);
+      }
+
+      const chartStartYmd = ymdInIncomeTimeZone(
+        currentIncome.periodStart,
+        EARNINGS_PAYMENT_INCOME_TIMEZONE,
+      );
+      const chartEndYmd = ymdInIncomeTimeZone(
+        currentIncome.periodEnd,
+        EARNINGS_PAYMENT_INCOME_TIMEZONE,
+      );
+      const chartDays = enumerateInclusiveDaysYmd(chartStartYmd, chartEndYmd);
+      const earnings: EarningsDataPoint[] = chartDays.map((date) => ({
+        date,
+        amount: dayAmount.get(date) ?? 0,
+      }));
+
+      let previousTotal: number | undefined;
+      if (previousIncome) {
+        previousTotal = primaryAmountFromUnits(
+          previousIncome.TotalIncome.Units,
+          network,
+          amountUnit,
+        );
+      }
+
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            earnings,
+            total,
+            amountUnit,
+            ...(previousTotal !== undefined ? { previousTotal } : {}),
+          },
+        } satisfies EarningsApiResponse,
+        200,
+      );
+    } catch (error) {
+      console.error("Failed to get earnings:", error);
+      throw new ApiError(500, "Failed to load earnings");
+    }
+  },
+);
+
+export const { GET } = nextHandlers(app);
+export default app;

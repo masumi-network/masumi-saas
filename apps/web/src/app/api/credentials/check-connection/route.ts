@@ -1,63 +1,75 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
-import { apiError } from "@/lib/api/error";
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import {
+  credentialCheckConnectionBodySchema,
+  credentialCheckConnectionSuccessSchema,
+  security,
+  stdResponses,
+  verificationUnavailableResponse,
+} from "@/lib/swagger/saas-app-openapi";
 import { checkContactExists } from "@/lib/veridian";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract, { checkConnectionSchema } from "./route.contract";
+const app = createApiApp("/api/credentials/check-connection");
 
-export async function POST(request: NextRequest) {
-  try {
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Credentials"],
+    summary: "Check recipient AID connection",
+    description:
+      "Validates whether Veridian already knows the recipient AID before issuing a credential.",
+    security,
+    request: {
+      body: {
+        required: true,
+        content: {
+          "application/json": { schema: credentialCheckConnectionBodySchema },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Recipient AID connection status",
+        content: {
+          "application/json": {
+            schema: credentialCheckConnectionSuccessSchema,
+          },
+        },
+      },
+      503: verificationUnavailableResponse,
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
     if (!isAgentVerificationFlowEnabled()) {
-      return apiError(
-        verificationFeatureCopy.agentVerificationUnavailableDescription,
+      throw new ApiError(
         503,
-        undefined,
-        { contract, method: "POST" },
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
       );
     }
 
-    const authContext = await getAuthenticatedOrThrow(request);
-    requireAnyNetworkedOidcApiScope(authContext, {
+    const auth = await getAuthenticatedOrThrow(c.req.raw);
+    requireAnyNetworkedOidcApiScope(auth, {
       resource: "credentials",
       action: "read",
     });
 
-    const body = await request.json().catch(() => ({}));
-    const validation = checkConnectionSchema.safeParse(body);
-
-    if (!validation.success) {
-      return apiError(
-        "Invalid request",
-        400,
-        validation.error.issues.map((issue) => issue.message),
-        { contract, method: "POST" },
-      );
-    }
-
-    const { aid } = validation.data;
-
+    const { aid } = c.req.valid("json");
     const exists = await checkContactExists(aid);
 
-    return contractJsonResponse(contract, "POST", 200, {
-      success: true,
-      data: { exists },
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to check connection:", error);
-    return apiError(
-      error instanceof Error ? error.message : "Failed to check connection",
-      500,
-      undefined,
-      { contract, method: "POST" },
-    );
-  }
-}
+    return c.json({ success: true as const, data: { exists } }, 200);
+  },
+);
+
+export const { POST } = nextHandlers(app);
+export default app;

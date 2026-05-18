@@ -1,13 +1,20 @@
+import { createRoute } from "@hono/zod-openapi";
 import { NextRequest } from "next/server";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
 import {
   checkPaymentNodeLiveness,
   isPaymentNodeConfigured,
 } from "@/lib/payment-node/health";
-
-import contract from "./route.contract";
+import {
+  errBody,
+  healthServiceUnavailableSchema,
+  healthSuccessSchema,
+  noSecurity,
+} from "@/lib/swagger/saas-app-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 function parsePositiveEnvInt(
   raw: string | undefined,
@@ -53,48 +60,85 @@ function publicHealthPaymentNodeMessage(detail: string): string {
     : detail;
 }
 
-/**
- * Liveness for load balancers and scripts. No authentication.
- * Requires payment node env; pings payment-node liveness (default
- * `GET {PAYMENT_NODE_BASE_URL}/health` per v1 API layout, or `PAYMENT_NODE_HEALTH_URL`) — **503** if
- * not configured, unreachable, or unhealthy.
- */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = await checkRateLimitOrRespond(
-    request,
-    "health",
-    healthRateLimitOptionsForIp,
-  );
-  if ("response" in rateLimitResult) return rateLimitResult.response;
+const app = createApiApp("/api/health");
 
-  const configured = isPaymentNodeConfigured();
-
-  if (!configured) {
-    return contractJsonResponse(contract, "GET", 503, {
-      success: false,
-      error: publicHealthPaymentNodeMessage(
-        "Payment node is not configured (required for this deployment)",
-      ),
-      data: { status: "degraded", paymentNode: { ok: false } },
-    });
-  }
-
-  const result = await checkPaymentNodeLiveness();
-  if (!result.ok) {
-    return contractJsonResponse(contract, "GET", 503, {
-      success: false,
-      error: publicHealthPaymentNodeMessage(
-        result.error ?? "Payment node unhealthy",
-      ),
-      data: { status: "degraded", paymentNode: { ok: false } },
-    });
-  }
-
-  return contractJsonResponse(contract, "GET", 200, {
-    success: true,
-    data: {
-      status: "ok",
-      paymentNode: { ok: true },
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["System"],
+    summary: "Health check",
+    description:
+      "Confirms this app and the Masumi payment service behind it are up. **503** means the payment service is unreachable or not reporting healthy.",
+    security: noSecurity,
+    responses: {
+      200: {
+        description: "App and payment service are healthy",
+        content: {
+          "application/json": { schema: healthSuccessSchema },
+        },
+      },
+      429: {
+        description: "Too many health checks from this client in the window",
+        content: { "application/json": { schema: errBody } },
+      },
+      503: {
+        description:
+          "Payment service unreachable or unhealthy from this environment",
+        content: {
+          "application/json": { schema: healthServiceUnavailableSchema },
+        },
+      },
     },
-  });
-}
+  }),
+  async (c) => {
+    const request = new NextRequest(c.req.raw);
+    const rateLimitResult = await checkRateLimitOrRespond(
+      request,
+      "health",
+      healthRateLimitOptionsForIp,
+    );
+    if ("response" in rateLimitResult)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return rateLimitResult.response as any;
+
+    const configured = isPaymentNodeConfigured();
+
+    if (!configured) {
+      throw new ApiError(
+        503,
+        publicHealthPaymentNodeMessage(
+          "Payment node is not configured (required for this deployment)",
+        ),
+        undefined,
+        { data: { status: "degraded", paymentNode: { ok: false } } },
+      );
+    }
+
+    const result = await checkPaymentNodeLiveness();
+    if (!result.ok) {
+      throw new ApiError(
+        503,
+        publicHealthPaymentNodeMessage(
+          result.error ?? "Payment node unhealthy",
+        ),
+        undefined,
+        { data: { status: "degraded", paymentNode: { ok: false } } },
+      );
+    }
+
+    return c.json(
+      {
+        success: true as const,
+        data: {
+          status: "ok" as const,
+          paymentNode: { ok: true },
+        },
+      },
+      200,
+    );
+  },
+);
+
+export const { GET } = nextHandlers(app);
+export default app;

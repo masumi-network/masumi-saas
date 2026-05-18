@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   requireAllNetworkedOidcApiScopes,
@@ -16,13 +16,18 @@ import {
   resolvePaymentUserTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "registry";
 const UPSTREAM_PATH = "/registry";
 
-export async function GET(request: NextRequest) {
+const app = createApiApp("/");
+
+app.get("*", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     requireNetworkedOidcApiScope(authContext, {
@@ -33,15 +38,15 @@ export async function GET(request: NextRequest) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method: "GET",
         headers,
@@ -53,16 +58,17 @@ export async function GET(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+app.post("*", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     const body = await readOptionalRequestBody(request);
@@ -75,9 +81,9 @@ export async function POST(request: NextRequest) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
@@ -98,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method: "POST",
         headers,
@@ -111,16 +117,17 @@ export async function POST(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
 
-export async function DELETE(request: NextRequest) {
+app.delete("*", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     const body = await readOptionalRequestBody(request);
@@ -132,9 +139,9 @@ export async function DELETE(request: NextRequest) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
@@ -155,7 +162,7 @@ export async function DELETE(request: NextRequest) {
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method: "DELETE",
         headers,
@@ -168,9 +175,12 @@ export async function DELETE(request: NextRequest) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
+
+export const { GET, POST, DELETE } = nextHandlers(app);
+export default app;

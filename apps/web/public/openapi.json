@@ -89,11 +89,11 @@
   "paths": {
     "/api/v1/agents/{agentId}": {
       "get": {
-        "summary": "Get agent by ID",
-        "description": "Returns a single agent by its ID. No authentication required.",
         "tags": [
           "Agents"
         ],
+        "summary": "Get agent by ID",
+        "description": "Returns a single agent by its ID. No authentication required.",
         "parameters": [
           {
             "schema": {
@@ -257,11 +257,11 @@
     },
     "/api/v1/agents": {
       "get": {
-        "summary": "List agents",
-        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters are ignored.",
         "tags": [
           "Agents"
         ],
+        "summary": "List agents",
+        "description": "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters are ignored.",
         "parameters": [
           {
             "schema": {
@@ -471,11 +471,11 @@
     },
     "/api/v1/agents/verify": {
       "get": {
-        "summary": "Verify agent identifier",
-        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
         "tags": [
           "Agents"
         ],
+        "summary": "Verify agent identifier",
+        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
         "parameters": [
           {
             "schema": {
@@ -583,13 +583,79 @@
             }
           },
           "400": {
-            "description": "Bad Request — invalid query parameters"
+            "description": "Bad Request — invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
           },
           "429": {
-            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header."
+            "description": "Too Many Requests — rate limit exceeded. Check Retry-After header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
           },
           "500": {
-            "description": "Internal Server Error"
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }

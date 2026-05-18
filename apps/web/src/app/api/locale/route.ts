@@ -1,28 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { setCookie } from "hono/cookie";
 import { z } from "zod";
 
 import { locales } from "@/i18n/config";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const schema = z.object({
   locale: z.enum(locales),
 });
 
-export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => null);
+const app = createApiApp("/api/locale");
+
+app.post("/", async (c) => {
+  const body = await c.req.raw
+    .clone()
+    .json()
+    .catch(() => null);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid locale" }, { status: 400 });
+    return c.json({ error: "Invalid locale" }, 400);
   }
 
   const { locale } = parsed.data;
-  const res = NextResponse.json({ locale });
-  res.cookies.set("NEXT_LOCALE", locale, {
+  setCookie(c, "NEXT_LOCALE", locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
   });
-  return res;
-}
+  return c.json({ locale });
+});
+
+export const { POST } = nextHandlers(app);
+export default app;

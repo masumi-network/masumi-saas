@@ -1,24 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { requireAllNetworkedOidcApiScopes } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
-  readOptionalRequestBody,
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "payment-information";
 const UPSTREAM_PATH = "/payment-information/";
 
-export async function GET(request: NextRequest) {
-  return handleRequest(request, "GET");
-}
+const app = createApiApp("/");
 
-async function handleRequest(request: NextRequest, method: string) {
+app.get("*", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     requireAllNetworkedOidcApiScopes(authContext, {
@@ -28,21 +28,18 @@ async function handleRequest(request: NextRequest, method: string) {
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
-    const body =
-      method === "GET" ? undefined : await readOptionalRequestBody(request);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
-        method,
+        method: "GET",
         headers,
-        body,
       },
     );
 
@@ -51,9 +48,12 @@ async function handleRequest(request: NextRequest, method: string) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
+    return c.json(
+      { success: false as const, error: "Proxy request failed" },
+      500,
     );
   }
-}
+});
+
+export const { GET } = nextHandlers(app);
+export default app;

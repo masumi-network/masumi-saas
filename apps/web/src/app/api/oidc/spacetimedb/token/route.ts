@@ -10,6 +10,8 @@ import {
 } from "@/lib/auth/oidc-flow";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { getTrustedOidcOrigins, oidcEnvConfig } from "@/lib/config/oidc.config";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 const requestSchema = z.object({
   client: z.enum(["web", "cli"]).default("web"),
@@ -33,15 +35,19 @@ function jsonWithCors(
   );
 }
 
-export async function OPTIONS(request: NextRequest) {
+const app = createApiApp("/api/oidc/spacetimedb/token");
+
+app.options("/", (c) => {
+  const request = new NextRequest(c.req.raw);
   return handleCorsPreflightResponse(
     request,
     ["POST", "OPTIONS"],
     OIDC_BRIDGE_CORS_OPTIONS,
   );
-}
+});
 
-export async function POST(request: NextRequest) {
+app.post("/", async (c) => {
+  const request = new NextRequest(c.req.raw);
   try {
     const authContext = await getAuthenticatedOrThrow(request);
 
@@ -133,4 +139,7 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
-}
+});
+
+export const { POST, OPTIONS } = nextHandlers(app);
+export default app;

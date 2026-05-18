@@ -1,16 +1,34 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
+import {
+  agentTransactionsSuccessSchema,
+  errBody,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "./route.contract";
+const app = createApiApp("/api/agents/{agentId}/transactions");
+
+const paramsSchema = z.object({
+  agentId: agentIdRouteParamSchema.openapi({
+    param: { name: "agentId", in: "path" },
+    description: "Agent ID (CUID)",
+    example: "cmlf6gswz0000x1uctad958tq",
+  }),
+});
 
 function mapItem(
   item: PaymentOrPurchaseItem,
@@ -39,113 +57,124 @@ function mapItem(
   };
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Agent transactions",
+    description: "Payment and purchase activity for one agent.",
+    security,
+    request: { params: paramsSchema },
+    responses: {
+      200: {
+        description: "Transactions",
+        content: {
+          "application/json": { schema: agentTransactionsSuccessSchema },
+        },
+      },
+      503: {
+        description: "Payment node unavailable",
+        content: { "application/json": { schema: errBody } },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
-    const { agentId } = await params;
+    const { agentId } = c.req.valid("param");
 
-    const agent = await getWalletOwnedAgentForUser({
-      userId: authContext.user.id,
-      agentId,
-    });
-
-    if (!agent) {
-      return contractJsonResponse(contract, "GET", 404, {
-        success: false,
-        error: "Agent not found",
+    try {
+      const agent = await getWalletOwnedAgentForUser({
+        userId: authContext.user.id,
+        agentId,
       });
-    }
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "agents",
-      action: "read",
-      network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
-    });
 
-    if (!agent.agentIdentifier) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: { transactions: [] },
+      if (!agent) {
+        throw new ApiError(404, "Agent not found");
+      }
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "read",
+        network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
-    }
 
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: { transactions: [] },
-      });
-    }
+      if (!agent.agentIdentifier) {
+        return c.json(
+          { success: true as const, data: { transactions: [] } },
+          200,
+        );
+      }
 
-    const network = toNetwork(agent.networkIdentifier);
+      const client = await getPaymentNodeClientForUser(authContext.user.id);
+      if (!client) {
+        return c.json(
+          { success: true as const, data: { transactions: [] } },
+          200,
+        );
+      }
 
-    const smartContractAddress =
-      await getSmartContractAddressForConfiguredSource(
-        client,
-        authContext.user.id,
-        network,
+      const network = toNetwork(agent.networkIdentifier);
+
+      const smartContractAddress =
+        await getSmartContractAddressForConfiguredSource(
+          client,
+          authContext.user.id,
+          network,
+        );
+      if (!smartContractAddress) {
+        return c.json(
+          { success: true as const, data: { transactions: [] } },
+          200,
+        );
+      }
+
+      const [paymentsRes, purchasesRes] = await Promise.all([
+        client.listPayments({
+          network,
+          filterSmartContractAddress: smartContractAddress,
+          limit: 50,
+        }),
+        client.listPurchases({
+          network,
+          filterSmartContractAddress: smartContractAddress,
+          limit: 50,
+        }),
+      ]);
+
+      const agentIdVal = agent.agentIdentifier;
+      const payments = (paymentsRes.Payments ?? []).filter(
+        (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
       );
-    if (!smartContractAddress) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: { transactions: [] },
-      });
+      const purchases = (purchasesRes.Purchases ?? []).filter(
+        (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
+      );
+
+      const transactions = [
+        ...payments.map((p: PaymentOrPurchaseItem) =>
+          mapItem(p, "payment", network),
+        ),
+        ...purchases.map((p: PaymentOrPurchaseItem) =>
+          mapItem(p, "purchase", network),
+        ),
+      ].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      return c.json({ success: true as const, data: { transactions } }, 200);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (isPaymentNodeConfigError(error)) {
+        throw new ApiError(503, error.message);
+      }
+      console.error("Failed to get agent transactions:", error);
+      throw new ApiError(500, "Failed to load transactions");
     }
+  },
+);
 
-    const [paymentsRes, purchasesRes] = await Promise.all([
-      client.listPayments({
-        network,
-        filterSmartContractAddress: smartContractAddress,
-        limit: 50,
-      }),
-      client.listPurchases({
-        network,
-        filterSmartContractAddress: smartContractAddress,
-        limit: 50,
-      }),
-    ]);
-
-    const agentIdVal = agent.agentIdentifier;
-    const payments = (paymentsRes.Payments ?? []).filter(
-      (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
-    );
-    const purchases = (purchasesRes.Purchases ?? []).filter(
-      (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
-    );
-
-    const transactions = [
-      ...payments.map((p: PaymentOrPurchaseItem) =>
-        mapItem(p, "payment", network),
-      ),
-      ...purchases.map((p: PaymentOrPurchaseItem) =>
-        mapItem(p, "purchase", network),
-      ),
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-
-    return contractJsonResponse(contract, "GET", 200, {
-      success: true,
-      data: { transactions },
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    if (isPaymentNodeConfigError(error)) {
-      return contractJsonResponse(contract, "GET", 503, {
-        success: false,
-        error: error.message,
-      });
-    }
-    console.error("Failed to get agent transactions:", error);
-    return contractJsonResponse(contract, "GET", 500, {
-      success: false,
-      error: "Failed to load transactions",
-    });
-  }
-}
+export const { GET } = nextHandlers(app);
+export default app;
