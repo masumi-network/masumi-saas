@@ -1087,7 +1087,7 @@
       "status": {
         "verified": "Verified",
         "verifiedShieldAriaSummary": "This agent has been verified on the Masumi network.",
-        "verifiedShieldTooltip": "This agent has been verified on the Masumi network and has a verifiable credential. <docsLink>Learn more</docsLink>",
+        "verifiedShieldTooltip": "This agent has been verified on the Masumi network and holds a verifiable credential. <docsLink>Verifiable credentials (SDK docs)</docsLink>",
         "rejected": "Rejected",
         "underReview": "Under Review",
         "pending": "Pending",
@@ -1339,7 +1339,7 @@
             "revokedAt": "Revoked at",
             "revokedNever": "Not revoked",
             "lastUpdated": "Record last synced",
-            "identityDocsLink": "About Agent Identities (docs)",
+            "identityDocsLink": "Verifiable credentials (SDK docs)",
             "notProvided": "not in VC",
             "notRegisteredYet": "not assigned yet"
           },

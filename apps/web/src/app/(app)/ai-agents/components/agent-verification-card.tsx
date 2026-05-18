@@ -37,13 +37,13 @@ import {
   agentApiClient,
   type AgentVerificationCredentialSummary,
 } from "@/lib/api/agent.client";
-import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import {
+  isAgentVerificationFlowEnabled,
+  verifiableCredentialsSdkDocUrl,
+} from "@/lib/config/verification.config";
 import { cn, shortenAddress } from "@/lib/utils";
 
 import { RequestVerificationDialog } from "./request-verification-dialog";
-
-const AGENT_IDENTITY_DOC =
-  "https://docs.masumi.network/core-concepts/identity" as const;
 
 const EM_DASH = "\u2014";
 
@@ -376,7 +376,7 @@ function VeridianCredentialSummaryPanel({
           <Separator />
 
           <Link
-            href={AGENT_IDENTITY_DOC}
+            href={verifiableCredentialsSdkDocUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-4 hover:text-primary/90"

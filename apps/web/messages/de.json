@@ -948,8 +948,8 @@
       },
       "status": {
         "verified": "Verifiziert",
-        "verifiedShieldAriaSummary": "Agenten-Authentizität über eine Agent Identity bestätigt.",
-        "verifiedShieldTooltip": "Die Authentizität dieses Agenten wird über eine Agent Identity bestätigt. <docsLink>Mehr erfahren</docsLink> über Agent Identities.",
+        "verifiedShieldAriaSummary": "Dieser Agent wurde im Masumi-Netzwerk verifiziert.",
+        "verifiedShieldTooltip": "Dieser Agent wurde im Masumi-Netzwerk verifiziert und hat ein Verifiable Credential. <docsLink>Verifiable Credentials (SDK-Doku)</docsLink>",
         "rejected": "Abgelehnt",
         "underReview": "Wird überprüft",
         "pending": "Ausstehend",
@@ -1201,7 +1201,7 @@
             "revokedAt": "Widerrufen am",
             "revokedNever": "Nicht widerrufen",
             "lastUpdated": "Datensatz zuletzt synchronisiert",
-            "identityDocsLink": "Zu Agent Identities (Doku)",
+            "identityDocsLink": "Verifiable Credentials (SDK-Doku)",
             "notProvided": "nicht im VC",
             "notRegisteredYet": "noch nicht gesetzt"
           },

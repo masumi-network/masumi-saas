@@ -8,11 +8,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { verifiableCredentialsSdkDocUrl } from "@/lib/config/verification.config";
 import { cn } from "@/lib/utils";
-
-/** Masumi docs: Identity (on-chain NFT + credentials). */
-const AGENT_IDENTITY_DOCS_URL =
-  "https://masumi-identity-sdk-docs-8lhm9.ondigitalocean.app/api-reference/credentials";
 
 const sizeClass = {
   sm: "h-4 w-4",
@@ -55,7 +52,7 @@ export function AgentVerifiedShield({
         {t.rich("verifiedShieldTooltip", {
           docsLink: (chunks) => (
             <a
-              href={AGENT_IDENTITY_DOCS_URL}
+              href={verifiableCredentialsSdkDocUrl}
               target="_blank"
               rel="noopener noreferrer"
               onPointerDown={(event) => event.stopPropagation()}

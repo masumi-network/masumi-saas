@@ -948,8 +948,8 @@
       },
       "status": {
         "verified": "確認済み",
-        "verifiedShieldAriaSummary": "Agent Identityにより、このエージェントの真正性が確認されています。",
-        "verifiedShieldTooltip": "このエージェントの真正性は Agent Identity によって確認されています。<docsLink>詳しく見る</docsLink> Agent Identities について。",
+        "verifiedShieldAriaSummary": "このエージェントはMasumiネットワーク上で確認済みです。",
+        "verifiedShieldTooltip": "このエージェントはMasumiネットワーク上で確認済みで、検証可能なクレデンシャルを保持しています。<docsLink>検証可能なクレデンシャル（SDKドキュメント）</docsLink>",
         "rejected": "拒否されました",
         "underReview": "検討中",
         "pending": "保留中",
@@ -1201,7 +1201,7 @@
             "revokedAt": "取り消し日時",
             "revokedNever": "取り消しなし",
             "lastUpdated": "レコード最終同期",
-            "identityDocsLink": "Agent Identitiesについて（ドキュメント）",
+            "identityDocsLink": "検証可能なクレデンシャル（SDKドキュメント）",
             "notProvided": "VC に含まれません",
             "notRegisteredYet": "未設定"
           },
