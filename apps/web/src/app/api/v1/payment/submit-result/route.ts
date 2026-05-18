@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import {
@@ -22,7 +20,7 @@ const UPSTREAM_PATH = "/payment/submit-result";
 const app = createApiApp("/");
 
 app.post("*", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,

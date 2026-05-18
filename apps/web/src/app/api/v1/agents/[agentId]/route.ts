@@ -91,25 +91,31 @@ app.openapi(
 
     const { agentId } = c.req.valid("param");
 
-    const agent = await prisma.agent.findUnique({
-      where: { id: agentId },
-      select: publicAgentSelect,
-    });
+    try {
+      const agent = await prisma.agent.findUnique({
+        where: { id: agentId },
+        select: publicAgentSelect,
+      });
 
-    if (!agent) {
-      throw new ApiError(404, "Agent not found");
+      if (!agent) {
+        throw new ApiError(404, "Agent not found");
+      }
+
+      const res = c.json(
+        {
+          success: true as const,
+          data: agent as unknown as z.infer<typeof AgentSchema>,
+        },
+        200,
+      );
+      res.headers.set("X-RateLimit-Limit", String(rl.limit));
+      res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+      return res;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error("Failed to get agent:", error);
+      throw new ApiError(500, "Failed to get agent");
     }
-
-    const res = c.json(
-      {
-        success: true as const,
-        data: agent as unknown as z.infer<typeof AgentSchema>,
-      },
-      200,
-    );
-    res.headers.set("X-RateLimit-Limit", String(rl.limit));
-    res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-    return res;
   },
 );
 

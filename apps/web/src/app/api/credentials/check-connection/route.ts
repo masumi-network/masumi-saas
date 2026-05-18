@@ -15,7 +15,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { checkContactExists } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/credentials/check-connection");
@@ -65,9 +65,19 @@ app.openapi(
     });
 
     const { aid } = c.req.valid("json");
-    const exists = await checkContactExists(aid);
 
-    return c.json({ success: true as const, data: { exists } }, 200);
+    try {
+      const exists = await checkContactExists(aid);
+      return c.json({ success: true as const, data: { exists } }, 200);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to check connection:", error);
+      throw new ApiError(
+        500,
+        error instanceof Error ? error.message : "Failed to check connection",
+      );
+    }
   },
 );
 

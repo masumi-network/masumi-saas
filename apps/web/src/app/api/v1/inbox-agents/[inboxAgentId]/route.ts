@@ -1,5 +1,4 @@
 import { createRoute } from "@hono/zod-openapi";
-import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
@@ -61,7 +60,7 @@ app.openapi(
   async (c) => {
     try {
       const authContext = await getAuthenticatedOrThrow(c.req.raw);
-      const request = new NextRequest(c.req.raw);
+      const request = c.req.raw;
       const network = getEffectivePaymentNetwork(request);
       requireNetworkedOidcApiScope(authContext, {
         resource: "inbox-agents",

@@ -6,6 +6,7 @@ import { agentVerifyQuerySchema } from "@/lib/schemas";
 import { verifyAgentResultSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
 import { honoCors } from "@/server/hono/middleware/cors";
 import { nextHandlers } from "@/server/hono/next";
 
@@ -57,17 +58,6 @@ app.openapi(
 
     const { agentIdentifier } = c.req.valid("query");
 
-    const agent = await prisma.agent.findFirst({
-      where: { agentIdentifier },
-      select: {
-        id: true,
-        name: true,
-        apiUrl: true,
-        verificationStatus: true,
-        veridianCredentialId: true,
-      },
-    });
-
     const respondNotVerified = () => {
       const res = c.json(
         { success: true as const, data: { verified: false as const } },
@@ -78,41 +68,58 @@ app.openapi(
       return res;
     };
 
-    if (!agent || agent.verificationStatus !== "VERIFIED") {
-      return respondNotVerified();
-    }
-
-    const credential = await prisma.veridianCredential.findFirst({
-      where: { agentId: agent.id, status: "ISSUED" },
-      select: { credentialId: true, expiresAt: true },
-      orderBy: { issuedAt: "desc" },
-    });
-
-    if (!credential) {
-      return respondNotVerified();
-    }
-
-    const isExpired =
-      credential.expiresAt !== null && credential.expiresAt < new Date();
-
-    const res = c.json(
-      {
-        success: true as const,
-        data: {
-          verified: !isExpired,
-          credentialId: credential.credentialId,
-          expiresAt: credential.expiresAt
-            ? credential.expiresAt.toISOString()
-            : null,
-          agentName: agent.name,
-          apiUrl: agent.apiUrl,
+    try {
+      const agent = await prisma.agent.findFirst({
+        where: { agentIdentifier },
+        select: {
+          id: true,
+          name: true,
+          apiUrl: true,
+          verificationStatus: true,
+          veridianCredentialId: true,
         },
-      },
-      200,
-    );
-    res.headers.set("X-RateLimit-Limit", String(rl.limit));
-    res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-    return res;
+      });
+
+      if (!agent || agent.verificationStatus !== "VERIFIED") {
+        return respondNotVerified();
+      }
+
+      const credential = await prisma.veridianCredential.findFirst({
+        where: { agentId: agent.id, status: "ISSUED" },
+        select: { credentialId: true, expiresAt: true },
+        orderBy: { issuedAt: "desc" },
+      });
+
+      if (!credential) {
+        return respondNotVerified();
+      }
+
+      const isExpired =
+        credential.expiresAt !== null && credential.expiresAt < new Date();
+
+      const res = c.json(
+        {
+          success: true as const,
+          data: {
+            verified: !isExpired,
+            credentialId: credential.credentialId,
+            expiresAt: credential.expiresAt
+              ? credential.expiresAt.toISOString()
+              : null,
+            agentName: agent.name,
+            apiUrl: agent.apiUrl,
+          },
+        },
+        200,
+      );
+      res.headers.set("X-RateLimit-Limit", String(rl.limit));
+      res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+      return res;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error("Failed to verify agent:", error);
+      throw new ApiError(500, "Failed to verify agent");
+    }
   },
 );
 

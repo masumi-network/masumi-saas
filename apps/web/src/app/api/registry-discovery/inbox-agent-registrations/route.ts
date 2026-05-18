@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -18,7 +16,7 @@ const UPSTREAM_PATH = "/inbox-agent-registration/";
 const app = createApiApp("/api/registry-discovery/inbox-agent-registrations");
 
 app.post("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -40,7 +38,7 @@ app.post("/", async (c) => {
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(request.url).search}`,
       {
         method: "POST",
         headers,

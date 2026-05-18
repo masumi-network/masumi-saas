@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
@@ -23,7 +23,7 @@ const OIDC_BRIDGE_CORS_OPTIONS = {
 } as const;
 
 function jsonWithCors(
-  request: NextRequest,
+  request: Request,
   body: unknown,
   init?: ResponseInit,
 ): NextResponse {
@@ -38,7 +38,7 @@ function jsonWithCors(
 const app = createApiApp("/api/oidc/spacetimedb/token");
 
 app.options("/", (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   return handleCorsPreflightResponse(
     request,
     ["POST", "OPTIONS"],
@@ -47,7 +47,7 @@ app.options("/", (c) => {
 });
 
 app.post("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request);
 

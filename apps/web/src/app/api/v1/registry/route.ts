@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 import {
   requireAllNetworkedOidcApiScopes,
   requireNetworkedOidcApiScope,
@@ -25,7 +23,7 @@ const UPSTREAM_PATH = "/registry";
 const app = createApiApp("/");
 
 app.get("*", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
@@ -66,7 +64,7 @@ app.get("*", async (c) => {
 });
 
 app.post("*", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
@@ -125,7 +123,7 @@ app.post("*", async (c) => {
 });
 
 app.delete("*", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,

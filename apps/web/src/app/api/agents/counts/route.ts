@@ -10,6 +10,7 @@ import {
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
 import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents/counts");
@@ -47,46 +48,53 @@ app.openapi(
       network,
     });
 
-    const agents = await listWalletOwnedAgentsForUser({
-      userId: authContext.user.id,
-      network,
-    });
+    try {
+      const agents = await listWalletOwnedAgentsForUser({
+        userId: authContext.user.id,
+        network,
+      });
 
-    const all = agents.length;
-    const registered = agents.filter(
-      (agent) => agent.registrationState === "RegistrationConfirmed",
-    ).length;
-    const deregistered = agents.filter(
-      (agent) => agent.registrationState === "DeregistrationConfirmed",
-    ).length;
-    const pending = agents.filter((agent) =>
-      ["RegistrationRequested", "DeregistrationRequested"].includes(
-        agent.registrationState,
-      ),
-    ).length;
-    const failed = agents.filter((agent) =>
-      ["RegistrationFailed", "DeregistrationFailed"].includes(
-        agent.registrationState,
-      ),
-    ).length;
-    const verified = agents.filter(
-      (agent) => agent.verificationStatus === "VERIFIED",
-    ).length;
+      const all = agents.length;
+      const registered = agents.filter(
+        (agent) => agent.registrationState === "RegistrationConfirmed",
+      ).length;
+      const deregistered = agents.filter(
+        (agent) => agent.registrationState === "DeregistrationConfirmed",
+      ).length;
+      const pending = agents.filter((agent) =>
+        ["RegistrationRequested", "DeregistrationRequested"].includes(
+          agent.registrationState,
+        ),
+      ).length;
+      const failed = agents.filter((agent) =>
+        ["RegistrationFailed", "DeregistrationFailed"].includes(
+          agent.registrationState,
+        ),
+      ).length;
+      const verified = agents.filter(
+        (agent) => agent.verificationStatus === "VERIFIED",
+      ).length;
 
-    return c.json(
-      {
-        success: true as const,
-        data: {
-          all,
-          registered,
-          deregistered,
-          pending,
-          failed,
-          verified,
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            all,
+            registered,
+            deregistered,
+            pending,
+            failed,
+            verified,
+          },
         },
-      },
-      200,
-    );
+        200,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to get agent counts:", error);
+      throw new ApiError(500, "Failed to get agent counts");
+    }
   },
 );
 

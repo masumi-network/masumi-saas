@@ -50,8 +50,12 @@ vi.mock("@/lib/payment-node/wallet-scopes", () => ({
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
   getEffectivePaymentNetwork: (request: NextRequest) => {
     const value =
-      request.nextUrl.searchParams.get("network") ??
-      request.cookies.get("payment_network")?.value;
+      new URL(request.url).searchParams.get("network") ??
+      (request.headers.get("cookie") || "")
+        .split(";")
+        .map((p) => p.trim())
+        .find((p) => p.startsWith("payment_network="))
+        ?.slice("payment_network=".length);
     return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
   },
 }));

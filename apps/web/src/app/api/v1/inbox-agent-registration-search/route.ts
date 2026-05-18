@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas/api-query";
@@ -18,12 +16,19 @@ const UPSTREAM_PATH = "/inbox-agent-registration-search/";
 const app = createApiApp("/");
 
 function getEffectiveInboxSearchNetwork(
-  request: NextRequest,
+  request: Request,
   body: string | undefined,
 ): "Mainnet" | "Preprod" {
+  const url = new URL(request.url);
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const networkCookie = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("payment_network="))
+    ?.slice("payment_network=".length);
   let networkValue =
-    request.nextUrl.searchParams.get("network") ??
-    request.cookies.get("payment_network")?.value;
+    url.searchParams.get("network") ??
+    (networkCookie ? decodeURIComponent(networkCookie) : undefined);
 
   if (body) {
     try {
@@ -40,7 +45,7 @@ function getEffectiveInboxSearchNetwork(
 }
 
 app.post("*", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,

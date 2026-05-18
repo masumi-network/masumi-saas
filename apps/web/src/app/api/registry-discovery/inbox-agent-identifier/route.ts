@@ -1,5 +1,3 @@
-import { NextRequest } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -15,7 +13,7 @@ import { nextHandlers } from "@/server/hono/next";
 const app = createApiApp("/api/registry-discovery/inbox-agent-identifier");
 
 app.get("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -27,7 +25,9 @@ app.get("/", async (c) => {
       network,
     });
 
-    const agentIdentifier = request.nextUrl.searchParams.get("agentIdentifier");
+    const agentIdentifier = new URL(request.url).searchParams.get(
+      "agentIdentifier",
+    );
     if (!agentIdentifier) {
       return c.json(
         { success: false as const, error: "agentIdentifier is required" },
