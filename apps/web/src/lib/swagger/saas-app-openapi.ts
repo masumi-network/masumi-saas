@@ -841,8 +841,6 @@ const credentialIssueBodySchema = z
         example: "2026-12-31T23:59:59.000Z",
       })
       .optional(),
-    signature: z.string().min(1).optional(),
-    signedMessage: z.string().min(1).optional(),
   })
   .openapi({
     example: {

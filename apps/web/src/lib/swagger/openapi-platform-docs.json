@@ -9580,14 +9580,6 @@
                     "type": "string",
                     "format": "date-time",
                     "example": "2026-12-31T23:59:59.000Z"
-                  },
-                  "signature": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "signedMessage": {
-                    "type": "string",
-                    "minLength": 1
                   }
                 },
                 "required": [

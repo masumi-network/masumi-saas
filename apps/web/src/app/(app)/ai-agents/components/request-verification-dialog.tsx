@@ -8,6 +8,7 @@ import {
   EyeOff,
   XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
@@ -55,7 +56,11 @@ import {
   type VerificationSnippetLang,
 } from "@/lib/verification-code-snippets";
 
-const STEP_COUNT = 3;
+const STEP_COUNT = 4;
+
+const VERIDIAN_CONNECT_URL =
+  process.env.NEXT_PUBLIC_VERIDIAN_KERIA_CONNECT_URL ?? "";
+const VERIDIAN_BOOT_URL = process.env.NEXT_PUBLIC_VERIDIAN_KERIA_BOOT_URL ?? "";
 const CREDENTIAL_POLL_MS = 3000;
 const CREDENTIAL_POLL_MAX = 100;
 const CONNECTION_POLL_MS = 4000;
@@ -164,7 +169,7 @@ export function RequestVerificationDialog({
 
   useEffect(() => {
     if (!agentVerificationEnabled) return;
-    if (!open || step !== 1) return;
+    if (!open || step !== 2) return;
 
     let cancelled = false;
     setIsLoadingIssuerOobi(true);
@@ -320,7 +325,7 @@ export function RequestVerificationDialog({
 
   // When AID derived from OOBI/direct input changes, reset and re-check
   useEffect(() => {
-    if (step !== 1) {
+    if (step !== 2) {
       return;
     }
     if (!derivedAid || invalidOobiPaste) {
@@ -343,7 +348,7 @@ export function RequestVerificationDialog({
   // Poll credential server connection while not yet established
   useEffect(() => {
     if (
-      step !== 1 ||
+      step !== 2 ||
       !derivedAid ||
       invalidOobiPaste ||
       connectionExists !== false
@@ -352,23 +357,27 @@ export function RequestVerificationDialog({
     }
 
     connPollAttemptsRef.current = 0;
-    /** Browser timer id (`window.setInterval` returns `number` in DOM types). */
-    let intervalId: number | undefined;
+    const intervalHolder: { id: number | undefined } = { id: undefined };
 
     const tick = async () => {
       connPollAttemptsRef.current += 1;
       if (connPollAttemptsRef.current > CONNECTION_POLL_MAX) {
-        if (intervalId !== undefined) window.clearInterval(intervalId);
+        if (intervalHolder.id !== undefined)
+          window.clearInterval(intervalHolder.id);
         return;
       }
       await checkConnectionRef.current(derivedAid, true);
     };
 
     void tick();
-    intervalId = window.setInterval(() => void tick(), CONNECTION_POLL_MS);
+    intervalHolder.id = window.setInterval(
+      () => void tick(),
+      CONNECTION_POLL_MS,
+    );
 
     return () => {
-      if (intervalId !== undefined) window.clearInterval(intervalId);
+      if (intervalHolder.id !== undefined)
+        window.clearInterval(intervalHolder.id);
     };
   }, [step, derivedAid, invalidOobiPaste, connectionExists]);
 
@@ -404,8 +413,10 @@ export function RequestVerificationDialog({
 
   const handleNext = async () => {
     if (step === 0) {
+      setStep(1);
+    } else if (step === 1) {
       const success = await handleTestEndpoint();
-      if (success) setStep(1);
+      if (success) setStep(2);
     } else if (step < STEP_COUNT - 1) {
       setStep((s) => s + 1);
     }
@@ -470,6 +481,10 @@ export function RequestVerificationDialog({
 
   const steps = [
     {
+      title: t("stepWalletSetup"),
+      description: t("stepWalletSetupDescription"),
+    },
+    {
       title: t("stepEndpoint"),
       description: t("stepEndpointDescription"),
     },
@@ -489,24 +504,28 @@ export function RequestVerificationDialog({
     return null;
   }
 
-  const step1Blocked =
+  const step2Blocked =
     !derivedAid ||
     invalidOobiPaste ||
     connectionExists !== true ||
     isCheckingConnection;
 
-  const isNextDisabled =
-    isTestingEndpoint ||
-    !challenge ||
-    !secret ||
-    kycStatus !== "APPROVED" ||
-    (step === 1 && step1Blocked);
+  const isNextDisabled = (() => {
+    if (step === 0) return false;
+    if (kycStatus !== "APPROVED") return true;
+    if (step === 1) return isTestingEndpoint || !challenge || !secret;
+    if (step === 2) return step2Blocked;
+    return false;
+  })();
 
   const getNextDisabledReason = (): string => {
-    if (isTestingEndpoint) return t("nextDisabledReasonTestingEndpoint");
-    if (!challenge || !secret) return t("nextDisabledReasonLoadingSetup");
+    if (step === 0) return "";
     if (kycStatus !== "APPROVED") return t("nextDisabledReasonKycRequired");
     if (step === 1) {
+      if (isTestingEndpoint) return t("nextDisabledReasonTestingEndpoint");
+      if (!challenge || !secret) return t("nextDisabledReasonLoadingSetup");
+    }
+    if (step === 2) {
       if (invalidOobiPaste) return t("invalidOobi");
       if (!derivedAid) return t("nextDisabledReasonPasteOobiOrAid");
       if (isCheckingConnection)
@@ -547,7 +566,7 @@ export function RequestVerificationDialog({
             {steps[step]?.description}
           </p>
 
-          {step !== 1 && kycStatus !== "APPROVED" && (
+          {step !== 0 && step !== 2 && kycStatus !== "APPROVED" && (
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-2">{t("kycStatus")}</h3>
               {kycStatus === "PENDING" ? (
@@ -610,6 +629,123 @@ export function RequestVerificationDialog({
 
           <div className="space-y-6">
             {step === 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-sm font-medium">
+                    {t("walletSetup.title")}
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t("walletSetup.description")}
+                  </p>
+                </div>
+
+                <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                      {1}
+                    </span>
+                    <p className="text-sm font-medium">
+                      {t("walletSetup.installStep")}
+                    </p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                          <CircleHelp className="h-3.5 w-3.5" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs whitespace-pre-line">
+                        {t("walletSetup.osRequirements")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-xs text-muted-foreground ml-7">
+                    {t("walletSetup.installDescription")}
+                  </p>
+                  <div className="ml-7 flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="https://apps.apple.com/ng/app/veridian-wallet/id6590628073"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Image
+                          src="/assets/veridian/appstore.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="h-4 w-4"
+                        />
+                        {t("walletSetup.appStore")}
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="https://play.google.com/store/apps/details?id=org.cardanofoundation.idw"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Image
+                          src="/assets/veridian/playstore.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="h-4 w-4"
+                        />
+                        {t("walletSetup.playStore")}
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+
+                {VERIDIAN_CONNECT_URL && VERIDIAN_BOOT_URL && (
+                  <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                        {2}
+                      </span>
+                      <p className="text-sm font-medium">
+                        {t("walletSetup.configureStep")}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">
+                      {t("walletSetup.configureDescription")}
+                    </p>
+                    <div className="ml-7 space-y-2">
+                      <div>
+                        <p className="text-xs font-medium mb-1">
+                          {t("walletSetup.connectUrl")}
+                        </p>
+                        <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
+                          <code className="min-w-0 flex-1 break-all select-all">
+                            {VERIDIAN_CONNECT_URL}
+                          </code>
+                          <CopyButton
+                            value={VERIDIAN_CONNECT_URL}
+                            className="h-7 w-7 shrink-0"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium mb-1">
+                          {t("walletSetup.bootUrl")}
+                        </p>
+                        <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
+                          <code className="min-w-0 flex-1 break-all select-all">
+                            {VERIDIAN_BOOT_URL}
+                          </code>
+                          <CopyButton
+                            value={VERIDIAN_BOOT_URL}
+                            className="h-7 w-7 shrink-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 1 && (
               <>
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-medium">
@@ -778,7 +914,7 @@ export function RequestVerificationDialog({
               </>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-medium">
@@ -928,7 +1064,7 @@ export function RequestVerificationDialog({
               </div>
             )}
 
-            {step === 2 &&
+            {step === 3 &&
               (isWaitingForAcceptance ? (
                 <div className="flex flex-col items-center gap-4 py-8">
                   <Spinner size={32} />

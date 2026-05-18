@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 /** Masumi docs: Identity (on-chain NFT + credentials). */
 const AGENT_IDENTITY_DOCS_URL =
-  "https://docs.masumi.network/core-concepts/identity";
+  "https://masumi-identity-sdk-docs-8lhm9.ondigitalocean.app/api-reference/credentials";
 
 const sizeClass = {
   sm: "h-4 w-4",
