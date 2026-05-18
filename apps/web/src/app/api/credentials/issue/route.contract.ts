@@ -18,7 +18,7 @@ const contract = defineRouteContract({
     POST: {
       summary: "Issue verification credential",
       description:
-        "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+        "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
       security,
       request: {
         body: jsonRequestBody(credentialIssueBodySchema, {

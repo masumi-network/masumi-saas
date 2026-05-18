@@ -47,8 +47,11 @@ export function CompletionStep({
 
   if (kycStatus === "REVIEW") {
     return (
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-4 text-center px-2">
         <Spinner size={64} className="text-primary" />
+        <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+          {t("processingMessage")}
+        </p>
       </div>
     );
   }

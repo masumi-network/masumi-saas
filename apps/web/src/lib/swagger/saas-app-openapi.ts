@@ -527,7 +527,7 @@ const verifyAgentSuccessSchema = z
     },
   });
 
-/** Public doc omits `secret` (still returned by the API once for HMAC setup). */
+/** `contractJsonResponse` strips unknown keys; `.passthrough()` on `data` keeps server-only fields in JSON without documenting them in OpenAPI. */
 const verificationChallengeSuccessSchema = z
   .object({
     success: z.literal(true),
@@ -536,9 +536,10 @@ const verificationChallengeSuccessSchema = z
         challenge: z.string(),
         generatedAt: z.string().nullable(),
       })
+      .passthrough()
       .openapi({
         description:
-          "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs.",
+          "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here.",
       }),
   })
   .openapi({
@@ -840,8 +841,6 @@ const credentialIssueBodySchema = z
         example: "2026-12-31T23:59:59.000Z",
       })
       .optional(),
-    signature: z.string().min(1),
-    signedMessage: z.string().min(1),
   })
   .openapi({
     example: {
@@ -851,8 +850,6 @@ const credentialIssueBodySchema = z
       attributes: {
         tier: "gold",
       },
-      signature: "base64-signature",
-      signedMessage: "challenge text",
     },
   });
 
@@ -1503,7 +1500,7 @@ registry.registerPath({
   tags: ["Credentials"],
   summary: "Issue verification credential",
   description:
-    "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+    "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
   security,
   request: {
     body: {

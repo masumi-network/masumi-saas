@@ -886,8 +886,8 @@
         "gdpr": "Seguimos los principios del RGPD y solo recopilamos los datos mínimos necesarios para la verificación. Sus datos se procesan de forma segura y se conservarán de acuerdo con nuestra política de privacidad.",
         "biometricTitle": "Consentimiento biométrico",
         "biometric": "El proceso de verificación incluye controles biométricos (selfie y detección de vida) para garantizar que usted sea una persona real que coincida con sus documentos de identidad.",
-        "credentialTitle": "Credencial Veridian",
-        "credential": "Tras la verificación exitosa, se emitirá una credencial de Veridian a su cuenta. Esta credencial le permite utilizar funciones avanzadas y puede compartirse con su consentimiento.",
+        "credentialTitle": "Credencial de verificación",
+        "credential": "Tras la verificación exitosa, se emitirá una credencial a su cuenta. Esta credencial le permite utilizar funciones avanzadas y puede compartirse con su consentimiento.",
         "consentLabel": "Entiendo y doy mi consentimiento al proceso de verificación de identidad.",
         "startButton": "Iniciar verificación",
         "metaTitle": "Verificación de identidad"
@@ -948,6 +948,8 @@
       },
       "status": {
         "verified": "Verificado",
+        "verifiedShieldAriaSummary": "Este agente fue verificado en la red Masumi.",
+        "verifiedShieldTooltip": "Este agente fue verificado en la red Masumi y tiene una credencial verificable. <docsLink>Credenciales verificables (doc SDK)</docsLink>",
         "rejected": "Rechazado",
         "underReview": "En revisión",
         "pending": "Pendiente",
@@ -1149,7 +1151,7 @@
         "Verification": {
           "pending": {
             "title": "Ninguna credencial emitida",
-            "description": "Este agente aún no tiene una credencial de Veridian. Solicite una credencial para vincular su estado KYC verificado a este agente."
+            "description": "Este agente aún no ha sido verificado. Solicite una verificación para vincular su identidad verificada a este agente."
           },
           "review": {
             "title": "Verificación bajo revisión",
@@ -1161,15 +1163,47 @@
           },
           "verified": {
             "title": "Agente verificado",
-            "description": "Este agente ha sido verificado exitosamente con una credencial de Veridian."
+            "description": "La identidad de este agente ha sido verificada en la red Masumi."
           },
           "revoked": {
-            "title": "Credencial revocada",
-            "description": "La credencial de este agente ha sido revocada. Puede solicitar una nueva credencial."
+            "title": "Verificación revocada",
+            "description": "La verificación de este agente ha sido revocada. Puede solicitar una nueva verificación."
           },
           "expired": {
-            "title": "Credencial caducada",
-            "description": "La credencial de este agente ha caducado. Puede solicitar una nueva credencial."
+            "title": "Verificación caducada",
+            "description": "La verificación de este agente ha caducado. Puede solicitar una nueva verificación."
+          },
+          "credentialStatuses": {
+            "PENDING": "Pendiente — esperando aceptación en la billetera",
+            "ISSUED": "Emitida",
+            "REVOKED": "Revocada",
+            "EXPIRED": "Caducada"
+          },
+          "credentialSummary": {
+            "sectionTitle": "Detalles de verificación",
+            "loadError": "No se pudieron cargar los detalles. Actualiza la página.",
+            "emptyHint": "No hay metadatos almacenados de la credencial para este agente.",
+            "pendingPlaceholder": "Este registro aún espera completar la emisión.",
+            "credentialDbStatus": "Estado de la credencial",
+            "credentialId": "ID de credencial (SAID)",
+            "schemaSaid": "SAID del esquema",
+            "recipientAid": "AID del destinatario",
+            "localRecordId": "ID interno del registro",
+            "credentialAgentDisplayName": "Nombre del agente (en el VC)",
+            "credentialAgentApiUrl": "URL de API del agente (en el VC)",
+            "claimedRegistryAgentId": "ID de agente en registry reclamado en el VC",
+            "currentRegistryAgentId": "ID de agente on-chain/registry actual",
+            "registryMatch": "El ID del VC coincide con este agente.",
+            "registryMismatch": "El ID del VC difiere — los metadatos pueden haber cambiado desde la emisión.",
+            "issuedAt": "Emitida",
+            "expiresAt": "Vence",
+            "expiresNever": "Sin fecha de vencimiento",
+            "revokedAt": "Revocada el",
+            "revokedNever": "No revocada",
+            "lastUpdated": "Registro última sincronización",
+            "identityDocsLink": "Credenciales verificables (doc SDK)",
+            "notProvided": "no figura en el VC",
+            "notRegisteredYet": "aún no asignado"
           },
           "rejected": {
             "title": "Verificación rechazada",
@@ -1177,6 +1211,7 @@
           },
           "loading": "Cargando...",
           "requestVerification": "Solicitar Credencial",
+          "tooltipRequestCredentialRequiresRegistration": "Primero termina el registro on-chain de este agente. Solo puedes solicitar una credencial cuando el registro esté confirmado.",
           "requestDescription": "Revise la información a continuación y confirme para emitir una credencial verificable para este agente.",
           "agentInformation": "Información del agente",
           "agentName": "Nombre del agente",
@@ -1193,10 +1228,21 @@
           "requestSuccess": "¡Credencial emitida exitosamente!",
           "requestError": "No se pudo emitir la credencial. Por favor inténtalo de nuevo.",
           "acceptanceTimeout": "Se agotó el tiempo de espera de aceptación en la billetera. Puedes cerrar y volver a intentarlo.",
+          "waitingForIssuanceSubmit": "Esperando…",
           "waitingForWalletAcceptance": "Esperando la aceptación de la billetera",
           "waitingForWalletDescription": "Abra su billetera Veridian y acepte la oferta de credencial entrante.",
           "completeKyc": "Verificación KYC completa",
-          "veridianWalletConnection": "Conexión de billetera Veridian",
+          "connectCredentialServer": "Conexión al servidor de credenciales",
+          "credentialServerInstructions": "Escanea el código QR del emisor en Veridian (Menú → Cardano Connect → Conectar). Luego pega la OOBI copiada de tu billetera abajo. Si ya vinculaste la billetera, usa solo la AID.",
+          "pasteOobi": "Pega la OOBI de tu billetera",
+          "oobiPlaceholder": "p. ej. https://ejemplo.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "¿Ya vinculado? Introduce solo la AID",
+          "useOobiPaste": "Pegar OOBI de la billetera",
+          "pasteAid": "Pega tu AID",
+          "aidPlaceholder": "p. ej. EL9oOWU…",
+          "parsedAid": "AID detectada",
+          "invalidOobi": "No se pudo obtener una AID de esa OOBI. Revisa el formato de la URL.",
+          "veridianWalletConnection": "Conexión al servidor de credenciales",
           "fetchingCredentials": "Obteniendo credenciales...",
           "identifierAid": "Identificador (AID)",
           "credentialsFound": "{count} credencial(es) encontrada(s)",
@@ -1238,19 +1284,34 @@
           "tooltipIntegrationCode": "Agregue este punto final a su agente. Recibe un desafío y devuelve HMAC-SHA256 (desafío, secreto) para demostrar que controlas el backend.",
           "tooltipGenerateNewSecret": "Úselo si el secreto quedó expuesto o necesita rotarlo. Actualice el entorno de su agente con el nuevo secreto.",
           "tooltipKycStatus": "Su identidad debe ser verificada antes de que podamos emitir una credencial que lo vincule con este agente.",
-          "tooltipVeridianWalletConnection": "Conecte la billetera que recibirá la credencial de verificación. La credencial demuestra que usted controla tanto al agente como a esta billetera.",
+          "tooltipVeridianWalletConnection": "Vincula la billetera Veridian: escanea el QR del emisor, pega tu OOBI o, si ya vinculaste, pega solo la AID.",
           "tooltipIdentifierAid": "Su identificador único (AID) en el sistema Veridian. Se utiliza para emitir y verificar credenciales.",
-          "tooltipEstablishConnection": "El servidor de credenciales necesita conocer su AID antes de poder emitir credenciales. Escanea el código QR con tu billetera Veridian.",
+          "tooltipEstablishConnection": "El servidor de credenciales debe conocer tu AID. El QR del emisor y resolver tu OOBI establece esa conexión mutua.",
           "tooltipWhatWillBeIssued": "Una credencial de Veridian que vincula su identidad verificada con este agente. Otros pueden verificar que el agente es auténtico.",
+          "stepWalletSetup": "Configuración de billetera",
+          "stepWalletSetupDescription": "Instale y configure la billetera Veridian en su dispositivo móvil. Omita este paso si ya la tiene configurada.",
+          "walletSetup": {
+            "title": "Configurar la billetera Veridian",
+            "description": "Necesita la aplicación Veridian para recibir credenciales de verificación. Si ya la tiene configurada, haga clic en Siguiente para omitir este paso.",
+            "installStep": "Instalar Veridian",
+            "installDescription": "Descargue la aplicación Veridian desde la App Store o Google Play.",
+            "appStore": "App Store",
+            "playStore": "Google Play",
+            "osRequirements": "Solo se admiten las siguientes versiones del sistema operativo; las versiones anteriores ya no reciben actualizaciones de seguridad.\n\niOS: Version 18.0 — Crystal\nAndroid: Version 14 — Upside Down Cake (API level 34)",
+            "configureStep": "Configurar conexión KERIA",
+            "configureDescription": "Abra Veridian → Ajustes → Agregar conexión KERIA y pegue las URL que aparecen a continuación.",
+            "connectUrl": "URL de conexión",
+            "bootUrl": "URL de arranque"
+          },
           "stepEndpoint": "Punto final",
           "stepEndpointDescription": "Agregue el secreto de verificación a su agente e implemente el punto final.",
           "stepWallet": "Billetera",
-          "stepWalletDescription": "Conecte su billetera Veridian a través de CIP-45 P2P, luego establezca la conexión con el servidor de credenciales.",
+          "stepWalletDescription": "Vincula la billetera con el servidor de credenciales escaneando el QR del emisor y pegando tu OOBI — o introduce tu AID si ya estás vinculado.",
           "stepSubmit": "Entregar",
-          "stepSubmitDescription": "Revise y envíe su solicitud de credencial. Firmarás un mensaje para confirmar.",
+          "stepSubmitDescription": "Revisa la información y envía la solicitud. Acepta la credencial en Veridian cuando se ofrezca.",
           "next": "Próximo",
           "prev": "Anterior",
-          "nextDisabledReasonConnectWallet": "Conecte su billetera Veridian escaneando el código QR para continuar.",
+          "nextDisabledReasonPasteOobiOrAid": "Pega la OOBI o AID (o cambia a entrada directa de AID) y espera a que figure conectado.",
           "nextDisabledReasonEstablishConnection": "Establezca conexión con el servidor de credenciales. Escanea el código QR del emisor con tu billetera.",
           "nextDisabledReasonCheckingConnection": "Comprobando conexión... Espere por favor.",
           "nextDisabledReasonTestingEndpoint": "Verificando punto final... Espere.",
@@ -1268,6 +1329,7 @@
             "endpointTestFailed": "La prueba del endpoint falló",
             "kycFirst": "Completa primero la verificación KYC",
             "connectionError": "Error de conexión: {error}",
+            "needCredentialConnection": "Pega una OOBI o AID válida y espera a que el servidor indique que está conectado.",
             "challengeNotReady": "El desafío de verificación no está listo. Espera o inténtalo de nuevo."
           },
           "secretToggle": {

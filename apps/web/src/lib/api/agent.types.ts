@@ -37,3 +37,20 @@ export type GetAgentsResult =
 export type ApiResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string };
+
+/** Sanitized VC row for the Credentials tab (no signing material). */
+export type AgentVerificationCredentialSummary = {
+  localCredentialRecordId: string;
+  credentialId: string;
+  schemaSaid: string;
+  aid: string;
+  credentialStatus: "PENDING" | "ISSUED" | "REVOKED" | "EXPIRED";
+  issuedAt: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUpdatedAt: string;
+  claimedRegistryAgentIdentifier: string | null;
+  credentialAgentDisplayName: string | null;
+  credentialAgentApiUrl: string | null;
+  registryAgentIdentifier: string | null;
+};

@@ -7,6 +7,17 @@ function parseFeatureFlag(
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
+const DEFAULT_VERIFIABLE_CREDENTIALS_SDK_DOC_URL =
+  "https://masumi-identity-sdk-docs-8lhm9.ondigitalocean.app/api-reference/credentials" as const;
+
+/**
+ * Masumi Identity SDK — Verifiable Credentials API reference (shown in agent verification UI).
+ * `NEXT_PUBLIC_*` is inlined into the client bundle; restart `pnpm dev` after changing.
+ */
+export const verifiableCredentialsSdkDocUrl =
+  process.env.NEXT_PUBLIC_VERIFIABLE_CREDENTIALS_SDK_DOC_URL?.trim() ||
+  DEFAULT_VERIFIABLE_CREDENTIALS_SDK_DOC_URL;
+
 export const verificationConfig = {
   sumsubKycEnabled: parseFeatureFlag(
     process.env.NEXT_PUBLIC_ENABLE_SUMSUB_KYC,

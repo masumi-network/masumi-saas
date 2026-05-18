@@ -6725,7 +6725,10 @@
                         "challenge",
                         "generatedAt"
                       ],
-                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here."
                     }
                   },
                   "required": [
@@ -6970,7 +6973,10 @@
                         "challenge",
                         "generatedAt"
                       ],
-                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here."
                     }
                   },
                   "required": [
@@ -6984,6 +6990,281 @@
                       "generatedAt": "2025-01-20T11:00:00.000Z"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{agentId}/verification-credential": {
+      "get": {
+        "summary": "Get agent verification credential summary",
+        "description": "Returns non-sensitive metadata for the Veridian credential linked to this agent (when credential-based verification applies). Omit `data` (`null`) when there is nothing to show.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "Agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "localCredentialRecordId": {
+                          "type": "string"
+                        },
+                        "credentialId": {
+                          "type": "string"
+                        },
+                        "schemaSaid": {
+                          "type": "string"
+                        },
+                        "aid": {
+                          "type": "string"
+                        },
+                        "credentialStatus": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "ISSUED",
+                            "REVOKED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "issuedAt": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "revokedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastUpdatedAt": {
+                          "type": "string"
+                        },
+                        "claimedRegistryAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "credentialAgentDisplayName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "credentialAgentApiUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registryAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "localCredentialRecordId",
+                        "credentialId",
+                        "schemaSaid",
+                        "aid",
+                        "credentialStatus",
+                        "issuedAt",
+                        "expiresAt",
+                        "revokedAt",
+                        "lastUpdatedAt",
+                        "claimedRegistryAgentIdentifier",
+                        "credentialAgentDisplayName",
+                        "credentialAgentApiUrl",
+                        "registryAgentIdentifier"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -9259,7 +9540,7 @@
     "/api/credentials/issue": {
       "post": {
         "summary": "Issue verification credential",
-        "description": "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+        "description": "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
         "security": [
           {
             "apiKeyHeader": []
@@ -9299,21 +9580,11 @@
                     "type": "string",
                     "format": "date-time",
                     "example": "2026-12-31T23:59:59.000Z"
-                  },
-                  "signature": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "signedMessage": {
-                    "type": "string",
-                    "minLength": 1
                   }
                 },
                 "required": [
                   "aid",
-                  "agentId",
-                  "signature",
-                  "signedMessage"
+                  "agentId"
                 ],
                 "example": {
                   "aid": "EXAMPLE_AID",
@@ -9321,9 +9592,7 @@
                   "agentId": "cmlf6gswz0000x1uctad958tq",
                   "attributes": {
                     "tier": "gold"
-                  },
-                  "signature": "base64-signature",
-                  "signedMessage": "challenge text"
+                  }
                 }
               }
             }

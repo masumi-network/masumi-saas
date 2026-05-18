@@ -2,9 +2,19 @@
 
 import type { AgentPricing } from "@/lib/utils";
 
-import type { Agent, ApiResponse, GetAgentsResult } from "./agent.types";
+import type {
+  Agent,
+  AgentVerificationCredentialSummary,
+  ApiResponse,
+  GetAgentsResult,
+} from "./agent.types";
 
-export type { Agent, ApiResponse, GetAgentsResult };
+export type {
+  Agent,
+  AgentVerificationCredentialSummary,
+  ApiResponse,
+  GetAgentsResult,
+};
 
 class AgentApiClient {
   private baseUrl = "/api/agents";
@@ -132,6 +142,15 @@ class AgentApiClient {
 
   async getAgent(agentId: string): Promise<ApiResponse<Agent>> {
     return this.request<Agent>(`/${agentId}`);
+  }
+
+  /** Veridian VC metadata for Agents → Credentials (VERIFIED / REVOKED / EXPIRED agents). */
+  async getVerificationCredentialSummary(
+    agentId: string,
+  ): Promise<ApiResponse<AgentVerificationCredentialSummary | null>> {
+    return this.request<AgentVerificationCredentialSummary | null>(
+      `/${agentId}/verification-credential`,
+    );
   }
 
   async registerAgent(data: {

@@ -2,6 +2,7 @@ import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { AgentVerifiedShield } from "@/components/agent-verified-shield";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -147,12 +148,17 @@ export default async function DashboardOverview({
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                           <Bot className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <p
-                          className="min-w-0 truncate text-sm font-medium"
-                          title={agent.name}
-                        >
-                          {agent.name}
-                        </p>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <p
+                            className="min-w-0 truncate text-sm font-medium"
+                            title={agent.name}
+                          >
+                            {agent.name}
+                          </p>
+                          {agent.verificationStatus === "VERIFIED" ? (
+                            <AgentVerifiedShield className="-mt-px" />
+                          ) : null}
+                        </div>
                       </div>
                       <Badge
                         variant={getRegistrationStatusBadgeVariant(

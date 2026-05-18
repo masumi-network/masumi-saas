@@ -45,16 +45,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const {
-      aid,
-      oobi,
-      attributes,
-      agentId,
-      organizationId,
-      expiresAt,
-      signature,
-      signedMessage,
-    } = validation.data;
+    const { aid, oobi, attributes, agentId, organizationId, expiresAt } =
+      validation.data;
 
     const schemaSaid = getAgentVerificationSchemaSaid();
 
@@ -234,16 +226,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const credentialDataWithSignature = {
-      ...credentialAttributes,
-      ...(signature &&
-        signedMessage && {
-          signature,
-          signedMessage,
-          signatureTimestamp: new Date().toISOString(),
-        }),
-    };
-
     try {
       const result = await issueCredential(
         schemaSaid,
@@ -265,7 +247,7 @@ export async function POST(request: NextRequest) {
           schemaSaid,
           aid,
           status: "PENDING",
-          credentialData: JSON.stringify(credentialDataWithSignature),
+          credentialData: JSON.stringify(credentialAttributes),
           attributes: JSON.stringify(credentialAttributes),
           userId: user.id,
           agentId,

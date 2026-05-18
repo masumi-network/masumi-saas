@@ -886,8 +886,8 @@
         "gdpr": "Wir befolgen die DSGVO-Grundsätze und erheben nur die für die Überprüfung erforderlichen Mindestdaten. Ihre Daten werden sicher verarbeitet und gemäß unserer Datenschutzrichtlinie aufbewahrt.",
         "biometricTitle": "Biometrische Einwilligung",
         "biometric": "Der Verifizierungsprozess umfasst biometrische Prüfungen (Selfie- und Lebendigkeitserkennung), um sicherzustellen, dass Sie eine echte Person sind, die mit Ihren Ausweisdokumenten übereinstimmt.",
-        "credentialTitle": "Veridian-Ausweis",
-        "credential": "Nach erfolgreicher Verifizierung wird Ihrem Konto ein Veridian-Zugangsdaten ausgestellt. Mit diesem Berechtigungsnachweis können Sie erweiterte Funktionen nutzen und können mit Ihrer Zustimmung weitergegeben werden.",
+        "credentialTitle": "Verifizierungsnachweis",
+        "credential": "Nach erfolgreicher Verifizierung wird Ihrem Konto ein Berechtigungsnachweis ausgestellt. Mit diesem Nachweis können Sie erweiterte Funktionen nutzen und können ihn mit Ihrer Zustimmung weitergeben.",
         "consentLabel": "Ich verstehe und stimme dem Identitätsüberprüfungsprozess zu.",
         "startButton": "Verifizierung starten",
         "metaTitle": "Identitätsverifizierung"
@@ -948,6 +948,8 @@
       },
       "status": {
         "verified": "Verifiziert",
+        "verifiedShieldAriaSummary": "Dieser Agent wurde im Masumi-Netzwerk verifiziert.",
+        "verifiedShieldTooltip": "Dieser Agent wurde im Masumi-Netzwerk verifiziert und hat ein Verifiable Credential. <docsLink>Verifiable Credentials (SDK-Doku)</docsLink>",
         "rejected": "Abgelehnt",
         "underReview": "Wird überprüft",
         "pending": "Ausstehend",
@@ -1149,7 +1151,7 @@
         "Verification": {
           "pending": {
             "title": "Kein Ausweis ausgestellt",
-            "description": "Dieser Agent verfügt noch nicht über eine Veridian-Berechtigung. Fordern Sie einen Berechtigungsnachweis an, um Ihren verifizierten KYC-Status mit diesem Agenten zu verknüpfen."
+            "description": "Dieser Agent wurde noch nicht verifiziert. Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität mit diesem Agenten zu verknüpfen."
           },
           "review": {
             "title": "Überprüfung wird derzeit überprüft",
@@ -1161,15 +1163,47 @@
           },
           "verified": {
             "title": "Agent verifiziert",
-            "description": "Dieser Agent wurde erfolgreich mit einem Veridian-Berechtigungsnachweis verifiziert."
+            "description": "Die Identität dieses Agenten wurde im Masumi-Netzwerk verifiziert."
           },
           "revoked": {
-            "title": "Berechtigung widerrufen",
-            "description": "Die Berechtigung für diesen Agenten wurde widerrufen. Sie können einen neuen Ausweis anfordern."
+            "title": "Verifizierung widerrufen",
+            "description": "Die Verifizierung für diesen Agenten wurde widerrufen. Sie können eine neue Verifizierung anfordern."
           },
           "expired": {
-            "title": "Anmeldeinformationen abgelaufen",
-            "description": "Die Anmeldeinformationen für diesen Agenten sind abgelaufen. Sie können einen neuen Ausweis anfordern."
+            "title": "Verifizierung abgelaufen",
+            "description": "Die Verifizierung für diesen Agenten ist abgelaufen. Sie können eine neue Verifizierung anfordern."
+          },
+          "credentialStatuses": {
+            "PENDING": "Ausstehend — Warten auf Wallet-Annahme",
+            "ISSUED": "Ausgestellt",
+            "REVOKED": "Widerrufen",
+            "EXPIRED": "Abgelaufen"
+          },
+          "credentialSummary": {
+            "sectionTitle": "Verifizierungsdetails",
+            "loadError": "Verifizierungsdetails konnten nicht geladen werden. Seite bitte aktualisieren.",
+            "emptyHint": "Keine gespeicherten Metadaten zu dieser Berechtigung gefunden.",
+            "pendingPlaceholder": "Dieser Datensatz wartet noch auf die Abschlussausstellung.",
+            "credentialDbStatus": "Anmeldedatenstatus",
+            "credentialId": "Ausweis-ID (SAID)",
+            "schemaSaid": "Schema SAID",
+            "recipientAid": "Empfänger-AID",
+            "localRecordId": "Interne Datensatz-ID",
+            "credentialAgentDisplayName": "Agentenname (in VC)",
+            "credentialAgentApiUrl": "Agent-API-URL (in VC)",
+            "claimedRegistryAgentId": "In VC beanspruchte Registry-Agent-ID",
+            "currentRegistryAgentId": "Aktuelle On-Chain-/Registry-Agent-ID",
+            "registryMatch": "Die VC-Registry-ID stimmt mit diesem Agent überein.",
+            "registryMismatch": "Die VC-Registry-ID weicht ab — Metadaten könnten sich seit Ausstellung geändert haben.",
+            "issuedAt": "Ausgestellt",
+            "expiresAt": "Läuft ab",
+            "expiresNever": "Kein Ablaufdatum",
+            "revokedAt": "Widerrufen am",
+            "revokedNever": "Nicht widerrufen",
+            "lastUpdated": "Datensatz zuletzt synchronisiert",
+            "identityDocsLink": "Verifiable Credentials (SDK-Doku)",
+            "notProvided": "nicht im VC",
+            "notRegisteredYet": "noch nicht gesetzt"
           },
           "rejected": {
             "title": "Überprüfung abgelehnt",
@@ -1177,6 +1211,7 @@
           },
           "loading": "Laden...",
           "requestVerification": "Ausweis anfordern",
+          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Ein Ausweis kann erst nach bestätigter Registrierung angefordert werden.",
           "requestDescription": "Überprüfen Sie die folgenden Informationen und bestätigen Sie, dass Sie für diesen Agenten einen überprüfbaren Ausweis ausstellen möchten.",
           "agentInformation": "Agenteninformationen",
           "agentName": "Agentenname",
@@ -1193,10 +1228,21 @@
           "requestSuccess": "Ausweis erfolgreich ausgestellt!",
           "requestError": "Anmeldeinformationen konnten nicht ausgestellt werden. Bitte versuchen Sie es erneut.",
           "acceptanceTimeout": "Zeitüberschreitung beim Warten auf die Annahme im Wallet. Sie können schließen und es erneut versuchen.",
+          "waitingForIssuanceSubmit": "Warten…",
           "waitingForWalletAcceptance": "Warten auf Wallet-Akzeptanz",
           "waitingForWalletDescription": "Bitte öffnen Sie Ihr Veridian-Wallet und akzeptieren Sie das eingehende Zugangsangebot.",
           "completeKyc": "Schließen Sie die KYC-Verifizierung ab",
-          "veridianWalletConnection": "Veridian Wallet-Verbindung",
+          "connectCredentialServer": "Verbindung zum Anmeldeinformationsserver",
+          "credentialServerInstructions": "Scannen Sie den Aussteller-QR-Code in Veridian (Menü → Cardano Connect → Verbinden). Fügen Sie dann die OOBI aus Ihrem Wallet unten ein. Wenn bereits verknüpft, aktivieren Sie die direkte AID-Eingabe.",
+          "pasteOobi": "Wallet-OOBI einfügen",
+          "oobiPlaceholder": "z. B. https://beispiel.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "Bereits verknüpft? AID direkt eingeben",
+          "useOobiPaste": "Stattdessen OOBI einfügen",
+          "pasteAid": "AID einfügen",
+          "aidPlaceholder": "z. B. EL9oOWU…",
+          "parsedAid": "Erkannte AID",
+          "invalidOobi": "Aus dieser OOBI konnte keine AID ermittelt werden. Prüfen Sie das URL-Format.",
+          "veridianWalletConnection": "Verbindung zum Anmeldeinformationsserver",
           "fetchingCredentials": "Anmeldeinformationen werden abgerufen...",
           "identifierAid": "Identifikator (AID)",
           "credentialsFound": "{count} Anmeldedaten gefunden",
@@ -1238,19 +1284,34 @@
           "tooltipIntegrationCode": "Fügen Sie diesen Endpunkt Ihrem Agenten hinzu. Es empfängt eine Herausforderung und gibt HMAC-SHA256(Herausforderung, Geheimnis) zurück, um zu beweisen, dass Sie die Kontrolle über das Backend haben.",
           "tooltipGenerateNewSecret": "Verwenden Sie diese Option, wenn das Geheimnis preisgegeben wurde oder Sie es drehen müssen. Aktualisieren Sie die Umgebung Ihres Agenten mit dem neuen Geheimnis.",
           "tooltipKycStatus": "Ihre Identität muss überprüft werden, bevor wir einen Berechtigungsnachweis ausstellen können, der Sie mit diesem Agenten verbindet.",
-          "tooltipVeridianWalletConnection": "Verbinden Sie das Wallet, das die Verifizierungsdaten erhalten soll. Der Berechtigungsnachweis beweist, dass Sie sowohl die Kontrolle über den Agenten als auch über dieses Wallet haben.",
+          "tooltipVeridianWalletConnection": "Verknüpfen Sie die Veridian-Wallet für die Credential-Ausstellung: QR des Ausstellers scannen, OOBI einfügen oder – wenn verknüpft – direkt die AID einfügen.",
           "tooltipIdentifierAid": "Ihre eindeutige Kennung (AID) im Veridian-System. Wird zur Ausstellung und Überprüfung von Anmeldeinformationen verwendet.",
-          "tooltipEstablishConnection": "Der Anmeldeinformationsserver muss Ihre AID kennen, bevor er Anmeldeinformationen ausstellen kann. Scannen Sie den QR-Code mit Ihrem Veridian-Wallet.",
+          "tooltipEstablishConnection": "Der Anmeldeinformationsserver muss Ihre AID kennen. Das Scannen des Aussteller-QR und die OOBI-Auflösung herstellt diese gegenseitige Verbindung.",
           "tooltipWhatWillBeIssued": "Eine Veridian-Anmeldeinformation, die Ihre verifizierte Identität mit diesem Agenten verknüpft. Andere können die Echtheit des Agenten überprüfen.",
+          "stepWalletSetup": "Wallet-Einrichtung",
+          "stepWalletSetupDescription": "Installieren und konfigurieren Sie das Veridian-Wallet auf Ihrem Mobilgerät. Überspringen Sie diesen Schritt, wenn es bereits eingerichtet ist.",
+          "walletSetup": {
+            "title": "Veridian-Wallet einrichten",
+            "description": "Sie benötigen die Veridian-Wallet-App, um Verifizierungsnachweise zu empfangen. Wenn Sie sie bereits konfiguriert haben, klicken Sie auf Weiter, um diesen Schritt zu überspringen.",
+            "installStep": "Veridian installieren",
+            "installDescription": "Laden Sie die Veridian-Wallet-App aus dem App Store oder Google Play herunter.",
+            "appStore": "App Store",
+            "playStore": "Google Play",
+            "osRequirements": "Nur die folgenden Betriebssystemversionen werden unterstützt; ältere Versionen erhalten keine Sicherheitsupdates mehr.\n\niOS: Version 18.0 — Crystal\nAndroid: Version 14 — Upside Down Cake (API level 34)",
+            "configureStep": "KERIA-Verbindung konfigurieren",
+            "configureDescription": "Öffnen Sie Veridian → Einstellungen → KERIA-Verbindung hinzufügen und fügen Sie die untenstehenden URLs ein.",
+            "connectUrl": "Verbindungs-URL",
+            "bootUrl": "Boot-URL"
+          },
           "stepEndpoint": "Endpunkt",
           "stepEndpointDescription": "Fügen Sie das Verifizierungsgeheimnis zu Ihrem Agenten hinzu und implementieren Sie den Endpunkt.",
           "stepWallet": "Geldbörse",
-          "stepWalletDescription": "Verbinden Sie Ihr Veridian-Wallet über CIP-45 P2P und stellen Sie dann eine Verbindung mit dem Anmeldeinformationsserver her.",
+          "stepWalletDescription": "Verknüpfen Sie die Wallet über den Aussteller-QR-Code und Ihre OOBI – oder geben Sie Ihre AID ein, wenn die Verknüpfung bereits besteht.",
           "stepSubmit": "Einreichen",
-          "stepSubmitDescription": "Überprüfen Sie Ihre Anmeldeinformationsanfrage und senden Sie sie ab. Zur Bestätigung unterschreiben Sie eine Nachricht.",
+          "stepSubmitDescription": "Prüfen Sie die Übersicht und senden Sie die Anfrage. Akzeptieren Sie die Ausstellung in Veridian bei der Aufforderung.",
           "next": "Nächste",
           "prev": "Vorherige",
-          "nextDisabledReasonConnectWallet": "Verbinden Sie Ihr Veridian-Wallet, indem Sie den QR-Code scannen, um fortzufahren.",
+          "nextDisabledReasonPasteOobiOrAid": "Fügen Sie die OOBI oder AID ein (oder wechseln Sie zur direkten AID) und warten Sie auf „Verbunden“.",
           "nextDisabledReasonEstablishConnection": "Stellen Sie eine Verbindung mit dem Anmeldeinformationsserver her. Scannen Sie den QR-Code des Ausstellers mit Ihrer Brieftasche.",
           "nextDisabledReasonCheckingConnection": "Verbindung wird geprüft... Bitte warten.",
           "nextDisabledReasonTestingEndpoint": "Endpunkt wird überprüft... Bitte warten.",
@@ -1268,6 +1329,7 @@
             "endpointTestFailed": "Endpoint-Test fehlgeschlagen",
             "kycFirst": "Bitte schließen Sie zuerst Ihre KYC-Verifizierung ab",
             "connectionError": "Verbindungsfehler: {error}",
+            "needCredentialConnection": "Fügen Sie eine gültige OOBI oder AID ein und warten Sie, bis der Server verbunden zeigt.",
             "challengeNotReady": "Verifizierungs-Challenge nicht bereit. Bitte warten Sie oder versuchen Sie es erneut."
           },
           "secretToggle": {

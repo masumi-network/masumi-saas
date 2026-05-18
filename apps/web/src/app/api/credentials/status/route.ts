@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextRequest } from "next/server";
 
+import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
@@ -127,6 +128,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (agentId) {
+      const prior = await prisma.agent.findUnique({
+        where: { id: agentId },
+        select: { verificationStatus: true },
+      });
       await prisma.agent.update({
         where: { id: agentId },
         data: {
@@ -134,6 +139,9 @@ export async function GET(request: NextRequest) {
           veridianCredentialId: credentialId,
         },
       });
+      if (prior?.verificationStatus !== "VERIFIED") {
+        await recordAgentActivityEvent(agentId, "AgentVerified");
+      }
     }
 
     return contractJsonResponse(contract, "GET", 200, {

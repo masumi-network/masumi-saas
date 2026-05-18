@@ -1,10 +1,12 @@
 "use client";
 
-import { useFormatter } from "next-intl";
+import { useFormatter, useNow } from "next-intl";
 import { useMemo } from "react";
 
 export function useFormatDate() {
   const format = useFormatter();
+  const now = useNow();
+
   return useMemo(() => {
     const toDate = (date: Date | string) =>
       date instanceof Date ? date : new Date(date);
@@ -17,7 +19,7 @@ export function useFormatDate() {
           timeStyle: "short",
         }),
       formatRelativeDate: (date: Date | string) =>
-        format.relativeTime(toDate(date)),
+        format.relativeTime(toDate(date), { now }),
     };
-  }, [format]);
+  }, [format, now]);
 }
