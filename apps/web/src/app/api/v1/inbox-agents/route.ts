@@ -336,6 +336,8 @@ app.openapi(
         }
 
         await refundCreditAndCleanupReservation();
+        if (error instanceof ApiError) throw error;
+        rethrowIfAuthOrCreditsError(error);
         throw new ApiError(500, "Failed to persist inbox agent ownership");
       }
 

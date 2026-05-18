@@ -202,6 +202,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get agents:", error);
       throw new ApiError(500, "Failed to get agents");
     }
