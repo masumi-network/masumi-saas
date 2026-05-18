@@ -332,7 +332,8 @@ export function RequestVerificationDialog({
   const checkConnectionRef = useRef(checkConnection);
   checkConnectionRef.current = checkConnection;
 
-  // When AID derived from OOBI/direct input changes, reset and re-check
+  // Direct AID entry must already be connected. OOBI entry is resolved by the
+  // issue endpoint before issuance, so a first-time wallet can proceed.
   useEffect(() => {
     if (step !== 2) {
       return;
@@ -353,12 +354,18 @@ export function RequestVerificationDialog({
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
     }
+    if (connectionMode === "oobi") {
+      setConnectionExists(null);
+      setConnectionCheckFailed(false);
+      lastCheckedAidRef.current = null;
+      return;
+    }
     void checkConnectionRef.current(derivedAid, true);
-  }, [step, derivedAid, invalidOobiPaste]);
+  }, [step, derivedAid, invalidOobiPaste, connectionMode]);
 
   // Poll credential server connection while not yet established (or initial check failed)
   useEffect(() => {
-    const sessionKey = `${step}:${derivedAid ?? ""}:${invalidOobiPaste}`;
+    const sessionKey = `${step}:${connectionMode}:${derivedAid ?? ""}:${invalidOobiPaste}`;
     if (connPollSessionKeyRef.current !== sessionKey) {
       connPollSessionKeyRef.current = sessionKey;
       connPollAttemptsRef.current = 0;
@@ -366,6 +373,7 @@ export function RequestVerificationDialog({
 
     if (
       step !== 2 ||
+      connectionMode !== "direct" ||
       !derivedAid ||
       invalidOobiPaste ||
       connectionExists === true ||
@@ -398,6 +406,7 @@ export function RequestVerificationDialog({
     };
   }, [
     step,
+    connectionMode,
     derivedAid,
     invalidOobiPaste,
     connectionExists,
@@ -530,8 +539,8 @@ export function RequestVerificationDialog({
   const step2Blocked =
     !derivedAid ||
     invalidOobiPaste ||
-    connectionExists !== true ||
-    isCheckingConnection;
+    (connectionMode === "direct" &&
+      (connectionExists !== true || isCheckingConnection));
 
   const isNextDisabled = (() => {
     if (step === 0) return false;
@@ -1049,40 +1058,43 @@ export function RequestVerificationDialog({
                         {derivedAid}
                       </p>
                     </div>
-                    {isCheckingConnection ? (
-                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
-                        <Spinner size={16} />
-                        <p className="text-xs text-muted-foreground">
-                          {t("checkingConnection")}
-                        </p>
-                      </div>
-                    ) : connectionExists === false || connectionCheckFailed ? (
-                      <div className="space-y-2">
-                        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                            {connectionCheckFailed
-                              ? t("failedToCheckConnection")
-                              : t("connectionNotEstablished")}
+                    {connectionMode === "direct" ? (
+                      isCheckingConnection ? (
+                        <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                          <Spinner size={16} />
+                          <p className="text-xs text-muted-foreground">
+                            {t("checkingConnection")}
                           </p>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            derivedAid && checkConnection(derivedAid, true)
-                          }
-                          disabled={isCheckingConnection}
-                          className="w-full"
-                        >
-                          {t("checkConnectionAgain")}
-                        </Button>
-                      </div>
-                    ) : connectionExists === true ? (
-                      <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                        <p className="text-xs text-green-600 dark:text-green-400">
-                          {t("connectionEstablished")}
-                        </p>
-                      </div>
+                      ) : connectionExists === false ||
+                        connectionCheckFailed ? (
+                        <div className="space-y-2">
+                          <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                              {connectionCheckFailed
+                                ? t("failedToCheckConnection")
+                                : t("connectionNotEstablished")}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              derivedAid && checkConnection(derivedAid, true)
+                            }
+                            disabled={isCheckingConnection}
+                            className="w-full"
+                          >
+                            {t("checkConnectionAgain")}
+                          </Button>
+                        </div>
+                      ) : connectionExists === true ? (
+                        <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
+                          <p className="text-xs text-green-600 dark:text-green-400">
+                            {t("connectionEstablished")}
+                          </p>
+                        </div>
+                      ) : null
                     ) : null}
                   </div>
                 ) : null}
