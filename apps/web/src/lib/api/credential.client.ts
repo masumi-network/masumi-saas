@@ -23,8 +23,6 @@ type IssueCredentialRequest = {
   agentId: string;
   organizationId?: string;
   expiresAt?: string;
-  signature?: string;
-  signedMessage?: string;
 };
 
 type ApiResponse<T> =
