@@ -117,8 +117,8 @@ function VeridianCredentialSummaryPanel({
   const [credSummary, setCredSummary] =
     useState<AgentVerificationCredentialSummary | null>(null);
   const [credLoadState, setCredLoadState] = useState<
-    "idle" | "loading" | "ok" | "error"
-  >("idle");
+    "loading" | "ok" | "error"
+  >("loading");
 
   useEffect(() => {
     let cancelled = false;
