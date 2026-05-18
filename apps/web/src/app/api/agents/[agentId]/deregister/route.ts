@@ -16,7 +16,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents/{agentId}/deregister");
@@ -102,6 +102,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to deregister agent:", error);
       throw new ApiError(500, "Failed to deregister agent");
     }

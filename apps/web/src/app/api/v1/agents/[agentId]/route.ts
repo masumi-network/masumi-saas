@@ -1,8 +1,6 @@
 import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
-import { NextRequest } from "next/server";
 
-import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { publicAgentSelect } from "@/lib/schemas/agent";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
@@ -10,6 +8,7 @@ import { AgentSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError } from "@/server/hono/errors";
+import { honoCors } from "@/server/hono/middleware/cors";
 import { nextHandlers } from "@/server/hono/next";
 
 export const routeMeta = { documents: ["public-v1"] as const };
@@ -51,10 +50,8 @@ const errorSchema = z.object({
 
 const app = createApiApp("/api/v1/agents/{agentId}");
 
-app.options("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
-  return handleCorsPreflightResponse(request);
-});
+// CORS first so preflight and every response (success + error) carry headers.
+app.use("*", honoCors(["GET", "OPTIONS"]));
 
 app.openapi(
   createRoute({
@@ -90,45 +87,29 @@ app.openapi(
     },
   }),
   async (c) => {
-    const request = new NextRequest(c.req.raw);
-    try {
-      const rateLimitResult = await checkRateLimitOrRespond(
-        request,
-        "public-agent",
-      );
-      if ("response" in rateLimitResult) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return rateLimitResult.response as any;
-      }
-      const { rl } = rateLimitResult;
+    const { rl } = await checkRateLimitOrRespond(c.req.raw, "public-agent");
 
-      const { agentId } = c.req.valid("param");
+    const { agentId } = c.req.valid("param");
 
-      const agent = await prisma.agent.findUnique({
-        where: { id: agentId },
-        select: publicAgentSelect,
-      });
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: publicAgentSelect,
+    });
 
-      if (!agent) {
-        throw new ApiError(404, "Agent not found");
-      }
-
-      const res = c.json(
-        {
-          success: true as const,
-          data: agent as unknown as z.infer<typeof AgentSchema>,
-        },
-        200,
-      );
-      res.headers.set("X-RateLimit-Limit", String(rl.limit));
-      res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return addCorsHeaders(res as any, request) as any;
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      console.error("Failed to get agent:", error);
-      throw new ApiError(500, "Failed to get agent");
+    if (!agent) {
+      throw new ApiError(404, "Agent not found");
     }
+
+    const res = c.json(
+      {
+        success: true as const,
+        data: agent as unknown as z.infer<typeof AgentSchema>,
+      },
+      200,
+    );
+    res.headers.set("X-RateLimit-Limit", String(rl.limit));
+    res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+    return res;
   },
 );
 

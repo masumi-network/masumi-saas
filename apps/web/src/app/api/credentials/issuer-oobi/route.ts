@@ -14,7 +14,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { getIssuerOobi } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/credentials/issuer-oobi");
@@ -60,6 +60,7 @@ app.openapi(
         200,
       );
     } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get issuer OOBI:", error);
       throw new ApiError(500, "Failed to get issuer OOBI");
     }

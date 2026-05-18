@@ -14,7 +14,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents/{agentId}");
@@ -81,6 +81,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get agent:", error);
       throw new ApiError(500, "Failed to get agent");
     }
@@ -130,6 +131,7 @@ app.openapi(
       return c.json({ success: true as const }, 200);
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to delete agent:", error);
       throw new ApiError(500, "Failed to delete agent");
     }

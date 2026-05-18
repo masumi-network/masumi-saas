@@ -1,5 +1,4 @@
 import { createRoute } from "@hono/zod-openapi";
-import { NextRequest } from "next/server";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import {
@@ -92,15 +91,11 @@ app.openapi(
     },
   }),
   async (c) => {
-    const request = new NextRequest(c.req.raw);
-    const rateLimitResult = await checkRateLimitOrRespond(
-      request,
+    await checkRateLimitOrRespond(
+      c.req.raw,
       "health",
       healthRateLimitOptionsForIp,
     );
-    if ("response" in rateLimitResult)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return rateLimitResult.response as any;
 
     const configured = isPaymentNodeConfigured();
 
@@ -110,8 +105,11 @@ app.openapi(
         publicHealthPaymentNodeMessage(
           "Payment node is not configured (required for this deployment)",
         ),
-        undefined,
-        { data: { status: "degraded", paymentNode: { ok: false } } },
+        {
+          extraBody: {
+            data: { status: "degraded", paymentNode: { ok: false } },
+          },
+        },
       );
     }
 
@@ -122,8 +120,11 @@ app.openapi(
         publicHealthPaymentNodeMessage(
           result.error ?? "Payment node unhealthy",
         ),
-        undefined,
-        { data: { status: "degraded", paymentNode: { ok: false } } },
+        {
+          extraBody: {
+            data: { status: "degraded", paymentNode: { ok: false } },
+          },
+        },
       );
     }
 
@@ -132,7 +133,7 @@ app.openapi(
         success: true as const,
         data: {
           status: "ok" as const,
-          paymentNode: { ok: true },
+          paymentNode: { ok: true as const },
         },
       },
       200,

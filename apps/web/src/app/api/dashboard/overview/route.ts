@@ -11,7 +11,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 export type DashboardOverviewApiResponse =
@@ -58,6 +58,7 @@ app.openapi(
       const data = await getDashboardOverview(authContext.user.id, network);
       return c.json({ success: true as const, data }, 200);
     } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get dashboard overview:", error);
       throw new ApiError(500, "Failed to load dashboard overview");
     }

@@ -12,7 +12,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/swagger/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const earningsAgentsQuerySchema = z.object({
@@ -104,6 +104,7 @@ app.openapi(
         200,
       );
     } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to list earnings agents:", error);
       throw new ApiError(500, "Failed to load eligible agents");
     }

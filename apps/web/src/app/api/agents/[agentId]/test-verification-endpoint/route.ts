@@ -17,7 +17,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents/{agentId}/test-verification-endpoint");
@@ -111,6 +111,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to test verification endpoint:", error);
       throw new ApiError(
         500,

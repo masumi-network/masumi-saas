@@ -9,6 +9,7 @@ import {
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 import { createApiApp } from "@/server/hono/app";
+import { rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/registry-discovery/inbox-agent-identifier");
@@ -64,6 +65,7 @@ app.get("/", async (c) => {
     if (isPaymentNodeConfigError(error)) {
       return c.json({ success: false as const, error: error.message }, 503);
     }
+    rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-identifier]", error);
     return c.json(
       { success: false as const, error: "Proxy request failed" },

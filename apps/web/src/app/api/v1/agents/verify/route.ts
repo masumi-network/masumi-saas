@@ -1,14 +1,12 @@
 import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
-import { NextRequest } from "next/server";
 
-import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { agentVerifyQuerySchema } from "@/lib/schemas";
 import { verifyAgentResultSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { honoCors } from "@/server/hono/middleware/cors";
 import { nextHandlers } from "@/server/hono/next";
 
 export const routeMeta = { documents: ["public-v1"] as const };
@@ -20,10 +18,7 @@ const errorSchema = z.object({
 
 const app = createApiApp("/api/v1/agents/verify");
 
-app.options("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
-  return handleCorsPreflightResponse(request);
-});
+app.use("*", honoCors(["GET", "OPTIONS"]));
 
 app.openapi(
   createRoute({
@@ -55,83 +50,69 @@ app.openapi(
     },
   }),
   async (c) => {
-    const request = new NextRequest(c.req.raw);
-    try {
-      const rateLimitResult = await checkRateLimitOrRespond(
-        request,
-        "public-agent-verify",
-      );
-      if ("response" in rateLimitResult) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return rateLimitResult.response as any;
-      }
-      const { rl } = rateLimitResult;
+    const { rl } = await checkRateLimitOrRespond(
+      c.req.raw,
+      "public-agent-verify",
+    );
 
-      const { agentIdentifier } = c.req.valid("query");
+    const { agentIdentifier } = c.req.valid("query");
 
-      const agent = await prisma.agent.findFirst({
-        where: { agentIdentifier },
-        select: {
-          id: true,
-          name: true,
-          apiUrl: true,
-          verificationStatus: true,
-          veridianCredentialId: true,
-        },
-      });
+    const agent = await prisma.agent.findFirst({
+      where: { agentIdentifier },
+      select: {
+        id: true,
+        name: true,
+        apiUrl: true,
+        verificationStatus: true,
+        veridianCredentialId: true,
+      },
+    });
 
-      const respondNotVerified = () => {
-        const res = c.json(
-          { success: true as const, data: { verified: false as const } },
-          200,
-        );
-        res.headers.set("X-RateLimit-Limit", String(rl.limit));
-        res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return addCorsHeaders(res as any, request) as any;
-      };
-
-      if (!agent || agent.verificationStatus !== "VERIFIED") {
-        return respondNotVerified();
-      }
-
-      const credential = await prisma.veridianCredential.findFirst({
-        where: { agentId: agent.id, status: "ISSUED" },
-        select: { credentialId: true, expiresAt: true },
-        orderBy: { issuedAt: "desc" },
-      });
-
-      if (!credential) {
-        return respondNotVerified();
-      }
-
-      const isExpired =
-        credential.expiresAt !== null && credential.expiresAt < new Date();
-
+    const respondNotVerified = () => {
       const res = c.json(
-        {
-          success: true as const,
-          data: {
-            verified: !isExpired,
-            credentialId: credential.credentialId,
-            expiresAt: credential.expiresAt
-              ? credential.expiresAt.toISOString()
-              : null,
-            agentName: agent.name,
-            apiUrl: agent.apiUrl,
-          },
-        },
+        { success: true as const, data: { verified: false as const } },
         200,
       );
       res.headers.set("X-RateLimit-Limit", String(rl.limit));
       res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return addCorsHeaders(res as any, request) as any;
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      console.error("Failed to verify agent:", error);
-      throw new ApiError(500, "Failed to verify agent");
+      return res;
+    };
+
+    if (!agent || agent.verificationStatus !== "VERIFIED") {
+      return respondNotVerified();
     }
+
+    const credential = await prisma.veridianCredential.findFirst({
+      where: { agentId: agent.id, status: "ISSUED" },
+      select: { credentialId: true, expiresAt: true },
+      orderBy: { issuedAt: "desc" },
+    });
+
+    if (!credential) {
+      return respondNotVerified();
+    }
+
+    const isExpired =
+      credential.expiresAt !== null && credential.expiresAt < new Date();
+
+    const res = c.json(
+      {
+        success: true as const,
+        data: {
+          verified: !isExpired,
+          credentialId: credential.credentialId,
+          expiresAt: credential.expiresAt
+            ? credential.expiresAt.toISOString()
+            : null,
+          agentName: agent.name,
+          apiUrl: agent.apiUrl,
+        },
+      },
+      200,
+    );
+    res.headers.set("X-RateLimit-Limit", String(rl.limit));
+    res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+    return res;
   },
 );
 

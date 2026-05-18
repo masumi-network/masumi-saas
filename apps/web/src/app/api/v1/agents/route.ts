@@ -1,14 +1,12 @@
 import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
-import { NextRequest } from "next/server";
 
-import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { publicAgentSelect } from "@/lib/schemas/agent";
 import { AgentSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { honoCors } from "@/server/hono/middleware/cors";
 import { nextHandlers } from "@/server/hono/next";
 
 export const routeMeta = { documents: ["public-v1"] as const };
@@ -78,10 +76,8 @@ const publicErrorSchema = z.object({
 
 const app = createApiApp("/api/v1/agents");
 
-app.options("/", async (c) => {
-  const request = new NextRequest(c.req.raw);
-  return handleCorsPreflightResponse(request);
-});
+// CORS first so preflight and every response (success + error) carry headers.
+app.use("*", honoCors(["GET", "OPTIONS"]));
 
 app.openapi(
   createRoute({
@@ -115,51 +111,34 @@ app.openapi(
     },
   }),
   async (c) => {
-    const request = new NextRequest(c.req.raw);
-    try {
-      const rateLimitResult = await checkRateLimitOrRespond(
-        request,
-        "public-agents",
-      );
-      if ("response" in rateLimitResult) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return rateLimitResult.response as any;
-      }
-      const { rl } = rateLimitResult;
+    const { rl } = await checkRateLimitOrRespond(c.req.raw, "public-agents");
 
-      const { status, page, limit } = c.req.valid("query");
+    const { status, page, limit } = c.req.valid("query");
 
-      const where = { verificationStatus: status };
-      const [agents, total] = await Promise.all([
-        prisma.agent.findMany({
-          where,
-          select: publicAgentSelect,
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          skip: (page - 1) * limit,
-        }),
-        prisma.agent.count({ where }),
-      ]);
-      const totalPages = Math.ceil(total / limit);
+    const where = { verificationStatus: status };
+    const [agents, total] = await Promise.all([
+      prisma.agent.findMany({
+        where,
+        select: publicAgentSelect,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      prisma.agent.count({ where }),
+    ]);
+    const totalPages = Math.ceil(total / limit);
 
-      const res = c.json(
-        {
-          success: true as const,
-          data: agents as unknown as z.infer<typeof AgentSchema>[],
-          pagination: { page, limit, total, totalPages },
-        },
-        200,
-      );
-      res.headers.set("X-RateLimit-Limit", String(rl.limit));
-      res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-      return addCorsHeaders(
-        res as unknown as Parameters<typeof addCorsHeaders>[0],
-        request,
-      ) as unknown as typeof res;
-    } catch (error) {
-      console.error("Failed to list agents:", error);
-      throw new ApiError(500, "Failed to list agents");
-    }
+    const res = c.json(
+      {
+        success: true as const,
+        data: agents as unknown as z.infer<typeof AgentSchema>[],
+        pagination: { page, limit, total, totalPages },
+      },
+      200,
+    );
+    res.headers.set("X-RateLimit-Limit", String(rl.limit));
+    res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+    return res;
   },
 );
 

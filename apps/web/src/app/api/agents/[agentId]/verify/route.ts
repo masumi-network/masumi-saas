@@ -9,7 +9,6 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { verifyAgentBodySchema } from "@/lib/schemas/agent";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   errBodyWithOptionalDetails,
@@ -27,7 +26,7 @@ import {
 } from "@/lib/veridian";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents/{agentId}/verify");
@@ -84,25 +83,7 @@ app.openapi(
 
     const authContext = await getAuthenticatedOrThrow(c.req.raw);
     const { agentId } = c.req.valid("param");
-
-    // Parse and validate request body (preserve original "Invalid request" error shape)
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      body = {};
-    }
-    const validation = verifyAgentBodySchema.safeParse(body);
-
-    if (!validation.success) {
-      throw new ApiError(
-        400,
-        "Invalid request",
-        validation.error.issues.map((issue) => issue.message),
-      );
-    }
-
-    const { aid, schemaSaid } = validation.data;
+    const { aid, schemaSaid } = c.req.valid("json");
 
     try {
       const agent = await getWalletOwnedAgentForUser({
@@ -191,13 +172,14 @@ app.openapi(
           throw new ApiError(
             400,
             `Credential validation failed: ${validationResult.message}`,
-            validationResult.details,
+            { details: validationResult.details },
           );
         }
 
         credentialId = selectedCredential.sad?.d || null;
       } catch (error) {
         if (error instanceof ApiError) throw error;
+        rethrowIfAuthOrCreditsError(error);
         console.error("Failed to fetch/validate credentials:", error);
         throw new ApiError(500, "Failed to validate credentials");
       }
@@ -229,6 +211,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to request agent verification:", error);
       throw new ApiError(500, "Failed to request agent verification");
     }

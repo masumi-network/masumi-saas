@@ -68,13 +68,14 @@ describe("rate limit backend hardening", () => {
     expect(captureExceptionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("returns a 503 helper response when the backend is unavailable", async () => {
+  it("throws a 503 ApiError when the backend is unavailable", async () => {
     setEnvValue("NODE_ENV", "production");
     setEnvValue("UPSTASH_REDIS_REST_URL", undefined);
     setEnvValue("UPSTASH_REDIS_REST_TOKEN", undefined);
 
     const { checkRateLimitOrRespond } =
       await import("./rate-limit-with-response");
+    const { ApiError } = await import("@/server/hono/errors");
 
     const request = new NextRequest("https://saas.example.com/api/v1/agents", {
       headers: {
@@ -83,17 +84,15 @@ describe("rate limit backend hardening", () => {
       },
     });
 
-    const result = await checkRateLimitOrRespond(request, "public");
-
-    expect("response" in result).toBe(true);
-    if (!("response" in result)) {
-      return;
-    }
-
-    expect(result.response.status).toBe(503);
-    await expect(result.response.json()).resolves.toMatchObject({
-      success: false,
-      error: "rate_limit_backend_unavailable",
+    await expect(
+      checkRateLimitOrRespond(request, "public"),
+    ).rejects.toMatchObject({
+      name: "ApiError",
+      status: 503,
+      message: "rate_limit_backend_unavailable",
     });
+    await expect(
+      checkRateLimitOrRespond(request, "public"),
+    ).rejects.toBeInstanceOf(ApiError);
   });
 });

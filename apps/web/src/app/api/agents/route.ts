@@ -10,7 +10,7 @@ import {
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -33,7 +33,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents");
@@ -380,11 +380,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
-      const authResponse = handleAuthError(error);
-      if (authResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return authResponse as any;
-      }
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to register agent:", error);
       throw new ApiError(500, "Failed to register agent");
     }

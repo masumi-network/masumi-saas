@@ -14,7 +14,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/credentials/schema-said");
@@ -57,6 +57,7 @@ app.openapi(
       const schemaSaid = getAgentVerificationSchemaSaid();
       return c.json({ success: true as const, data: { schemaSaid } }, 200);
     } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get schema SAID:", error);
       throw new ApiError(500, "Failed to get schema SAID");
     }

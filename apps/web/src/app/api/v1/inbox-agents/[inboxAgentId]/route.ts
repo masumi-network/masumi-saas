@@ -2,7 +2,7 @@ import { createRoute } from "@hono/zod-openapi";
 import { NextRequest } from "next/server";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createInboxAdminPaymentNodeClient,
   deleteInboxAgentReference,
@@ -19,7 +19,7 @@ import {
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 export const routeMeta = { documents: ["platform"] as const };
@@ -109,11 +109,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
-      const authResponse = handleAuthError(error);
-      if (authResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return authResponse as any;
-      }
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to delete inbox agent:", error);
       throw new ApiError(500, "Failed to delete inbox agent");
     }

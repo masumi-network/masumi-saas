@@ -20,7 +20,7 @@ import {
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 export type AgentAnalyticsApiResponse =
@@ -179,6 +179,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get agent earnings analytics:", error);
       throw new ApiError(500, "Failed to load earnings");
     }

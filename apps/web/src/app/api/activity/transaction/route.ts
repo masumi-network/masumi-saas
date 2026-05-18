@@ -14,7 +14,7 @@ import {
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/activity/transaction");
@@ -112,6 +112,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
+      rethrowIfAuthOrCreditsError(error);
       console.error("[Activity transaction] GET failed:", error);
       throw new ApiError(500, "Failed to load transaction");
     }

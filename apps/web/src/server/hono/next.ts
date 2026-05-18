@@ -25,14 +25,20 @@ const PATH_ALIASES: ReadonlyArray<{ from: string; to: string }> = [
   { from: "/credits", to: "/api/credits" },
 ];
 
+/** True when `pathname` matches `prefix` on a path-segment boundary. */
+function matchesAliasPrefix(pathname: string, prefix: string): boolean {
+  // Trailing-slash prefixes (e.g. "/pay/api/") already encode the segment
+  // boundary, so plain `startsWith` is correct.
+  if (prefix.endsWith("/")) return pathname.startsWith(prefix);
+  // Boundary-less prefixes need explicit checks so `/credits-foo` doesn't
+  // get rewritten when the alias is `/credits`.
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 function rewriteAliasedRequest(request: Request): Request {
   const url = new URL(request.url);
   for (const { from, to } of PATH_ALIASES) {
-    if (url.pathname === from || url.pathname.startsWith(`${from}/`)) {
-      url.pathname = to + url.pathname.slice(from.length);
-      return new Request(url, request);
-    }
-    if (url.pathname.startsWith(from)) {
+    if (matchesAliasPrefix(url.pathname, from)) {
       url.pathname = to + url.pathname.slice(from.length);
       return new Request(url, request);
     }

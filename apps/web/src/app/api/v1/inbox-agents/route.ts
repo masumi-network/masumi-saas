@@ -2,7 +2,7 @@ import { createRoute } from "@hono/zod-openapi";
 import { getCookie } from "hono/cookie";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -42,7 +42,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 export const routeMeta = { documents: ["platform"] as const };
@@ -121,11 +121,7 @@ app.openapi(
       if (isStaleInboxAgentCursorError(error)) {
         throw new ApiError(410, error.message);
       }
-      const authResponse = handleAuthError(error);
-      if (authResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return authResponse as any;
-      }
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get inbox agents:", error);
       throw new ApiError(500, "Failed to get inbox agents");
     }
@@ -365,11 +361,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
-      const authResponse = handleAuthError(error);
-      if (authResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return authResponse as any;
-      }
+      rethrowIfAuthOrCreditsError(error);
       if (cleanupError) {
         console.error(
           "[Inbox Agents] Failed to refund consumed credit during registration cleanup:",

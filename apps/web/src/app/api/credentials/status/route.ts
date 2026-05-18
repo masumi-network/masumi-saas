@@ -20,7 +20,7 @@ import {
   getAgentVerificationSchemaSaid,
 } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/credentials/status");
@@ -179,6 +179,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to check credential status:", error);
       throw new ApiError(
         500,

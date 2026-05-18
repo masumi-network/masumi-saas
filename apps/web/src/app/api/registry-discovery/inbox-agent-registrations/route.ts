@@ -10,6 +10,7 @@ import {
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
 import { createApiApp } from "@/server/hono/app";
+import { rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const UPSTREAM_PATH = "/inbox-agent-registration/";
@@ -49,6 +50,7 @@ app.post("/", async (c) => {
 
     return toUpstreamResponse(response);
   } catch (error) {
+    rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-registrations]", error);
     return c.json(
       { success: false as const, error: "Proxy request failed" },

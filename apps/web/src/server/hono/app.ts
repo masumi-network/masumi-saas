@@ -1,11 +1,8 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 
 import { handleApiError } from "./errors";
-import { type AuthVariables } from "./middleware/auth";
 
-export type ApiEnv = {
-  Variables: Partial<AuthVariables>;
-};
+export type ApiEnv = Record<string, never>;
 
 /**
  * Per-route Hono app. `basePath` MUST match the Next folder route under /api/*
@@ -14,7 +11,7 @@ export type ApiEnv = {
  * so dynamic basePaths still match incoming URLs.
  *
  * `defaultHook` formats Zod validation failures into the
- * `{ success: false, error, details }` shape used across the API.
+ * `{ success: false, error }` shape used across the API.
  */
 export function createApiApp(basePath: string) {
   const honoBasePath = basePath.replace(/\{([^}]+)\}/g, ":$1");

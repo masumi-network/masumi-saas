@@ -16,7 +16,7 @@ import {
   userEarningsSuccessSchema,
 } from "@/lib/swagger/saas-app-openapi";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 /**
@@ -247,6 +247,7 @@ app.openapi(
         200,
       );
     } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get earnings:", error);
       throw new ApiError(500, "Failed to load earnings");
     }

@@ -22,7 +22,7 @@ import {
   resolveOobi,
 } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/credentials/issue");
@@ -141,10 +141,12 @@ app.openapi(
     );
 
     if (!agentVerification.success) {
-      throw new ApiError(400, agentVerification.error, [
-        "Ensure your agent has MASUMI_VERIFICATION_SECRET in env and returns HMAC-SHA256(challenge, secret).",
-        "If the issue persists, contact support.",
-      ]);
+      throw new ApiError(400, agentVerification.error, {
+        details: [
+          "Ensure your agent has MASUMI_VERIFICATION_SECRET in env and returns HMAC-SHA256(challenge, secret).",
+          "If the issue persists, contact support.",
+        ],
+      });
     }
 
     if (!foundAgent.agentIdentifier) {
@@ -228,7 +230,9 @@ app.openapi(
       );
 
       if (!result.success) {
-        throw new ApiError(500, "Failed to issue credential", result.data);
+        throw new ApiError(500, "Failed to issue credential", {
+          details: result.data,
+        });
       }
 
       const placeholderCredentialId = `pending-${randomUUID()}`;
@@ -264,6 +268,7 @@ app.openapi(
       );
     } catch (error) {
       if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to issue credential via Veridian:", error);
       throw new ApiError(
         500,

@@ -23,7 +23,7 @@ import {
 import { z } from "@/lib/swagger/zod-openapi";
 import type { ActivityFeedItem } from "@/lib/types/activity";
 import { createApiApp } from "@/server/hono/app";
-import { ApiError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 import {
@@ -153,8 +153,7 @@ app.openapi(
             throw new ApiError(
               410,
               "This page of the activity feed is out of date. Refresh to load the latest items.",
-              undefined,
-              { code: ACTIVITY_STALE_CURSOR_CODE },
+              { extraBody: { code: ACTIVITY_STALE_CURSOR_CODE } },
             );
           }
           start = idx + 1;
@@ -183,6 +182,7 @@ app.openapi(
       if (isPaymentNodeConfigError(error)) {
         throw new ApiError(503, error.message);
       }
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to get activity feed:", error);
       const message =
         process.env.NODE_ENV === "development" && error instanceof Error
