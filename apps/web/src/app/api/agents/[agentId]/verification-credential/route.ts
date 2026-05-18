@@ -1,5 +1,6 @@
 import prisma from "@masumi/database/client";
 import { NextRequest } from "next/server";
+import { z } from "zod";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -12,43 +13,55 @@ import { contractJsonResponse } from "@/lib/openapi/contracts";
 
 import contract from "./route.contract";
 
-function parseStoredCredentialAttributes(json: string | null): {
+type StoredCredentialAttributes = {
   claimedRegistryAgentIdentifier: string | null;
   credentialAgentDisplayName: string | null;
   credentialAgentApiUrl: string | null;
-} {
-  if (!json) {
-    return {
-      claimedRegistryAgentIdentifier: null,
-      credentialAgentDisplayName: null,
-      credentialAgentApiUrl: null,
-    };
-  }
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    if (typeof parsed !== "object" || parsed === null) {
-      return {
-        claimedRegistryAgentIdentifier: null,
-        credentialAgentDisplayName: null,
-        credentialAgentApiUrl: null,
-      };
+};
+
+const emptyStoredCredentialAttributes: StoredCredentialAttributes = {
+  claimedRegistryAgentIdentifier: null,
+  credentialAgentDisplayName: null,
+  credentialAgentApiUrl: null,
+};
+
+const storedCredentialAttributeStringSchema = z
+  .unknown()
+  .optional()
+  .transform((value) => (typeof value === "string" ? value : null));
+
+const storedCredentialAttributesSchema = z
+  .object({
+    agentId: storedCredentialAttributeStringSchema,
+    agentName: storedCredentialAttributeStringSchema,
+    agentApiUrl: storedCredentialAttributeStringSchema,
+  })
+  .transform(
+    ({ agentId, agentName, agentApiUrl }): StoredCredentialAttributes => ({
+      claimedRegistryAgentIdentifier: agentId,
+      credentialAgentDisplayName: agentName,
+      credentialAgentApiUrl: agentApiUrl,
+    }),
+  );
+
+const storedCredentialAttributesJsonSchema = z
+  .string()
+  .nullable()
+  .transform((json): unknown => {
+    if (!json) return {};
+    try {
+      return JSON.parse(json) as unknown;
+    } catch {
+      return null;
     }
-    const o = parsed as Record<string, unknown>;
-    return {
-      claimedRegistryAgentIdentifier:
-        typeof o.agentId === "string" ? o.agentId : null,
-      credentialAgentDisplayName:
-        typeof o.agentName === "string" ? o.agentName : null,
-      credentialAgentApiUrl:
-        typeof o.agentApiUrl === "string" ? o.agentApiUrl : null,
-    };
-  } catch {
-    return {
-      claimedRegistryAgentIdentifier: null,
-      credentialAgentDisplayName: null,
-      credentialAgentApiUrl: null,
-    };
-  }
+  })
+  .pipe(storedCredentialAttributesSchema)
+  .catch(emptyStoredCredentialAttributes);
+
+function parseStoredCredentialAttributes(
+  json: string | null,
+): StoredCredentialAttributes {
+  return storedCredentialAttributesJsonSchema.parse(json);
 }
 
 export async function GET(
