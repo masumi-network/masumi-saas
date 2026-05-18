@@ -1,11 +1,12 @@
 import { requireAllNetworkedOidcApiScopes } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
 import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "payment-information";
@@ -43,13 +44,10 @@ app.get("*", async (c) => {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return c.json(
-      { success: false as const, error: "Proxy request failed" },
-      500,
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
 });
 
