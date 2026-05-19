@@ -19,14 +19,13 @@ import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
-  registerAgentBodySchema,
+  registerAgentOpenApiBodySchema,
 } from "@/lib/schemas/agent";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 import {
   agentsListSuccessSchema,
   errBody,
   insufficientCreditsResponse,
-  registerAgentOpenApiBodySchema,
   security,
   startRegistrationSuccessSchema,
   stdResponses,
@@ -245,20 +244,6 @@ app.openapi(
     const authContext = await getAuthenticatedOrThrow(c.req.raw);
     const { user, activeOrganizationId } = authContext;
 
-    let body: unknown;
-    try {
-      body = await c.req.json();
-    } catch {
-      body = {};
-    }
-    const validation = registerAgentBodySchema.safeParse(body);
-    if (!validation.success) {
-      throw new ApiError(
-        400,
-        validation.error.issues.map((e) => e.message).join(", "),
-      );
-    }
-
     const {
       name,
       description,
@@ -273,7 +258,7 @@ app.openapi(
       capabilityName,
       capabilityVersion,
       exampleOutputs,
-    } = validation.data;
+    } = c.req.valid("json");
 
     const tagsArray = tags
       ? tags

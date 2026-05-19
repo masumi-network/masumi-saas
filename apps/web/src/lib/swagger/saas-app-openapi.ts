@@ -9,7 +9,7 @@
  */
 
 import {
-  registerAgentBodySchema,
+  registerAgentOpenApiBodySchema,
   verifyAgentBodySchema,
 } from "@/lib/schemas/agent";
 import { registerInboxAgentBodySchema } from "@/lib/schemas/inbox-agent";
@@ -24,36 +24,6 @@ const security: SecurityRequirementObject[] = [{ apiKeyHeader: [] }];
 
 /** Public operations (no API key in Try it out). */
 const noSecurity: SecurityRequirementObject[] = [];
-
-/** Same validation as `POST /api/agents` — documented shape + Try-it-out example. */
-const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
-  description:
-    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).',
-  example: {
-    name: "Research assistant",
-    description: "Helps with literature review",
-    extendedDescription: "",
-    apiUrl: "https://agent.example.com/mip",
-    tags: "research, nlp",
-    icon: "bot",
-    pricing: {
-      pricingType: "Fixed",
-      prices: [{ amount: "5", currency: "USD" }],
-    },
-    termsOfUseUrl: "https://example.com/terms",
-    privacyPolicyUrl: "https://example.com/privacy",
-    otherUrl: "",
-    capabilityName: "Masumi",
-    capabilityVersion: "1.0",
-    exampleOutputs: [
-      {
-        name: "Sample output",
-        url: "https://example.com/sample.json",
-        mimeType: "application/json",
-      },
-    ],
-  },
-});
 
 const verifyAgentOpenApiBodySchema = verifyAgentBodySchema.openapi({
   description:

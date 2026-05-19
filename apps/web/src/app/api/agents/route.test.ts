@@ -94,6 +94,7 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       search: z.string().optional(),
     }),
     registerAgentBodySchema,
+    registerAgentOpenApiBodySchema: registerAgentBodySchema.openapi({}),
   };
 });
 

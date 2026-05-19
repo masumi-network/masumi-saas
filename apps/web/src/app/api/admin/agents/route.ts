@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/admin.server";
 import { getAuthenticatedOrThrow, isAdminUser } from "@/lib/auth/utils";
 import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/admin/agents");
@@ -43,11 +44,10 @@ app.get("/", async (c) => {
     }
     return c.json(result, 200);
   } catch (error) {
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error("Failed to fetch admin agents:", error);
-    return c.json(
-      { success: false as const, error: "Failed to load agents" },
-      500,
-    );
+    throw new ApiError(500, "Failed to load agents");
   }
 });
 
