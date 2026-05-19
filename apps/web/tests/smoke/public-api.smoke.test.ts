@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { request } from "../helpers";
+import { request, requestRawPath } from "../helpers";
 
 describe("SMOKE — Public API /api/v1/", () => {
   it("GET /api/v1/agents — no auth required, returns list", async () => {
@@ -188,7 +188,7 @@ describe("SMOKE — Authenticated payment/registry wrappers", () => {
   });
 
   it("URL-encoded path traversal (%2e%2e) is not routable → 404", async () => {
-    const res = await request("/api/v1/%2e%2e/auth/get-session");
+    const res = await requestRawPath("/api/v1/%2e%2e/auth/get-session");
     expect(res.status).toBe(404);
   });
 

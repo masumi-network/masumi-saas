@@ -163,6 +163,7 @@ function buildSecurityHeaders() {
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  skipProxyUrlNormalize: true,
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },
