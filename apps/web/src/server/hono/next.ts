@@ -12,13 +12,18 @@ type NextHandler = (
  * `/api/...` path before Hono routing.
  *
  * /pay/api/v1/registry-inbox/agent-identifier maps to a different parent
- * tree, so it needs an explicit entry. Everything else is a clean prefix
- * substitution.
+ * tree, and /api/masumi/inbox-agent/register is a compatibility alias for
+ * the public inbox-agent registration route. Everything else is a clean
+ * prefix substitution.
  */
 const PATH_ALIASES: ReadonlyArray<{ from: string; to: string }> = [
   {
     from: "/pay/api/v1/registry-inbox/agent-identifier",
     to: "/api/registry-discovery/inbox-agent-identifier",
+  },
+  {
+    from: "/api/masumi/inbox-agent/register",
+    to: "/api/v1/inbox-agents",
   },
   { from: "/pay/api/", to: "/api/" },
   { from: "/registry/api/", to: "/api/" },

@@ -35,6 +35,14 @@ vi.mock("@/lib/schemas/api-query", () => ({
         network: "Mainnet",
       },
     }),
+    safeParseAsync: async () => ({
+      success: true as const,
+      data: {
+        id: "txn-1",
+        type: "payment",
+        network: "Mainnet",
+      },
+    }),
   },
 }));
 
