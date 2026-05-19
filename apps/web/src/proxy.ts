@@ -18,7 +18,12 @@ function getRawPathname(url: string): string {
 
 export function hasApiV1DotSegmentTraversal(url: string): boolean {
   const pathname = getRawPathname(url);
-  if (pathname !== "/api/v1" && !pathname.startsWith("/api/v1/")) {
+  const isApiV1Path =
+    pathname === "/api/v1" ||
+    pathname.startsWith("/api/v1/") ||
+    /^\/api\/v1%2f/i.test(pathname);
+
+  if (!isApiV1Path) {
     return false;
   }
 

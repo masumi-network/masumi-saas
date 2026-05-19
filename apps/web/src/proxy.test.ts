@@ -9,6 +9,16 @@ describe("proxy traversal guard", () => {
         "https://saas.example.com/api/v1/%2e%2e/auth/get-session",
       ),
     ).toBe(true);
+    expect(
+      hasApiV1DotSegmentTraversal(
+        "https://saas.example.com/api/v1%2f%2e%2e/auth/get-session",
+      ),
+    ).toBe(true);
+    expect(
+      hasApiV1DotSegmentTraversal(
+        "https://saas.example.com/api/v1%2F..%2Fauth/get-session",
+      ),
+    ).toBe(true);
   });
 
   it("allows normal /api/v1 requests and non-api dot paths", () => {
