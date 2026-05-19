@@ -47,14 +47,14 @@ app.openapi(
       requireEmailVerified: false,
     });
 
-    const { network } = c.req.valid("query");
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "dashboard",
-      action: "read",
-      network,
-    });
-
     try {
+      const { network } = c.req.valid("query");
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "dashboard",
+        action: "read",
+        network,
+      });
+
       const data = await getDashboardOverview(authContext.user.id, network);
       return c.json({ success: true as const, data }, 200);
     } catch (error) {

@@ -4683,6 +4683,312 @@
         }
       }
     },
+    "/api/admin/agents": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List agents for admin review",
+        "description": "Returns a paginated list of agents across users. Requires an authenticated admin user.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": ""
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin agents list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "agents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "apiUrl": {
+                                "type": "string"
+                              },
+                              "registrationState": {
+                                "type": "string"
+                              },
+                              "verificationStatus": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "agentIdentifier": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "ownerName": {
+                                "type": "string"
+                              },
+                              "ownerEmail": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "apiUrl",
+                              "registrationState",
+                              "verificationStatus",
+                              "agentIdentifier",
+                              "createdAt",
+                              "ownerName",
+                              "ownerEmail"
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "currentPage": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "currentPage",
+                            "totalPages",
+                            "total",
+                            "limit"
+                          ]
+                        },
+                        "search": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "agents",
+                        "pagination",
+                        "search"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "agents": [
+                        {
+                          "id": "cmlf6gswz0000x1uctad958tq",
+                          "name": "Research assistant",
+                          "apiUrl": "https://agent.example.com/mip",
+                          "registrationState": "RegistrationConfirmed",
+                          "verificationStatus": "VERIFIED",
+                          "agentIdentifier": "policy1.assetname1",
+                          "createdAt": "2026-01-15T12:00:00.000Z",
+                          "ownerName": "Ada Lovelace",
+                          "ownerEmail": "ada@example.com"
+                        }
+                      ],
+                      "pagination": {
+                        "currentPage": 1,
+                        "totalPages": 1,
+                        "total": 1,
+                        "limit": 10
+                      },
+                      "search": ""
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/agents/{agentId}/complete-registration": {
       "post": {
         "tags": [

@@ -65,16 +65,15 @@ app.openapi(
       requireEmailVerified: false,
     });
 
-    const network = parseNetwork(
-      new URL(c.req.url).searchParams.get("network"),
-    );
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "earnings",
-      action: "read",
-      network,
-    });
-
     try {
+      const { network: networkRaw } = c.req.valid("query");
+      const network = parseNetwork(networkRaw);
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "earnings",
+        action: "read",
+        network,
+      });
+
       const agents = await listUserOwnedAgentsForEarnings({
         userId: authContext.user.id,
         network,

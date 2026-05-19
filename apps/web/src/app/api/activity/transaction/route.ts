@@ -54,14 +54,15 @@ app.openapi(
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
-    const { id, type: typeRaw, network } = c.req.valid("query");
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "activity",
-      action: "read",
-      network,
-    });
 
     try {
+      const { id, type: typeRaw, network } = c.req.valid("query");
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "activity",
+        action: "read",
+        network,
+      });
+
       const client = await getPaymentNodeClientForUser(authContext.user.id);
       if (!client) {
         throw new ApiError(503, "Payment node is not configured");

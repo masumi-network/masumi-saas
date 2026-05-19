@@ -148,14 +148,14 @@ app.openapi(
       requireEmailVerified: false,
     });
 
-    const { period, network } = c.req.valid("query");
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "earnings",
-      action: "read",
-      network,
-    });
-
     try {
+      const { period, network } = c.req.valid("query");
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "earnings",
+        action: "read",
+        network,
+      });
+
       const client = await getPaymentNodeClientForUser(authContext.user.id);
       if (!client) {
         return c.json(

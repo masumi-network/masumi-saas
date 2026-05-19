@@ -9,7 +9,6 @@ import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import {
-  activityApiSearchParamsSchema,
   activityPaginationFromLimitParamSchema,
   activityQueryInputSchema,
   parseActivityQueryInput,
@@ -74,27 +73,19 @@ app.openapi(
     const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
-    const qpResult = activityApiSearchParamsSchema.safeParse(
-      new URL(c.req.url).searchParams,
-    );
-    if (!qpResult.success) {
-      throw new ApiError(
-        400,
-        qpResult.error.issues.map((i) => i.message).join("; "),
-      );
-    }
-    const qp = qpResult.data;
-    const { limit: limitRaw, cursor: cursorParam, ...queryRaw } = qp;
-    const query = parseActivityQueryInput(queryRaw);
-    const validFilter = query.filter;
-    const network = query.network;
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "activity",
-      action: "read",
-      network,
-    });
 
     try {
+      const qp = c.req.valid("query");
+      const { limit: limitRaw, cursor: cursorParam, ...queryRaw } = qp;
+      const query = parseActivityQueryInput(queryRaw);
+      const validFilter = query.filter;
+      const network = query.network;
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "activity",
+        action: "read",
+        network,
+      });
+
       const { merged, transactionLastUpdate } =
         await getActivityMergedFeedCached({
           userId: authContext.user.id,

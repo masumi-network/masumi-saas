@@ -67,16 +67,16 @@ app.openapi(
       requireEmailVerified: false,
     });
 
-    const { agentId, network, range, startDate, endDate, timeZone } =
-      c.req.valid("query");
-
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "earnings",
-      action: "read",
-      network,
-    });
-
     try {
+      const { agentId, network, range, startDate, endDate, timeZone } =
+        c.req.valid("query");
+
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "earnings",
+        action: "read",
+        network,
+      });
+
       const agent = await getUserOwnedAgentForEarnings({
         userId: authContext.user.id,
         agentId,

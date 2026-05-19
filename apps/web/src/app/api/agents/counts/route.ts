@@ -41,14 +41,14 @@ app.openapi(
       requireEmailVerified: false,
     });
 
-    const { network } = c.req.valid("query");
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "agents",
-      action: "read",
-      network,
-    });
-
     try {
+      const { network } = c.req.valid("query");
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "read",
+        network,
+      });
+
       const agents = await listWalletOwnedAgentsForUser({
         userId: authContext.user.id,
         network,

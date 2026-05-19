@@ -132,13 +132,12 @@ app.openapi(
       registrationState,
       registrationStateIn,
       search,
+      network: networkQuery,
     } = c.req.valid("query");
 
     try {
-      const url = new URL(c.req.url);
-      const fromQuery = url.searchParams.get("network");
       const fromCookie = getCookie(c, "payment_network");
-      const network = parseNetwork(fromQuery ?? fromCookie ?? undefined);
+      const network = parseNetwork(networkQuery ?? fromCookie ?? undefined);
 
       requireNetworkedOidcApiScope(authContext, {
         resource: "agents",
