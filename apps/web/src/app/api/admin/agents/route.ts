@@ -100,7 +100,7 @@ app.openapi(
       select: { role: true },
     });
     if (!isAdminUser({ id: user.id, role: dbUser?.role ?? undefined })) {
-      return c.json({ success: false as const, error: "Forbidden" }, 403);
+      throw new ApiError(403, "Forbidden");
     }
 
     const query = c.req.valid("query");
@@ -108,7 +108,7 @@ app.openapi(
     try {
       const result = await getAdminAgentsData(query);
       if (!result.success) {
-        return c.json({ success: false as const, error: result.error }, 500);
+        throw new ApiError(500, result.error);
       }
       return c.json(result, 200);
     } catch (error) {

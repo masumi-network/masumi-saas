@@ -8,7 +8,7 @@ import {
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
 import { createApiApp } from "@/server/hono/app";
-import { rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const UPSTREAM_PATH = "/inbox-agent-registration/";
@@ -30,10 +30,7 @@ app.post("/", async (c) => {
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return c.json(
-        { success: false as const, error: upstream.error },
-        upstream.status as 503,
-      );
+      throw new ApiError(upstream.status as 503, upstream.error);
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
@@ -48,12 +45,10 @@ app.post("/", async (c) => {
 
     return toUpstreamResponse(response);
   } catch (error) {
+    if (error instanceof ApiError) throw error;
     rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-registrations]", error);
-    return c.json(
-      { success: false as const, error: "Proxy request failed" },
-      500,
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
 });
 

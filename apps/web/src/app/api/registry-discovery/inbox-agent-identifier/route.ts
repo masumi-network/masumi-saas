@@ -7,7 +7,7 @@ import {
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
 import { createApiApp } from "@/server/hono/app";
-import { rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/registry-discovery/inbox-agent-identifier");
@@ -29,10 +29,7 @@ app.get("/", async (c) => {
       "agentIdentifier",
     );
     if (!agentIdentifier) {
-      return c.json(
-        { success: false as const, error: "agentIdentifier is required" },
-        400,
-      );
+      throw new ApiError(400, "agentIdentifier is required");
     }
 
     const ownedReference =
@@ -42,10 +39,7 @@ app.get("/", async (c) => {
         agentIdentifier,
       });
     if (!ownedReference) {
-      return c.json(
-        { success: false as const, error: "Inbox agent not found" },
-        404,
-      );
+      throw new ApiError(404, "Inbox agent not found");
     }
 
     const client = createInboxAdminPaymentNodeClient();
@@ -54,23 +48,18 @@ app.get("/", async (c) => {
       network,
     });
     if (!metadata) {
-      return c.json(
-        { success: false as const, error: "Inbox agent not found" },
-        404,
-      );
+      throw new ApiError(404, "Inbox agent not found");
     }
 
     return c.json({ success: true as const, data: metadata }, 200);
   } catch (error) {
+    if (error instanceof ApiError) throw error;
     if (isPaymentNodeConfigError(error)) {
-      return c.json({ success: false as const, error: error.message }, 503);
+      throw new ApiError(503, error.message);
     }
     rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-identifier]", error);
-    return c.json(
-      { success: false as const, error: "Proxy request failed" },
-      500,
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
 });
 
