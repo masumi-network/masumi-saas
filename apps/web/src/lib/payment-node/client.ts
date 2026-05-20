@@ -12,6 +12,7 @@ import type {
   AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
+  CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
@@ -30,6 +31,9 @@ import type {
   RegistryInboxCountResponse,
   RegistryInboxEntry,
   RegistryStatusFilter,
+  ResolvePaymentInput,
+  RuntimePaymentResponse,
+  SubmitPaymentResultInput,
   UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
@@ -37,6 +41,7 @@ import {
   addWalletToSourceOutputSchema,
   createApiKeyInputSchema,
   createApiKeyOutputSchema,
+  createPaymentInputSchema,
   generatedWalletSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
@@ -53,6 +58,9 @@ import {
   registryInboxWalletResponseSchema,
   registryListResponseSchema,
   registryWalletResponseSchema,
+  resolvePaymentInputSchema,
+  runtimePaymentResponseSchema,
+  submitPaymentResultInputSchema,
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
@@ -63,6 +71,7 @@ export type {
   AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
+  CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
@@ -85,6 +94,9 @@ export type {
   RegistryInboxEntry,
   RegistryRequestState,
   RegistryStatusFilter,
+  ResolvePaymentInput,
+  RuntimePaymentResponse,
+  SubmitPaymentResultInput,
   UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
@@ -808,6 +820,63 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         paymentIncomeOutputSchema,
+      );
+    },
+
+    /** Create a seller-side payment request for a MIP runtime job. */
+    async createPayment(
+      body: CreatePaymentInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = createPaymentInputSchema.parse(body);
+      return requestParse(
+        base,
+        apiKey,
+        `/payment`,
+        {
+          method: "POST",
+          body: parsedBody,
+        },
+        runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Resolve a seller-side payment by blockchain identifier. */
+    async resolvePaymentByBlockchainIdentifier(
+      body: ResolvePaymentInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = resolvePaymentInputSchema.parse({
+        ...body,
+        includeHistory: body.includeHistory ?? false,
+      });
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/resolve-blockchain-identifier`,
+        {
+          method: "POST",
+          body: {
+            ...parsedBody,
+            includeHistory: parsedBody.includeHistory ? "true" : "false",
+          },
+        },
+        runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Submit completed result hash for a seller-side payment request. */
+    async submitPaymentResult(
+      body: SubmitPaymentResultInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = submitPaymentResultInputSchema.parse(body);
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/submit-result`,
+        {
+          method: "POST",
+          body: parsedBody,
+        },
+        runtimePaymentResponseSchema,
       );
     },
   };
