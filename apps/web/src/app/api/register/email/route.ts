@@ -1,77 +1,87 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
-import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { requestMagicLinkRegistration } from "@/lib/auth/email-registration";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
-import { registerByEmailApiBodySchema } from "@/lib/schemas/auth-api";
-
-import contract from "./route.contract";
+import {
+  registerByEmailApiBodySchema,
+  registerByEmailApiSuccessSchema,
+} from "@/lib/schemas/auth-api";
+import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError } from "@/server/hono/errors";
+import { honoCors } from "@/server/hono/middleware/cors";
+import { nextHandlers } from "@/server/hono/next";
 
 const REGISTER_EMAIL_CORS_METHODS = ["POST", "OPTIONS"] as const;
 
-export async function OPTIONS(request: NextRequest) {
-  return handleCorsPreflightResponse(request, REGISTER_EMAIL_CORS_METHODS);
-}
+const app = createApiApp("/api/register/email");
 
-export async function POST(request: NextRequest) {
-  try {
-    const rateLimitResult = await checkRateLimitOrRespond(
-      request,
+app.use("*", honoCors(REGISTER_EMAIL_CORS_METHODS));
+
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Auth"],
+    summary: "Register with email",
+    description:
+      "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+    security: noSecurity,
+    request: {
+      body: {
+        required: true,
+        content: {
+          "application/json": { schema: registerByEmailApiBodySchema },
+        },
+      },
+    },
+    responses: {
+      202: {
+        description: "Magic link accepted for delivery",
+        content: {
+          "application/json": { schema: registerByEmailApiSuccessSchema },
+        },
+      },
+      400: {
+        description: "Invalid request body",
+        content: { "application/json": { schema: errBody } },
+      },
+      429: {
+        description: "Too many registration requests from this client",
+        content: { "application/json": { schema: errBody } },
+      },
+      500: {
+        description: "Registration email could not be queued or sent",
+        content: { "application/json": { schema: errBody } },
+      },
+    },
+  }),
+  async (c) => {
+    const { rl } = await checkRateLimitOrRespond(
+      c.req.raw,
       "public-register-email",
-      undefined,
-      REGISTER_EMAIL_CORS_METHODS,
     );
-    if ("response" in rateLimitResult) return rateLimitResult.response;
-    const { rl } = rateLimitResult;
 
-    const body = await request.json().catch(() => null);
-    const validation = registerByEmailApiBodySchema.safeParse(body);
-    if (!validation.success) {
-      return addCorsHeaders(
-        contractJsonResponse(contract, "POST", 400, {
-          success: false,
-          error: validation.error.issues
-            .map((issue) => issue.message)
-            .join(", "),
-        }),
-        request,
-        REGISTER_EMAIL_CORS_METHODS,
-      );
-    }
+    const data = c.req.valid("json");
 
     const result = await requestMagicLinkRegistration({
-      email: validation.data.email,
-      name: validation.data.name,
-      callbackUrl: sanitizeCallbackUrl(validation.data.callbackUrl) ?? "/",
-      headers: request.headers,
+      email: data.email,
+      name: data.name,
+      callbackUrl: sanitizeCallbackUrl(data.callbackUrl) ?? "/",
+      headers: c.req.raw.headers,
     });
 
     if ("error" in result) {
-      return addCorsHeaders(
-        contractJsonResponse(contract, "POST", 500, {
-          success: false,
-          error: result.error,
-        }),
-        request,
-        REGISTER_EMAIL_CORS_METHODS,
-      );
+      throw new ApiError(500, result.error);
     }
 
-    const response = contractJsonResponse(contract, "POST", 202, result);
+    const response = c.json(result, 202);
     response.headers.set("X-RateLimit-Limit", String(rl.limit));
     response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-    return addCorsHeaders(response, request, REGISTER_EMAIL_CORS_METHODS);
-  } catch (error) {
-    console.error("Failed to register via email:", error);
-    return addCorsHeaders(
-      contractJsonResponse(contract, "POST", 500, {
-        success: false,
-        error: "Failed to register via email",
-      }),
-      request,
-      REGISTER_EMAIL_CORS_METHODS,
-    );
-  }
-}
+    return response;
+  },
+);
+
+export const { POST, OPTIONS } = nextHandlers(app);
+export default app;

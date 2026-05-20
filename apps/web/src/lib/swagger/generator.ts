@@ -1,17 +1,19 @@
-import {
-  OpenApiGeneratorV3,
-  OpenAPIRegistry,
-} from "@asteasolutions/zod-to-openapi";
+/**
+ * Shared schemas + reusable response fragments for the public-v1 (`/api/v1/*`)
+ * discovery surface. Used by the per-route Hono apps in
+ * `src/app/api/v1/agents/**`. The actual OpenAPI document is now assembled by
+ * `src/lib/openapi/aggregate-spec.ts`.
+ */
 
-import { agentVerifyQuerySchema } from "@/lib/schemas";
+import { agentVerifyQuerySchema as _agentVerifyQuerySchema } from "@/lib/schemas";
 
 import { z } from "./zod-openapi";
 
-const registry = new OpenAPIRegistry();
+// Re-exported so legacy import paths keep resolving while v1 routes migrate.
+export const agentVerifyQuerySchema = _agentVerifyQuerySchema;
 
-const AgentSchema = registry.register(
-  "Agent",
-  z.object({
+export const AgentSchema = z
+  .object({
     id: z.string().openapi({ example: "cmlf6gswz0000x1uctad958tq" }),
     name: z.string().openapi({ example: "My AI Agent" }),
     description: z
@@ -40,10 +42,10 @@ const AgentSchema = registry.register(
     updatedAt: z
       .string()
       .openapi({ format: "date-time", example: "2026-01-26T12:00:00.000Z" }),
-  }),
-);
+  })
+  .openapi("Agent");
 
-const verifyAgentResultSchema = z
+export const verifyAgentResultSchema = z
   .union([
     z.object({
       success: z.literal(true),
@@ -77,7 +79,7 @@ const verifyAgentResultSchema = z
     },
   });
 
-const errorResponses = {
+export const errorResponses = {
   400: { description: "Bad Request — invalid query parameters" },
   429: {
     description:
@@ -85,172 +87,3 @@ const errorResponses = {
   },
   500: { description: "Internal Server Error" },
 } as const;
-
-registry.registerPath({
-  method: "get",
-  path: "/api/v1/agents",
-  tags: ["Agents"],
-  summary: "List agents",
-  description:
-    "Returns a list of agents filtered by verification status. Defaults to VERIFIED agents only. No authentication required. **Only** the query parameters documented here are applied; extra parameters (for example name or tag search) are **not** supported on this public endpoint and are ignored.",
-  request: {
-    query: z.object({
-      status: z
-        .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
-        .optional()
-        .openapi({
-          description:
-            "Filter by agent verification status. Defaults to VERIFIED if not specified.",
-          example: "VERIFIED",
-        }),
-      page: z.coerce.number().int().min(1).optional().openapi({
-        description: "Page number for pagination. Defaults to 1.",
-        example: 1,
-      }),
-      limit: z.coerce.number().int().min(1).max(100).optional().openapi({
-        description: "Number of results per page. Defaults to 50, max 100.",
-        example: 50,
-      }),
-    }),
-  },
-  responses: {
-    200: {
-      description: "List of agents",
-      content: {
-        "application/json": {
-          schema: z
-            .object({
-              success: z.literal(true),
-              data: z.array(AgentSchema),
-              pagination: z.object({
-                page: z.number().int().openapi({ example: 1 }),
-                limit: z.number().int().openapi({ example: 50 }),
-                total: z.number().int().openapi({ example: 1 }),
-                totalPages: z.number().int().openapi({ example: 1 }),
-              }),
-            })
-            .openapi({
-              example: {
-                success: true,
-                data: [
-                  {
-                    id: "cmlf6gswz0000x1uctad958tq",
-                    name: "My AI Agent",
-                    description:
-                      "A payment processing agent on the Masumi network",
-                    apiUrl: "https://my-agent.example.com",
-                    verificationStatus: "VERIFIED",
-                    veridianCredentialId:
-                      "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-                    tags: ["payments", "ai"],
-                    createdAt: "2026-01-26T10:00:00.000Z",
-                    updatedAt: "2026-01-26T12:00:00.000Z",
-                  },
-                ],
-                pagination: {
-                  page: 1,
-                  limit: 50,
-                  total: 1,
-                  totalPages: 1,
-                },
-              },
-            }),
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-registry.registerPath({
-  method: "get",
-  path: "/api/v1/agents/{agentId}",
-  tags: ["Agents"],
-  summary: "Get agent by ID",
-  description: "Returns a single agent by its ID. No authentication required.",
-  request: {
-    params: z.object({
-      agentId: z.string().openapi({
-        description: "The unique agent ID (CUID)",
-        example: "cmlf6gswz0000x1uctad958tq",
-      }),
-    }),
-  },
-  responses: {
-    200: {
-      description: "Agent found",
-      content: {
-        "application/json": {
-          schema: z
-            .object({
-              success: z.literal(true),
-              data: AgentSchema,
-            })
-            .openapi({
-              example: {
-                success: true,
-                data: {
-                  id: "cmlf6gswz0000x1uctad958tq",
-                  name: "My AI Agent",
-                  description:
-                    "A payment processing agent on the Masumi network",
-                  apiUrl: "https://my-agent.example.com",
-                  verificationStatus: "VERIFIED",
-                  veridianCredentialId:
-                    "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO",
-                  tags: ["payments", "ai"],
-                  createdAt: "2026-01-26T10:00:00.000Z",
-                  updatedAt: "2026-01-26T12:00:00.000Z",
-                },
-              },
-            }),
-        },
-      },
-    },
-    404: { description: "Agent not found" },
-    ...errorResponses,
-  },
-});
-
-registry.registerPath({
-  method: "get",
-  path: "/api/v1/agents/verify",
-  tags: ["Agents"],
-  summary: "Verify agent identifier",
-  description:
-    "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
-  request: {
-    query: agentVerifyQuerySchema,
-  },
-  responses: {
-    200: {
-      description: "Verification result",
-      content: {
-        "application/json": {
-          schema: verifyAgentResultSchema,
-        },
-      },
-    },
-    ...errorResponses,
-  },
-});
-
-export function generateOpenAPISpec() {
-  return new OpenApiGeneratorV3(registry.definitions).generateDocument({
-    openapi: "3.0.0",
-    info: {
-      version: "1.0.0",
-      title: "Masumi Agent Verification API",
-      description:
-        "Public API for looking up agent verification status on the Masumi network.",
-    },
-    servers: [
-      {
-        url: "/",
-        description: "Current environment",
-      },
-    ],
-  });
-}
-
-export { AgentSchema, errorResponses, verifyAgentResultSchema };

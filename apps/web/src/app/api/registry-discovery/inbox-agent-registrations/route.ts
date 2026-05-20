@@ -1,7 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
   getEffectivePaymentNetwork,
@@ -9,10 +7,16 @@ import {
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 const UPSTREAM_PATH = "/inbox-agent-registration/";
 
-export async function POST(request: NextRequest) {
+const app = createApiApp("/api/registry-discovery/inbox-agent-registrations");
+
+app.post("/", async (c) => {
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -26,15 +30,12 @@ export async function POST(request: NextRequest) {
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
-      );
+      throw new ApiError(upstream.status as 503, upstream.error);
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(request.url).search}`,
       {
         method: "POST",
         headers,
@@ -44,12 +45,12 @@ export async function POST(request: NextRequest) {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-registrations]", error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
-}
+});
+
+export const { POST } = nextHandlers(app);
+export default app;

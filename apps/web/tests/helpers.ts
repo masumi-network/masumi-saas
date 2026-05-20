@@ -3,6 +3,9 @@
  * All tests run against the real running server at BASE_URL.
  */
 
+import * as http from "node:http";
+import * as https from "node:https";
+
 export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:2999";
 
 export const TEST_EMAIL = process.env.TEST_EMAIL ?? "admin@masumi.network";
@@ -82,6 +85,60 @@ export async function request(
   }
 
   return { status: res.status, body: parsed, headers: res.headers };
+}
+
+export async function requestRawPath(
+  path: string,
+  { method = "GET", headers = {} }: RequestOptions = {},
+): Promise<{ status: number; body: string; headers: Headers }> {
+  const baseUrl = new URL(BASE_URL);
+  const basePath =
+    baseUrl.pathname === "/" ? "" : baseUrl.pathname.replace(/\/+$/, "");
+  const rawPath = `${basePath}${path.startsWith("/") ? path : `/${path}`}`;
+  const client = baseUrl.protocol === "https:" ? https : http;
+
+  return new Promise((resolve, reject) => {
+    const req = client.request(
+      {
+        protocol: baseUrl.protocol,
+        hostname: baseUrl.hostname,
+        port: baseUrl.port,
+        method,
+        path: rawPath,
+        headers: {
+          "Content-Type": "application/json",
+          Origin: BASE_URL,
+          ...headers,
+        },
+      },
+      (res) => {
+        const responseHeaders = new Headers();
+        for (const [key, value] of Object.entries(res.headers)) {
+          if (Array.isArray(value)) {
+            for (const item of value) responseHeaders.append(key, item);
+          } else if (value !== undefined) {
+            responseHeaders.set(key, value);
+          }
+        }
+
+        let responseBody = "";
+        res.setEncoding("utf8");
+        res.on("data", (chunk: string) => {
+          responseBody += chunk;
+        });
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: responseBody,
+            headers: responseHeaders,
+          });
+        });
+      },
+    );
+
+    req.on("error", reject);
+    req.end();
+  });
 }
 
 export async function requestForm(

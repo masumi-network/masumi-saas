@@ -1,10 +1,11 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { verifySumsubWebhookSignature } from "@/lib/sumsub";
 import { parseReviewResult } from "@/lib/sumsub/verification-utils";
+import { createApiApp } from "@/server/hono/app";
+import { nextHandlers } from "@/server/hono/next";
 
 // Maximum age for webhook timestamps (5 minutes)
 const MAX_TIMESTAMP_AGE_SECONDS = 300;
@@ -29,37 +30,36 @@ const sumsubWebhookSchema = z.object({
 
 type SumsubWebhookPayload = z.infer<typeof sumsubWebhookSchema>;
 
+const app = createApiApp("/api/webhooks/sumsub");
+
 /**
  * Sumsub webhook handler
  * Handles applicant status updates and updates database accordingly
  */
-export async function POST(request: NextRequest) {
+app.post("/", async (c) => {
   try {
     if (!isKycVerificationEnabled()) {
-      return NextResponse.json({
+      return c.json({
         success: true,
         disabled: true,
         message: "Sumsub verification is currently disabled.",
       });
     }
 
-    const body = await request.text();
-    const signature = request.headers.get("X-Payload-Digest");
-    const timestamp = request.headers.get("X-Payload-Digest-Ts");
+    const body = await c.req.raw.text();
+    const signature = c.req.header("X-Payload-Digest");
+    const timestamp = c.req.header("X-Payload-Digest-Ts");
 
     const isDevelopment = process.env.NODE_ENV === "development";
     const isTestWebhook =
-      request.headers.get("user-agent")?.includes("PMI Service") &&
+      c.req.header("user-agent")?.includes("PMI Service") &&
       (!signature || !timestamp);
 
     const isValidTestWebhook = isDevelopment && isTestWebhook;
 
     if ((!signature || !timestamp) && !isValidTestWebhook) {
       console.error("[Sumsub Webhook] Missing signature or timestamp");
-      return NextResponse.json(
-        { error: "Missing signature or timestamp" },
-        { status: 401 },
-      );
+      return c.json({ error: "Missing signature or timestamp" }, 401);
     }
 
     if (signature && timestamp) {
@@ -72,19 +72,13 @@ export async function POST(request: NextRequest) {
         console.error(
           `[Sumsub Webhook] Timestamp too old or in future: ${timestampAge}s`,
         );
-        return NextResponse.json(
-          { error: "Webhook timestamp expired" },
-          { status: 401 },
-        );
+        return c.json({ error: "Webhook timestamp expired" }, 401);
       }
 
       const isValid = verifySumsubWebhookSignature(body, signature, timestamp);
       if (!isValid && (!isDevelopment || !isTestWebhook)) {
         console.error("[Sumsub Webhook] Invalid signature");
-        return NextResponse.json(
-          { error: "Invalid signature" },
-          { status: 401 },
-        );
+        return c.json({ error: "Invalid signature" }, 401);
       }
     }
 
@@ -95,17 +89,14 @@ export async function POST(request: NextRequest) {
       payload = sumsubWebhookSchema.parse(rawPayload);
     } catch (error) {
       console.error("[Sumsub Webhook] Invalid payload format:", error);
-      return NextResponse.json(
-        { error: "Invalid payload format" },
-        { status: 400 },
-      );
+      return c.json({ error: "Invalid payload format" }, 400);
     }
 
     if (payload.type === "applicantWorkflowCompleted") {
       const { applicantId, externalUserId, reviewResult } = payload;
 
       if (isDevelopment && isTestWebhook) {
-        return NextResponse.json({
+        return c.json({
           success: true,
           message: "Test webhook received (no database update)",
         });
@@ -138,7 +129,7 @@ export async function POST(request: NextRequest) {
             },
           });
         }
-        return NextResponse.json({ success: true });
+        return c.json({ success: true });
       }
 
       const organization = await prisma.organization.findUnique({
@@ -162,25 +153,22 @@ export async function POST(request: NextRequest) {
             },
           });
         }
-        return NextResponse.json({ success: true });
+        return c.json({ success: true });
       }
 
       // No user or organization found - return 404 so Sumsub can retry
       console.error(
         `[Sumsub Webhook] No user or organization found for externalUserId: ${externalUserId}, applicantId: ${applicantId}`,
       );
-      return NextResponse.json(
-        { error: "No matching user or organization found" },
-        { status: 404 },
-      );
+      return c.json({ error: "No matching user or organization found" }, 404);
     }
 
-    return NextResponse.json({ success: true });
+    return c.json({ success: true });
   } catch (error) {
     console.error("Sumsub webhook error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return c.json({ error: "Internal server error" }, 500);
   }
-}
+});
+
+export const { POST } = nextHandlers(app);
+export default app;

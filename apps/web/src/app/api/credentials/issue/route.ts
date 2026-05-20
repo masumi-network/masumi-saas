@@ -1,52 +1,73 @@
+import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
 import { randomUUID } from "crypto";
-import { NextRequest } from "next/server";
 
 import { fetchAgentCredentialChallenge } from "@/lib/agent-verification";
-import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import {
+  credentialIssueBodySchema,
+  credentialIssueSuccessSchema,
+  security,
+  stdResponses,
+  verificationUnavailableResponse,
+} from "@/lib/swagger/saas-app-openapi";
 import {
   getAgentVerificationSchemaSaid,
   issueCredential,
   resolveOobi,
 } from "@/lib/veridian";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract, { issueCredentialSchema } from "./route.contract";
+const app = createApiApp("/api/credentials/issue");
 
-export async function POST(request: NextRequest) {
-  try {
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Credentials"],
+    summary: "Issue verification credential",
+    description:
+      "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
+    security,
+    request: {
+      body: {
+        required: true,
+        content: {
+          "application/json": { schema: credentialIssueBodySchema },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Credential issued",
+        content: {
+          "application/json": { schema: credentialIssueSuccessSchema },
+        },
+      },
+      503: verificationUnavailableResponse,
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
     if (!isAgentVerificationFlowEnabled()) {
-      return apiError(
-        verificationFeatureCopy.agentVerificationUnavailableDescription,
+      throw new ApiError(
         503,
-        undefined,
-        { contract, method: "POST" },
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
       );
     }
 
-    const authContext = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(c.req.raw);
     const { user } = authContext;
 
-    const body = await request.json().catch(() => ({}));
-    const validation = issueCredentialSchema.safeParse(body);
-
-    if (!validation.success) {
-      return apiError(
-        "Invalid request",
-        400,
-        validation.error.issues.map((issue) => issue.message),
-        { contract, method: "POST" },
-      );
-    }
-
     const { aid, oobi, attributes, agentId, organizationId, expiresAt } =
-      validation.data;
+      c.req.valid("json");
 
     const schemaSaid = getAgentVerificationSchemaSaid();
 
@@ -59,27 +80,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!userWithKyc) {
-      return apiError("User not found", 404, undefined, {
-        contract,
-        method: "POST",
-      });
+      throw new ApiError(404, "User not found");
     }
 
     if (!userWithKyc.kycVerification) {
-      return apiError(
-        "KYC verification not found. Please complete KYC verification first.",
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "POST" },
+        "KYC verification not found. Please complete KYC verification first.",
       );
     }
 
     if (userWithKyc.kycVerification.status !== "APPROVED") {
-      return apiError(
-        `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "POST" },
+        `KYC verification is ${userWithKyc.kycVerification.status}. Please complete KYC verification first.`,
       );
     }
 
@@ -91,11 +105,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!foundAgent) {
-      return apiError(
-        "Agent not found or you don't have permission to issue credentials for this agent",
+      throw new ApiError(
         404,
-        undefined,
-        { contract, method: "POST" },
+        "Agent not found or you don't have permission to issue credentials for this agent",
       );
     }
     requireNetworkedOidcApiScope(authContext, {
@@ -106,11 +118,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (foundAgent.registrationState !== "RegistrationConfirmed") {
-      return apiError(
-        `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "POST" },
+        `Cannot issue credential for agent with registration state ${foundAgent.registrationState}. Agent must be registered.`,
       );
     }
 
@@ -118,11 +128,9 @@ export async function POST(request: NextRequest) {
     const challenge = foundAgent.verificationChallenge;
     const secret = foundAgent.verificationSecret;
     if (!challenge || !secret) {
-      return apiError(
-        "No verification challenge or secret found. Generate from the Request Credential dialog and add the secret to your agent.",
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "POST" },
+        "No verification challenge or secret found. Generate from the Request Credential dialog and add the secret to your agent.",
       );
     }
 
@@ -133,23 +141,18 @@ export async function POST(request: NextRequest) {
     );
 
     if (!agentVerification.success) {
-      return apiError(
-        agentVerification.error,
-        400,
-        [
+      throw new ApiError(400, agentVerification.error, {
+        details: [
           "Ensure your agent has MASUMI_VERIFICATION_SECRET in env and returns HMAC-SHA256(challenge, secret).",
           "If the issue persists, contact support.",
         ],
-        { contract, method: "POST" },
-      );
+      });
     }
 
     if (!foundAgent.agentIdentifier) {
-      return apiError(
-        "Agent does not have a payment node identifier. Please ensure the agent is fully registered.",
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "POST" },
+        "Agent does not have a payment node identifier. Please ensure the agent is fully registered.",
       );
     }
 
@@ -197,14 +200,9 @@ export async function POST(request: NextRequest) {
       });
 
       if (!member) {
-        return apiError(
-          "Organization not found or you're not a member",
+        throw new ApiError(
           404,
-          undefined,
-          {
-            contract,
-            method: "POST",
-          },
+          "Organization not found or you're not a member",
         );
       }
     }
@@ -215,13 +213,11 @@ export async function POST(request: NextRequest) {
         await resolveOobi(oobi);
       } catch (error) {
         console.error("Failed to resolve OOBI:", error);
-        return apiError(
+        throw new ApiError(
+          500,
           error instanceof Error
             ? `Failed to resolve OOBI: ${error.message}`
             : "Failed to resolve OOBI. The credential server needs to know about the recipient AID before issuing credentials.",
-          500,
-          undefined,
-          { contract, method: "POST" },
         );
       }
     }
@@ -234,9 +230,8 @@ export async function POST(request: NextRequest) {
       );
 
       if (!result.success) {
-        return apiError("Failed to issue credential", 500, result.data, {
-          contract,
-          method: "POST",
+        throw new ApiError(500, "Failed to issue credential", {
+          details: result.data,
         });
       }
 
@@ -256,38 +251,34 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return contractJsonResponse(contract, "POST", 200, {
-        success: true,
-        data: {
-          id: pendingCredential.id,
-          credentialId: pendingCredential.credentialId,
-          schemaSaid: pendingCredential.schemaSaid,
-          aid: pendingCredential.aid,
-          status: pendingCredential.status,
-          issuedAt: pendingCredential.issuedAt,
-          expiresAt: pendingCredential.expiresAt,
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            id: pendingCredential.id,
+            credentialId: pendingCredential.credentialId,
+            schemaSaid: pendingCredential.schemaSaid,
+            aid: pendingCredential.aid,
+            status: pendingCredential.status,
+            issuedAt: pendingCredential.issuedAt,
+            expiresAt: pendingCredential.expiresAt,
+          },
         },
-      });
+        200,
+      );
     } catch (error) {
+      if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
       console.error("Failed to issue credential via Veridian:", error);
-      return apiError(
+      throw new ApiError(
+        500,
         error instanceof Error
           ? `Failed to issue credential: ${error.message}`
           : "Failed to issue credential",
-        500,
-        undefined,
-        { contract, method: "POST" },
       );
     }
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to issue credential:", error);
-    return apiError(
-      error instanceof Error ? error.message : "Failed to issue credential",
-      500,
-      undefined,
-      { contract, method: "POST" },
-    );
-  }
-}
+  },
+);
+
+export const { POST } = nextHandlers(app);
+export default app;

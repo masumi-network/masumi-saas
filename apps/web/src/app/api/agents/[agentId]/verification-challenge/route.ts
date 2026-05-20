@@ -1,69 +1,60 @@
+import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
 import { randomBytes, randomUUID } from "crypto";
-import { NextRequest } from "next/server";
+import type { Context } from "hono";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
-import { apiError } from "@/lib/api/error";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
+import {
+  security,
+  stdResponses,
+  verificationChallengePostBodySchema,
+  verificationChallengeSuccessSchema,
+  verificationUnavailableResponse,
+} from "@/lib/swagger/saas-app-openapi";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract, { bodySchema } from "./route.contract";
+const app = createApiApp("/api/agents/{agentId}/verification-challenge");
 
-/**
- * GET or POST /api/agents/[agentId]/verification-challenge
- * Returns the current verification challenge for the agent, or generates a new one.
- * POST with { regenerate: true } to generate a new challenge (invalidates the previous).
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  return handleChallengeRequest(request, params, false);
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  const body = await request.json().catch(() => ({}));
-  const parsed = bodySchema.safeParse(body);
-  const regenerate = parsed.success ? (parsed.data.regenerate ?? false) : false;
-  return handleChallengeRequest(request, params, regenerate);
-}
+const paramsSchema = z.object({
+  agentId: agentIdRouteParamSchema.openapi({
+    param: { name: "agentId", in: "path" },
+    description: "Agent ID (CUID)",
+    example: "cmlf6gswz0000x1uctad958tq",
+  }),
+});
 
 async function handleChallengeRequest(
-  request: NextRequest,
-  params: Promise<{ agentId: string }>,
+  c: Context,
+  agentId: string,
   regenerate: boolean,
 ) {
+  if (!isAgentVerificationFlowEnabled()) {
+    throw new ApiError(
+      503,
+      verificationFeatureCopy.agentVerificationUnavailableDescription,
+    );
+  }
+
+  const authContext = await getAuthenticatedOrThrow(c.req.raw);
+
   try {
-    if (!isAgentVerificationFlowEnabled()) {
-      return apiError(
-        verificationFeatureCopy.agentVerificationUnavailableDescription,
-        503,
-        undefined,
-        { contract, method: "GET" },
-      );
-    }
-
-    const authContext = await getAuthenticatedOrThrow(request);
-    const { agentId } = await params;
-
     const agent = await getWalletOwnedAgentForUser({
       userId: authContext.user.id,
       agentId,
     });
 
     if (!agent) {
-      return apiError("Agent not found", 404, undefined, {
-        contract,
-        method: "GET",
-      });
+      throw new ApiError(404, "Agent not found");
     }
     requireNetworkedOidcApiScope(authContext, {
       resource: "agents",
@@ -72,11 +63,9 @@ async function handleChallengeRequest(
     });
 
     if (agent.registrationState !== "RegistrationConfirmed") {
-      return apiError(
-        `Agent must be registered. Current state: ${agent.registrationState}`,
+      throw new ApiError(
         400,
-        undefined,
-        { contract, method: "GET" },
+        `Agent must be registered. Current state: ${agent.registrationState}`,
       );
     }
 
@@ -98,25 +87,100 @@ async function handleChallengeRequest(
       generatedAt = updated.verificationChallengeGeneratedAt;
     }
 
-    return contractJsonResponse(contract, regenerate ? "POST" : "GET", 200, {
-      success: true,
-      data: {
-        challenge,
-        secret,
-        generatedAt: generatedAt?.toISOString() ?? null,
+    return c.json(
+      {
+        success: true as const,
+        data: {
+          challenge,
+          secret,
+          generatedAt: generatedAt?.toISOString() ?? null,
+        },
       },
-    });
+      200,
+    );
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error("Failed to get verification challenge:", error);
-    return apiError(
+    throw new ApiError(
+      500,
       error instanceof Error
         ? error.message
         : "Failed to get verification challenge",
-      500,
-      undefined,
-      { contract, method: regenerate ? "POST" : "GET" },
     );
   }
 }
+
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Get verification challenge",
+    description: "Returns the current verification challenge for the agent.",
+    security,
+    request: { params: paramsSchema },
+    responses: {
+      200: {
+        description: "Challenge",
+        content: {
+          "application/json": { schema: verificationChallengeSuccessSchema },
+        },
+      },
+      503: verificationUnavailableResponse,
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const { agentId } = c.req.valid("param");
+    return handleChallengeRequest(c, agentId, false);
+  },
+);
+
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Refresh verification challenge",
+    description:
+      'Optional body `{ "regenerate": true }` to issue a new challenge and invalidate the previous.',
+    security,
+    request: {
+      params: paramsSchema,
+      body: {
+        content: {
+          "application/json": { schema: verificationChallengePostBodySchema },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Challenge",
+        content: {
+          "application/json": { schema: verificationChallengeSuccessSchema },
+        },
+      },
+      503: verificationUnavailableResponse,
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const { agentId } = c.req.valid("param");
+    // Body is optional; default regenerate to false if absent/invalid
+    let regenerate = false;
+    try {
+      const body = await c.req.json();
+      const parsed = verificationChallengePostBodySchema.safeParse(body);
+      if (parsed.success) {
+        regenerate = parsed.data.regenerate ?? false;
+      }
+    } catch {
+      // No body or invalid JSON — keep regenerate=false
+    }
+    return handleChallengeRequest(c, agentId, regenerate);
+  },
+);
+
+export const { GET, POST } = nextHandlers(app);
+export default app;

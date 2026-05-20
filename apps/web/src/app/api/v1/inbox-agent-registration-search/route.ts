@@ -1,7 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas/api-query";
 import {
   buildUpstreamHeaders,
@@ -9,21 +7,29 @@ import {
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "inbox-agent-registration-search";
 const UPSTREAM_PATH = "/inbox-agent-registration-search/";
 
-export async function POST(request: NextRequest) {
-  return handleRequest(request, "POST");
-}
+const app = createApiApp("/");
 
 function getEffectiveInboxSearchNetwork(
-  request: NextRequest,
+  request: Request,
   body: string | undefined,
 ): "Mainnet" | "Preprod" {
+  const url = new URL(request.url);
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const networkCookie = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("payment_network="))
+    ?.slice("payment_network=".length);
   let networkValue =
-    request.nextUrl.searchParams.get("network") ??
-    request.cookies.get("payment_network")?.value;
+    url.searchParams.get("network") ??
+    (networkCookie ? decodeURIComponent(networkCookie) : undefined);
 
   if (body) {
     try {
@@ -39,13 +45,13 @@ function getEffectiveInboxSearchNetwork(
   return parseNetwork(networkValue);
 }
 
-async function handleRequest(request: NextRequest, method: string) {
+app.post("*", async (c) => {
+  const request = c.req.raw;
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
-    const body =
-      method === "GET" ? undefined : await readOptionalRequestBody(request);
+    const body = await readOptionalRequestBody(request);
     requireNetworkedOidcApiScope(authContext, {
       resource: "inbox-agents",
       action: "read",
@@ -54,17 +60,17 @@ async function handleRequest(request: NextRequest, method: string) {
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
-        method,
+        method: "POST",
         headers,
         body,
       },
@@ -72,12 +78,12 @@ async function handleRequest(request: NextRequest, method: string) {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
-}
+});
+
+export const { POST } = nextHandlers(app);
+export default app;

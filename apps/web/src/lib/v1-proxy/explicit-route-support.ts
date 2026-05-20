@@ -1,9 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
 import { registryServiceConfig } from "@/lib/registry-service";
 import { parseNetwork } from "@/lib/schemas/api-query";
+
+/**
+ * Read a cookie value from a raw `Request`. Avoids depending on the
+ * `NextRequest.cookies` API so these helpers work with the underlying Web
+ * Request that Hono hands us (`c.req.raw`).
+ *
+ * Wrapping the Hono request in `new NextRequest(...)` throws on Next 16
+ * (`Cannot read private member #state ...`), which is why we read the raw
+ * Cookie header instead.
+ */
+function readCookieFromRequest(
+  request: Request,
+  name: string,
+): string | undefined {
+  const header = request.headers.get("cookie");
+  if (!header) return undefined;
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq);
+    if (key !== name) continue;
+    const value = trimmed.slice(eq + 1).trim();
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+  return undefined;
+}
 
 export type UpstreamResolution =
   | {
@@ -60,10 +91,7 @@ export function resolveRegistrySharedTokenUpstream(): UpstreamResolution {
   }
 }
 
-export function buildUpstreamHeaders(
-  request: NextRequest,
-  token: string,
-): Headers {
+export function buildUpstreamHeaders(request: Request, token: string): Headers {
   const headers = new Headers();
   headers.set("token", token);
   headers.set(
@@ -74,7 +102,7 @@ export function buildUpstreamHeaders(
 }
 
 export async function readOptionalRequestBody(
-  request: NextRequest,
+  request: Request,
 ): Promise<string | undefined> {
   try {
     const body = await request.text();
@@ -98,13 +126,14 @@ function extractNetworkFromBody(body: string | undefined): string | undefined {
 }
 
 export function getEffectivePaymentNetwork(
-  request: NextRequest,
+  request: Request,
   body?: string,
 ): "Mainnet" | "Preprod" {
+  const url = new URL(request.url);
   return parseNetwork(
     extractNetworkFromBody(body) ??
-      request.nextUrl.searchParams.get("network") ??
-      request.cookies.get("payment_network")?.value,
+      url.searchParams.get("network") ??
+      readCookieFromRequest(request, "payment_network"),
   );
 }
 

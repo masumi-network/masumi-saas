@@ -1,122 +1,150 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createInboxAdminPaymentNodeClient,
   getOwnedInboxAgentForUser,
   resolveInboxSmartContractAddress,
   saveInboxAgentReference,
 } from "@/lib/inbox-agents/server";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { inboxAgentIdRouteParamSchema } from "@/lib/schemas/inbox-agent";
+import {
+  errBody,
+  inboxAgentMutationSuccessSchema,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "../../../../../pay/api/v1/inbox-agents/[inboxAgentId]/deregister/route.contract";
+export const routeMeta = { documents: ["platform"] as const };
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ inboxAgentId: string }> },
-) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request);
-    const network = getEffectivePaymentNetwork(request);
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "inbox-agents",
-      action: "write",
-      network,
-    });
+const paramsSchema = z.object({
+  inboxAgentId: inboxAgentIdRouteParamSchema.openapi({
+    param: { name: "inboxAgentId", in: "path" },
+    description: "Inbox agent request ID (CUID)",
+    example: "cm_inbox_1",
+  }),
+});
 
-    const { inboxAgentId: rawInboxAgentId } = await params;
-    const inboxAgentIdResult =
-      inboxAgentIdRouteParamSchema.safeParse(rawInboxAgentId);
-    if (!inboxAgentIdResult.success) {
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error:
-          inboxAgentIdResult.error.issues
-            .map((issue) => issue.message)
-            .join(", ") || "Invalid inbox agent ID",
-      });
-    }
+const app = createApiApp("/api/v1/inbox-agents/{inboxAgentId}/deregister");
 
-    const ownedInboxAgent = await getOwnedInboxAgentForUser({
-      userId: authContext.user.id,
-      network,
-      inboxAgentId: inboxAgentIdResult.data,
-    });
-    if (!ownedInboxAgent) {
-      return contractJsonResponse(contract, "POST", 404, {
-        success: false,
-        error: "Inbox agent not found",
-      });
-    }
-
-    const inboxAgent = ownedInboxAgent.entry;
-
-    if (inboxAgent.state !== "RegistrationConfirmed") {
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error:
-          "Inbox agent can only be deregistered when registration is confirmed",
-      });
-    }
-
-    if (!inboxAgent.agentIdentifier) {
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error: "Inbox agent is missing its on-chain identifier",
-      });
-    }
-
-    const client = createInboxAdminPaymentNodeClient();
-    const smartContractAddress =
-      ownedInboxAgent.smartContractAddress ??
-      (await resolveInboxSmartContractAddress(
-        client,
+app.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    tags: ["Inbox agents"],
+    summary: "Deregister inbox agent",
+    description:
+      "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
+    security,
+    request: { params: paramsSchema },
+    responses: {
+      200: {
+        description: "Deregistration requested",
+        content: {
+          "application/json": { schema: inboxAgentMutationSuccessSchema },
+        },
+      },
+      503: {
+        description: "Payment service unavailable",
+        content: { "application/json": { schema: errBody } },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    try {
+      const authContext = await getAuthenticatedOrThrow(c.req.raw);
+      const request = c.req.raw;
+      const network = getEffectivePaymentNetwork(request);
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "inbox-agents",
+        action: "write",
         network,
-        inboxAgent.SmartContractWallet.walletVkey,
-      ));
-    if (!smartContractAddress) {
-      return contractJsonResponse(contract, "POST", 400, {
-        success: false,
-        error:
+      });
+
+      const { inboxAgentId } = c.req.valid("param");
+
+      const ownedInboxAgent = await getOwnedInboxAgentForUser({
+        userId: authContext.user.id,
+        network,
+        inboxAgentId,
+      });
+      if (!ownedInboxAgent) {
+        throw new ApiError(404, "Inbox agent not found");
+      }
+
+      const inboxAgent = ownedInboxAgent.entry;
+
+      if (inboxAgent.state !== "RegistrationConfirmed") {
+        throw new ApiError(
+          400,
+          "Inbox agent can only be deregistered when registration is confirmed",
+        );
+      }
+
+      if (!inboxAgent.agentIdentifier) {
+        throw new ApiError(
+          400,
+          "Inbox agent is missing its on-chain identifier",
+        );
+      }
+
+      const client = createInboxAdminPaymentNodeClient();
+      const smartContractAddress =
+        ownedInboxAgent.smartContractAddress ??
+        (await resolveInboxSmartContractAddress(
+          client,
+          network,
+          inboxAgent.SmartContractWallet.walletVkey,
+        ));
+      if (!smartContractAddress) {
+        throw new ApiError(
+          400,
           "Could not resolve the payment source for this inbox agent registration",
+        );
+      }
+
+      const deregistered = await client.deregisterInboxAgent({
+        network,
+        agentIdentifier: inboxAgent.agentIdentifier,
+        smartContractAddress,
       });
-    }
 
-    const deregistered = await client.deregisterInboxAgent({
-      network,
-      agentIdentifier: inboxAgent.agentIdentifier,
-      smartContractAddress,
-    });
-
-    await saveInboxAgentReference({
-      userId: authContext.user.id,
-      network,
-      entry: deregistered,
-      executingWallet: ownedInboxAgent.executingWallet,
-      smartContractAddress,
-    });
-
-    return contractJsonResponse(contract, "POST", 200, {
-      success: true,
-      data: deregistered,
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    if (isPaymentNodeConfigError(error)) {
-      return contractJsonResponse(contract, "POST", 503, {
-        success: false,
-        error: error.message,
+      await saveInboxAgentReference({
+        userId: authContext.user.id,
+        network,
+        entry: deregistered,
+        executingWallet: ownedInboxAgent.executingWallet,
+        smartContractAddress,
       });
+
+      return c.json(
+        {
+          success: true as const,
+          data: deregistered as unknown as z.infer<
+            typeof inboxAgentMutationSuccessSchema
+          >["data"],
+        },
+        200,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (isPaymentNodeConfigError(error)) {
+        throw new ApiError(503, error.message);
+      }
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to deregister inbox agent:", error);
+      throw new ApiError(500, "Failed to deregister inbox agent");
     }
-    console.error("Failed to deregister inbox agent:", error);
-    return contractJsonResponse(contract, "POST", 500, {
-      success: false,
-      error: "Failed to deregister inbox agent",
-    });
-  }
-}
+  },
+);
+
+export const { POST } = nextHandlers(app);
+export default app;

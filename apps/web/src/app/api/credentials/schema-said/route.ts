@@ -1,47 +1,68 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
-import { apiError } from "@/lib/api/error";
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
+import {
+  credentialSchemaSaidSuccessSchema,
+  security,
+  stdResponses,
+  verificationUnavailableResponse,
+} from "@/lib/swagger/saas-app-openapi";
 import { getAgentVerificationSchemaSaid } from "@/lib/veridian";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "./route.contract";
+const app = createApiApp("/api/credentials/schema-said");
 
-export async function GET(request: NextRequest) {
-  try {
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Credentials"],
+    summary: "Get verification schema SAID",
+    description:
+      "Returns the configured Veridian schema SAID for agent verification credentials.",
+    security,
+    responses: {
+      200: {
+        description: "Verification schema SAID",
+        content: {
+          "application/json": { schema: credentialSchemaSaidSuccessSchema },
+        },
+      },
+      503: verificationUnavailableResponse,
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
     if (!isAgentVerificationFlowEnabled()) {
-      return apiError(
-        verificationFeatureCopy.agentVerificationUnavailableDescription,
+      throw new ApiError(
         503,
-        undefined,
-        { contract, method: "GET" },
+        verificationFeatureCopy.agentVerificationUnavailableDescription,
       );
     }
 
-    const authContext = await getAuthenticatedOrThrow(request);
+    const authContext = await getAuthenticatedOrThrow(c.req.raw);
     requireAnyNetworkedOidcApiScope(authContext, {
       resource: "credentials",
       action: "read",
     });
 
-    const schemaSaid = getAgentVerificationSchemaSaid();
+    try {
+      const schemaSaid = getAgentVerificationSchemaSaid();
+      return c.json({ success: true as const, data: { schemaSaid } }, 200);
+    } catch (error) {
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to get schema SAID:", error);
+      throw new ApiError(500, "Failed to get schema SAID");
+    }
+  },
+);
 
-    return contractJsonResponse(contract, "GET", 200, {
-      success: true,
-      data: { schemaSaid },
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to get schema SAID:", error);
-    return contractJsonResponse(contract, "GET", 500, {
-      success: false,
-      error: "Failed to get schema SAID",
-    });
-  }
-}
+export const { GET } = nextHandlers(app);
+export default app;

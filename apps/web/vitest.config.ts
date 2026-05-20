@@ -17,5 +17,12 @@ export default defineConfig({
     reporters: ["verbose"],
     sequence: { concurrent: false },
     fileParallelism: false,
+    env: {
+      // Route modules transitively import the Prisma client, which throws at
+      // import time when DATABASE_URL is missing. Tests stub the database
+      // client itself, but the env check fires before mocks resolve.
+      DATABASE_URL:
+        process.env.DATABASE_URL ?? "postgres://test:test@localhost:5432/test",
+    },
   },
 });
