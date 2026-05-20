@@ -75,6 +75,8 @@ export const ModelName = {
   EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  IntegrationConnection: "IntegrationConnection",
+  MipJob: "MipJob",
   AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
@@ -410,6 +412,9 @@ export const AgentScalarFieldEnum = {
   userId: "userId",
   organizationId: "organizationId",
   registrationState: "registrationState",
+  runtimeProvider: "runtimeProvider",
+  integrationConnectionId: "integrationConnectionId",
+  providerConfig: "providerConfig",
   verificationStatus: "verificationStatus",
   veridianCredentialId: "veridianCredentialId",
   verificationChallenge: "verificationChallenge",
@@ -427,6 +432,47 @@ export const AgentScalarFieldEnum = {
 
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const IntegrationConnectionScalarFieldEnum = {
+  id: "id",
+  provider: "provider",
+  name: "name",
+  encryptedSecret: "encryptedSecret",
+  userId: "userId",
+  organizationId: "organizationId",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type IntegrationConnectionScalarFieldEnum =
+  (typeof IntegrationConnectionScalarFieldEnum)[keyof typeof IntegrationConnectionScalarFieldEnum];
+
+export const MipJobScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  status: "status",
+  identifierFromPurchaser: "identifierFromPurchaser",
+  inputData: "inputData",
+  inputHash: "inputHash",
+  inputSchema: "inputSchema",
+  outputHash: "outputHash",
+  result: "result",
+  blockchainIdentifier: "blockchainIdentifier",
+  agentIdentifier: "agentIdentifier",
+  sellerVKey: "sellerVKey",
+  payByTime: "payByTime",
+  submitResultTime: "submitResultTime",
+  unlockTime: "unlockTime",
+  externalDisputeUnlockTime: "externalDisputeUnlockTime",
+  conversation: "conversation",
+  error: "error",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type MipJobScalarFieldEnum =
+  (typeof MipJobScalarFieldEnum)[keyof typeof MipJobScalarFieldEnum];
 
 export const AgentActivityEventScalarFieldEnum = {
   id: "id",
@@ -587,6 +633,13 @@ export const NullableJsonNullValueInput = {
 
 export type NullableJsonNullValueInput =
   (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
+
+export const JsonNullValueInput = {
+  JsonNull: "JsonNull",
+} as const;
+
+export type JsonNullValueInput =
+  (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
 
 export const QueryMode = {
   default: "default",

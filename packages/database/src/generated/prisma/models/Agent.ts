@@ -33,6 +33,8 @@ export type AgentMinAggregateOutputType = {
   userId: string | null;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState | null;
+  runtimeProvider: $Enums.AgentRuntimeProvider | null;
+  integrationConnectionId: string | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   verificationChallenge: string | null;
@@ -55,6 +57,8 @@ export type AgentMaxAggregateOutputType = {
   userId: string | null;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState | null;
+  runtimeProvider: $Enums.AgentRuntimeProvider | null;
+  integrationConnectionId: string | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   verificationChallenge: string | null;
@@ -77,6 +81,9 @@ export type AgentCountAggregateOutputType = {
   userId: number;
   organizationId: number;
   registrationState: number;
+  runtimeProvider: number;
+  integrationConnectionId: number;
+  providerConfig: number;
   verificationStatus: number;
   veridianCredentialId: number;
   verificationChallenge: number;
@@ -102,6 +109,8 @@ export type AgentMinAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  runtimeProvider?: true;
+  integrationConnectionId?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   verificationChallenge?: true;
@@ -124,6 +133,8 @@ export type AgentMaxAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  runtimeProvider?: true;
+  integrationConnectionId?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   verificationChallenge?: true;
@@ -146,6 +157,9 @@ export type AgentCountAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  runtimeProvider?: true;
+  integrationConnectionId?: true;
+  providerConfig?: true;
   verificationStatus?: true;
   veridianCredentialId?: true;
   verificationChallenge?: true;
@@ -250,6 +264,9 @@ export type AgentGroupByOutputType = {
   userId: string;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState;
+  runtimeProvider: $Enums.AgentRuntimeProvider;
+  integrationConnectionId: string | null;
+  providerConfig: runtime.JsonValue | null;
   verificationStatus: $Enums.VerificationStatus | null;
   veridianCredentialId: string | null;
   verificationChallenge: string | null;
@@ -294,6 +311,14 @@ export type AgentWhereInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFilter<"Agent">
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.StringNullableFilter<"Agent">
+    | string
+    | null;
+  providerConfig?: Prisma.JsonNullableFilter<"Agent">;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableFilter<"Agent">
     | $Enums.VerificationStatus
@@ -319,12 +344,17 @@ export type AgentWhereInput = {
     Prisma.OrganizationNullableScalarRelationFilter,
     Prisma.OrganizationWhereInput
   > | null;
+  integrationConnection?: Prisma.XOR<
+    Prisma.IntegrationConnectionNullableScalarRelationFilter,
+    Prisma.IntegrationConnectionWhereInput
+  > | null;
   veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
   agentReference?: Prisma.XOR<
     Prisma.AgentReferenceNullableScalarRelationFilter,
     Prisma.AgentReferenceWhereInput
   > | null;
   activityEvents?: Prisma.AgentActivityEventListRelationFilter;
+  mipJobs?: Prisma.MipJobListRelationFilter;
 };
 
 export type AgentOrderByWithRelationInput = {
@@ -336,6 +366,9 @@ export type AgentOrderByWithRelationInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  runtimeProvider?: Prisma.SortOrder;
+  integrationConnectionId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  providerConfig?: Prisma.SortOrderInput | Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   verificationChallenge?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -351,9 +384,11 @@ export type AgentOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
   organization?: Prisma.OrganizationOrderByWithRelationInput;
+  integrationConnection?: Prisma.IntegrationConnectionOrderByWithRelationInput;
   veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput;
   agentReference?: Prisma.AgentReferenceOrderByWithRelationInput;
   activityEvents?: Prisma.AgentActivityEventOrderByRelationAggregateInput;
+  mipJobs?: Prisma.MipJobOrderByRelationAggregateInput;
 };
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<
@@ -371,6 +406,14 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     registrationState?:
       | Prisma.EnumRegistrationStateFilter<"Agent">
       | $Enums.RegistrationState;
+    runtimeProvider?:
+      | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
+      | $Enums.AgentRuntimeProvider;
+    integrationConnectionId?:
+      | Prisma.StringNullableFilter<"Agent">
+      | string
+      | null;
+    providerConfig?: Prisma.JsonNullableFilter<"Agent">;
     verificationStatus?:
       | Prisma.EnumVerificationStatusNullableFilter<"Agent">
       | $Enums.VerificationStatus
@@ -399,12 +442,17 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
       Prisma.OrganizationNullableScalarRelationFilter,
       Prisma.OrganizationWhereInput
     > | null;
+    integrationConnection?: Prisma.XOR<
+      Prisma.IntegrationConnectionNullableScalarRelationFilter,
+      Prisma.IntegrationConnectionWhereInput
+    > | null;
     veridianCredentials?: Prisma.VeridianCredentialListRelationFilter;
     agentReference?: Prisma.XOR<
       Prisma.AgentReferenceNullableScalarRelationFilter,
       Prisma.AgentReferenceWhereInput
     > | null;
     activityEvents?: Prisma.AgentActivityEventListRelationFilter;
+    mipJobs?: Prisma.MipJobListRelationFilter;
   },
   "id"
 >;
@@ -418,6 +466,9 @@ export type AgentOrderByWithAggregationInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  runtimeProvider?: Prisma.SortOrder;
+  integrationConnectionId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  providerConfig?: Prisma.SortOrderInput | Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrderInput | Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrderInput | Prisma.SortOrder;
   verificationChallenge?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -463,6 +514,14 @@ export type AgentScalarWhereWithAggregatesInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateWithAggregatesFilter<"Agent">
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderWithAggregatesFilter<"Agent">
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.StringNullableWithAggregatesFilter<"Agent">
+    | string
+    | null;
+  providerConfig?: Prisma.JsonNullableWithAggregatesFilter<"Agent">;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableWithAggregatesFilter<"Agent">
     | $Enums.VerificationStatus
@@ -507,6 +566,8 @@ export type AgentCreateInput = {
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -522,9 +583,11 @@ export type AgentCreateInput = {
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
   organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateInput = {
@@ -536,6 +599,9 @@ export type AgentUncheckedCreateInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -552,6 +618,7 @@ export type AgentUncheckedCreateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUpdateInput = {
@@ -566,6 +633,10 @@ export type AgentUpdateInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -603,9 +674,11 @@ export type AgentUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
   organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateInput = {
@@ -625,6 +698,14 @@ export type AgentUncheckedUpdateInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -663,6 +744,7 @@ export type AgentUncheckedUpdateInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateManyInput = {
@@ -674,6 +756,9 @@ export type AgentCreateManyInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -701,6 +786,10 @@ export type AgentUpdateManyMutationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -755,6 +844,14 @@ export type AgentUncheckedUpdateManyInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -811,6 +908,9 @@ export type AgentCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  runtimeProvider?: Prisma.SortOrder;
+  integrationConnectionId?: Prisma.SortOrder;
+  providerConfig?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   verificationChallenge?: Prisma.SortOrder;
@@ -835,6 +935,8 @@ export type AgentMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  runtimeProvider?: Prisma.SortOrder;
+  integrationConnectionId?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   verificationChallenge?: Prisma.SortOrder;
@@ -857,6 +959,8 @@ export type AgentMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  runtimeProvider?: Prisma.SortOrder;
+  integrationConnectionId?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
   veridianCredentialId?: Prisma.SortOrder;
   verificationChallenge?: Prisma.SortOrder;
@@ -870,14 +974,14 @@ export type AgentMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type AgentNullableScalarRelationFilter = {
-  is?: Prisma.AgentWhereInput | null;
-  isNot?: Prisma.AgentWhereInput | null;
-};
-
 export type AgentScalarRelationFilter = {
   is?: Prisma.AgentWhereInput;
   isNot?: Prisma.AgentWhereInput;
+};
+
+export type AgentNullableScalarRelationFilter = {
+  is?: Prisma.AgentWhereInput | null;
+  isNot?: Prisma.AgentWhereInput | null;
 };
 
 export type AgentCreateNestedManyWithoutUserInput = {
@@ -1060,6 +1164,10 @@ export type EnumRegistrationStateFieldUpdateOperationsInput = {
   set?: $Enums.RegistrationState;
 };
 
+export type EnumAgentRuntimeProviderFieldUpdateOperationsInput = {
+  set?: $Enums.AgentRuntimeProvider;
+};
+
 export type NullableEnumVerificationStatusFieldUpdateOperationsInput = {
   set?: $Enums.VerificationStatus | null;
 };
@@ -1067,6 +1175,118 @@ export type NullableEnumVerificationStatusFieldUpdateOperationsInput = {
 export type AgentUpdatetagsInput = {
   set?: string[];
   push?: string | string[];
+};
+
+export type AgentCreateNestedManyWithoutIntegrationConnectionInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentCreateWithoutIntegrationConnectionInput,
+        Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+      >
+    | Prisma.AgentCreateWithoutIntegrationConnectionInput[]
+    | Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput[];
+  connectOrCreate?:
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput[];
+  createMany?: Prisma.AgentCreateManyIntegrationConnectionInputEnvelope;
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+};
+
+export type AgentUncheckedCreateNestedManyWithoutIntegrationConnectionInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentCreateWithoutIntegrationConnectionInput,
+        Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+      >
+    | Prisma.AgentCreateWithoutIntegrationConnectionInput[]
+    | Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput[];
+  connectOrCreate?:
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput[];
+  createMany?: Prisma.AgentCreateManyIntegrationConnectionInputEnvelope;
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+};
+
+export type AgentUpdateManyWithoutIntegrationConnectionNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentCreateWithoutIntegrationConnectionInput,
+        Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+      >
+    | Prisma.AgentCreateWithoutIntegrationConnectionInput[]
+    | Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput[];
+  connectOrCreate?:
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput[];
+  upsert?:
+    | Prisma.AgentUpsertWithWhereUniqueWithoutIntegrationConnectionInput
+    | Prisma.AgentUpsertWithWhereUniqueWithoutIntegrationConnectionInput[];
+  createMany?: Prisma.AgentCreateManyIntegrationConnectionInputEnvelope;
+  set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  update?:
+    | Prisma.AgentUpdateWithWhereUniqueWithoutIntegrationConnectionInput
+    | Prisma.AgentUpdateWithWhereUniqueWithoutIntegrationConnectionInput[];
+  updateMany?:
+    | Prisma.AgentUpdateManyWithWhereWithoutIntegrationConnectionInput
+    | Prisma.AgentUpdateManyWithWhereWithoutIntegrationConnectionInput[];
+  deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[];
+};
+
+export type AgentUncheckedUpdateManyWithoutIntegrationConnectionNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.AgentCreateWithoutIntegrationConnectionInput,
+        Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+      >
+    | Prisma.AgentCreateWithoutIntegrationConnectionInput[]
+    | Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput[];
+  connectOrCreate?:
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput
+    | Prisma.AgentCreateOrConnectWithoutIntegrationConnectionInput[];
+  upsert?:
+    | Prisma.AgentUpsertWithWhereUniqueWithoutIntegrationConnectionInput
+    | Prisma.AgentUpsertWithWhereUniqueWithoutIntegrationConnectionInput[];
+  createMany?: Prisma.AgentCreateManyIntegrationConnectionInputEnvelope;
+  set?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  disconnect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  delete?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  connect?: Prisma.AgentWhereUniqueInput | Prisma.AgentWhereUniqueInput[];
+  update?:
+    | Prisma.AgentUpdateWithWhereUniqueWithoutIntegrationConnectionInput
+    | Prisma.AgentUpdateWithWhereUniqueWithoutIntegrationConnectionInput[];
+  updateMany?:
+    | Prisma.AgentUpdateManyWithWhereWithoutIntegrationConnectionInput
+    | Prisma.AgentUpdateManyWithWhereWithoutIntegrationConnectionInput[];
+  deleteMany?: Prisma.AgentScalarWhereInput | Prisma.AgentScalarWhereInput[];
+};
+
+export type AgentCreateNestedOneWithoutMipJobsInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutMipJobsInput,
+    Prisma.AgentUncheckedCreateWithoutMipJobsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutMipJobsInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+};
+
+export type AgentUpdateOneRequiredWithoutMipJobsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutMipJobsInput,
+    Prisma.AgentUncheckedCreateWithoutMipJobsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutMipJobsInput;
+  upsert?: Prisma.AgentUpsertWithoutMipJobsInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.AgentUpdateToOneWithWhereWithoutMipJobsInput,
+      Prisma.AgentUpdateWithoutMipJobsInput
+    >,
+    Prisma.AgentUncheckedUpdateWithoutMipJobsInput
+  >;
 };
 
 export type AgentCreateNestedOneWithoutActivityEventsInput = {
@@ -1158,6 +1378,8 @@ export type AgentCreateWithoutUserInput = {
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1172,9 +1394,11 @@ export type AgentCreateWithoutUserInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutUserInput = {
@@ -1185,6 +1409,9 @@ export type AgentUncheckedCreateWithoutUserInput = {
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1201,6 +1428,7 @@ export type AgentUncheckedCreateWithoutUserInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutUserInput = {
@@ -1258,6 +1486,14 @@ export type AgentScalarWhereInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFilter<"Agent">
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.StringNullableFilter<"Agent">
+    | string
+    | null;
+  providerConfig?: Prisma.JsonNullableFilter<"Agent">;
   verificationStatus?:
     | Prisma.EnumVerificationStatusNullableFilter<"Agent">
     | $Enums.VerificationStatus
@@ -1287,6 +1523,8 @@ export type AgentCreateWithoutOrganizationInput = {
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1301,9 +1539,11 @@ export type AgentCreateWithoutOrganizationInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutOrganizationInput = {
@@ -1314,6 +1554,9 @@ export type AgentUncheckedCreateWithoutOrganizationInput = {
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1330,6 +1573,7 @@ export type AgentUncheckedCreateWithoutOrganizationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutOrganizationInput = {
@@ -1375,13 +1619,15 @@ export type AgentUpdateManyWithWhereWithoutOrganizationInput = {
   >;
 };
 
-export type AgentCreateWithoutActivityEventsInput = {
+export type AgentCreateWithoutIntegrationConnectionInput = {
   id?: string;
   name: string;
   description?: string | null;
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1399,9 +1645,11 @@ export type AgentCreateWithoutActivityEventsInput = {
   organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
-export type AgentUncheckedCreateWithoutActivityEventsInput = {
+export type AgentUncheckedCreateWithoutIntegrationConnectionInput = {
   id?: string;
   name: string;
   description?: string | null;
@@ -1410,6 +1658,8 @@ export type AgentUncheckedCreateWithoutActivityEventsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1425,6 +1675,323 @@ export type AgentUncheckedCreateWithoutActivityEventsInput = {
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentCreateOrConnectWithoutIntegrationConnectionInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutIntegrationConnectionInput,
+    Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+  >;
+};
+
+export type AgentCreateManyIntegrationConnectionInputEnvelope = {
+  data:
+    | Prisma.AgentCreateManyIntegrationConnectionInput
+    | Prisma.AgentCreateManyIntegrationConnectionInput[];
+  skipDuplicates?: boolean;
+};
+
+export type AgentUpsertWithWhereUniqueWithoutIntegrationConnectionInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  update: Prisma.XOR<
+    Prisma.AgentUpdateWithoutIntegrationConnectionInput,
+    Prisma.AgentUncheckedUpdateWithoutIntegrationConnectionInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutIntegrationConnectionInput,
+    Prisma.AgentUncheckedCreateWithoutIntegrationConnectionInput
+  >;
+};
+
+export type AgentUpdateWithWhereUniqueWithoutIntegrationConnectionInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateWithoutIntegrationConnectionInput,
+    Prisma.AgentUncheckedUpdateWithoutIntegrationConnectionInput
+  >;
+};
+
+export type AgentUpdateManyWithWhereWithoutIntegrationConnectionInput = {
+  where: Prisma.AgentScalarWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateManyMutationInput,
+    Prisma.AgentUncheckedUpdateManyWithoutIntegrationConnectionInput
+  >;
+};
+
+export type AgentCreateWithoutMipJobsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentUncheckedCreateWithoutMipJobsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  userId: string;
+  organizationId?: string | null;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentCreateOrConnectWithoutMipJobsInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutMipJobsInput,
+    Prisma.AgentUncheckedCreateWithoutMipJobsInput
+  >;
+};
+
+export type AgentUpsertWithoutMipJobsInput = {
+  update: Prisma.XOR<
+    Prisma.AgentUpdateWithoutMipJobsInput,
+    Prisma.AgentUncheckedUpdateWithoutMipJobsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutMipJobsInput,
+    Prisma.AgentUncheckedCreateWithoutMipJobsInput
+  >;
+  where?: Prisma.AgentWhereInput;
+};
+
+export type AgentUpdateToOneWithWhereWithoutMipJobsInput = {
+  where?: Prisma.AgentWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateWithoutMipJobsInput,
+    Prisma.AgentUncheckedUpdateWithoutMipJobsInput
+  >;
+};
+
+export type AgentUpdateWithoutMipJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateWithoutMipJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentCreateWithoutActivityEventsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentUncheckedCreateWithoutActivityEventsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  userId: string;
+  organizationId?: string | null;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutActivityEventsInput = {
@@ -1467,6 +2034,10 @@ export type AgentUpdateWithoutActivityEventsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1504,8 +2075,10 @@ export type AgentUpdateWithoutActivityEventsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
   organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutActivityEventsInput = {
@@ -1525,6 +2098,14 @@ export type AgentUncheckedUpdateWithoutActivityEventsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1562,6 +2143,7 @@ export type AgentUncheckedUpdateWithoutActivityEventsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateWithoutAgentReferenceInput = {
@@ -1571,6 +2153,8 @@ export type AgentCreateWithoutAgentReferenceInput = {
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1586,8 +2170,10 @@ export type AgentCreateWithoutAgentReferenceInput = {
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
   organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutAgentReferenceInput = {
@@ -1599,6 +2185,9 @@ export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1614,6 +2203,7 @@ export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   updatedAt?: Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutAgentReferenceInput = {
@@ -1656,6 +2246,10 @@ export type AgentUpdateWithoutAgentReferenceInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1693,8 +2287,10 @@ export type AgentUpdateWithoutAgentReferenceInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
   organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
@@ -1714,6 +2310,14 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1751,6 +2355,7 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateWithoutVeridianCredentialsInput = {
@@ -1760,6 +2365,8 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   extendedDescription?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1775,8 +2382,10 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   updatedAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutAgentsInput;
   organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
@@ -1788,6 +2397,9 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1803,6 +2415,7 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   updatedAt?: Date | string;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutVeridianCredentialsInput = {
@@ -1845,6 +2458,10 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1882,8 +2499,10 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
   organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
@@ -1903,6 +2522,14 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -1940,6 +2567,7 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateManyUserInput = {
@@ -1950,6 +2578,9 @@ export type AgentCreateManyUserInput = {
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -1977,6 +2608,10 @@ export type AgentUpdateWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2013,9 +2648,11 @@ export type AgentUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutUserInput = {
@@ -2034,6 +2671,14 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2072,6 +2717,7 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateManyWithoutUserInput = {
@@ -2090,6 +2736,14 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2135,6 +2789,9 @@ export type AgentCreateManyOrganizationInput = {
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
   veridianCredentialId?: string | null;
   verificationChallenge?: string | null;
@@ -2162,6 +2819,10 @@ export type AgentUpdateWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2198,9 +2859,11 @@ export type AgentUpdateWithoutOrganizationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutOrganizationInput = {
@@ -2216,6 +2879,14 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2254,6 +2925,7 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
@@ -2269,6 +2941,219 @@ export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+export type AgentCreateManyIntegrationConnectionInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  userId: string;
+  organizationId?: string | null;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
+export type AgentUpdateWithoutIntegrationConnectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateWithoutIntegrationConnectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateManyWithoutIntegrationConnectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?:
     | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
     | $Enums.VerificationStatus
@@ -2313,6 +3198,7 @@ export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
 export type AgentCountOutputType = {
   veridianCredentials: number;
   activityEvents: number;
+  mipJobs: number;
 };
 
 export type AgentCountOutputTypeSelect<
@@ -2323,6 +3209,7 @@ export type AgentCountOutputTypeSelect<
     | boolean
     | AgentCountOutputTypeCountVeridianCredentialsArgs;
   activityEvents?: boolean | AgentCountOutputTypeCountActivityEventsArgs;
+  mipJobs?: boolean | AgentCountOutputTypeCountMipJobsArgs;
 };
 
 /**
@@ -2358,6 +3245,16 @@ export type AgentCountOutputTypeCountActivityEventsArgs<
   where?: Prisma.AgentActivityEventWhereInput;
 };
 
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeCountMipJobsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.MipJobWhereInput;
+};
+
 export type AgentSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -2371,6 +3268,9 @@ export type AgentSelect<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    runtimeProvider?: boolean;
+    integrationConnectionId?: boolean;
+    providerConfig?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     verificationChallenge?: boolean;
@@ -2386,11 +3286,15 @@ export type AgentSelect<
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+    integrationConnection?:
+      | boolean
+      | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
     veridianCredentials?:
       | boolean
       | Prisma.Agent$veridianCredentialsArgs<ExtArgs>;
     agentReference?: boolean | Prisma.Agent$agentReferenceArgs<ExtArgs>;
     activityEvents?: boolean | Prisma.Agent$activityEventsArgs<ExtArgs>;
+    mipJobs?: boolean | Prisma.Agent$mipJobsArgs<ExtArgs>;
     _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["agent"]
@@ -2409,6 +3313,9 @@ export type AgentSelectCreateManyAndReturn<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    runtimeProvider?: boolean;
+    integrationConnectionId?: boolean;
+    providerConfig?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     verificationChallenge?: boolean;
@@ -2424,6 +3331,9 @@ export type AgentSelectCreateManyAndReturn<
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+    integrationConnection?:
+      | boolean
+      | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
   },
   ExtArgs["result"]["agent"]
 >;
@@ -2441,6 +3351,9 @@ export type AgentSelectUpdateManyAndReturn<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    runtimeProvider?: boolean;
+    integrationConnectionId?: boolean;
+    providerConfig?: boolean;
     verificationStatus?: boolean;
     veridianCredentialId?: boolean;
     verificationChallenge?: boolean;
@@ -2456,6 +3369,9 @@ export type AgentSelectUpdateManyAndReturn<
     updatedAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
     organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+    integrationConnection?:
+      | boolean
+      | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
   },
   ExtArgs["result"]["agent"]
 >;
@@ -2469,6 +3385,9 @@ export type AgentSelectScalar = {
   userId?: boolean;
   organizationId?: boolean;
   registrationState?: boolean;
+  runtimeProvider?: boolean;
+  integrationConnectionId?: boolean;
+  providerConfig?: boolean;
   verificationStatus?: boolean;
   veridianCredentialId?: boolean;
   verificationChallenge?: boolean;
@@ -2496,6 +3415,9 @@ export type AgentOmit<
   | "userId"
   | "organizationId"
   | "registrationState"
+  | "runtimeProvider"
+  | "integrationConnectionId"
+  | "providerConfig"
   | "verificationStatus"
   | "veridianCredentialId"
   | "verificationChallenge"
@@ -2517,9 +3439,13 @@ export type AgentInclude<
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
   organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+  integrationConnection?:
+    | boolean
+    | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
   veridianCredentials?: boolean | Prisma.Agent$veridianCredentialsArgs<ExtArgs>;
   agentReference?: boolean | Prisma.Agent$agentReferenceArgs<ExtArgs>;
   activityEvents?: boolean | Prisma.Agent$activityEventsArgs<ExtArgs>;
+  mipJobs?: boolean | Prisma.Agent$mipJobsArgs<ExtArgs>;
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type AgentIncludeCreateManyAndReturn<
@@ -2528,6 +3454,9 @@ export type AgentIncludeCreateManyAndReturn<
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
   organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+  integrationConnection?:
+    | boolean
+    | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
 };
 export type AgentIncludeUpdateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -2535,6 +3464,9 @@ export type AgentIncludeUpdateManyAndReturn<
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
   organization?: boolean | Prisma.Agent$organizationArgs<ExtArgs>;
+  integrationConnection?:
+    | boolean
+    | Prisma.Agent$integrationConnectionArgs<ExtArgs>;
 };
 
 export type $AgentPayload<
@@ -2545,9 +3477,11 @@ export type $AgentPayload<
   objects: {
     user: Prisma.$UserPayload<ExtArgs>;
     organization: Prisma.$OrganizationPayload<ExtArgs> | null;
+    integrationConnection: Prisma.$IntegrationConnectionPayload<ExtArgs> | null;
     veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[];
     agentReference: Prisma.$AgentReferencePayload<ExtArgs> | null;
     activityEvents: Prisma.$AgentActivityEventPayload<ExtArgs>[];
+    mipJobs: Prisma.$MipJobPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -2559,6 +3493,9 @@ export type $AgentPayload<
       userId: string;
       organizationId: string | null;
       registrationState: $Enums.RegistrationState;
+      runtimeProvider: $Enums.AgentRuntimeProvider;
+      integrationConnectionId: string | null;
+      providerConfig: runtime.JsonValue | null;
       verificationStatus: $Enums.VerificationStatus | null;
       veridianCredentialId: string | null;
       verificationChallenge: string | null;
@@ -3149,6 +4086,21 @@ export interface Prisma__AgentClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  integrationConnection<
+    T extends Prisma.Agent$integrationConnectionArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Agent$integrationConnectionArgs<ExtArgs>>,
+  ): Prisma.Prisma__IntegrationConnectionClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$IntegrationConnectionPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   veridianCredentials<
     T extends Prisma.Agent$veridianCredentialsArgs<ExtArgs> = {},
   >(
@@ -3180,6 +4132,17 @@ export interface Prisma__AgentClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$AgentActivityEventPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  mipJobs<T extends Prisma.Agent$mipJobsArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.Agent$mipJobsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$MipJobPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -3236,6 +4199,9 @@ export interface AgentFieldRefs {
   readonly userId: Prisma.FieldRef<"Agent", "String">;
   readonly organizationId: Prisma.FieldRef<"Agent", "String">;
   readonly registrationState: Prisma.FieldRef<"Agent", "RegistrationState">;
+  readonly runtimeProvider: Prisma.FieldRef<"Agent", "AgentRuntimeProvider">;
+  readonly integrationConnectionId: Prisma.FieldRef<"Agent", "String">;
+  readonly providerConfig: Prisma.FieldRef<"Agent", "Json">;
   readonly verificationStatus: Prisma.FieldRef<"Agent", "VerificationStatus">;
   readonly veridianCredentialId: Prisma.FieldRef<"Agent", "String">;
   readonly verificationChallenge: Prisma.FieldRef<"Agent", "String">;
@@ -3723,6 +4689,28 @@ export type Agent$organizationArgs<
 };
 
 /**
+ * Agent.integrationConnection
+ */
+export type Agent$integrationConnectionArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the IntegrationConnection
+   */
+  select?: Prisma.IntegrationConnectionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the IntegrationConnection
+   */
+  omit?: Prisma.IntegrationConnectionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.IntegrationConnectionInclude<ExtArgs> | null;
+  where?: Prisma.IntegrationConnectionWhereInput;
+};
+
+/**
  * Agent.veridianCredentials
  */
 export type Agent$veridianCredentialsArgs<
@@ -3804,6 +4792,35 @@ export type Agent$activityEventsArgs<
   distinct?:
     | Prisma.AgentActivityEventScalarFieldEnum
     | Prisma.AgentActivityEventScalarFieldEnum[];
+};
+
+/**
+ * Agent.mipJobs
+ */
+export type Agent$mipJobsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the MipJob
+   */
+  select?: Prisma.MipJobSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the MipJob
+   */
+  omit?: Prisma.MipJobOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MipJobInclude<ExtArgs> | null;
+  where?: Prisma.MipJobWhereInput;
+  orderBy?:
+    | Prisma.MipJobOrderByWithRelationInput
+    | Prisma.MipJobOrderByWithRelationInput[];
+  cursor?: Prisma.MipJobWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.MipJobScalarFieldEnum | Prisma.MipJobScalarFieldEnum[];
 };
 
 /**
