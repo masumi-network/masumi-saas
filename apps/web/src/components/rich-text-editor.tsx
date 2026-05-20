@@ -101,7 +101,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md border border-input bg-muted-surface transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+        "flex flex-col rounded-md border border-input bg-muted-surface transition-[color,box-shadow] duration-200 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
         minHeight,
         className,
       )}

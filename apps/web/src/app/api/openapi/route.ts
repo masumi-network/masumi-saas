@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
     }
   })();
   const response = NextResponse.json(spec);
-  response.headers.set("Cache-Control", "private, no-store, must-revalidate");
+  // Same spec for every authed user; browser can reuse during a Swagger session
+  // (private — never share across users via shared caches/CDNs).
+  response.headers.set(
+    "Cache-Control",
+    "private, max-age=300, must-revalidate",
+  );
   return addCorsHeaders(response, request);
 }

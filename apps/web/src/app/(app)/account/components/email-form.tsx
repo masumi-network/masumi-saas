@@ -108,6 +108,7 @@ export function EmailForm({ currentEmail }: EmailFormProps) {
                       <FormControl>
                         <Input
                           type="email"
+                          autoComplete="email"
                           placeholder={t("emailPlaceholder")}
                           {...field}
                         />

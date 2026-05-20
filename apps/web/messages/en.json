@@ -474,6 +474,9 @@
           "createOrgOptional": "Create your first organization (optional)",
           "registerAgent": "Register your first AI agent",
           "doIt": "Do it",
+          "goToVerifyEmail": "Verify email",
+          "goToRegisterAgent": "Register agent",
+          "goToCreateOrg": "Create organization",
           "step1": "1",
           "step2": "2",
           "step3": "3",
@@ -515,7 +518,8 @@
       "title": "Withdraw",
       "description": "Withdraw your earnings to your preferred payout method.",
       "status": "Coming soon",
-      "comingSoon": "Withdrawals are coming soon."
+      "comingSoon": "Withdrawals are coming soon.",
+      "comingSoonDescription": "We're working on payout integrations. Check back here once they're live."
     },
     "Analytics": {
       "title": "Analytics",

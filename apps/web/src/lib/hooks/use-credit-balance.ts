@@ -26,6 +26,9 @@ export function useCreditBalance() {
 
       return json.data;
     },
+    // 25s staleTime suppresses duplicate fetches triggered by component
+    // re-mounts within a single 30s interval window.
+    staleTime: 25_000,
     refetchInterval: 30_000,
   });
 }
