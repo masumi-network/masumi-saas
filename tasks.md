@@ -24,7 +24,7 @@ Done:
 Pending:
 
 - Add focused unit tests for Langdock field conversion, hash helpers, runtime state transitions, registration branching.
-- Run full web lint/test/build.
+- Run full web test/build.
 - Manual Sokosumi smoke against Preprod + Mainnet.
 - PR final notes after smoke.
 
@@ -33,6 +33,7 @@ Verification so far:
 - `pnpm install` succeeded; warned current Node is `v25.2.1`, repo wants `24.x`.
 - `packages/database prepare` ran Prisma generate + DB package build successfully during install.
 - `pnpm --filter web lint` passed.
+- `pnpm --filter web run i18n:validate` passed after adding fallback locale keys.
 - `pnpm prisma:generate` before install failed because `node_modules` was missing.
 
 ## Locked Decisions
