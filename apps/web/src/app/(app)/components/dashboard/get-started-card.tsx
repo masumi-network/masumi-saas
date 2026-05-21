@@ -78,7 +78,7 @@ export function GetStartedCard({ user }: GetStartedCardProps) {
             </span>
             {!user.emailVerified && (
               <Button asChild size="sm" variant="ghost">
-                <Link href="/account">{t("getStarted.doIt")}</Link>
+                <Link href="/account">{t("getStarted.goToVerifyEmail")}</Link>
               </Button>
             )}
           </li>
@@ -93,7 +93,7 @@ export function GetStartedCard({ user }: GetStartedCardProps) {
               {t("getStarted.registerAgent")}
             </span>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/ai-agents">{t("getStarted.doIt")}</Link>
+              <Link href="/ai-agents">{t("getStarted.goToRegisterAgent")}</Link>
             </Button>
           </li>
           <li
@@ -107,7 +107,7 @@ export function GetStartedCard({ user }: GetStartedCardProps) {
               {t("getStarted.createOrgOptional")}
             </span>
             <Button asChild size="sm" variant="ghost">
-              <Link href="/organizations">{t("getStarted.doIt")}</Link>
+              <Link href="/organizations">{t("getStarted.goToCreateOrg")}</Link>
             </Button>
           </li>
         </ul>

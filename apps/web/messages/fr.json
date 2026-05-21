@@ -473,6 +473,9 @@
           "createOrg": "Créez votre première organisation",
           "registerAgent": "Enregistrez votre premier agent IA",
           "doIt": "Fais-le",
+          "goToVerifyEmail": "Vérifier l'e-mail",
+          "goToRegisterAgent": "Enregistrer l'agent",
+          "goToCreateOrg": "Créer l'organisation",
           "step1": "1",
           "step2": "2",
           "step3": "3",
@@ -515,6 +518,7 @@
       "title": "Retirer",
       "description": "Retirez vos gains vers votre méthode de paiement préférée.",
       "comingSoon": "Les retraits arrivent bientôt.",
+      "comingSoonDescription": "Nous travaillons sur les intégrations de paiement. Revenez ici dès qu'elles seront en ligne.",
       "status": "Bientôt disponible"
     },
     "Analytics": {

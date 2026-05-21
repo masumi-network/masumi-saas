@@ -19,8 +19,6 @@ import Header from "./components/header";
 import { ImpersonationBanner } from "./components/impersonation-banner";
 import Sidebar from "./components/sidebar";
 
-export const dynamic = "force-dynamic";
-
 function getInitialPaymentNetwork(
   cookieStore: Awaited<ReturnType<typeof cookies>>,
 ): PaymentNodeNetwork {

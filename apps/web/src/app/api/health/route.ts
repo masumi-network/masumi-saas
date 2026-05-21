@@ -128,7 +128,7 @@ app.openapi(
       );
     }
 
-    return c.json(
+    const res = c.json(
       {
         success: true as const,
         data: {
@@ -138,6 +138,13 @@ app.openapi(
       },
       200,
     );
+    // Short cache so uptime monitors / LBs batch hits; SWR lets degraded
+    // states surface within ~15s.
+    res.headers.set(
+      "Cache-Control",
+      "public, max-age=5, s-maxage=5, stale-while-revalidate=10",
+    );
+    return res;
   },
 );
 
