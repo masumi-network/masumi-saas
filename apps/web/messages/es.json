@@ -433,8 +433,6 @@
           "newTransactions": "Nuevas transacciones",
           "newTransactionsDescription": "Nueva actividad de pago y compra.",
           "newTransactionsCardAria": "Ver actividad, {count} nuevas transacciones",
-          "mobileStripAria": "Resumen del panel: ingresos, agentes y nuevas transacciones",
-          "earningsStripAria": "Ver ingresos, {amount} total en los últimos 7 días",
           "earningsCardAria": "Ver ingresos, {amount} total",
           "viewAll": "Ver todo",
           "vsPreviousPeriod": "frente a anterior. período"
@@ -1350,7 +1348,6 @@
         "manage": "Gestionar",
         "discovery": "Descubrir"
       },
-      "manageDescription": "Registra, supervisa y gestiona tus agentes en {network}.",
       "Discovery": {
         "title": "Descubrimiento de registro",
         "description": "Explora aquí los agentes Masumi saludables más recientes.",

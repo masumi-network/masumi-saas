@@ -433,9 +433,7 @@
           "newTransactions": "新規取引",
           "newTransactionsDescription": "新しい支払いと購入アクティビティ",
           "newTransactionsCardAria": "アクティビティを表示、{count} 新しいトランザクション",
-          "mobileStripAria": "ダッシュボード概要：収益、エージェント、新しいトランザクション",
           "earningsCardAria": "収益を表示、合計 {amount}",
-          "earningsStripAria": "収益を表示、過去7日間の合計 {amount}",
           "viewAll": "すべて見る",
           "vsPreviousPeriod": "対前期間"
         },
@@ -1350,7 +1348,6 @@
         "manage": "管理",
         "discovery": "ディスカバリー"
       },
-      "manageDescription": "{network} 上でエージェントを登録、監視、管理します。",
       "Discovery": {
         "title": "レジストリディスカバリー",
         "description": "最新の正常な Masumi エージェントをここで閲覧します。",

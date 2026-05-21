@@ -433,8 +433,6 @@
           "newTransactions": "Nouvelles transactions",
           "newTransactionsDescription": "Nouvelle activité de paiement et d’achat",
           "newTransactionsCardAria": "Afficher l'activité, {count} nouvelles transactions",
-          "mobileStripAria": "Résumé du tableau de bord : revenus, agents et nouvelles transactions",
-          "earningsStripAria": "Voir les revenus, {amount} au total sur les 7 derniers jours",
           "earningsCardAria": "Voir les revenus, {amount} au total",
           "viewAll": "Voir tout",
           "vsPreviousPeriod": "contre précédent. période"
@@ -1350,7 +1348,6 @@
         "manage": "Gérer",
         "discovery": "Découverte"
       },
-      "manageDescription": "Enregistrez, surveillez et gérez vos agents sur {network}.",
       "Discovery": {
         "title": "Découverte du registre",
         "description": "Parcourez ici les derniers agents Masumi sains.",

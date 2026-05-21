@@ -433,8 +433,6 @@
           "newTransactions": "Neue Transaktionen",
           "newTransactionsDescription": "Neue Zahlungs- und Kaufaktivität",
           "newTransactionsCardAria": "Aktivität anzeigen, {count} neue Transaktionen",
-          "mobileStripAria": "Dashboard-Übersicht: Einnahmen, Agenten und neue Transaktionen",
-          "earningsStripAria": "Einnahmen anzeigen, {amount} gesamt in den letzten 7 Tagen",
           "earningsCardAria": "Einnahmen anzeigen, {amount} gesamt",
           "viewAll": "Alle anzeigen",
           "vsPreviousPeriod": "vs. vorher. Zeitraum"
@@ -1350,7 +1348,6 @@
         "manage": "Verwalten",
         "discovery": "Entdecken"
       },
-      "manageDescription": "Registrieren, überwachen und verwalten Sie Ihre Agenten auf {network}.",
       "Discovery": {
         "title": "Registry-Entdeckung",
         "description": "Durchsuchen Sie hier die neuesten gesunden Masumi-Agenten.",
