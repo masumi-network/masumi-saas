@@ -5,8 +5,16 @@ import kanjiBlack from "@/assets/Kanji.svg";
 import kanjiWhite from "@/assets/Masumi kanji white.svg";
 import masumiWhite from "@/assets/Masumi white.svg";
 import masumiBlack from "@/assets/masumi-logo-black.svg";
+import { cn } from "@/lib/utils";
 
-const MasumiLogo = React.memo(() => {
+type MasumiLogoProps = {
+  /** Always show kanji (e.g. mobile sidebar drawer). Default: hidden below `sm`. */
+  showKanji?: boolean;
+};
+
+const MasumiLogo = React.memo(({ showKanji = false }: MasumiLogoProps) => {
+  const kanjiVisibility = showKanji ? "block" : "hidden sm:block";
+
   return (
     <div className="flex items-end justify-center gap-4">
       <Image
@@ -25,12 +33,19 @@ const MasumiLogo = React.memo(() => {
         priority
         className="hidden dark:block"
       />
-      <Image src={kanjiBlack} alt="Kanji" priority className="dark:hidden" />
+      <Image
+        src={kanjiBlack}
+        alt=""
+        aria-hidden
+        priority
+        className={cn(kanjiVisibility, "dark:hidden")}
+      />
       <Image
         src={kanjiWhite}
-        alt="Kanji"
+        alt=""
+        aria-hidden
         priority
-        className="hidden dark:block"
+        className={cn(showKanji ? "hidden dark:block" : "hidden sm:dark:block")}
       />
     </div>
   );
