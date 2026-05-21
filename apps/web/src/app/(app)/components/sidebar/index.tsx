@@ -44,7 +44,7 @@ export default function Sidebar({ session }: SidebarProps) {
               <>
                 <SheetClose asChild>
                   <Link href="/" className="flex items-center shrink-0">
-                    <MasumiLogo />
+                    <MasumiLogo showKanji />
                   </Link>
                 </SheetClose>
                 <Button
@@ -61,7 +61,7 @@ export default function Sidebar({ session }: SidebarProps) {
                 <SheetClose asChild>
                   <Link href="/">
                     <span className="group-data-[collapsible=icon]:hidden">
-                      <MasumiLogo />
+                      <MasumiLogo showKanji />
                     </span>
                     <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
                   </Link>

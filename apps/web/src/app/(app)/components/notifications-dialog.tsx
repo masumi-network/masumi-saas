@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useNotifications } from "@/lib/context/notifications-context";
+import { cn } from "@/lib/utils";
 
 const NOTIFICATION_ICONS = {
   success: CheckCircle2,
@@ -18,14 +19,24 @@ const NOTIFICATION_ICONS = {
   error: AlertCircle,
 } as const;
 
-export function NotificationsDialog() {
+type NotificationsDialogProps = {
+  triggerClassName?: string;
+};
+
+export function NotificationsDialog({
+  triggerClassName,
+}: NotificationsDialogProps = {}) {
   const t = useTranslations("App.Notifications");
   const { notifications, dismissNotification, clearAll } = useNotifications();
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="h-8 w-8 relative">
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn("relative h-8 w-8 shrink-0", triggerClassName)}
+        >
           <Bell className="h-4 w-4" />
           {notifications.length > 0 && (
             <>

@@ -14,7 +14,7 @@ export function PaymentNetworkToggle() {
 
   return (
     <div className="px-4 border-b h-16 flex items-center group-data-[collapsible=icon]:px-2 transition-[padding] duration-200 ease-linear">
-      <div className="relative flex p-1 w-full rounded-md bg-muted">
+      <div className="relative flex w-full rounded-lg bg-muted/80 p-1 ring-1 ring-sidebar-border/60">
         {/* Sliding pill */}
         <div
           className="absolute top-1 bottom-1 rounded-md bg-background shadow-sm transition-[left] duration-200 ease-out"

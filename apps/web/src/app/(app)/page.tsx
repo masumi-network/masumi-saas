@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { getDashboardOverviewAction } from "@/lib/actions/dashboard.action";
 import { getAuthContext } from "@/lib/auth/utils";
 
@@ -32,14 +34,9 @@ async function HomePageContent() {
 
   if (!authContext.isAuthenticated || !authContext.session?.user) {
     return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
-      </div>
+      <AppPage animate={false}>
+        <PageHeader title={t("welcome")} description={t("description")} />
+      </AppPage>
     );
   }
 
@@ -53,21 +50,16 @@ async function HomePageContent() {
 
   if (!result.success) {
     return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("welcome")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
+      <AppPage animate={false}>
+        <PageHeader title={t("welcome")} description={t("description")} />
         <p className="text-destructive">{result.error}</p>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div className="min-w-0 space-y-8">
+    <AppPage animate={false}>
       <DashboardOverview data={result.data} />
-    </div>
+    </AppPage>
   );
 }
