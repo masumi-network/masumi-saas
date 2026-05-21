@@ -143,6 +143,9 @@ function getMessageInput(inputData: MipInputDataPayload): string {
 }
 
 async function getLangdockSecret(agent: NonNullable<RuntimeAgent>) {
+  if (!agent.integrationConnection) {
+    throw new Error("Langdock integration connection not found");
+  }
   return decryptIntegrationConnectionSecret(agent.integrationConnection);
 }
 

@@ -240,46 +240,43 @@ export function langdockInputFieldsToMipSchema(
   }
 
   const usedIds = new Set<string>();
-  const fields: MipInputField[] = inputFields
-    .map((raw, index) => {
-      if (!raw || typeof raw !== "object") return null;
-      const field = raw as Record<string, unknown>;
-      const label =
-        getInputFieldString(field, ["name", "label", "title", "id"]) ??
-        `Field ${index + 1}`;
-      const sourceId =
-        getInputFieldString(field, ["id", "key", "name", "label"]) ??
-        `field_${index + 1}`;
-      let id = slugifyInputId(sourceId, `field_${index + 1}`);
-      while (usedIds.has(id)) id = `${id}_${index + 1}`;
-      usedIds.add(id);
-      const type = mapLangdockFieldType(
-        getInputFieldString(field, ["type", "fieldType", "inputType"]),
-      );
-      const options = getOptions(field);
-      return {
-        id,
-        type,
-        name: label,
-        data: {
-          placeholder: getInputFieldString(field, ["placeholder"]),
-          description: getInputFieldString(field, ["description", "helpText"]),
-          ...(type === "option" && options.length > 0
-            ? { values: options }
-            : {}),
+  const fields = inputFields.reduce<MipInputField[]>((result, raw, index) => {
+    if (!raw || typeof raw !== "object") return result;
+    const field = raw as Record<string, unknown>;
+    const label =
+      getInputFieldString(field, ["name", "label", "title", "id"]) ??
+      `Field ${index + 1}`;
+    const sourceId =
+      getInputFieldString(field, ["id", "key", "name", "label"]) ??
+      `field_${index + 1}`;
+    let id = slugifyInputId(sourceId, `field_${index + 1}`);
+    while (usedIds.has(id)) id = `${id}_${index + 1}`;
+    usedIds.add(id);
+    const type = mapLangdockFieldType(
+      getInputFieldString(field, ["type", "fieldType", "inputType"]),
+    );
+    const options = getOptions(field);
+    result.push({
+      id,
+      type,
+      name: label,
+      data: {
+        placeholder: getInputFieldString(field, ["placeholder"]),
+        description: getInputFieldString(field, ["description", "helpText"]),
+        ...(type === "option" && options.length > 0 ? { values: options } : {}),
+      },
+      validations: [
+        {
+          validation: "optional",
+          value:
+            field.required === true || field.optional === false
+              ? "false"
+              : "true",
         },
-        validations: [
-          {
-            validation: "optional",
-            value:
-              field.required === true || field.optional === false
-                ? "false"
-                : "true",
-          },
-        ],
-      } satisfies MipInputField;
-    })
-    .filter((field): field is MipInputField => field != null);
+      ],
+    } satisfies MipInputField);
+    return result;
+  }, []);
 
   return fields.length > 0
     ? { input_data: fields }

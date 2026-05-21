@@ -10,7 +10,8 @@ function sha256Hex(value: string): string {
 
 export function hashCanonicalJsonValue(value: unknown): string | null {
   try {
-    return sha256Hex(stringify(value));
+    const canonicalJson = stringify(value);
+    return canonicalJson === undefined ? null : sha256Hex(canonicalJson);
   } catch {
     return null;
   }
