@@ -1,7 +1,5 @@
 import "./globals.css";
 
-import { GeistMono } from "geist/font/mono";
-import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -11,6 +9,7 @@ import { GlobalModalsContextProvider } from "@/components/modals/global-modals-c
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { appMono, appSans } from "@/lib/fonts";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -50,8 +49,10 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body
+        className={`${appSans.variable} ${appMono.variable} font-sans antialiased`}
+      >
+        <ThemeProvider>
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
               <GlobalModalsContextProvider>
