@@ -7,6 +7,7 @@ import {
   type MipInputField,
   type MipInputSchema,
 } from "@/lib/mip/input-schema";
+import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 
 const DEFAULT_LANGDOCK_BASE_URL = "https://api.langdock.com";
 const LANGDOCK_TIMEOUT_MS = 20_000;
@@ -41,13 +42,29 @@ function normalizeLangdockBaseUrl(baseUrl?: string | null): string {
   return url.toString().replace(/\/$/, "");
 }
 
+async function getAllowedLangdockBaseUrl(
+  baseUrl?: string | null,
+): Promise<string> {
+  const normalized = normalizeLangdockBaseUrl(baseUrl);
+  try {
+    await assertAllowedAgentApiUrl(normalized);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message.replace(/^API URL/, "Langdock base URL")
+        : "Invalid Langdock base URL";
+    throw new Error(message);
+  }
+  return normalized;
+}
+
 async function langdockFetch(
   apiKey: string,
   path: string,
   options: RequestInit = {},
   baseUrl?: string | null,
 ): Promise<unknown> {
-  const base = normalizeLangdockBaseUrl(baseUrl);
+  const base = await getAllowedLangdockBaseUrl(baseUrl);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LANGDOCK_TIMEOUT_MS);
   try {

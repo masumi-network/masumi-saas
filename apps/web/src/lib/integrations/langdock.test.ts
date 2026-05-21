@@ -78,6 +78,7 @@ describe("langdockInputFieldsToMipSchema", () => {
 describe("testLangdockAgent", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("fetches agent metadata and sends a chat probe with the supplied credentials", async () => {
@@ -153,5 +154,38 @@ describe("testLangdockAgent", () => {
     await expect(
       testLangdockAgent({ apiKey: "bad", agentId: "agent-1" }),
     ).rejects.toThrow("Langdock request failed: 401 bad key");
+  });
+
+  it("rejects private Langdock base URLs in production before fetching", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: "agent-1",
+            name: "Research bot",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "ok" } }],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      testLangdockAgent({
+        apiKey: "ld_test",
+        agentId: "agent-1",
+        baseUrl: "https://localhost:1234",
+      }),
+    ).rejects.toThrow("public internet host");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
