@@ -10,7 +10,12 @@ import {
 } from "@/lib/integrations/langdock";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 
-import { hashInputData, hashInputSchema, hashResult } from "./hash";
+import {
+  hashInputData,
+  hashInputSchema,
+  hashResult,
+  signRuntimeResponse,
+} from "./hash";
 import {
   getDefaultLangdockInputSchema,
   getLangdockHitlInputSchema,
@@ -147,6 +152,24 @@ async function getLangdockSecret(agent: NonNullable<RuntimeAgent>) {
     throw new Error("Langdock integration connection not found");
   }
   return decryptIntegrationConnectionSecret(agent.integrationConnection);
+}
+
+function getRuntimeSignatureSecret(agent: NonNullable<RuntimeAgent>) {
+  if (!agent.integrationConnection?.encryptedSecret) {
+    throw new Error("Langdock integration connection not found");
+  }
+  return `${agent.id}:${agent.integrationConnection.encryptedSecret}`;
+}
+
+function signProvideInputBody<T extends Record<string, unknown>>(
+  agent: NonNullable<RuntimeAgent>,
+  body: T,
+): T & { signature: string } {
+  const secret = getRuntimeSignatureSecret(agent);
+  return {
+    ...body,
+    signature: signRuntimeResponse(body, secret),
+  };
 }
 
 async function resolvePaymentLocked(job: {
@@ -484,16 +507,16 @@ export async function provideLangdockJobInput(agentId: string, body: unknown) {
         outputHash,
       },
     });
+    const responseBody = {
+      input_hash: inputHash,
+      status: "completed",
+      job_id: job.id,
+      result: finalResult,
+      output_hash: outputHash,
+    };
     return {
       status: 200 as const,
-      body: {
-        input_hash: inputHash,
-        signature: "",
-        status: "completed",
-        job_id: job.id,
-        result: finalResult,
-        output_hash: outputHash,
-      },
+      body: signProvideInputBody(agent, responseBody),
     };
   }
 
@@ -501,9 +524,9 @@ export async function provideLangdockJobInput(agentId: string, body: unknown) {
     ...conversation,
     { role: "user" as const, content: message },
   ];
-  const secret = await getLangdockSecret(agent);
+  const langdockSecret = await getLangdockSecret(agent);
   const answer = await completeLangdockChat({
-    apiKey: secret,
+    apiKey: langdockSecret,
     agentId: agent.langdockConfig.langdockAgentId,
     baseUrl: agent.langdockConfig.langdockBaseUrl,
     messages: updatedMessages,
@@ -522,14 +545,14 @@ export async function provideLangdockJobInput(agentId: string, body: unknown) {
     },
   });
 
+  const responseBody = {
+    input_hash: inputHash,
+    status: "awaiting_input",
+    job_id: job.id,
+    result: answer,
+  };
   return {
     status: 200 as const,
-    body: {
-      input_hash: inputHash,
-      signature: "",
-      status: "awaiting_input",
-      job_id: job.id,
-      result: answer,
-    },
+    body: signProvideInputBody(agent, responseBody),
   };
 }

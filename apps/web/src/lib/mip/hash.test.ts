@@ -18,9 +18,9 @@ describe("MIP hash helpers", () => {
     ).toBe("e7fa910005c820eb29fdc711ccf14fc6937a0b407ecaf28beb017af394fa6d94");
   });
 
-  it("hashes escaped result text using the purchaser identifier prefix", () => {
+  it("hashes raw result text using the purchaser identifier prefix", () => {
     expect(hashResult('first line\nsecond "quoted"', "buyer-1")).toBe(
-      "dd81ff5cb83cbb9ee01300b82eefcaf419f1a2479ff0105e5f31a83959f899a0",
+      "f13179b6cba10fa4dbb2224f3c56c7de1604925df7d343856334fc9bf93d9c2a",
     );
   });
 

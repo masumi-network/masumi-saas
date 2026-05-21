@@ -250,5 +250,8 @@ describe("Langdock MIP runtime", () => {
         output_hash: expect.any(String),
       },
     });
+    expect((result.body as { signature?: string }).signature).toMatch(
+      /^[0-9a-f]{64}$/,
+    );
   });
 });

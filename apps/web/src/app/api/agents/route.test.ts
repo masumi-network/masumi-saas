@@ -478,6 +478,7 @@ describe("/api/agents POST", () => {
         hitl: true,
       },
     });
+    expect(params.providerConfig).not.toHaveProperty("runtimeSignatureSecret");
   });
 
   it("uses saved Langdock connection credentials and base URL metadata", async () => {
