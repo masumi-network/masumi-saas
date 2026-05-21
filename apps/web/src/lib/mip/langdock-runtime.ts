@@ -215,10 +215,11 @@ export async function resumeLangdockJob(jobId: string): Promise<void> {
   if (job.status === "AWAITING_PAYMENT") {
     const locked = await resolvePaymentLocked(job);
     if (!locked) return;
-    await prisma.mipJob.update({
-      where: { id: job.id },
+    const claimed = await prisma.mipJob.updateMany({
+      where: { id: job.id, status: "AWAITING_PAYMENT" },
       data: { status: "RUNNING" },
     });
+    if (claimed.count === 0) return;
   }
 
   const refreshed = await prisma.mipJob.findUnique({

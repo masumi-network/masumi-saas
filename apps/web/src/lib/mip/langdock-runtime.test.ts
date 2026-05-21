@@ -5,6 +5,7 @@ const mipJobCreateMock = vi.fn();
 const mipJobFindFirstMock = vi.fn();
 const mipJobFindUniqueMock = vi.fn();
 const mipJobUpdateMock = vi.fn();
+const mipJobUpdateManyMock = vi.fn();
 const completeLangdockChatMock = vi.fn();
 const decryptIntegrationConnectionSecretMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
@@ -19,6 +20,7 @@ vi.mock("@masumi/database/client", () => ({
       findFirst: mipJobFindFirstMock,
       findUnique: mipJobFindUniqueMock,
       update: mipJobUpdateMock,
+      updateMany: mipJobUpdateManyMock,
     },
   },
 }));
@@ -68,6 +70,7 @@ describe("Langdock MIP runtime", () => {
     decryptIntegrationConnectionSecretMock.mockResolvedValue("ld-key");
     completeLangdockChatMock.mockResolvedValue("Langdock answer");
     agentFindUniqueMock.mockResolvedValue(runtimeAgent());
+    mipJobUpdateManyMock.mockResolvedValue({ count: 1 });
     mipJobFindUniqueMock.mockResolvedValue(null);
   });
 
@@ -116,8 +119,8 @@ describe("Langdock MIP runtime", () => {
       network: "Preprod",
       includeHistory: false,
     });
-    expect(mipJobUpdateMock).toHaveBeenNthCalledWith(1, {
-      where: { id: "job-1" },
+    expect(mipJobUpdateManyMock).toHaveBeenCalledWith({
+      where: { id: "job-1", status: "AWAITING_PAYMENT" },
       data: { status: "RUNNING" },
     });
     expect(completeLangdockChatMock).toHaveBeenCalledWith({
@@ -126,7 +129,7 @@ describe("Langdock MIP runtime", () => {
       baseUrl: "https://langdock.example.com",
       messages: [{ role: "user", content: "Summarize this" }],
     });
-    expect(mipJobUpdateMock).toHaveBeenNthCalledWith(2, {
+    expect(mipJobUpdateMock).toHaveBeenCalledWith({
       where: { id: "job-1" },
       data: {
         status: "AWAITING_INPUT",
@@ -138,6 +141,31 @@ describe("Langdock MIP runtime", () => {
         ],
       },
     });
+  });
+
+  it("does not run Langdock when another request already claimed the job", async () => {
+    const paymentClient = {
+      resolvePaymentByBlockchainIdentifier: vi
+        .fn()
+        .mockResolvedValue({ onChainState: "FundsLocked" }),
+    };
+    getPaymentNodeClientForUserMock.mockResolvedValue(paymentClient);
+    mipJobUpdateManyMock.mockResolvedValue({ count: 0 });
+    mipJobFindUniqueMock.mockResolvedValueOnce({
+      id: "job-1",
+      agentId: "agent-1",
+      status: "AWAITING_PAYMENT",
+      blockchainIdentifier: "chain-1",
+      agent: runtimeAgent(),
+    });
+
+    await resumeLangdockJob("job-1");
+
+    expect(mipJobUpdateManyMock).toHaveBeenCalledWith({
+      where: { id: "job-1", status: "AWAITING_PAYMENT" },
+      data: { status: "RUNNING" },
+    });
+    expect(completeLangdockChatMock).not.toHaveBeenCalled();
   });
 
   it("creates a paid job with a payment-node payment request", async () => {
