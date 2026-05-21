@@ -39,7 +39,7 @@ export default async function WithdrawPage() {
             {t("comingSoon")}
           </p>
           <p className="mt-1 max-w-sm text-center text-xs text-muted-foreground">
-            {t("description")}
+            {t("comingSoonDescription")}
           </p>
         </div>
       </div>

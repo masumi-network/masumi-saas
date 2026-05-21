@@ -1,15 +1,13 @@
-"use client";
-
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Locale } from "@/i18n/config";
 
-export function AuthFooter() {
-  const t = useTranslations("Footer");
-  const locale = useLocale() as Locale;
+export async function AuthFooter() {
+  const t = await getTranslations("Footer");
+  const locale = (await getLocale()) as Locale;
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-center border-t bg-background/80 backdrop-blur-md">

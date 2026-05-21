@@ -84,7 +84,7 @@ export function Tabs({ tabs, activeTab, onTabChange, className }: TabsProps) {
             <div className="flex items-center gap-2">
               {tab.name}
               {tab.count !== null && tab.count !== undefined && (
-                <span className="bg-destructive text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">
+                <span className="bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center">
                   {tab.count}
                 </span>
               )}

@@ -110,6 +110,10 @@ app.openapi(
       );
       res.headers.set("X-RateLimit-Limit", String(rl.limit));
       res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+      res.headers.set(
+        "Cache-Control",
+        "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+      );
       return res;
     } catch (error) {
       if (error instanceof ApiError) throw error;

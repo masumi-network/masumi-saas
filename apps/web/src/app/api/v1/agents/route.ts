@@ -138,6 +138,13 @@ app.openapi(
     );
     res.headers.set("X-RateLimit-Limit", String(rl.limit));
     res.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+    // CDN-friendly cache: short fresh window + long SWR so the CDN absorbs
+    // discovery traffic. Browser revalidates each navigation (max-age=0) so
+    // per-IP rate-limit headers stay honest.
+    res.headers.set(
+      "Cache-Control",
+      "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+    );
     return res;
   },
 );

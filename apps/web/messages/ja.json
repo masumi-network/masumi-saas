@@ -480,6 +480,9 @@
           "createOrg": "最初の組織を作成する",
           "registerAgent": "最初の AI エージェントを登録する",
           "doIt": "やってみろよ",
+          "goToVerifyEmail": "メールを確認",
+          "goToRegisterAgent": "エージェントを登録",
+          "goToCreateOrg": "組織を作成",
           "step1": "1",
           "step2": "2",
           "step3": "3",
@@ -522,6 +525,7 @@
       "title": "撤回する",
       "description": "収益をご希望の支払い方法に出金してください。",
       "comingSoon": "もうすぐ引き出しが始まります。",
+      "comingSoonDescription": "出金機能の連携を準備中です。公開され次第こちらでお知らせします。",
       "status": "近日公開"
     },
     "Analytics": {

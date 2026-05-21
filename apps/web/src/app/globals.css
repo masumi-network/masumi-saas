@@ -406,38 +406,8 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-@keyframes bounceBottom {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-bounce-bottom {
-  animation: bounceBottom 0.3s ease forwards;
-}
-
 #__next {
   overflow-y: scroll !important;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 
 @keyframes grid-glide {
@@ -465,18 +435,6 @@ input[type="number"] {
   }
 }
 
-@keyframes rotateIn {
-  0% {
-    transform: rotate(-360deg);
-    opacity: 0;
-  }
-
-  100% {
-    transform: rotate(0deg);
-    opacity: 1;
-  }
-}
-
 @keyframes checkIn {
   0% {
     transform: scale(0.4) rotate(-180deg);
@@ -492,23 +450,6 @@ input[type="number"] {
   animation: checkIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Highlight animation for searched elements */
-@keyframes highlight {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-.highlight-element {
-  animation: highlight 0.5s ease infinite alternate;
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-}
-
 /* Schema Playground: keep form preview on top so it stays interactive (Monaco can overlay) */
 .schema-playground-wrapper > div > div:last-child {
   position: relative;
@@ -520,21 +461,6 @@ input[type="number"] {
 .schema-playground-wrapper select:focus,
 .schema-playground-wrapper button:focus-visible {
   --tw-ring-color: hsl(var(--ring));
-}
-
-/* Ensure toast notifications appear above dialog overlays */
-/* Dialog overlay uses z-[999], dialog content uses z-[1000], so toasts need higher */
-.Toastify {
-  position: fixed;
-  z-index: 10000 !important;
-}
-
-.Toastify__toast-container {
-  z-index: 10000 !important;
-}
-
-.Toastify__toast {
-  z-index: 10000 !important;
 }
 
 :root {
@@ -692,5 +618,19 @@ input[type="number"] {
   div {
     width: 100% !important;
     height: 100% !important;
+  }
+}
+
+/* Respect user's reduced-motion preference. Single repo-wide rule disables
+ * keyframe animations and transitions for the entire surface. Individual
+ * components don't need their own opt-out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

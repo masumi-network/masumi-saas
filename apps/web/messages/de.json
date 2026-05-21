@@ -480,6 +480,9 @@
           "createOrg": "Erstellen Sie Ihre erste Organisation",
           "registerAgent": "Registrieren Sie Ihren ersten KI-Agenten",
           "doIt": "Mach es",
+          "goToVerifyEmail": "E-Mail bestätigen",
+          "goToRegisterAgent": "Agent registrieren",
+          "goToCreateOrg": "Organisation anlegen",
           "step1": "1",
           "step2": "2",
           "step3": "3",
@@ -522,6 +525,7 @@
       "title": "Zurückziehen",
       "description": "Lassen Sie sich Ihre Einnahmen über Ihre bevorzugte Auszahlungsmethode auszahlen.",
       "comingSoon": "Auszahlungen erfolgen bald.",
+      "comingSoonDescription": "Wir arbeiten an den Auszahlungs-Integrationen. Sobald sie verfügbar sind, finden Sie sie hier.",
       "status": "Demnächst verfügbar"
     },
     "Analytics": {

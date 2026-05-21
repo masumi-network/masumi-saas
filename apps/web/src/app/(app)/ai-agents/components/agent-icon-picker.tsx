@@ -197,7 +197,7 @@ export function AgentIconPicker({
                       onClick={() => handlePresetClick(key)}
                       disabled={disabled}
                       className={cn(
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all",
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-[background-color,border-color,box-shadow,color] duration-200",
                         isSelected
                           ? "border-primary bg-primary/10 text-primary shadow-md"
                           : "border bg-background hover:bg-muted hover:border-muted-foreground/20",

@@ -214,9 +214,16 @@ export async function getAuthenticatedOrThrow(
     request instanceof Request ? request.headers : await getRequestHeaders();
   const standardHeaders =
     headersList instanceof Headers ? headersList : new Headers(headersList);
-  const session = await auth.api.getSession({
-    headers: standardHeaders,
-  });
+
+  // When no explicit request is passed (i.e. we're reading the request
+  // headers from Next), route through the React `cache()`-wrapped
+  // `getSession` so chained auth calls in the same request hit the same
+  // memoised result instead of re-hitting better-auth's DB lookup. When a
+  // request IS passed (route handlers wrap their own Request), we need the
+  // session against THAT request's headers, so bypass the cache.
+  const session = request
+    ? await auth.api.getSession({ headers: standardHeaders })
+    : await getSession();
 
   const authContext =
     session?.user != null

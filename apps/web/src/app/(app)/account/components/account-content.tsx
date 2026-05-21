@@ -70,9 +70,9 @@ export function AccountContent({
 
       <div className="mx-auto max-w-3xl space-y-8">
         <div className="flex flex-row flex-nowrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
-          <p className="min-w-0 shrink truncate pr-2 text-sm font-medium leading-none">
+          <h2 className="min-w-0 shrink truncate pr-2 text-sm font-medium leading-none">
             {t("languageAndAppearance")}
-          </p>
+          </h2>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeSetting />
             <LocaleSwitcher currentLocale={locale} />
