@@ -422,6 +422,7 @@
           "topUp": "Nachfüllen",
           "withdraw": "Zurückziehen",
           "agentsCardAria": "Agenten anzeigen, {count} registriert",
+          "agentsStripLabel": "Agenten",
           "runningAgents": "{count} läuft",
           "pendingAgents": "{count} ausstehend",
           "failedAgents": "{count} fehlgeschlagen",

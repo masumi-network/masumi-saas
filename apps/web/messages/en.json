@@ -422,6 +422,7 @@
           "topUp": "Top up",
           "withdraw": "Withdraw",
           "agentsCardAria": "View agents, {count} registered",
+          "agentsStripLabel": "Agents",
           "runningAgents": "{count} running",
           "pendingAgents": "{count} pending",
           "failedAgents": "{count} failed",

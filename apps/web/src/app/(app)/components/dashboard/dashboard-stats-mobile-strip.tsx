@@ -29,7 +29,7 @@ export function DashboardStatsMobileStrip({
           {agentCount}
         </p>
         <p className="min-w-0 text-xs leading-snug text-muted-foreground">
-          {t("agents")}
+          {t("agentsStripLabel")}
         </p>
       </Link>
       <Link

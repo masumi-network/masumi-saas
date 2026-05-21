@@ -422,6 +422,7 @@
           "topUp": "補充する",
           "withdraw": "撤回する",
           "agentsCardAria": "エージェントを表示、{count} 登録済み",
+          "agentsStripLabel": "エージェント",
           "runningAgents": "{count} ランニング",
           "pendingAgents": "{count} 保留中",
           "failedAgents": "{count} 失敗しました",
