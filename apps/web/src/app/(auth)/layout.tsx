@@ -38,7 +38,7 @@ export default async function AuthLayout({
       />
       <div className="relative z-10">
         <Header />
-        <main className="flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center px-4 py-16 sm:px-6 sm:py-20">
+        <main className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-24 sm:px-6 sm:pt-28 sm:pb-28">
           <div className="surface-panel mx-auto w-full max-w-form px-6 py-8 sm:px-8 sm:py-10">
             {children}
           </div>
