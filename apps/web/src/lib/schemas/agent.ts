@@ -87,6 +87,7 @@ export const agentMetadataSchema = z
   .strict();
 
 export const registerAgentBodySchema = z.object({
+  runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
   name: z
     .string()
     .min(1, "Name is required")
@@ -101,7 +102,11 @@ export const registerAgentBodySchema = z.object({
     .max(5000, "Extended description must be less than 5000 characters")
     .optional()
     .or(z.literal("")),
-  apiUrl: agentApiUrlSchema,
+  apiUrl: agentApiUrlSchema.optional(),
+  integrationConnectionId: z.string().min(1).max(250).optional(),
+  langdockApiKey: z.string().min(1).max(5000).optional(),
+  langdockAgentId: z.string().min(1).max(500).optional(),
+  langdockBaseUrl: z.string().url().max(250).optional().or(z.literal("")),
   tags: z.string().optional(),
   icon: z.string().max(2000).optional(),
   pricing: registerAgentPricingSchema.optional(),
@@ -124,6 +129,7 @@ export const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
     description: "Helps with literature review",
     extendedDescription: "",
     apiUrl: "https://agent.example.com/mip",
+    runtimeProvider: "DIRECT_MIP",
     tags: "research, nlp",
     icon: "bot",
     pricing: {

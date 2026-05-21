@@ -8712,6 +8712,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "runtimeProvider": {
+                    "type": "string",
+                    "enum": [
+                      "DIRECT_MIP",
+                      "LANGDOCK"
+                    ]
+                  },
                   "name": {
                     "type": "string",
                     "minLength": 1,
@@ -8750,6 +8757,36 @@
                     "format": "uri",
                     "example": "https://agent.example.com/mip",
                     "description": "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected."
+                  },
+                  "integrationConnectionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 250
+                  },
+                  "langdockApiKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "langdockAgentId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "langdockBaseUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
                   },
                   "tags": {
                     "type": "string"
@@ -8941,8 +8978,7 @@
                   }
                 },
                 "required": [
-                  "name",
-                  "apiUrl"
+                  "name"
                 ],
                 "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).",
                 "example": {
@@ -8950,6 +8986,7 @@
                   "description": "Helps with literature review",
                   "extendedDescription": "",
                   "apiUrl": "https://agent.example.com/mip",
+                  "runtimeProvider": "DIRECT_MIP",
                   "tags": "research, nlp",
                   "icon": "bot",
                   "pricing": {
