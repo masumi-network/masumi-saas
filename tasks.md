@@ -4,7 +4,7 @@ Goal: user gives Langdock API key, Langdock agent ID, agent metadata, pricing. M
 
 ## Current Progress
 
-Status: automated integration pass complete; live Sokosumi/Langdock smoke still needs real credentials and a running app environment.
+Status: automated integration pass complete and branch pushed. Live Preprod Sokosumi/Langdock smoke is blocked only on external wrapper credentials plus a runnable MaaS Preprod target. Mainnet smoke is deferred until Preprod passes.
 
 Done:
 
@@ -22,11 +22,23 @@ Done:
 - Route scoping fixed: `status` and `provide_input` bind `job_id` to route `agentId`.
 - Saved Langdock connections reuse stored `baseUrl` metadata during registration/test when the form value is blank.
 - Focused unit coverage added for Langdock field conversion/client probing, MIP hash helpers, runtime job transitions, status route scoping, and `/api/agents` provider branching.
+- GitHub PR #110 is open for `feature/langdock-masumi-integration`.
+- Langdock wrapper contract has been checked against the MaaS integration code.
 
 Pending:
 
-- Manual Sokosumi smoke against Preprod + Mainnet with real Langdock credentials.
-- PR final notes after smoke.
+- Langdock wrapper details for Preprod smoke:
+  - `LANGDOCK_API_KEY`
+  - `LANGDOCK_AGENT_ID`
+  - `LANGDOCK_BASE_URL` if the wrapper is not `https://api.langdock.com`
+  - one deterministic smoke prompt and expected valid response
+  - confirmation that `GET /agent/v1/get?agentId=...` and `POST /agent/v1/chat/completions` work with bearer auth.
+- Runnable MaaS Preprod target:
+  - deployed/preprod URL plus test login, or local `.env` capable of running the app
+  - Preprod buyer/payment setup if the smoke should include the paid `FundsLocked` path instead of only the unpaid runtime path.
+- Manual Preprod smoke: register Langdock agent, verify generated `/mip/agents/{agentId}` endpoints, start job, poll status, provide HITL input, complete job, and submit result hash when paid flow is available.
+- PR final notes after Preprod smoke.
+- Mainnet smoke after Preprod succeeds.
 
 Verification so far:
 
@@ -38,7 +50,9 @@ Verification so far:
 - Focused Langdock/MIP tests passed: `src/lib/integrations/langdock.test.ts`, `src/lib/mip/hash.test.ts`, `src/lib/mip/langdock-runtime.test.ts`, `src/app/api/agents/route.test.ts`.
 - `pnpm --filter web exec tsc --noEmit --pretty false` passed.
 - `pnpm --filter web run check-openapi-json` passed.
+- GitHub PR checks passed: CodeQL, build/lint, and analysis.
 - `pnpm --filter web test` failed only on smoke/e2e/stress tests that require a live app at `localhost:2999`; failures were `ECONNREFUSED`.
+- Local real-smoke readiness check found no MaaS server on `localhost:2999`, no local app env, and no GitHub deployment/preview URL for the branch.
 - `DATABASE_URL=postgres://spec-gen:spec-gen@localhost:5432/spec-gen pnpm --filter web build` hung locally in `next build`/Turbopack compile with the process idle at 0% CPU and was stopped after repeated attempts.
 - `pnpm prisma:generate` before install failed because `node_modules` was missing.
 
