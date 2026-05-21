@@ -25,7 +25,7 @@ type NotificationsDialogProps = {
 
 export function NotificationsDialog({
   triggerClassName,
-}: NotificationsDialogProps = {}) {
+}: NotificationsDialogProps) {
   const t = useTranslations("App.Notifications");
   const { notifications, dismissNotification, clearAll } = useNotifications();
 
