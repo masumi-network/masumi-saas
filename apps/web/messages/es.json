@@ -8,7 +8,8 @@
       "title": "Algo salió mal",
       "descriptionRoot": "Se produjo un error inesperado. Inténtalo de nuevo.",
       "descriptionApp": "Se produjo un error inesperado al cargar esta página.",
-      "retry": "Reintentar"
+      "retry": "Reintentar",
+      "support": "Soporte"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Bueno {time}, {name}",
+        "greeting": {
+          "morning": "Buenos días, {name}",
+          "afternoon": "Buenas tardes, {name}",
+          "evening": "Buenas noches, {name}"
+        },
         "subtitle": "Administre sus agentes, organizaciones y claves API desde un solo lugar.",
         "kycStatus": {
           "pending": "Pendiente",
@@ -426,8 +431,12 @@
           "totalTransactionsDescription": "Pagos y compras entre agentes",
           "activitySummaryCardAria": "Ver actividad, transacciones {count}",
           "newTransactions": "Nuevas transacciones",
+          "newTransactionsMobile": "Transacciones",
           "newTransactionsDescription": "Nueva actividad de pago y compra.",
           "newTransactionsCardAria": "Ver actividad, {count} nuevas transacciones",
+          "mobileStripAria": "Resumen del panel: ingresos, agentes y nuevas transacciones",
+          "earningsStripAria": "Ver ingresos, {amount} total en los últimos 7 días",
+          "earningsCardAria": "Ver ingresos, {amount} total",
           "viewAll": "Ver todo",
           "vsPreviousPeriod": "frente a anterior. período"
         },
@@ -1342,6 +1351,7 @@
         "manage": "Gestionar",
         "discovery": "Descubrir"
       },
+      "manageDescription": "Registra, supervisa y gestiona tus agentes en {network}.",
       "Discovery": {
         "title": "Descubrimiento de registro",
         "description": "Explora aquí los agentes Masumi saludables más recientes.",
@@ -1631,6 +1641,7 @@
       "metadataPageTitle": "Bandejas de entrada",
       "metadataPageDescription": "Gestiona los registros de bandejas de entrada en Masumi SaaS.",
       "title": "Bandejas de entrada",
+      "pageDescription": "Administra registros de bandejas de entrada y descubre listados del registro.",
       "tabs": {
         "all": "Todos",
         "registered": "Registrados",
@@ -1666,6 +1677,7 @@
       "emptyTitle": "No se encontraron bandejas de entrada",
       "emptyDescription": "Prueba una búsqueda más amplia o cambia de pestaña.",
       "loadingPage": "Cargando página...",
+      "page": "Página {page}",
       "regWalletPrefix": "Reg.:",
       "fundWalletPrefix": "Fond.:",
       "table": {
@@ -1732,6 +1744,12 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Alternar tema"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "Tema",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
     },
     "Dialog": {
       "close": "Cerca"
@@ -1988,7 +2006,7 @@
         "mip004Blurb": "Entrada hasheada según <link>MIP-004</link> — SHA-256(identificador + \";\" + JCS(input_data))",
         "loadPreset": "Cargar preset…",
         "inputDataLabel": "Datos de entrada",
-        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
         "inputHashLabel": "Hash de entrada",
         "inputHashPlaceholder": "Generado desde datos de entrada",
         "metadataLabel": "Metadatos (opcional)",

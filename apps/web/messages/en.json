@@ -8,7 +8,8 @@
       "title": "Something went wrong",
       "descriptionRoot": "An unexpected error occurred. Please try again.",
       "descriptionApp": "An unexpected error occurred while loading this page.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "support": "Support"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Good {time}, {name}",
+        "greeting": {
+          "morning": "Good morning, {name}",
+          "afternoon": "Good afternoon, {name}",
+          "evening": "Good evening, {name}"
+        },
         "subtitle": "Manage your agents, organizations, and API keys from one place.",
         "kycStatus": {
           "pending": "Pending",
@@ -426,8 +431,12 @@
           "totalTransactionsDescription": "Payments and purchases across agents",
           "activitySummaryCardAria": "View activity, {count} transactions",
           "newTransactions": "New transactions",
+          "newTransactionsMobile": "Transactions",
           "newTransactionsDescription": "New payment and purchase activity",
           "newTransactionsCardAria": "View activity, {count} new transactions",
+          "mobileStripAria": "Dashboard summary: earnings, agents, and new transactions",
+          "earningsStripAria": "View earnings, {amount} total for the last 7 days",
+          "earningsCardAria": "View earnings, {amount} total",
           "viewAll": "View all",
           "vsPreviousPeriod": "vs prev. period"
         },
@@ -1007,6 +1016,7 @@
         "manage": "Manage",
         "discovery": "Discovery"
       },
+      "manageDescription": "Register, monitor, and manage your agents on {network}.",
       "Discovery": {
         "title": "Registry discovery",
         "description": "Browse the latest healthy Masumi agents here.",
@@ -1631,6 +1641,7 @@
       "metadataPageTitle": "Inboxes",
       "metadataPageDescription": "Manage inbox registrations in Masumi SaaS.",
       "title": "Inboxes",
+      "pageDescription": "Manage inbox registrations and discover registry listings.",
       "tabs": {
         "all": "All",
         "registered": "Registered",
@@ -1666,6 +1677,7 @@
       "emptyTitle": "No inboxes found",
       "emptyDescription": "Try a broader search or switch tabs.",
       "loadingPage": "Loading page...",
+      "page": "Page {page}",
       "regWalletPrefix": "Reg:",
       "fundWalletPrefix": "Fund:",
       "table": {
@@ -1732,6 +1744,12 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Toggle theme"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
     },
     "Dialog": {
       "close": "Close"

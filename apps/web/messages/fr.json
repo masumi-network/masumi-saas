@@ -8,7 +8,8 @@
       "title": "Une erreur est survenue",
       "descriptionRoot": "Une erreur inattendue est survenue. Veuillez réessayer.",
       "descriptionApp": "Une erreur inattendue est survenue lors du chargement de cette page.",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "support": "Soutien"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Bon {time}, {name}",
+        "greeting": {
+          "morning": "Bonjour, {name}",
+          "afternoon": "Bon après-midi, {name}",
+          "evening": "Bonsoir, {name}"
+        },
         "subtitle": "Gérez vos agents, organisations et clés API à partir d'un seul endroit.",
         "kycStatus": {
           "pending": "En attente",
@@ -426,8 +431,12 @@
           "totalTransactionsDescription": "Paiements et achats entre agents",
           "activitySummaryCardAria": "Afficher l'activité, {count} transactions",
           "newTransactions": "Nouvelles transactions",
+          "newTransactionsMobile": "Transactions",
           "newTransactionsDescription": "Nouvelle activité de paiement et d’achat",
           "newTransactionsCardAria": "Afficher l'activité, {count} nouvelles transactions",
+          "mobileStripAria": "Résumé du tableau de bord : revenus, agents et nouvelles transactions",
+          "earningsStripAria": "Voir les revenus, {amount} au total sur les 7 derniers jours",
+          "earningsCardAria": "Voir les revenus, {amount} au total",
           "viewAll": "Voir tout",
           "vsPreviousPeriod": "contre précédent. période"
         },
@@ -1342,6 +1351,7 @@
         "manage": "Gérer",
         "discovery": "Découverte"
       },
+      "manageDescription": "Enregistrez, surveillez et gérez vos agents sur {network}.",
       "Discovery": {
         "title": "Découverte du registre",
         "description": "Parcourez ici les derniers agents Masumi sains.",
@@ -1631,6 +1641,7 @@
       "metadataPageTitle": "Boîtes de réception",
       "metadataPageDescription": "Gérez les enregistrements de boîtes de réception dans Masumi SaaS.",
       "title": "Boîtes de réception",
+      "pageDescription": "Gérez les enregistrements de boîtes de réception et découvrez les listes du registre.",
       "tabs": {
         "all": "Tous",
         "registered": "Enregistrés",
@@ -1666,6 +1677,7 @@
       "emptyTitle": "Aucune boîte de réception trouvée",
       "emptyDescription": "Essayez une recherche plus large ou changez d'onglet.",
       "loadingPage": "Chargement de la page...",
+      "page": "Page {page}",
       "regWalletPrefix": "Enr. :",
       "fundWalletPrefix": "Fond. :",
       "table": {
@@ -1732,6 +1744,12 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Changer de thème"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "Thème",
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
     },
     "Dialog": {
       "close": "Fermer"
@@ -1988,7 +2006,7 @@
         "mip004Blurb": "Entrée hashée selon <link>MIP-004</link> — SHA-256(identifiant + \";\" + JCS(input_data))",
         "loadPreset": "Charger un préréglage…",
         "inputDataLabel": "Données d'entrée",
-        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
         "inputHashLabel": "Hash d'entrée",
         "inputHashPlaceholder": "Généré à partir des données d'entrée",
         "metadataLabel": "Métadonnées (optionnel)",

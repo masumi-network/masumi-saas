@@ -8,7 +8,8 @@
       "title": "Etwas ist schiefgelaufen",
       "descriptionRoot": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
       "descriptionApp": "Beim Laden dieser Seite ist ein unerwarteter Fehler aufgetreten.",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "support": "Support"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Gut {time}, {name}",
+        "greeting": {
+          "morning": "Guten Morgen, {name}",
+          "afternoon": "Guten Tag, {name}",
+          "evening": "Guten Abend, {name}"
+        },
         "subtitle": "Verwalten Sie Ihre Agenten, Organisationen und API-Schlüssel von einem Ort aus.",
         "kycStatus": {
           "pending": "Ausstehend",
@@ -426,8 +431,12 @@
           "totalTransactionsDescription": "Zahlungen und Käufe zwischen Agenten",
           "activitySummaryCardAria": "Aktivität anzeigen, {count} Transaktionen",
           "newTransactions": "Neue Transaktionen",
+          "newTransactionsMobile": "Transaktionen",
           "newTransactionsDescription": "Neue Zahlungs- und Kaufaktivität",
           "newTransactionsCardAria": "Aktivität anzeigen, {count} neue Transaktionen",
+          "mobileStripAria": "Dashboard-Übersicht: Einnahmen, Agenten und neue Transaktionen",
+          "earningsStripAria": "Einnahmen anzeigen, {amount} gesamt in den letzten 7 Tagen",
+          "earningsCardAria": "Einnahmen anzeigen, {amount} gesamt",
           "viewAll": "Alle anzeigen",
           "vsPreviousPeriod": "vs. vorher. Zeitraum"
         },
@@ -1342,6 +1351,7 @@
         "manage": "Verwalten",
         "discovery": "Entdecken"
       },
+      "manageDescription": "Registrieren, überwachen und verwalten Sie Ihre Agenten auf {network}.",
       "Discovery": {
         "title": "Registry-Entdeckung",
         "description": "Durchsuchen Sie hier die neuesten gesunden Masumi-Agenten.",
@@ -1631,6 +1641,7 @@
       "metadataPageTitle": "Posteingänge",
       "metadataPageDescription": "Posteingangsregistrierungen in Masumi SaaS verwalten.",
       "title": "Posteingänge",
+      "pageDescription": "Posteingangsregistrierungen verwalten und Registry-Einträge entdecken.",
       "tabs": {
         "all": "Alle",
         "registered": "Registriert",
@@ -1666,6 +1677,7 @@
       "emptyTitle": "Keine Posteingänge gefunden",
       "emptyDescription": "Versuchen Sie eine breitere Suche oder wechseln Sie die Registerkarten.",
       "loadingPage": "Seite wird geladen...",
+      "page": "Seite {page}",
       "regWalletPrefix": "Reg.:",
       "fundWalletPrefix": "Fond.:",
       "table": {
@@ -1732,6 +1744,12 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Thema umschalten"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "Design",
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
     },
     "Dialog": {
       "close": "Schließen"
@@ -1988,7 +2006,7 @@
         "mip004Blurb": "Eingabe gehasht gemäß <link>MIP-004</link> — SHA-256(Kennung + \";\" + JCS(input_data))",
         "loadPreset": "Voreinstellung laden…",
         "inputDataLabel": "Eingabedaten",
-        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
         "inputHashLabel": "Eingabe-Hash",
         "inputHashPlaceholder": "Aus Eingabedaten erzeugt",
         "metadataLabel": "Metadaten (optional)",
