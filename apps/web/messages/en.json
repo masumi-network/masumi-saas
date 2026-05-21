@@ -1638,7 +1638,6 @@
       "metadataPageTitle": "Inboxes",
       "metadataPageDescription": "Manage inbox registrations in Masumi SaaS.",
       "title": "Inboxes",
-      "pageDescription": "Manage inbox registrations and discover registry listings.",
       "tabs": {
         "all": "All",
         "registered": "Registered",

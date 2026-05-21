@@ -1638,7 +1638,6 @@
       "metadataPageTitle": "受信箱",
       "metadataPageDescription": "Masumi SaaS で受信箱登録を管理します。",
       "title": "受信箱",
-      "pageDescription": "受信箱登録を管理し、レジストリの一覧を探索します。",
       "tabs": {
         "all": "すべて",
         "registered": "登録済み",

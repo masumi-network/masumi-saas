@@ -1638,7 +1638,6 @@
       "metadataPageTitle": "Bandejas de entrada",
       "metadataPageDescription": "Gestiona los registros de bandejas de entrada en Masumi SaaS.",
       "title": "Bandejas de entrada",
-      "pageDescription": "Administra registros de bandejas de entrada y descubre listados del registro.",
       "tabs": {
         "all": "Todos",
         "registered": "Registrados",
