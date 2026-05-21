@@ -431,7 +431,6 @@
           "totalTransactionsDescription": "エージェント間での支払いと購入",
           "activitySummaryCardAria": "アクティビティ、{count} トランザクションを表示",
           "newTransactions": "新規取引",
-          "newTransactionsMobile": "取引",
           "newTransactionsDescription": "新しい支払いと購入アクティビティ",
           "newTransactionsCardAria": "アクティビティを表示、{count} 新しいトランザクション",
           "mobileStripAria": "ダッシュボード概要：収益、エージェント、新しいトランザクション",

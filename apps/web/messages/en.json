@@ -431,7 +431,6 @@
           "totalTransactionsDescription": "Payments and purchases across agents",
           "activitySummaryCardAria": "View activity, {count} transactions",
           "newTransactions": "New transactions",
-          "newTransactionsMobile": "Transactions",
           "newTransactionsDescription": "New payment and purchase activity",
           "newTransactionsCardAria": "View activity, {count} new transactions",
           "mobileStripAria": "Dashboard summary: earnings, agents, and new transactions",

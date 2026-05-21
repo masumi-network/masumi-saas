@@ -431,7 +431,6 @@
           "totalTransactionsDescription": "Zahlungen und Käufe zwischen Agenten",
           "activitySummaryCardAria": "Aktivität anzeigen, {count} Transaktionen",
           "newTransactions": "Neue Transaktionen",
-          "newTransactionsMobile": "Transaktionen",
           "newTransactionsDescription": "Neue Zahlungs- und Kaufaktivität",
           "newTransactionsCardAria": "Aktivität anzeigen, {count} neue Transaktionen",
           "mobileStripAria": "Dashboard-Übersicht: Einnahmen, Agenten und neue Transaktionen",

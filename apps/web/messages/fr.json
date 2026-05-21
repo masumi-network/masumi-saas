@@ -431,7 +431,6 @@
           "totalTransactionsDescription": "Paiements et achats entre agents",
           "activitySummaryCardAria": "Afficher l'activité, {count} transactions",
           "newTransactions": "Nouvelles transactions",
-          "newTransactionsMobile": "Transactions",
           "newTransactionsDescription": "Nouvelle activité de paiement et d’achat",
           "newTransactionsCardAria": "Afficher l'activité, {count} nouvelles transactions",
           "mobileStripAria": "Résumé du tableau de bord : revenus, agents et nouvelles transactions",

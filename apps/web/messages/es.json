@@ -431,7 +431,6 @@
           "totalTransactionsDescription": "Pagos y compras entre agentes",
           "activitySummaryCardAria": "Ver actividad, transacciones {count}",
           "newTransactions": "Nuevas transacciones",
-          "newTransactionsMobile": "Transacciones",
           "newTransactionsDescription": "Nueva actividad de pago y compra.",
           "newTransactionsCardAria": "Ver actividad, {count} nuevas transacciones",
           "mobileStripAria": "Resumen del panel: ingresos, agentes y nuevas transacciones",
