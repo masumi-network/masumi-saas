@@ -5,6 +5,8 @@
 
 import { useEffect, useState } from "react";
 
+import { resolveAppliedTheme, resolveThemePreference } from "@/lib/theme";
+
 interface GlobalErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
@@ -37,7 +39,7 @@ function isSelectiveHydrationLeak(error: Error): boolean {
   );
 }
 
-type Theme = "light" | "dark";
+type AppliedTheme = "light" | "dark";
 
 const DARK_PALETTE = {
   bg: "#0a0a0a",
@@ -63,21 +65,15 @@ const LIGHT_PALETTE = {
   btnHoverBg: "#f4f4f5",
 };
 
-function resolveInitialTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+function resolveInitialTheme(): AppliedTheme {
+  if (typeof window === "undefined") return "light";
+  let stored: string | null = null;
   try {
-    const stored = window.localStorage.getItem("theme");
-    if (stored === "light" || stored === "dark") return stored;
+    stored = window.localStorage.getItem("theme");
   } catch {
-    // localStorage may be blocked — fall through to media query
+    // localStorage may be blocked — fall through to system resolution
   }
-  try {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  } catch {
-    return "dark";
-  }
+  return resolveAppliedTheme(resolveThemePreference(stored));
 }
 
 const FADE_IN_KEYFRAMES =
@@ -85,7 +81,7 @@ const FADE_IN_KEYFRAMES =
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
   const [autoResetAttempted, setAutoResetAttempted] = useState(false);
-  const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme());
+  const [theme, setTheme] = useState<AppliedTheme>(() => resolveInitialTheme());
 
   useEffect(() => {
     if (isSelectiveHydrationLeak(error) && !autoResetAttempted) {

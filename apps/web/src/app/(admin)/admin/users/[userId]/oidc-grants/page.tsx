@@ -5,7 +5,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
 import { OidcPermissionCheckboxGroups } from "@/components/oidc/oidc-permission-checkbox-groups";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,27 +167,31 @@ export default async function AdminOidcGrantsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
+    <AppPage>
+      <PageHeader
+        title={t("title")}
+        description={
+          <>
+            {t("description")}
+            <span className="mt-2 block text-sm text-muted-foreground">
+              {user.name} {USER_IDENTITY_SEPARATOR} {user.email}
+            </span>
+          </>
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{t("badge")}</Badge>
             {user.emailVerified ? (
               <Badge variant="default">{t("verified")}</Badge>
             ) : (
               <Badge variant="outline">{t("unverified")}</Badge>
             )}
+            <Button asChild variant="outline">
+              <Link href="/admin/users">{t("backToUsers")}</Link>
+            </Button>
           </div>
-          <h1 className="text-3xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground">{t("description")}</p>
-          <p className="text-sm text-muted-foreground">
-            {user.name} {USER_IDENTITY_SEPARATOR} {user.email}
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/users">{t("backToUsers")}</Link>
-        </Button>
-      </div>
+        }
+      />
 
       {resolvedSearchParams.saved === "1" ? (
         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
@@ -268,6 +274,6 @@ export default async function AdminOidcGrantsPage({
           );
         })}
       </div>
-    </div>
+    </AppPage>
   );
 }

@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAdminAuthContext } from "@/lib/auth/utils";
 
@@ -46,11 +48,8 @@ export default async function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-page-in">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("description")}</p>
-      </div>
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
 
       {hasError ? (
         <Card className="border-destructive">
@@ -61,7 +60,7 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card
             className="animate-list-item-in transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             style={{ animationDelay: "0ms" }}
@@ -73,7 +72,9 @@ export default async function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsers}</div>
+              <div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">
+                {totalUsers}
+              </div>
             </CardContent>
           </Card>
 
@@ -88,7 +89,9 @@ export default async function AdminDashboardPage() {
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{verifiedUsers}</div>
+              <div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">
+                {verifiedUsers}
+              </div>
             </CardContent>
           </Card>
 
@@ -103,7 +106,9 @@ export default async function AdminDashboardPage() {
               <Bot className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalAgents}</div>
+              <div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">
+                {totalAgents}
+              </div>
             </CardContent>
           </Card>
 
@@ -118,11 +123,13 @@ export default async function AdminDashboardPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingKyc}</div>
+              <div className="font-mono text-2xl font-semibold tabular-nums tracking-tight">
+                {pendingKyc}
+              </div>
             </CardContent>
           </Card>
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }

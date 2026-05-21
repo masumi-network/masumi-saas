@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { AuthPageHeader } from "@/components/auth-page-header";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -76,15 +77,8 @@ export default function AdminSignInForm() {
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-light tracking-tight mb-4">
-          {t("title")}
-        </h1>
-        <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          {t("description")}
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-page-in">
+      <AuthPageHeader title={t("title")} description={t("description")} />
 
       <Form {...form}>
         <form

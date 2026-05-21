@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AuthPageHeader } from "@/components/auth-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -61,15 +62,13 @@ export default function TwoFactorForm() {
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-light tracking-tight mb-4">
-          {t("title")}
-        </h1>
-        <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          {useBackupCode ? t("backupCodeDescription") : t("description")}
-        </p>
-      </div>
+    <div className="w-full space-y-6">
+      <AuthPageHeader
+        title={t("title")}
+        description={
+          useBackupCode ? t("backupCodeDescription") : t("description")
+        }
+      />
 
       <form
         onSubmit={onSubmit}

@@ -4,7 +4,7 @@ import { Header } from "@/components/header";
 
 export const dynamic = "force-dynamic";
 
-export default function OidcLayout({
+export default function DeviceLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ export default function OidcLayout({
   return (
     <div className="relative min-h-screen bg-app-canvas text-foreground">
       <div
-        className="absolute inset-0 opacity-40 animate-grid-glide pointer-events-none"
+        className="pointer-events-none absolute inset-0 animate-grid-glide opacity-40"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
