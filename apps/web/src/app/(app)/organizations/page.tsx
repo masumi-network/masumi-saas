@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { getOrganizationsAction } from "@/lib/actions/organization.action";
 
 import { CreateOrganizationDialog } from "./components/create-organization-dialog";
@@ -20,17 +22,15 @@ export default async function OrganizationsPage() {
   const organizations = result.success ? result.data : [];
 
   return (
-    <div className="space-y-8 animate-page-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
-        {organizations.length > 0 && <CreateOrganizationDialog />}
-      </div>
+    <AppPage>
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          organizations.length > 0 ? <CreateOrganizationDialog /> : undefined
+        }
+      />
       <OrganizationsContent organizations={organizations} />
-    </div>
+    </AppPage>
   );
 }

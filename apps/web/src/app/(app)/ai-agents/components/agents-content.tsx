@@ -316,14 +316,7 @@ export function AgentsContent() {
 
   return (
     <>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
-      </div>
-
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-4">
         <Tabs
           tabs={sections}
           activeTab={activeSection}
@@ -331,17 +324,17 @@ export function AgentsContent() {
         />
 
         {activeSection === "manage" ? (
-          <>
+          <div className="space-y-4 rounded-2xl border border-border/80 bg-background/95 p-4 sm:p-6">
             <Tabs
               tabs={tabs}
               activeTab={activeTab}
               onTabChange={handleTabChange}
             />
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div
                 onClick={() => searchInputRef.current?.focus()}
-                className="relative flex w-64 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
               >
                 <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <Input
@@ -360,7 +353,7 @@ export function AgentsContent() {
                   </kbd>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ml-auto flex shrink-0 items-center gap-2">
                 <RefreshButton
                   onRefresh={() => {
                     startTransition(async () => {
@@ -393,18 +386,41 @@ export function AgentsContent() {
 
             {isLoading ? (
               <AgentsTableSkeleton />
+            ) : agents.length === 0 ? (
+              <div className="rounded-xl border border-dashed px-6 py-14 text-center">
+                <div className="mx-auto max-w-md space-y-3">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <Bot className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-base font-medium">
+                    {debouncedSearch
+                      ? t("noAgentsMatchingSearch")
+                      : activeTab === "registered"
+                        ? t("noRegisteredAgents")
+                        : activeTab === "pending"
+                          ? t("noPendingAgents")
+                          : activeTab === "failed"
+                            ? t("noFailedAgents")
+                            : activeTab === "verified"
+                              ? t("noVerifiedAgents")
+                              : t("noAgents")}
+                  </p>
+                </div>
+              </div>
             ) : (
               <>
-                <AgentsTable
-                  agents={agents}
-                  onAgentClick={(agent) => {
-                    router.push(`/ai-agents/${agent.id}`);
-                  }}
-                  onDeleteSuccess={handleDeleteSuccess}
-                />
+                <div className="rounded-xl border border-border/80">
+                  <AgentsTable
+                    agents={agents}
+                    onAgentClick={(agent) => {
+                      router.push(`/ai-agents/${agent.id}`);
+                    }}
+                    onDeleteSuccess={handleDeleteSuccess}
+                  />
+                </div>
 
-                {nextCursor && (
-                  <div className="flex justify-center mb-10">
+                {nextCursor ? (
+                  <div className="flex justify-center">
                     <Button
                       variant="outline"
                       size="sm"
@@ -414,31 +430,10 @@ export function AgentsContent() {
                       {isLoadingMore ? <Spinner size={14} /> : t("loadMore")}
                     </Button>
                   </div>
-                )}
-
-                {agents.length === 0 && (
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 py-12 px-4 text-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                      <Bot className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      {debouncedSearch
-                        ? t("noAgentsMatchingSearch")
-                        : activeTab === "registered"
-                          ? t("noRegisteredAgents")
-                          : activeTab === "pending"
-                            ? t("noPendingAgents")
-                            : activeTab === "failed"
-                              ? t("noFailedAgents")
-                              : activeTab === "verified"
-                                ? t("noVerifiedAgents")
-                                : t("noAgents")}
-                    </p>
-                  </div>
-                )}
+                ) : null}
               </>
             )}
-          </>
+          </div>
         ) : (
           <AgentsDiscovery />
         )}

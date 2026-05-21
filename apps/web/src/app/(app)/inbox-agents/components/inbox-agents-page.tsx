@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -709,24 +710,22 @@ export function InboxAgentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {activeSection === "manage"
-              ? t("manageDescription", { network: network })
-              : t("discoveryDescription", { network: network })}
-          </p>
-        </div>
-        {activeSection === "manage" && (
-          <RefreshButton
-            onRefresh={() => void loadFirstPage()}
-            isRefreshing={state.isLoading || state.isPageLoading}
-          />
-        )}
-      </div>
+      <PageHeader
+        title={t("title")}
+        description={
+          activeSection === "manage"
+            ? t("manageDescription", { network: network })
+            : t("discoveryDescription", { network: network })
+        }
+        actions={
+          activeSection === "manage" ? (
+            <RefreshButton
+              onRefresh={() => void loadFirstPage()}
+              isRefreshing={state.isLoading || state.isPageLoading}
+            />
+          ) : undefined
+        }
+      />
 
       <div className="space-y-4">
         <Tabs
@@ -751,14 +750,14 @@ export function InboxAgentsPage() {
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by name, slug, identifier, wallet, or state..."
+                  placeholder={t("searchPlaceholder")}
                   className="pl-10"
                 />
               </div>
               <div className="text-sm text-muted-foreground">
                 {state.isPageLoading
                   ? t("loadingPage")
-                  : `Page ${state.currentPage}`}
+                  : t("page", { page: state.currentPage })}
               </div>
             </div>
 

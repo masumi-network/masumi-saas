@@ -1,7 +1,13 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Activity, ChevronRight, ExternalLink, Search } from "lucide-react";
+import {
+  Activity,
+  Bot,
+  ChevronRight,
+  ExternalLink,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
@@ -13,19 +19,16 @@ import {
   useState,
 } from "react";
 
+import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { SectionPanel } from "@/components/section-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -355,7 +358,7 @@ function RegistryEntryDetailsDialog({
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <DialogBody className="px-6 py-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <DiscoveryDetailItem label={t("table.apiUrl")} fullWidth>
               <div className="flex flex-wrap items-center gap-2">
@@ -436,7 +439,7 @@ function RegistryEntryDetailsDialog({
               )}
             </DiscoveryDetailItem>
           </div>
-        </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );
@@ -870,123 +873,104 @@ export function AgentsDiscovery() {
     : getKnownTotalPages(registryState);
 
   return (
-    <Card className="overflow-hidden gap-0 py-0">
-      <CardHeader className="border-b border-border/60 bg-masumi-gradient rounded-t-xl pt-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <CardTitle className="text-base font-semibold">
-              {t("Discovery.title")}
-            </CardTitle>
-            <CardDescription className="max-w-3xl leading-6">
-              {t("Discovery.description")}
-            </CardDescription>
-          </div>
-          <Badge variant="outline-muted" className="whitespace-nowrap">
+    <SectionPanel>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <Badge variant="success">{t("Discovery.onlineOnly")}</Badge>
+          <span className="text-sm text-muted-foreground">
+            {t("Discovery.sortHint")}
+          </span>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
             {network}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="success">{t("Discovery.onlineOnly")}</Badge>
-            <span className="text-sm text-muted-foreground">
-              {t("Discovery.agentsDescription")}
-            </span>
-          </div>
-          <div className="text-sm text-muted-foreground">
+          </span>
+          <span className="text-sm text-muted-foreground">
             {t("Discovery.page", { page: activeCurrentPage })}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div
-            onClick={() => searchInputRef.current?.focus()}
-            className="relative flex w-full max-w-xl cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-          >
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder={t("Discovery.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
-            />
-            {!isSearchFocused && (
-              <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
-                {t("searchShortcut")}
-              </kbd>
-            )}
-          </div>
-
+          </span>
           <RefreshButton
             onRefresh={handleRefresh}
             size="md"
             isRefreshing={isRefreshing}
           />
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-          <div>{summaryLabel}</div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div
+          onClick={() => searchInputRef.current?.focus()}
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            type="search"
+            placeholder={t("Discovery.searchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+          />
+          {!isSearchFocused && (
+            <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
+              {t("searchShortcut")}
+            </kbd>
+          )}
         </div>
+        <p className="shrink-0 text-sm text-muted-foreground">{summaryLabel}</p>
+      </div>
 
-        {activeError && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {activeError}
-          </div>
-        )}
+      {activeError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {activeError}
+        </div>
+      )}
 
-        {!hasActiveSearch && registryState.isLoading ? (
-          <DiscoverySkeleton />
-        ) : (
-          <>
-            {isSearchLoading && (
-              <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
-                <Spinner size={14} />
-                {t("loadingMore")}
-              </div>
-            )}
+      {!hasActiveSearch && registryState.isLoading ? (
+        <DiscoverySkeleton />
+      ) : (
+        <>
+          {isSearchLoading && (
+            <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
+              <Spinner size={14} />
+              {t("loadingMore")}
+            </div>
+          )}
 
-            {visibleRegistryEntries.length > 0 ? (
-              <div className="space-y-3">
-                {visibleRegistryEntries.map((entry) => (
-                  <RegistryAgentListItem
-                    key={entry.id}
-                    entry={entry}
-                    onViewDetails={() => setSelectedRegistryEntry(entry)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 px-4 py-12 text-center">
-                <p className="text-muted-foreground text-sm">{emptyLabel}</p>
-              </div>
-            )}
+          {visibleRegistryEntries.length > 0 ? (
+            <div className="space-y-3">
+              {visibleRegistryEntries.map((entry) => (
+                <RegistryAgentListItem
+                  key={entry.id}
+                  entry={entry}
+                  onViewDetails={() => setSelectedRegistryEntry(entry)}
+                />
+              ))}
+            </div>
+          ) : (
+            <DiscoveryEmptyState icon={Bot} message={emptyLabel} />
+          )}
 
-            <DiscoveryPaginationBar
-              currentPage={activeCurrentPage}
-              totalPages={activeTotalPages}
-              isLoading={isSearchLoading}
-              onPageChange={(page) => {
-                void loadRegistryPage(page);
-              }}
-              labels={paginationLabels}
-            />
+          <DiscoveryPaginationBar
+            currentPage={activeCurrentPage}
+            totalPages={activeTotalPages}
+            isLoading={isSearchLoading}
+            onPageChange={(page) => {
+              void loadRegistryPage(page);
+            }}
+            labels={paginationLabels}
+          />
 
-            <RegistryEntryDetailsDialog
-              entry={selectedRegistryEntry}
-              open={selectedRegistryEntry !== null}
-              onOpenChange={(open) => {
-                if (!open) setSelectedRegistryEntry(null);
-              }}
-            />
-          </>
-        )}
-      </CardContent>
-    </Card>
+          <RegistryEntryDetailsDialog
+            entry={selectedRegistryEntry}
+            open={selectedRegistryEntry !== null}
+            onOpenChange={(open) => {
+              if (!open) setSelectedRegistryEntry(null);
+            }}
+          />
+        </>
+      )}
+    </SectionPanel>
   );
 }

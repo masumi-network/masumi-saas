@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -54,7 +55,7 @@ export function DeleteAgentDialog({
             <DialogTitle>{t("deleteConfirmTitle")}</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+        <DialogBody stagger={false} className="flex flex-col gap-4 space-y-0">
           <DialogDescription className="text-muted-foreground text-sm">
             {t("deleteConfirmDescription", { name: agentName })}
           </DialogDescription>
@@ -76,7 +77,7 @@ export function DeleteAgentDialog({
               autoComplete="off"
             />
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-4">
           <Button
             variant="outline"

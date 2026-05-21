@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -552,7 +553,7 @@ export function RegisterAgentDialog({
               className="flex flex-1 flex-col min-h-0 overflow-hidden"
               onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             >
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              <DialogBody className="space-y-8">
                 {/* Icon section */}
                 <FormField
                   control={form.control}
@@ -907,7 +908,7 @@ export function RegisterAgentDialog({
                     t={t}
                   />
                 </div>
-              </div>
+              </DialogBody>
 
               <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
                 <Button

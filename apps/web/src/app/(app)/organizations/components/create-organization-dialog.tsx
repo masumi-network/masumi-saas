@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -188,7 +189,7 @@ export function CreateOrganizationDialog({
           onSubmit={handleSubmit}
           className="flex flex-1 flex-col min-h-0 overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <DialogBody stagger={false}>
             <p className="text-muted-foreground text-sm">{t("description")}</p>
 
             {error && (
@@ -235,7 +236,7 @@ export function CreateOrganizationDialog({
                 <p className="text-destructive text-sm">{slugError}</p>
               )}
             </div>
-          </div>
+          </DialogBody>
 
           <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
             <Button

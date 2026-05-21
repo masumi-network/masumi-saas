@@ -125,7 +125,7 @@ export function AgentsTable({
 
   return (
     <>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

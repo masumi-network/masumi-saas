@@ -64,7 +64,7 @@ export function AgentPageHeader({
           className="size-8 shrink-0"
         />
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <h1 className="min-w-0 truncate text-2xl font-light tracking-tight">
+          <h1 className="min-w-0 truncate text-page-title font-semibold tracking-tight">
             {agent.name}
           </h1>
           {agent.verificationStatus === "VERIFIED" ? (

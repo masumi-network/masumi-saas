@@ -20,6 +20,7 @@ import { CodeEditor } from "@/components/ui/code-editor";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -592,7 +593,7 @@ export function RequestVerificationDialog({
           </DialogHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <DialogBody className="space-y-6">
           <Steps currentStep={step + 1} steps={steps} className="mb-4" />
           <p className="text-sm text-muted-foreground mb-6">
             {steps[step]?.description}
@@ -1127,7 +1128,7 @@ export function RequestVerificationDialog({
                 </div>
               ))}
           </div>
-        </div>
+        </DialogBody>
 
         <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
           <Button variant="ghost" size="sm" asChild>
