@@ -282,4 +282,72 @@ describe("Langdock MIP runtime", () => {
       /^[0-9a-f]{64}$/,
     );
   });
+
+  it("does not complete paid jobs when result submission cannot be authenticated", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue(null);
+    const inputSchema = getLangdockHitlInputSchema();
+    mipJobFindFirstMock.mockResolvedValue({
+      id: "job-1",
+      agentId: "agent-1",
+      status: "AWAITING_INPUT",
+      identifierFromPurchaser: "buyer-1",
+      inputSchema,
+      conversation: [
+        { role: "user", content: "Initial prompt" },
+        { role: "assistant", content: "First answer" },
+      ],
+      blockchainIdentifier: "chain-1",
+      agent: runtimeAgent(),
+    });
+
+    const result = await provideLangdockJobInput("agent-1", {
+      job_id: "job-1",
+      input_schema_hash: hashInputSchema(inputSchema),
+      input_data: { message: "finish" },
+    });
+
+    expect(result).toStrictEqual({
+      status: 503,
+      body: { error: "Payment node unavailable" },
+    });
+    expect(mipJobUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it("does not complete paid jobs when payment result submission fails", async () => {
+    const paymentClient = {
+      submitPaymentResult: vi.fn().mockRejectedValue(new Error("node down")),
+    };
+    getPaymentNodeClientForUserMock.mockResolvedValue(paymentClient);
+    const inputSchema = getLangdockHitlInputSchema();
+    mipJobFindFirstMock.mockResolvedValue({
+      id: "job-1",
+      agentId: "agent-1",
+      status: "AWAITING_INPUT",
+      identifierFromPurchaser: "buyer-1",
+      inputSchema,
+      conversation: [
+        { role: "user", content: "Initial prompt" },
+        { role: "assistant", content: "First answer" },
+      ],
+      blockchainIdentifier: "chain-1",
+      agent: runtimeAgent(),
+    });
+
+    const result = await provideLangdockJobInput("agent-1", {
+      job_id: "job-1",
+      input_schema_hash: hashInputSchema(inputSchema),
+      input_data: { message: "finish" },
+    });
+
+    expect(paymentClient.submitPaymentResult).toHaveBeenCalledWith({
+      network: "Preprod",
+      blockchainIdentifier: "chain-1",
+      submitResultHash: expect.any(String),
+    });
+    expect(result).toStrictEqual({
+      status: 502,
+      body: { error: "Failed to submit payment result" },
+    });
+    expect(mipJobUpdateMock).not.toHaveBeenCalled();
+  });
 });

@@ -492,13 +492,31 @@ export async function provideLangdockJobInput(agentId: string, body: unknown) {
       finalResult,
       job.identifierFromPurchaser || job.id,
     );
-    const client = await getPaymentNodeClientForUser(agent.userId);
-    if (job.blockchainIdentifier && client) {
-      await client.submitPaymentResult({
-        network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
-        blockchainIdentifier: job.blockchainIdentifier,
-        submitResultHash: outputHash,
-      });
+    if (job.blockchainIdentifier) {
+      const client = await getPaymentNodeClientForUser(agent.userId);
+      if (!client) {
+        return {
+          status: 503 as const,
+          body: { error: "Payment node unavailable" },
+        };
+      }
+      try {
+        await client.submitPaymentResult({
+          network:
+            agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+          blockchainIdentifier: job.blockchainIdentifier,
+          submitResultHash: outputHash,
+        });
+      } catch (error) {
+        console.error("[Langdock Runtime] Failed to submit payment result:", {
+          jobId: job.id,
+          error,
+        });
+        return {
+          status: 502 as const,
+          body: { error: "Failed to submit payment result" },
+        };
+      }
     }
     await prisma.mipJob.update({
       where: { id: job.id },
