@@ -18,10 +18,10 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-20 h-16 border-b border-border bg-background/80 backdrop-blur-md ${className || ""}`}
+      className={`sticky top-0 z-20 h-14 shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-lg sm:h-16 ${className || ""}`}
     >
-      <div className="max-w-container mx-auto w-full h-full">
-        <div className="h-full px-4 flex items-center justify-between gap-4">
+      <div className="mx-auto h-full w-full max-w-container">
+        <div className="flex h-full items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <div className="flex flex-1 items-center gap-2 md:min-w-0">
             <div className="md:hidden flex items-center gap-2 shrink-0">
               <Button
@@ -39,7 +39,7 @@ export default function AdminHeader({ className }: AdminHeaderProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span className="hidden md:inline-block px-2 py-1 rounded-md bg-primary/10 text-primary">
+            <span className="hidden rounded-lg bg-primary/10 px-2.5 py-1 text-primary md:inline-block">
               {t("portalTitle")}
             </span>
           </div>

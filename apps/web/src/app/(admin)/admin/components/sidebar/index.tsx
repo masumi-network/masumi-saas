@@ -41,7 +41,7 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
             <>
               <SheetClose asChild>
                 <Link href="/admin" className="flex items-center shrink-0">
-                  <MasumiLogo />
+                  <MasumiLogo showKanji />
                 </Link>
               </SheetClose>
               <Button
@@ -58,7 +58,7 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
               <SheetClose asChild>
                 <Link href="/admin">
                   <span className="group-data-[collapsible=icon]:hidden">
-                    <MasumiLogo />
+                    <MasumiLogo showKanji />
                   </span>
                   <MasumiIcon className="hidden size-6 group-data-[collapsible=icon]:block" />
                 </Link>

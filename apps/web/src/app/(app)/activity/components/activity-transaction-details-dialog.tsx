@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -158,7 +159,7 @@ export function ActivityTransactionDetailsDialog({
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-4">
+        <DialogBody className="space-y-5 px-6 py-4">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -453,7 +454,7 @@ export function ActivityTransactionDetailsDialog({
               ) : null}
             </>
           ) : null}
-        </div>
+        </DialogBody>
 
         <DialogFooter className="shrink-0 flex-col gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-between">
           {primaryAgentHref ? (

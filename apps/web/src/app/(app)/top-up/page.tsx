@@ -10,6 +10,8 @@ import {
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,19 +49,17 @@ export default async function TopUpPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-page-in">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <Badge variant="outline-muted">
+    <AppPage>
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Badge variant="outline-muted" className="shrink-0">
             <Clock3 className="mr-1 h-3 w-3" />
             {t("status")}
           </Badge>
-        </div>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
         <div className="space-y-6">
@@ -141,6 +141,6 @@ export default async function TopUpPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

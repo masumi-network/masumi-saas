@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -203,7 +204,7 @@ export function TestPaymentDialog({
             </DialogHeader>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+          <DialogBody>
             <p className="text-sm text-muted-foreground">{t("description")}</p>
             <PaymentFormFields
               register={register}
@@ -243,7 +244,7 @@ export function TestPaymentDialog({
                 />
               </div>
             )}
-          </div>
+          </DialogBody>
 
           <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
             <Button

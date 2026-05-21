@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -270,11 +271,11 @@ function ConnectedAppRow({ client }: { client: SerializedConnectedClient }) {
               </DialogTitle>
             </DialogHeader>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
+          <DialogBody stagger={false}>
             <DialogDescription className="text-muted-foreground text-sm">
               {t("confirmDescription", { name: client.name })}
             </DialogDescription>
-          </div>
+          </DialogBody>
           <DialogFooter className="shrink-0 flex justify-end gap-2 border-t border-border bg-background px-6 py-4">
             <Button
               type="button"

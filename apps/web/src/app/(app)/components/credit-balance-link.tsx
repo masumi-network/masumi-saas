@@ -15,7 +15,6 @@ interface CreditBalanceLinkProps {
 
 export function CreditBalanceLink({ className }: CreditBalanceLinkProps) {
   const tHeader = useTranslations("App.Header");
-  const tTopUp = useTranslations("App.TopUp");
   const { data, isPending, isError } = useCreditBalance();
 
   const formattedCredits = data
@@ -29,19 +28,22 @@ export function CreditBalanceLink({ className }: CreditBalanceLinkProps) {
       variant="outline"
       size="sm"
       asChild
-      className={cn("h-8 gap-2 px-2.5 md:h-9 md:px-3", className)}
+      className={cn(
+        "h-8 w-8 gap-0 p-0 md:h-9 md:w-auto md:gap-2 md:px-3",
+        className,
+      )}
     >
       <Link
         href="/top-up"
-        aria-label={tTopUp("title")}
+        aria-label={`${tHeader("credits")}: ${formattedCredits}`}
         title={`${tHeader("credits")}: ${formattedCredits}`}
       >
         <Coins className="h-4 w-4 shrink-0" />
         <span className="hidden lg:inline">{tHeader("credits")}</span>
-        <span className="font-mono text-xs tabular-nums">
+        <span className="hidden font-mono text-xs tabular-nums md:inline">
           {isError ? "—" : formattedCredits}
         </span>
-        <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+        <ArrowUpRight className="hidden h-3.5 w-3.5 shrink-0 opacity-70 md:inline" />
       </Link>
     </Button>
   );

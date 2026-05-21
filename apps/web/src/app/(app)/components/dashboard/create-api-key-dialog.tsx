@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -97,7 +98,7 @@ export function CreateApiKeyDialog({
                 <DialogTitle>{tDashboard("createdTitle")}</DialogTitle>
               </DialogHeader>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <DialogBody stagger={false} className="space-y-4">
               <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
                 <code className="min-w-0 flex-1 break-all font-mono text-sm">
                   {createdKey}
@@ -107,7 +108,7 @@ export function CreateApiKeyDialog({
               <p className="text-xs text-muted-foreground">
                 {tDashboard("copyWarning")}
               </p>
-            </div>
+            </DialogBody>
             <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button variant="primary" onClick={handleClose}>
                 {tDashboard("done")}
@@ -124,7 +125,7 @@ export function CreateApiKeyDialog({
                 <DialogTitle>{t("addKeyTitle")}</DialogTitle>
               </DialogHeader>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 grid gap-4">
+            <DialogBody stagger={false} className="grid gap-4 space-y-0">
               <div className="grid gap-2">
                 <Label htmlFor="api-key-name">{tDashboard("name")}</Label>
                 <Input
@@ -137,7 +138,7 @@ export function CreateApiKeyDialog({
               </div>
 
               {error && <p className="text-sm text-destructive">{error}</p>}
-            </div>
+            </DialogBody>
             <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
               <Button
                 type="button"

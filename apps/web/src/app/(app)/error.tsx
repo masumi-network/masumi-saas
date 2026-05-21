@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { ErrorBoundaryActions } from "@/components/error-boundary-actions";
+import { ErrorPageLayout } from "@/components/error-page-layout";
 import {
   Card,
   CardContent,
@@ -53,18 +54,16 @@ export default function AppGroupError({ error, reset }: ErrorBoundaryProps) {
   }
 
   return (
-    <div className="bg-background text-foreground flex min-h-svh items-center justify-center p-4">
-      <Card className="animate-in fade-in fill-mode-both delay-500 duration-150 max-w-md border-destructive">
+    <ErrorPageLayout variant="app">
+      <Card className="animate-in fade-in fill-mode-both delay-500 duration-150 w-full border-destructive shadow-md">
         <CardHeader>
           <CardTitle className="text-destructive">{t("title")}</CardTitle>
           <CardDescription>{t("descriptionApp")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={reset} variant="outline">
-            {t("retry")}
-          </Button>
+          <ErrorBoundaryActions onRetry={reset} />
         </CardContent>
       </Card>
-    </div>
+    </ErrorPageLayout>
   );
 }
