@@ -348,12 +348,18 @@ app.openapi(
           throw new ApiError(400, "Langdock API key is required.");
         }
 
+        const resolvedLangdockBaseUrl =
+          langdockBaseUrl?.trim() ||
+          (typeof connectionMetadata.baseUrl === "string"
+            ? connectionMetadata.baseUrl.trim()
+            : undefined);
+
         let langdockAgent;
         try {
           langdockAgent = await testLangdockAgent({
             apiKey: secret,
             agentId: langdockAgentId.trim(),
-            baseUrl: langdockBaseUrl?.trim() || undefined,
+            baseUrl: resolvedLangdockBaseUrl || undefined,
           });
         } catch (error) {
           throw new ApiError(
@@ -372,7 +378,7 @@ app.openapi(
             secret,
             metadata: {
               ...connectionMetadata,
-              baseUrl: langdockBaseUrl?.trim() || undefined,
+              baseUrl: resolvedLangdockBaseUrl || undefined,
               lastAgentId: langdockAgentId.trim(),
               lastCheckedAt: new Date().toISOString(),
             },
@@ -384,7 +390,7 @@ app.openapi(
         resolvedApiUrl = getPublicMipAgentBaseUrl(agentId);
         providerConfig = {
           langdockAgentId: langdockAgentId.trim(),
-          langdockBaseUrl: langdockBaseUrl?.trim() || undefined,
+          langdockBaseUrl: resolvedLangdockBaseUrl || undefined,
           inputSchema: langdockInputFieldsToMipSchema(
             langdockAgent.inputFields,
           ),

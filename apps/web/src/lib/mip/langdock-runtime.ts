@@ -374,9 +374,16 @@ export async function getLangdockJobStatus(agentId: string, query: unknown) {
   if (!parsed.success) {
     return { status: 400 as const, body: { error: "Missing job_id" } };
   }
-  await resumeLangdockJob(parsed.data.job_id);
-  const job = await prisma.mipJob.findFirst({
+  const scopedJob = await prisma.mipJob.findFirst({
     where: { id: parsed.data.job_id, agentId },
+  });
+  if (!scopedJob) {
+    return { status: 404 as const, body: { error: "Job not found" } };
+  }
+
+  await resumeLangdockJob(scopedJob.id);
+  const job = await prisma.mipJob.findFirst({
+    where: { id: scopedJob.id, agentId },
   });
   if (!job) return { status: 404 as const, body: { error: "Job not found" } };
 

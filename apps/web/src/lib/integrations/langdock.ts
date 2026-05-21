@@ -244,7 +244,7 @@ export function langdockInputFieldsToMipSchema(
     if (!raw || typeof raw !== "object") return result;
     const field = raw as Record<string, unknown>;
     const label =
-      getInputFieldString(field, ["name", "label", "title", "id"]) ??
+      getInputFieldString(field, ["name", "label", "title", "key", "id"]) ??
       `Field ${index + 1}`;
     const sourceId =
       getInputFieldString(field, ["id", "key", "name", "label"]) ??

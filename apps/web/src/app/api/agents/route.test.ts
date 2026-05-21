@@ -12,6 +12,12 @@ const consumeCreditIfRequiredMock = vi.fn();
 const shapeAgentWithMergedMetadataMock = vi.fn();
 const agentFindFirstMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
+const createIntegrationConnectionMock = vi.fn();
+const decryptIntegrationConnectionSecretMock = vi.fn();
+const getScopedIntegrationConnectionMock = vi.fn();
+const langdockInputFieldsToMipSchemaMock = vi.fn();
+const testLangdockAgentMock = vi.fn();
+const getPublicMipAgentBaseUrlMock = vi.fn();
 
 vi.mock("@masumi/database/client", () => ({
   default: {
@@ -54,6 +60,21 @@ vi.mock("@/lib/api/agent-metadata", () => ({
   shapeAgentWithMergedMetadata: shapeAgentWithMergedMetadataMock,
 }));
 
+vi.mock("@/lib/integrations/connections", () => ({
+  createIntegrationConnection: createIntegrationConnectionMock,
+  decryptIntegrationConnectionSecret: decryptIntegrationConnectionSecretMock,
+  getScopedIntegrationConnection: getScopedIntegrationConnectionMock,
+}));
+
+vi.mock("@/lib/integrations/langdock", () => ({
+  langdockInputFieldsToMipSchema: langdockInputFieldsToMipSchemaMock,
+  testLangdockAgent: testLangdockAgentMock,
+}));
+
+vi.mock("@/lib/mip/public-url", () => ({
+  getPublicMipAgentBaseUrl: getPublicMipAgentBaseUrlMock,
+}));
+
 vi.mock("@/lib/schemas", () => ({
   parseNetwork: (value?: string) =>
     value === "Mainnet" ? "Mainnet" : "Preprod",
@@ -66,7 +87,12 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       name: z.string().min(1),
       description: z.string().optional().or(z.literal("")),
       extendedDescription: z.string().optional().or(z.literal("")),
-      apiUrl: z.string().url(),
+      apiUrl: z.string().url().optional(),
+      runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
+      integrationConnectionId: z.string().optional(),
+      langdockApiKey: z.string().optional(),
+      langdockAgentId: z.string().optional(),
+      langdockBaseUrl: z.string().url().optional().or(z.literal("")),
       tags: z.string().min(1),
       icon: z.string().optional().or(z.literal("")),
       pricing: z.any().optional(),
@@ -150,6 +176,24 @@ describe("/api/agents POST", () => {
       success: true,
       agentId: "agent-1",
     });
+    createIntegrationConnectionMock.mockResolvedValue({
+      id: "connection-1",
+      provider: "LANGDOCK",
+    });
+    decryptIntegrationConnectionSecretMock.mockResolvedValue("saved-ld-key");
+    getScopedIntegrationConnectionMock.mockResolvedValue(null);
+    langdockInputFieldsToMipSchemaMock.mockReturnValue({
+      input_data: [{ id: "text", type: "textarea", name: "Prompt" }],
+    });
+    testLangdockAgentMock.mockResolvedValue({
+      id: "ld-agent-1",
+      name: "Langdock research bot",
+      description: "Answers research questions",
+      inputFields: [{ id: "text", type: "text" }],
+    });
+    getPublicMipAgentBaseUrlMock.mockImplementation(
+      (agentId: string) => `https://saas.example.com/mip/agents/${agentId}`,
+    );
     listWalletOwnedAgentsForUserMock.mockResolvedValue([]);
     agentFindFirstMock.mockResolvedValue({
       ...agentResponseShape,
@@ -186,6 +230,7 @@ describe("/api/agents POST", () => {
         apiUrl: "https://agent.example.com/mip",
         network: "Preprod",
         authMethod: "session",
+        runtimeProvider: "DIRECT_MIP",
       },
     });
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
@@ -350,6 +395,160 @@ describe("/api/agents POST", () => {
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
     const params = startAgentRegistrationMock.mock.calls[0]?.[1];
     expect(params.agentPricing).toEqual({ pricingType: "Dynamic" });
+  });
+
+  it("requires apiUrl for direct MIP registrations before consuming credits", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runtimeProvider: "DIRECT_MIP",
+          name: "Research assistant",
+          description: "Helps with literature review",
+          tags: "research, nlp",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("validates a new Langdock connection and registers a generated MIP runtime URL", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runtimeProvider: "LANGDOCK",
+          name: "Research assistant",
+          description: "Helps with literature review",
+          tags: "research, nlp",
+          langdockApiKey: "ld_test",
+          langdockAgentId: "ld-agent-1",
+          langdockBaseUrl: "https://langdock.example.com/api",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(testLangdockAgentMock).toHaveBeenCalledWith({
+      apiKey: "ld_test",
+      agentId: "ld-agent-1",
+      baseUrl: "https://langdock.example.com/api",
+    });
+    expect(createIntegrationConnectionMock).toHaveBeenCalledWith({
+      scope: { userId: "user-1", organizationId: null },
+      provider: "LANGDOCK",
+      name: "Langdock",
+      secret: "ld_test",
+      metadata: expect.objectContaining({
+        baseUrl: "https://langdock.example.com/api",
+        lastAgentId: "ld-agent-1",
+      }),
+    });
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(getPublicMipAgentBaseUrlMock).toHaveBeenCalledWith(params.id);
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          apiUrl: `https://saas.example.com/mip/agents/${params.id}`,
+          runtimeProvider: "LANGDOCK",
+        }),
+      }),
+    );
+    expect(params).toMatchObject({
+      apiUrl: `https://saas.example.com/mip/agents/${params.id}`,
+      runtimeProvider: "LANGDOCK",
+      integrationConnectionId: "connection-1",
+      providerConfig: {
+        langdockAgentId: "ld-agent-1",
+        langdockBaseUrl: "https://langdock.example.com/api",
+        inputSchema: {
+          input_data: [{ id: "text", type: "textarea", name: "Prompt" }],
+        },
+        hitl: true,
+      },
+    });
+  });
+
+  it("uses saved Langdock connection credentials and base URL metadata", async () => {
+    getScopedIntegrationConnectionMock.mockResolvedValue({
+      id: "connection-1",
+      provider: "LANGDOCK",
+      encryptedSecret: "encrypted",
+      metadata: { baseUrl: "https://saved.langdock.example.com" },
+    });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runtimeProvider: "LANGDOCK",
+          name: "Research assistant",
+          description: "Helps with literature review",
+          tags: "research, nlp",
+          integrationConnectionId: "connection-1",
+          langdockAgentId: "ld-agent-1",
+          langdockBaseUrl: "",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(decryptIntegrationConnectionSecretMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "connection-1" }),
+    );
+    expect(createIntegrationConnectionMock).not.toHaveBeenCalled();
+    expect(testLangdockAgentMock).toHaveBeenCalledWith({
+      apiKey: "saved-ld-key",
+      agentId: "ld-agent-1",
+      baseUrl: "https://saved.langdock.example.com",
+    });
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(params.integrationConnectionId).toBe("connection-1");
+    expect(params.providerConfig.langdockBaseUrl).toBe(
+      "https://saved.langdock.example.com",
+    );
+  });
+
+  it("does not consume credits when Langdock validation fails", async () => {
+    testLangdockAgentMock.mockRejectedValueOnce(new Error("bad Langdock key"));
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runtimeProvider: "LANGDOCK",
+          name: "Research assistant",
+          description: "Helps with literature review",
+          tags: "research, nlp",
+          langdockApiKey: "bad",
+          langdockAgentId: "ld-agent-1",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(createIntegrationConnectionMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
   });
 
   it("does not consume credits when validation fails locally", async () => {

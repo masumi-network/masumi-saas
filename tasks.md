@@ -4,7 +4,7 @@ Goal: user gives Langdock API key, Langdock agent ID, agent metadata, pricing. M
 
 ## Current Progress
 
-Status: progress checkpoint ready for draft PR.
+Status: automated integration pass complete; live Sokosumi/Langdock smoke still needs real credentials and a running app environment.
 
 Done:
 
@@ -20,12 +20,12 @@ Done:
 - Integrations page + nav item added.
 - Register agent dialog extended with provider selector, Langdock key/agent fields, test/autofill.
 - Route scoping fixed: `status` and `provide_input` bind `job_id` to route `agentId`.
+- Saved Langdock connections reuse stored `baseUrl` metadata during registration/test when the form value is blank.
+- Focused unit coverage added for Langdock field conversion/client probing, MIP hash helpers, runtime job transitions, status route scoping, and `/api/agents` provider branching.
 
 Pending:
 
-- Add focused unit tests for Langdock field conversion, hash helpers, runtime state transitions, registration branching.
-- Run full web test/build.
-- Manual Sokosumi smoke against Preprod + Mainnet.
+- Manual Sokosumi smoke against Preprod + Mainnet with real Langdock credentials.
 - PR final notes after smoke.
 
 Verification so far:
@@ -34,6 +34,12 @@ Verification so far:
 - `packages/database prepare` ran Prisma generate + DB package build successfully during install.
 - `pnpm --filter web lint` passed.
 - `pnpm --filter web run i18n:validate` passed after adding fallback locale keys.
+- `pnpm --filter web test src` passed: 68 files, 236 tests.
+- Focused Langdock/MIP tests passed: `src/lib/integrations/langdock.test.ts`, `src/lib/mip/hash.test.ts`, `src/lib/mip/langdock-runtime.test.ts`, `src/app/api/agents/route.test.ts`.
+- `pnpm --filter web exec tsc --noEmit --pretty false` passed.
+- `pnpm --filter web run check-openapi-json` passed.
+- `pnpm --filter web test` failed only on smoke/e2e/stress tests that require a live app at `localhost:2999`; failures were `ECONNREFUSED`.
+- `DATABASE_URL=postgres://spec-gen:spec-gen@localhost:5432/spec-gen pnpm --filter web build` hung locally in `next build`/Turbopack compile with the process idle at 0% CPU and was stopped after repeated attempts.
 - `pnpm prisma:generate` before install failed because `node_modules` was missing.
 
 ## Locked Decisions

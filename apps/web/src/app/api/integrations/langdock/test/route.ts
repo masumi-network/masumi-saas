@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     organizationId: authContext.activeOrganizationId,
   };
   let apiKey = parsed.data.apiKey?.trim() ?? "";
+  let connectionBaseUrl: string | undefined;
 
   if (parsed.data.integrationConnectionId) {
     const connection = await getScopedIntegrationConnection({
@@ -47,6 +48,13 @@ export async function POST(request: Request) {
       );
     }
     apiKey = await decryptIntegrationConnectionSecret(connection);
+    const metadata =
+      connection.metadata && typeof connection.metadata === "object"
+        ? (connection.metadata as Record<string, unknown>)
+        : {};
+    if (typeof metadata.baseUrl === "string") {
+      connectionBaseUrl = metadata.baseUrl.trim() || undefined;
+    }
   }
 
   if (!apiKey) {
@@ -60,7 +68,7 @@ export async function POST(request: Request) {
     const agent = await testLangdockAgent({
       apiKey,
       agentId: parsed.data.agentId,
-      baseUrl: parsed.data.baseUrl || undefined,
+      baseUrl: parsed.data.baseUrl || connectionBaseUrl,
     });
     return NextResponse.json({
       success: true,
