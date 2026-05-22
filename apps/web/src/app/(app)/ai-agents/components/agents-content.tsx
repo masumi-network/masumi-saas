@@ -371,6 +371,7 @@ export function AgentsContent() {
                   onClick={() => setIsRegisterDialogOpen(true)}
                   size="icon"
                   className="md:hidden"
+                  aria-label={t("registerAgent")}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>

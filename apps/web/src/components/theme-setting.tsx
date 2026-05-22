@@ -32,6 +32,7 @@ export function ThemeSetting({
 }: ThemeSettingProps) {
   const isCompact = variant === "compact";
   const t = useTranslations("Components.ThemeSetting");
+  const tToggle = useTranslations("Components.ThemeToggle");
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -75,8 +76,8 @@ export function ThemeSetting({
           isCompact ? "flex" : "md:hidden",
         )}
         onClick={cycleTheme}
-        aria-label={t(activeTheme)}
-        title={t(activeTheme)}
+        aria-label={tToggle("toggleTheme")}
+        title={tToggle("toggleTheme")}
       >
         {THEME_TYPES.map((themeType) => {
           const Icon = THEME_ICONS[themeType];
