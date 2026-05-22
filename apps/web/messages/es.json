@@ -1748,6 +1748,7 @@
     },
     "ThemeSetting": {
       "ariaLabel": "Tema",
+      "cycleTheme": "Cambiar tema, actualmente {theme}",
       "system": "Sistema",
       "light": "Claro",
       "dark": "Oscuro"

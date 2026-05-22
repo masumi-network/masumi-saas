@@ -633,4 +633,9 @@ input[type="number"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .dialog-stagger-in > * {
+    opacity: 1 !important;
+    animation: none !important;
+  }
 }

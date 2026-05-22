@@ -1748,6 +1748,7 @@
     },
     "ThemeSetting": {
       "ariaLabel": "Design",
+      "cycleTheme": "Design wechseln, aktuell {theme}",
       "system": "System",
       "light": "Hell",
       "dark": "Dunkel"

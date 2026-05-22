@@ -1748,6 +1748,7 @@
     },
     "ThemeSetting": {
       "ariaLabel": "テーマ",
+      "cycleTheme": "テーマを変更、現在は{theme}",
       "system": "システム",
       "light": "ライト",
       "dark": "ダーク"
