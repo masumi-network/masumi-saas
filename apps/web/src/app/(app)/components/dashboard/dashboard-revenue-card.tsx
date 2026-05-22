@@ -141,11 +141,14 @@ export function DashboardRevenueCard() {
       />
       <Card className="dashboard-stat-card pointer-events-none relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0">
         <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-4 lg:pt-6">
-          <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
+          <CardTitle
+            aria-hidden
+            className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground"
+          >
             {amountUnit === "USD" ? (
-              <DollarSign className="h-4 w-4 shrink-0" />
+              <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
             ) : (
-              <Coins className="h-4 w-4 shrink-0" />
+              <Coins className="h-4 w-4 shrink-0" aria-hidden />
             )}
             {t("earnings")}
           </CardTitle>
@@ -170,7 +173,7 @@ export function DashboardRevenueCard() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="relative flex flex-1 flex-col pb-4">
+        <CardContent aria-hidden className="relative flex flex-1 flex-col pb-4">
           {showChart && (
             <div
               className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
