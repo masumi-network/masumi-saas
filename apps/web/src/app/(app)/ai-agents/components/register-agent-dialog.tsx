@@ -553,7 +553,7 @@ export function RegisterAgentDialog({
               className="flex flex-1 flex-col min-h-0 overflow-hidden"
               onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             >
-              <DialogBody className="space-y-8">
+              <DialogBody stagger={false} className="space-y-8">
                 {/* Icon section */}
                 <FormField
                   control={form.control}

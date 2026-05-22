@@ -593,7 +593,7 @@ export function RequestVerificationDialog({
           </DialogHeader>
         </div>
 
-        <DialogBody className="space-y-6">
+        <DialogBody stagger={false} className="space-y-6">
           <Steps currentStep={step + 1} steps={steps} className="mb-4" />
           <p className="text-sm text-muted-foreground mb-6">
             {steps[step]?.description}

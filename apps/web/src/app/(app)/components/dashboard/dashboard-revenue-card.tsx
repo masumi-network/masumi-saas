@@ -125,22 +125,21 @@ export function DashboardRevenueCard() {
     fetchEarnings();
   }, [fetchEarnings]);
 
-  const showChart =
-    !isLoading &&
-    !error &&
-    total > 0 &&
-    earnings.some((point) => point.amount > 0);
+  const showChart = !isLoading && !error && earnings.length > 0;
 
   const formattedTotal = formatDashboardEarningsTotal(total, amountUnit);
+  const earningsAriaLabel = isLoading
+    ? t("earnings")
+    : t("earningsCardAria", { amount: formattedTotal });
 
   return (
-    <div className="group relative h-full">
+    <div className="group relative h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
       <Link
         href="/earnings"
         className="absolute inset-0 z-0 rounded-xl"
-        aria-label={t("earningsCardAria", { amount: formattedTotal })}
+        aria-label={earningsAriaLabel}
       />
-      <Card className="dashboard-stat-card pointer-events-none relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-primary/5">
+      <Card className="dashboard-stat-card pointer-events-none relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0">
         <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-4 lg:pt-6">
           <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
             {amountUnit === "USD" ? (
