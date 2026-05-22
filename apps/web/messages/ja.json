@@ -435,6 +435,7 @@
           "newTransactionsDescription": "新しい支払いと購入アクティビティ",
           "newTransactionsCardAria": "アクティビティを表示、{count} 新しいトランザクション",
           "earningsCardAria": "収益を表示、合計 {amount}",
+          "earningsCardErrorAria": "収益を表示。{error}",
           "viewAll": "すべて見る",
           "vsPreviousPeriod": "対前期間"
         },

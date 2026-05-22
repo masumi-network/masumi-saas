@@ -3,7 +3,7 @@
 import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,8 +18,6 @@ import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
-import { cn } from "@/lib/utils";
-
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
 type EarningsPoint = { date: string; amount: number };
@@ -81,6 +79,7 @@ function buildEarningsChartPaths(earnings: EarningsPoint[]): {
 
 export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
+  const chartGradientId = useId();
   const { network } = usePaymentNetwork();
   const [period, setPeriod] = useState<TimePeriod>("7d");
   const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
@@ -129,29 +128,24 @@ export function DashboardRevenueCard() {
   const showChart = !isLoading && !error && earnings.length > 0;
 
   const formattedTotal = formatDashboardEarningsTotal(total, amountUnit);
-  const isEarningsLinkActive = !error;
-  const earningsAriaLabel = isLoading
-    ? t("earnings")
-    : t("earningsCardAria", { amount: formattedTotal });
+  const hideCardFromAt = !error;
+  const earningsAriaLabel = error
+    ? t("earningsCardErrorAria", { error })
+    : isLoading
+      ? t("earnings")
+      : t("earningsCardAria", { amount: formattedTotal });
 
   return (
     <div className="group relative h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
-      {isEarningsLinkActive ? (
-        <Link
-          href="/earnings"
-          className="absolute inset-0 z-0 rounded-xl"
-          aria-label={earningsAriaLabel}
-        />
-      ) : null}
-      <Card
-        className={cn(
-          "dashboard-stat-card relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0",
-          isEarningsLinkActive && "pointer-events-none",
-        )}
-      >
+      <Link
+        href="/earnings"
+        className="absolute inset-0 z-0 rounded-xl"
+        aria-label={earningsAriaLabel}
+      />
+      <Card className="dashboard-stat-card pointer-events-none relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0">
         <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-4 lg:pt-6">
           <CardTitle
-            aria-hidden={isEarningsLinkActive}
+            aria-hidden={hideCardFromAt}
             className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground"
           >
             {amountUnit === "USD" ? (
@@ -183,7 +177,7 @@ export function DashboardRevenueCard() {
           </div>
         </CardHeader>
         <CardContent
-          aria-hidden={isEarningsLinkActive}
+          aria-hidden={hideCardFromAt}
           className="relative flex flex-1 flex-col pb-4"
         >
           {showChart && (
@@ -198,7 +192,7 @@ export function DashboardRevenueCard() {
               >
                 <defs>
                   <linearGradient
-                    id="earnings-chart-gradient"
+                    id={chartGradientId}
                     x1="0"
                     y1="0"
                     x2="0"
@@ -221,7 +215,7 @@ export function DashboardRevenueCard() {
                     buildEarningsChartPaths(earnings);
                   return (
                     <>
-                      <path d={areaPath} fill="url(#earnings-chart-gradient)" />
+                      <path d={areaPath} fill={`url(#${chartGradientId})`} />
                       <path
                         d={linePath}
                         fill="none"
@@ -238,7 +232,10 @@ export function DashboardRevenueCard() {
           )}
 
           {error ? (
-            <p role="alert" className="mb-1 text-sm text-destructive">
+            <p
+              role="alert"
+              className="pointer-events-auto relative z-10 mb-1 text-sm text-destructive"
+            >
               {error}
             </p>
           ) : isLoading ? (

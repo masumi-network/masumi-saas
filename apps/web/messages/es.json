@@ -435,6 +435,7 @@
           "newTransactionsDescription": "Nueva actividad de pago y compra.",
           "newTransactionsCardAria": "Ver actividad, {count} nuevas transacciones",
           "earningsCardAria": "Ver ingresos, {amount} total",
+          "earningsCardErrorAria": "Ver ingresos. {error}",
           "viewAll": "Ver todo",
           "vsPreviousPeriod": "frente a anterior. período"
         },

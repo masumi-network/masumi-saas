@@ -435,6 +435,7 @@
           "newTransactionsDescription": "Nouvelle activité de paiement et d’achat",
           "newTransactionsCardAria": "Afficher l'activité, {count} nouvelles transactions",
           "earningsCardAria": "Voir les revenus, {amount} au total",
+          "earningsCardErrorAria": "Voir les revenus. {error}",
           "viewAll": "Voir tout",
           "vsPreviousPeriod": "contre précédent. période"
         },
