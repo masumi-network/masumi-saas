@@ -387,38 +387,40 @@ export function AgentsContent() {
 
             {isLoading ? (
               <AgentsTableSkeleton />
-            ) : agents.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-6 py-14 text-center">
-                <div className="mx-auto max-w-md space-y-3">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <Bot className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-base font-medium">
-                    {debouncedSearch
-                      ? t("noAgentsMatchingSearch")
-                      : activeTab === "registered"
-                        ? t("noRegisteredAgents")
-                        : activeTab === "pending"
-                          ? t("noPendingAgents")
-                          : activeTab === "failed"
-                            ? t("noFailedAgents")
-                            : activeTab === "verified"
-                              ? t("noVerifiedAgents")
-                              : t("noAgents")}
-                  </p>
-                </div>
-              </div>
             ) : (
               <>
-                <div className="rounded-xl border border-border/80">
-                  <AgentsTable
-                    agents={agents}
-                    onAgentClick={(agent) => {
-                      router.push(`/ai-agents/${agent.id}`);
-                    }}
-                    onDeleteSuccess={handleDeleteSuccess}
-                  />
-                </div>
+                {agents.length === 0 ? (
+                  <div className="rounded-xl border border-dashed px-6 py-14 text-center">
+                    <div className="mx-auto max-w-md space-y-3">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <Bot className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-base font-medium">
+                        {debouncedSearch
+                          ? t("noAgentsMatchingSearch")
+                          : activeTab === "registered"
+                            ? t("noRegisteredAgents")
+                            : activeTab === "pending"
+                              ? t("noPendingAgents")
+                              : activeTab === "failed"
+                                ? t("noFailedAgents")
+                                : activeTab === "verified"
+                                  ? t("noVerifiedAgents")
+                                  : t("noAgents")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border/80">
+                    <AgentsTable
+                      agents={agents}
+                      onAgentClick={(agent) => {
+                        router.push(`/ai-agents/${agent.id}`);
+                      }}
+                      onDeleteSuccess={handleDeleteSuccess}
+                    />
+                  </div>
+                )}
 
                 {nextCursor ? (
                   <div className="flex justify-center">
