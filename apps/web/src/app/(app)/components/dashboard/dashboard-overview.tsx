@@ -21,11 +21,10 @@ import {
 } from "@/lib/utils/agent-utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
-import { DashboardActivitySummaryCard } from "./dashboard-activity-summary-card";
 import { DashboardOrgContextBanner } from "./dashboard-org-context-banner";
+import { DashboardOverviewStatsClient } from "./dashboard-overview-stats-client";
 import { DashboardRegisterAgentButton } from "./dashboard-register-agent-button";
 import { DashboardRevenueCard } from "./dashboard-revenue-card";
-import { DashboardStatsMobileStrip } from "./dashboard-stats-mobile-strip";
 import { GetStartedCard } from "./get-started-card";
 
 export default async function DashboardOverview({
@@ -64,35 +63,34 @@ export default async function DashboardOverview({
         <div className="md:col-span-2 lg:col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
           <DashboardRevenueCard />
         </div>
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75 md:hidden">
-          <DashboardStatsMobileStrip agentCount={agentCount} />
-        </div>
-        <div className="hidden animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75 md:block">
-          <Link
-            href="/ai-agents"
-            aria-label={t("stats.agentsCardAria", { count: agentCount })}
-          >
-            <Card className="dashboard-stat-card group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
-              <CardHeader className="space-y-0 pb-2">
-                <CardTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors group-hover:text-primary">
-                  <Bot className="h-4 w-4 shrink-0" />
-                  {t("stats.registeredAgents")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
-                  {agentCount}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("stats.registeredAgentsDescription")}
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-        <div className="hidden animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-150 md:block">
-          <DashboardActivitySummaryCard />
-        </div>
+        <DashboardOverviewStatsClient
+          agentCount={agentCount}
+          agentsCard={
+            <div className="hidden animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75 md:block">
+              <Link
+                href="/ai-agents"
+                aria-label={t("stats.agentsCardAria", { count: agentCount })}
+              >
+                <Card className="dashboard-stat-card group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
+                  <CardHeader className="space-y-0 pb-2">
+                    <CardTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors group-hover:text-primary">
+                      <Bot className="h-4 w-4 shrink-0" />
+                      {t("stats.registeredAgents")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight">
+                      {agentCount}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("stats.registeredAgentsDescription")}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          }
+        />
       </div>
 
       {/* Get started checklist - for new users */}

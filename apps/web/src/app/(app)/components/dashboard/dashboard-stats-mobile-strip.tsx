@@ -3,17 +3,16 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
-
 type DashboardStatsMobileStripProps = {
   agentCount: number;
+  newTransactionsCount: number;
 };
 
 export function DashboardStatsMobileStrip({
   agentCount,
+  newTransactionsCount,
 }: DashboardStatsMobileStripProps) {
   const t = useTranslations("App.Home.Dashboard.stats");
-  const { newTransactionsCount } = useNewTransactionsCount();
 
   const segmentClassName =
     "group flex min-w-0 flex-1 items-center justify-center gap-2 px-3 py-3 transition-colors hover:bg-muted/40";

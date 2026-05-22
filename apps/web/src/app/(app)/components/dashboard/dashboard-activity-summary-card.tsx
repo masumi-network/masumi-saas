@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
+type DashboardActivitySummaryCardProps = {
+  newTransactionsCount: number;
+};
 
-export function DashboardActivitySummaryCard() {
+export function DashboardActivitySummaryCard({
+  newTransactionsCount,
+}: DashboardActivitySummaryCardProps) {
   const t = useTranslations("App.Home.Dashboard.stats");
-  const { newTransactionsCount } = useNewTransactionsCount();
 
   const ariaLabel = t("newTransactionsCardAria", {
     count: newTransactionsCount,
