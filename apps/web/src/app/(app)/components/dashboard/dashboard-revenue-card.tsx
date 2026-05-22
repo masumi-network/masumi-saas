@@ -18,6 +18,7 @@ import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
+import { cn } from "@/lib/utils";
 
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
@@ -128,21 +129,29 @@ export function DashboardRevenueCard() {
   const showChart = !isLoading && !error && earnings.length > 0;
 
   const formattedTotal = formatDashboardEarningsTotal(total, amountUnit);
+  const isEarningsLinkActive = !error;
   const earningsAriaLabel = isLoading
     ? t("earnings")
     : t("earningsCardAria", { amount: formattedTotal });
 
   return (
     <div className="group relative h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
-      <Link
-        href="/earnings"
-        className="absolute inset-0 z-0 rounded-xl"
-        aria-label={earningsAriaLabel}
-      />
-      <Card className="dashboard-stat-card pointer-events-none relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0">
+      {isEarningsLinkActive ? (
+        <Link
+          href="/earnings"
+          className="absolute inset-0 z-0 rounded-xl"
+          aria-label={earningsAriaLabel}
+        />
+      ) : null}
+      <Card
+        className={cn(
+          "dashboard-stat-card relative z-[1] h-full overflow-hidden rounded-xl border-l-4 border-l-primary pt-0",
+          isEarningsLinkActive && "pointer-events-none",
+        )}
+      >
         <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-4 lg:pt-6">
           <CardTitle
-            aria-hidden
+            aria-hidden={isEarningsLinkActive}
             className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground"
           >
             {amountUnit === "USD" ? (
@@ -173,7 +182,10 @@ export function DashboardRevenueCard() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent aria-hidden className="relative flex flex-1 flex-col pb-4">
+        <CardContent
+          aria-hidden={isEarningsLinkActive}
+          className="relative flex flex-1 flex-col pb-4"
+        >
           {showChart && (
             <div
               className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
@@ -226,7 +238,9 @@ export function DashboardRevenueCard() {
           )}
 
           {error ? (
-            <p className="mb-1 text-sm text-destructive">{error}</p>
+            <p role="alert" className="mb-1 text-sm text-destructive">
+              {error}
+            </p>
           ) : isLoading ? (
             <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative animate-pulse">
               {formatDashboardEarningsTotal(0, amountUnit)}
