@@ -27,9 +27,10 @@ type ThemeSettingProps = {
 };
 
 export function ThemeSetting({
-  variant: _variant = "default",
+  variant = "default",
   className,
 }: ThemeSettingProps) {
+  const isCompact = variant === "compact";
   const t = useTranslations("Components.ThemeSetting");
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -54,7 +55,8 @@ export function ThemeSetting({
     return (
       <div
         className={cn(
-          "h-8 w-8 shrink-0 rounded-lg bg-muted/80 md:h-9 md:w-24 md:ring-1 md:ring-border/60",
+          "h-8 w-8 shrink-0 rounded-lg bg-muted/80",
+          !isCompact && "md:h-9 md:w-24 md:ring-1 md:ring-border/60",
           className,
         )}
         aria-hidden
@@ -68,7 +70,10 @@ export function ThemeSetting({
         type="button"
         variant="ghost"
         size="icon"
-        className="relative h-8 w-8 shrink-0 bg-background p-2 md:hidden"
+        className={cn(
+          "relative h-8 w-8 shrink-0 bg-background p-2",
+          isCompact ? "flex" : "md:hidden",
+        )}
         onClick={cycleTheme}
         aria-label={t(activeTheme)}
         title={t(activeTheme)}
@@ -94,7 +99,10 @@ export function ThemeSetting({
       <div
         role="radiogroup"
         aria-label={t("ariaLabel")}
-        className="relative hidden h-9 w-24 shrink-0 items-center gap-1.5 rounded-lg bg-muted/80 p-1.5 ring-1 ring-border/60 md:flex"
+        className={cn(
+          "relative hidden h-9 w-24 shrink-0 items-center gap-1.5 rounded-lg bg-muted/80 p-1.5 ring-1 ring-border/60",
+          isCompact ? "hidden" : "md:flex",
+        )}
       >
         <div
           className={cn(
