@@ -15,6 +15,7 @@ import { RegistrationCompletionProvider } from "@/lib/context/registration-compl
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { VerifyEmailBanner } from "./account/components/verify-email-banner";
+import { AppCanvasShell } from "./components/app-canvas-shell";
 import Header from "./components/header";
 import { ImpersonationBanner } from "./components/impersonation-banner";
 import Sidebar from "./components/sidebar";
@@ -55,10 +56,10 @@ export default async function AppLayout({
                 className="flex max-w-svw overflow-clip"
               >
                 <Sidebar session={authContext.session} />
-                <div className="flex min-w-0 flex-1 flex-col min-h-0">
+                <AppCanvasShell>
                   <Header />
-                  <div className="flex-1 min-h-0 overflow-y-auto">
-                    <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                    <main className="relative mx-auto w-full max-w-container flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
                       {isImpersonating && (
                         <div className="mb-4">
                           <ImpersonationBanner
@@ -78,11 +79,11 @@ export default async function AppLayout({
                         )}
                       {children}
                     </main>
-                    <div className="max-w-container mx-auto w-full border-t border-border mt-4">
-                      <FooterSections className="p-4" />
+                    <div className="mx-auto w-full max-w-container shrink-0 border-t border-border/80">
+                      <FooterSections className="px-4 py-6 sm:px-6 lg:px-8" />
                     </div>
                   </div>
-                </div>
+                </AppCanvasShell>
               </SidebarProvider>
             </RegistrationCompletionProvider>
           </NotificationsProvider>

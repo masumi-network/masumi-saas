@@ -10,9 +10,9 @@ export default function OidcLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground relative">
+    <div className="relative min-h-screen bg-app-canvas text-foreground">
       <div
-        className="absolute inset-0 opacity-25 animate-grid-glide pointer-events-none"
+        className="absolute inset-0 opacity-40 animate-grid-glide pointer-events-none"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
@@ -26,7 +26,9 @@ export default function OidcLayout({
       />
       <div className="relative z-10 flex min-h-screen flex-col">
         <Header />
-        <div className="flex-1">{children}</div>
+        <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
+          <div className="w-full max-w-lg animate-page-in">{children}</div>
+        </main>
         <AuthFooter />
       </div>
     </div>

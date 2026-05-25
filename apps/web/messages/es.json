@@ -8,7 +8,8 @@
       "title": "Algo salió mal",
       "descriptionRoot": "Se produjo un error inesperado. Inténtalo de nuevo.",
       "descriptionApp": "Se produjo un error inesperado al cargar esta página.",
-      "retry": "Reintentar"
+      "retry": "Reintentar",
+      "support": "Soporte"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Bueno {time}, {name}",
+        "greeting": {
+          "morning": "Buenos días, {name}",
+          "afternoon": "Buenas tardes, {name}",
+          "evening": "Buenas noches, {name}"
+        },
         "subtitle": "Administre sus agentes, organizaciones y claves API desde un solo lugar.",
         "kycStatus": {
           "pending": "Pendiente",
@@ -417,6 +422,7 @@
           "topUp": "Completar",
           "withdraw": "Retirar",
           "agentsCardAria": "Ver agentes, {count} registrados",
+          "agentsStripLabel": "Agentes",
           "runningAgents": "{count} corriendo",
           "pendingAgents": "{count} pendiente",
           "failedAgents": "{count} fallido",
@@ -428,6 +434,8 @@
           "newTransactions": "Nuevas transacciones",
           "newTransactionsDescription": "Nueva actividad de pago y compra.",
           "newTransactionsCardAria": "Ver actividad, {count} nuevas transacciones",
+          "earningsCardAria": "Ver ingresos, {amount} total",
+          "earningsCardErrorAria": "Ver ingresos. {error}",
           "viewAll": "Ver todo",
           "vsPreviousPeriod": "frente a anterior. período"
         },
@@ -1670,6 +1678,7 @@
       "emptyTitle": "No se encontraron bandejas de entrada",
       "emptyDescription": "Prueba una búsqueda más amplia o cambia de pestaña.",
       "loadingPage": "Cargando página...",
+      "page": "Página {page}",
       "regWalletPrefix": "Reg.:",
       "fundWalletPrefix": "Fond.:",
       "table": {
@@ -1736,6 +1745,13 @@
     },
     "ThemeToggle": {
       "toggleTheme": "Alternar tema"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "Tema",
+      "cycleTheme": "Cambiar tema, actualmente {theme}",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
     },
     "Dialog": {
       "close": "Cerca"
@@ -1992,7 +2008,7 @@
         "mip004Blurb": "Entrada hasheada según <link>MIP-004</link> — SHA-256(identificador + \";\" + JCS(input_data))",
         "loadPreset": "Cargar preset…",
         "inputDataLabel": "Datos de entrada",
-        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
         "inputHashLabel": "Hash de entrada",
         "inputHashPlaceholder": "Generado desde datos de entrada",
         "metadataLabel": "Metadatos (opcional)",

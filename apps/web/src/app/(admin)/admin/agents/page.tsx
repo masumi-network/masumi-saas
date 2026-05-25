@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { getAdminAgents } from "@/lib/api/admin.server";
 
 import AdminAgentsContent from "./components/admin-agents-content";
@@ -33,12 +35,9 @@ export default async function AdminAgentsPage({ searchParams }: PageProps) {
   const result = await getAdminAgents({ page, limit, search });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("description")}</p>
-      </div>
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
       <AdminAgentsContent result={result} />
-    </div>
+    </AppPage>
   );
 }

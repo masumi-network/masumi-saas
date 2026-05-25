@@ -8,7 +8,8 @@
       "title": "問題が発生しました",
       "descriptionRoot": "予期しないエラーが発生しました。もう一度お試しください。",
       "descriptionApp": "このページの読み込み中に予期しないエラーが発生しました。",
-      "retry": "再試行"
+      "retry": "再試行",
+      "support": "サポート"
     }
   },
   "Auth": {
@@ -377,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "良い {time}, {name}",
+        "greeting": {
+          "morning": "おはようございます、{name}。",
+          "afternoon": "こんにちは、{name}。",
+          "evening": "こんばんは、{name}。"
+        },
         "subtitle": "エージェント、組織、API キーを 1 か所から管理します。",
         "kycStatus": {
           "pending": "保留中",
@@ -417,6 +422,7 @@
           "topUp": "補充する",
           "withdraw": "撤回する",
           "agentsCardAria": "エージェントを表示、{count} 登録済み",
+          "agentsStripLabel": "エージェント",
           "runningAgents": "{count} ランニング",
           "pendingAgents": "{count} 保留中",
           "failedAgents": "{count} 失敗しました",
@@ -428,6 +434,8 @@
           "newTransactions": "新規取引",
           "newTransactionsDescription": "新しい支払いと購入アクティビティ",
           "newTransactionsCardAria": "アクティビティを表示、{count} 新しいトランザクション",
+          "earningsCardAria": "収益を表示、合計 {amount}",
+          "earningsCardErrorAria": "収益を表示。{error}",
           "viewAll": "すべて見る",
           "vsPreviousPeriod": "対前期間"
         },
@@ -1670,6 +1678,7 @@
       "emptyTitle": "受信箱が見つかりません",
       "emptyDescription": "検索範囲を広げるか、タブを切り替えてください。",
       "loadingPage": "ページを読み込み中...",
+      "page": "{page} ページ",
       "regWalletPrefix": "登録:",
       "fundWalletPrefix": "資金:",
       "table": {
@@ -1736,6 +1745,13 @@
     },
     "ThemeToggle": {
       "toggleTheme": "テーマの切り替え"
+    },
+    "ThemeSetting": {
+      "ariaLabel": "テーマ",
+      "cycleTheme": "テーマを変更、現在は{theme}",
+      "system": "システム",
+      "light": "ライト",
+      "dark": "ダーク"
     },
     "Dialog": {
       "close": "近い"
@@ -1992,7 +2008,7 @@
         "mip004Blurb": "<link>MIP-004</link>に従ってハッシュ化された入力 — SHA-256(識別子 + \";\" + JCS(input_data))",
         "loadPreset": "プリセットを読み込み…",
         "inputDataLabel": "入力データ",
-        "inputDataPlaceholder": "{\"key\": \"value\"}",
+        "inputDataPlaceholder": "'{'\"key\": \"value\"'}'",
         "inputHashLabel": "入力ハッシュ",
         "inputHashPlaceholder": "入力データから生成",
         "metadataLabel": "メタデータ(オプション)",

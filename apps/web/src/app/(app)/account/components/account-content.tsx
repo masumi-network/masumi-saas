@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { OrganizationSelect } from "@/components/organization-select";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { PageHeader } from "@/components/page-header";
+import { ThemeSetting } from "@/components/theme-setting";
 import { Separator } from "@/components/ui/separator";
 import type { Locale } from "@/i18n/config";
 import { auth } from "@/lib/auth/auth";
@@ -58,15 +59,13 @@ export function AccountContent({
   );
 
   return (
-    <div className="w-full space-y-8 animate-page-in">
-      <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
-        <div className="space-y-2 min-w-0">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
-        <OrganizationSelectorSection />
+    <div className="w-full animate-page-in space-y-8">
+      <div className="mx-auto max-w-3xl">
+        <PageHeader
+          title={t("title")}
+          description={t("description")}
+          actions={<OrganizationSelectorSection />}
+        />
       </div>
 
       <div className="mx-auto max-w-3xl space-y-8">
@@ -75,7 +74,7 @@ export function AccountContent({
             {t("languageAndAppearance")}
           </h2>
           <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+            <ThemeSetting />
             <LocaleSwitcher currentLocale={locale} />
           </div>
         </div>

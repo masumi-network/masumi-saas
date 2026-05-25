@@ -175,9 +175,9 @@ export function OrganizationDashboardOverview({
         </CardHeader>
         <CardContent className="space-y-3 px-4 sm:px-6">
           {/* Stats grid */}
-          <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {/* Wallet balance */}
-            <Card className="group col-span-2 lg:col-span-1 h-full rounded-xl bg-muted-surface pt-0">
+            <Card className="group h-full rounded-xl bg-muted-surface pt-0 sm:col-span-2 lg:col-span-1">
               <CardHeader className="space-y-0 pb-2 bg-masumi-gradient pt-6">
                 <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
                   <Wallet className="h-3.5 w-3.5" />

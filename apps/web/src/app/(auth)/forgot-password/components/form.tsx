@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { AuthPageHeader } from "@/components/auth-page-header";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -59,15 +60,11 @@ export default function ForgotPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="w-full max-w-form space-y-6">
-        <div className="text-center">
-          <h1 className="text-4xl font-light tracking-tight mb-4">
-            {t("checkEmail.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            {t("checkEmail.description")}
-          </p>
-        </div>
+      <div className="w-full space-y-6">
+        <AuthPageHeader
+          title={t("checkEmail.title")}
+          description={t("checkEmail.description")}
+        />
 
         <div className="flex justify-center">
           <Button variant="outline" asChild>
@@ -79,15 +76,8 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-form space-y-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-light tracking-tight mb-4">
-          {t("title")}
-        </h1>
-        <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          {t("description")}
-        </p>
-      </div>
+    <div className="w-full space-y-6">
+      <AuthPageHeader title={t("title")} description={t("description")} />
 
       <Form {...form}>
         <form

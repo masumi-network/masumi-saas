@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { SocialAuthButtons } from "@/auth/components/social-auth-buttons";
+import { AuthPageHeader } from "@/components/auth-page-header";
 import { Button } from "@/components/ui/button";
 import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
@@ -59,20 +60,16 @@ export default function SignInForm({
 
   if (magicLinkEmail) {
     return (
-      <div className="w-full max-w-form space-y-6 animate-page-in">
-        <div className="text-center">
-          <h1 className="text-4xl font-light tracking-tight mb-4">
-            {t("checkEmail.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8 text-center max-w-md mx-auto">
-            {t(
-              isOidcFlow
-                ? "checkEmail.oidcDescription"
-                : "checkEmail.description",
-              { email: magicLinkEmail },
-            )}
-          </p>
-        </div>
+      <div className="w-full space-y-6 animate-page-in">
+        <AuthPageHeader
+          title={t("checkEmail.title")}
+          description={t(
+            isOidcFlow
+              ? "checkEmail.oidcDescription"
+              : "checkEmail.description",
+            { email: magicLinkEmail },
+          )}
+        />
 
         <MagicLinkCodePanel
           email={magicLinkEmail}
@@ -98,15 +95,8 @@ export default function SignInForm({
   }
 
   return (
-    <div className="w-full max-w-form space-y-6 animate-page-in">
-      <div className="text-center">
-        <h1 className="text-4xl font-light tracking-tight mb-4">
-          {t("title")}
-        </h1>
-        <p className="text-sm text-muted-foreground text-center max-w-md mx-auto">
-          {t("description")}
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-page-in">
+      <AuthPageHeader title={t("title")} description={t("description")} />
 
       {oauthProviders.length > 0 && (
         <SocialAuthButtons

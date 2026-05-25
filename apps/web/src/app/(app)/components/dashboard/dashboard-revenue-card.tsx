@@ -1,8 +1,9 @@
 "use client";
 
 import { Coins, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,7 +18,6 @@ import {
   type DashboardEarningsAmountUnit,
   formatDashboardEarningsTotal,
 } from "@/lib/payment-node/format";
-
 type TimePeriod = "24h" | "7d" | "30d" | "all";
 
 type EarningsPoint = { date: string; amount: number };
@@ -79,6 +79,7 @@ function buildEarningsChartPaths(earnings: EarningsPoint[]): {
 
 export function DashboardRevenueCard() {
   const t = useTranslations("App.Home.Dashboard.stats");
+  const chartGradientId = useId();
   const { network } = usePaymentNetwork();
   const [period, setPeriod] = useState<TimePeriod>("7d");
   const [earnings, setEarnings] = useState<EarningsPoint[]>([]);
@@ -124,128 +125,155 @@ export function DashboardRevenueCard() {
     fetchEarnings();
   }, [fetchEarnings]);
 
-  return (
-    <Card
-      className="group relative overflow-hidden rounded-xl border-l-4 border-l-primary pt-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
-      role="group"
-      aria-label={`${t("earnings")}: ${formatDashboardEarningsTotal(total, amountUnit)}`}
-    >
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-6">
-        <CardTitle className="text-xs font-medium uppercase tracking-tight text-muted-foreground flex items-center gap-2">
-          {amountUnit === "USD" ? (
-            <DollarSign className="h-4 w-4 shrink-0" />
-          ) : (
-            <Coins className="h-4 w-4 shrink-0" />
-          )}
-          {t("earnings")}
-        </CardTitle>
-        <Select
-          value={period}
-          onValueChange={(v) => setPeriod(v as TimePeriod)}
-        >
-          <SelectTrigger className="w-28 h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="24h">{t("period24h")}</SelectItem>
-            <SelectItem value="7d">{t("period7d")}</SelectItem>
-            <SelectItem value="30d">{t("period30d")}</SelectItem>
-            <SelectItem value="all">{t("periodAll")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </CardHeader>
-      <CardContent className="relative">
-        {/* Line chart from earnings array - hide when no data */}
-        {!isLoading && earnings.length > 0 && (
-          <div
-            className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
-            aria-hidden
-          >
-            <svg
-              viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-              preserveAspectRatio="none"
-              className="w-full h-full opacity-60"
-            >
-              <defs>
-                <linearGradient
-                  id="earnings-chart-gradient"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="hsl(var(--primary))"
-                    stopOpacity="0.4"
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="hsl(var(--primary))"
-                    stopOpacity="0"
-                  />
-                </linearGradient>
-              </defs>
-              {(() => {
-                const { areaPath, linePath } =
-                  buildEarningsChartPaths(earnings);
-                return (
-                  <>
-                    <path d={areaPath} fill="url(#earnings-chart-gradient)" />
-                    <path
-                      d={linePath}
-                      fill="none"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth="0.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </>
-                );
-              })()}
-            </svg>
-          </div>
-        )}
+  const showChart = !isLoading && !error && earnings.length > 0;
 
-        {error ? (
-          <p className="mb-1 text-sm text-destructive">{error}</p>
-        ) : isLoading ? (
-          <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative animate-pulse">
-            {formatDashboardEarningsTotal(0, amountUnit)}
-          </p>
-        ) : (
-          <div className="mb-1 flex flex-wrap items-baseline gap-2">
-            <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
-              {formatDashboardEarningsTotal(total, amountUnit)}
-            </p>
-            {previousTotal !== undefined &&
-              previousTotal > 0 &&
-              total !== previousTotal && (
-                <span
-                  className={
-                    total >= previousTotal
-                      ? "text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-0.5"
-                      : "text-destructive/90 text-xs font-medium flex items-center gap-0.5"
-                  }
+  const formattedTotal = formatDashboardEarningsTotal(total, amountUnit);
+  const hideCardFromAt = !error;
+  const earningsAriaLabel = error
+    ? t("earningsCardErrorAria", { error })
+    : isLoading
+      ? t("earnings")
+      : t("earningsCardAria", { amount: formattedTotal });
+
+  return (
+    <div className="group relative h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
+      <Card className="dashboard-stat-card relative flex h-full flex-col overflow-hidden rounded-xl border-l-4 border-l-primary pt-0">
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 rounded-t-xl bg-masumi-gradient pb-2 pt-4 lg:pt-6">
+          <CardTitle
+            aria-hidden={hideCardFromAt}
+            className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground"
+          >
+            {amountUnit === "USD" ? (
+              <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
+            ) : (
+              <Coins className="h-4 w-4 shrink-0" aria-hidden />
+            )}
+            {t("earnings")}
+          </CardTitle>
+          <Select
+            value={period}
+            onValueChange={(v) => setPeriod(v as TimePeriod)}
+          >
+            <SelectTrigger className="relative z-10 h-8 w-28 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="24h">{t("period24h")}</SelectItem>
+              <SelectItem value="7d">{t("period7d")}</SelectItem>
+              <SelectItem value="30d">{t("period30d")}</SelectItem>
+              <SelectItem value="all">{t("periodAll")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <Link
+            href="/earnings"
+            className="absolute inset-0 z-0 rounded-b-xl"
+            aria-label={earningsAriaLabel}
+          />
+          <CardContent
+            aria-hidden={hideCardFromAt}
+            className="pointer-events-none relative z-[1] flex flex-1 flex-col pb-4"
+          >
+            {showChart && (
+              <div
+                className="absolute right-0 bottom-0 h-30 w-full pointer-events-none"
+                aria-hidden
+              >
+                <svg
+                  viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+                  preserveAspectRatio="none"
+                  className="w-full h-full opacity-60"
                 >
-                  {total >= previousTotal ? (
-                    <TrendingUp className="h-3.5 w-3.5" />
-                  ) : (
-                    <TrendingDown className="h-3.5 w-3.5" />
+                  <defs>
+                    <linearGradient
+                      id={chartGradientId}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity="0.4"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="hsl(var(--primary))"
+                        stopOpacity="0"
+                      />
+                    </linearGradient>
+                  </defs>
+                  {(() => {
+                    const { areaPath, linePath } =
+                      buildEarningsChartPaths(earnings);
+                    return (
+                      <>
+                        <path d={areaPath} fill={`url(#${chartGradientId})`} />
+                        <path
+                          d={linePath}
+                          fill="none"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="0.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </>
+                    );
+                  })()}
+                </svg>
+              </div>
+            )}
+
+            {error ? (
+              <p
+                role="alert"
+                className="pointer-events-auto relative z-10 mb-1 text-sm text-destructive"
+              >
+                {error}
+              </p>
+            ) : isLoading ? (
+              <p className="mb-1 font-mono text-3xl font-semibold tabular-nums tracking-tight relative animate-pulse">
+                {formatDashboardEarningsTotal(0, amountUnit)}
+              </p>
+            ) : (
+              <div className="mb-1 flex flex-wrap items-baseline gap-2">
+                <p className="font-mono text-3xl font-semibold tabular-nums tracking-tight relative">
+                  {formatDashboardEarningsTotal(total, amountUnit)}
+                </p>
+                {previousTotal !== undefined &&
+                  previousTotal > 0 &&
+                  total !== previousTotal && (
+                    <span
+                      className={
+                        total >= previousTotal
+                          ? "text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-0.5"
+                          : "text-destructive/90 text-xs font-medium flex items-center gap-0.5"
+                      }
+                    >
+                      {total >= previousTotal ? (
+                        <TrendingUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5" />
+                      )}
+                      {Math.abs(
+                        Math.round(
+                          ((total - previousTotal) / previousTotal) * 100,
+                        ),
+                      )}
+                      {"% "}
+                      {t("vsPreviousPeriod")}
+                    </span>
                   )}
-                  {Math.abs(
-                    Math.round(((total - previousTotal) / previousTotal) * 100),
-                  )}
-                  {"% "}
-                  {t("vsPreviousPeriod")}
-                </span>
-              )}
-          </div>
-        )}
-        <p className="mb-4 text-xs text-muted-foreground">
-          {t("earningsDescription")}
-        </p>
-      </CardContent>
-    </Card>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground max-lg:mb-0 lg:mb-4">
+              {t("earningsDescription")}
+            </p>
+          </CardContent>
+        </div>
+      </Card>
+    </div>
   );
 }

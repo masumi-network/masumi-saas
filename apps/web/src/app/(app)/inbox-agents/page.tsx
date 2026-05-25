@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+
 import { InboxAgentsPage } from "./components/inbox-agents-page";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,8 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function InboxAgentsRoute() {
   return (
-    <div className="w-full space-y-8 animate-page-in">
+    <AppPage className="w-full">
       <InboxAgentsPage />
-    </div>
+    </AppPage>
   );
 }

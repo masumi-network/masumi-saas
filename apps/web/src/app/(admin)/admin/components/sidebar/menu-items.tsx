@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 interface MenuItemConfig {
   key: string;
@@ -60,16 +61,24 @@ export default function AdminMenuItems() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  className="px-4 py-5"
+                  className="rounded-lg px-3 py-3 transition-colors data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-none"
                 >
                   <SheetClose asChild>
                     <Link
                       href={href}
                       aria-current={isActive ? "page" : undefined}
-                      className="text-sidebar-text flex w-full items-center gap-2"
+                      className="flex w-full items-center gap-3 text-sidebar-text"
                     >
-                      <Icon className="size-4" aria-hidden />
-                      <span className="flex-1 truncate">{label}</span>
+                      <Icon
+                        className={cn(
+                          "size-4 shrink-0",
+                          isActive && "text-primary",
+                        )}
+                        aria-hidden
+                      />
+                      <span className="flex-1 truncate font-medium">
+                        {label}
+                      </span>
                     </Link>
                   </SheetClose>
                 </SidebarMenuButton>

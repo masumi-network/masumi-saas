@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getAuthContextWithHeaders } from "@/lib/auth/utils";
 import { isKycVerificationEnabled } from "@/lib/config/verification.config";
@@ -41,12 +42,12 @@ export default async function VerificationPage() {
     : null;
 
   return (
-    <div className="container py-8">
+    <AppPage className="mx-auto max-w-3xl">
       <VerificationWizard
         kycStatus={kycStatus}
         rejectionReason={rejectionReason}
         kycCompletedAt={kycCompletedAt}
       />
-    </div>
+    </AppPage>
   );
 }

@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { getAdminAuthContext, isAdminUser } from "@/lib/auth/utils";
 
 import UsersList from "./components/users-list";
@@ -120,11 +122,8 @@ export default async function AdminUsersPage({
   const currentUserId = authContext.session?.user?.id;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground mt-2">{t("description")}</p>
-      </div>
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
 
       {hasError ? (
         <div className="rounded-lg border border-destructive p-6">
@@ -152,6 +151,6 @@ export default async function AdminUsersPage({
           currentFilter={filter}
         />
       )}
-    </div>
+    </AppPage>
   );
 }

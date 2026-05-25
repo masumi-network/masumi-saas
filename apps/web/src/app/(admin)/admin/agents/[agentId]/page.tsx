@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,18 +71,20 @@ export default async function AdminAgentDetailPage({ params }: PageProps) {
   })();
 
   return (
-    <div className="space-y-6 animate-page-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <Button variant="ghost" size="sm" className="w-fit px-0" asChild>
-            <Link href="/admin/agents">{t("backToList")}</Link>
-          </Button>
-          <h1 className="text-3xl font-light tracking-tight">{agent.name}</h1>
-          <p className="text-muted-foreground text-sm">{t("subtitle")}</p>
-        </div>
-        <Button variant="outline" asChild className="shrink-0">
-          <Link href={`/ai-agents/${agent.id}`}>{t("openInApp")}</Link>
+    <AppPage>
+      <div className="space-y-3">
+        <Button variant="ghost" size="sm" className="w-fit px-0" asChild>
+          <Link href="/admin/agents">{t("backToList")}</Link>
         </Button>
+        <PageHeader
+          title={agent.name}
+          description={t("subtitle")}
+          actions={
+            <Button variant="outline" asChild className="shrink-0">
+              <Link href={`/ai-agents/${agent.id}`}>{t("openInApp")}</Link>
+            </Button>
+          }
+        />
       </div>
 
       <Card>
@@ -143,6 +147,6 @@ export default async function AdminAgentDetailPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppPage>
   );
 }
