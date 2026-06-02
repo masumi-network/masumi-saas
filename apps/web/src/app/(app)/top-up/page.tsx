@@ -1,19 +1,11 @@
-import {
-  Bell,
-  Clock3,
-  Coins,
-  CreditCard,
-  History,
-  PlusCircle,
-  ShieldCheck,
-} from "lucide-react";
+import { Coins, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -25,8 +17,24 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { formatCreditAmount } from "@/lib/credits/format";
 import { getCreditBalance } from "@/lib/credits/service";
+import { serverLog } from "@/lib/server/logger";
+import {
+  getCreditUnitAmountCents,
+  isStripeTopUpEnabled,
+  STRIPE_CHECKOUT_CURRENCY,
+} from "@/lib/stripe/config";
+import { TOP_UP_PRESET_CREDIT_AMOUNTS } from "@/lib/stripe/top-up-constants";
+import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
+
+import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
+import { TopUpCanceledBanner } from "./components/top-up-return-alerts";
+import { TopUpReturnSuccessBanner } from "./components/top-up-return-success";
+import { TopUpStripSessionQuery } from "./components/top-up-strip-session-query";
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (!isStripeTopUpEnabled()) {
+    notFound();
+  }
   const t = await getTranslations("App.TopUp");
   return {
     title: `Masumi - ${t("title")}`,
@@ -34,110 +42,146 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function TopUpPage() {
+function formatMinorUnitsForCheckout(
+  cents: number,
+  numberLocale: string,
+): string {
+  return new Intl.NumberFormat(numberLocale, {
+    style: "currency",
+    currency: STRIPE_CHECKOUT_CURRENCY.toUpperCase(),
+  }).format(cents / 100);
+}
+
+type PageProps = {
+  searchParams: Promise<{ session_id?: string; canceled?: string }>;
+};
+
+export default async function TopUpPage({ searchParams }: PageProps) {
+  if (!isStripeTopUpEnabled()) {
+    notFound();
+  }
+
   const t = await getTranslations("App.TopUp");
+  const numberLocale = await getLocale();
+  const params = await searchParams;
+  const sessionId = params.session_id;
+  const canceledParam = params.canceled;
+  const canceled = canceledParam === "1" || canceledParam === "true";
+
+  /** Balance + return verification; submitting checkout still requires verified email (server action). */
   const { user } = await getAuthenticatedOrThrow({
     requireEmailVerified: false,
   });
+
+  /** Verified paid session from Stripe redirect (`?session_id=`); stripped next tick client-side. */
+  let stripeReturnCreditsVerified: number | null = null;
+
+  if (sessionId && !canceled) {
+    const returnInfo = await verifyTopUpReturnSession({
+      userId: user.id,
+      sessionId,
+    });
+    if (returnInfo.ok) {
+      stripeReturnCreditsVerified = returnInfo.credits;
+    } else {
+      serverLog.warn("Stripe top-up return session verification failed", {
+        userId: user.id,
+        sessionIdSuffix: sessionId.slice(-12),
+        reason: returnInfo.reason,
+      });
+    }
+  }
+
   const balance = await getCreditBalance(user.id);
   const formattedCredits = formatCreditAmount(balance.creditsRemaining);
-
-  const roadmapItems = [
-    { icon: CreditCard, label: t("roadmapBilling") },
-    { icon: History, label: t("roadmapHistory") },
-    { icon: Bell, label: t("roadmapAlerts") },
-  ];
+  const unitCents = getCreditUnitAmountCents();
+  const unitLabel =
+    unitCents > 0
+      ? t("unitLabel", {
+          price: formatMinorUnitsForCheckout(unitCents, numberLocale),
+        })
+      : "";
+  const purchaseTiers =
+    unitCents > 0
+      ? TOP_UP_PRESET_CREDIT_AMOUNTS.map((credits) => ({
+          credits,
+          totalFormatted: formatMinorUnitsForCheckout(
+            credits * unitCents,
+            numberLocale,
+          ),
+        }))
+      : [];
 
   return (
     <AppPage>
-      <PageHeader
-        title={t("title")}
-        description={t("description")}
-        actions={
-          <Badge variant="outline-muted" className="shrink-0">
-            <Clock3 className="mr-1 h-3 w-3" />
-            {t("status")}
-          </Badge>
-        }
-      />
+      <PageHeader title={t("title")} description={t("description")} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
-        <div className="space-y-6">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
-            <Card className="overflow-hidden pt-0">
-              <CardHeader className="rounded-t-xl bg-masumi-gradient pb-6 pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <CardDescription className="text-foreground/70">
-                      {t("balanceLabel")}
-                    </CardDescription>
-                    <CardTitle className="font-mono text-5xl font-semibold tracking-tight">
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <Suspense fallback={null}>
+          <TopUpStripSessionQuery />
+        </Suspense>
+
+        {canceled ? <TopUpCanceledBanner /> : null}
+
+        {stripeReturnCreditsVerified !== null ? (
+          <TopUpReturnSuccessBanner credits={stripeReturnCreditsVerified} />
+        ) : null}
+
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
+          <Card className="gap-0 overflow-hidden pt-0">
+            <CardHeader className="rounded-t-xl bg-masumi-gradient pb-4 pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <CardDescription className="text-foreground/70">
+                    {t("balanceLabel")}
+                  </CardDescription>
+                  <div className="min-w-0 max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <CardTitle className="font-mono text-[clamp(1.625rem,7vw,3rem)] font-semibold tabular-nums tracking-tight whitespace-nowrap">
                       {formattedCredits}
                     </CardTitle>
                   </div>
-                  <div className="rounded-full border border-foreground/10 bg-background/70 p-3 backdrop-blur-sm">
-                    <Coins className="h-5 w-5" />
-                  </div>
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4 pt-6">
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {t("balanceDescription")}
-                </p>
-
-                <div className="rounded-xl border bg-muted/30 p-4">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {t("mainnetOnlyTitle")}
-                      </p>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {t("mainnetOnlyDescription")}
-                      </p>
-                    </div>
-                  </div>
+                <div className="rounded-full border border-foreground/10 bg-background/70 p-3 backdrop-blur-sm">
+                  <Coins className="h-5 w-5" />
                 </div>
-              </CardContent>
-
-              <CardFooter className="flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <Button disabled className="w-full sm:w-auto">
-                  <PlusCircle className="h-4 w-4" />
-                  {t("cta")}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {t("comingSoon")}
-                </p>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-75">
-          <Card className="h-full shadow-none">
-            <CardHeader>
-              <div className="space-y-2">
-                <CardTitle className="text-base">{t("roadmapTitle")}</CardTitle>
-                <CardDescription className="leading-6">
-                  {t("roadmapDescription")}
-                </CardDescription>
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-3">
-              {roadmapItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 rounded-lg border bg-muted/20 p-4"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <item.icon className="h-4 w-4 text-muted-foreground" />
+            <CardContent className="space-y-4 pt-4">
+              <p className="text-sm leading-6 text-muted-foreground">
+                {t("balanceDescription")}
+              </p>
+
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {t("mainnetOnlyTitle")}
+                    </p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {t("mainnetOnlyDescription")}
+                    </p>
                   </div>
-                  <p className="text-sm font-medium">{item.label}</p>
                 </div>
-              ))}
+              </div>
+
+              {unitCents > 0 ? (
+                <TopUpPurchaseForm
+                  purchaseTiers={purchaseTiers}
+                  stripeCheckoutCurrencyUpper={STRIPE_CHECKOUT_CURRENCY.toUpperCase()}
+                  unitAmountCents={unitCents}
+                  unitLabel={unitLabel}
+                  numberLocale={numberLocale}
+                />
+              ) : null}
             </CardContent>
+
+            <CardFooter className="mt-6 flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground">
+                {t("webhookNote")}
+              </p>
+            </CardFooter>
           </Card>
         </div>
       </div>

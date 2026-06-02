@@ -2,6 +2,8 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
+import { serverLog } from "@/lib/server/logger";
+
 import { parseNetwork } from "../schemas/api-query";
 
 export const CREDIT_COST = 1;
@@ -11,7 +13,8 @@ export type CreditLedgerReason =
   | "initial_grant"
   | "agent_register"
   | "inbox_agent_register"
-  | "payment_proxy_write";
+  | "payment_proxy_write"
+  | "stripe_checkout";
 
 export type CreditBalance = {
   creditsRemaining: number;
@@ -31,6 +34,17 @@ export class InsufficientCreditsError extends Error {
     this.requiredCredits = requiredCredits;
   }
 }
+
+/** Raised when granting credits would exceed {@link MAX_USER_CREDITS_REMAINING}. */
+export class CreditBalanceCapExceededError extends Error {
+  constructor() {
+    super("Credit balance would exceed configured maximum");
+    this.name = "CreditBalanceCapExceededError";
+  }
+}
+
+/** Stay below Postgres `Int` max (2_147_483_647) with headroom. */
+const MAX_USER_CREDITS_REMAINING = 2_000_000_000;
 
 function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -182,6 +196,77 @@ export async function consumeCreditIfRequired(params: {
   });
 }
 
+/**
+ * Idempotent credit grant for Stripe Checkout (`checkout.session.completed`).
+ * Same `checkoutSessionId` only applies once (unique userId + reason + reference).
+ */
+export async function grantCreditTopUpFromCheckoutSession(params: {
+  userId: string;
+  credits: number;
+  checkoutSessionId: string;
+  metadata?: CreditMetadata;
+}): Promise<{ granted: boolean; balanceAfter: number }> {
+  if (params.credits <= 0) {
+    throw new Error(
+      "grantCreditTopUpFromCheckoutSession: credits must be positive",
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.creditLedgerEntry.findUnique({
+      where: {
+        userId_reason_reference: {
+          userId: params.userId,
+          reason: "stripe_checkout",
+          reference: params.checkoutSessionId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      const u = await tx.user.findUniqueOrThrow({
+        where: { id: params.userId },
+        select: { creditsRemaining: true },
+      });
+      return { granted: false, balanceAfter: u.creditsRemaining };
+    }
+
+    const before = await tx.user.findUniqueOrThrow({
+      where: { id: params.userId },
+      select: { creditsRemaining: true },
+    });
+    if (before.creditsRemaining > MAX_USER_CREDITS_REMAINING - params.credits) {
+      throw new CreditBalanceCapExceededError();
+    }
+
+    const user = await tx.user.update({
+      where: { id: params.userId },
+      data: {
+        creditsRemaining: {
+          increment: params.credits,
+        },
+      },
+      select: { creditsRemaining: true },
+    });
+
+    await tx.creditLedgerEntry.create({
+      data: {
+        userId: params.userId,
+        delta: params.credits,
+        balanceAfter: user.creditsRemaining,
+        reason: "stripe_checkout",
+        reference: params.checkoutSessionId,
+        ...(params.metadata
+          ? { metadata: toJsonMetadata(params.metadata) }
+          : {}),
+      },
+    });
+
+    return { granted: true, balanceAfter: user.creditsRemaining };
+  });
+}
+
 export async function refundConsumedCredit(params: {
   userId: string;
   reason: Exclude<CreditLedgerReason, "initial_grant">;
@@ -241,11 +326,11 @@ export async function refundConsumedCredit(params: {
     });
   } catch (error) {
     if (isUniqueConstraintError(error)) return;
-    console.error("[Credits] Failed to refund consumed credit:", {
+    serverLog.error("[Credits] Failed to refund consumed credit", {
       userId: params.userId,
       reason: params.reason,
       reference: params.reference,
-      error,
+      err: error,
     });
   }
 }
