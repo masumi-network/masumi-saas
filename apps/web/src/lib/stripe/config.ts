@@ -24,7 +24,7 @@ function readOptionalTrimmed(name: string): string | null {
  * Env names / hints still needed for Checkout + webhooks. Empty means top-up is ready.
  * Production and local dev are expected to set these; the UI calls this out if not.
  */
-export function getStripeTopUpConfigurationGaps(): string[] {
+function listStripeTopUpConfigurationGaps(): string[] {
   const missing: string[] = [];
   if (readOptionalTrimmed("STRIPE_SECRET_KEY") == null) {
     missing.push("STRIPE_SECRET_KEY");
@@ -44,7 +44,7 @@ export function getStripeTopUpConfigurationGaps(): string[] {
 }
 
 export function isStripeTopUpEnabled(): boolean {
-  return getStripeTopUpConfigurationGaps().length === 0;
+  return listStripeTopUpConfigurationGaps().length === 0;
 }
 
 export function getAppBaseUrlForStripe(): string {

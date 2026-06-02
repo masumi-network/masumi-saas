@@ -35,11 +35,11 @@ export function CreditBalanceLink({
     <>
       <Coins className="h-4 w-4 shrink-0" />
       <span className="hidden lg:inline">{tHeader("credits")}</span>
-      <span className="shrink-0 font-mono text-xs tabular-nums whitespace-nowrap">
+      <span className="hidden font-mono text-xs tabular-nums whitespace-nowrap md:inline">
         {isError ? "—" : formattedCredits}
       </span>
       {balanceLinkToTopUp ? (
-        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-70" />
+        <ArrowUpRight className="hidden h-3.5 w-3.5 shrink-0 opacity-70 md:inline" />
       ) : null}
     </>
   );
