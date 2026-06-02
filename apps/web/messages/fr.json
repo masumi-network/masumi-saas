@@ -63,8 +63,8 @@
       "login": "Se connecter",
       "checkEmail": {
         "title": "Vérifiez vos e-mails",
-        "description": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour vous connecter à votre tableau de bord.",
-        "oidcDescription": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour poursuivre la connexion avec votre compte Masumi.",
+        "description": "Nous avons envoyé un lien magique à <emailEmphasis>{email}</emailEmphasis>. Ouvrez-le pour vous connecter à votre tableau de bord.",
+        "oidcDescription": "Nous avons envoyé un lien magique à <emailEmphasis>{email}</emailEmphasis>. Ouvrez-le pour poursuivre la connexion avec votre compte Masumi.",
         "tryAnother": "Utiliser une autre adresse e-mail"
       }
     },
@@ -90,8 +90,8 @@
       "useMagicLink": "Utiliser un lien magique à la place (recommandé)",
       "checkEmail": {
         "title": "Vérifiez vos e-mails",
-        "description": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour terminer l'inscription et accéder à votre tableau de bord.",
-        "oidcDescription": "Nous avons envoyé un lien magique à {email}. Ouvrez-le pour terminer l'inscription et continuer avec votre compte Masumi.",
+        "description": "Nous avons envoyé un lien magique à <emailEmphasis>{email}</emailEmphasis>. Ouvrez-le pour terminer l'inscription et accéder à votre tableau de bord.",
+        "oidcDescription": "Nous avons envoyé un lien magique à <emailEmphasis>{email}</emailEmphasis>. Ouvrez-le pour terminer l'inscription et continuer avec votre compte Masumi.",
         "tryAnother": "Utiliser une autre adresse e-mail"
       }
     },
@@ -163,7 +163,6 @@
       "title": "Vérifier avec un code",
       "description": "Utilisez le code à 6 chiffres du même e-mail si vous ne souhaitez pas ouvrir le lien.",
       "codeLabel": "Code de connexion",
-      "codePlaceholder": "000000",
       "submit": "Autoriser avec un code",
       "submitting": "Vérification du code...",
       "success": "Code accepté. Autorisation..."
@@ -1729,6 +1728,9 @@
       "description": "Nous utilisons des cookies pour vous garantir la meilleure expérience sur notre site Web.",
       "gotIt": "J'ai compris",
       "learnMore": "Apprendre encore plus"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "Chiffre {index} sur {total}"
     },
     "LogoutModal": {
       "title": "Voulez-vous vraiment vous déconnecter ?",

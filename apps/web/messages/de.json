@@ -63,8 +63,8 @@
       "login": "Anmelden",
       "checkEmail": {
         "title": "Prüfen Sie Ihre E-Mails",
-        "description": "Wir haben einen Magic-Link an {email} gesendet. Öffnen Sie ihn, um sich bei Ihrem Dashboard anzumelden.",
-        "oidcDescription": "Wir haben einen Magic-Link an {email} gesendet. Öffnen Sie ihn, um sich mit Ihrem Masumi-Konto weiter anzumelden.",
+        "description": "Wir haben einen Magic-Link an <emailEmphasis>{email}</emailEmphasis> gesendet. Öffnen Sie ihn, um sich bei Ihrem Dashboard anzumelden.",
+        "oidcDescription": "Wir haben einen Magic-Link an <emailEmphasis>{email}</emailEmphasis> gesendet. Öffnen Sie ihn, um sich mit Ihrem Masumi-Konto weiter anzumelden.",
         "tryAnother": "Andere E-Mail-Adresse verwenden"
       }
     },
@@ -90,8 +90,8 @@
       "useMagicLink": "Stattdessen Magic-Link verwenden (empfohlen)",
       "checkEmail": {
         "title": "Prüfen Sie Ihre E-Mails",
-        "description": "Wir haben einen Magic-Link an {email} gesendet. Öffnen Sie ihn, um die Registrierung abzuschließen und auf Ihr Dashboard zuzugreifen.",
-        "oidcDescription": "Wir haben einen Magic-Link an {email} gesendet. Öffnen Sie ihn, um die Registrierung abzuschließen und mit Ihrem Masumi-Konto fortzufahren.",
+        "description": "Wir haben einen Magic-Link an <emailEmphasis>{email}</emailEmphasis> gesendet. Öffnen Sie ihn, um die Registrierung abzuschließen und auf Ihr Dashboard zuzugreifen.",
+        "oidcDescription": "Wir haben einen Magic-Link an <emailEmphasis>{email}</emailEmphasis> gesendet. Öffnen Sie ihn, um die Registrierung abzuschließen und mit Ihrem Masumi-Konto fortzufahren.",
         "tryAnother": "Andere E-Mail-Adresse verwenden"
       }
     },
@@ -163,7 +163,6 @@
       "title": "Mit Code bestätigen",
       "description": "Verwenden Sie den 6-stelligen Code aus derselben E-Mail, falls Sie den Link nicht öffnen möchten.",
       "codeLabel": "Anmeldecode",
-      "codePlaceholder": "000000",
       "submit": "Mit Code autorisieren",
       "submitting": "Code wird geprüft...",
       "success": "Code akzeptiert. Autorisierung läuft..."
@@ -1729,6 +1728,9 @@
       "description": "Wir verwenden Cookies, um sicherzustellen, dass Sie das beste Erlebnis auf unserer Website haben.",
       "gotIt": "Habe es",
       "learnMore": "Erfahren Sie mehr"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "Ziffer {index} von {total}"
     },
     "LogoutModal": {
       "title": "Möchten Sie sich wirklich abmelden?",
