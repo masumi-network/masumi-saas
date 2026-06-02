@@ -70,10 +70,11 @@ export const authConfig = {
   },
   /** Six-digit codes: signup verification, magic-link email code, OIDC email verify. */
   emailOtp: {
+    expiresInMinutes: EMAIL_OTP_EXPIRES_IN_MINUTES,
     expiresInSeconds: EMAIL_OTP_EXPIRES_IN_MINUTES * 60,
-    allowedAttempts: parseInt(
-      process.env.EMAIL_OTP_ALLOWED_ATTEMPTS || "3",
-      10,
+    allowedAttempts: parsePositiveIntEnv(
+      process.env.EMAIL_OTP_ALLOWED_ATTEMPTS,
+      3,
     ),
   },
   magicLink: {

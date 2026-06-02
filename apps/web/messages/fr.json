@@ -1799,7 +1799,7 @@
       "linkText": "Ou copiez et collez ce lien dans votre navigateur :",
       "footer": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail en toute sécurité.",
       "codeLabel": "Code de vérification",
-      "codeExpiry": "Ce code expire dans 15 minutes.",
+      "codeExpiry": "Ce code expire dans {minutes} minutes.",
       "codeHelp": "Vous pouvez entrer ce code dans Masumi si vous préférez vérifier par code."
     },
     "Invitation": {
@@ -1817,7 +1817,7 @@
       "greeting": "Bonjour {name},",
       "message": "Entrez ce code dans Masumi pour vérifier votre adresse e-mail et poursuivre la connexion.",
       "codeLabel": "Code de vérification",
-      "expiry": "Ce code expire dans 15 minutes.",
+      "expiry": "Ce code expire dans {minutes} minutes.",
       "footer": "Si vous n'avez pas demandé ce code, vous pouvez ignorer cet e-mail."
     },
     "MagicLink": {
@@ -1830,7 +1830,7 @@
       "consentAfter": ".",
       "button": "Continuer vers Masumi",
       "codeLabel": "Code d'accès",
-      "codeExpiry": "Ce code expire dans 15 minutes.",
+      "codeExpiry": "Ce code expire dans {minutes} minutes.",
       "codeHelp": "Vous pouvez entrer ce code dans Masumi si vous préférez ne pas ouvrir le lien.",
       "linkText": "Lien d'accès de secours",
       "footer": "Si vous n'avez pas demandé cet e-mail, vous pouvez l'ignorer."
@@ -1845,7 +1845,7 @@
       "consentAfter": ".",
       "button": "Continuer vers Agent Messenger",
       "codeLabel": "Code d'accès",
-      "codeExpiry": "Ce code expire dans 15 minutes.",
+      "codeExpiry": "Ce code expire dans {minutes} minutes.",
       "codeHelp": "Vous pouvez entrer ce code dans Agent Messenger si vous préférez ne pas ouvrir le lien.",
       "linkText": "Lien de secours Agent Messenger",
       "footer": "Si vous n'avez pas demandé cet e-mail, vous pouvez l'ignorer."

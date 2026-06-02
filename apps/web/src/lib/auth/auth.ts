@@ -51,6 +51,7 @@ import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
 import { reactAgentMessengerMagicLinkEmail } from "@/lib/email/agent-messenger-magic-link";
+import { formatOtpExpiryMessage } from "@/lib/email/format-otp-expiry-message";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -230,7 +231,7 @@ async function sendVerificationOtpEmail({
         greeting: msg.greeting,
         message: msg.message,
         codeLabel: msg.codeLabel,
-        expiry: msg.expiry,
+        expiry: formatOtpExpiryMessage(msg.expiry),
         footer: msg.footer,
       },
     }),
@@ -383,7 +384,7 @@ export const auth = betterAuth({
               message: msg.message,
               button: msg.button,
               codeLabel: msg.codeLabel,
-              codeExpiry: msg.codeExpiry,
+              codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
               codeHelp: msg.codeHelp,
               footer: msg.footer,
             },
@@ -595,7 +596,7 @@ export const auth = betterAuth({
                   consentAfter: msg.consentAfter,
                   button: msg.button,
                   codeLabel: msg.codeLabel,
-                  codeExpiry: msg.codeExpiry,
+                  codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
                   codeHelp: msg.codeHelp,
                   footer: msg.footer,
                 },
@@ -617,7 +618,7 @@ export const auth = betterAuth({
                   consentAfter: msg.consentAfter,
                   button: msg.button,
                   codeLabel: msg.codeLabel,
-                  codeExpiry: msg.codeExpiry,
+                  codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
                   codeHelp: msg.codeHelp,
                   footer: msg.footer,
                 },
