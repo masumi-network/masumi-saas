@@ -51,9 +51,30 @@ export const authEnvConfig = {
   },
 } as const;
 
+function parsePositiveIntEnv(
+  value: string | undefined,
+  fallback: number,
+): number {
+  const parsed = parseInt(value ?? String(fallback), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const EMAIL_OTP_EXPIRES_IN_MINUTES = Math.max(
+  15,
+  parsePositiveIntEnv(process.env.EMAIL_OTP_EXPIRES_IN_MINUTES, 15),
+);
+
 export const authConfig = {
   emailAndPassword: {
     requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === "true",
+  },
+  /** Six-digit codes: signup verification, magic-link email code, OIDC email verify. */
+  emailOtp: {
+    expiresInSeconds: EMAIL_OTP_EXPIRES_IN_MINUTES * 60,
+    allowedAttempts: parseInt(
+      process.env.EMAIL_OTP_ALLOWED_ATTEMPTS || "3",
+      10,
+    ),
   },
   magicLink: {
     expiresIn:

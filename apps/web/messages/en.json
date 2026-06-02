@@ -1797,7 +1797,7 @@
       "message": "Please verify your email address by clicking the button below or entering the code shown here.",
       "button": "Verify email",
       "codeLabel": "Verification code",
-      "codeExpiry": "This code expires in 5 minutes.",
+      "codeExpiry": "This code expires in 15 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer verification by code.",
       "linkText": "Backup verification link",
       "footer": "If you didn't create an account, you can safely ignore this email."
@@ -1808,7 +1808,7 @@
       "greeting": "Hello {name},",
       "message": "Enter this code in Masumi to verify your email address and continue signing in.",
       "codeLabel": "Verification code",
-      "expiry": "This code expires in 5 minutes.",
+      "expiry": "This code expires in 15 minutes.",
       "footer": "If you didn't request this code, you can safely ignore this email."
     },
     "MagicLink": {
@@ -1821,7 +1821,7 @@
       "consentAfter": ".",
       "button": "Continue to Masumi",
       "codeLabel": "Access code",
-      "codeExpiry": "This code expires in 5 minutes.",
+      "codeExpiry": "This code expires in 15 minutes.",
       "codeHelp": "You can enter this code in Masumi if you prefer not to open the link.",
       "linkText": "Backup access link",
       "footer": "If you didn't request this email, you can safely ignore it."
@@ -1836,7 +1836,7 @@
       "consentAfter": ".",
       "button": "Continue to Agent Messenger",
       "codeLabel": "Access code",
-      "codeExpiry": "This code expires in 5 minutes.",
+      "codeExpiry": "This code expires in 15 minutes.",
       "codeHelp": "You can enter this code in Agent Messenger if you prefer not to open the link.",
       "linkText": "Backup Agent Messenger link",
       "footer": "If you didn't request this email, you can safely ignore it."

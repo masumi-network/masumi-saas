@@ -25,7 +25,7 @@ describe("reactAgentMessengerMagicLinkEmail", () => {
         consentAfter: ".",
         button: "Continue to Agent Messenger",
         codeLabel: "Access code",
-        codeExpiry: "This code expires in 5 minutes.",
+        codeExpiry: "This code expires in 15 minutes.",
         codeHelp:
           "You can enter this code in Agent Messenger if you prefer not to open the link.",
         footer: "If you didn't request this email, you can safely ignore it.",

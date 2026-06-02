@@ -1799,7 +1799,7 @@
       "linkText": "O copie y pegue este enlace en su navegador:",
       "footer": "Si no creó una cuenta, puede ignorar este correo electrónico con seguridad.",
       "codeLabel": "Código de verificación",
-      "codeExpiry": "Este código caduca en 5 minutos.",
+      "codeExpiry": "Este código caduca en 15 minutos.",
       "codeHelp": "Puedes introducir este código en Masumi si prefieres verificar mediante código."
     },
     "Invitation": {
@@ -1817,7 +1817,7 @@
       "greeting": "Hola {name},",
       "message": "Introduce este código en Masumi para verificar tu correo y continuar iniciando sesión.",
       "codeLabel": "Código de verificación",
-      "expiry": "Este código caduca en 5 minutos.",
+      "expiry": "Este código caduca en 15 minutos.",
       "footer": "Si no solicitaste este código, puedes ignorar este correo con seguridad."
     },
     "MagicLink": {
@@ -1830,7 +1830,7 @@
       "consentAfter": ".",
       "button": "Continuar a Masumi",
       "codeLabel": "Código de acceso",
-      "codeExpiry": "Este código caduca en 5 minutos.",
+      "codeExpiry": "Este código caduca en 15 minutos.",
       "codeHelp": "Puedes introducir este código en Masumi si prefieres no abrir el enlace.",
       "linkText": "Enlace de acceso de respaldo",
       "footer": "Si no solicitaste este correo, puedes ignorarlo con seguridad."
@@ -1845,7 +1845,7 @@
       "consentAfter": ".",
       "button": "Continuar a Agent Messenger",
       "codeLabel": "Código de acceso",
-      "codeExpiry": "Este código caduca en 5 minutos.",
+      "codeExpiry": "Este código caduca en 15 minutos.",
       "codeHelp": "Puedes introducir este código en Agent Messenger si prefieres no abrir el enlace.",
       "linkText": "Enlace de respaldo de Agent Messenger",
       "footer": "Si no solicitaste este correo, puedes ignorarlo con seguridad."

@@ -60,8 +60,6 @@ import { reactVerificationEmail } from "@/lib/email/verification";
 import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
 import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
-const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
-const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
 const ADMIN_IMPERSONATION_TARGET_ERROR = "Admin users cannot be impersonated.";
 const BANNED_IMPERSONATION_TARGET_ERROR =
   "Banned users cannot be impersonated.";
@@ -172,7 +170,9 @@ async function createEmailOtp(
     id: crypto.randomUUID(),
     identifier,
     value: buildStoredOtpValue(otp),
-    expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
+    expiresAt: new Date(
+      Date.now() + authConfig.emailOtp.expiresInSeconds * 1000,
+    ),
   });
 
   return otp;
@@ -502,9 +502,9 @@ export const auth = betterAuth({
         clientId === oidcEnvConfig.cli.clientId,
     }),
     emailOTP({
-      expiresIn: EMAIL_OTP_EXPIRES_IN_SECONDS,
+      expiresIn: authConfig.emailOtp.expiresInSeconds,
       otpLength: 6,
-      allowedAttempts: EMAIL_OTP_ALLOWED_ATTEMPTS,
+      allowedAttempts: authConfig.emailOtp.allowedAttempts,
       storeOTP: createEmailOtpStoreOptions(),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type !== "email-verification") {
