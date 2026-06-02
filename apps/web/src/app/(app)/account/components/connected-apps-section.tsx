@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -29,10 +30,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { terminateConnectedAppAction } from "@/lib/actions/connected-apps.action";
 import type { ConnectedOidcClient } from "@/lib/auth/connected-oidc-clients";
 import { cn } from "@/lib/utils";
-import { formatRelativeDate } from "@/lib/utils/format-date";
 
 /**
  * Client-safe shape for connected OIDC clients. Dates are serialized to ISO
@@ -151,6 +152,7 @@ export function ConnectedAppsSection({ clients }: ConnectedAppsSectionProps) {
 
 function ConnectedAppRow({ client }: { client: SerializedConnectedClient }) {
   const t = useTranslations("App.Account.Connected");
+  const { formatRelativeDate } = useFormatDate();
   const router = useRouter();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -269,11 +271,11 @@ function ConnectedAppRow({ client }: { client: SerializedConnectedClient }) {
               </DialogTitle>
             </DialogHeader>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
+          <DialogBody stagger={false}>
             <DialogDescription className="text-muted-foreground text-sm">
               {t("confirmDescription", { name: client.name })}
             </DialogDescription>
-          </div>
+          </DialogBody>
           <DialogFooter className="shrink-0 flex justify-end gap-2 border-t border-border bg-background px-6 py-4">
             <Button
               type="button"

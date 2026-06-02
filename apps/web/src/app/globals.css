@@ -8,9 +8,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
+  --text-page-title: 1.625rem;
+  --text-page-title--line-height: 1.2;
+  --text-display: 1.75rem;
+  --text-display--line-height: 1.15;
+  --text-auth-title: 2rem;
+  --text-auth-title--line-height: 1.15;
+  --spacing-page: 2rem;
+  --spacing-section: 1.5rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -138,6 +147,95 @@
     background-image: var(--gradient-masumi-header);
   }
 
+  .app-canvas-glow-layer {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.55s ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-canvas-glow-layer {
+      transition: none;
+    }
+  }
+
+  .bg-app-canvas,
+  .bg-app-canvas-vivid {
+    background-color: hsl(var(--background));
+  }
+
+  .app-canvas-glow-subtle,
+  .app-canvas-glow-vivid {
+    background-color: transparent;
+  }
+
+  /* Default canvas — subtle glow for inner app, admin, docs, etc. */
+  .bg-app-canvas,
+  .app-canvas-glow-subtle {
+    background-image:
+      radial-gradient(
+        ellipse 90% 60% at 50% -12%,
+        color-mix(in srgb, var(--color-masumi-iris-flower) 2%, transparent),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 100% 0%,
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 2%, transparent),
+        transparent 55%
+      );
+  }
+
+  .dark .bg-app-canvas,
+  .dark .app-canvas-glow-subtle {
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 50% -6%,
+        color-mix(in srgb, var(--color-masumi-electric-pink) 2.5%, transparent),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 45% 28% at 0% 100%,
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 6%, transparent),
+        transparent 50%
+      );
+  }
+
+  /* Dashboard home — slightly stronger brand glow */
+  .bg-app-canvas-vivid,
+  .app-canvas-glow-vivid {
+    background-image:
+      radial-gradient(
+        ellipse 100% 65% at 50% -16%,
+        color-mix(in srgb, var(--color-masumi-iris-flower) 4%, transparent),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 0%,
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 4%, transparent),
+        transparent 50%
+      );
+  }
+
+  .dark .bg-app-canvas-vivid,
+  .dark .app-canvas-glow-vivid {
+    background-image:
+      radial-gradient(
+        ellipse 90% 55% at 50% -8%,
+        color-mix(in srgb, var(--color-masumi-electric-pink) 5%, transparent),
+        transparent 48%
+      ),
+      radial-gradient(
+        ellipse 50% 30% at 0% 100%,
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 12%, transparent),
+        transparent 45%
+      );
+  }
+
+  .surface-panel {
+    @apply rounded-xl border border-border/80 bg-card/80 shadow-sm backdrop-blur-sm;
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -187,20 +285,20 @@
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --muted-surface: 240 4.8% 97.2%;
+    --muted-foreground: 240 4% 42%;
+    --muted-surface: 300 20% 98%;
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 349 100% 58%; /* #c70000 */
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 300 8% 88%;
+    --input: 300 8% 88%;
     --ring: hsla(300, 100%, 66%, 1);
     /* masumi-iris-flower */
     --tooltip: hsla(300, 100%, 66%, 1);
     /* masumi-iris-flower */
     --tooltip-foreground: hsla(0, 0%, 0%, 1);
-    --radius: 0.5rem;
+    --radius: 0.625rem;
   }
 
   .dark {
@@ -240,8 +338,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -309,38 +406,8 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-@keyframes bounceBottom {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-bounce-bottom {
-  animation: bounceBottom 0.3s ease forwards;
-}
-
 #__next {
   overflow-y: scroll !important;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 
 @keyframes grid-glide {
@@ -368,18 +435,6 @@ input[type="number"] {
   }
 }
 
-@keyframes rotateIn {
-  0% {
-    transform: rotate(-360deg);
-    opacity: 0;
-  }
-
-  100% {
-    transform: rotate(0deg);
-    opacity: 1;
-  }
-}
-
 @keyframes checkIn {
   0% {
     transform: scale(0.4) rotate(-180deg);
@@ -395,23 +450,6 @@ input[type="number"] {
   animation: checkIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Highlight animation for searched elements */
-@keyframes highlight {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-.highlight-element {
-  animation: highlight 0.5s ease infinite alternate;
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-}
-
 /* Schema Playground: keep form preview on top so it stays interactive (Monaco can overlay) */
 .schema-playground-wrapper > div > div:last-child {
   position: relative;
@@ -425,30 +463,15 @@ input[type="number"] {
   --tw-ring-color: hsl(var(--ring));
 }
 
-/* Ensure toast notifications appear above dialog overlays */
-/* Dialog overlay uses z-[999], dialog content uses z-[1000], so toasts need higher */
-.Toastify {
-  position: fixed;
-  z-index: 10000 !important;
-}
-
-.Toastify__toast-container {
-  z-index: 10000 !important;
-}
-
-.Toastify__toast {
-  z-index: 10000 !important;
-}
-
 :root {
-  --sidebar: hsla(300, 0%, 98%, 1);
+  --sidebar: hsla(300, 30%, 99%, 1);
   --sidebar-foreground: hsla(300, 0%, 4%, 1);
   --sidebar-primary: hsla(330, 0%, 9%, 1);
   --sidebar-primary-foreground: hsla(300, 0%, 98%, 1);
-  --sidebar-accent: hsla(300, 0%, 90%, 1);
+  --sidebar-accent: hsla(300, 60%, 96%, 1);
   --sidebar-accent-foreground: hsla(330, 0%, 9%, 1);
-  --sidebar-border: hsla(330, 0%, 90%, 1);
-  --sidebar-ring: hsla(0, 0%, 63%, 1);
+  --sidebar-border: hsla(300, 15%, 91%, 1);
+  --sidebar-ring: hsla(300, 100%, 66%, 0.35);
   --sidebar-text: 240 5.9% 10%;
 }
 
@@ -494,11 +517,63 @@ input[type="number"] {
   animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.animate-stagger-1 { animation-delay: 0.05s; }
-.animate-stagger-2 { animation-delay: 0.1s; }
-.animate-stagger-3 { animation-delay: 0.15s; }
-.animate-stagger-4 { animation-delay: 0.2s; }
-.animate-stagger-5 { animation-delay: 0.25s; }
+.animate-stagger-1 {
+  animation-delay: 0.05s;
+}
+.animate-stagger-2 {
+  animation-delay: 0.1s;
+}
+.animate-stagger-3 {
+  animation-delay: 0.15s;
+}
+.animate-stagger-4 {
+  animation-delay: 0.2s;
+}
+.animate-stagger-5 {
+  animation-delay: 0.25s;
+}
+.animate-stagger-6 {
+  animation-delay: 0.3s;
+}
+.animate-stagger-7 {
+  animation-delay: 0.35s;
+}
+.animate-stagger-8 {
+  animation-delay: 0.4s;
+}
+
+/* Stagger direct children in dialog scroll bodies (developers test payment pattern) */
+.dialog-stagger-in > * {
+  opacity: 0;
+  animation: fadeInUp 0.3s ease-out both;
+}
+.dialog-stagger-in > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.dialog-stagger-in > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.dialog-stagger-in > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.dialog-stagger-in > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.dialog-stagger-in > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.dialog-stagger-in > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.dialog-stagger-in > *:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.dialog-stagger-in > *:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.dialog-stagger-in > *:nth-child(n + 9) {
+  animation-delay: 0.45s;
+}
 
 .grid-expand-wrapper {
   display: grid;
@@ -543,5 +618,24 @@ input[type="number"] {
   div {
     width: 100% !important;
     height: 100% !important;
+  }
+}
+
+/* Respect user's reduced-motion preference. Single repo-wide rule disables
+ * keyframe animations and transitions for the entire surface. Individual
+ * components don't need their own opt-out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .dialog-stagger-in > * {
+    opacity: 1 !important;
+    animation: none !important;
   }
 }

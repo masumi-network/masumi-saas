@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "")
   .split(",")
@@ -30,10 +30,10 @@ function formatAllowedMethods(methods?: readonly string[]) {
 }
 
 export function corsHeaders(
-  request?: NextRequest,
+  request?: Request,
   methods?: readonly string[],
   options?: CorsOptions,
-): HeadersInit {
+): Record<string, string> {
   const origin = request?.headers.get("origin") ?? null;
   const allowed = isOriginAllowed(origin, options);
 
@@ -51,7 +51,7 @@ export function corsHeaders(
 }
 
 export function handleCorsPreflightResponse(
-  request?: NextRequest,
+  request?: Request,
   methods?: readonly string[],
   options?: CorsOptions,
 ): NextResponse {
@@ -61,12 +61,12 @@ export function handleCorsPreflightResponse(
   });
 }
 
-export function addCorsHeaders(
-  response: NextResponse,
-  request?: NextRequest,
+export function addCorsHeaders<TResponse extends Response>(
+  response: TResponse,
+  request?: Request,
   methods?: readonly string[],
   options?: CorsOptions,
-): NextResponse {
+): TResponse {
   for (const [key, value] of Object.entries(
     corsHeaders(request, methods, options),
   )) {

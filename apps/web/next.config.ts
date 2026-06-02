@@ -57,7 +57,7 @@ function buildContentSecurityPolicy(options: {
     connectSrc.add(options.sentryOrigin);
   }
 
-  if (options.route === "verification" && options.sumsubOrigin) {
+  if (options.sumsubOrigin) {
     connectSrc.add(options.sumsubOrigin);
     frameSrc.add(options.sumsubOrigin);
   }
@@ -68,8 +68,8 @@ function buildContentSecurityPolicy(options: {
     `form-action ${[...formAction].join(" ")}`,
     "frame-ancestors 'self'",
     "object-src 'none'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
-    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https:",
     `connect-src ${[...connectSrc].join(" ")}`,
@@ -163,6 +163,7 @@ function buildSecurityHeaders() {
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  skipProxyUrlNormalize: true,
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },

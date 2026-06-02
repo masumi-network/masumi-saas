@@ -43,6 +43,8 @@ describe("next security headers", () => {
     setEnvValue("SUMSUB_BASE_URL", "https://api.sumsub.com");
 
     const configModule = await import("./next.config");
+    expect(configModule.default.skipProxyUrlNormalize).toBe(true);
+
     const headers = await configModule.default.headers?.();
 
     expect(headers).toBeDefined();

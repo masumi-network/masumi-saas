@@ -1,41 +1,27 @@
 import prisma from "@masumi/database/client";
-import { NextRequest, NextResponse } from "next/server";
+import type { Context } from "hono";
 
-import {
-  getAuthenticatedOrThrow,
-  handleAuthError,
-  isAdminUser,
-} from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow, isAdminUser } from "@/lib/auth/utils";
 import {
   buildUpstreamHeaders,
   readOptionalRequestBody,
   resolveRegistrySharedTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "registry-source";
 const UPSTREAM_PATH = "/registry-source/";
 
-export async function GET(request: NextRequest) {
-  return handleRequest(request, "GET");
-}
-
-export async function POST(request: NextRequest) {
-  return handleRequest(request, "POST");
-}
-
-export async function PATCH(request: NextRequest) {
-  return handleRequest(request, "PATCH");
-}
-
-export async function DELETE(request: NextRequest) {
-  return handleRequest(request, "DELETE");
-}
+const app = createApiApp("/");
 
 async function handleRequest(
-  request: NextRequest,
+  c: Context,
   method: "GET" | "POST" | "PATCH" | "DELETE",
 ) {
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -46,17 +32,14 @@ async function handleRequest(
     });
 
     if (!isAdminUser({ id: authContext.user.id, role: dbUser?.role })) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+      return c.json({ success: false as const, error: "Forbidden" }, 403);
     }
 
     const upstream = resolveRegistrySharedTokenUpstream();
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
@@ -64,7 +47,7 @@ async function handleRequest(
     const body =
       method === "GET" ? undefined : await readOptionalRequestBody(request);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method,
         headers,
@@ -74,12 +57,17 @@ async function handleRequest(
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
 }
+
+app.get("*", (c) => handleRequest(c, "GET"));
+app.post("*", (c) => handleRequest(c, "POST"));
+app.patch("*", (c) => handleRequest(c, "PATCH"));
+app.delete("*", (c) => handleRequest(c, "DELETE"));
+
+export const { GET, POST, PATCH, DELETE } = nextHandlers(app);
+export default app;

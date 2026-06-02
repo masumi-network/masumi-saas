@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import { getApiKeysAction } from "@/lib/actions/auth.action";
 import { getAuthContext } from "@/lib/auth/utils";
 
@@ -26,27 +28,17 @@ export default async function ApiKeysPage() {
   const result = await getApiKeysAction();
   if (!result.success) {
     return (
-      <div className="space-y-8 animate-page-in">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
+      <AppPage>
+        <PageHeader title={t("title")} description={t("description")} />
         <p className="text-destructive">{result.error}</p>
-      </div>
+      </AppPage>
     );
   }
 
   return (
-    <div className="space-y-8 animate-page-in">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
-      </div>
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
       <ApiKeysList keys={result.keys} />
-    </div>
+    </AppPage>
   );
 }

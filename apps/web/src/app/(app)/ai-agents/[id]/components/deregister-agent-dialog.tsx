@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -46,11 +47,11 @@ export function DeregisterAgentDialog({
             <DialogTitle>{t("deregisterConfirmTitle")}</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <DialogBody stagger={false}>
           <DialogDescription className="text-muted-foreground text-sm">
             {t("deregisterConfirmDescription", { name: agentName })}
           </DialogDescription>
-        </div>
+        </DialogBody>
         <DialogFooter className="shrink-0 flex justify-end gap-2 border-t border-border bg-background px-6 py-4">
           <Button
             variant="outline"

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
+
 import { AgentsContent } from "./components/agents-content";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,10 +14,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function AgentsPage() {
+export default async function AgentsPage() {
+  const t = await getTranslations("App.Agents");
+
   return (
-    <div className="w-full space-y-8 animate-page-in">
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
       <AgentsContent />
-    </div>
+    </AppPage>
   );
 }

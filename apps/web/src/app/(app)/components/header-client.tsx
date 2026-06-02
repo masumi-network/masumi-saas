@@ -41,10 +41,10 @@ export function HeaderClient({
   return (
     <>
       <header
-        className={`sticky top-0 z-20 h-16 border-b border-border bg-background/80 backdrop-blur-md ${className || ""}`}
+        className={`sticky top-0 z-20 h-14 shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-lg sm:h-16 ${className || ""}`}
       >
-        <div className="max-w-container mx-auto w-full h-full">
-          <div className="h-full px-4 flex items-center justify-between gap-4">
+        <div className="mx-auto h-full w-full max-w-container">
+          <div className="flex h-full items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
             <div className="md:hidden flex items-center gap-2 shrink-0">
               <Button
                 variant="ghost"
@@ -60,7 +60,7 @@ export function HeaderClient({
             </div>
 
             <div
-              className="hidden md:flex w-full max-w-search min-w-0 justify-start gap-2 relative rounded-md border border-input bg-muted-surface px-3 py-2 text-sm ring-offset-background cursor-pointer items-center hover:bg-accent/50"
+              className="relative hidden w-full min-w-0 max-w-search cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/80 px-3 py-2.5 text-sm ring-offset-background transition-colors hover:border-primary/25 hover:bg-accent/40 md:flex"
               onClick={() => setIsSearchOpen(true)}
             >
               <Search className="h-4 w-4 shrink-0 text-muted-foreground" />

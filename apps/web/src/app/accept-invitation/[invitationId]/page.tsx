@@ -17,9 +17,12 @@ import { getAuthContext } from "@/lib/auth/utils";
 
 import { AcceptInvitationContent } from "./components/accept-invitation-content";
 
-export const metadata: Metadata = {
-  title: "Masumi - Organization Invitation",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("App.Organizations.AcceptInvitation");
+  return {
+    title: `Masumi - ${t("title")}`,
+  };
+}
 
 interface AcceptInvitationPageProps {
   params: Promise<{ invitationId: string }>;
@@ -43,7 +46,7 @@ export default async function AcceptInvitationPage({
   // Invitation not found, expired, or already used (expiration checked in action)
   if (!result.success || result.data.status !== "pending") {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full border-0 bg-transparent shadow-none">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
@@ -69,7 +72,7 @@ export default async function AcceptInvitationPage({
     invitationEmail && (currentEmail !== invitationEmail || !currentEmail);
   if (isWrongAccount) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full border-0 bg-transparent shadow-none">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">

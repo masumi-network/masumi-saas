@@ -1,24 +1,21 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ChevronRight, ExternalLink, Search } from "lucide-react";
+import { ChevronRight, ExternalLink, Inbox, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { SectionPanel } from "@/components/section-panel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -37,13 +34,14 @@ import {
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFormatDate } from "@/hooks/use-format-date";
 import {
   type InboxAgentRegistration,
   type InboxAgentRegistrationFilter,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { formatRelativeDate, getInitials, shortenAddress } from "@/lib/utils";
+import { getInitials, shortenAddress } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -272,6 +270,7 @@ function InboxAgentDetailsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
 
   if (!registration) return null;
 
@@ -315,7 +314,7 @@ function InboxAgentDetailsDialog({
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <DialogBody className="px-6 py-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <DiscoveryDetailItem label={t("Discovery.inboxSlug")}>
               <div className="flex items-center gap-2">
@@ -384,7 +383,7 @@ function InboxAgentDetailsDialog({
               )}
             </DiscoveryDetailItem>
           </div>
-        </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );
@@ -398,6 +397,7 @@ function InboxAgentListItem({
   onViewDetails: () => void;
 }) {
   const t = useTranslations("App.Agents");
+  const { formatRelativeDate } = useFormatDate();
   const policyId = registration.RegistrySource.policyId;
   const shortDescription = registration.description?.trim();
 
@@ -779,133 +779,114 @@ export function InboxAgentsDiscovery() {
       ? searchPageItems.length
       : pageItems.length;
 
+  const summaryLabel = t("Discovery.resultsSummary", {
+    visibleCount: visibleItems.length,
+    loadedCount: summaryLoadedCount,
+  });
+
   return (
-    <Card className="overflow-hidden gap-0 py-0">
-      <CardHeader className="border-b border-border/60 bg-masumi-gradient rounded-t-xl pt-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <CardTitle className="text-base font-semibold">
-              {t("Discovery.title")}
-            </CardTitle>
-            <CardDescription className="max-w-3xl leading-6">
-              {t("Discovery.inboxDescription")}
-            </CardDescription>
-          </div>
-          <Badge variant="outline-muted">{network}</Badge>
+    <SectionPanel>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <Badge variant="secondary-muted">
+            {t("Discovery.pendingAndVerified")}
+          </Badge>
+          <span className="text-sm text-muted-foreground">
+            {t("Discovery.sortHint")}
+          </span>
         </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary-muted">
-              {t("Discovery.pendingAndVerified")}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              {t("Discovery.inboxDescription")}
-            </span>
-          </div>
-          <div className="text-sm text-muted-foreground">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+            {network}
+          </span>
+          <span className="text-sm text-muted-foreground">
             {t("Discovery.page", { page: activeCurrentPage })}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div
-            onClick={() => searchInputRef.current?.focus()}
-            className="relative flex w-full max-w-xl cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-          >
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder={t("Discovery.inboxSearchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
-            />
-            {!isSearchFocused && (
-              <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
-                {t("searchShortcut")}
-              </kbd>
-            )}
-          </div>
-
+          </span>
           <RefreshButton
             onRefresh={handleRefresh}
             size="md"
             isRefreshing={isRefreshing}
           />
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-          <div>
-            {t("Discovery.resultsSummary", {
-              visibleCount: visibleItems.length,
-              loadedCount: summaryLoadedCount,
-            })}
-          </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div
+          onClick={() => searchInputRef.current?.focus()}
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            type="search"
+            placeholder={t("Discovery.inboxSearchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+          />
+          {!isSearchFocused && (
+            <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
+              {t("searchShortcut")}
+            </kbd>
+          )}
         </div>
+        <p className="shrink-0 text-sm text-muted-foreground">{summaryLabel}</p>
+      </div>
 
-        {activeError && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {activeError}
-          </div>
-        )}
+      {activeError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {activeError}
+        </div>
+      )}
 
-        {!hasActiveSearch && state.isLoading ? (
-          <DiscoverySkeleton />
-        ) : (
-          <>
-            {isSearchLoading && (
-              <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
-                <Spinner size={14} />
-                {t("loadingMore")}
-              </div>
-            )}
+      {!hasActiveSearch && state.isLoading ? (
+        <DiscoverySkeleton />
+      ) : (
+        <>
+          {isSearchLoading && (
+            <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
+              <Spinner size={14} />
+              {t("loadingMore")}
+            </div>
+          )}
 
-            {visibleItems.length > 0 ? (
-              <div className="space-y-3">
-                {visibleItems.map((registration) => (
-                  <InboxAgentListItem
-                    key={registration.id}
-                    registration={registration}
-                    onViewDetails={() =>
-                      setSelectedInboxRegistration(registration)
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted-surface/50 px-4 py-12 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {activeEmptyLabel}
-                </p>
-              </div>
-            )}
+          {visibleItems.length > 0 ? (
+            <div className="space-y-3">
+              {visibleItems.map((registration) => (
+                <InboxAgentListItem
+                  key={registration.id}
+                  registration={registration}
+                  onViewDetails={() =>
+                    setSelectedInboxRegistration(registration)
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <DiscoveryEmptyState icon={Inbox} message={activeEmptyLabel} />
+          )}
 
-            <DiscoveryPaginationBar
-              currentPage={activeCurrentPage}
-              totalPages={activeTotalPages}
-              isLoading={isSearchLoading}
-              onPageChange={(page) => {
-                void loadPage(page);
-              }}
-              labels={paginationLabels}
-            />
+          <DiscoveryPaginationBar
+            currentPage={activeCurrentPage}
+            totalPages={activeTotalPages}
+            isLoading={isSearchLoading}
+            onPageChange={(page) => {
+              void loadPage(page);
+            }}
+            labels={paginationLabels}
+          />
 
-            <InboxAgentDetailsDialog
-              registration={selectedInboxRegistration}
-              open={selectedInboxRegistration !== null}
-              onOpenChange={(open) => {
-                if (!open) setSelectedInboxRegistration(null);
-              }}
-            />
-          </>
-        )}
-      </CardContent>
-    </Card>
+          <InboxAgentDetailsDialog
+            registration={selectedInboxRegistration}
+            open={selectedInboxRegistration !== null}
+            onOpenChange={(open) => {
+              if (!open) setSelectedInboxRegistration(null);
+            }}
+          />
+        </>
+      )}
+    </SectionPanel>
   );
 }

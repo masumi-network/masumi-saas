@@ -1,7 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -13,13 +11,19 @@ import {
   resolvePaymentUserTokenUpstream,
   toUpstreamResponse,
 } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
 const ROUTE_PATH = "payment";
 const UPSTREAM_PATH = "/payment";
 
-export async function GET(request: NextRequest) {
+const app = createApiApp("/");
+
+app.get("*", async (c) => {
+  const request = c.req.raw;
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     requireNetworkedOidcApiScope(authContext, {
@@ -30,15 +34,15 @@ export async function GET(request: NextRequest) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method: "GET",
         headers,
@@ -47,19 +51,17 @@ export async function GET(request: NextRequest) {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+app.post("*", async (c) => {
+  const request = c.req.raw;
   try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
     const body = await readOptionalRequestBody(request);
@@ -72,9 +74,9 @@ export async function POST(request: NextRequest) {
 
     const upstream = await resolvePaymentUserTokenUpstream(authContext.user.id);
     if (!upstream.ok) {
-      return NextResponse.json(
-        { success: false, error: upstream.error },
-        { status: upstream.status },
+      return c.json(
+        { success: false as const, error: upstream.error },
+        upstream.status as never,
       );
     }
 
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     const headers = buildUpstreamHeaders(request, upstream.token);
     const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${request.nextUrl.search}`,
+      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
       {
         method: "POST",
         headers,
@@ -105,12 +107,12 @@ export async function POST(request: NextRequest) {
 
     return toUpstreamResponse(response);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
+    rethrowIfAuthOrCreditsError(error);
     console.error(`[External Service Proxy:${ROUTE_PATH}]`, error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
-}
+});
+
+export const { GET, POST } = nextHandlers(app);
+export default app;

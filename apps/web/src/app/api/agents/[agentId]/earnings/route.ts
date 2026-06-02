@@ -1,18 +1,37 @@
-import { NextRequest } from "next/server";
+import { createRoute } from "@hono/zod-openapi";
 
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchNormalizedAgentPaymentIncome,
   hasAgentEarningsData,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
-import { contractJsonResponse } from "@/lib/openapi/contracts";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-import { agentEarningsQuerySchema } from "@/lib/schemas";
+import {
+  agentEarningsQuerySchema,
+  agentIdRouteParamSchema,
+} from "@/lib/schemas/api-query";
+import {
+  agentEarningsSuccessSchema,
+  security,
+  stdResponses,
+} from "@/lib/swagger/saas-app-openapi";
+import { z } from "@/lib/zod-openapi";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-import contract from "./route.contract";
+const app = createApiApp("/api/agents/{agentId}/earnings");
+
+const paramsSchema = z.object({
+  agentId: agentIdRouteParamSchema.openapi({
+    param: { name: "agentId", in: "path" },
+    description: "Agent ID (CUID)",
+    example: "cmlf6gswz0000x1uctad958tq",
+  }),
+});
 
 function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;
@@ -42,109 +61,123 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   };
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  try {
-    const authContext = await getAuthenticatedOrThrow(request, {
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Agent earnings",
+    security,
+    request: {
+      params: paramsSchema,
+      query: agentEarningsQuerySchema,
+    },
+    responses: {
+      200: {
+        description: "Earnings",
+        content: {
+          "application/json": { schema: agentEarningsSuccessSchema },
+        },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw, {
       requireEmailVerified: false,
     });
-    const { agentId } = await params;
+    const { agentId } = c.req.valid("param");
+    const { period } = c.req.valid("query");
 
-    const agent = await getUserOwnedAgentForEarnings({
-      userId: authContext.user.id,
-      agentId,
-    });
-
-    if (!agent) {
-      return contractJsonResponse(contract, "GET", 404, {
-        success: false,
-        error: "Agent not found",
+    try {
+      const agent = await getUserOwnedAgentForEarnings({
+        userId: authContext.user.id,
+        agentId,
       });
-    }
-    const network = toNetwork(
-      agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
-    );
 
-    requireNetworkedOidcApiScope(authContext, {
-      resource: "agents",
-      action: "read",
-      network,
-    });
+      if (!agent) {
+        throw new ApiError(404, "Agent not found");
+      }
+      const network = toNetwork(
+        agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
+      );
 
-    if (!hasAgentEarningsData(agent)) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: {
-          totalTransactions: 0,
-          totalIncome: { units: [], blockchainFees: 0 },
-          totalRefunded: { units: [], blockchainFees: 0 },
-          totalPending: { units: [], blockchainFees: 0 },
-          periodStart: null,
-          periodEnd: null,
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "read",
+        network,
+      });
+
+      if (!hasAgentEarningsData(agent)) {
+        return c.json(
+          {
+            success: true as const,
+            data: {
+              totalTransactions: 0,
+              totalIncome: { units: [], blockchainFees: 0 },
+              totalRefunded: { units: [], blockchainFees: 0 },
+              totalPending: { units: [], blockchainFees: 0 },
+              periodStart: null,
+              periodEnd: null,
+            },
+          },
+          200,
+        );
+      }
+
+      const client = await getPaymentNodeClientForUser(authContext.user.id);
+      if (!client) {
+        return c.json(
+          {
+            success: true as const,
+            data: {
+              totalTransactions: 0,
+              totalIncome: { units: [], blockchainFees: 0 },
+              totalRefunded: { units: [], blockchainFees: 0 },
+              totalPending: { units: [], blockchainFees: 0 },
+              periodStart: null,
+              periodEnd: null,
+            },
+          },
+          200,
+        );
+      }
+
+      const { startDate, endDate } = periodToDateRange(period);
+
+      const income = await fetchNormalizedAgentPaymentIncome({
+        client,
+        network,
+        agentIdentifier: agent.agentIdentifier!,
+        startDate,
+        endDate,
+        timeZone: "Etc/UTC",
+      });
+
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            totalTransactions: income.totalTransactions,
+            totalIncome: income.totalIncome,
+            totalRefunded: income.totalRefunded,
+            totalPending: income.totalPending,
+            periodStart: income.periodStart,
+            periodEnd: income.periodEnd,
+            dailyIncome: income.dailyIncome,
+            monthlyIncome: income.monthlyIncome,
+          },
         },
-      });
+        200,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to get agent earnings:", error);
+      throw new ApiError(500, "Failed to load earnings");
     }
+  },
+);
 
-    const { searchParams } = new URL(request.url);
-    const queryResult = agentEarningsQuerySchema.safeParse({
-      period: searchParams.get("period") ?? undefined,
-    });
-    if (!queryResult.success) {
-      return contractJsonResponse(contract, "GET", 400, {
-        success: false,
-        error: queryResult.error.issues.map((i) => i.message).join("; "),
-      });
-    }
-    const period = queryResult.data.period;
-
-    const client = await getPaymentNodeClientForUser(authContext.user.id);
-    if (!client) {
-      return contractJsonResponse(contract, "GET", 200, {
-        success: true,
-        data: {
-          totalTransactions: 0,
-          totalIncome: { units: [], blockchainFees: 0 },
-          totalRefunded: { units: [], blockchainFees: 0 },
-          totalPending: { units: [], blockchainFees: 0 },
-          periodStart: null,
-          periodEnd: null,
-        },
-      });
-    }
-
-    const { startDate, endDate } = periodToDateRange(period);
-
-    const income = await fetchNormalizedAgentPaymentIncome({
-      client,
-      network,
-      agentIdentifier: agent.agentIdentifier!,
-      startDate,
-      endDate,
-      timeZone: "Etc/UTC",
-    });
-
-    return contractJsonResponse(contract, "GET", 200, {
-      success: true,
-      data: {
-        totalTransactions: income.totalTransactions,
-        totalIncome: income.totalIncome,
-        totalRefunded: income.totalRefunded,
-        totalPending: income.totalPending,
-        periodStart: income.periodStart,
-        periodEnd: income.periodEnd,
-        dailyIncome: income.dailyIncome,
-        monthlyIncome: income.monthlyIncome,
-      },
-    });
-  } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
-    console.error("Failed to get agent earnings:", error);
-    return contractJsonResponse(contract, "GET", 500, {
-      success: false,
-      error: "Failed to load earnings",
-    });
-  }
-}
+export const { GET } = nextHandlers(app);
+export default app;

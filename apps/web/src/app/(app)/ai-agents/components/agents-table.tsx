@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AgentVerifiedShield } from "@/components/agent-verified-shield";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -23,14 +24,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import {
-  formatPricingDisplay,
-  formatRelativeDate,
-  shortenAddress,
-  stripHtml,
-} from "@/lib/utils";
+import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
@@ -53,8 +49,7 @@ export function AgentsTable({
   const t = useTranslations("App.Agents");
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
-  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
-
+  const { formatRelativeDate } = useFormatDate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [selectedAgentToDelete, setSelectedAgentToDelete] =
@@ -130,7 +125,7 @@ export function AgentsTable({
 
   return (
     <>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -171,16 +166,23 @@ export function AgentsTable({
                   onClick={() => onAgentClick(agent)}
                 >
                   <TableCell className="max-w-52">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium truncate">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-sm font-medium">
                         {agent.name}
                       </span>
-                      {agentVerificationUiEnabled &&
-                        agent.verificationStatus === "VERIFIED" && (
-                          <span className="sr-only">
-                            {t("status.verified")}
-                          </span>
-                        )}
+                      {agent.verificationStatus === "VERIFIED" ? (
+                        <span
+                          className="inline-flex shrink-0"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.stopPropagation();
+                            }
+                          }}
+                        >
+                          <AgentVerifiedShield className="-mt-px" />
+                        </span>
+                      ) : null}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {agent.description ??

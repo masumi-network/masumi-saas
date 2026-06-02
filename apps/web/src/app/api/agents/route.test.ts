@@ -94,6 +94,7 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       search: z.string().optional(),
     }),
     registerAgentBodySchema,
+    registerAgentOpenApiBodySchema: registerAgentBodySchema.openapi({}),
   };
 });
 
@@ -320,6 +321,35 @@ describe("/api/agents POST", () => {
 
     expect(response.status).toBe(402);
     expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("forwards Dynamic pricing through to buildAgentPricing", async () => {
+    buildAgentPricingMock.mockReturnValue({ pricingType: "Dynamic" });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Research assistant",
+          description: "Helps with literature review",
+          apiUrl: "https://agent.example.com/mip",
+          tags: "research, nlp",
+          pricing: { pricingType: "Dynamic" },
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(buildAgentPricingMock).toHaveBeenCalledWith("Preprod", {
+      pricingType: "Dynamic",
+    });
+    expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(params.agentPricing).toEqual({ pricingType: "Dynamic" });
   });
 
   it("does not consume credits when validation fails locally", async () => {

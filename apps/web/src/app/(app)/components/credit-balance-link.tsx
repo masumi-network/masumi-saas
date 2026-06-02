@@ -39,7 +39,7 @@ export function CreditBalanceLink({
         {isError ? "—" : formattedCredits}
       </span>
       {balanceLinkToTopUp ? (
-        <ArrowUpRight className="h-3.5 w-3.5 opacity-70" />
+        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-70" />
       ) : null}
     </>
   );
@@ -50,7 +50,10 @@ export function CreditBalanceLink({
         variant="outline"
         size="sm"
         asChild
-        className={cn("h-8 gap-2 px-2.5 md:h-9 md:px-3", className)}
+        className={cn(
+          "h-8 w-8 gap-0 p-0 md:h-9 md:w-auto md:gap-2 md:px-3",
+          className,
+        )}
       >
         <Link href="/top-up" aria-label={tTopUp("title")} title={title}>
           {inner}
@@ -64,7 +67,10 @@ export function CreditBalanceLink({
       type="button"
       variant="outline"
       size="sm"
-      className={cn("h-8 gap-2 px-2.5 md:h-9 md:px-3", className)}
+      className={cn(
+        "h-8 w-8 gap-0 p-0 md:h-9 md:w-auto md:gap-2 md:px-3",
+        className,
+      )}
       title={title}
       aria-label={title}
     >

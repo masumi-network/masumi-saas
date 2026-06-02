@@ -4,6 +4,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export function RichTextEditor({
   className,
   minHeight = "min-h-28",
 }: RichTextEditorProps) {
+  const t = useTranslations("Components.RichTextEditor");
   const editor = useEditor({
     extensions: [StarterKit, Placeholder.configure({ placeholder })],
     content: value || "",
@@ -99,7 +101,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-md border border-input bg-muted-surface transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+        "flex flex-col rounded-md border border-input bg-muted-surface transition-[color,box-shadow] duration-200 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
         minHeight,
         className,
       )}
@@ -108,28 +110,28 @@ export function RichTextEditor({
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive("bold")}
-          title="Bold"
+          title={t("bold")}
         >
           <Bold className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive("italic")}
-          title="Italic"
+          title={t("italic")}
         >
           <Italic className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive("bulletList")}
-          title="Bullet list"
+          title={t("bulletList")}
         >
           <List className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           isActive={editor.isActive("orderedList")}
-          title="Numbered list"
+          title={t("numberedList")}
         >
           <ListOrdered className="h-4 w-4" />
         </ToolbarButton>

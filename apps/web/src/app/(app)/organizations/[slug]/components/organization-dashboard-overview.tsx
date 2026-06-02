@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { AgentVerifiedShield } from "@/components/agent-verified-shield";
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -174,9 +175,9 @@ export function OrganizationDashboardOverview({
         </CardHeader>
         <CardContent className="space-y-3 px-4 sm:px-6">
           {/* Stats grid */}
-          <div className="grid min-w-0 grid-cols-2 gap-5 lg:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {/* Wallet balance */}
-            <Card className="group col-span-2 lg:col-span-1 h-full rounded-xl bg-muted-surface pt-0">
+            <Card className="group h-full rounded-xl bg-muted-surface pt-0 sm:col-span-2 lg:col-span-1">
               <CardHeader className="space-y-0 pb-2 bg-masumi-gradient pt-6">
                 <CardTitle className="flex items-center gap-2 text-xs font-medium uppercase tracking-tight text-muted-foreground">
                   <Wallet className="h-3.5 w-3.5" />
@@ -300,12 +301,27 @@ export function OrganizationDashboardOverview({
                       role="button"
                       tabIndex={0}
                     >
-                      <p
-                        className="min-w-0 truncate text-sm font-medium"
-                        title={agent.name}
-                      >
-                        {agent.name}
-                      </p>
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <p
+                          className="min-w-0 truncate text-sm font-medium"
+                          title={agent.name}
+                        >
+                          {agent.name}
+                        </p>
+                        {agent.verificationStatus === "VERIFIED" ? (
+                          <span
+                            className="inline-flex shrink-0"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.stopPropagation();
+                              }
+                            }}
+                          >
+                            <AgentVerifiedShield className="-mt-px" />
+                          </span>
+                        ) : null}
+                      </div>
                       <Badge
                         variant={
                           agentVerificationUiEnabled &&

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { AgentIcon } from "@/components/agent-icon";
-import { Badge } from "@/components/ui/badge";
+import { AgentVerifiedShield } from "@/components/agent-verified-shield";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -13,11 +13,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { type Agent } from "@/lib/api/agent.client";
-
-import {
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
-} from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
   agent: Agent;
@@ -31,7 +26,6 @@ export function AgentPageHeader({
   backLabel,
 }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
-  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
 
   const label = backLabel ?? tDetails("backToAgents");
@@ -63,29 +57,20 @@ export function AgentPageHeader({
           {breadcrumbLabel}
         </Link>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 min-w-0">
         <AgentIcon
           icon={agent.icon}
           name={agent.name}
           className="size-8 shrink-0"
         />
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-2xl font-light tracking-tight truncate min-w-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h1 className="min-w-0 truncate text-page-title font-semibold tracking-tight">
             {agent.name}
           </h1>
+          {agent.verificationStatus === "VERIFIED" ? (
+            <AgentVerifiedShield size="md" className="-mt-0.5 shrink-0" />
+          ) : null}
         </div>
-        <Badge
-          variant={
-            agent.registrationState === "RegistrationConfirmed"
-              ? "success"
-              : getRegistrationStatusBadgeVariant(agent.registrationState)
-          }
-          className="shrink-0"
-        >
-          {tRegistrationStatus(
-            getRegistrationStatusKey(agent.registrationState),
-          )}
-        </Badge>
       </div>
     </div>
   );

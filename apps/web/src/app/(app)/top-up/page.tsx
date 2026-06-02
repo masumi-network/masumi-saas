@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
+import { AppPage } from "@/components/app-page";
+import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardContent,
@@ -111,85 +113,78 @@ export default async function TopUpPage({ searchParams }: PageProps) {
       : [];
 
   return (
-    <div className="animate-page-in">
-      <div className="mx-auto w-full max-w-3xl space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            {t("description")}
-          </p>
-        </div>
+    <AppPage>
+      <PageHeader title={t("title")} description={t("description")} />
 
-        <div className="space-y-6">
-          <Suspense fallback={null}>
-            <TopUpStripSessionQuery />
-          </Suspense>
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <Suspense fallback={null}>
+          <TopUpStripSessionQuery />
+        </Suspense>
 
-          {canceled ? <TopUpCanceledBanner /> : null}
+        {canceled ? <TopUpCanceledBanner /> : null}
 
-          {stripeReturnCreditsVerified !== null ? (
-            <TopUpReturnSuccessBanner credits={stripeReturnCreditsVerified} />
-          ) : null}
+        {stripeReturnCreditsVerified !== null ? (
+          <TopUpReturnSuccessBanner credits={stripeReturnCreditsVerified} />
+        ) : null}
 
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
-            <Card className="gap-0 overflow-hidden pt-0">
-              <CardHeader className="rounded-t-xl bg-masumi-gradient pb-4 pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <CardDescription className="text-foreground/70">
-                      {t("balanceLabel")}
-                    </CardDescription>
-                    <div className="min-w-0 max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      <CardTitle className="font-mono text-[clamp(1.625rem,7vw,3rem)] font-semibold tabular-nums tracking-tight whitespace-nowrap">
-                        {formattedCredits}
-                      </CardTitle>
-                    </div>
-                  </div>
-                  <div className="rounded-full border border-foreground/10 bg-background/70 p-3 backdrop-blur-sm">
-                    <Coins className="h-5 w-5" />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
+          <Card className="gap-0 overflow-hidden pt-0">
+            <CardHeader className="rounded-t-xl bg-masumi-gradient pb-4 pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <CardDescription className="text-foreground/70">
+                    {t("balanceLabel")}
+                  </CardDescription>
+                  <div className="min-w-0 max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <CardTitle className="font-mono text-[clamp(1.625rem,7vw,3rem)] font-semibold tabular-nums tracking-tight whitespace-nowrap">
+                      {formattedCredits}
+                    </CardTitle>
                   </div>
                 </div>
-              </CardHeader>
+                <div className="rounded-full border border-foreground/10 bg-background/70 p-3 backdrop-blur-sm">
+                  <Coins className="h-5 w-5" />
+                </div>
+              </div>
+            </CardHeader>
 
-              <CardContent className="space-y-4 pt-4">
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {t("balanceDescription")}
-                </p>
+            <CardContent className="space-y-4 pt-4">
+              <p className="text-sm leading-6 text-muted-foreground">
+                {t("balanceDescription")}
+              </p>
 
-                <div className="rounded-xl border bg-muted/30 p-4">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {t("mainnetOnlyTitle")}
-                      </p>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {t("mainnetOnlyDescription")}
-                      </p>
-                    </div>
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {t("mainnetOnlyTitle")}
+                    </p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {t("mainnetOnlyDescription")}
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {unitCents > 0 ? (
-                  <TopUpPurchaseForm
-                    purchaseTiers={purchaseTiers}
-                    stripeCheckoutCurrencyUpper={STRIPE_CHECKOUT_CURRENCY.toUpperCase()}
-                    unitAmountCents={unitCents}
-                    unitLabel={unitLabel}
-                    numberLocale={numberLocale}
-                  />
-                ) : null}
-              </CardContent>
+              {unitCents > 0 ? (
+                <TopUpPurchaseForm
+                  purchaseTiers={purchaseTiers}
+                  stripeCheckoutCurrencyUpper={STRIPE_CHECKOUT_CURRENCY.toUpperCase()}
+                  unitAmountCents={unitCents}
+                  unitLabel={unitLabel}
+                  numberLocale={numberLocale}
+                />
+              ) : null}
+            </CardContent>
 
-              <CardFooter className="flex flex-col mt-6 items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-muted-foreground">
-                  {t("webhookNote")}
-                </p>
-              </CardFooter>
-            </Card>
-          </div>
+            <CardFooter className="mt-6 flex flex-col items-start gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground">
+                {t("webhookNote")}
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }

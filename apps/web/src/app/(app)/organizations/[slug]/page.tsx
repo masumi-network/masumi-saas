@@ -67,8 +67,10 @@ export default async function OrganizationPage({
   const { slug } = await params;
 
   return (
-    <Suspense fallback={<OrganizationDashboardSkeleton />}>
-      <OrganizationPageContent slug={slug} />
-    </Suspense>
+    <div className="animate-page-in">
+      <Suspense fallback={<OrganizationDashboardSkeleton />}>
+        <OrganizationPageContent slug={slug} />
+      </Suspense>
+    </div>
   );
 }

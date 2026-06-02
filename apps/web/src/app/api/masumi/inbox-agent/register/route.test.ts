@@ -8,9 +8,13 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const createInboxAdminPaymentNodeClientMock = vi.fn();
+const findInboxAgentSlugConflictMock = vi.fn();
+const findRegistryInboxAgentSlugConflictMock = vi.fn();
 const listOwnedInboxAgentsForUserMock = vi.fn();
 const prepareManagedInboxRegistrationMock = vi.fn();
-const saveInboxAgentReferenceMock = vi.fn();
+const reserveInboxAgentReferenceMock = vi.fn();
+const finalizeInboxAgentReservationMock = vi.fn();
+const deleteInboxAgentReferenceMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -24,9 +28,19 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 
 vi.mock("@/lib/inbox-agents/server", () => ({
   createInboxAdminPaymentNodeClient: createInboxAdminPaymentNodeClientMock,
+  deleteInboxAgentReference: deleteInboxAgentReferenceMock,
+  finalizeInboxAgentReservation: finalizeInboxAgentReservationMock,
+  findInboxAgentSlugConflict: findInboxAgentSlugConflictMock,
+  findRegistryInboxAgentSlugConflict: findRegistryInboxAgentSlugConflictMock,
+  INBOX_AGENT_DUPLICATE_SLUG_ERROR:
+    "Inbox slug is already in use on this network",
+  INBOX_AGENT_OWNERSHIP_CONFLICT_ERROR:
+    "Inbox agent is already owned by another account",
   listOwnedInboxAgentsForUser: listOwnedInboxAgentsForUserMock,
   prepareManagedInboxRegistration: prepareManagedInboxRegistrationMock,
-  saveInboxAgentReference: saveInboxAgentReferenceMock,
+  reserveInboxAgentReference: reserveInboxAgentReferenceMock,
+  isInboxAgentOwnershipMismatchError: () => false,
+  isStaleInboxAgentCursorError: () => false,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
@@ -50,8 +64,12 @@ vi.mock("@/lib/payment-node/wallet-scopes", () => ({
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => ({
   getEffectivePaymentNetwork: (request: NextRequest) => {
     const value =
-      request.nextUrl.searchParams.get("network") ??
-      request.cookies.get("payment_network")?.value;
+      new URL(request.url).searchParams.get("network") ??
+      (request.headers.get("cookie") || "")
+        .split(";")
+        .map((p) => p.trim())
+        .find((p) => p.startsWith("payment_network="))
+        ?.slice("payment_network=".length);
     return value === "Mainnet" || value === "Preprod" ? value : "Preprod";
   },
 }));
@@ -106,10 +124,19 @@ describe("/api/masumi/inbox-agent/register", () => {
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     getPaymentNodeClientForUserMock.mockResolvedValue({});
-    saveInboxAgentReferenceMock.mockResolvedValue({
+    findInboxAgentSlugConflictMock.mockResolvedValue(null);
+    findRegistryInboxAgentSlugConflictMock.mockResolvedValue(null);
+    reserveInboxAgentReferenceMock.mockResolvedValue({
+      status: "reserved",
+      reservation: {
+        id: "reservation-1",
+      },
+    });
+    finalizeInboxAgentReservationMock.mockResolvedValue({
       id: "ref-1",
       userId: "user-1",
     });
+    deleteInboxAgentReferenceMock.mockResolvedValue(undefined);
   });
 
   it("registers inbox agents through the compatibility alias", async () => {
@@ -176,6 +203,31 @@ describe("/api/masumi/inbox-agent/register", () => {
     });
     expect(getPaymentNodeClientForUserMock).toHaveBeenCalledWith("user-1");
     expect(createInboxAdminPaymentNodeClientMock).toHaveBeenCalledTimes(1);
+    expect(findInboxAgentSlugConflictMock).toHaveBeenCalledWith({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: expect.any(Object),
+    });
+    expect(findRegistryInboxAgentSlugConflictMock).toHaveBeenCalledWith({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: expect.any(Object),
+    });
+    expect(reserveInboxAgentReferenceMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      network: "Preprod",
+      name: "Support inbox",
+      description: "Routes support requests",
+      slug: "support-inbox",
+      executingWallet: {
+        id: "funding-1",
+        walletVkey: "funding_vkey",
+        walletAddress: "addr_test1funding",
+        collectionAddress: null,
+        note: "Funding wallet",
+      },
+      smartContractAddress: "addr_test1contract",
+    });
     expect(registerInboxAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
       sellingWalletVkey: "funding_vkey",
@@ -184,7 +236,8 @@ describe("/api/masumi/inbox-agent/register", () => {
       description: "Routes support requests",
       agentSlug: "support-inbox",
     });
-    expect(saveInboxAgentReferenceMock).toHaveBeenCalledWith({
+    expect(finalizeInboxAgentReservationMock).toHaveBeenCalledWith({
+      reservationId: "reservation-1",
       userId: "user-1",
       network: "Preprod",
       entry: createdInboxAgent,

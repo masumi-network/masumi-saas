@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import {
   type AuthPageSearchParams,
@@ -10,10 +11,13 @@ import { getAuthContext } from "@/lib/auth/utils";
 
 import SignInForm from "./components/form";
 
-export const metadata: Metadata = {
-  title: "Masumi - Login",
-  description: "Login to access the Masumi dashboard",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Auth.SignIn");
+  return {
+    title: `Masumi - ${t("title")}`,
+    description: t("description"),
+  };
+}
 
 function getEnabledOAuthProviders(): ("google" | "github" | "microsoft")[] {
   const providers: ("google" | "github" | "microsoft")[] = [];

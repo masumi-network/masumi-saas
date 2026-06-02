@@ -103,7 +103,7 @@ describe("/pay/api/v1/payment/income", () => {
     expect(response.status).toBe(200);
     expect(getEffectivePaymentNetworkMock).toHaveBeenCalledTimes(1);
     expect(getEffectivePaymentNetworkMock).toHaveBeenCalledWith(
-      expect.any(NextRequest),
+      expect.any(Request),
       body,
     );
     expect(requireNetworkedOidcApiScopeMock).toHaveBeenCalledWith(

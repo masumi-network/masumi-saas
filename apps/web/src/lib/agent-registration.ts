@@ -38,6 +38,7 @@ const MAX_PAYMENT_SOURCE_PAGES = 10;
 
 export type AgentPricing =
   | { pricingType: "Free" }
+  | { pricingType: "Dynamic" }
   | {
       pricingType: "Fixed";
       Pricing: Array<{ unit: string; amount: string }>;
@@ -834,12 +835,15 @@ export function buildAgentPricing(
   network: PaymentNodeNetwork,
   pricing:
     | {
-        pricingType: "Free" | "Fixed";
+        pricingType: "Free" | "Fixed" | "Dynamic";
         prices?: Array<{ amount: string; currency?: string }>;
       }
     | null
     | undefined,
 ): AgentPricing {
+  if (pricing?.pricingType === "Dynamic") {
+    return { pricingType: "Dynamic" };
+  }
   const token = USDM[network];
   if (
     pricing?.pricingType === "Fixed" &&

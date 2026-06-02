@@ -36,13 +36,15 @@ export default async function AdminLayout({
       className="flex max-w-svw overflow-clip"
     >
       <AdminSidebar session={authContext.session} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-clip">
+      <div className="flex min-h-svh min-w-0 flex-1 flex-col overflow-clip bg-app-canvas">
         <AdminHeader />
-        <main className="max-w-container mx-auto w-full relative min-h-main-content p-4">
-          {children}
-        </main>
-        <div className="max-w-container mx-auto w-full">
-          <FooterSections className="p-4" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <main className="relative mx-auto w-full max-w-container flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            {children}
+          </main>
+          <div className="mx-auto w-full max-w-container shrink-0 border-t border-border/80">
+            <FooterSections className="px-4 py-6 sm:px-6 lg:px-8" />
+          </div>
         </div>
       </div>
     </SidebarProvider>

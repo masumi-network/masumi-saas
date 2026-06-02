@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -41,7 +42,7 @@ export function NetworkMismatchDialog({
             <DialogTitle>{t("title")}</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <DialogBody stagger={false} className="px-6 py-4">
           <p className="text-sm text-muted-foreground">
             {t.rich("description", {
               agentNetwork,
@@ -51,7 +52,7 @@ export function NetworkMismatchDialog({
               ),
             })}
           </p>
-        </div>
+        </DialogBody>
         <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-4">
           <Button variant="outline" onClick={onBack}>
             {t("back")}

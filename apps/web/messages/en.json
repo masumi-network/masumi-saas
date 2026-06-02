@@ -3,11 +3,13 @@
     "Loading": "Loading...",
     "Error": "Error",
     "Success": "Success",
+    "dismiss": "Dismiss",
     "ErrorBoundary": {
       "title": "Something went wrong",
       "descriptionRoot": "An unexpected error occurred. Please try again.",
       "descriptionApp": "An unexpected error occurred while loading this page.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "support": "Support"
     }
   },
   "Auth": {
@@ -336,7 +338,16 @@
       "verificationRevoked": "Revoked",
       "verificationExpired": "Expired",
       "copyIdentifier": "Copy agent identifier",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "agentDetail": {
+        "backToList": "← Back to agents",
+        "subtitle": "Platform agent overview (admin).",
+        "overviewTitle": "Overview",
+        "apiUrl": "API URL",
+        "openInApp": "Open in app",
+        "notFoundTitle": "Agent not found",
+        "metaDescription": "Admin view for agent {name}"
+      }
     }
   },
   "App": {
@@ -367,7 +378,11 @@
         }
       },
       "Dashboard": {
-        "greeting": "Good {time}, {name}",
+        "greeting": {
+          "morning": "Good morning, {name}",
+          "afternoon": "Good afternoon, {name}",
+          "evening": "Good evening, {name}"
+        },
         "subtitle": "Manage your agents, organizations, and API keys from one place.",
         "kycStatus": {
           "pending": "Pending",
@@ -407,6 +422,7 @@
           "topUp": "Top up",
           "withdraw": "Withdraw",
           "agentsCardAria": "View agents, {count} registered",
+          "agentsStripLabel": "Agents",
           "runningAgents": "{count} running",
           "pendingAgents": "{count} pending",
           "failedAgents": "{count} failed",
@@ -418,6 +434,8 @@
           "newTransactions": "New transactions",
           "newTransactionsDescription": "New payment and purchase activity",
           "newTransactionsCardAria": "View activity, {count} new transactions",
+          "earningsCardAria": "View earnings, {amount} total",
+          "earningsCardErrorAria": "View earnings. {error}",
           "viewAll": "View all",
           "vsPreviousPeriod": "vs prev. period"
         },
@@ -464,6 +482,9 @@
           "createOrgOptional": "Create your first organization (optional)",
           "registerAgent": "Register your first AI agent",
           "doIt": "Do it",
+          "goToVerifyEmail": "Verify email",
+          "goToRegisterAgent": "Register agent",
+          "goToCreateOrg": "Create organization",
           "step1": "1",
           "step2": "2",
           "step3": "3",
@@ -524,7 +545,8 @@
       "title": "Withdraw",
       "description": "Withdraw your earnings to your preferred payout method.",
       "status": "Coming soon",
-      "comingSoon": "Withdrawals are coming soon."
+      "comingSoon": "Withdrawals are coming soon.",
+      "comingSoonDescription": "We're working on payout integrations. Check back here once they're live."
     },
     "Analytics": {
       "title": "Analytics",
@@ -621,6 +643,7 @@
       "details": "Details",
       "lifecycle": "Lifecycle",
       "transactionHash": "Transaction Hash",
+      "agentIdentifier": "Agent identifier",
       "searchPlaceholder": "Search by agent, type, status, amount...",
       "searchShortcut": "F",
       "noSearchResults": "No results match your search.",
@@ -966,10 +989,11 @@
         "gdpr": "We follow GDPR principles and only collect the minimum data necessary for verification. Your data is processed securely and will be retained according to our privacy policy.",
         "biometricTitle": "Biometric Consent",
         "biometric": "The verification process includes biometric checks (selfie and liveness detection) to ensure you are a real person matching your identity documents.",
-        "credentialTitle": "Veridian Credential",
-        "credential": "Upon successful verification, a Veridian credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
+        "credentialTitle": "Verification Credential",
+        "credential": "Upon successful verification, a credential will be issued to your account. This credential enables you to use advanced features and can be shared with your consent.",
         "consentLabel": "I understand and consent to the identity verification process.",
-        "startButton": "Start Verification"
+        "startButton": "Start Verification",
+        "metaTitle": "Identity Verification"
       },
       "Verification": {
         "description": "Please complete the verification steps below. You'll need to upload an identity document and take a selfie.",
@@ -1093,6 +1117,8 @@
       },
       "status": {
         "verified": "Verified",
+        "verifiedShieldAriaSummary": "This agent has been verified on the Masumi network.",
+        "verifiedShieldTooltip": "This agent has been verified on the Masumi network and holds a verifiable credential. <docsLink>Verifiable credentials (SDK docs)</docsLink>",
         "rejected": "Rejected",
         "underReview": "Under Review",
         "pending": "Pending",
@@ -1155,7 +1181,14 @@
         "apiUrlProtocol": "API URL must start with http:// or https://",
         "price": "Price",
         "pricePlaceholder": "e.g. Free, 5 ADA, 10 USDM",
-        "isFree": "This is a free agent (no cost for interactions)",
+        "pricingModel": "Pricing model",
+        "pricingFreeTitle": "Free",
+        "pricingFreeDescription": "No charge for interactions through Masumi.",
+        "pricingFixedTitle": "Fixed",
+        "pricingFixedDescription": "Set USD amounts now; buyers pay those fixed rates.",
+        "pricingDynamicTitle": "Dynamic",
+        "pricingDynamicDescription": "No amounts at registration — pricing is set per job or purchase.",
+        "pricingDynamicContext": "Choose Dynamic when your agent negotiates or quotes a price per request (for example via your MIP/API). Buyers see \"Dynamic\" in discovery; exact amounts are agreed when they start a payment or purchase flow.",
         "prices": "Prices",
         "addPrice": "Add price",
         "priceAmountRequired": "Amount is required",
@@ -1190,7 +1223,8 @@
         "progressStep1": "Creating agent and wallets",
         "progressStep2": "Funding wallet",
         "progressStep3": "Registering on network",
-        "registrationStarted": "Registration started. We'll notify you when it's done."
+        "registrationStarted": "Registration started. We'll notify you when it's done.",
+        "amountPlaceholder": "0.00"
       },
       "Edit": {
         "title": "Edit Agent",
@@ -1246,7 +1280,7 @@
         "cancel": "Cancel",
         "networkMismatch": {
           "title": "Switch Network",
-          "description": "This agent is on <strong>{agentNetwork}</strong>, but you\u2019re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
+          "description": "This agent is on <strong>{agentNetwork}</strong>, but you’re currently on <strong>{currentNetwork}</strong>. Switch networks to view this agent.",
           "confirm": "Switch to {network}",
           "back": "Go back"
         },
@@ -1286,7 +1320,7 @@
         "Verification": {
           "pending": {
             "title": "No Credential Issued",
-            "description": "This agent does not have a Veridian credential yet. Request a credential to link your verified KYC status to this agent."
+            "description": "This agent has not been verified yet. Request verification to link your verified identity to this agent."
           },
           "review": {
             "title": "Verification Under Review",
@@ -1298,15 +1332,47 @@
           },
           "verified": {
             "title": "Agent Verified",
-            "description": "This agent has been successfully verified with a Veridian credential."
+            "description": "This agent's identity has been verified on the Masumi network."
           },
           "revoked": {
-            "title": "Credential Revoked",
-            "description": "The credential for this agent has been revoked. You can request a new credential."
+            "title": "Verification Revoked",
+            "description": "The verification for this agent has been revoked. You can request new verification."
           },
           "expired": {
-            "title": "Credential Expired",
-            "description": "The credential for this agent has expired. You can request a new credential."
+            "title": "Verification Expired",
+            "description": "The verification for this agent has expired. You can request new verification."
+          },
+          "credentialStatuses": {
+            "PENDING": "Pending — await wallet acceptance",
+            "ISSUED": "Issued",
+            "REVOKED": "Revoked",
+            "EXPIRED": "Expired"
+          },
+          "credentialSummary": {
+            "sectionTitle": "Verification details",
+            "loadError": "Could not load verification details. Try refreshing the page.",
+            "emptyHint": "No stored credential metadata was found for this agent.",
+            "pendingPlaceholder": "This credential row is waiting for issuance to complete.",
+            "credentialDbStatus": "Credential status",
+            "credentialId": "Credential ID (SAID)",
+            "schemaSaid": "Schema SAID",
+            "recipientAid": "Recipient AID",
+            "localRecordId": "Credential record ID",
+            "credentialAgentDisplayName": "Agent display name (in VC)",
+            "credentialAgentApiUrl": "Agent API URL (in VC)",
+            "claimedRegistryAgentId": "Registry agent ID claimed in VC",
+            "currentRegistryAgentId": "Current on-chain/registry agent ID",
+            "registryMatch": "Registry agent ID in the VC matches this agent.",
+            "registryMismatch": "Registry agent ID in the VC differs from this agent — metadata may have changed since issuance.",
+            "issuedAt": "Issued",
+            "expiresAt": "Expires",
+            "expiresNever": "No expiry set",
+            "revokedAt": "Revoked at",
+            "revokedNever": "Not revoked",
+            "lastUpdated": "Record last synced",
+            "identityDocsLink": "Verifiable credentials (SDK docs)",
+            "notProvided": "not in VC",
+            "notRegisteredYet": "not assigned yet"
           },
           "rejected": {
             "title": "Verification Rejected",
@@ -1314,6 +1380,7 @@
           },
           "loading": "Loading...",
           "requestVerification": "Request Credential",
+          "tooltipRequestCredentialRequiresRegistration": "Finish on-chain registration for this agent first. You can request a credential only after registration is confirmed.",
           "requestDescription": "Review the information below and confirm to issue a Verifiable Credential for this agent.",
           "agentInformation": "Agent Information",
           "agentName": "Agent Name",
@@ -1330,10 +1397,21 @@
           "requestSuccess": "Credential issued successfully!",
           "requestError": "Failed to issue credential. Please try again.",
           "acceptanceTimeout": "Timed out waiting for acceptance in wallet. You can close and try again.",
+          "waitingForIssuanceSubmit": "Waiting…",
           "waitingForWalletAcceptance": "Waiting for wallet acceptance",
           "waitingForWalletDescription": "Please open your Veridian wallet and accept the incoming credential offer.",
           "completeKyc": "Complete KYC Verification",
-          "veridianWalletConnection": "Veridian Wallet Connection",
+          "connectCredentialServer": "Credential server connection",
+          "credentialServerInstructions": "Scan the issuer QR code in Veridian (Menu → Cardano Connect → Connect). Then paste the OOBI copied from your wallet below. If you already linked this wallet to the issuer, switch to paste your AID only.",
+          "pasteOobi": "Paste your wallet OOBI",
+          "oobiPlaceholder": "e.g. https://example.com/oobi/EABC123…/witness/…",
+          "alreadyConnected": "Already linked? Enter AID directly",
+          "useOobiPaste": "Paste OOBI from wallet instead",
+          "pasteAid": "Paste your AID",
+          "aidPlaceholder": "e.g. EL9oOWU…",
+          "parsedAid": "Detected AID",
+          "invalidOobi": "Could not parse an AID from that OOBI. Check the URL format.",
+          "veridianWalletConnection": "Credential server connection",
           "fetchingCredentials": "Fetching credentials...",
           "identifierAid": "Identifier (AID)",
           "credentialsFound": "{count} credential(s) found",
@@ -1375,25 +1453,58 @@
           "tooltipIntegrationCode": "Add this endpoint to your agent. It receives a challenge and returns HMAC-SHA256(challenge, secret) to prove you control the backend.",
           "tooltipGenerateNewSecret": "Use if the secret was exposed or you need to rotate it. Update your agent's environment with the new secret.",
           "tooltipKycStatus": "Your identity must be verified before we can issue a credential linking you to this agent.",
-          "tooltipVeridianWalletConnection": "Connect the wallet that will receive the verification credential. The credential proves you control both the agent and this wallet.",
+          "tooltipVeridianWalletConnection": "Link the Veridian wallet that will receive the credential: scan the issuer QR, paste your OOBI, or paste your AID if already linked.",
           "tooltipIdentifierAid": "Your unique identifier (AID) in the Veridian system. Used to issue and verify credentials.",
-          "tooltipEstablishConnection": "The credential server needs to know your AID before it can issue credentials. Scan the QR code with your Veridian wallet.",
+          "tooltipEstablishConnection": "The credential server must recognize your AID before issuing. Scanning the issuer QR and resolving your OOBI establishes that mutual connection.",
           "tooltipWhatWillBeIssued": "A Veridian credential that links your verified identity to this agent. Others can verify the agent is authentic.",
+          "stepWalletSetup": "Wallet Setup",
+          "stepWalletSetupDescription": "Install and configure the Veridian wallet on your mobile device.",
+          "walletSetup": {
+            "title": "Set Up Veridian Wallet",
+            "description": "You need the Veridian wallet app to receive verification credentials. If you already have it configured, click Next to skip this step.",
+            "installStep": "Install Veridian",
+            "installDescription": "Download the Veridian wallet app from the App Store or Google Play.",
+            "appStore": "App Store",
+            "playStore": "Google Play",
+            "osRequirements": "Only the following operating system versions are supported; any earlier versions no longer receive security updates.\n\niOS: Version 18.0 — Crystal\nAndroid: Version 14 — Upside Down Cake (API level 34)",
+            "configureStep": "Configure KERIA Connection",
+            "configureDescription": "Open Veridian → Settings → Add KERIA Connection, then paste the URLs below.",
+            "connectUrl": "Connect URL",
+            "bootUrl": "Boot URL"
+          },
           "stepEndpoint": "Endpoint",
           "stepEndpointDescription": "Add the verification secret to your agent and implement the endpoint.",
           "stepWallet": "Wallet",
-          "stepWalletDescription": "Connect your Veridian wallet via CIP-45 P2P, then establish connection with the credential server.",
+          "stepWalletDescription": "Link your wallet to the credential server by scanning the issuer QR code and pasting your OOBI—or enter your AID if you're already linked.",
           "stepSubmit": "Submit",
-          "stepSubmitDescription": "Review and submit your credential request. You'll sign a message to confirm.",
+          "stepSubmitDescription": "Review and submit your request. Confirm acceptance in Veridian when the credential is offered.",
           "next": "Next",
           "prev": "Previous",
-          "nextDisabledReasonConnectWallet": "Connect your Veridian wallet by scanning the QR code to proceed.",
+          "nextDisabledReasonPasteOobiOrAid": "Paste your OOBI or AID (or enter AID if already linked) and wait until connected.",
           "nextDisabledReasonEstablishConnection": "Establish connection with the credential server. Scan the issuer QR code with your wallet.",
           "nextDisabledReasonCheckingConnection": "Checking connection... Please wait.",
           "nextDisabledReasonTestingEndpoint": "Verifying endpoint... Please wait.",
           "nextDisabledReasonLoadingSetup": "Loading verification setup. Please wait.",
           "nextDisabledReasonKycRequired": "Complete KYC verification first to proceed.",
-          "help": "Help"
+          "help": "Help",
+          "toasts": {
+            "challengeFailed": "Failed to get verification challenge",
+            "connectWalletFirst": "Please connect your Veridian wallet first",
+            "walletNotConnected": "Veridian wallet not connected",
+            "signingUnavailable": "Signing not available in this wallet",
+            "signingDeclined": "Message signing declined",
+            "signingFailed": "Failed to sign message. Please try again.",
+            "regenerateChallengeFailed": "Failed to generate new challenge",
+            "endpointTestFailed": "Endpoint test failed",
+            "kycFirst": "Please complete your KYC verification first",
+            "connectionError": "Connection error: {error}",
+            "needCredentialConnection": "Paste a valid OOBI or AID and wait until the credential server reports connected.",
+            "challengeNotReady": "Verification challenge not ready. Please wait or try again."
+          },
+          "secretToggle": {
+            "show": "Show secret",
+            "hide": "Hide secret"
+          }
         }
       }
     },
@@ -1429,6 +1540,7 @@
         "resendError": "Failed to send verification email. Please try again."
       },
       "activeWorkspace": "Active workspace:",
+      "languageAndAppearance": "Language & appearance",
       "Name": {
         "title": "Change Name",
         "description": "Update your display name.",
@@ -1518,7 +1630,8 @@
         },
         "regenerateSuccess": "Backup codes regenerated",
         "downloadNote1": "Each code can only be used once.",
-        "downloadNote2": "Store these codes in a safe place."
+        "downloadNote2": "Store these codes in a safe place.",
+        "verifyCodePlaceholder": "000000"
       },
       "Connected": {
         "sectionLabel": "Connections",
@@ -1544,6 +1657,90 @@
         "refresh": "Refresh",
         "refreshed": "Connections refreshed"
       }
+    },
+    "InboxAgents": {
+      "metadataPageTitle": "Inboxes",
+      "metadataPageDescription": "Manage inbox registrations in Masumi SaaS.",
+      "title": "Inboxes",
+      "tabs": {
+        "all": "All",
+        "registered": "Registered",
+        "deregistered": "Deregistered",
+        "pending": "Pending",
+        "failed": "Failed"
+      },
+      "sections": {
+        "manage": "Manage",
+        "discovery": "Discovery"
+      },
+      "manageDescription": "Inspect, deregister, and clean up inbox registrations on {network}.",
+      "discoveryDescription": "Browse the latest pending and verified inboxes published to the Masumi registry on {network}.",
+      "searchPlaceholder": "Search by name, slug, identifier, wallet, or state...",
+      "noDescription": "No description",
+      "noDescriptionProvided": "No description provided.",
+      "noIdentifier": "No on-chain identifier yet.",
+      "notCheckedYet": "Not checked yet",
+      "usesRegistrationWallet": "Uses the registration wallet",
+      "awaitingConfirmation": "Awaiting confirmation",
+      "noTransactionHash": "No transaction hash yet.",
+      "noActiveTransaction": "No active transaction.",
+      "rawLookup": "Raw lookup",
+      "close": "Close",
+      "delete": "Delete",
+      "deregister": "Deregister",
+      "confirm": "Confirm",
+      "deleteInboxAgent": "Delete inbox",
+      "deregisterInboxAgent": "Deregister inbox",
+      "deleteInboxAgentDescription": "Delete {name}? This removes the registration record from your inbox list.",
+      "deregisterInboxAgentDescription": "Deregister {name}? This starts the on-chain deregistration flow.",
+      "details": "Details",
+      "emptyTitle": "No inboxes found",
+      "emptyDescription": "Try a broader search or switch tabs.",
+      "loadingPage": "Loading page...",
+      "page": "Page {page}",
+      "regWalletPrefix": "Reg:",
+      "fundWalletPrefix": "Fund:",
+      "table": {
+        "name": "Name",
+        "added": "Added",
+        "inboxSlug": "Inbox slug",
+        "agentId": "Agent ID",
+        "wallets": "Wallets",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "detail": {
+        "inboxSlug": "Inbox slug:",
+        "description": "Description",
+        "agentIdentifier": "Agent identifier",
+        "metadataVersion": "Metadata version",
+        "created": "Created",
+        "updated": "Updated",
+        "lastChecked": "Last checked",
+        "registrationWallet": "Registration wallet",
+        "fundingWallet": "Funding wallet",
+        "currentTransaction": "Current transaction",
+        "failure": "Failure"
+      },
+      "actionFailed": "Failed to {action} inbox",
+      "deletedToast": "Inbox deleted",
+      "deregistrationStartedToast": "Inbox deregistration started",
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "previousAriaLabel": "Go to previous page",
+        "nextAriaLabel": "Go to next page",
+        "morePages": "More pages"
+      },
+      "status": {
+        "pending": "Pending",
+        "registering": "Registering",
+        "registered": "Registered",
+        "registrationFailed": "Registration failed",
+        "deregistering": "Deregistering",
+        "deregistered": "Deregistered",
+        "deregistrationFailed": "Deregistration failed"
+      }
     }
   },
   "Components": {
@@ -1568,6 +1765,13 @@
     "ThemeToggle": {
       "toggleTheme": "Toggle theme"
     },
+    "ThemeSetting": {
+      "ariaLabel": "Theme",
+      "cycleTheme": "Change theme, currently {theme}",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "Dialog": {
       "close": "Close"
     },
@@ -1578,6 +1782,21 @@
       "title": "Sidebar",
       "description": "Displays the mobile sidebar.",
       "toggleSidebar": "Toggle Sidebar"
+    },
+    "LocaleSwitcher": {
+      "ariaLabel": "Language"
+    },
+    "Pagination": {
+      "ariaLabel": "Pagination"
+    },
+    "RichTextEditor": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list"
+    },
+    "UserAvatar": {
+      "loadingAriaLabel": "Loading user profile"
     }
   },
   "Email": {
@@ -1837,6 +2056,7 @@
         "badgeError": "Error",
         "badgeOk": "OK"
       }
-    }
+    },
+    "skeletonAriaLabel": "Loading developers tools"
   }
 }

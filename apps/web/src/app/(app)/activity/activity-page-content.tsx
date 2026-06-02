@@ -8,9 +8,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs } from "@/components/ui/tabs";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
 import type { ActivityFeedItem } from "@/lib/types/activity";
-import { formatDate } from "@/lib/utils";
 
 import {
   ActivityFeedTable,
@@ -29,8 +29,13 @@ const TAB_KEYS: ActivityTabFilter[] = [
   "disputes",
 ];
 
-export function ActivityPageContent() {
+export function ActivityPageContent({
+  linkAgentsInAdmin = false,
+}: {
+  linkAgentsInAdmin?: boolean;
+}) {
   const t = useTranslations("App.Activity");
+  const { formatDate } = useFormatDate();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<ActivityTabFilter>("all");
@@ -87,6 +92,7 @@ export function ActivityPageContent() {
     const headers = [
       t("type"),
       t("transactionHash"),
+      t("agentIdentifier"),
       t("agent"),
       t("amount"),
       t("status"),
@@ -98,6 +104,7 @@ export function ActivityPageContent() {
         return [
           t("lifecycle"),
           "",
+          "",
           item.agentName ?? "",
           "",
           LIFECYCLE_LABELS[item.type] ?? item.type,
@@ -107,6 +114,7 @@ export function ActivityPageContent() {
       return [
         item.type,
         item.txHash ?? "",
+        item.agentIdentifier ?? "",
         item.agentName ?? "",
         item.amount,
         item.status.replace(/([A-Z])/g, " $1").trim(),
@@ -127,7 +135,7 @@ export function ActivityPageContent() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(blobUrl);
-  }, [t, activeTab]);
+  }, [t, activeTab, formatDate]);
 
   const tabConfig = useMemo(
     () => [
@@ -143,7 +151,7 @@ export function ActivityPageContent() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <Tabs
         tabs={tabConfig}
         activeTab={activeTab}
@@ -153,7 +161,7 @@ export function ActivityPageContent() {
         <div className="flex items-center justify-between gap-4">
           <div
             onClick={() => searchInputRef.current?.focus()}
-            className="flex w-full max-w-64 sm:max-w-80 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 shrink-0"
+            className="flex w-full max-w-64 shrink-0 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:max-w-80"
           >
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
@@ -185,7 +193,18 @@ export function ActivityPageContent() {
             <Button
               type="button"
               variant="outline"
-              className="flex items-center gap-2"
+              size="icon"
+              className="md:hidden"
+              onClick={downloadCsv}
+              disabled={!hasItemsToExport}
+              aria-label={t("downloadCsv")}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="hidden md:flex items-center gap-2"
               onClick={downloadCsv}
               disabled={!hasItemsToExport}
               aria-label={t("downloadCsv")}
@@ -201,6 +220,7 @@ export function ActivityPageContent() {
           searchQuery={searchQuery}
           refreshKey={refreshKey}
           onFilteredItemsChange={handleFilteredItemsChange}
+          linkAgentsInAdmin={linkAgentsInAdmin}
         />
       </div>
     </div>

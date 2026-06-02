@@ -32,7 +32,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full animate-page-in space-y-6">
       <AgentPageContent agent={result.data} />
     </div>
   );

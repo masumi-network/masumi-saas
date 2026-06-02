@@ -528,7 +528,7 @@ export function TwoFactorSection() {
               maxLength={6}
               value={verifyCode}
               onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
-              placeholder="000000"
+              placeholder={t("verifyCodePlaceholder")}
               className="text-center text-lg tracking-widest font-mono"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleVerify();

@@ -8,16 +8,21 @@ import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormatDate } from "@/hooks/use-format-date";
+import { agentDetailHref } from "@/lib/agent-detail-href";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { formatRequestedAmount } from "@/lib/payment-node/format";
 import { shortenAddress } from "@/lib/utils";
+
+type TimestampFormatter = (date: Date) => string;
 
 function cardanoTxExplorerUrl(network: string, txHash: string): string {
   const host =
@@ -25,15 +30,18 @@ function cardanoTxExplorerUrl(network: string, txHash: string): string {
   return `https://${host}/transaction/${txHash}`;
 }
 
-function formatActivityTimestamp(value: unknown): string {
+function formatActivityTimestamp(
+  value: unknown,
+  fmt: TimestampFormatter,
+): string {
   if (value == null || value === "") return "—";
   if (typeof value === "string" && /^\d+$/.test(value)) {
     const n = Number(value);
     const d = new Date(n > 1e12 ? n : n * 1000);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    return Number.isNaN(d.getTime()) ? "—" : fmt(d);
   }
   const d = new Date(String(value));
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? "—" : fmt(d);
 }
 
 function humanizeNextAction(action: string | null | undefined): string {
@@ -94,6 +102,8 @@ export interface ActivityTransactionDetailsDialogProps {
   transactionType: "payment" | "purchase" | null;
   agentName: string | null;
   agentId: string | null;
+  /** When true, primary agent navigation uses `/admin/agents/[id]`. */
+  linkAgentsInAdmin?: boolean;
 }
 
 export function ActivityTransactionDetailsDialog({
@@ -103,9 +113,13 @@ export function ActivityTransactionDetailsDialog({
   transactionType,
   agentName,
   agentId,
+  linkAgentsInAdmin = false,
 }: ActivityTransactionDetailsDialogProps) {
   const t = useTranslations("App.Activity.transactionDetails");
+  const { formatDateTime } = useFormatDate();
   const { network } = usePaymentNetwork();
+
+  const primaryAgentHref = agentDetailHref(agentId, linkAgentsInAdmin);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["activity-transaction", transactionId, transactionType, network],
@@ -145,7 +159,7 @@ export function ActivityTransactionDetailsDialog({
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-4">
+        <DialogBody className="space-y-5 px-6 py-4">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -219,7 +233,19 @@ export function ActivityTransactionDetailsDialog({
                       {t("agentIdentifier")}
                     </h4>
                     <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-                      <span>{shortenAddress(item.agentIdentifier, 8)}</span>
+                      {primaryAgentHref ? (
+                        <Link
+                          href={primaryAgentHref}
+                          className="text-primary hover:underline"
+                          onClick={onClose}
+                        >
+                          {shortenAddress(item.agentIdentifier, 8)}
+                        </Link>
+                      ) : (
+                        <span className="break-all">
+                          {item.agentIdentifier}
+                        </span>
+                      )}
                       <CopyButton value={item.agentIdentifier} />
                     </div>
                   </div>
@@ -235,7 +261,7 @@ export function ActivityTransactionDetailsDialog({
                 <div>
                   <h4 className="mb-1 text-sm font-semibold">{t("created")}</h4>
                   <p className="text-sm">
-                    {formatActivityTimestamp(item.createdAt)}
+                    {formatActivityTimestamp(item.createdAt, formatDateTime)}
                   </p>
                 </div>
               </div>
@@ -313,25 +339,36 @@ export function ActivityTransactionDetailsDialog({
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("lastUpdated")}
                     </p>
-                    <p>{formatActivityTimestamp(item.updatedAt)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.updatedAt, formatDateTime)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("submitResultBy")}
                     </p>
-                    <p>{formatActivityTimestamp(item.submitResultTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(
+                        item.submitResultTime,
+                        formatDateTime,
+                      )}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("unlockTime")}
                     </p>
-                    <p>{formatActivityTimestamp(item.unlockTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.unlockTime, formatDateTime)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("payBy")}
                     </p>
-                    <p>{formatActivityTimestamp(item.payByTime)}</p>
+                    <p>
+                      {formatActivityTimestamp(item.payByTime, formatDateTime)}
+                    </p>
                   </div>
                   {extended.externalDisputeUnlockTime != null ? (
                     <div className="col-span-2">
@@ -341,6 +378,7 @@ export function ActivityTransactionDetailsDialog({
                       <p>
                         {formatActivityTimestamp(
                           extended.externalDisputeUnlockTime,
+                          formatDateTime,
                         )}
                       </p>
                     </div>
@@ -350,7 +388,12 @@ export function ActivityTransactionDetailsDialog({
                       <p className="text-xs font-medium text-muted-foreground">
                         {t("lastChecked")}
                       </p>
-                      <p>{formatActivityTimestamp(extended.lastCheckedAt)}</p>
+                      <p>
+                        {formatActivityTimestamp(
+                          extended.lastCheckedAt,
+                          formatDateTime,
+                        )}
+                      </p>
                     </div>
                   ) : null}
                 </div>
@@ -411,12 +454,12 @@ export function ActivityTransactionDetailsDialog({
               ) : null}
             </>
           ) : null}
-        </div>
+        </DialogBody>
 
         <DialogFooter className="shrink-0 flex-col gap-2 border-t bg-background px-6 py-4 sm:flex-row sm:justify-between">
-          {agentId ? (
+          {primaryAgentHref ? (
             <Button variant="outline" asChild className="w-full sm:w-auto">
-              <Link href={`/ai-agents/${agentId}`} onClick={onClose}>
+              <Link href={primaryAgentHref} onClick={onClose}>
                 {t("viewAgent")}
               </Link>
             </Button>

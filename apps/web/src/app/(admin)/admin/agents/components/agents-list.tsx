@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useTransition } from "react";
@@ -18,8 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { formatDate } from "@/lib/utils";
 
 import { AdminPaginationBar } from "../../components/admin-pagination-bar";
 import {
@@ -64,6 +65,7 @@ export default function AgentsList({
   currentSearch,
 }: AgentsListProps) {
   const t = useTranslations("Admin.Agents");
+  const { formatDate } = useFormatDate();
   const router = useRouter();
   const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const [paramsPending, startTransition] = useTransition();
@@ -200,7 +202,12 @@ export default function AgentsList({
                   {agents.map((agent) => (
                     <TableRow key={agent.id}>
                       <TableCell className="font-medium">
-                        {agent.name}
+                        <Link
+                          href={`/admin/agents/${agent.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {agent.name}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <span className="block truncate max-w-[200px]">

@@ -87,6 +87,45 @@ function userIdToAdvisoryLockKeys(userId: string): [number, number] {
   return [buf.readInt32BE(0), buf.readInt32BE(4)];
 }
 
+/** Distinct from lifecycle backfill so the two txs never share the same lock pair. */
+function userIdVerificationActivityBackfillLockKeys(
+  userId: string,
+): [number, number] {
+  const buf = createHash("sha256")
+    .update(`verified-activity:${userId}`, "utf8")
+    .digest();
+  return [buf.readInt32BE(0), buf.readInt32BE(4)];
+}
+
+const MISSING_AGENT_VERIFIED_ACTIVITY_BACKFILL_MS = 120_000;
+const MISSING_AGENT_VERIFIED_ACTIVITY_BACKFILL_MAP_MAX = 128;
+/** Process-local throttle (see {@link BACKFILL_GUARD_COOLDOWN_MS}). */
+const missingAgentVerifiedActivityBfSkipUntilMs = new Map<string, number>();
+
+function missingAgentVerifiedActivityBfKey(
+  userId: string,
+  network: NetworkQuery,
+) {
+  return `${userId}:${network}:mv-act`;
+}
+
+function markMissingAgentVerifiedActivityBfCooldown(
+  userId: string,
+  network: NetworkQuery,
+) {
+  const now = Date.now();
+  missingAgentVerifiedActivityBfSkipUntilMs.set(
+    missingAgentVerifiedActivityBfKey(userId, network),
+    now + MISSING_AGENT_VERIFIED_ACTIVITY_BACKFILL_MS,
+  );
+  pruneTtlBoundedMap(
+    missingAgentVerifiedActivityBfSkipUntilMs,
+    now,
+    MISSING_AGENT_VERIFIED_ACTIVITY_BACKFILL_MAP_MAX,
+    (until) => until,
+  );
+}
+
 /**
  * One-time seed of lifecycle rows when the user has agents but no events yet.
  * Runs **outside** the DB snapshot cache (writes must not be skipped by a stale cached read) and uses
@@ -188,6 +227,109 @@ async function maybeBackfillAgentLifecycleEvents(params: {
   } catch (err) {
     console.error("[Activity] Backfill transaction failed:", userId, err);
   }
+}
+
+/**
+ * Inserts a missing {@link AgentActivityEventType.AgentVerified} row when the agent is already VERIFIED
+ * (e.g. verified via credential status polling before we recorded lifecycle events).
+ */
+async function maybeBackfillMissingAgentVerifiedActivity(params: {
+  userId: string;
+  network: NetworkQuery;
+}): Promise<void> {
+  const { userId, network } = params;
+  const now = Date.now();
+  pruneTtlBoundedMap(
+    missingAgentVerifiedActivityBfSkipUntilMs,
+    now,
+    MISSING_AGENT_VERIFIED_ACTIVITY_BACKFILL_MAP_MAX,
+    (until) => until,
+  );
+  const skipUntil = missingAgentVerifiedActivityBfSkipUntilMs.get(
+    missingAgentVerifiedActivityBfKey(userId, network),
+  );
+  if (skipUntil !== undefined && now < skipUntil) {
+    return;
+  }
+
+  const anyVerifiedPreview = await prisma.agent.findFirst({
+    where: {
+      userId,
+      verificationStatus: "VERIFIED",
+      OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+    },
+    select: { id: true },
+  });
+
+  if (!anyVerifiedPreview) {
+    markMissingAgentVerifiedActivityBfCooldown(userId, network);
+    return;
+  }
+
+  const [k1, k2] = userIdVerificationActivityBackfillLockKeys(userId);
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+
+      const verifiedAgents = await tx.agent.findMany({
+        where: {
+          userId,
+          verificationStatus: "VERIFIED",
+          OR: [{ networkIdentifier: network }, { networkIdentifier: null }],
+        },
+        select: { id: true, name: true, networkIdentifier: true },
+      });
+      if (verifiedAgents.length === 0) {
+        return;
+      }
+
+      const agentIds = verifiedAgents.map((a) => a.id);
+      const withEvent = await tx.agentActivityEvent.groupBy({
+        by: ["agentId"],
+        where: {
+          agentId: { in: agentIds },
+          type: "AgentVerified",
+        },
+      });
+      const hasEvent = new Set(
+        withEvent
+          .map((row) => row.agentId)
+          .filter((id): id is string => Boolean(id)),
+      );
+
+      for (const agent of verifiedAgents) {
+        if (hasEvent.has(agent.id)) {
+          continue;
+        }
+
+        const firstIssued = await tx.veridianCredential.findFirst({
+          where: {
+            agentId: agent.id,
+            status: "ISSUED",
+          },
+          orderBy: { issuedAt: "asc" },
+          select: { issuedAt: true },
+        });
+
+        await tx.agentActivityEvent.create({
+          data: {
+            agentId: agent.id,
+            userId,
+            type: "AgentVerified",
+            agentNameSnapshot: agent.name,
+            networkIdentifier: agent.networkIdentifier,
+            createdAt: firstIssued?.issuedAt ?? new Date(),
+          },
+        });
+      }
+    });
+  } catch (err) {
+    console.error("[Activity] AgentVerified backfill failed:", userId, err);
+    return;
+  }
+
+  markMissingAgentVerifiedActivityBfCooldown(userId, network);
 }
 
 function registrationStateToEventType(
@@ -450,6 +592,7 @@ export async function loadActivityTransactionFeedPart(params: {
         type,
         agentId: agent?.id ?? null,
         agentName: agent?.name ?? null,
+        agentIdentifier: p.agentIdentifier ?? null,
         amount: formatRequestedAmount(fundsForAmount),
         status: String(status),
         txHash: p.CurrentTransaction?.txHash ?? null,
@@ -537,6 +680,12 @@ export async function getActivityMergedFeedCached(
       network: params.network,
     });
   }
+
+  /** Not gated on `needLifecycle`: ensures {@link AgentActivityEventType.AgentVerified} rows exist before any merged-request path might surface lifecycle data elsewhere (transactions-only callers still amortize DB work via in-process TTL). */
+  await maybeBackfillMissingAgentVerifiedActivity({
+    userId: params.userId,
+    network: params.network,
+  });
 
   const { agents, lifecycleItems } = await loadActivityDbSnapshot({
     userId: params.userId,

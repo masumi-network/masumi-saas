@@ -105,18 +105,25 @@ export default function MenuItems() {
           <SidebarMenuButton
             asChild
             isActive={isActive}
-            className={cn("px-4 py-5", className)}
+            className={cn(
+              "rounded-lg px-3 py-3 transition-colors data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-none",
+              isMobile ? "px-4 py-3.5" : "py-3",
+              className,
+            )}
           >
             <SheetClose asChild>
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "text-sidebar-text flex w-full items-center gap-3",
+                  "flex w-full items-center gap-3 text-sidebar-text data-[active=true]:text-primary",
                   linkClassName,
                 )}
               >
-                <Icon className="size-4 shrink-0" aria-hidden />
+                <Icon
+                  className={cn("size-4 shrink-0", isActive && "text-primary")}
+                  aria-hidden
+                />
                 <span className="flex-1 truncate font-medium">{label}</span>
               </Link>
             </SheetClose>

@@ -12,14 +12,6 @@
     }
   ],
   "components": {
-    "securitySchemes": {
-      "apiKeyHeader": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-api-key",
-        "description": "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec)."
-      }
-    },
     "schemas": {
       "PaymentProxy_APIKey": {
         "type": "object",
@@ -3965,20 +3957,28 @@
         ]
       }
     },
-    "parameters": {}
+    "parameters": {},
+    "securitySchemes": {
+      "apiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Masumi SaaS API key from **API Keys** in the app. Send only this header (no Bearer scheme in this spec)."
+      }
+    }
   },
   "paths": {
     "/api/activity": {
       "get": {
+        "tags": [
+          "Activity"
+        ],
         "summary": "Activity feed",
         "description": "Cross-agent activity with filters (tab/type). Use `summary=1` for counts-only payload.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Activity"
         ],
         "parameters": [
           {
@@ -4136,6 +4136,10 @@
                                         "type": "string",
                                         "nullable": true
                                       },
+                                      "agentIdentifier": {
+                                        "type": "string",
+                                        "nullable": true
+                                      },
                                       "amount": {
                                         "type": "string"
                                       },
@@ -4154,6 +4158,7 @@
                                       "type",
                                       "agentId",
                                       "agentName",
+                                      "agentIdentifier",
                                       "amount",
                                       "status",
                                       "txHash"
@@ -4230,6 +4235,7 @@
                           "type": "payment",
                           "agentId": "cmlf6gswz0000x1uctad958tq",
                           "agentName": "Research assistant",
+                          "agentIdentifier": "agent123policy456name789",
                           "amount": "10 ADA",
                           "status": "FundsLocked",
                           "txHash": "abc123…"
@@ -4429,15 +4435,15 @@
     },
     "/api/activity/transaction": {
       "get": {
+        "tags": [
+          "Activity"
+        ],
         "summary": "Get activity transaction",
         "description": "Loads a single payment or purchase visible to the caller by ID and transaction type.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Activity"
         ],
         "parameters": [
           {
@@ -4677,16 +4683,322 @@
         }
       }
     },
-    "/api/agents/{agentId}/complete-registration": {
-      "post": {
-        "summary": "Complete on-chain registration",
+    "/api/admin/agents": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List agents for admin review",
+        "description": "Returns a paginated list of agents across users. Requires an authenticated admin user.",
         "security": [
           {
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": ""
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin agents list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "agents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "apiUrl": {
+                                "type": "string"
+                              },
+                              "registrationState": {
+                                "type": "string"
+                              },
+                              "verificationStatus": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "agentIdentifier": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "ownerName": {
+                                "type": "string"
+                              },
+                              "ownerEmail": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "apiUrl",
+                              "registrationState",
+                              "verificationStatus",
+                              "agentIdentifier",
+                              "createdAt",
+                              "ownerName",
+                              "ownerEmail"
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "currentPage": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "currentPage",
+                            "totalPages",
+                            "total",
+                            "limit"
+                          ]
+                        },
+                        "search": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "agents",
+                        "pagination",
+                        "search"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "agents": [
+                        {
+                          "id": "cmlf6gswz0000x1uctad958tq",
+                          "name": "Research assistant",
+                          "apiUrl": "https://agent.example.com/mip",
+                          "registrationState": "RegistrationConfirmed",
+                          "verificationStatus": "VERIFIED",
+                          "agentIdentifier": "policy1.assetname1",
+                          "createdAt": "2026-01-15T12:00:00.000Z",
+                          "ownerName": "Ada Lovelace",
+                          "ownerEmail": "ada@example.com"
+                        }
+                      ],
+                      "pagination": {
+                        "currentPage": 1,
+                        "totalPages": 1,
+                        "total": 1,
+                        "limit": 10
+                      },
+                      "search": ""
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{agentId}/complete-registration": {
+      "post": {
         "tags": [
           "Agents"
+        ],
+        "summary": "Complete on-chain registration",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
         ],
         "parameters": [
           {
@@ -5034,14 +5346,14 @@
     },
     "/api/agents/{agentId}/deregister": {
       "post": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Deregister agent on-chain",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -5238,14 +5550,14 @@
     },
     "/api/agents/{agentId}/earnings": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Agent earnings",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -5683,14 +5995,14 @@
     },
     "/api/agents/{agentId}": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Get agent",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -5991,14 +6303,14 @@
         }
       },
       "delete": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Delete agent",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -6170,14 +6482,14 @@
     },
     "/api/agents/{agentId}/test-verification-endpoint": {
       "post": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Test agent verification URL",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -6389,15 +6701,15 @@
     },
     "/api/agents/{agentId}/transactions": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Agent transactions",
         "description": "Payment and purchase activity for one agent.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -6665,15 +6977,15 @@
     },
     "/api/agents/{agentId}/verification-challenge": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Get verification challenge",
         "description": "Returns the current verification challenge for the agent.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -6719,7 +7031,10 @@
                         "challenge",
                         "generatedAt"
                       ],
-                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here."
                     }
                   },
                   "required": [
@@ -6890,15 +7205,15 @@
         }
       },
       "post": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Refresh verification challenge",
         "description": "Optional body `{ \"regenerate\": true }` to issue a new challenge and invalidate the previous.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -6964,7 +7279,10 @@
                         "challenge",
                         "generatedAt"
                       ],
-                      "description": "Also includes `secret` (string) for one-time HMAC configuration. It is intentionally omitted from this public schema—do not log, share, or paste into docs."
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Challenge UUID and when it was issued. Responses may include additional authenticated-only fields not listed here."
                     }
                   },
                   "required": [
@@ -7135,16 +7453,291 @@
         }
       }
     },
-    "/api/agents/{agentId}/verify": {
-      "post": {
-        "summary": "Verify agent (credential flow)",
+    "/api/agents/{agentId}/verification-credential": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Get agent verification credential summary",
+        "description": "Returns non-sensitive metadata for the Veridian credential linked to this agent (when credential-based verification applies). Omit `data` (`null`) when there is nothing to show.",
         "security": [
           {
             "apiKeyHeader": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "Agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "localCredentialRecordId": {
+                          "type": "string"
+                        },
+                        "credentialId": {
+                          "type": "string"
+                        },
+                        "schemaSaid": {
+                          "type": "string"
+                        },
+                        "aid": {
+                          "type": "string"
+                        },
+                        "credentialStatus": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING",
+                            "ISSUED",
+                            "REVOKED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "issuedAt": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "revokedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastUpdatedAt": {
+                          "type": "string"
+                        },
+                        "claimedRegistryAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "credentialAgentDisplayName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "credentialAgentApiUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registryAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "localCredentialRecordId",
+                        "credentialId",
+                        "schemaSaid",
+                        "aid",
+                        "credentialStatus",
+                        "issuedAt",
+                        "expiresAt",
+                        "revokedAt",
+                        "lastUpdatedAt",
+                        "claimedRegistryAgentIdentifier",
+                        "credentialAgentDisplayName",
+                        "credentialAgentApiUrl",
+                        "registryAgentIdentifier"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{agentId}/verify": {
+      "post": {
         "tags": [
           "Agents"
+        ],
+        "summary": "Verify agent (credential flow)",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
         ],
         "parameters": [
           {
@@ -7162,6 +7755,7 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -7502,15 +8096,15 @@
     },
     "/api/agents/counts": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Aggregate agent counts",
         "description": "Counts by status and network for the current user.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -7718,15 +8312,15 @@
     },
     "/api/agents": {
       "get": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "List agents",
         "description": "Paginated list of the authenticated user’s agents. Effective **network** filter uses the `network` query param, or the `payment_network` cookie when the query is omitted.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Agents"
         ],
         "parameters": [
           {
@@ -8101,6 +8695,9 @@
         }
       },
       "post": {
+        "tags": [
+          "Agents"
+        ],
         "summary": "Start agent registration",
         "description": "Creates a new agent and begins registration in Masumi SaaS. Returns **400** if `tags` is missing or empty after splitting on commas (at least one tag required).",
         "security": [
@@ -8108,10 +8705,8 @@
             "apiKeyHeader": []
           }
         ],
-        "tags": [
-          "Agents"
-        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -8164,35 +8759,83 @@
                     "maxLength": 2000
                   },
                   "pricing": {
-                    "type": "object",
-                    "properties": {
-                      "pricingType": {
-                        "type": "string",
-                        "enum": [
-                          "Free",
-                          "Fixed"
-                        ]
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Free"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
+                        ],
+                        "example": {
+                          "pricingType": "Free"
+                        }
                       },
-                      "prices": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "amount": {
-                              "type": "string"
-                            },
-                            "currency": {
-                              "type": "string"
-                            }
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Fixed"
+                            ]
                           },
-                          "required": [
-                            "amount"
+                          "prices": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "amount": {
+                                  "type": "string"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "amount"
+                              ]
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "pricingType",
+                          "prices"
+                        ],
+                        "example": {
+                          "pricingType": "Fixed",
+                          "prices": [
+                            {
+                              "amount": "5",
+                              "currency": "USD"
+                            }
                           ]
                         }
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "pricingType": {
+                            "type": "string",
+                            "enum": [
+                              "Dynamic"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "pricingType"
+                        ],
+                        "example": {
+                          "pricingType": "Dynamic"
+                        }
                       }
-                    },
-                    "required": [
-                      "pricingType"
                     ]
                   },
                   "termsOfUseUrl": {
@@ -8301,7 +8944,7 @@
                   "name",
                   "apiUrl"
                 ],
-                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`).",
+                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).",
                 "example": {
                   "name": "Research assistant",
                   "description": "Helps with literature review",
@@ -8696,15 +9339,15 @@
     },
     "/api/api-key-status": {
       "get": {
+        "tags": [
+          "API keys"
+        ],
         "summary": "API key status",
         "description": "Returns whether the caller is authenticated with a **browser session** or a **Masumi SaaS API key** (`x-api-key` / `Authorization: Bearer`). For API key auth, includes public metadata for that key (id, name, prefix, start fragment). Does **not** echo the secret key.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "API keys"
         ],
         "responses": {
           "200": {
@@ -8977,15 +9620,15 @@
     },
     "/api/credentials/check-connection": {
       "post": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Check recipient AID connection",
         "description": "Validates whether Veridian already knows the recipient AID before issuing a credential.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "requestBody": {
           "required": true,
@@ -9204,15 +9847,15 @@
     },
     "/api/credentials/issue": {
       "post": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Issue verification credential",
-        "description": "Requests a Veridian credential for an owned, registered agent after validating KYC, challenge signature, and optional organization membership.",
+        "description": "Requests a Veridian credential for an owned, registered agent after validating KYC, agent endpoint HMAC verification, and optional organization membership.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "requestBody": {
           "required": true,
@@ -9245,21 +9888,11 @@
                     "type": "string",
                     "format": "date-time",
                     "example": "2026-12-31T23:59:59.000Z"
-                  },
-                  "signature": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "signedMessage": {
-                    "type": "string",
-                    "minLength": 1
                   }
                 },
                 "required": [
                   "aid",
-                  "agentId",
-                  "signature",
-                  "signedMessage"
+                  "agentId"
                 ],
                 "example": {
                   "aid": "EXAMPLE_AID",
@@ -9267,9 +9900,7 @@
                   "agentId": "cmlf6gswz0000x1uctad958tq",
                   "attributes": {
                     "tier": "gold"
-                  },
-                  "signature": "base64-signature",
-                  "signedMessage": "challenge text"
+                  }
                 }
               }
             }
@@ -9516,15 +10147,15 @@
     },
     "/api/credentials/issuer-oobi": {
       "get": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Get issuer OOBI",
         "description": "Returns the Veridian issuer OOBI that agents can resolve before credential issuance.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "responses": {
           "200": {
@@ -9721,15 +10352,15 @@
     },
     "/api/credentials/reconcile": {
       "get": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Reconcile pending credentials",
         "description": "Checks pending credentials for an owned agent and marks the first matching issued credential as resolved.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "parameters": [
           {
@@ -9937,15 +10568,15 @@
     },
     "/api/credentials/schema-said": {
       "get": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Get verification schema SAID",
         "description": "Returns the configured Veridian schema SAID for agent verification credentials.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "responses": {
           "200": {
@@ -10142,15 +10773,15 @@
     },
     "/api/credentials/status": {
       "get": {
+        "tags": [
+          "Credentials"
+        ],
         "summary": "Get credential status",
         "description": "Polls the current credential state for a pending or issued verification credential owned by the caller.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credentials"
         ],
         "parameters": [
           {
@@ -10373,15 +11004,15 @@
     },
     "/api/credits": {
       "get": {
+        "tags": [
+          "Credits"
+        ],
         "summary": "Get remaining credits",
         "description": "Canonical credits endpoint for the authenticated SaaS API. Returns the authenticated user’s remaining write credits.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Credits"
         ],
         "responses": {
           "200": {
@@ -10558,15 +11189,15 @@
     },
     "/api/dashboard/overview": {
       "get": {
+        "tags": [
+          "Dashboard"
+        ],
         "summary": "Dashboard overview",
         "description": "User, organizations, agents, API keys, balance snapshot, KYC hints — scoped to the authenticated user.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Dashboard"
         ],
         "parameters": [
           {
@@ -10962,15 +11593,15 @@
     },
     "/api/earnings/agent": {
       "get": {
+        "tags": [
+          "Earnings"
+        ],
         "summary": "Get per-agent earnings analytics",
         "description": "Returns earnings analytics, time-bucketed series, and display-unit totals for one owned agent on the selected network.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Earnings"
         ],
         "parameters": [
           {
@@ -11785,15 +12416,15 @@
     },
     "/api/earnings/agents": {
       "get": {
+        "tags": [
+          "Earnings"
+        ],
         "summary": "List agents eligible for earnings analytics",
         "description": "Returns owned agents that have a payment identifier and a registration state eligible for earnings reporting.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Earnings"
         ],
         "parameters": [
           {
@@ -12017,14 +12648,14 @@
     },
     "/api/earnings": {
       "get": {
+        "tags": [
+          "Earnings"
+        ],
         "summary": "User earnings summary",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Earnings"
         ],
         "parameters": [
           {
@@ -12254,12 +12885,12 @@
     },
     "/api/health": {
       "get": {
-        "summary": "Health check",
-        "description": "Confirms this app and the Masumi payment service behind it are up. **503** means the payment service is unreachable or not reporting healthy.",
-        "security": [],
         "tags": [
           "System"
         ],
+        "summary": "Health check",
+        "description": "Confirms this app and the Masumi payment service behind it are up. **503** means the payment service is unreachable or not reporting healthy.",
+        "security": [],
         "responses": {
           "200": {
             "description": "App and payment service are healthy",
@@ -12424,475 +13055,14 @@
         }
       }
     },
-    "/api/masumi/inbox-agent/register": {
-      "post": {
-        "summary": "Register inbox agent",
-        "description": "Compatibility alias for `POST /pay/api/v1/inbox-agents`. Registers a new inbox agent with the same server-side executing-wallet flow as the canonical route. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
-        "security": [
-          {
-            "apiKeyHeader": []
-          }
-        ],
-        "tags": [
-          "Inbox agents"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 120
-                  },
-                  "description": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 500
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      }
-                    ]
-                  },
-                  "agentSlug": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 160
-                  }
-                },
-                "required": [
-                  "name",
-                  "agentSlug"
-                ],
-                "additionalProperties": false,
-                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
-                "example": {
-                  "name": "Support inbox",
-                  "description": "Routes support requests into the Masumi inbox registry",
-                  "agentSlug": "support-inbox"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Inbox-agent registration created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "error": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "agentSlug": {
-                          "type": "string"
-                        },
-                        "state": {
-                          "type": "string",
-                          "enum": [
-                            "RegistrationRequested",
-                            "RegistrationInitiated",
-                            "RegistrationConfirmed",
-                            "RegistrationFailed",
-                            "DeregistrationRequested",
-                            "DeregistrationInitiated",
-                            "DeregistrationConfirmed",
-                            "DeregistrationFailed"
-                          ]
-                        },
-                        "createdAt": {
-                          "type": "string"
-                        },
-                        "updatedAt": {
-                          "type": "string"
-                        },
-                        "lastCheckedAt": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "agentIdentifier": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "metadataVersion": {
-                          "type": "number"
-                        },
-                        "sendFundingLovelace": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "SmartContractWallet": {
-                          "type": "object",
-                          "properties": {
-                            "walletVkey": {
-                              "type": "string"
-                            },
-                            "walletAddress": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "walletVkey",
-                            "walletAddress"
-                          ]
-                        },
-                        "RecipientWallet": {
-                          "type": "object",
-                          "nullable": true,
-                          "properties": {
-                            "walletVkey": {
-                              "type": "string"
-                            },
-                            "walletAddress": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "walletVkey",
-                            "walletAddress"
-                          ]
-                        },
-                        "CurrentTransaction": {
-                          "type": "object",
-                          "nullable": true,
-                          "properties": {
-                            "txHash": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "status": {
-                              "type": "string",
-                              "enum": [
-                                "Pending",
-                                "Confirmed",
-                                "FailedViaTimeout",
-                                "FailedViaManualReset",
-                                "RolledBack"
-                              ]
-                            },
-                            "confirmations": {
-                              "type": "number",
-                              "nullable": true
-                            },
-                            "fees": {
-                              "type": "string",
-                              "nullable": true
-                            },
-                            "blockHeight": {
-                              "type": "number",
-                              "nullable": true
-                            },
-                            "blockTime": {
-                              "type": "number",
-                              "nullable": true
-                            }
-                          },
-                          "required": [
-                            "txHash",
-                            "status",
-                            "confirmations",
-                            "fees",
-                            "blockHeight",
-                            "blockTime"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "error",
-                        "id",
-                        "name",
-                        "description",
-                        "agentSlug",
-                        "state",
-                        "createdAt",
-                        "updatedAt",
-                        "lastCheckedAt",
-                        "agentIdentifier",
-                        "metadataVersion",
-                        "sendFundingLovelace",
-                        "SmartContractWallet",
-                        "RecipientWallet",
-                        "CurrentTransaction"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "example": {
-                    "success": true,
-                    "data": {
-                      "id": "cm_inbox_1",
-                      "name": "Support inbox",
-                      "description": "Routes support requests into the Masumi inbox registry",
-                      "agentSlug": "support-inbox",
-                      "state": "RegistrationConfirmed",
-                      "error": null,
-                      "createdAt": "2026-04-10T10:00:00.000Z",
-                      "updatedAt": "2026-04-10T10:10:00.000Z",
-                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
-                      "agentIdentifier": "policy.asset",
-                      "metadataVersion": 1,
-                      "sendFundingLovelace": null,
-                      "SmartContractWallet": {
-                        "walletVkey": "wallet_vkey_123",
-                        "walletAddress": "addr_test1mint..."
-                      },
-                      "RecipientWallet": {
-                        "walletVkey": "wallet_vkey_456",
-                        "walletAddress": "addr_test1recipient..."
-                      },
-                      "CurrentTransaction": null
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation or bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized — valid session or API key required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "402": {
-            "description": "Insufficient credits",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string",
-                      "enum": [
-                        "Insufficient credits"
-                      ]
-                    },
-                    "creditsRemaining": {
-                      "type": "number"
-                    },
-                    "requiredCredits": {
-                      "type": "number",
-                      "enum": [
-                        1
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error",
-                    "creditsRemaining",
-                    "requiredCredits"
-                  ],
-                  "example": {
-                    "success": false,
-                    "error": "Insufficient credits",
-                    "creditsRemaining": 0,
-                    "requiredCredits": 1
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden — insufficient role or feature not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Inbox registration conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string",
-                      "enum": [
-                        "Inbox slug is already in use on this network",
-                        "Inbox agent is already owned by another account"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ],
-                  "example": {
-                    "success": false,
-                    "error": "Inbox slug is already in use on this network"
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/register/email": {
       "post": {
-        "summary": "Register with email",
-        "description": "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
-        "security": [],
         "tags": [
           "Auth"
         ],
+        "summary": "Register with email",
+        "description": "Creates a new account if needed, then sends a magic sign-in link to the provided email address. The client must confirm terms acceptance before calling this route.",
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -13051,202 +13221,17 @@
         }
       }
     },
-    "/credits": {
-      "get": {
-        "summary": "Get remaining credits",
-        "description": "Compatibility alias for `/api/credits`. Returns the authenticated user’s remaining write credits. New users start with 1 credit; existing users stay at 0 until credits are granted outside this v1 flow.",
-        "security": [
-          {
-            "apiKeyHeader": []
-          }
-        ],
-        "tags": [
-          "Credits"
-        ],
-        "responses": {
-          "200": {
-            "description": "Current balance",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "creditsRemaining": {
-                          "type": "number"
-                        },
-                        "updatedAt": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "creditsRemaining",
-                        "updatedAt"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "example": {
-                    "success": true,
-                    "data": {
-                      "creditsRemaining": 20,
-                      "updatedAt": "2026-04-13T10:30:00.000Z"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation or bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized — valid session or API key required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden — insufficient role or feature not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister": {
+    "/api/v1/inbox-agents/{inboxAgentId}/deregister": {
       "post": {
+        "tags": [
+          "Inbox agents"
+        ],
         "summary": "Deregister inbox agent",
         "description": "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Inbox agents"
         ],
         "parameters": [
           {
@@ -13613,17 +13598,17 @@
         }
       }
     },
-    "/pay/api/v1/inbox-agents/{inboxAgentId}": {
+    "/api/v1/inbox-agents/{inboxAgentId}": {
       "delete": {
+        "tags": [
+          "Inbox agents"
+        ],
         "summary": "Delete inbox agent",
         "description": "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Inbox agents"
         ],
         "parameters": [
           {
@@ -13990,17 +13975,17 @@
         }
       }
     },
-    "/pay/api/v1/inbox-agents": {
+    "/api/v1/inbox-agents": {
       "get": {
+        "tags": [
+          "Inbox agents"
+        ],
         "summary": "List inbox agents",
         "description": "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie. Continue pagination only with the same `network`, `filterStatus`, and `search`; changing any of them requires restarting without `cursor`, otherwise the endpoint may return HTTP 410.",
         "security": [
           {
             "apiKeyHeader": []
           }
-        ],
-        "tags": [
-          "Inbox agents"
         ],
         "parameters": [
           {
@@ -14424,6 +14409,9 @@
         }
       },
       "post": {
+        "tags": [
+          "Inbox agents"
+        ],
         "summary": "Register inbox agent",
         "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
         "security": [
@@ -14431,10 +14419,8 @@
             "apiKeyHeader": []
           }
         ],
-        "tags": [
-          "Inbox agents"
-        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -14882,6 +14868,2351 @@
           },
           "503": {
             "description": "Payment node unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credits": {
+      "get": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Get remaining credits",
+        "description": "Canonical credits endpoint for the authenticated SaaS API. Returns the authenticated user’s remaining write credits.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "creditsRemaining": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "creditsRemaining",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "creditsRemaining": 20,
+                      "updatedAt": "2026-04-13T10:30:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/masumi/inbox-agent/register": {
+      "post": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "Register inbox agent",
+        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "agentSlug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "name",
+                  "agentSlug"
+                ],
+                "additionalProperties": false,
+                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
+                "example": {
+                  "name": "Support inbox",
+                  "description": "Routes support requests into the Masumi inbox registry",
+                  "agentSlug": "support-inbox"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox-agent registration created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentSlug": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "lastCheckedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadataVersion": {
+                          "type": "number"
+                        },
+                        "sendFundingLovelace": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "SmartContractWallet": {
+                          "type": "object",
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "RecipientWallet": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "CurrentTransaction": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "txHash": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "Pending",
+                                "Confirmed",
+                                "FailedViaTimeout",
+                                "FailedViaManualReset",
+                                "RolledBack"
+                              ]
+                            },
+                            "confirmations": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "fees": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "blockHeight": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "blockTime": {
+                              "type": "number",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "txHash",
+                            "status",
+                            "confirmations",
+                            "fees",
+                            "blockHeight",
+                            "blockTime"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "description",
+                        "agentSlug",
+                        "state",
+                        "createdAt",
+                        "updatedAt",
+                        "lastCheckedAt",
+                        "agentIdentifier",
+                        "metadataVersion",
+                        "sendFundingLovelace",
+                        "SmartContractWallet",
+                        "RecipientWallet",
+                        "CurrentTransaction"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cm_inbox_1",
+                      "name": "Support inbox",
+                      "description": "Routes support requests into the Masumi inbox registry",
+                      "agentSlug": "support-inbox",
+                      "state": "RegistrationConfirmed",
+                      "error": null,
+                      "createdAt": "2026-04-10T10:00:00.000Z",
+                      "updatedAt": "2026-04-10T10:10:00.000Z",
+                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                      "agentIdentifier": "policy.asset",
+                      "metadataVersion": 1,
+                      "sendFundingLovelace": null,
+                      "SmartContractWallet": {
+                        "walletVkey": "wallet_vkey_123",
+                        "walletAddress": "addr_test1mint..."
+                      },
+                      "RecipientWallet": {
+                        "walletVkey": "wallet_vkey_456",
+                        "walletAddress": "addr_test1recipient..."
+                      },
+                      "CurrentTransaction": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Insufficient credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "Insufficient credits"
+                      ]
+                    },
+                    "creditsRemaining": {
+                      "type": "number"
+                    },
+                    "requiredCredits": {
+                      "type": "number",
+                      "enum": [
+                        1
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "creditsRemaining",
+                    "requiredCredits"
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Insufficient credits",
+                    "creditsRemaining": 0,
+                    "requiredCredits": 1
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Inbox registration conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "Inbox slug is already in use on this network",
+                        "Inbox agent is already owned by another account"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Inbox slug is already in use on this network"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment node unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pay/api/v1/inbox-agents": {
+      "get": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "List inbox agents",
+        "description": "Paginated list of the authenticated user’s inbox-agent registrations. Effective `network` comes from the query param or the `payment_network` cookie. Continue pagination only with the same `network`, `filterStatus`, and `search`; changing any of them requires restarting without `cursor`, otherwise the endpoint may return HTTP 410.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cursor from the previous response (`nextCursor`). A cursor is valid only when reusing the same `network`, `filterStatus`, and `search` values; changing any of them invalidates pagination and may return HTTP 410."
+            },
+            "required": false,
+            "description": "Cursor from the previous response (`nextCursor`). A cursor is valid only when reusing the same `network`, `filterStatus`, and `search` values; changing any of them invalidates pagination and may return HTTP 410.",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "required": false,
+            "name": "take",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Registered",
+                "Deregistered",
+                "Pending",
+                "Failed"
+              ]
+            },
+            "required": false,
+            "name": "filterStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false,
+            "name": "network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inbox-agent list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "error": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "agentSlug": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "RegistrationRequested",
+                              "RegistrationInitiated",
+                              "RegistrationConfirmed",
+                              "RegistrationFailed",
+                              "DeregistrationRequested",
+                              "DeregistrationInitiated",
+                              "DeregistrationConfirmed",
+                              "DeregistrationFailed"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "lastCheckedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "agentIdentifier": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "metadataVersion": {
+                            "type": "number"
+                          },
+                          "sendFundingLovelace": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "SmartContractWallet": {
+                            "type": "object",
+                            "properties": {
+                              "walletVkey": {
+                                "type": "string"
+                              },
+                              "walletAddress": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "walletVkey",
+                              "walletAddress"
+                            ]
+                          },
+                          "RecipientWallet": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "walletVkey": {
+                                "type": "string"
+                              },
+                              "walletAddress": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "walletVkey",
+                              "walletAddress"
+                            ]
+                          },
+                          "CurrentTransaction": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "txHash": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "Pending",
+                                  "Confirmed",
+                                  "FailedViaTimeout",
+                                  "FailedViaManualReset",
+                                  "RolledBack"
+                                ]
+                              },
+                              "confirmations": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "fees": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "blockHeight": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "blockTime": {
+                                "type": "number",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "txHash",
+                              "status",
+                              "confirmations",
+                              "fees",
+                              "blockHeight",
+                              "blockTime"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "error",
+                          "id",
+                          "name",
+                          "description",
+                          "agentSlug",
+                          "state",
+                          "createdAt",
+                          "updatedAt",
+                          "lastCheckedAt",
+                          "agentIdentifier",
+                          "metadataVersion",
+                          "sendFundingLovelace",
+                          "SmartContractWallet",
+                          "RecipientWallet",
+                          "CurrentTransaction"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "nextCursor"
+                  ],
+                  "example": {
+                    "success": true,
+                    "nextCursor": "cm_inbox_2",
+                    "data": [
+                      {
+                        "id": "cm_inbox_1",
+                        "name": "Support inbox",
+                        "description": "Routes support requests into the Masumi inbox registry",
+                        "agentSlug": "support-inbox",
+                        "state": "RegistrationConfirmed",
+                        "error": null,
+                        "createdAt": "2026-04-10T10:00:00.000Z",
+                        "updatedAt": "2026-04-10T10:10:00.000Z",
+                        "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                        "agentIdentifier": "policy.asset",
+                        "metadataVersion": 1,
+                        "sendFundingLovelace": null,
+                        "SmartContractWallet": {
+                          "walletVkey": "wallet_vkey_123",
+                          "walletAddress": "addr_test1mint..."
+                        },
+                        "RecipientWallet": {
+                          "walletVkey": "wallet_vkey_456",
+                          "walletAddress": "addr_test1recipient..."
+                        },
+                        "CurrentTransaction": {
+                          "txHash": "abc123",
+                          "status": "Confirmed",
+                          "confirmations": 12,
+                          "fees": "170000",
+                          "blockHeight": 123,
+                          "blockTime": 1744277200
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Stale cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "Register inbox agent",
+        "description": "Registers a new inbox agent after normalizing the slug. A configured server-side executing wallet pays for the registration and receives the registration asset; ownership is tracked locally for the authenticated user. Returns HTTP 409 when the slug is already in use on the selected network, or when the finalized registration resolves to another user's existing ownership record.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "agentSlug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "name",
+                  "agentSlug"
+                ],
+                "additionalProperties": false,
+                "description": "Registers an inbox agent under the active network. `agentSlug` is normalized server-side, and a configured server-side executing wallet pays for the registration and receives the registration asset.",
+                "example": {
+                  "name": "Support inbox",
+                  "description": "Routes support requests into the Masumi inbox registry",
+                  "agentSlug": "support-inbox"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inbox-agent registration created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentSlug": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "lastCheckedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadataVersion": {
+                          "type": "number"
+                        },
+                        "sendFundingLovelace": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "SmartContractWallet": {
+                          "type": "object",
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "RecipientWallet": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "CurrentTransaction": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "txHash": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "Pending",
+                                "Confirmed",
+                                "FailedViaTimeout",
+                                "FailedViaManualReset",
+                                "RolledBack"
+                              ]
+                            },
+                            "confirmations": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "fees": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "blockHeight": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "blockTime": {
+                              "type": "number",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "txHash",
+                            "status",
+                            "confirmations",
+                            "fees",
+                            "blockHeight",
+                            "blockTime"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "description",
+                        "agentSlug",
+                        "state",
+                        "createdAt",
+                        "updatedAt",
+                        "lastCheckedAt",
+                        "agentIdentifier",
+                        "metadataVersion",
+                        "sendFundingLovelace",
+                        "SmartContractWallet",
+                        "RecipientWallet",
+                        "CurrentTransaction"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cm_inbox_1",
+                      "name": "Support inbox",
+                      "description": "Routes support requests into the Masumi inbox registry",
+                      "agentSlug": "support-inbox",
+                      "state": "RegistrationConfirmed",
+                      "error": null,
+                      "createdAt": "2026-04-10T10:00:00.000Z",
+                      "updatedAt": "2026-04-10T10:10:00.000Z",
+                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                      "agentIdentifier": "policy.asset",
+                      "metadataVersion": 1,
+                      "sendFundingLovelace": null,
+                      "SmartContractWallet": {
+                        "walletVkey": "wallet_vkey_123",
+                        "walletAddress": "addr_test1mint..."
+                      },
+                      "RecipientWallet": {
+                        "walletVkey": "wallet_vkey_456",
+                        "walletAddress": "addr_test1recipient..."
+                      },
+                      "CurrentTransaction": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Insufficient credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "Insufficient credits"
+                      ]
+                    },
+                    "creditsRemaining": {
+                      "type": "number"
+                    },
+                    "requiredCredits": {
+                      "type": "number",
+                      "enum": [
+                        1
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "creditsRemaining",
+                    "requiredCredits"
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Insufficient credits",
+                    "creditsRemaining": 0,
+                    "requiredCredits": 1
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Inbox registration conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "Inbox slug is already in use on this network",
+                        "Inbox agent is already owned by another account"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ],
+                  "example": {
+                    "success": false,
+                    "error": "Inbox slug is already in use on this network"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment node unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pay/api/v1/inbox-agents/{inboxAgentId}": {
+      "delete": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "Delete inbox agent",
+        "description": "Deletes an inbox-agent registration after SaaS verifies it belongs to the caller and is in a user-safe terminal state.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Inbox agent request ID (CUID)",
+              "example": "cm_inbox_1"
+            },
+            "required": true,
+            "description": "Inbox agent request ID (CUID)",
+            "name": "inboxAgentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentSlug": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "lastCheckedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadataVersion": {
+                          "type": "number"
+                        },
+                        "sendFundingLovelace": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "SmartContractWallet": {
+                          "type": "object",
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "RecipientWallet": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "CurrentTransaction": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "txHash": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "Pending",
+                                "Confirmed",
+                                "FailedViaTimeout",
+                                "FailedViaManualReset",
+                                "RolledBack"
+                              ]
+                            },
+                            "confirmations": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "fees": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "blockHeight": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "blockTime": {
+                              "type": "number",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "txHash",
+                            "status",
+                            "confirmations",
+                            "fees",
+                            "blockHeight",
+                            "blockTime"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "description",
+                        "agentSlug",
+                        "state",
+                        "createdAt",
+                        "updatedAt",
+                        "lastCheckedAt",
+                        "agentIdentifier",
+                        "metadataVersion",
+                        "sendFundingLovelace",
+                        "SmartContractWallet",
+                        "RecipientWallet",
+                        "CurrentTransaction"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cm_inbox_1",
+                      "name": "Support inbox",
+                      "description": "Routes support requests into the Masumi inbox registry",
+                      "agentSlug": "support-inbox",
+                      "state": "RegistrationConfirmed",
+                      "error": null,
+                      "createdAt": "2026-04-10T10:00:00.000Z",
+                      "updatedAt": "2026-04-10T10:10:00.000Z",
+                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                      "agentIdentifier": "policy.asset",
+                      "metadataVersion": 1,
+                      "sendFundingLovelace": null,
+                      "SmartContractWallet": {
+                        "walletVkey": "wallet_vkey_123",
+                        "walletAddress": "addr_test1mint..."
+                      },
+                      "RecipientWallet": {
+                        "walletVkey": "wallet_vkey_456",
+                        "walletAddress": "addr_test1recipient..."
+                      },
+                      "CurrentTransaction": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pay/api/v1/inbox-agents/{inboxAgentId}/deregister": {
+      "post": {
+        "tags": [
+          "Inbox agents"
+        ],
+        "summary": "Deregister inbox agent",
+        "description": "Requests deregistration for a confirmed inbox agent after SaaS verifies ownership and resolves the matching payment source smart contract. The slug remains unavailable until the registry confirms deregistration.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Inbox agent request ID (CUID)",
+              "example": "cm_inbox_1"
+            },
+            "required": true,
+            "description": "Inbox agent request ID (CUID)",
+            "name": "inboxAgentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deregistration requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentSlug": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "lastCheckedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadataVersion": {
+                          "type": "number"
+                        },
+                        "sendFundingLovelace": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "SmartContractWallet": {
+                          "type": "object",
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "RecipientWallet": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "walletVkey": {
+                              "type": "string"
+                            },
+                            "walletAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "walletVkey",
+                            "walletAddress"
+                          ]
+                        },
+                        "CurrentTransaction": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "txHash": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "Pending",
+                                "Confirmed",
+                                "FailedViaTimeout",
+                                "FailedViaManualReset",
+                                "RolledBack"
+                              ]
+                            },
+                            "confirmations": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "fees": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "blockHeight": {
+                              "type": "number",
+                              "nullable": true
+                            },
+                            "blockTime": {
+                              "type": "number",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "txHash",
+                            "status",
+                            "confirmations",
+                            "fees",
+                            "blockHeight",
+                            "blockTime"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "description",
+                        "agentSlug",
+                        "state",
+                        "createdAt",
+                        "updatedAt",
+                        "lastCheckedAt",
+                        "agentIdentifier",
+                        "metadataVersion",
+                        "sendFundingLovelace",
+                        "SmartContractWallet",
+                        "RecipientWallet",
+                        "CurrentTransaction"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cm_inbox_1",
+                      "name": "Support inbox",
+                      "description": "Routes support requests into the Masumi inbox registry",
+                      "agentSlug": "support-inbox",
+                      "state": "RegistrationConfirmed",
+                      "error": null,
+                      "createdAt": "2026-04-10T10:00:00.000Z",
+                      "updatedAt": "2026-04-10T10:10:00.000Z",
+                      "lastCheckedAt": "2026-04-10T10:12:00.000Z",
+                      "agentIdentifier": "policy.asset",
+                      "metadataVersion": 1,
+                      "sendFundingLovelace": null,
+                      "SmartContractWallet": {
+                        "walletVkey": "wallet_vkey_123",
+                        "walletAddress": "addr_test1mint..."
+                      },
+                      "RecipientWallet": {
+                        "walletVkey": "wallet_vkey_456",
+                        "walletAddress": "addr_test1recipient..."
+                      },
+                      "CurrentTransaction": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Payment service unavailable",
             "content": {
               "application/json": {
                 "schema": {

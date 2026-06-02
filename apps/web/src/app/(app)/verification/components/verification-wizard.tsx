@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardContent,
@@ -15,12 +16,16 @@ import {
 import { Steps } from "@/components/ui/steps";
 import {
   generateKycAccessTokenAction,
+  getKycStatusAction,
   markKycAsSubmittedAction,
-} from "@/lib/actions/kyc.action";
+} from "@/lib/actions";
 
 import { CompletionStep } from "./completion-step";
 import { IntroStep } from "./intro-step";
 import { SumsubStep } from "./sumsub-step";
+
+const KYC_POLL_INTERVAL_MS = 4000;
+const KYC_MAX_POLL_ATTEMPTS = 120;
 
 interface VerificationWizardProps {
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
@@ -35,11 +40,33 @@ export function VerificationWizard({
 }: VerificationWizardProps) {
   const t = useTranslations("App.Verification");
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() =>
+    kycStatus === "APPROVED" ? 3 : 1,
+  );
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoadingToken, setIsLoadingToken] = useState(false);
   const [verificationCompleted, setVerificationCompleted] = useState(false);
+  const [liveKycStatus, setLiveKycStatus] = useState(kycStatus);
+  const [liveRejectionReason, setLiveRejectionReason] = useState(
+    rejectionReason ?? null,
+  );
+  const [liveKycCompletedAt, setLiveKycCompletedAt] = useState(
+    kycCompletedAt ?? null,
+  );
+  const pollAttemptsRef = useRef(0);
+
+  useEffect(() => {
+    setLiveKycStatus(kycStatus);
+    setLiveRejectionReason(rejectionReason ?? null);
+    setLiveKycCompletedAt(kycCompletedAt ?? null);
+  }, [kycStatus, rejectionReason, kycCompletedAt]);
+
+  useEffect(() => {
+    if (liveKycStatus === "APPROVED") {
+      setCurrentStep(3);
+    }
+  }, [liveKycStatus]);
 
   const steps = [
     {
@@ -79,12 +106,22 @@ export function VerificationWizard({
   };
 
   const handleVerificationComplete = async () => {
-    await markKycAsSubmittedAction();
+    const marked = await markKycAsSubmittedAction();
+    if (!marked.success) {
+      toast.error(marked.error || t("errors.verificationFailed"));
+      return;
+    }
+
+    const refreshed = await getKycStatusAction();
+    if (refreshed.success && refreshed.data) {
+      setLiveKycStatus(refreshed.data.kycStatus);
+      setLiveRejectionReason(refreshed.data.kycRejectionReason ?? null);
+      setLiveKycCompletedAt(refreshed.data.kycCompletedAt ?? null);
+    }
+
     setVerificationCompleted(true);
     setCurrentStep(3);
-    setTimeout(() => {
-      router.refresh();
-    }, 2000);
+    router.refresh();
   };
 
   const handleVerificationError = (error: string) => {
@@ -92,16 +129,58 @@ export function VerificationWizard({
   };
 
   const isVerificationSubmitted =
-    kycStatus === "REVIEW" || kycStatus === "REJECTED";
+    liveKycStatus === "REVIEW" || liveKycStatus === "REJECTED";
+
+  useEffect(() => {
+    const shouldPoll =
+      liveKycStatus === "REVIEW" ||
+      (verificationCompleted &&
+        liveKycStatus !== "APPROVED" &&
+        liveKycStatus !== "REJECTED");
+
+    if (!shouldPoll) {
+      pollAttemptsRef.current = 0;
+      return;
+    }
+
+    pollAttemptsRef.current = 0;
+    let intervalId: number | undefined;
+
+    const tick = async () => {
+      pollAttemptsRef.current += 1;
+      if (pollAttemptsRef.current > KYC_MAX_POLL_ATTEMPTS) {
+        if (intervalId !== undefined) {
+          window.clearInterval(intervalId);
+        }
+        return;
+      }
+      const result = await getKycStatusAction();
+      if (result.success && result.data) {
+        setLiveKycStatus(result.data.kycStatus);
+        setLiveRejectionReason(result.data.kycRejectionReason ?? null);
+        setLiveKycCompletedAt(result.data.kycCompletedAt ?? null);
+        if (
+          result.data.kycStatus === "APPROVED" ||
+          result.data.kycStatus === "REJECTED"
+        ) {
+          router.refresh();
+        }
+      }
+    };
+
+    void tick();
+    intervalId = window.setInterval(() => void tick(), KYC_POLL_INTERVAL_MS);
+
+    return () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [liveKycStatus, verificationCompleted, router]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm leading-6">
-          {t("description")}
-        </p>
-      </div>
+    <div className="w-full space-y-8">
+      <PageHeader title={t("title")} description={t("description")} />
 
       <div className="w-full space-y-8">
         {!isVerificationSubmitted && (
@@ -113,22 +192,22 @@ export function VerificationWizard({
             <>
               <CardHeader className="rounded-t-xl bg-masumi-gradient pt-6 items-center">
                 <CardTitle>
-                  {kycStatus === "REVIEW"
+                  {liveKycStatus === "REVIEW"
                     ? t("Completion.processingTitle")
                     : t("Intro.rejectionTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {kycStatus === "REVIEW"
+                  {liveKycStatus === "REVIEW"
                     ? t("Completion.processingMessage")
-                    : rejectionReason || t("Completion.rejectedMessage")}
+                    : liveRejectionReason || t("Completion.rejectedMessage")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <CompletionStep
-                  verificationCompleted={kycStatus === "REVIEW"}
-                  kycStatus={kycStatus}
-                  rejectionReason={rejectionReason}
-                  kycCompletedAt={kycCompletedAt}
+                  verificationCompleted={liveKycStatus === "REVIEW"}
+                  kycStatus={liveKycStatus}
+                  rejectionReason={liveRejectionReason}
+                  kycCompletedAt={liveKycCompletedAt}
                 />
               </CardContent>
             </>
@@ -147,8 +226,8 @@ export function VerificationWizard({
                     onConsentChange={setConsentAccepted}
                     onStart={handleStartVerification}
                     isLoading={isLoadingToken}
-                    kycStatus={kycStatus}
-                    rejectionReason={rejectionReason}
+                    kycStatus={liveKycStatus}
+                    rejectionReason={liveRejectionReason}
                   />
                 )}
                 {currentStep === 2 && accessToken && (
@@ -161,9 +240,9 @@ export function VerificationWizard({
                 {currentStep === 3 && (
                   <CompletionStep
                     verificationCompleted={verificationCompleted}
-                    kycStatus={kycStatus}
-                    rejectionReason={rejectionReason}
-                    kycCompletedAt={kycCompletedAt}
+                    kycStatus={liveKycStatus}
+                    rejectionReason={liveRejectionReason}
+                    kycCompletedAt={liveKycCompletedAt}
                   />
                 )}
               </CardContent>

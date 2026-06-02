@@ -16,6 +16,9 @@ function hasMethodExport(source: string, method: string): boolean {
     new RegExp(`export\\s+async\\s+function\\s+${method}\\s*\\(`).test(
       source,
     ) ||
+    new RegExp(
+      `export\\s+const\\s*\\{[^}]*\\b${method}\\b[^}]*\\}\\s*=\\s*nextHandlers\\s*\\(`,
+    ).test(source) ||
     new RegExp(`export\\s*\\{[^}]*\\b${method}\\b[^}]*\\}\\s*from`).test(source)
   );
 }

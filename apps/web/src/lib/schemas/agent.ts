@@ -6,6 +6,34 @@ import { z } from "@/lib/zod-openapi";
  * Shared agent validation schema — used by both server actions and API routes.
  * Keep in sync with Prisma Agent model constraints.
  */
+/** POST /api/agents `pricing` — discriminated by `pricingType` (matches payment-node registration). */
+const registerAgentPricingSchema = z.discriminatedUnion("pricingType", [
+  z
+    .object({ pricingType: z.literal("Free") })
+    .openapi({ example: { pricingType: "Free" } }),
+  z
+    .object({
+      pricingType: z.literal("Fixed"),
+      prices: z
+        .array(
+          z.object({
+            amount: z.string(),
+            currency: z.string().optional(),
+          }),
+        )
+        .min(1, "At least one price amount is required for fixed pricing"),
+    })
+    .openapi({
+      example: {
+        pricingType: "Fixed",
+        prices: [{ amount: "5", currency: "USD" }],
+      },
+    }),
+  z
+    .object({ pricingType: z.literal("Dynamic") })
+    .openapi({ example: { pricingType: "Dynamic" } }),
+]);
+
 const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
   url: z.string().url().min(1),
@@ -76,19 +104,7 @@ export const registerAgentBodySchema = z.object({
   apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional(),
-  pricing: z
-    .object({
-      pricingType: z.enum(["Free", "Fixed"]),
-      prices: z
-        .array(
-          z.object({
-            amount: z.string(),
-            currency: z.string().optional(),
-          }),
-        )
-        .optional(),
-    })
-    .optional(),
+  pricing: registerAgentPricingSchema.optional(),
   termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
   privacyPolicyUrl: z
     .union([z.literal(""), z.string().url().max(250)])
@@ -97,6 +113,36 @@ export const registerAgentBodySchema = z.object({
   capabilityName: z.string().max(250).optional().or(z.literal("")),
   capabilityVersion: z.string().max(250).optional().or(z.literal("")),
   exampleOutputs: z.array(exampleOutputSchema).optional(),
+});
+
+/** Same validation as `POST /api/agents`; `.openapi()` only adds documentation metadata. */
+export const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
+  description:
+    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).',
+  example: {
+    name: "Research assistant",
+    description: "Helps with literature review",
+    extendedDescription: "",
+    apiUrl: "https://agent.example.com/mip",
+    tags: "research, nlp",
+    icon: "bot",
+    pricing: {
+      pricingType: "Fixed",
+      prices: [{ amount: "5", currency: "USD" }],
+    },
+    termsOfUseUrl: "https://example.com/terms",
+    privacyPolicyUrl: "https://example.com/privacy",
+    otherUrl: "",
+    capabilityName: "Masumi",
+    capabilityVersion: "1.0",
+    exampleOutputs: [
+      {
+        name: "Sample output",
+        url: "https://example.com/sample.json",
+        mimeType: "application/json",
+      },
+    ],
+  },
 });
 
 /** GET /api/agents query — shared with OpenAPI (`saas-app-openapi`). */
@@ -142,8 +188,8 @@ const registerAgentFormBaseSchema = z.object({
   apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
-  /** "Free" | "Fixed" */
-  pricingType: z.enum(["Free", "Fixed"]).optional(),
+  /** "Free" | "Fixed" | "Dynamic" */
+  pricingType: z.enum(["Free", "Fixed", "Dynamic"]).optional(),
   /** JSON-encoded Array<{ amount: string; currency: string }> */
   prices: z.string().optional(),
   termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),

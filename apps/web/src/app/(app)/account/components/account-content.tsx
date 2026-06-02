@@ -1,9 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { OrganizationSelect } from "@/components/organization-select";
+import { PageHeader } from "@/components/page-header";
+import { ThemeSetting } from "@/components/theme-setting";
 import { Separator } from "@/components/ui/separator";
+import type { Locale } from "@/i18n/config";
 import { auth } from "@/lib/auth/auth";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
@@ -48,24 +52,33 @@ export function AccountContent({
   userProfileCard,
 }: AccountContentProps) {
   const t = useTranslations("App.Account");
+  const locale = useLocale() as Locale;
 
   const hasCredentialAccount = accounts.some(
     (account) => account.providerId === "credential",
   );
 
   return (
-    <div className="w-full space-y-8 animate-page-in">
-      <div className="mx-auto max-w-3xl flex flex-row flex-wrap gap-4 items-center justify-between">
-        <div className="space-y-2 min-w-0">
-          <h1 className="text-2xl font-light tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t("description")}
-          </p>
-        </div>
-        <OrganizationSelectorSection />
+    <div className="w-full animate-page-in space-y-8">
+      <div className="mx-auto max-w-3xl">
+        <PageHeader
+          title={t("title")}
+          description={t("description")}
+          actions={<OrganizationSelectorSection />}
+        />
       </div>
 
       <div className="mx-auto max-w-3xl space-y-8">
+        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <h2 className="min-w-0 shrink truncate pr-2 text-sm font-medium leading-none">
+            {t("languageAndAppearance")}
+          </h2>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeSetting />
+            <LocaleSwitcher currentLocale={locale} />
+          </div>
+        </div>
+
         {userProfileCard}
 
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">

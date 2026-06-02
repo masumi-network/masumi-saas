@@ -24,7 +24,7 @@ export default async function AuthLayout({
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       <div
-        className="absolute inset-0 opacity-25 animate-grid-glide"
+        className="absolute inset-0 opacity-40 animate-grid-glide"
         style={{
           backgroundImage: `url(${typeof gridSvg === "string" ? gridSvg : gridSvg.src || gridSvg})`,
           backgroundRepeat: "repeat",
@@ -38,8 +38,10 @@ export default async function AuthLayout({
       />
       <div className="relative z-10">
         <Header />
-        <main className="flex flex-col items-center justify-center min-h-screen py-20 px-4 sm:px-6">
-          {children}
+        <main className="flex min-h-svh flex-col items-center justify-center px-4 pt-24 pb-24 sm:px-6 sm:pt-28 sm:pb-28">
+          <div className="surface-panel mx-auto w-full max-w-form px-6 py-8 sm:px-8 sm:py-10">
+            {children}
+          </div>
         </main>
         <AuthFooter />
       </div>

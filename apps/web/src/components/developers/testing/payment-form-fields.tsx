@@ -29,6 +29,7 @@ import {
   generateMIP004InputHash,
   generateRandomHex,
 } from "@/lib/developers/testing-utils";
+import { dialogStaggerClass } from "@/lib/dialog-motion";
 import { cn } from "@/lib/utils";
 
 export const INPUT_DATA_PRESETS = [
@@ -208,7 +209,7 @@ export function PaymentFormFields({
 
   return (
     <>
-      <div className="space-y-2 animate-fade-in-up opacity-0 animate-stagger-1">
+      <div className={cn("space-y-2", dialogStaggerClass(1))}>
         <Label>
           {t("agentLabel")}{" "}
           <span className="text-red-500">{t("required")}</span>
@@ -252,7 +253,7 @@ export function PaymentFormFields({
         )}
       </div>
 
-      <div className="space-y-2 animate-fade-in-up opacity-0 animate-stagger-2">
+      <div className={cn("space-y-2", dialogStaggerClass(2))}>
         <div className="flex items-center justify-between">
           <Label>
             {t("purchaserIdLabel")}{" "}
@@ -283,7 +284,12 @@ export function PaymentFormFields({
         )}
       </div>
 
-      <div className="space-y-3 rounded-lg border border-border/80 bg-muted/40 p-4 animate-fade-in-up opacity-0 animate-stagger-3">
+      <div
+        className={cn(
+          "space-y-3 rounded-lg border border-border/80 bg-muted/40 p-4",
+          dialogStaggerClass(3),
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             {t.rich("mip004Blurb", {
@@ -361,7 +367,7 @@ export function PaymentFormFields({
         </div>
       </div>
 
-      <div className="space-y-2 animate-fade-in-up opacity-0 animate-stagger-4">
+      <div className={cn("space-y-2", dialogStaggerClass(4))}>
         <Label>{t("metadataLabel")}</Label>
         <Textarea
           {...register("metadata")}

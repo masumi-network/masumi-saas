@@ -1,15 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
+import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   createInboxAdminPaymentNodeClient,
   getRegisteredOwnedInboxAgentReferenceByAgentIdentifier,
 } from "@/lib/inbox-agents/server";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getEffectivePaymentNetwork } from "@/lib/v1-proxy/explicit-route-support";
+import { createApiApp } from "@/server/hono/app";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
+import { nextHandlers } from "@/server/hono/next";
 
-export async function GET(request: NextRequest) {
+const app = createApiApp("/api/registry-discovery/inbox-agent-identifier");
+
+app.get("/", async (c) => {
+  const request = c.req.raw;
   try {
     const authContext = await getAuthenticatedOrThrow(request, {
       requireEmailVerified: false,
@@ -21,12 +25,11 @@ export async function GET(request: NextRequest) {
       network,
     });
 
-    const agentIdentifier = request.nextUrl.searchParams.get("agentIdentifier");
+    const agentIdentifier = new URL(request.url).searchParams.get(
+      "agentIdentifier",
+    );
     if (!agentIdentifier) {
-      return NextResponse.json(
-        { success: false, error: "agentIdentifier is required" },
-        { status: 400 },
-      );
+      throw new ApiError(400, "agentIdentifier is required");
     }
 
     const ownedReference =
@@ -36,10 +39,7 @@ export async function GET(request: NextRequest) {
         agentIdentifier,
       });
     if (!ownedReference) {
-      return NextResponse.json(
-        { success: false, error: "Inbox agent not found" },
-        { status: 404 },
-      );
+      throw new ApiError(404, "Inbox agent not found");
     }
 
     const client = createInboxAdminPaymentNodeClient();
@@ -48,26 +48,20 @@ export async function GET(request: NextRequest) {
       network,
     });
     if (!metadata) {
-      return NextResponse.json(
-        { success: false, error: "Inbox agent not found" },
-        { status: 404 },
-      );
+      throw new ApiError(404, "Inbox agent not found");
     }
 
-    return NextResponse.json({ success: true, data: metadata });
+    return c.json({ success: true as const, data: metadata }, 200);
   } catch (error) {
-    const authResponse = handleAuthError(error);
-    if (authResponse) return authResponse;
+    if (error instanceof ApiError) throw error;
     if (isPaymentNodeConfigError(error)) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 503 },
-      );
+      throw new ApiError(503, error.message);
     }
+    rethrowIfAuthOrCreditsError(error);
     console.error("[Registry Discovery:inbox-agent-identifier]", error);
-    return NextResponse.json(
-      { success: false, error: "Proxy request failed" },
-      { status: 500 },
-    );
+    throw new ApiError(500, "Proxy request failed");
   }
-}
+});
+
+export const { GET } = nextHandlers(app);
+export default app;

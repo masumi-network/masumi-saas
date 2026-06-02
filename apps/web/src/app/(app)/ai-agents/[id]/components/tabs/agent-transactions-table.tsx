@@ -12,6 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useFormatDate } from "@/hooks/use-format-date";
+
+type TimestampFormatter = (date: Date) => string;
 
 type AgentTransaction = {
   id: string;
@@ -82,12 +85,15 @@ function formatStatus(status: string) {
   return status.replace(/([A-Z])/g, " $1").trim();
 }
 
-function formatTimestamp(timestamp: string | null | undefined) {
+function formatTimestamp(
+  timestamp: string | null | undefined,
+  fmt: TimestampFormatter,
+) {
   if (!timestamp) return "—";
   if (/^\d+$/.test(timestamp)) {
-    return new Date(parseInt(timestamp)).toLocaleString();
+    return fmt(new Date(parseInt(timestamp)));
   }
-  return new Date(timestamp).toLocaleString();
+  return fmt(new Date(timestamp));
 }
 
 export function AgentTransactionsTable({
@@ -103,6 +109,7 @@ export function AgentTransactionsTable({
   );
 
   const t = useTranslations("App.Agents.Details.Transactions");
+  const { formatDateTime } = useFormatDate();
 
   return (
     <div className="rounded-md border overflow-x-auto">
@@ -174,11 +181,11 @@ export function AgentTransactionsTable({
                 <TableCell>{formatStatus(tx.status)}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {tx.status === "ResultSubmitted"
-                    ? formatTimestamp(tx.unlockTime)
+                    ? formatTimestamp(tx.unlockTime, formatDateTime)
                     : "—"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatTimestamp(tx.createdAt)}
+                  {formatTimestamp(tx.createdAt, formatDateTime)}
                 </TableCell>
               </TableRow>
             ))
