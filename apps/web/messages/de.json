@@ -620,7 +620,8 @@
         "account": "Konto",
         "inboxAgents": "Posteingänge",
         "earnings": "Einnahmen",
-        "topUp": "Aufladen"
+        "topUp": "Aufladen",
+        "integrations": "Integrations"
       }
     },
     "ApiKeys": {
@@ -1067,7 +1068,24 @@
         "progressStep2": "Funding-Wallet",
         "progressStep3": "Registrierung im Netzwerk",
         "registrationStarted": "Die Registrierung hat begonnen. Wir benachrichtigen Sie, wenn es fertig ist.",
-        "amountPlaceholder": "0,00"
+        "amountPlaceholder": "0,00",
+        "runtimeProvider": "Runtime",
+        "runtimeDirectTitle": "MIP-003 endpoint",
+        "runtimeDirectDescription": "Agent already exposes Masumi endpoints.",
+        "runtimeLangdockTitle": "Langdock",
+        "runtimeLangdockDescription": "Masumi hosts the wrapper and connects to Langdock.",
+        "langdockConnection": "Langdock connection",
+        "langdockNewConnection": "Use new API key",
+        "langdockApiKey": "Langdock API key",
+        "langdockApiKeyPlaceholder": "ld_...",
+        "langdockApiKeyRequired": "Langdock API key is required.",
+        "langdockAgentId": "Langdock agent ID",
+        "langdockAgentIdPlaceholder": "Agent ID from Langdock",
+        "langdockAgentIdRequired": "Langdock agent ID is required.",
+        "langdockBaseUrl": "Langdock base URL",
+        "langdockTestAutofill": "Test and autofill",
+        "langdockTestSuccess": "Langdock agent verified.",
+        "langdockTestError": "Langdock connection check failed."
       },
       "Edit": {
         "title": "Agent bearbeiten",
@@ -1722,6 +1740,27 @@
         "deregistered": "Abgemeldet",
         "deregistrationFailed": "Abmeldung fehlgeschlagen"
       }
+    },
+    "Integrations": {
+      "title": "Integrations",
+      "description": "Connect external agent platforms for Masumi registration and monetization.",
+      "langdockTitle": "Langdock",
+      "langdockDescription": "Validate a Langdock agent and save its API key for registration.",
+      "connectionName": "Connection name",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "ld_...",
+      "agentId": "Agent ID",
+      "agentIdPlaceholder": "Langdock agent ID",
+      "baseUrl": "Base URL",
+      "testAndSave": "Test and save",
+      "connections": "Saved connections",
+      "connectionsDescription": "Connections available in the agent registration flow.",
+      "connected": "Connected",
+      "refresh": "Refresh",
+      "empty": "No Langdock connections yet.",
+      "loadError": "Failed to load integrations.",
+      "saveError": "Failed to save Langdock connection.",
+      "saveSuccess": "Langdock connection saved."
     }
   },
   "Components": {

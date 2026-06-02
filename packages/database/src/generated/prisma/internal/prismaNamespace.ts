@@ -433,6 +433,8 @@ export const ModelName = {
   EmailSendRateLimit: "EmailSendRateLimit",
   KycVerification: "KycVerification",
   Agent: "Agent",
+  IntegrationConnection: "IntegrationConnection",
+  MipJob: "MipJob",
   AgentActivityEvent: "AgentActivityEvent",
   OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
@@ -484,6 +486,8 @@ export type TypeMap<
       | "emailSendRateLimit"
       | "kycVerification"
       | "agent"
+      | "integrationConnection"
+      | "mipJob"
       | "agentActivityEvent"
       | "orgApiKey"
       | "kycSubmission"
@@ -2091,6 +2095,158 @@ export type TypeMap<
         };
       };
     };
+    IntegrationConnection: {
+      payload: Prisma.$IntegrationConnectionPayload<ExtArgs>;
+      fields: Prisma.IntegrationConnectionFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.IntegrationConnectionFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.IntegrationConnectionFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        findFirst: {
+          args: Prisma.IntegrationConnectionFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.IntegrationConnectionFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        findMany: {
+          args: Prisma.IntegrationConnectionFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>[];
+        };
+        create: {
+          args: Prisma.IntegrationConnectionCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        createMany: {
+          args: Prisma.IntegrationConnectionCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.IntegrationConnectionCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>[];
+        };
+        delete: {
+          args: Prisma.IntegrationConnectionDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        update: {
+          args: Prisma.IntegrationConnectionUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        deleteMany: {
+          args: Prisma.IntegrationConnectionDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.IntegrationConnectionUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.IntegrationConnectionUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>[];
+        };
+        upsert: {
+          args: Prisma.IntegrationConnectionUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$IntegrationConnectionPayload>;
+        };
+        aggregate: {
+          args: Prisma.IntegrationConnectionAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateIntegrationConnection>;
+        };
+        groupBy: {
+          args: Prisma.IntegrationConnectionGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.IntegrationConnectionGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.IntegrationConnectionCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.IntegrationConnectionCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    MipJob: {
+      payload: Prisma.$MipJobPayload<ExtArgs>;
+      fields: Prisma.MipJobFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.MipJobFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.MipJobFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        findFirst: {
+          args: Prisma.MipJobFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.MipJobFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        findMany: {
+          args: Prisma.MipJobFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>[];
+        };
+        create: {
+          args: Prisma.MipJobCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        createMany: {
+          args: Prisma.MipJobCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.MipJobCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>[];
+        };
+        delete: {
+          args: Prisma.MipJobDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        update: {
+          args: Prisma.MipJobUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        deleteMany: {
+          args: Prisma.MipJobDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.MipJobUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.MipJobUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>[];
+        };
+        upsert: {
+          args: Prisma.MipJobUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MipJobPayload>;
+        };
+        aggregate: {
+          args: Prisma.MipJobAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMipJob>;
+        };
+        groupBy: {
+          args: Prisma.MipJobGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.MipJobGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.MipJobCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.MipJobCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     AgentActivityEvent: {
       payload: Prisma.$AgentActivityEventPayload<ExtArgs>;
       fields: Prisma.AgentActivityEventFieldRefs;
@@ -3047,6 +3203,9 @@ export const AgentScalarFieldEnum = {
   userId: "userId",
   organizationId: "organizationId",
   registrationState: "registrationState",
+  runtimeProvider: "runtimeProvider",
+  integrationConnectionId: "integrationConnectionId",
+  providerConfig: "providerConfig",
   verificationStatus: "verificationStatus",
   veridianCredentialId: "veridianCredentialId",
   verificationChallenge: "verificationChallenge",
@@ -3064,6 +3223,47 @@ export const AgentScalarFieldEnum = {
 
 export type AgentScalarFieldEnum =
   (typeof AgentScalarFieldEnum)[keyof typeof AgentScalarFieldEnum];
+
+export const IntegrationConnectionScalarFieldEnum = {
+  id: "id",
+  provider: "provider",
+  name: "name",
+  encryptedSecret: "encryptedSecret",
+  userId: "userId",
+  organizationId: "organizationId",
+  metadata: "metadata",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type IntegrationConnectionScalarFieldEnum =
+  (typeof IntegrationConnectionScalarFieldEnum)[keyof typeof IntegrationConnectionScalarFieldEnum];
+
+export const MipJobScalarFieldEnum = {
+  id: "id",
+  agentId: "agentId",
+  status: "status",
+  identifierFromPurchaser: "identifierFromPurchaser",
+  inputData: "inputData",
+  inputHash: "inputHash",
+  inputSchema: "inputSchema",
+  outputHash: "outputHash",
+  result: "result",
+  blockchainIdentifier: "blockchainIdentifier",
+  agentIdentifier: "agentIdentifier",
+  sellerVKey: "sellerVKey",
+  payByTime: "payByTime",
+  submitResultTime: "submitResultTime",
+  unlockTime: "unlockTime",
+  externalDisputeUnlockTime: "externalDisputeUnlockTime",
+  conversation: "conversation",
+  error: "error",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type MipJobScalarFieldEnum =
+  (typeof MipJobScalarFieldEnum)[keyof typeof MipJobScalarFieldEnum];
 
 export const AgentActivityEventScalarFieldEnum = {
   id: "id",
@@ -3225,6 +3425,13 @@ export const NullableJsonNullValueInput = {
 export type NullableJsonNullValueInput =
   (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput];
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull,
+} as const;
+
+export type JsonNullValueInput =
+  (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
+
 export const QueryMode = {
   default: "default",
   insensitive: "insensitive",
@@ -3363,6 +3570,46 @@ export type EnumRegistrationStateFieldRefInput<$PrismaModel> =
  */
 export type ListEnumRegistrationStateFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "RegistrationState[]">;
+
+/**
+ * Reference to a field of type 'AgentRuntimeProvider'
+ */
+export type EnumAgentRuntimeProviderFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentRuntimeProvider">;
+
+/**
+ * Reference to a field of type 'AgentRuntimeProvider[]'
+ */
+export type ListEnumAgentRuntimeProviderFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentRuntimeProvider[]">;
+
+/**
+ * Reference to a field of type 'IntegrationProvider'
+ */
+export type EnumIntegrationProviderFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "IntegrationProvider">;
+
+/**
+ * Reference to a field of type 'IntegrationProvider[]'
+ */
+export type ListEnumIntegrationProviderFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "IntegrationProvider[]">;
+
+/**
+ * Reference to a field of type 'MipJobStatus'
+ */
+export type EnumMipJobStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "MipJobStatus"
+>;
+
+/**
+ * Reference to a field of type 'MipJobStatus[]'
+ */
+export type ListEnumMipJobStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "MipJobStatus[]"
+>;
 
 /**
  * Reference to a field of type 'AgentActivityEventType'
@@ -3554,6 +3801,8 @@ export type GlobalOmitConfig = {
   emailSendRateLimit?: Prisma.EmailSendRateLimitOmit;
   kycVerification?: Prisma.KycVerificationOmit;
   agent?: Prisma.AgentOmit;
+  integrationConnection?: Prisma.IntegrationConnectionOmit;
+  mipJob?: Prisma.MipJobOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;
   orgApiKey?: Prisma.OrgApiKeyOmit;
   kycSubmission?: Prisma.KycSubmissionOmit;

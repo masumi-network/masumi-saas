@@ -11,30 +11,31 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String
-  emailVerified Boolean  @default(false)
-  creditsRemaining Int   @default(0)
-  image         String?
-  imageHash     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  email            String
+  emailVerified    Boolean  @default(false)
+  creditsRemaining Int      @default(0)
+  image            String?
+  imageHash        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  sessions            Session[]
-  accounts            Account[]
-  members             Member[]
-  invitations         Invitation[]
-  apikeys             Apikey[]
-  oauthApplications   OauthApplication[]
-  oauthAccessTokens   OauthAccessToken[]
-  oauthConsents       OauthConsent[]
-  oidcUserGrants      OidcUserGrant[]
-  creditLedgerEntries CreditLedgerEntry[]
-  agents              Agent[]
-  agentActivityEvents AgentActivityEvent[]
-  inboxAgentReferences InboxAgentReference[]
-  veridianCredentials VeridianCredential[]
+  sessions               Session[]
+  accounts               Account[]
+  members                Member[]
+  invitations            Invitation[]
+  apikeys                Apikey[]
+  oauthApplications      OauthApplication[]
+  oauthAccessTokens      OauthAccessToken[]
+  oauthConsents          OauthConsent[]
+  oidcUserGrants         OidcUserGrant[]
+  creditLedgerEntries    CreditLedgerEntry[]
+  agents                 Agent[]
+  agentActivityEvents    AgentActivityEvent[]
+  inboxAgentReferences   InboxAgentReference[]
+  integrationConnections IntegrationConnection[]
+  veridianCredentials    VeridianCredential[]
 
   // Additional fields
   termsAccepted       Boolean @default(false)
@@ -152,9 +153,10 @@ model Organization {
   kybVerification   KybVerification? @relation(fields: [kybVerificationId], references: [id], onDelete: SetNull)
 
   // Domain relations
-  agents         Agent[]
-  orgApiKeys     OrgApiKey[]
-  kybSubmissions KybSubmission[]
+  agents                 Agent[]
+  orgApiKeys             OrgApiKey[]
+  kybSubmissions         KybSubmission[]
+  integrationConnections IntegrationConnection[]
 
   @@unique([slug])
   @@unique([stripeCustomerId])
@@ -224,7 +226,7 @@ model Apikey {
   lastRequest         DateTime?
   expiresAt           DateTime?
   permissions         String? // Better Auth apiKey plugin (v1.4+)
-  metadata            String?   // Better Auth apiKey plugin (enableMetadata: true)
+  metadata            String? // Better Auth apiKey plugin (enableMetadata: true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -316,9 +318,9 @@ model CreditLedgerEntry {
 }
 
 model DeviceCode {
-  id              String   @id @default(cuid())
-  deviceCode      String   @unique
-  userCode        String   @unique
+  id              String    @id @default(cuid())
+  deviceCode      String    @unique
+  userCode        String    @unique
   userId          String?
   expiresAt       DateTime
   status          String
@@ -333,10 +335,10 @@ model DeviceCode {
 }
 
 model Jwks {
-  id         String   @id @default(cuid())
-  publicKey  String   @db.Text
-  privateKey String   @db.Text
-  createdAt  DateTime @default(now())
+  id         String    @id @default(cuid())
+  publicKey  String    @db.Text
+  privateKey String    @db.Text
+  createdAt  DateTime  @default(now())
   expiresAt  DateTime?
 
   @@map("jwks")
@@ -403,14 +405,31 @@ enum RegistrationState {
   DeregistrationFailed
 }
 
+enum AgentRuntimeProvider {
+  DIRECT_MIP
+  LANGDOCK
+}
+
+enum IntegrationProvider {
+  LANGDOCK
+}
+
+enum MipJobStatus {
+  AWAITING_PAYMENT
+  RUNNING
+  AWAITING_INPUT
+  COMPLETED
+  FAILED
+}
+
 model Agent {
-  id          String  @id @default(cuid())
-  name        String
+  id                  String  @id @default(cuid())
+  name                String
   description         String? // Short tagline, max 250 chars
   extendedDescription String? // Optional detailed overview (Markdown supported)
-  apiUrl      String
-  userId      String
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiUrl              String
+  userId              String
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Organization ownership (optional; set when agent is created under an active org)
   organizationId String?
@@ -418,6 +437,12 @@ model Agent {
 
   // Registration
   registrationState RegistrationState @default(RegistrationConfirmed)
+
+  // Runtime provider
+  runtimeProvider         AgentRuntimeProvider   @default(DIRECT_MIP)
+  integrationConnectionId String?
+  integrationConnection   IntegrationConnection? @relation(fields: [integrationConnectionId], references: [id], onDelete: SetNull)
+  providerConfig          Json?
 
   // Verification
   verificationStatus               VerificationStatus?  @default(PENDING)
@@ -433,23 +458,73 @@ model Agent {
   icon     String? // Preset key (e.g. "bot", "sparkles") or URL for custom icon
 
   // Registry / pricing
-  agentIdentifier  String? // On-chain or registry identifier
+  agentIdentifier   String? // On-chain or registry identifier
   networkIdentifier String? // Network this agent is registered on (e.g. Preprod, Mainnet)
-  pricing          Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
+  pricing           Json? // { pricingType: "Free"|"Fixed", prices: [{ amount: string, currency?: string }] } - amounts in USD
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Domain relations
-  agentReference   AgentReference?
-  activityEvents   AgentActivityEvent[]
+  agentReference AgentReference?
+  activityEvents AgentActivityEvent[]
+  mipJobs        MipJob[]
 
   @@index([userId])
   @@index([organizationId])
+  @@index([runtimeProvider])
+  @@index([integrationConnectionId])
   @@index([verificationStatus])
   @@index([registrationState])
   @@index([networkIdentifier])
   @@map("agent")
+}
+
+model IntegrationConnection {
+  id              String              @id @default(cuid())
+  provider        IntegrationProvider
+  name            String
+  encryptedSecret String              @db.Text
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId  String?
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  metadata        Json?
+  agents          Agent[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId, provider])
+  @@index([organizationId, provider])
+  @@map("integration_connection")
+}
+
+model MipJob {
+  id                        String       @id @default(cuid())
+  agentId                   String
+  agent                     Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  status                    MipJobStatus @default(AWAITING_PAYMENT)
+  identifierFromPurchaser   String
+  inputData                 Json
+  inputHash                 String
+  inputSchema               Json?
+  outputHash                String?
+  result                    String?      @db.Text
+  blockchainIdentifier      String?
+  agentIdentifier           String?
+  sellerVKey                String?
+  payByTime                 DateTime?
+  submitResultTime          DateTime?
+  unlockTime                DateTime?
+  externalDisputeUnlockTime DateTime?
+  conversation              Json?
+  error                     String?      @db.Text
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  @@index([agentId, status])
+  @@index([blockchainIdentifier])
+  @@map("mip_job")
 }
 
 /// Audit log of agent lifecycle events for the Activity feed.
@@ -458,15 +533,15 @@ model Agent {
 /// agentNameSnapshot preserves display name after agentId is cleared on delete.
 /// networkIdentifier scopes orphan events (agentId null) to Mainnet vs Preprod.
 model AgentActivityEvent {
-  id                  String   @id @default(cuid())
-  userId              String
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agentId             String?
-  agent               Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
-  agentNameSnapshot   String?
-  networkIdentifier   String?
-  type                AgentActivityEventType
-  createdAt           DateTime @default(now())
+  id                String                 @id @default(cuid())
+  userId            String
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId           String?
+  agent             Agent?                 @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentNameSnapshot String?
+  networkIdentifier String?
+  type              AgentActivityEventType
+  createdAt         DateTime               @default(now())
 
   @@index([userId])
   @@index([agentId])

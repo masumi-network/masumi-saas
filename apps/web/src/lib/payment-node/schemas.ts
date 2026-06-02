@@ -369,6 +369,74 @@ export const listPurchasesOutputSchema = z.object({
 });
 export type ListPurchasesOutput = z.infer<typeof listPurchasesOutputSchema>;
 
+// ─── Runtime payment endpoints ──────────────────────────────────────────────
+
+export const createPaymentInputSchema = z.object({
+  inputHash: z.string(),
+  network: paymentNodeNetworkSchema,
+  agentIdentifier: z.string(),
+  RequestedFunds: z.array(unitAmountSchema).optional(),
+  payByTime: z.string().optional(),
+  submitResultTime: z.string().optional(),
+  unlockTime: z.string().optional(),
+  externalDisputeUnlockTime: z.string().optional(),
+  metadata: z.string().optional(),
+  identifierFromPurchaser: z.string(),
+});
+export type CreatePaymentInput = z.infer<typeof createPaymentInputSchema>;
+
+export const runtimePaymentResponseSchema = z
+  .object({
+    id: z.union([z.string(), z.number().transform(String)]),
+    blockchainIdentifier: z.string(),
+    agentIdentifier: z.string().nullable().optional(),
+    inputHash: z.string().nullable().optional(),
+    payByTime: z.string().nullable(),
+    submitResultTime: z.string(),
+    unlockTime: z.string(),
+    externalDisputeUnlockTime: z.string(),
+    onChainState: z.string().nullable().optional(),
+    RequestedFunds: z.array(unitAmountSchema).optional(),
+    NextAction: z
+      .object({
+        requestedAction: z.string().nullable().optional(),
+        errorType: z.string().nullable().optional(),
+        errorNote: z.string().nullable().optional(),
+        resultHash: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    SmartContractWallet: z
+      .object({
+        id: z.string().optional(),
+        walletVkey: z.string(),
+        walletAddress: z.string(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+export type RuntimePaymentResponse = z.infer<
+  typeof runtimePaymentResponseSchema
+>;
+
+export const resolvePaymentInputSchema = z.object({
+  blockchainIdentifier: z.string(),
+  network: paymentNodeNetworkSchema,
+  filterSmartContractAddress: z.string().nullable().optional(),
+  includeHistory: z.boolean().optional(),
+});
+export type ResolvePaymentInput = z.infer<typeof resolvePaymentInputSchema>;
+
+export const submitPaymentResultInputSchema = z.object({
+  network: paymentNodeNetworkSchema,
+  submitResultHash: z.string(),
+  blockchainIdentifier: z.string(),
+});
+export type SubmitPaymentResultInput = z.infer<
+  typeof submitPaymentResultInputSchema
+>;
+
 // ─── Income (matches payment node POST /payment/income: PascalCase, Units) ───
 
 const incomeUnitsBlockSchema = z.object({

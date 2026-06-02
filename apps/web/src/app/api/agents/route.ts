@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { createRoute } from "@hono/zod-openapi";
 import prisma, { RegistrationState } from "@masumi/database/client";
 import { getCookie } from "hono/cookie";
@@ -15,6 +17,16 @@ import {
   consumeCreditIfRequired,
   createCreditReference,
 } from "@/lib/credits/service";
+import {
+  createIntegrationConnection,
+  decryptIntegrationConnectionSecret,
+  getScopedIntegrationConnection,
+} from "@/lib/integrations/connections";
+import {
+  langdockInputFieldsToMipSchema,
+  testLangdockAgent,
+} from "@/lib/integrations/langdock";
+import { getPublicMipAgentBaseUrl } from "@/lib/mip/public-url";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
 import {
@@ -248,6 +260,11 @@ app.openapi(
       description,
       extendedDescription,
       apiUrl,
+      runtimeProvider,
+      integrationConnectionId,
+      langdockApiKey,
+      langdockAgentId,
+      langdockBaseUrl,
       tags,
       icon,
       pricing,
@@ -282,13 +299,103 @@ app.openapi(
         network,
       });
 
-      try {
-        await assertAllowedAgentApiUrl(apiUrl);
-      } catch (error) {
-        if (error instanceof Error) {
-          throw new ApiError(400, error.message);
+      const selectedRuntimeProvider = runtimeProvider ?? "DIRECT_MIP";
+      let resolvedApiUrl = apiUrl?.trim() ?? "";
+      let resolvedIntegrationConnectionId: string | null = null;
+      let providerConfig: Record<string, unknown> | null = null;
+      let agentId: string | undefined;
+
+      if (selectedRuntimeProvider === "DIRECT_MIP") {
+        if (!resolvedApiUrl) {
+          throw new ApiError(400, "API URL is required.");
         }
-        throw new ApiError(400, "Invalid API URL");
+        try {
+          await assertAllowedAgentApiUrl(resolvedApiUrl);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw new ApiError(400, error.message);
+          }
+          throw new ApiError(400, "Invalid API URL");
+        }
+      } else {
+        if (!langdockAgentId?.trim()) {
+          throw new ApiError(400, "Langdock agent ID is required.");
+        }
+        const scope = {
+          userId: user.id,
+          organizationId: activeOrganizationId,
+        };
+        let secret = langdockApiKey?.trim() ?? "";
+        let connectionMetadata: Record<string, unknown> = {};
+
+        if (integrationConnectionId) {
+          const connection = await getScopedIntegrationConnection({
+            scope,
+            id: integrationConnectionId,
+          });
+          if (!connection || connection.provider !== "LANGDOCK") {
+            throw new ApiError(404, "Langdock connection not found.");
+          }
+          secret = await decryptIntegrationConnectionSecret(connection);
+          resolvedIntegrationConnectionId = connection.id;
+          connectionMetadata =
+            connection.metadata && typeof connection.metadata === "object"
+              ? (connection.metadata as Record<string, unknown>)
+              : {};
+        }
+
+        if (!secret) {
+          throw new ApiError(400, "Langdock API key is required.");
+        }
+
+        const resolvedLangdockBaseUrl =
+          langdockBaseUrl?.trim() ||
+          (typeof connectionMetadata.baseUrl === "string"
+            ? connectionMetadata.baseUrl.trim()
+            : undefined);
+
+        let langdockAgent;
+        try {
+          langdockAgent = await testLangdockAgent({
+            apiKey: secret,
+            agentId: langdockAgentId.trim(),
+            baseUrl: resolvedLangdockBaseUrl || undefined,
+          });
+        } catch (error) {
+          throw new ApiError(
+            400,
+            error instanceof Error
+              ? error.message
+              : "Langdock connection check failed.",
+          );
+        }
+
+        if (!resolvedIntegrationConnectionId) {
+          const connection = await createIntegrationConnection({
+            scope,
+            provider: "LANGDOCK",
+            name: "Langdock",
+            secret,
+            metadata: {
+              ...connectionMetadata,
+              baseUrl: resolvedLangdockBaseUrl || undefined,
+              lastAgentId: langdockAgentId.trim(),
+              lastCheckedAt: new Date().toISOString(),
+            },
+          });
+          resolvedIntegrationConnectionId = connection.id;
+        }
+
+        agentId = randomUUID();
+        resolvedApiUrl = getPublicMipAgentBaseUrl(agentId);
+        providerConfig = {
+          langdockAgentId: langdockAgentId.trim(),
+          langdockBaseUrl: resolvedLangdockBaseUrl || undefined,
+          inputSchema: langdockInputFieldsToMipSchema(
+            langdockAgent.inputFields,
+          ),
+          hitl: true,
+        };
       }
 
       const agentPricing = buildAgentPricing(network, pricing ?? undefined);
@@ -300,19 +407,24 @@ app.openapi(
         network,
         metadata: {
           name,
-          apiUrl,
+          apiUrl: resolvedApiUrl,
           network,
           authMethod: authContext.authMethod,
+          runtimeProvider: selectedRuntimeProvider,
         },
       });
 
       const params: RegisterAgentParams = {
+        id: agentId,
         name,
         description: description?.trim() || null,
         extendedDescription: (extendedDescription?.trim() || null) as
           | string
           | null,
-        apiUrl,
+        apiUrl: resolvedApiUrl,
+        runtimeProvider: selectedRuntimeProvider,
+        integrationConnectionId: resolvedIntegrationConnectionId,
+        providerConfig,
         tags: tagsArray,
         icon: icon?.trim() || null,
         agentPricing,

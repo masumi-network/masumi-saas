@@ -45,10 +45,14 @@ export type AgentPricing =
     };
 
 export type RegisterAgentParams = {
+  id?: string;
   name: string;
   description: string | null;
   extendedDescription: string | null;
   apiUrl: string;
+  runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
+  integrationConnectionId?: string | null;
+  providerConfig?: Record<string, unknown> | null;
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
@@ -394,10 +398,14 @@ async function registerAgentOnChainUntilSetup(
 
   const agent = await prisma.agent.create({
     data: {
+      ...(params.id ? { id: params.id } : {}),
       name: params.name,
       description: params.description,
       extendedDescription: params.extendedDescription,
       apiUrl: params.apiUrl,
+      runtimeProvider: params.runtimeProvider ?? "DIRECT_MIP",
+      integrationConnectionId: params.integrationConnectionId ?? null,
+      providerConfig: params.providerConfig ?? undefined,
       tags: params.tags,
       icon: params.icon,
       userId: user.id,
