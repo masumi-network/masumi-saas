@@ -51,6 +51,7 @@ import { OIDC_API_SCOPES } from "@/lib/config/oidc-scopes.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
 import { reactAgentMessengerMagicLinkEmail } from "@/lib/email/agent-messenger-magic-link";
+import { formatOtpExpiryMessage } from "@/lib/email/format-otp-expiry-message";
 import { reactInvitationEmail } from "@/lib/email/invitation";
 import { reactMagicLinkEmail } from "@/lib/email/magic-link";
 import { getEmailMessages, parseAcceptLanguage } from "@/lib/email/messages";
@@ -60,8 +61,6 @@ import { reactVerificationEmail } from "@/lib/email/verification";
 import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
 import { createPaymentNodeKeyForUser } from "@/lib/payment-node/on-signup";
 
-const EMAIL_OTP_EXPIRES_IN_SECONDS = 5 * 60;
-const EMAIL_OTP_ALLOWED_ATTEMPTS = 3;
 const ADMIN_IMPERSONATION_TARGET_ERROR = "Admin users cannot be impersonated.";
 const BANNED_IMPERSONATION_TARGET_ERROR =
   "Banned users cannot be impersonated.";
@@ -172,7 +171,9 @@ async function createEmailOtp(
     id: crypto.randomUUID(),
     identifier,
     value: buildStoredOtpValue(otp),
-    expiresAt: new Date(Date.now() + EMAIL_OTP_EXPIRES_IN_SECONDS * 1000),
+    expiresAt: new Date(
+      Date.now() + authConfig.emailOtp.expiresInSeconds * 1000,
+    ),
   });
 
   return otp;
@@ -230,7 +231,7 @@ async function sendVerificationOtpEmail({
         greeting: msg.greeting,
         message: msg.message,
         codeLabel: msg.codeLabel,
-        expiry: msg.expiry,
+        expiry: formatOtpExpiryMessage(msg.expiry),
         footer: msg.footer,
       },
     }),
@@ -383,7 +384,7 @@ export const auth = betterAuth({
               message: msg.message,
               button: msg.button,
               codeLabel: msg.codeLabel,
-              codeExpiry: msg.codeExpiry,
+              codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
               codeHelp: msg.codeHelp,
               footer: msg.footer,
             },
@@ -502,9 +503,9 @@ export const auth = betterAuth({
         clientId === oidcEnvConfig.cli.clientId,
     }),
     emailOTP({
-      expiresIn: EMAIL_OTP_EXPIRES_IN_SECONDS,
+      expiresIn: authConfig.emailOtp.expiresInSeconds,
       otpLength: 6,
-      allowedAttempts: EMAIL_OTP_ALLOWED_ATTEMPTS,
+      allowedAttempts: authConfig.emailOtp.allowedAttempts,
       storeOTP: createEmailOtpStoreOptions(),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type !== "email-verification") {
@@ -595,7 +596,7 @@ export const auth = betterAuth({
                   consentAfter: msg.consentAfter,
                   button: msg.button,
                   codeLabel: msg.codeLabel,
-                  codeExpiry: msg.codeExpiry,
+                  codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
                   codeHelp: msg.codeHelp,
                   footer: msg.footer,
                 },
@@ -617,7 +618,7 @@ export const auth = betterAuth({
                   consentAfter: msg.consentAfter,
                   button: msg.button,
                   codeLabel: msg.codeLabel,
-                  codeExpiry: msg.codeExpiry,
+                  codeExpiry: formatOtpExpiryMessage(msg.codeExpiry),
                   codeHelp: msg.codeHelp,
                   footer: msg.footer,
                 },
