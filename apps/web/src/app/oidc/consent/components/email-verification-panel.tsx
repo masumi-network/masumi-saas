@@ -3,11 +3,11 @@
 import { AlertCircle, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
+import { OtpCodeInput } from "@/components/otp-code-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { emailOtp, sendVerificationEmail } from "@/lib/auth/auth.client";
 
@@ -45,6 +45,8 @@ export function EmailVerificationPanel({
 }: EmailVerificationPanelProps) {
   const t = useTranslations("Auth.OidcVerifyEmail");
   const router = useRouter();
+  const labelId = useId();
+  const errorId = useId();
   const [otp, setOtp] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isSendingLink, setIsSendingLink] = useState(false);
@@ -133,8 +135,8 @@ export function EmailVerificationPanel({
     }
   }
 
-  async function handleVerify() {
-    if (!otp.trim()) {
+  async function handleVerify(nextOtp = otp) {
+    if (!nextOtp.trim()) {
       setInlineError(t("invalidCode"));
       return;
     }
@@ -144,7 +146,7 @@ export function EmailVerificationPanel({
     try {
       const { error } = await emailOtp.verifyEmail({
         email,
-        otp: otp.trim(),
+        otp: nextOtp.trim(),
       });
 
       if (error) {
@@ -181,28 +183,30 @@ export function EmailVerificationPanel({
       </div>
 
       <div className="space-y-2">
-        <label
-          htmlFor="oidc-email-verification-code"
-          className="text-sm font-medium"
-        >
+        <label id={labelId} className="text-sm font-medium">
           {t("codeLabel")}
         </label>
-        <Input
-          id="oidc-email-verification-code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder={t("codePlaceholder")}
+        <OtpCodeInput
           value={otp}
-          maxLength={6}
-          className="text-center font-mono text-lg tracking-widest"
-          onChange={(event) =>
-            setOtp(event.target.value.replace(/\D+/g, "").slice(0, 6))
-          }
+          onChange={(next) => {
+            setOtp(next);
+            if (inlineError) setInlineError(null);
+          }}
+          onComplete={(completed) => void handleVerify(completed)}
+          disabled={isVerifying}
+          autoFocus
+          invalid={inlineError !== null}
+          ariaLabelledBy={labelId}
+          ariaDescribedBy={inlineError ? errorId : undefined}
         />
       </div>
 
       {inlineError ? (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div
+          id={errorId}
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{inlineError}</span>
         </div>
@@ -212,7 +216,7 @@ export function EmailVerificationPanel({
         <Button
           type="button"
           variant="primary"
-          onClick={handleVerify}
+          onClick={() => void handleVerify()}
           disabled={isVerifying || otp.trim().length === 0}
           className="sm:flex-1"
         >

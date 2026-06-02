@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
 
 type AuthPageHeaderProps = {
   title: string;
-  description?: string;
+  description?: ReactNode;
   className?: string;
 };
 
