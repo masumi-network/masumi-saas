@@ -1,6 +1,5 @@
 import "server-only";
 
-import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { ApiError, isAuthOrCreditsError } from "@/server/hono/errors";
 
 import { type CreditChargeReason, getCreditCostForReason } from "./pricing";
@@ -14,7 +13,6 @@ type CreditMetadata = Record<string, unknown>;
 
 function shouldRefundAfterThrownError(error: unknown): boolean {
   if (isAuthOrCreditsError(error)) return false;
-  if (isPaymentNodeConfigError(error)) return false;
   if (error instanceof ApiError) {
     return error.status >= 500;
   }
@@ -23,7 +21,8 @@ function shouldRefundAfterThrownError(error: unknown): boolean {
 
 /**
  * Debits credits on Mainnet, runs `run`, and refunds when the operation fails
- * (non-ApiError throws, or ApiError with status >= 500).
+ * (including payment-node misconfiguration). Skips refund only for auth/credit
+ * errors and client ApiErrors (status < 500).
  */
 export async function withCreditCharge<T>(params: {
   userId: string;
