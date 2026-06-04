@@ -46,9 +46,18 @@ export async function executeCreditChargedProxyWrite(params: {
     metadata,
   });
 
+  const refundParams = {
+    userId: params.userId,
+    reason: "payment_proxy_write" as const,
+    reference: creditReference,
+    network: params.network,
+    metadata,
+  };
+
+  let response: Response;
   try {
     const headers = buildUpstreamHeaders(params.request, params.token);
-    const response = await fetch(
+    response = await fetch(
       `${params.upstreamBaseUrl}${params.upstreamPath}${new URL(params.request.url).search}`,
       {
         method: params.method,
@@ -56,26 +65,16 @@ export async function executeCreditChargedProxyWrite(params: {
         ...(params.body !== undefined ? { body: params.body } : {}),
       },
     );
-
-    if (shouldRefundProxyUpstreamStatus(response.status)) {
-      await refundConsumedCredit({
-        userId: params.userId,
-        reason: "payment_proxy_write",
-        reference: creditReference,
-        network: params.network,
-        metadata,
-      });
-    }
-
-    return toUpstreamResponse(response);
   } catch (error) {
-    await refundConsumedCredit({
-      userId: params.userId,
-      reason: "payment_proxy_write",
-      reference: creditReference,
-      network: params.network,
-      metadata,
-    });
+    await refundConsumedCredit(refundParams);
     throw error;
   }
+
+  if (shouldRefundProxyUpstreamStatus(response.status)) {
+    await refundConsumedCredit(refundParams);
+  }
+
+  // Do not refund if mapping the upstream body fails after a non-5xx response —
+  // the payment node may already have applied the write.
+  return toUpstreamResponse(response);
 }
