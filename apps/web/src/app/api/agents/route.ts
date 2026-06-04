@@ -11,10 +11,8 @@ import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import {
-  consumeCreditIfRequired,
-  createCreditReference,
-} from "@/lib/credits/service";
+import { withCreditCharge } from "@/lib/credits/charge";
+import { createCreditReference } from "@/lib/credits/service";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { parseNetwork } from "@/lib/schemas";
 import {
@@ -292,19 +290,13 @@ app.openapi(
       }
 
       const agentPricing = buildAgentPricing(network, pricing ?? undefined);
-
-      await consumeCreditIfRequired({
-        userId: user.id,
-        reason: "agent_register",
-        reference: createCreditReference("agent-register"),
+      const creditReference = createCreditReference("agent-register");
+      const creditMetadata = {
+        name,
+        apiUrl,
         network,
-        metadata: {
-          name,
-          apiUrl,
-          network,
-          authMethod: authContext.authMethod,
-        },
-      });
+        authMethod: authContext.authMethod,
+      };
 
       const params: RegisterAgentParams = {
         name,
@@ -324,42 +316,51 @@ app.openapi(
         otherUrl: otherUrl?.trim() || null,
       };
 
-      const result = await startAgentRegistration(
-        {
-          user: {
-            id: user.id,
-            name: user.name ?? null,
-            email: user.email ?? null,
-          },
-          activeOrganizationId,
-          network,
-        },
-        params,
-      );
+      return await withCreditCharge({
+        userId: user.id,
+        reason: "agent_register",
+        reference: creditReference,
+        network,
+        metadata: creditMetadata,
+        run: async () => {
+          const result = await startAgentRegistration(
+            {
+              user: {
+                id: user.id,
+                name: user.name ?? null,
+                email: user.email ?? null,
+              },
+              activeOrganizationId,
+              network,
+            },
+            params,
+          );
 
-      if (result.success) {
-        const agent = await prisma.agent.findFirst({
-          where: { id: result.agentId, userId: user.id },
-          include: { agentReference: true },
-        });
-        if (!agent) {
-          throw new ApiError(500, "Failed to load created agent");
-        }
-        const data = shapeAgentWithMergedMetadata(agent);
-        // Prisma types are looser than the OpenAPI response schema. Cast.
-        type StartRegistrationData = z.infer<
-          typeof startRegistrationSuccessSchema
-        >["data"];
-        return c.json(
-          {
-            success: true as const,
-            data: data as unknown as StartRegistrationData,
-            agentId: result.agentId,
-          },
-          200,
-        );
-      }
-      throw new ApiError(400, result.error);
+          if (!result.success) {
+            throw new ApiError(400, result.error);
+          }
+
+          const agent = await prisma.agent.findFirst({
+            where: { id: result.agentId, userId: user.id },
+            include: { agentReference: true },
+          });
+          if (!agent) {
+            throw new ApiError(500, "Failed to load created agent");
+          }
+          const data = shapeAgentWithMergedMetadata(agent);
+          type StartRegistrationData = z.infer<
+            typeof startRegistrationSuccessSchema
+          >["data"];
+          return c.json(
+            {
+              success: true as const,
+              data: data as unknown as StartRegistrationData,
+              agentId: result.agentId,
+            },
+            200,
+          );
+        },
+      });
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (isPaymentNodeConfigError(error)) {

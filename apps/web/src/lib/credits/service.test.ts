@@ -192,6 +192,7 @@ vi.mock("@masumi/database/client", () => ({
 
 const {
   CREDIT_COST,
+  CREDITS_PER_PAYMENT_EVENT,
   InsufficientCreditsError,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
@@ -204,22 +205,24 @@ describe("credit service", () => {
     store.current = createState();
   });
 
-  it("grants exactly twenty initial credits once", async () => {
+  it("grants exactly twenty payment-units of initial credits once", async () => {
     await grantInitialCreditsIfNeeded("user-1");
     await grantInitialCreditsIfNeeded("user-1");
 
-    expect(store.current.user?.creditsRemaining).toBe(20);
+    expect(store.current.user?.creditsRemaining).toBe(
+      20 * CREDITS_PER_PAYMENT_EVENT,
+    );
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: 20,
-      balanceAfter: 20,
+      delta: 20 * CREDITS_PER_PAYMENT_EVENT,
+      balanceAfter: 20 * CREDITS_PER_PAYMENT_EVENT,
       reason: "initial_grant",
       reference: "signup",
     });
   });
 
-  it("consumes one credit and writes a ledger entry", async () => {
-    store.current = createState(1);
+  it("consumes per-reason pricing and writes a ledger entry", async () => {
+    store.current = createState(400);
 
     const result = await consumeCreditOrThrow({
       userId: "user-1",
@@ -232,7 +235,7 @@ describe("credit service", () => {
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: -CREDIT_COST,
+      delta: -400,
       balanceAfter: 0,
       reason: "agent_register",
       reference: "agent-register:test",
@@ -300,7 +303,7 @@ describe("credit service", () => {
   });
 
   it("still debits on Mainnet", async () => {
-    store.current = createState(1);
+    store.current = createState(CREDIT_COST);
 
     const result = await consumeCreditIfRequired({
       userId: "user-1",
@@ -321,7 +324,7 @@ describe("credit service", () => {
   });
 
   it("refunds a Mainnet debit with a :refund ledger entry", async () => {
-    store.current = createState(1);
+    store.current = createState(CREDIT_COST);
 
     await consumeCreditIfRequired({
       userId: "user-1",
@@ -338,18 +341,18 @@ describe("credit service", () => {
       metadata: { network: "Mainnet" },
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(CREDIT_COST);
     expect(store.current.ledger).toHaveLength(2);
     expect(store.current.ledger[1]).toMatchObject({
       delta: CREDIT_COST,
-      balanceAfter: 1,
+      balanceAfter: CREDIT_COST,
       reason: "payment_proxy_write",
       reference: "payment:mainnet:refund",
     });
   });
 
   it("is idempotent when refunded twice with the same reference", async () => {
-    store.current = createState(1);
+    store.current = createState(CREDIT_COST);
 
     await consumeCreditIfRequired({
       userId: "user-1",
@@ -370,7 +373,7 @@ describe("credit service", () => {
       network: "Mainnet",
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(CREDIT_COST);
     expect(store.current.ledger).toHaveLength(2);
     expect(store.current.ledger[1]).toMatchObject({
       reference: "payment:mainnet:refund",
@@ -378,7 +381,7 @@ describe("credit service", () => {
   });
 
   it("does not refund when the original debit is missing", async () => {
-    store.current = createState(1);
+    store.current = createState(CREDIT_COST);
 
     await refundConsumedCredit({
       userId: "user-1",
@@ -387,7 +390,7 @@ describe("credit service", () => {
       network: "Mainnet",
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(CREDIT_COST);
     expect(store.current.ledger).toHaveLength(0);
   });
 
@@ -405,8 +408,8 @@ describe("credit service", () => {
     expect(store.current.ledger).toHaveLength(0);
   });
 
-  it("allows only one concurrent debit when one credit remains", async () => {
-    store.current = createState(1);
+  it("allows only one concurrent debit when one payment credit remains", async () => {
+    store.current = createState(CREDIT_COST);
 
     const results = await Promise.allSettled([
       consumeCreditOrThrow({

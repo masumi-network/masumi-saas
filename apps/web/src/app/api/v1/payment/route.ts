@@ -1,9 +1,6 @@
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import {
-  consumeCreditIfRequired,
-  createCreditReference,
-} from "@/lib/credits/service";
+import { executeCreditChargedProxyWrite } from "@/lib/v1-proxy/credit-charged-proxy-write";
 import {
   buildUpstreamHeaders,
   getEffectivePaymentNetwork,
@@ -80,32 +77,18 @@ app.post("*", async (c) => {
       );
     }
 
-    // Debit before the first upstream write.
-    await consumeCreditIfRequired({
+    return executeCreditChargedProxyWrite({
       userId: authContext.user.id,
-      reason: "payment_proxy_write",
-      reference: createCreditReference("payment-proxy-write"),
       network,
-      metadata: {
-        method: "POST",
-        route: ROUTE_PATH,
-        upstreamPath: UPSTREAM_PATH,
-        network,
-        authMethod: authContext.authMethod,
-      },
+      routePath: ROUTE_PATH,
+      upstreamPath: UPSTREAM_PATH,
+      upstreamBaseUrl: upstream.baseUrl,
+      token: upstream.token,
+      request,
+      method: "POST",
+      body,
+      authMethod: authContext.authMethod,
     });
-
-    const headers = buildUpstreamHeaders(request, upstream.token);
-    const response = await fetch(
-      `${upstream.baseUrl}${UPSTREAM_PATH}${new URL(c.req.url).search}`,
-      {
-        method: "POST",
-        headers,
-        body,
-      },
-    );
-
-    return toUpstreamResponse(response);
   } catch (error) {
     if (error instanceof ApiError) throw error;
     rethrowIfAuthOrCreditsError(error);

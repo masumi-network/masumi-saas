@@ -1,14 +1,26 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PaymentNodeConfigError } from "@/lib/payment-node/config";
 import { z } from "@/lib/zod-openapi";
 
-const getAuthenticatedOrThrowMock = vi.fn();
-const handleAuthErrorMock = vi.fn();
-const requireNetworkedOidcApiScopeMock = vi.fn();
-const buildAgentPricingMock = vi.fn();
-const startAgentRegistrationMock = vi.fn();
-const consumeCreditIfRequiredMock = vi.fn();
+const {
+  getAuthenticatedOrThrowMock,
+  handleAuthErrorMock,
+  requireNetworkedOidcApiScopeMock,
+  buildAgentPricingMock,
+  startAgentRegistrationMock,
+  consumeCreditIfRequiredMock,
+  refundConsumedCreditMock,
+} = vi.hoisted(() => ({
+  getAuthenticatedOrThrowMock: vi.fn(),
+  handleAuthErrorMock: vi.fn(),
+  requireNetworkedOidcApiScopeMock: vi.fn(),
+  buildAgentPricingMock: vi.fn(),
+  startAgentRegistrationMock: vi.fn(),
+  consumeCreditIfRequiredMock: vi.fn(),
+  refundConsumedCreditMock: vi.fn(),
+}));
 const shapeAgentWithMergedMetadataMock = vi.fn();
 const agentFindFirstMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
@@ -45,10 +57,39 @@ vi.mock("@/lib/agents/wallet-ownership", () => ({
   listWalletOwnedAgentsForUser: listWalletOwnedAgentsForUserMock,
 }));
 
-vi.mock("@/lib/credits/service", () => ({
-  consumeCreditIfRequired: consumeCreditIfRequiredMock,
-  createCreditReference: () => "agent-register:test",
-}));
+vi.mock("@/lib/credits/service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/credits/service")>();
+  return {
+    ...actual,
+    createCreditReference: () => "agent-register:test",
+  };
+});
+
+vi.mock("@/lib/credits/charge", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/credits/charge")>();
+  return {
+    ...actual,
+    withCreditCharge: vi.fn(
+      async (params: {
+        userId: string;
+        reason: string;
+        reference: string;
+        network?: string | null;
+        metadata?: Record<string, unknown>;
+        run: () => Promise<unknown>;
+      }) => {
+        await consumeCreditIfRequiredMock({
+          userId: params.userId,
+          reason: params.reason,
+          reference: params.reference,
+          network: params.network,
+          metadata: params.metadata,
+        });
+        return params.run();
+      },
+    ),
+  };
+});
 
 vi.mock("@/lib/api/agent-metadata", () => ({
   shapeAgentWithMergedMetadata: shapeAgentWithMergedMetadataMock,
@@ -176,24 +217,18 @@ describe("/api/agents POST", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith({
-      userId: "user-1",
-      reason: "agent_register",
-      reference: "agent-register:test",
-      network: "Preprod",
-      metadata: {
-        name: "Research assistant",
-        apiUrl: "https://agent.example.com/mip",
+    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        reason: "agent_register",
+        reference: "agent-register:test",
         network: "Preprod",
-        authMethod: "session",
-      },
-    });
+      }),
+    );
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns 503 when Mainnet payment-source config is missing", async () => {
-    const { PaymentNodeConfigError } =
-      await import("@/lib/payment-node/config");
     startAgentRegistrationMock.mockRejectedValue(
       new PaymentNodeConfigError(
         "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
@@ -286,25 +321,11 @@ describe("/api/agents POST", () => {
       name: "InsufficientCreditsError",
       message: "Insufficient credits",
       creditsRemaining: 0,
-      requiredCredits: 1,
-    });
-    handleAuthErrorMock.mockImplementation((error) => {
-      if ((error as { name?: string }).name === "InsufficientCreditsError") {
-        return Response.json(
-          {
-            success: false,
-            error: "Insufficient credits",
-            creditsRemaining: 0,
-            requiredCredits: 1,
-          },
-          { status: 402 },
-        );
-      }
-      return null;
+      requiredCredits: 400,
     });
 
     const request = new NextRequest(
-      "https://saas.example.com/api/agents?network=Preprod",
+      "https://saas.example.com/api/agents?network=Mainnet",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

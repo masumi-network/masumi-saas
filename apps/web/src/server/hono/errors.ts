@@ -1,6 +1,8 @@
 import type { ErrorHandler } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
+import { CREDIT_OPERATION_COST_ATOMIC } from "@/lib/credits/pricing";
+
 export type ApiErrorInit = {
   details?: unknown;
   /** Extra fields merged into the JSON body (e.g. `{ code: "..." }`). */
@@ -105,7 +107,9 @@ export function toApiErrorIfAuth(err: unknown): ApiError | null {
       return new ApiError(402, c.message ?? "Insufficient credits", {
         extraBody: {
           creditsRemaining: c.creditsRemaining ?? 0,
-          requiredCredits: c.requiredCredits ?? 1,
+          requiredCredits:
+            c.requiredCredits ??
+            CREDIT_OPERATION_COST_ATOMIC.payment_proxy_write,
         },
       });
     }
@@ -188,7 +192,8 @@ export const handleApiError: ErrorHandler = (err, c) => {
     return c.json(
       buildBody(e.message ?? "Insufficient credits", undefined, {
         creditsRemaining: e.creditsRemaining ?? 0,
-        requiredCredits: e.requiredCredits ?? 1,
+        requiredCredits:
+          e.requiredCredits ?? CREDIT_OPERATION_COST_ATOMIC.payment_proxy_write,
       }),
       402,
     );
