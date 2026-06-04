@@ -5,7 +5,7 @@ export type CreditLedgerReason =
   | "payment_proxy_write";
 
 /**
- * Atomic ledger units for one “payment proxy write” (MAS-418 scale).
+ * Atomic ledger units for one payment proxy write.
  * UI and API error messages divide by this to show human-friendly credits.
  */
 export const CREDITS_PER_PAYMENT_EVENT = 800;
