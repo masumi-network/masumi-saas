@@ -28,7 +28,7 @@ describe("/api/credits", () => {
       user: { id: "user-1" },
     });
     getCreditBalanceMock.mockResolvedValue({
-      creditsRemaining: 1,
+      creditsRemaining: 16000,
       updatedAt: new Date("2026-04-13T10:30:00.000Z"),
     });
   });
@@ -42,7 +42,7 @@ describe("/api/credits", () => {
     await expect(response.json()).resolves.toEqual({
       success: true,
       data: {
-        creditsRemaining: 1,
+        creditsRemaining: 16000,
         updatedAt: "2026-04-13T10:30:00.000Z",
       },
     });

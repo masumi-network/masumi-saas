@@ -5,7 +5,7 @@ const getAuthenticatedOrThrowMock = vi.fn();
 const handleAuthErrorMock = vi.fn();
 const requireAllNetworkedOidcApiScopesMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
-const consumeCreditIfRequiredMock = vi.fn();
+const executeCreditChargedProxyWriteMock = vi.fn();
 const resolvePaymentUserTokenUpstreamMock = vi.fn();
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -18,9 +18,8 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
   requireNetworkedOidcApiScope: requireNetworkedOidcApiScopeMock,
 }));
 
-vi.mock("@/lib/credits/service", () => ({
-  consumeCreditIfRequired: consumeCreditIfRequiredMock,
-  createCreditReference: () => "payment-proxy-write:test",
+vi.mock("@/lib/v1-proxy/credit-charged-proxy-write", () => ({
+  executeCreditChargedProxyWrite: executeCreditChargedProxyWriteMock,
 }));
 
 vi.mock("@/lib/v1-proxy/explicit-route-support", () => {
@@ -63,10 +62,27 @@ describe("/pay/api/v1/registry", () => {
     });
     requireAllNetworkedOidcApiScopesMock.mockImplementation(() => []);
     requireNetworkedOidcApiScopeMock.mockImplementation(() => {});
-    consumeCreditIfRequiredMock.mockResolvedValue({
-      creditsRemaining: 0,
-      updatedAt: new Date("2026-04-13T10:00:00.000Z"),
-    });
+    executeCreditChargedProxyWriteMock.mockImplementation(
+      async (params: {
+        upstreamBaseUrl: string;
+        upstreamPath: string;
+        request: Request;
+        method: string;
+        body?: string;
+        token: string;
+      }) => {
+        const response = await fetch(
+          `${params.upstreamBaseUrl}${params.upstreamPath}${new URL(params.request.url).search}`,
+          {
+            method: params.method,
+            headers: { token: params.token },
+            body: params.body,
+          },
+        );
+        const text = await response.text();
+        return Response.json(JSON.parse(text), { status: response.status });
+      },
+    );
     resolvePaymentUserTokenUpstreamMock.mockResolvedValue({
       ok: true,
       baseUrl: "https://payment.example.com/api/v1",
@@ -74,7 +90,7 @@ describe("/pay/api/v1/registry", () => {
     });
   });
 
-  it("forwards registry writes and consumes a credit", async () => {
+  it("forwards registry writes through the credit-charged proxy helper", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ status: "success" }), {
         status: 200,
@@ -112,15 +128,13 @@ describe("/pay/api/v1/registry", () => {
         body: JSON.stringify({ name: "Agent" }),
       }),
     );
-    expect(consumeCreditIfRequiredMock).toHaveBeenCalledWith(
+    expect(executeCreditChargedProxyWriteMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        reason: "payment_proxy_write",
+        userId: "user-1",
         network: "Preprod",
-        metadata: expect.objectContaining({
-          route: "registry",
-          upstreamPath: "/registry",
-          network: "Preprod",
-        }),
+        routePath: "registry",
+        upstreamPath: "/registry",
+        method: "POST",
       }),
     );
   });

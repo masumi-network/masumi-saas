@@ -2,16 +2,20 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
-import { parseNetwork } from "../schemas/api-query";
+import { parseNetwork } from "@/lib/schemas/api-query";
 
-export const CREDIT_COST = 1;
-const INITIAL_CREDIT_GRANT = 20;
+import {
+  type CreditChargeReason,
+  getCreditCostForReason,
+  INITIAL_CREDIT_GRANT_ATOMIC,
+} from "./pricing";
 
-export type CreditLedgerReason =
-  | "initial_grant"
-  | "agent_register"
-  | "inbox_agent_register"
-  | "payment_proxy_write";
+export type { CreditLedgerReason } from "./pricing";
+export {
+  CREDIT_COST,
+  CREDITS_PER_PAYMENT_EVENT,
+  getCreditCostForReason,
+} from "./pricing";
 
 export type CreditBalance = {
   creditsRemaining: number;
@@ -24,7 +28,7 @@ export class InsufficientCreditsError extends Error {
   readonly creditsRemaining: number;
   readonly requiredCredits: number;
 
-  constructor(creditsRemaining: number, requiredCredits = CREDIT_COST) {
+  constructor(creditsRemaining: number, requiredCredits: number) {
     super("Insufficient credits");
     this.name = "InsufficientCreditsError";
     this.creditsRemaining = creditsRemaining;
@@ -74,13 +78,13 @@ export async function grantInitialCreditsIfNeeded(
         select: { creditsRemaining: true },
       });
 
-      const balanceAfter = user.creditsRemaining + INITIAL_CREDIT_GRANT;
+      const balanceAfter = user.creditsRemaining + INITIAL_CREDIT_GRANT_ATOMIC;
 
       await tx.user.update({
         where: { id: userId },
         data: {
           creditsRemaining: {
-            increment: INITIAL_CREDIT_GRANT,
+            increment: INITIAL_CREDIT_GRANT_ATOMIC,
           },
         },
       });
@@ -88,7 +92,7 @@ export async function grantInitialCreditsIfNeeded(
       await tx.creditLedgerEntry.create({
         data: {
           userId,
-          delta: INITIAL_CREDIT_GRANT,
+          delta: INITIAL_CREDIT_GRANT_ATOMIC,
           balanceAfter,
           reason: "initial_grant",
           reference: "signup",
@@ -105,21 +109,24 @@ export async function grantInitialCreditsIfNeeded(
 
 export async function consumeCreditOrThrow(params: {
   userId: string;
-  reason: Exclude<CreditLedgerReason, "initial_grant">;
+  reason: CreditChargeReason;
   reference: string;
   metadata?: CreditMetadata;
+  amount?: number;
 }): Promise<CreditBalance> {
+  const cost = params.amount ?? getCreditCostForReason(params.reason);
+
   return prisma.$transaction(async (tx) => {
     const debitResult = await tx.user.updateMany({
       where: {
         id: params.userId,
         creditsRemaining: {
-          gte: CREDIT_COST,
+          gte: cost,
         },
       },
       data: {
         creditsRemaining: {
-          decrement: CREDIT_COST,
+          decrement: cost,
         },
       },
     });
@@ -129,7 +136,7 @@ export async function consumeCreditOrThrow(params: {
         where: { id: params.userId },
         select: { creditsRemaining: true },
       });
-      throw new InsufficientCreditsError(user?.creditsRemaining ?? 0);
+      throw new InsufficientCreditsError(user?.creditsRemaining ?? 0, cost);
     }
 
     const user = await tx.user.findUniqueOrThrow({
@@ -143,7 +150,7 @@ export async function consumeCreditOrThrow(params: {
     await tx.creditLedgerEntry.create({
       data: {
         userId: params.userId,
-        delta: -CREDIT_COST,
+        delta: -cost,
         balanceAfter: user.creditsRemaining,
         reason: params.reason,
         reference: params.reference,
@@ -162,14 +169,14 @@ export async function consumeCreditOrThrow(params: {
 
 export async function consumeCreditIfRequired(params: {
   userId: string;
-  reason: Exclude<CreditLedgerReason, "initial_grant">;
+  reason: CreditChargeReason;
   reference: string;
   metadata?: CreditMetadata;
   network?: string | null | undefined;
+  amount?: number;
 }): Promise<CreditBalance> {
   const effectiveNetwork = parseNetwork(params.network);
 
-  // Credits should only be spent for writes against Mainnet.
   if (effectiveNetwork !== "Mainnet") {
     return getCreditBalance(params.userId);
   }
@@ -179,12 +186,13 @@ export async function consumeCreditIfRequired(params: {
     reason: params.reason,
     reference: params.reference,
     metadata: params.metadata,
+    amount: params.amount,
   });
 }
 
 export async function refundConsumedCredit(params: {
   userId: string;
-  reason: Exclude<CreditLedgerReason, "initial_grant">;
+  reason: CreditChargeReason;
   reference: string;
   metadata?: CreditMetadata;
   network?: string | null | undefined;
@@ -218,18 +226,20 @@ export async function refundConsumedCredit(params: {
         },
         select: { delta: true },
       });
-      if (!originalDebit || originalDebit.delta !== -CREDIT_COST) return;
+      if (!originalDebit || originalDebit.delta >= 0) return;
+
+      const refundAmount = -originalDebit.delta;
 
       const user = await tx.user.update({
         where: { id: params.userId },
-        data: { creditsRemaining: { increment: CREDIT_COST } },
+        data: { creditsRemaining: { increment: refundAmount } },
         select: { creditsRemaining: true },
       });
 
       await tx.creditLedgerEntry.create({
         data: {
           userId: params.userId,
-          delta: CREDIT_COST,
+          delta: refundAmount,
           balanceAfter: user.creditsRemaining,
           reason: params.reason,
           reference: refundReference,

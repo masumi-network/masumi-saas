@@ -17,7 +17,12 @@ export class PaymentNodeConfigError extends Error {
 export function isPaymentNodeConfigError(
   error: unknown,
 ): error is PaymentNodeConfigError {
-  return error instanceof PaymentNodeConfigError;
+  return (
+    error instanceof PaymentNodeConfigError ||
+    (typeof error === "object" &&
+      error !== null &&
+      (error as { name?: string }).name === "PaymentNodeConfigError")
+  );
 }
 
 function getPaymentSourceIdEnvName(
