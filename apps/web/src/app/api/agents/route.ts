@@ -30,11 +30,7 @@ import {
 } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
-import {
-  ApiError,
-  rethrowIfAuthOrCreditsError,
-  toApiErrorIfAuth,
-} from "@/server/hono/errors";
+import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
 
 const app = createApiApp("/api/agents");
@@ -368,18 +364,7 @@ app.openapi(
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (isPaymentNodeConfigError(error)) {
-        return c.json({ success: false as const, error: error.message }, 503);
-      }
-      const authOrCreditError = toApiErrorIfAuth(error);
-      if (authOrCreditError) {
-        return c.json(
-          {
-            success: false as const,
-            error: authOrCreditError.message,
-            ...authOrCreditError.extraBody,
-          },
-          authOrCreditError.status,
-        );
+        throw new ApiError(503, error.message);
       }
       rethrowIfAuthOrCreditsError(error);
       console.error("Failed to register agent:", error);
