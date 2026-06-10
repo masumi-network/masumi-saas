@@ -2,20 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/lib/auth/auth";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { markOnboardingCompleteForUser } from "@/lib/onboarding/mark-onboarding-complete";
 
 export async function completeOnboardingAction(): Promise<
   | { success: true }
   | { success: false; errorKey: "FailedToComplete" | "UnexpectedError" }
 > {
-  const { headers: headersList } = await getAuthenticatedOrThrow();
-
   try {
-    await auth.api.updateUser({
-      headers: headersList,
-      body: { onboardingCompleted: true },
-    });
+    const { headers: headersList, user } = await getAuthenticatedOrThrow();
+
+    const updated = await markOnboardingCompleteForUser(user.id, headersList);
+    if (!updated) {
+      return {
+        success: false,
+        errorKey: "FailedToComplete",
+      };
+    }
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -23,7 +26,7 @@ export async function completeOnboardingAction(): Promise<
     console.error("[onboarding] Failed to complete onboarding:", error);
     return {
       success: false,
-      errorKey: "FailedToComplete",
+      errorKey: "UnexpectedError",
     };
   }
 }
