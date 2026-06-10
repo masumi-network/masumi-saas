@@ -11,16 +11,26 @@ async function markOnboardingCompleteForUser(userId: string): Promise<void> {
       headers: await headers(),
       body: { onboardingCompleted: true },
     });
+    return;
   } catch (error) {
     console.error(
       "[onboarding] Failed to mark complete via Better Auth; falling back to Prisma",
       userId,
       error,
     );
+  }
+
+  try {
     await prisma.user.update({
       where: { id: userId },
       data: { onboardingCompleted: true },
     });
+  } catch (error) {
+    console.error(
+      "[onboarding] Failed to mark complete via Prisma",
+      userId,
+      error,
+    );
   }
 }
 

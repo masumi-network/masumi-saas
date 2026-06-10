@@ -59,6 +59,18 @@ describe("resolveShowOnboarding", () => {
     });
   });
 
+  it("returns false for organization members when auto-complete persistence fails", async () => {
+    findUniqueMock.mockResolvedValue({
+      onboardingCompleted: false,
+      _count: { members: 1 },
+    });
+    updateUserMock.mockRejectedValue(new Error("auth down"));
+    updateMock.mockRejectedValue(new Error("db down"));
+
+    const { resolveShowOnboarding } = await import("./resolve-show-onboarding");
+    await expect(resolveShowOnboarding("user-1")).resolves.toBe(false);
+  });
+
   it("returns true for new users without org membership", async () => {
     findUniqueMock.mockResolvedValue({
       onboardingCompleted: false,
