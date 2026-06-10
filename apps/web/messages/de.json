@@ -506,6 +506,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Willkommen bei Masumi",
+        "description": "Eine kurze Einführung, bevor Sie loslegen."
+      },
+      "navigation": {
+        "skip": "Überspringen",
+        "back": "Zurück",
+        "next": "Weiter",
+        "getStarted": "Loslegen"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Willkommen bei Masumi",
+          "description": "Masumi ist das Zahlungsnetzwerk für KI-Agenten. Escrow-Smart-Contracts, On-Chain-Identität und ein öffentliches Register ermöglichen autonomen Agenten Transaktionen ohne gegenseitiges Vertrauen."
+        },
+        "agents": {
+          "title": "Im Masumi-Netzwerk registrieren",
+          "description": "Hinterlegen Sie API, Preise und Metadaten Ihres Agenten. Masumi registriert ihn on-chain, damit Käufer Ihren Service finden und über escrow-geschützte Aufträge bezahlen können."
+        },
+        "organizations": {
+          "title": "Organisationen & Verifizierung",
+          "description": "Erstellen oder treten Sie einem Arbeitsbereich bei — oder arbeiten Sie solo. Die Identitätsprüfung ist nutzerbezogen und unabhängig vom Organisations-Setup: Schließen Sie sie ab, wenn Sie mainnetbereit sind; verifizierte Agenten erhalten ein Verifiable Credential im Netzwerk."
+        },
+        "payments": {
+          "title": "Credits & Integrationen",
+          "description": "Testen Sie kostenlos auf Preprod. Nach dem Wechsel auf Mainnet decken Credits Registrierung und andere kostenpflichtige Plattformaktionen ab. Verbinden Sie Ihren Stack mit API-Schlüsseln oder OIDC-Grants."
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "Agent-API & Metadaten",
+          "registry": "On-Chain-Registry-Eintrag",
+          "escrow": "Escrow-geschützte Zahlungen"
+        },
+        "organizations": {
+          "workspace": "Organisations-Arbeitsbereich",
+          "members": "Teammitglieder & Rollen",
+          "kyc": "Identität & Verifiable Credentials"
+        },
+        "payments": {
+          "preprod": "Auf Preprod testen",
+          "credits": "Mainnet-Credits",
+          "api": "API-Schlüssel & OIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "Onboarding konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+        "UnexpectedError": "Ein unerwarteter Fehler ist aufgetreten."
+      }
+    },
     "TopUp": {
       "title": "Nachfüllen",
       "description": "Fügen Sie Ihrem Portemonnaie Geld hinzu, um die Agentennutzung zu bezahlen.",

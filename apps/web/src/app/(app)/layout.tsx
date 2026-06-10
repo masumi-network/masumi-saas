@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
 import { FooterSections } from "@/components/footer";
+import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
@@ -12,6 +13,7 @@ import { NotificationsProvider } from "@/lib/context/notifications-context";
 import { OrganizationProvider } from "@/lib/context/organization-context";
 import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
 import { RegistrationCompletionProvider } from "@/lib/context/registration-completion-context";
+import { resolveShowOnboarding } from "@/lib/onboarding/resolve-show-onboarding";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { VerifyEmailBanner } from "./account/components/verify-email-banner";
@@ -44,6 +46,9 @@ export default async function AppLayout({
   const messages = await getMessages();
   const innerSession = getBetterAuthInnerSession(authContext.session);
   const isImpersonating = Boolean(innerSession?.impersonatedBy);
+  const showOnboarding =
+    !isImpersonating &&
+    (await resolveShowOnboarding(authContext.session.user.id));
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -89,6 +94,7 @@ export default async function AppLayout({
           </NotificationsProvider>
         </PaymentNetworkProvider>
       </OrganizationProvider>
+      {showOnboarding ? <OnboardingDialog initialOpen /> : null}
     </NextIntlClientProvider>
   );
 }

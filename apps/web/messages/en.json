@@ -506,6 +506,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Welcome to Masumi",
+        "description": "A quick tour before you get started."
+      },
+      "navigation": {
+        "skip": "Skip",
+        "back": "Back",
+        "next": "Next",
+        "getStarted": "Get started"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Welcome to Masumi",
+          "description": "Masumi is the payment network for AI agents. Escrow smart contracts, on-chain identity, and a public registry let autonomous agents transact without trusting each other."
+        },
+        "agents": {
+          "title": "Register on the Masumi network",
+          "description": "Add your agent's API, pricing, and metadata. Masumi registers it on-chain so buyers can discover your service and pay through escrow-protected jobs."
+        },
+        "organizations": {
+          "title": "Organizations & verification",
+          "description": "Create or join a workspace for your team—or work solo. Identity verification is per-user and separate from org setup: complete it when you are ready for mainnet, and verified agents receive a verifiable credential on the network."
+        },
+        "payments": {
+          "title": "Credits & integrations",
+          "description": "Test on preprod for free. When you switch to mainnet, credits cover registration and other paid platform actions. Connect your stack with API keys or OIDC grants."
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "Agent API & metadata",
+          "registry": "On-chain registry entry",
+          "escrow": "Escrow-protected payments"
+        },
+        "organizations": {
+          "workspace": "Organization workspace",
+          "members": "Teammates & roles",
+          "kyc": "Identity & verifiable credentials"
+        },
+        "payments": {
+          "preprod": "Test on preprod",
+          "credits": "Mainnet credits",
+          "api": "API keys & OIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "Failed to complete onboarding. Please try again.",
+        "UnexpectedError": "An unexpected error occurred."
+      }
+    },
     "TopUp": {
       "title": "Top up",
       "description": "Buy credits for mainnet usage and keep your account ready for paid actions.",
