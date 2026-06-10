@@ -409,6 +409,14 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
   },
   user: {
+    additionalFields: {
+      onboardingCompleted: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: true,
+      },
+    },
     changeEmail: {
       enabled: true,
     },
