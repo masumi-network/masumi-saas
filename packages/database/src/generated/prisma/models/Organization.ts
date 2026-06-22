@@ -244,6 +244,7 @@ export type OrganizationWhereInput = {
   agents?: Prisma.AgentListRelationFilter;
   orgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
   kybSubmissions?: Prisma.KybSubmissionListRelationFilter;
+  integrationConnections?: Prisma.IntegrationConnectionListRelationFilter;
 };
 
 export type OrganizationOrderByWithRelationInput = {
@@ -265,6 +266,7 @@ export type OrganizationOrderByWithRelationInput = {
   agents?: Prisma.AgentOrderByRelationAggregateInput;
   orgApiKeys?: Prisma.OrgApiKeyOrderByRelationAggregateInput;
   kybSubmissions?: Prisma.KybSubmissionOrderByRelationAggregateInput;
+  integrationConnections?: Prisma.IntegrationConnectionOrderByRelationAggregateInput;
 };
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<
@@ -293,6 +295,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<
     agents?: Prisma.AgentListRelationFilter;
     orgApiKeys?: Prisma.OrgApiKeyListRelationFilter;
     kybSubmissions?: Prisma.KybSubmissionListRelationFilter;
+    integrationConnections?: Prisma.IntegrationConnectionListRelationFilter;
   },
   "id" | "kybVerificationId" | "slug" | "stripeCustomerId"
 >;
@@ -372,6 +375,7 @@ export type OrganizationCreateInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateInput = {
@@ -392,6 +396,7 @@ export type OrganizationUncheckedCreateInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUpdateInput = {
@@ -418,6 +423,7 @@ export type OrganizationUpdateInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateInput = {
@@ -447,6 +453,7 @@ export type OrganizationUncheckedUpdateInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateManyInput = {
@@ -715,6 +722,34 @@ export type OrganizationUpdateOneWithoutAgentsNestedInput = {
   >;
 };
 
+export type OrganizationCreateNestedOneWithoutIntegrationConnectionsInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutIntegrationConnectionsInput,
+    Prisma.OrganizationUncheckedCreateWithoutIntegrationConnectionsInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutIntegrationConnectionsInput;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+};
+
+export type OrganizationUpdateOneWithoutIntegrationConnectionsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutIntegrationConnectionsInput,
+    Prisma.OrganizationUncheckedCreateWithoutIntegrationConnectionsInput
+  >;
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutIntegrationConnectionsInput;
+  upsert?: Prisma.OrganizationUpsertWithoutIntegrationConnectionsInput;
+  disconnect?: Prisma.OrganizationWhereInput | boolean;
+  delete?: Prisma.OrganizationWhereInput | boolean;
+  connect?: Prisma.OrganizationWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrganizationUpdateToOneWithWhereWithoutIntegrationConnectionsInput,
+      Prisma.OrganizationUpdateWithoutIntegrationConnectionsInput
+    >,
+    Prisma.OrganizationUncheckedUpdateWithoutIntegrationConnectionsInput
+  >;
+};
+
 export type OrganizationCreateNestedOneWithoutOrgApiKeysInput = {
   create?: Prisma.XOR<
     Prisma.OrganizationCreateWithoutOrgApiKeysInput,
@@ -812,6 +847,7 @@ export type OrganizationCreateWithoutSessionsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutSessionsInput = {
@@ -831,6 +867,7 @@ export type OrganizationUncheckedCreateWithoutSessionsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutSessionsInput = {
@@ -884,6 +921,7 @@ export type OrganizationUpdateWithoutSessionsInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutSessionsInput = {
@@ -912,6 +950,7 @@ export type OrganizationUncheckedUpdateWithoutSessionsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutKybVerificationInput = {
@@ -931,6 +970,7 @@ export type OrganizationCreateWithoutKybVerificationInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
@@ -950,6 +990,7 @@ export type OrganizationUncheckedCreateWithoutKybVerificationInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutKybVerificationInput = {
@@ -1003,6 +1044,7 @@ export type OrganizationUpdateWithoutKybVerificationInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
@@ -1028,6 +1070,7 @@ export type OrganizationUncheckedUpdateWithoutKybVerificationInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutMembersInput = {
@@ -1047,6 +1090,7 @@ export type OrganizationCreateWithoutMembersInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutMembersInput = {
@@ -1066,6 +1110,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutMembersInput = {
@@ -1119,6 +1164,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutMembersInput = {
@@ -1147,6 +1193,7 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -1166,6 +1213,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -1185,6 +1233,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -1238,6 +1287,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -1266,6 +1316,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutAgentsInput = {
@@ -1285,6 +1336,7 @@ export type OrganizationCreateWithoutAgentsInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutAgentsInput = {
@@ -1304,6 +1356,7 @@ export type OrganizationUncheckedCreateWithoutAgentsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutAgentsInput = {
@@ -1357,6 +1410,7 @@ export type OrganizationUpdateWithoutAgentsInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutAgentsInput = {
@@ -1385,6 +1439,131 @@ export type OrganizationUncheckedUpdateWithoutAgentsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationCreateWithoutIntegrationConnectionsInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput;
+  sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutOrganizationInput;
+  kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
+  agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
+  orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
+  kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationUncheckedCreateWithoutIntegrationConnectionsInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  stripeCustomerId?: string | null;
+  invoiceEmail?: string | null;
+  kybVerificationId?: string | null;
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput;
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput;
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
+  orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
+  kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+};
+
+export type OrganizationCreateOrConnectWithoutIntegrationConnectionsInput = {
+  where: Prisma.OrganizationWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutIntegrationConnectionsInput,
+    Prisma.OrganizationUncheckedCreateWithoutIntegrationConnectionsInput
+  >;
+};
+
+export type OrganizationUpsertWithoutIntegrationConnectionsInput = {
+  update: Prisma.XOR<
+    Prisma.OrganizationUpdateWithoutIntegrationConnectionsInput,
+    Prisma.OrganizationUncheckedUpdateWithoutIntegrationConnectionsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.OrganizationCreateWithoutIntegrationConnectionsInput,
+    Prisma.OrganizationUncheckedCreateWithoutIntegrationConnectionsInput
+  >;
+  where?: Prisma.OrganizationWhereInput;
+};
+
+export type OrganizationUpdateToOneWithWhereWithoutIntegrationConnectionsInput =
+  {
+    where?: Prisma.OrganizationWhereInput;
+    data: Prisma.XOR<
+      Prisma.OrganizationUpdateWithoutIntegrationConnectionsInput,
+      Prisma.OrganizationUncheckedUpdateWithoutIntegrationConnectionsInput
+    >;
+  };
+
+export type OrganizationUpdateWithoutIntegrationConnectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput;
+  sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutOrganizationNestedInput;
+  kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
+  agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
+  orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
+  kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+};
+
+export type OrganizationUncheckedUpdateWithoutIntegrationConnectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  slug?: Prisma.StringFieldUpdateOperationsInput | string;
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stripeCustomerId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  invoiceEmail?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  kybVerificationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput;
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput;
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
+  orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
+  kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutOrgApiKeysInput = {
@@ -1404,6 +1583,7 @@ export type OrganizationCreateWithoutOrgApiKeysInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutOrgApiKeysInput = {
@@ -1423,6 +1603,7 @@ export type OrganizationUncheckedCreateWithoutOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutOrgApiKeysInput = {
@@ -1476,6 +1657,7 @@ export type OrganizationUpdateWithoutOrgApiKeysInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutOrgApiKeysInput = {
@@ -1504,6 +1686,7 @@ export type OrganizationUncheckedUpdateWithoutOrgApiKeysInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutKybSubmissionsInput = {
@@ -1523,6 +1706,7 @@ export type OrganizationCreateWithoutKybSubmissionsInput = {
   kybVerification?: Prisma.KybVerificationCreateNestedOneWithoutOrganizationInput;
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutKybSubmissionsInput = {
@@ -1542,6 +1726,7 @@ export type OrganizationUncheckedCreateWithoutKybSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutOrganizationInput;
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutKybSubmissionsInput = {
@@ -1595,6 +1780,7 @@ export type OrganizationUpdateWithoutKybSubmissionsInput = {
   kybVerification?: Prisma.KybVerificationUpdateOneWithoutOrganizationNestedInput;
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutKybSubmissionsInput = {
@@ -1623,6 +1809,7 @@ export type OrganizationUncheckedUpdateWithoutKybSubmissionsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutOrganizationNestedInput;
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationCreateWithoutVeridianCredentialsInput = {
@@ -1642,6 +1829,7 @@ export type OrganizationCreateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationUncheckedCreateWithoutVeridianCredentialsInput = {
@@ -1661,6 +1849,7 @@ export type OrganizationUncheckedCreateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutOrganizationInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedCreateNestedManyWithoutOrganizationInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutOrganizationInput;
 };
 
 export type OrganizationCreateOrConnectWithoutVeridianCredentialsInput = {
@@ -1714,6 +1903,7 @@ export type OrganizationUpdateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutOrganizationNestedInput;
 };
 
 export type OrganizationUncheckedUpdateWithoutVeridianCredentialsInput = {
@@ -1742,6 +1932,7 @@ export type OrganizationUncheckedUpdateWithoutVeridianCredentialsInput = {
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput;
   orgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutOrganizationNestedInput;
   kybSubmissions?: Prisma.KybSubmissionUncheckedUpdateManyWithoutOrganizationNestedInput;
+  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutOrganizationNestedInput;
 };
 
 /**
@@ -1756,6 +1947,7 @@ export type OrganizationCountOutputType = {
   agents: number;
   orgApiKeys: number;
   kybSubmissions: number;
+  integrationConnections: number;
 };
 
 export type OrganizationCountOutputTypeSelect<
@@ -1771,6 +1963,9 @@ export type OrganizationCountOutputTypeSelect<
   agents?: boolean | OrganizationCountOutputTypeCountAgentsArgs;
   orgApiKeys?: boolean | OrganizationCountOutputTypeCountOrgApiKeysArgs;
   kybSubmissions?: boolean | OrganizationCountOutputTypeCountKybSubmissionsArgs;
+  integrationConnections?:
+    | boolean
+    | OrganizationCountOutputTypeCountIntegrationConnectionsArgs;
 };
 
 /**
@@ -1856,6 +2051,16 @@ export type OrganizationCountOutputTypeCountKybSubmissionsArgs<
   where?: Prisma.KybSubmissionWhereInput;
 };
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountIntegrationConnectionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.IntegrationConnectionWhereInput;
+};
+
 export type OrganizationSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -1883,6 +2088,9 @@ export type OrganizationSelect<
     agents?: boolean | Prisma.Organization$agentsArgs<ExtArgs>;
     orgApiKeys?: boolean | Prisma.Organization$orgApiKeysArgs<ExtArgs>;
     kybSubmissions?: boolean | Prisma.Organization$kybSubmissionsArgs<ExtArgs>;
+    integrationConnections?:
+      | boolean
+      | Prisma.Organization$integrationConnectionsArgs<ExtArgs>;
     _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["organization"]
@@ -1975,6 +2183,9 @@ export type OrganizationInclude<
   agents?: boolean | Prisma.Organization$agentsArgs<ExtArgs>;
   orgApiKeys?: boolean | Prisma.Organization$orgApiKeysArgs<ExtArgs>;
   kybSubmissions?: boolean | Prisma.Organization$kybSubmissionsArgs<ExtArgs>;
+  integrationConnections?:
+    | boolean
+    | Prisma.Organization$integrationConnectionsArgs<ExtArgs>;
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrganizationIncludeCreateManyAndReturn<
@@ -2004,6 +2215,7 @@ export type $OrganizationPayload<
     agents: Prisma.$AgentPayload<ExtArgs>[];
     orgApiKeys: Prisma.$OrgApiKeyPayload<ExtArgs>[];
     kybSubmissions: Prisma.$KybSubmissionPayload<ExtArgs>[];
+    integrationConnections: Prisma.$IntegrationConnectionPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -2666,6 +2878,22 @@ export interface Prisma__OrganizationClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$KybSubmissionPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  integrationConnections<
+    T extends Prisma.Organization$integrationConnectionsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.Organization$integrationConnectionsArgs<ExtArgs>
+    >,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$IntegrationConnectionPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -3425,6 +3653,37 @@ export type Organization$kybSubmissionsArgs<
   distinct?:
     | Prisma.KybSubmissionScalarFieldEnum
     | Prisma.KybSubmissionScalarFieldEnum[];
+};
+
+/**
+ * Organization.integrationConnections
+ */
+export type Organization$integrationConnectionsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the IntegrationConnection
+   */
+  select?: Prisma.IntegrationConnectionSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the IntegrationConnection
+   */
+  omit?: Prisma.IntegrationConnectionOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.IntegrationConnectionInclude<ExtArgs> | null;
+  where?: Prisma.IntegrationConnectionWhereInput;
+  orderBy?:
+    | Prisma.IntegrationConnectionOrderByWithRelationInput
+    | Prisma.IntegrationConnectionOrderByWithRelationInput[];
+  cursor?: Prisma.IntegrationConnectionWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.IntegrationConnectionScalarFieldEnum
+    | Prisma.IntegrationConnectionScalarFieldEnum[];
 };
 
 /**

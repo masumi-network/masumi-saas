@@ -35,6 +35,31 @@ export const RegistrationState = {
 export type RegistrationState =
   (typeof RegistrationState)[keyof typeof RegistrationState];
 
+export const AgentRuntimeProvider = {
+  DIRECT_MIP: "DIRECT_MIP",
+  LANGDOCK: "LANGDOCK",
+} as const;
+
+export type AgentRuntimeProvider =
+  (typeof AgentRuntimeProvider)[keyof typeof AgentRuntimeProvider];
+
+export const IntegrationProvider = {
+  LANGDOCK: "LANGDOCK",
+} as const;
+
+export type IntegrationProvider =
+  (typeof IntegrationProvider)[keyof typeof IntegrationProvider];
+
+export const MipJobStatus = {
+  AWAITING_PAYMENT: "AWAITING_PAYMENT",
+  RUNNING: "RUNNING",
+  AWAITING_INPUT: "AWAITING_INPUT",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+} as const;
+
+export type MipJobStatus = (typeof MipJobStatus)[keyof typeof MipJobStatus];
+
 export const AgentActivityEventType = {
   RegistrationInitiated: "RegistrationInitiated",
   RegistrationConfirmed: "RegistrationConfirmed",
