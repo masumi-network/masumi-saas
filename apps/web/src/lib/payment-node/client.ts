@@ -18,6 +18,7 @@ import type {
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  GetWalletListOutput,
   InboxAgentIdentifierMetadata,
   InboxAgentMetadata,
   ListPaymentsOutput,
@@ -45,6 +46,7 @@ import {
   generatedWalletSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
+  getWalletListOutputSchema,
   inboxAgentIdentifierMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
@@ -77,6 +79,7 @@ export type {
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  GetWalletListOutput,
   InboxAgentIdentifierMetadata,
   InboxAgentMetadata,
   ListPaymentsOutput,
@@ -646,6 +649,38 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         getPaymentSourcesOutputSchema,
+      );
+    },
+
+    /** List hot wallets (admin). Wallets are no longer embedded on GET /payment-source. */
+    async getWalletList(params?: {
+      take?: number;
+      cursorId?: string;
+      paymentSourceId?: string;
+      walletType?: "Selling" | "Purchasing";
+      walletVkey?: string;
+      walletAddress?: string;
+    }): Promise<GetWalletListOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet/list`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.take != null && { take: String(params.take) }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+            ...(params?.paymentSourceId && {
+              paymentSourceId: params.paymentSourceId,
+            }),
+            ...(params?.walletType && { walletType: params.walletType }),
+            ...(params?.walletVkey && { walletVkey: params.walletVkey }),
+            ...(params?.walletAddress && {
+              walletAddress: params.walletAddress,
+            }),
+          },
+        },
+        getWalletListOutputSchema,
       );
     },
 
