@@ -62,8 +62,8 @@
       "forgotPassword": "Forgot password?",
       "checkEmail": {
         "title": "Check your email",
-        "description": "We sent a magic link to {email}. Open it to sign in to your dashboard.",
-        "oidcDescription": "We sent a magic link to {email}. Open it to continue signing in with your Masumi account.",
+        "description": "We sent a magic link to <emailEmphasis>{email}</emailEmphasis>. Open it to sign in to your dashboard.",
+        "oidcDescription": "We sent a magic link to <emailEmphasis>{email}</emailEmphasis>. Open it to continue signing in with your Masumi account.",
         "tryAnother": "Use another email"
       },
       "success": "Logged in successfully!"
@@ -89,8 +89,8 @@
       "login": "Sign In",
       "checkEmail": {
         "title": "Check your email",
-        "description": "We sent a magic link to {email}. Open it to finish signing up and access your dashboard.",
-        "oidcDescription": "We sent a magic link to {email}. Open it to finish signing up and continue with your Masumi account.",
+        "description": "We sent a magic link to <emailEmphasis>{email}</emailEmphasis>. Open it to finish signing up and access your dashboard.",
+        "oidcDescription": "We sent a magic link to <emailEmphasis>{email}</emailEmphasis>. Open it to finish signing up and continue with your Masumi account.",
         "tryAnother": "Use another email"
       },
       "success": "Account created successfully!"
@@ -121,7 +121,6 @@
       "title": "Verify with code",
       "description": "Use the 6-digit code from the same email if you do not want to open the link.",
       "codeLabel": "Sign-in code",
-      "codePlaceholder": "000000",
       "submit": "Authorize with code",
       "submitting": "Checking code...",
       "success": "Code accepted. Authorizing..."
@@ -1780,6 +1779,9 @@
       "description": "We use cookies to ensure you get the best experience on our website.",
       "gotIt": "Got it",
       "learnMore": "Learn more"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "Digit {index} of {total}"
     },
     "LogoutModal": {
       "title": "Do you really want to log out?",

@@ -63,8 +63,8 @@
       "login": "Iniciar sesión",
       "checkEmail": {
         "title": "Revisa tu correo",
-        "description": "Enviamos un enlace mágico a {email}. Ábrelo para iniciar sesión en tu panel.",
-        "oidcDescription": "Enviamos un enlace mágico a {email}. Ábrelo para continuar iniciando sesión con tu cuenta de Masumi.",
+        "description": "Enviamos un enlace mágico a <emailEmphasis>{email}</emailEmphasis>. Ábrelo para iniciar sesión en tu panel.",
+        "oidcDescription": "Enviamos un enlace mágico a <emailEmphasis>{email}</emailEmphasis>. Ábrelo para continuar iniciando sesión con tu cuenta de Masumi.",
         "tryAnother": "Usar otro correo"
       }
     },
@@ -90,8 +90,8 @@
       "useMagicLink": "Usar enlace mágico en su lugar (recomendado)",
       "checkEmail": {
         "title": "Revisa tu correo",
-        "description": "Enviamos un enlace mágico a {email}. Ábrelo para completar el registro y acceder a tu panel.",
-        "oidcDescription": "Enviamos un enlace mágico a {email}. Ábrelo para completar el registro y continuar con tu cuenta de Masumi.",
+        "description": "Enviamos un enlace mágico a <emailEmphasis>{email}</emailEmphasis>. Ábrelo para completar el registro y acceder a tu panel.",
+        "oidcDescription": "Enviamos un enlace mágico a <emailEmphasis>{email}</emailEmphasis>. Ábrelo para completar el registro y continuar con tu cuenta de Masumi.",
         "tryAnother": "Usar otro correo"
       }
     },
@@ -163,7 +163,6 @@
       "title": "Verificar con código",
       "description": "Usa el código de 6 dígitos del mismo correo si prefieres no abrir el enlace.",
       "codeLabel": "Código de inicio de sesión",
-      "codePlaceholder": "000000",
       "submit": "Autorizar con código",
       "submitting": "Verificando código...",
       "success": "Código aceptado. Autorizando..."
@@ -1780,6 +1779,9 @@
       "description": "Utilizamos cookies para garantizar que obtenga la mejor experiencia en nuestro sitio web.",
       "gotIt": "Entiendo",
       "learnMore": "Más información"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "Dígito {index} de {total}"
     },
     "LogoutModal": {
       "title": "¿Realmente quieres cerrar sesión?",

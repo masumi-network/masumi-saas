@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
 import { toast } from "sonner";
 
+import { OtpCodeInput } from "@/components/otp-code-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +35,7 @@ export function TwoFactorSection() {
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
   const [regeneratePassword, setRegeneratePassword] = useState("");
   const [showNewBackupCodes, setShowNewBackupCodes] = useState(false);
-  const verifyInputRef = useRef<HTMLInputElement>(null);
+  const verifyLabelId = useId();
 
   const is2FAEnabled = session?.user?.twoFactorEnabled;
 
@@ -74,12 +75,12 @@ export function TwoFactorSection() {
   }
 
   // Setup flow - Step: Verify TOTP code to confirm setup
-  async function handleVerify() {
-    if (!verifyCode.trim() || verifyCode.length !== 6) return;
+  async function handleVerify(nextCode = verifyCode) {
+    if (!nextCode.trim() || nextCode.length !== 6) return;
     setIsLoading(true);
     try {
       const { data, error } = await twoFactor.verifyTotp({
-        code: verifyCode,
+        code: nextCode,
       });
       if (error) {
         toast.error(error.message || t("errors.invalidCode"));
@@ -494,12 +495,7 @@ export function TwoFactorSection() {
             </Button>
           </div>
 
-          <Button
-            onClick={() => {
-              setStep("verify");
-              setTimeout(() => verifyInputRef.current?.focus(), 100);
-            }}
-          >
+          <Button onClick={() => setStep("verify")}>
             {t("setup.continue")}
           </Button>
         </div>
@@ -516,30 +512,22 @@ export function TwoFactorSection() {
           </div>
 
           <div>
-            <label htmlFor="verify-totp-code" className="sr-only">
+            <span id={verifyLabelId} className="sr-only">
               {t("setup.verifyCode")}
-            </label>
-            <Input
-              id="verify-totp-code"
-              ref={verifyInputRef}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
+            </span>
+            <OtpCodeInput
               value={verifyCode}
-              onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
-              placeholder={t("verifyCodePlaceholder")}
-              className="text-center text-lg tracking-widest font-mono"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleVerify();
-              }}
+              onChange={setVerifyCode}
+              onComplete={(completed) => void handleVerify(completed)}
+              disabled={isLoading}
               autoFocus
+              ariaLabelledBy={verifyLabelId}
             />
           </div>
 
           <div className="flex gap-3">
             <Button
-              onClick={handleVerify}
+              onClick={() => void handleVerify()}
               disabled={isLoading || verifyCode.length !== 6}
             >
               {isLoading ? <Spinner size={16} className="mr-2" /> : null}

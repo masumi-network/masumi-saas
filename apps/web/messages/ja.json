@@ -63,8 +63,8 @@
       "login": "サインイン",
       "checkEmail": {
         "title": "メールを確認してください",
-        "description": "{email} にマジックリンクを送信しました。リンクを開いてダッシュボードにサインインしてください。",
-        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて Masumi アカウントでサインインを続行してください。",
+        "description": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いてダッシュボードにサインインしてください。",
+        "oidcDescription": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて Masumi アカウントでサインインを続行してください。",
         "tryAnother": "別のメールアドレスを使用"
       }
     },
@@ -90,8 +90,8 @@
       "useMagicLink": "代わりにマジックリンクを使用 (推奨)",
       "checkEmail": {
         "title": "メールを確認してください",
-        "description": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、ダッシュボードにアクセスしてください。",
-        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、Masumi アカウントで続行してください。",
+        "description": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて登録を完了し、ダッシュボードにアクセスしてください。",
+        "oidcDescription": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて登録を完了し、Masumi アカウントで続行してください。",
         "tryAnother": "別のメールアドレスを使用"
       }
     },
@@ -163,7 +163,6 @@
       "title": "コードで確認",
       "description": "リンクを開きたくない場合は、同じメールに記載された6桁のコードを使用してください。",
       "codeLabel": "サインインコード",
-      "codePlaceholder": "000000",
       "submit": "コードで認証",
       "submitting": "コードを確認中...",
       "success": "コードが承認されました。認証中..."
@@ -1780,6 +1779,9 @@
       "description": "当社ウェブサイトで最高のエクスペリエンスをお楽しみいただけるよう、Cookie を使用しています。",
       "gotIt": "わかった",
       "learnMore": "もっと詳しく知る"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "{total} 桁中 {index} 桁目"
     },
     "LogoutModal": {
       "title": "本当にログアウトしますか?",
