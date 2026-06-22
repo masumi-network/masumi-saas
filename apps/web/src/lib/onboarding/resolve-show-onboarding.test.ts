@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { findUniqueMock, updateMock, updateUserMock } = vi.hoisted(() => ({
+const { findUniqueMock, updateMock } = vi.hoisted(() => ({
   findUniqueMock: vi.fn(),
   updateMock: vi.fn(),
-  updateUserMock: vi.fn(),
 }));
 
 vi.mock("@masumi/database/client", () => ({
@@ -15,22 +14,9 @@ vi.mock("@masumi/database/client", () => ({
   },
 }));
 
-vi.mock("next/headers", () => ({
-  headers: vi.fn(async () => new Headers()),
-}));
-
-vi.mock("@/lib/auth/auth", () => ({
-  auth: {
-    api: {
-      updateUser: updateUserMock,
-    },
-  },
-}));
-
 describe("resolveShowOnboarding", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    updateUserMock.mockResolvedValue(undefined);
     updateMock.mockResolvedValue(undefined);
   });
 
@@ -42,7 +28,7 @@ describe("resolveShowOnboarding", () => {
 
     const { resolveShowOnboarding } = await import("./resolve-show-onboarding");
     await expect(resolveShowOnboarding("user-1")).resolves.toBe(false);
-    expect(updateUserMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
   });
 
   it("auto-completes and returns false for organization members", async () => {
@@ -53,9 +39,9 @@ describe("resolveShowOnboarding", () => {
 
     const { resolveShowOnboarding } = await import("./resolve-show-onboarding");
     await expect(resolveShowOnboarding("user-1")).resolves.toBe(false);
-    expect(updateUserMock).toHaveBeenCalledWith({
-      headers: expect.any(Headers),
-      body: { onboardingCompleted: true },
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { onboardingCompleted: true },
     });
   });
 
@@ -64,7 +50,6 @@ describe("resolveShowOnboarding", () => {
       onboardingCompleted: false,
       _count: { members: 1 },
     });
-    updateUserMock.mockRejectedValue(new Error("auth down"));
     updateMock.mockRejectedValue(new Error("db down"));
 
     const { resolveShowOnboarding } = await import("./resolve-show-onboarding");
@@ -79,6 +64,6 @@ describe("resolveShowOnboarding", () => {
 
     const { resolveShowOnboarding } = await import("./resolve-show-onboarding");
     await expect(resolveShowOnboarding("user-1")).resolves.toBe(true);
-    expect(updateUserMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
   });
 });

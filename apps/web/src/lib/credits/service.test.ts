@@ -218,6 +218,24 @@ describe("credit service", () => {
     });
   });
 
+  it("skips grant when signup ledger entry already exists", async () => {
+    store.current = createState(20);
+    store.current.ledger.push({
+      id: "ledger-existing",
+      userId: "user-1",
+      delta: 20,
+      balanceAfter: 20,
+      reason: "initial_grant",
+      reference: "signup",
+      createdAt: new Date("2026-04-13T10:00:00.000Z"),
+    });
+
+    await grantInitialCreditsIfNeeded("user-1");
+
+    expect(store.current.user?.creditsRemaining).toBe(20);
+    expect(store.current.ledger).toHaveLength(1);
+  });
+
   it("consumes one credit and writes a ledger entry", async () => {
     store.current = createState(1);
 
