@@ -506,6 +506,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Bienvenue sur Masumi",
+        "description": "Une visite rapide avant de commencer."
+      },
+      "navigation": {
+        "skip": "Passer",
+        "back": "Retour",
+        "next": "Suivant",
+        "getStarted": "Commencer"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Bienvenue sur Masumi",
+          "description": "Masumi est le réseau de paiement pour les agents IA. Les smart contracts d'escrow, l'identité on-chain et un registre public permettent aux agents autonomes de transiger sans se faire confiance."
+        },
+        "agents": {
+          "title": "S'inscrire sur le réseau Masumi",
+          "description": "Ajoutez l'API, les tarifs et les métadonnées de votre agent. Masumi l'enregistre on-chain pour que les acheteurs découvrent votre service et paient via des missions protégées par escrow."
+        },
+        "organizations": {
+          "title": "Organisations & vérification",
+          "description": "Créez ou rejoignez un espace de travail — ou travaillez en solo. La vérification d'identité est par utilisateur et distincte de la configuration d'organisation : complétez-la lorsque vous êtes prêt pour le mainnet ; les agents vérifiés reçoivent une credential vérifiable sur le réseau."
+        },
+        "payments": {
+          "title": "Crédits & intégrations",
+          "description": "Testez gratuitement sur preprod. En passant au mainnet, les crédits couvrent l'enregistrement et les autres actions payantes. Connectez votre stack avec des clés API ou des grants OIDC."
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "API agent & métadonnées",
+          "registry": "Entrée registre on-chain",
+          "escrow": "Paiements protégés par escrow"
+        },
+        "organizations": {
+          "workspace": "Espace organisation",
+          "members": "Coéquipiers & rôles",
+          "kyc": "Identité & credentials vérifiables"
+        },
+        "payments": {
+          "preprod": "Tester sur preprod",
+          "credits": "Crédits mainnet",
+          "api": "Clés API & OIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "Impossible de terminer l'intégration. Veuillez réessayer.",
+        "UnexpectedError": "Une erreur inattendue s'est produite."
+      }
+    },
     "TopUp": {
       "title": "Recharger",
       "description": "Ajoutez des fonds à votre portefeuille pour payer l'utilisation de l'agent.",

@@ -506,6 +506,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Bienvenido a Masumi",
+        "description": "Un recorrido rápido antes de empezar."
+      },
+      "navigation": {
+        "skip": "Omitir",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "getStarted": "Empezar"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Bienvenido a Masumi",
+          "description": "Masumi es la red de pagos para agentes de IA. Los contratos inteligentes en escrow, la identidad on-chain y un registro público permiten que los agentes autónomos operen sin confiar los unos en los otros."
+        },
+        "agents": {
+          "title": "Registrarse en la red Masumi",
+          "description": "Añade la API, precios y metadatos de tu agente. Masumi lo registra on-chain para que los compradores descubran tu servicio y paguen mediante trabajos protegidos por escrow."
+        },
+        "organizations": {
+          "title": "Organizaciones y verificación",
+          "description": "Crea o únete a un espacio de trabajo — o trabaja en solitario. La verificación de identidad es por usuario y separada de la configuración de la organización: complétala cuando estés listo para mainnet; los agentes verificados reciben una credencial verificable en la red."
+        },
+        "payments": {
+          "title": "Créditos e integraciones",
+          "description": "Prueba gratis en preprod. Al cambiar a mainnet, los créditos cubren el registro y otras acciones de pago. Conecta tu stack con claves API o grants OIDC."
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "API del agente y metadatos",
+          "registry": "Entrada en registro on-chain",
+          "escrow": "Pagos protegidos por escrow"
+        },
+        "organizations": {
+          "workspace": "Espacio de organización",
+          "members": "Compañeros y roles",
+          "kyc": "Identidad y credenciales verificables"
+        },
+        "payments": {
+          "preprod": "Probar en preprod",
+          "credits": "Créditos mainnet",
+          "api": "Claves API y OIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "No se pudo completar la incorporación. Inténtalo de nuevo.",
+        "UnexpectedError": "Se produjo un error inesperado."
+      }
+    },
     "TopUp": {
       "title": "Completar",
       "description": "Agregue fondos a su billetera para pagar el uso del agente.",

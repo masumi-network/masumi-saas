@@ -450,6 +450,22 @@ input[type="number"] {
   animation: checkIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+@keyframes masumi-logo-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.82) rotate(-180deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-masumi-logo-enter {
+  animation: masumi-logo-enter 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Schema Playground: keep form preview on top so it stays interactive (Monaco can overlay) */
 .schema-playground-wrapper > div > div:last-child {
   position: relative;

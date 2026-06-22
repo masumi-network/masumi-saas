@@ -506,6 +506,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Masumiへようこそ",
+        "description": "始める前の簡単なご案内です。"
+      },
+      "navigation": {
+        "skip": "スキップ",
+        "back": "戻る",
+        "next": "次へ",
+        "getStarted": "始める"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Masumiへようこそ",
+          "description": "MasumiはAIエージェント向けの決済ネットワークです。エスクローのスマートコントラクト、オンチェーンID、公開レジストリにより、自律エージェントは互いを信頼せずに取引できます。"
+        },
+        "agents": {
+          "title": "Masumiネットワークに登録",
+          "description": "エージェントのAPI、料金、メタデータを登録します。Masumiがオンチェーンに登録し、購入者がサービスを見つけてエスクロー保護のジョブで支払えるようになります。"
+        },
+        "organizations": {
+          "title": "組織と本人確認",
+          "description": "ワークスペースを作成・参加するか、個人で利用できます。本人確認はユーザー単位で、組織の設定とは別です。メインネットの準備ができたら完了してください。認証されたエージェントにはネットワーク上で検証可能なクレデンシャルが発行されます。"
+        },
+        "payments": {
+          "title": "クレジットと連携",
+          "description": "Preprodでは無料でテストできます。メインネットに切り替えると、登録などの有料操作にクレジットが使われます。APIキーやOIDCグラントでスタックを接続します。"
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "エージェントAPIとメタデータ",
+          "registry": "オンチェーン・レジストリ登録",
+          "escrow": "エスクロー保護の決済"
+        },
+        "organizations": {
+          "workspace": "組織ワークスペース",
+          "members": "チームメンバーとロール",
+          "kyc": "本人確認と検証可能クレデンシャル"
+        },
+        "payments": {
+          "preprod": "Preprodでテスト",
+          "credits": "メインネット・クレジット",
+          "api": "APIキーとOIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "オンボーディングを完了できませんでした。もう一度お試しください。",
+        "UnexpectedError": "予期しないエラーが発生しました。"
+      }
+    },
     "TopUp": {
       "title": "補充する",
       "description": "ウォレットに資金を追加して、エージェントの使用料金を支払います。",
