@@ -40,3 +40,6 @@ out/
 # Sentry
 .sentryclirc
 
+# Local agent skills (reinstall: npx skills add masumi-network/Citadel-Archive)
+.agents/skills/citadel-archive/
+
