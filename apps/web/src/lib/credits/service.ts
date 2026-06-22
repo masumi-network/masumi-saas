@@ -33,12 +33,22 @@ export class InsufficientCreditsError extends Error {
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "P2002"
-  );
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    if (
+      typeof current === "object" &&
+      current !== null &&
+      "code" in current &&
+      (current as { code?: unknown }).code === "P2002"
+    ) {
+      return true;
+    }
+    current =
+      typeof current === "object" && current !== null && "cause" in current
+        ? (current as { cause?: unknown }).cause
+        : undefined;
+  }
+  return false;
 }
 
 function toJsonMetadata(metadata?: CreditMetadata) {
@@ -69,6 +79,18 @@ export async function grantInitialCreditsIfNeeded(
 ): Promise<void> {
   try {
     await prisma.$transaction(async (tx) => {
+      const existingGrant = await tx.creditLedgerEntry.findUnique({
+        where: {
+          userId_reason_reference: {
+            userId,
+            reason: "initial_grant",
+            reference: "signup",
+          },
+        },
+        select: { id: true },
+      });
+      if (existingGrant) return;
+
       const user = await tx.user.findUniqueOrThrow({
         where: { id: userId },
         select: { creditsRemaining: true },
