@@ -8975,6 +8975,121 @@
                         "mimeType"
                       ]
                     }
+                  },
+                  "supportedPaymentSources": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "chain": {
+                              "type": "string",
+                              "enum": [
+                                "Cardano"
+                              ]
+                            },
+                            "network": {
+                              "type": "string",
+                              "enum": [
+                                "Mainnet",
+                                "Preprod"
+                              ]
+                            },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ]
+                            },
+                            "address": {
+                              "type": "string",
+                              "maxLength": 250
+                            }
+                          },
+                          "required": [
+                            "chain",
+                            "network",
+                            "paymentSourceType",
+                            "address"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "chain": {
+                              "type": "string",
+                              "enum": [
+                                "EVM"
+                              ]
+                            },
+                            "network": {
+                              "type": "string",
+                              "pattern": "^eip155:\\d+$"
+                            },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "nullable": true,
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2",
+                                null
+                              ]
+                            },
+                            "address": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$"
+                            },
+                            "scheme": {
+                              "type": "string",
+                              "enum": [
+                                "Exact"
+                              ]
+                            },
+                            "asset": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$"
+                            },
+                            "amount": {
+                              "type": "string",
+                              "pattern": "^\\d+$"
+                            },
+                            "decimals": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "payTo": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$"
+                            },
+                            "resource": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri"
+                            },
+                            "extra": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "nullable": true
+                              }
+                            }
+                          },
+                          "required": [
+                            "chain",
+                            "network",
+                            "scheme",
+                            "asset",
+                            "amount",
+                            "decimals",
+                            "payTo"
+                          ]
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 25
                   }
                 },
                 "required": [

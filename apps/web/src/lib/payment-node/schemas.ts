@@ -3,7 +3,7 @@
  * Parse all responses through these so the app stays in sync with the API.
  */
 
-import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402";
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
 import { z } from "zod";
 
 // ─── Primitives & enums ─────────────────────────────────────────────────────
