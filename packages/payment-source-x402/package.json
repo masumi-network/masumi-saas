@@ -9,6 +9,16 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./payment-source": {
+      "types": "./dist/payment-source.d.ts",
+      "import": "./dist/payment-source.js",
+      "default": "./dist/payment-source.js"
+    },
+    "./supported-payment-sources": {
+      "types": "./dist/supported-payment-sources.d.ts",
+      "import": "./dist/supported-payment-sources.js",
+      "default": "./dist/supported-payment-sources.js"
+    },
     "./service": {
       "types": "./dist/service.d.ts",
       "import": "./dist/service.js",
@@ -29,7 +39,7 @@
     "@x402/core": "2.14.0",
     "@x402/evm": "2.14.0",
     "@x402/extensions": "2.14.0",
-    "canonical-json": "0.4.0",
+    "canonical-json": "0.2.0",
     "http-errors": "2.0.1",
     "viem": "2.52.2",
     "zod": "4.1.13"

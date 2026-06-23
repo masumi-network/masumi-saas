@@ -1,4 +1,4 @@
-import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402";
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
 import { zfd } from "zod-form-data";
 
 import { z } from "@/lib/zod-openapi";

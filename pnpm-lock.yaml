@@ -356,8 +356,8 @@ importers:
         specifier: 2.14.0
         version: 2.14.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       canonical-json:
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.2.0
+        version: 0.2.0
       http-errors:
         specifier: 2.0.1
         version: 2.0.1
@@ -5669,6 +5669,13 @@ packages:
       {
         integrity: sha512-JF9ptu1vP2coz98+5051jZ4PwQgd2ni8A+gYSN7EA7dPKIMf0pDlSUxhdmVOaV3/fYK5uWBkgSXJaRLr4+3A6g==,
       }
+
+  canonical-json@0.2.0:
+    resolution:
+      {
+        integrity: sha512-xeH/NgtNA7kIuKSxopJVdXqCKWyDB79aqxQRQ9FV02fvmqW7DSnjoFyzAUrBpfbwjU6lwTYOLc+HM6KupbsfVQ==,
+      }
+    hasBin: true
 
   canonical-json@0.4.0:
     resolution:
@@ -15302,6 +15309,8 @@ snapshots:
   callsites@3.1.0: {}
 
   caniuse-lite@1.0.30001761: {}
+
+  canonical-json@0.2.0: {}
 
   canonical-json@0.4.0: {}
 

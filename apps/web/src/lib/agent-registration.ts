@@ -6,14 +6,16 @@
 
 import prisma, { type RegistrationState } from "@masumi/database/client";
 import {
-  loadSupportedPaymentSourcesForAgent,
-  mergeWithDefaultCardanoSource,
   normalizeSupportedPaymentSourceInput,
   PaymentSourceType,
-  replaceSupportedPaymentSourcesForAgent,
   type SupportedPaymentSource,
   validateSupportedPaymentSourcesOrThrow,
-} from "@masumi/payment-source-x402";
+} from "@masumi/payment-source-x402/payment-source";
+import {
+  loadSupportedPaymentSourcesForAgent,
+  mergeWithDefaultCardanoSource,
+  replaceSupportedPaymentSourcesForAgent,
+} from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
