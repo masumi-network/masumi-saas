@@ -239,3 +239,39 @@ export type InboxAgentReference = Prisma.InboxAgentReferenceModel;
  *
  */
 export type VeridianCredential = Prisma.VeridianCredentialModel;
+/**
+ * Model SupportedPaymentSource
+ * Advertised payment option on an agent (Cardano escrow and/or EVM x402 Exact).
+ */
+export type SupportedPaymentSource = Prisma.SupportedPaymentSourceModel;
+/**
+ * Model X402Network
+ *
+ */
+export type X402Network = Prisma.X402NetworkModel;
+/**
+ * Model X402EvmWallet
+ *
+ */
+export type X402EvmWallet = Prisma.X402EvmWalletModel;
+/**
+ * Model X402EvmWalletLowBalanceRule
+ *
+ */
+export type X402EvmWalletLowBalanceRule =
+  Prisma.X402EvmWalletLowBalanceRuleModel;
+/**
+ * Model X402WalletBudget
+ *
+ */
+export type X402WalletBudget = Prisma.X402WalletBudgetModel;
+/**
+ * Model X402PaymentAttempt
+ *
+ */
+export type X402PaymentAttempt = Prisma.X402PaymentAttemptModel;
+/**
+ * Model X402Settlement
+ *
+ */
+export type X402Settlement = Prisma.X402SettlementModel;

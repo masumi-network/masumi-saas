@@ -5,6 +5,15 @@
  */
 
 import prisma, { type RegistrationState } from "@masumi/database/client";
+import {
+  loadSupportedPaymentSourcesForAgent,
+  mergeWithDefaultCardanoSource,
+  normalizeSupportedPaymentSourceInput,
+  PaymentSourceType,
+  replaceSupportedPaymentSourcesForAgent,
+  type SupportedPaymentSource,
+  validateSupportedPaymentSourcesOrThrow,
+} from "@masumi/payment-source-x402";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
@@ -60,6 +69,7 @@ export type RegisterAgentParams = {
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
+  supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
   capabilityVersion: string;
@@ -465,6 +475,37 @@ async function registerAgentOnChainUntilSetup(
     },
   });
 
+  const smartContractAddress =
+    paymentSource.smartContractAddress ??
+    configuredPaymentSource.smartContractAddress;
+  if (smartContractAddress) {
+    const userSources = (params.supportedPaymentSources ?? []).map(
+      normalizeSupportedPaymentSourceInput,
+    );
+    const mergedSources = mergeWithDefaultCardanoSource(
+      network,
+      smartContractAddress,
+      userSources,
+    );
+    try {
+      validateSupportedPaymentSourcesOrThrow(
+        mergedSources,
+        network,
+        PaymentSourceType.Web3CardanoV2,
+      );
+    } catch (error) {
+      await prisma.agent.delete({ where: { id: agent.id } });
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Invalid supported payment sources",
+      };
+    }
+    await replaceSupportedPaymentSourcesForAgent(agent.id, mergedSources);
+  }
+
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
   return { success: true, agentId: agent.id };
@@ -741,6 +782,14 @@ export async function completeOnChainRegistration(
           }
         : {}),
       AgentPricing: payload.agentPricing,
+      ...(await (async () => {
+        const supportedPaymentSources =
+          await loadSupportedPaymentSourcesForAgent(agent.id);
+        return supportedPaymentSources != null &&
+          supportedPaymentSources.length > 0
+          ? { supportedPaymentSources }
+          : {};
+      })()),
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {

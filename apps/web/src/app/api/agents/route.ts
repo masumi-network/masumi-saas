@@ -274,6 +274,7 @@ app.openapi(
       capabilityName,
       capabilityVersion,
       exampleOutputs,
+      supportedPaymentSources,
     } = c.req.valid("json");
 
     const tagsArray = tags
@@ -434,6 +435,7 @@ app.openapi(
         termsOfUseUrl: termsOfUseUrl?.trim() || null,
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
+        supportedPaymentSources,
       };
 
       const result = await startAgentRegistration(

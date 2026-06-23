@@ -40,19 +40,32 @@ export type {
   Member,
   Organization,
   OrgApiKey,
-  Prisma,
+  SupportedPaymentSource,
   User,
   VeridianCredential,
   WalletCache,
+  X402EvmWallet,
+  X402Network,
+  X402PaymentAttempt,
+  X402Settlement,
+  X402WalletBudget,
 } from "./generated/prisma/client.js";
+
+// Prisma namespace (types + runtime helpers such as PrismaClientKnownRequestError).
+export { Prisma } from "./generated/prisma/client.js";
 
 // Export enums as values (runtime constants, not just types).
 // Use `export type` for types; enums need `export` since they are JS values.
 export {
   AgentReferenceStatus,
   CredentialStatus,
+  LowBalanceStatus,
   RegistrationState,
   VerificationStatus,
   WalletConnectionState,
   WalletType,
+  X402EvmWalletType,
+  X402PaymentDirection,
+  X402PaymentScheme,
+  X402PaymentStatus,
 } from "./generated/prisma/client.js";

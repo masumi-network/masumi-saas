@@ -257,6 +257,8 @@ export type OrgApiKeyWhereInput = {
     Prisma.UserNullableScalarRelationFilter,
     Prisma.UserWhereInput
   > | null;
+  x402WalletBudgets?: Prisma.X402WalletBudgetListRelationFilter;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter;
 };
 
 export type OrgApiKeyOrderByWithRelationInput = {
@@ -274,6 +276,8 @@ export type OrgApiKeyOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder;
   organization?: Prisma.OrganizationOrderByWithRelationInput;
   createdBy?: Prisma.UserOrderByWithRelationInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetOrderByRelationAggregateInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptOrderByRelationAggregateInput;
 };
 
 export type OrgApiKeyWhereUniqueInput = Prisma.AtLeast<
@@ -309,6 +313,8 @@ export type OrgApiKeyWhereUniqueInput = Prisma.AtLeast<
       Prisma.UserNullableScalarRelationFilter,
       Prisma.UserWhereInput
     > | null;
+    x402WalletBudgets?: Prisma.X402WalletBudgetListRelationFilter;
+    x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter;
   },
   "id" | "keyHash"
 >;
@@ -377,6 +383,8 @@ export type OrgApiKeyCreateInput = {
   updatedAt?: Date | string;
   organization: Prisma.OrganizationCreateNestedOneWithoutOrgApiKeysInput;
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrgApiKeysInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyUncheckedCreateInput = {
@@ -392,6 +400,8 @@ export type OrgApiKeyUncheckedCreateInput = {
   expiresAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyUpdateInput = {
@@ -415,6 +425,8 @@ export type OrgApiKeyUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutOrgApiKeysNestedInput;
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrgApiKeysNestedInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyUncheckedUpdateInput = {
@@ -438,6 +450,8 @@ export type OrgApiKeyUncheckedUpdateInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyCreateManyInput = {
@@ -550,6 +564,16 @@ export type OrgApiKeyMinOrderByAggregateInput = {
   expiresAt?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
+};
+
+export type OrgApiKeyScalarRelationFilter = {
+  is?: Prisma.OrgApiKeyWhereInput;
+  isNot?: Prisma.OrgApiKeyWhereInput;
+};
+
+export type OrgApiKeyNullableScalarRelationFilter = {
+  is?: Prisma.OrgApiKeyWhereInput | null;
+  isNot?: Prisma.OrgApiKeyWhereInput | null;
 };
 
 export type OrgApiKeyCreateNestedManyWithoutCreatedByInput = {
@@ -773,6 +797,60 @@ export type OrgApiKeyUpdatescopesInput = {
   push?: string | string[];
 };
 
+export type OrgApiKeyCreateNestedOneWithoutX402WalletBudgetsInput = {
+  create?: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402WalletBudgetsInput
+  >;
+  connectOrCreate?: Prisma.OrgApiKeyCreateOrConnectWithoutX402WalletBudgetsInput;
+  connect?: Prisma.OrgApiKeyWhereUniqueInput;
+};
+
+export type OrgApiKeyUpdateOneRequiredWithoutX402WalletBudgetsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402WalletBudgetsInput
+  >;
+  connectOrCreate?: Prisma.OrgApiKeyCreateOrConnectWithoutX402WalletBudgetsInput;
+  upsert?: Prisma.OrgApiKeyUpsertWithoutX402WalletBudgetsInput;
+  connect?: Prisma.OrgApiKeyWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrgApiKeyUpdateToOneWithWhereWithoutX402WalletBudgetsInput,
+      Prisma.OrgApiKeyUpdateWithoutX402WalletBudgetsInput
+    >,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402WalletBudgetsInput
+  >;
+};
+
+export type OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput = {
+  create?: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  connectOrCreate?: Prisma.OrgApiKeyCreateOrConnectWithoutX402PaymentAttemptsInput;
+  connect?: Prisma.OrgApiKeyWhereUniqueInput;
+};
+
+export type OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  connectOrCreate?: Prisma.OrgApiKeyCreateOrConnectWithoutX402PaymentAttemptsInput;
+  upsert?: Prisma.OrgApiKeyUpsertWithoutX402PaymentAttemptsInput;
+  disconnect?: Prisma.OrgApiKeyWhereInput | boolean;
+  delete?: Prisma.OrgApiKeyWhereInput | boolean;
+  connect?: Prisma.OrgApiKeyWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.OrgApiKeyUpdateToOneWithWhereWithoutX402PaymentAttemptsInput,
+      Prisma.OrgApiKeyUpdateWithoutX402PaymentAttemptsInput
+    >,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+};
+
 export type OrgApiKeyCreateWithoutCreatedByInput = {
   id?: string;
   name: string;
@@ -785,6 +863,8 @@ export type OrgApiKeyCreateWithoutCreatedByInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   organization: Prisma.OrganizationCreateNestedOneWithoutOrgApiKeysInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyUncheckedCreateWithoutCreatedByInput = {
@@ -799,6 +879,8 @@ export type OrgApiKeyUncheckedCreateWithoutCreatedByInput = {
   expiresAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyCreateOrConnectWithoutCreatedByInput = {
@@ -878,6 +960,8 @@ export type OrgApiKeyCreateWithoutOrganizationInput = {
   createdAt?: Date | string;
   updatedAt?: Date | string;
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrgApiKeysInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyUncheckedCreateWithoutOrganizationInput = {
@@ -892,6 +976,8 @@ export type OrgApiKeyUncheckedCreateWithoutOrganizationInput = {
   expiresAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutOrgApiKeyInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutOrgApiKeyInput;
 };
 
 export type OrgApiKeyCreateOrConnectWithoutOrganizationInput = {
@@ -937,6 +1023,222 @@ export type OrgApiKeyUpdateManyWithWhereWithoutOrganizationInput = {
   >;
 };
 
+export type OrgApiKeyCreateWithoutX402WalletBudgetsInput = {
+  id?: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  scopes?: Prisma.OrgApiKeyCreatescopesInput | string[];
+  enabled?: boolean;
+  lastUsedAt?: Date | string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  organization: Prisma.OrganizationCreateNestedOneWithoutOrgApiKeysInput;
+  createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrgApiKeysInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutOrgApiKeyInput;
+};
+
+export type OrgApiKeyUncheckedCreateWithoutX402WalletBudgetsInput = {
+  id?: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  organizationId: string;
+  createdById?: string | null;
+  scopes?: Prisma.OrgApiKeyCreatescopesInput | string[];
+  enabled?: boolean;
+  lastUsedAt?: Date | string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutOrgApiKeyInput;
+};
+
+export type OrgApiKeyCreateOrConnectWithoutX402WalletBudgetsInput = {
+  where: Prisma.OrgApiKeyWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402WalletBudgetsInput
+  >;
+};
+
+export type OrgApiKeyUpsertWithoutX402WalletBudgetsInput = {
+  update: Prisma.XOR<
+    Prisma.OrgApiKeyUpdateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402WalletBudgetsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402WalletBudgetsInput
+  >;
+  where?: Prisma.OrgApiKeyWhereInput;
+};
+
+export type OrgApiKeyUpdateToOneWithWhereWithoutX402WalletBudgetsInput = {
+  where?: Prisma.OrgApiKeyWhereInput;
+  data: Prisma.XOR<
+    Prisma.OrgApiKeyUpdateWithoutX402WalletBudgetsInput,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402WalletBudgetsInput
+  >;
+};
+
+export type OrgApiKeyUpdateWithoutX402WalletBudgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyHash?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyPrefix?: Prisma.StringFieldUpdateOperationsInput | string;
+  scopes?: Prisma.OrgApiKeyUpdatescopesInput | string[];
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  lastUsedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutOrgApiKeysNestedInput;
+  createdBy?: Prisma.UserUpdateOneWithoutCreatedOrgApiKeysNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutOrgApiKeyNestedInput;
+};
+
+export type OrgApiKeyUncheckedUpdateWithoutX402WalletBudgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyHash?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyPrefix?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  scopes?: Prisma.OrgApiKeyUpdatescopesInput | string[];
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  lastUsedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
+};
+
+export type OrgApiKeyCreateWithoutX402PaymentAttemptsInput = {
+  id?: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  scopes?: Prisma.OrgApiKeyCreatescopesInput | string[];
+  enabled?: boolean;
+  lastUsedAt?: Date | string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  organization: Prisma.OrganizationCreateNestedOneWithoutOrgApiKeysInput;
+  createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrgApiKeysInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutOrgApiKeyInput;
+};
+
+export type OrgApiKeyUncheckedCreateWithoutX402PaymentAttemptsInput = {
+  id?: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  organizationId: string;
+  createdById?: string | null;
+  scopes?: Prisma.OrgApiKeyCreatescopesInput | string[];
+  enabled?: boolean;
+  lastUsedAt?: Date | string | null;
+  expiresAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutOrgApiKeyInput;
+};
+
+export type OrgApiKeyCreateOrConnectWithoutX402PaymentAttemptsInput = {
+  where: Prisma.OrgApiKeyWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+};
+
+export type OrgApiKeyUpsertWithoutX402PaymentAttemptsInput = {
+  update: Prisma.XOR<
+    Prisma.OrgApiKeyUpdateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.OrgApiKeyCreateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  where?: Prisma.OrgApiKeyWhereInput;
+};
+
+export type OrgApiKeyUpdateToOneWithWhereWithoutX402PaymentAttemptsInput = {
+  where?: Prisma.OrgApiKeyWhereInput;
+  data: Prisma.XOR<
+    Prisma.OrgApiKeyUpdateWithoutX402PaymentAttemptsInput,
+    Prisma.OrgApiKeyUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+};
+
+export type OrgApiKeyUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyHash?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyPrefix?: Prisma.StringFieldUpdateOperationsInput | string;
+  scopes?: Prisma.OrgApiKeyUpdatescopesInput | string[];
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  lastUsedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutOrgApiKeysNestedInput;
+  createdBy?: Prisma.UserUpdateOneWithoutCreatedOrgApiKeysNestedInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutOrgApiKeyNestedInput;
+};
+
+export type OrgApiKeyUncheckedUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyHash?: Prisma.StringFieldUpdateOperationsInput | string;
+  keyPrefix?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  scopes?: Prisma.OrgApiKeyUpdatescopesInput | string[];
+  enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+  lastUsedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  expiresAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
+};
+
 export type OrgApiKeyCreateManyCreatedByInput = {
   id?: string;
   name: string;
@@ -971,6 +1273,8 @@ export type OrgApiKeyUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutOrgApiKeysNestedInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyUncheckedUpdateWithoutCreatedByInput = {
@@ -993,6 +1297,8 @@ export type OrgApiKeyUncheckedUpdateWithoutCreatedByInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyUncheckedUpdateManyWithoutCreatedByInput = {
@@ -1051,6 +1357,8 @@ export type OrgApiKeyUpdateWithoutOrganizationInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrgApiKeysNestedInput;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyUncheckedUpdateWithoutOrganizationInput = {
@@ -1073,6 +1381,8 @@ export type OrgApiKeyUncheckedUpdateWithoutOrganizationInput = {
     | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyNestedInput;
 };
 
 export type OrgApiKeyUncheckedUpdateManyWithoutOrganizationInput = {
@@ -1097,6 +1407,60 @@ export type OrgApiKeyUncheckedUpdateManyWithoutOrganizationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
+/**
+ * Count Type OrgApiKeyCountOutputType
+ */
+
+export type OrgApiKeyCountOutputType = {
+  x402WalletBudgets: number;
+  x402PaymentAttempts: number;
+};
+
+export type OrgApiKeyCountOutputTypeSelect<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  x402WalletBudgets?:
+    | boolean
+    | OrgApiKeyCountOutputTypeCountX402WalletBudgetsArgs;
+  x402PaymentAttempts?:
+    | boolean
+    | OrgApiKeyCountOutputTypeCountX402PaymentAttemptsArgs;
+};
+
+/**
+ * OrgApiKeyCountOutputType without action
+ */
+export type OrgApiKeyCountOutputTypeDefaultArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the OrgApiKeyCountOutputType
+   */
+  select?: Prisma.OrgApiKeyCountOutputTypeSelect<ExtArgs> | null;
+};
+
+/**
+ * OrgApiKeyCountOutputType without action
+ */
+export type OrgApiKeyCountOutputTypeCountX402WalletBudgetsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.X402WalletBudgetWhereInput;
+};
+
+/**
+ * OrgApiKeyCountOutputType without action
+ */
+export type OrgApiKeyCountOutputTypeCountX402PaymentAttemptsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.X402PaymentAttemptWhereInput;
+};
+
 export type OrgApiKeySelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -1116,6 +1480,13 @@ export type OrgApiKeySelect<
     updatedAt?: boolean;
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     createdBy?: boolean | Prisma.OrgApiKey$createdByArgs<ExtArgs>;
+    x402WalletBudgets?:
+      | boolean
+      | Prisma.OrgApiKey$x402WalletBudgetsArgs<ExtArgs>;
+    x402PaymentAttempts?:
+      | boolean
+      | Prisma.OrgApiKey$x402PaymentAttemptsArgs<ExtArgs>;
+    _count?: boolean | Prisma.OrgApiKeyCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["orgApiKey"]
 >;
@@ -1205,6 +1576,11 @@ export type OrgApiKeyInclude<
 > = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
   createdBy?: boolean | Prisma.OrgApiKey$createdByArgs<ExtArgs>;
+  x402WalletBudgets?: boolean | Prisma.OrgApiKey$x402WalletBudgetsArgs<ExtArgs>;
+  x402PaymentAttempts?:
+    | boolean
+    | Prisma.OrgApiKey$x402PaymentAttemptsArgs<ExtArgs>;
+  _count?: boolean | Prisma.OrgApiKeyCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type OrgApiKeyIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -1229,6 +1605,8 @@ export type $OrgApiKeyPayload<
   objects: {
     organization: Prisma.$OrganizationPayload<ExtArgs>;
     createdBy: Prisma.$UserPayload<ExtArgs> | null;
+    x402WalletBudgets: Prisma.$X402WalletBudgetPayload<ExtArgs>[];
+    x402PaymentAttempts: Prisma.$X402PaymentAttemptPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -1821,6 +2199,32 @@ export interface Prisma__OrgApiKeyClient<
     ExtArgs,
     GlobalOmitOptions
   >;
+  x402WalletBudgets<
+    T extends Prisma.OrgApiKey$x402WalletBudgetsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.OrgApiKey$x402WalletBudgetsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$X402WalletBudgetPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  x402PaymentAttempts<
+    T extends Prisma.OrgApiKey$x402PaymentAttemptsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.OrgApiKey$x402PaymentAttemptsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$X402PaymentAttemptPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2361,6 +2765,68 @@ export type OrgApiKey$createdByArgs<
    */
   include?: Prisma.UserInclude<ExtArgs> | null;
   where?: Prisma.UserWhereInput;
+};
+
+/**
+ * OrgApiKey.x402WalletBudgets
+ */
+export type OrgApiKey$x402WalletBudgetsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the X402WalletBudget
+   */
+  select?: Prisma.X402WalletBudgetSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the X402WalletBudget
+   */
+  omit?: Prisma.X402WalletBudgetOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.X402WalletBudgetInclude<ExtArgs> | null;
+  where?: Prisma.X402WalletBudgetWhereInput;
+  orderBy?:
+    | Prisma.X402WalletBudgetOrderByWithRelationInput
+    | Prisma.X402WalletBudgetOrderByWithRelationInput[];
+  cursor?: Prisma.X402WalletBudgetWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.X402WalletBudgetScalarFieldEnum
+    | Prisma.X402WalletBudgetScalarFieldEnum[];
+};
+
+/**
+ * OrgApiKey.x402PaymentAttempts
+ */
+export type OrgApiKey$x402PaymentAttemptsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the X402PaymentAttempt
+   */
+  select?: Prisma.X402PaymentAttemptSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the X402PaymentAttempt
+   */
+  omit?: Prisma.X402PaymentAttemptOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.X402PaymentAttemptInclude<ExtArgs> | null;
+  where?: Prisma.X402PaymentAttemptWhereInput;
+  orderBy?:
+    | Prisma.X402PaymentAttemptOrderByWithRelationInput
+    | Prisma.X402PaymentAttemptOrderByWithRelationInput[];
+  cursor?: Prisma.X402PaymentAttemptWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.X402PaymentAttemptScalarFieldEnum
+    | Prisma.X402PaymentAttemptScalarFieldEnum[];
 };
 
 /**
