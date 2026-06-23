@@ -1,3 +1,4 @@
+import { X402PaymentDirection, X402PaymentStatus } from "@masumi/database";
 import {
   BASE_MAINNET_CAIP2,
   BASE_SEPOLIA_CAIP2,
@@ -92,6 +93,42 @@ export function getCaip2NetworkLimitFromAuth(
   return limits.length > 0 ? limits : null;
 }
 
+function toIsoString(date: Date): string {
+  return date.toISOString();
+}
+
+export function serializeWallet<
+  T extends {
+    id: string;
+    address: string;
+    type: string;
+    note: string | null;
+    createdByUserId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    privateKey?: string | null;
+  },
+>(wallet: T) {
+  return {
+    ...wallet,
+    createdAt: toIsoString(wallet.createdAt),
+    updatedAt: toIsoString(wallet.updatedAt),
+  };
+}
+
+export function serializeNetwork<
+  T extends {
+    createdAt: Date;
+    updatedAt: Date;
+  },
+>(network: T) {
+  return {
+    ...network,
+    createdAt: toIsoString(network.createdAt),
+    updatedAt: toIsoString(network.updatedAt),
+  };
+}
+
 export function serializeBudget(budget: {
   id: string;
   orgApiKeyId: string;
@@ -111,6 +148,8 @@ export function serializeBudget(budget: {
     evmWalletAddress: EvmWallet.address,
     remainingAmount: budget.remainingAmount.toString(),
     spentAmount: budget.spentAmount.toString(),
+    createdAt: toIsoString(budget.createdAt),
+    updatedAt: toIsoString(budget.updatedAt),
   };
 }
 
@@ -118,8 +157,8 @@ export function serializePaymentAttempt(attempt: {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  direction: string;
-  status: string;
+  direction: X402PaymentDirection;
+  status: X402PaymentStatus;
   userId: string;
   orgApiKeyId: string | null;
   evmWalletId: string | null;
@@ -146,10 +185,13 @@ export function serializePaymentAttempt(attempt: {
   return {
     ...attempt,
     amount: attempt.amount.toString(),
+    createdAt: toIsoString(attempt.createdAt),
+    updatedAt: toIsoString(attempt.updatedAt),
     Settlement: attempt.Settlement
       ? {
           ...attempt.Settlement,
           amount: attempt.Settlement.amount?.toString() ?? null,
+          createdAt: toIsoString(attempt.Settlement.createdAt),
         }
       : null,
   };
@@ -169,5 +211,7 @@ export function serializeSettlement(settlement: {
   return {
     ...settlement,
     amount: settlement.amount?.toString() ?? null,
+    createdAt: toIsoString(settlement.createdAt),
+    updatedAt: toIsoString(settlement.updatedAt),
   };
 }
