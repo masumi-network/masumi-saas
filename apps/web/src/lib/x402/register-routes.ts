@@ -15,7 +15,6 @@ import {
   upsertX402Network,
   verifyX402Payment,
 } from "@masumi/payment-source-x402/service";
-import type { PaymentPayload, PaymentRequired } from "@x402/core/types";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
@@ -26,8 +25,10 @@ import {
   requireX402PayAccess,
   rethrowIfHttpError,
   serializeBudget,
+  serializeNetwork,
   serializePaymentAttempt,
   serializeSettlement,
+  serializeWallet,
 } from "@/lib/x402/route-support";
 import {
   budgetSchema,
@@ -60,7 +61,14 @@ import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 
 type X402App = OpenAPIHono<Record<string, never>>;
 
-function handleRouteError(error: unknown, label: string): void {
+type VerifyPaymentPayload = Parameters<
+  typeof verifyX402Payment
+>[0]["paymentPayload"];
+type OutboundPaymentRequired = Parameters<
+  typeof createX402Payment
+>[0]["paymentRequired"];
+
+function handleRouteError(error: unknown, label: string): never {
   if (error instanceof ApiError) throw error;
   rethrowIfAuthOrCreditsError(error);
   rethrowIfHttpError(error);
@@ -104,7 +112,8 @@ export function registerX402Routes(app: X402App): void {
           orgApiKeyId: input.orgApiKeyId,
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
-          paymentPayload: input.paymentPayload as unknown as PaymentPayload,
+          paymentPayload:
+            input.paymentPayload as unknown as VerifyPaymentPayload,
         });
 
         return c.json(result, 200);
@@ -149,10 +158,20 @@ export function registerX402Routes(app: X402App): void {
           orgApiKeyId: input.orgApiKeyId,
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
-          paymentPayload: input.paymentPayload as unknown as PaymentPayload,
+          paymentPayload:
+            input.paymentPayload as unknown as VerifyPaymentPayload,
         });
 
-        return c.json(result, 200);
+        return c.json(
+          {
+            ...result,
+            settleResponse: {
+              ...result.settleResponse,
+              network: String(result.settleResponse.network),
+            },
+          },
+          200,
+        );
       } catch (error) {
         handleRouteError(error, "x402 settle failed");
       }
@@ -198,13 +217,21 @@ export function registerX402Routes(app: X402App): void {
           orgApiKeyId: input.orgApiKeyId,
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           evmWalletId: input.evmWalletId,
-          paymentRequired: input.paymentRequired as unknown as PaymentRequired,
+          paymentRequired:
+            input.paymentRequired as unknown as OutboundPaymentRequired,
           preferredNetwork: input.preferredNetwork,
           preferredAsset: input.preferredAsset,
           paymentIdentifier: input.paymentIdentifier,
         });
 
-        return c.json(result, 200);
+        return c.json(
+          {
+            ...result,
+            caip2Network: String(result.caip2Network),
+            paymentPayload: result.paymentPayload as Record<string, unknown>,
+          },
+          200,
+        );
       } catch (error) {
         handleRouteError(error, "x402 pay failed");
       }
@@ -237,12 +264,14 @@ export function registerX402Routes(app: X402App): void {
         requireX402AdminRead(authContext);
         const query = c.req.valid("query");
 
-        const Wallets = await listX402ManagedWallets({
-          userId: authContext.user.id,
-          take: query.take,
-          cursorId: query.cursorId,
-          type: query.type,
-        });
+        const Wallets = (
+          await listX402ManagedWallets({
+            userId: authContext.user.id,
+            take: query.take,
+            cursorId: query.cursorId,
+            type: query.type,
+          })
+        ).map(serializeWallet);
 
         return c.json({ Wallets }, 200);
       } catch (error) {
@@ -283,14 +312,16 @@ export function registerX402Routes(app: X402App): void {
         requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const wallet = await createX402ManagedWallet({
-          userId: authContext.user.id,
-          organizationId: authContext.activeOrganizationId,
-          createdByUserId: authContext.user.id,
-          type: input.type,
-          note: input.note,
-          privateKey: input.privateKey,
-        });
+        const wallet = serializeWallet(
+          await createX402ManagedWallet({
+            userId: authContext.user.id,
+            organizationId: authContext.activeOrganizationId,
+            createdByUserId: authContext.user.id,
+            type: input.type,
+            note: input.note,
+            privateKey: input.privateKey,
+          }),
+        );
 
         return c.json(wallet, 200);
       } catch (error) {
@@ -331,11 +362,13 @@ export function registerX402Routes(app: X402App): void {
         requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const wallet = await updateX402ManagedWallet({
-          userId: authContext.user.id,
-          id: input.id,
-          note: input.note,
-        });
+        const wallet = serializeWallet(
+          await updateX402ManagedWallet({
+            userId: authContext.user.id,
+            id: input.id,
+            note: input.note,
+          }),
+        );
 
         return c.json(wallet, 200);
       } catch (error) {
@@ -414,10 +447,12 @@ export function registerX402Routes(app: X402App): void {
         requireX402AdminRead(authContext);
         const query = c.req.valid("query");
 
-        const Networks = await listX402Networks({
-          userId: authContext.user.id,
-          isTestnet: query.isTestnet,
-        });
+        const Networks = (
+          await listX402Networks({
+            userId: authContext.user.id,
+            isTestnet: query.isTestnet,
+          })
+        ).map(serializeNetwork);
 
         return c.json({ Networks }, 200);
       } catch (error) {
@@ -458,12 +493,14 @@ export function registerX402Routes(app: X402App): void {
         requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const network = await upsertX402Network({
-          userId: authContext.user.id,
-          organizationId: authContext.activeOrganizationId,
-          createdByUserId: authContext.user.id,
-          ...input,
-        });
+        const network = serializeNetwork(
+          await upsertX402Network({
+            userId: authContext.user.id,
+            organizationId: authContext.activeOrganizationId,
+            createdByUserId: authContext.user.id,
+            ...input,
+          }),
+        );
 
         return c.json(network, 200);
       } catch (error) {
