@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
+    "prepare": "pnpm build",
     "lint": "eslint --max-warnings 0 .",
     "lint:fix": "eslint --fix ."
   },
