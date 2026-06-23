@@ -3,6 +3,7 @@
  * Parse all responses through these so the app stays in sync with the API.
  */
 
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402";
 import { z } from "zod";
 
 // ─── Primitives & enums ─────────────────────────────────────────────────────
@@ -199,6 +200,7 @@ export const registerAgentInputSchema = z.object({
       Pricing: z.array(unitAmountSchema),
     }),
   ]),
+  supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
 });
 export type RegisterAgentInput = z.infer<typeof registerAgentInputSchema>;
 
