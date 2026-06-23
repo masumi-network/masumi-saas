@@ -20,6 +20,10 @@ import type {
 } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  findSellingWalletIdByVkey,
+  hydratePaymentSource,
+} from "@/lib/payment-node/payment-source-wallets";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
@@ -275,10 +279,15 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
+  const configuredPaymentSourceWithWallets = await hydratePaymentSource(
+    adminClient,
+    configuredPaymentSource,
+  );
+
   const fundingWalletResult = resolveRegistrationFundingWallet({
     network,
     paymentSourceId,
-    sellingWallets: configuredPaymentSource.SellingWallets,
+    sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
   });
   if (!fundingWalletResult.wallet) {
     return {
@@ -338,10 +347,11 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
-  const sellingWalletId =
-    paymentSource.SellingWallets.find(
-      (w: PaymentSourceWallet) => w.walletVkey === sellingWallet.walletVkey,
-    )?.id ?? null;
+  const sellingWalletId = await findSellingWalletIdByVkey(
+    adminClient,
+    paymentSourceId,
+    sellingWallet.walletVkey,
+  );
   if (!sellingWalletId) {
     console.error(
       "[Payment Node] Could not resolve managed selling wallet ID:",
@@ -588,10 +598,14 @@ export async function completeOnChainRegistration(
         error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
       };
     }
+    const configuredPaymentSourceWithWallets = await hydratePaymentSource(
+      adminClient,
+      configuredPaymentSource,
+    );
     const fundingWalletResult = resolveRegistrationFundingWallet({
       network,
       paymentSourceId: paymentSourceId!,
-      sellingWallets: configuredPaymentSource.SellingWallets,
+      sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
     });
     if (!fundingWalletResult.wallet) {
       return {

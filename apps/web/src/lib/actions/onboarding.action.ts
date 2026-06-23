@@ -10,9 +10,11 @@ export async function completeOnboardingAction(): Promise<
   | { success: false; errorKey: "FailedToComplete" | "UnexpectedError" }
 > {
   try {
-    const { headers: headersList, user } = await getAuthenticatedOrThrow();
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
 
-    const updated = await markOnboardingCompleteForUser(user.id, headersList);
+    const updated = await markOnboardingCompleteForUser(user.id);
     if (!updated) {
       return {
         success: false,

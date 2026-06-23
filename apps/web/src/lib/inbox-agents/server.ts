@@ -15,6 +15,7 @@ import type {
 } from "@/lib/payment-node";
 import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { hydratePaymentSources } from "@/lib/payment-node/payment-source-wallets";
 import { registryInboxEntrySchema } from "@/lib/payment-node/schemas";
 
 import {
@@ -198,7 +199,7 @@ async function listPaymentSources(
     cursorId = nextCursor;
   }
 
-  return sources;
+  return hydratePaymentSources(client, sources);
 }
 
 export async function listPaymentSourcesForNetwork(
