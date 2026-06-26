@@ -436,7 +436,6 @@ export const ModelName = {
   IntegrationConnection: "IntegrationConnection",
   MipJob: "MipJob",
   AgentActivityEvent: "AgentActivityEvent",
-  OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
@@ -496,7 +495,6 @@ export type TypeMap<
       | "integrationConnection"
       | "mipJob"
       | "agentActivityEvent"
-      | "orgApiKey"
       | "kycSubmission"
       | "kybSubmission"
       | "walletCache"
@@ -2337,82 +2335,6 @@ export type TypeMap<
         };
       };
     };
-    OrgApiKey: {
-      payload: Prisma.$OrgApiKeyPayload<ExtArgs>;
-      fields: Prisma.OrgApiKeyFieldRefs;
-      operations: {
-        findUnique: {
-          args: Prisma.OrgApiKeyFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
-        };
-        findUniqueOrThrow: {
-          args: Prisma.OrgApiKeyFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        findFirst: {
-          args: Prisma.OrgApiKeyFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
-        };
-        findFirstOrThrow: {
-          args: Prisma.OrgApiKeyFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        findMany: {
-          args: Prisma.OrgApiKeyFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        create: {
-          args: Prisma.OrgApiKeyCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        createMany: {
-          args: Prisma.OrgApiKeyCreateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        createManyAndReturn: {
-          args: Prisma.OrgApiKeyCreateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        delete: {
-          args: Prisma.OrgApiKeyDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        update: {
-          args: Prisma.OrgApiKeyUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        deleteMany: {
-          args: Prisma.OrgApiKeyDeleteManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateMany: {
-          args: Prisma.OrgApiKeyUpdateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateManyAndReturn: {
-          args: Prisma.OrgApiKeyUpdateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        upsert: {
-          args: Prisma.OrgApiKeyUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        aggregate: {
-          args: Prisma.OrgApiKeyAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateOrgApiKey>;
-        };
-        groupBy: {
-          args: Prisma.OrgApiKeyGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.OrgApiKeyGroupByOutputType>[];
-        };
-        count: {
-          args: Prisma.OrgApiKeyCountArgs<ExtArgs>;
-          result:
-            | runtime.Types.Utils.Optional<Prisma.OrgApiKeyCountAggregateOutputType>
-            | number;
-        };
-      };
-    };
     KycSubmission: {
       payload: Prisma.$KycSubmissionPayload<ExtArgs>;
       fields: Prisma.KycSubmissionFieldRefs;
@@ -3824,24 +3746,6 @@ export const AgentActivityEventScalarFieldEnum = {
 export type AgentActivityEventScalarFieldEnum =
   (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum];
 
-export const OrgApiKeyScalarFieldEnum = {
-  id: "id",
-  name: "name",
-  keyHash: "keyHash",
-  keyPrefix: "keyPrefix",
-  organizationId: "organizationId",
-  createdById: "createdById",
-  scopes: "scopes",
-  enabled: "enabled",
-  lastUsedAt: "lastUsedAt",
-  expiresAt: "expiresAt",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type OrgApiKeyScalarFieldEnum =
-  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
-
 export const KycSubmissionScalarFieldEnum = {
   id: "id",
   userId: "userId",
@@ -4036,7 +3940,7 @@ export const X402WalletBudgetScalarFieldEnum = {
   createdAt: "createdAt",
   updatedAt: "updatedAt",
   userId: "userId",
-  orgApiKeyId: "orgApiKeyId",
+  apiKeyId: "apiKeyId",
   evmWalletId: "evmWalletId",
   caip2Network: "caip2Network",
   asset: "asset",
@@ -4057,7 +3961,7 @@ export const X402PaymentAttemptScalarFieldEnum = {
   direction: "direction",
   status: "status",
   userId: "userId",
-  orgApiKeyId: "orgApiKeyId",
+  apiKeyId: "apiKeyId",
   evmWalletId: "evmWalletId",
   agentId: "agentId",
   supportedPaymentSourceId: "supportedPaymentSourceId",
@@ -4552,7 +4456,6 @@ export type GlobalOmitConfig = {
   integrationConnection?: Prisma.IntegrationConnectionOmit;
   mipJob?: Prisma.MipJobOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;
-  orgApiKey?: Prisma.OrgApiKeyOmit;
   kycSubmission?: Prisma.KycSubmissionOmit;
   kybSubmission?: Prisma.KybSubmissionOmit;
   walletCache?: Prisma.WalletCacheOmit;

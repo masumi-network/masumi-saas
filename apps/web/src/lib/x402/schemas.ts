@@ -59,7 +59,7 @@ export const x402PaymentPayloadSchema = z.object({
 export const verifySettleSchemaInput = z.object({
   supportedPaymentSourceId: z.string(),
   paymentPayload: x402PaymentPayloadSchema,
-  orgApiKeyId: z.string().optional(),
+  apiKeyId: z.string().optional(),
 });
 
 export const verifySchemaOutput = z.object({
@@ -118,9 +118,12 @@ export const forwardedX402PaymentRequiredSchema = z.object({
 });
 
 export const createPaymentSchemaInput = z.object({
-  orgApiKeyId: z
+  apiKeyId: z
     .string()
-    .describe("Org API key that owns the outbound x402 wallet budget"),
+    .optional()
+    .describe(
+      "Better Auth API key (mas_*) that owns the outbound wallet budget. Required for session auth; inferred from API key auth.",
+    ),
   evmWalletId: z.string(),
   paymentRequired: forwardedX402PaymentRequiredSchema,
   preferredNetwork: caip2Eip155Schema.optional(),
@@ -231,7 +234,7 @@ export const listNetworksSchemaOutput = z.object({
 export const budgetSchema = z
   .object({
     id: z.string(),
-    orgApiKeyId: z.string(),
+    apiKeyId: z.string(),
     evmWalletId: z.string(),
     evmWalletAddress: z.string(),
     caip2Network: caip2Eip155Schema,
@@ -245,7 +248,7 @@ export const budgetSchema = z
   .openapi("X402Budget");
 
 export const setBudgetSchemaInput = z.object({
-  orgApiKeyId: z.string(),
+  apiKeyId: z.string().optional(),
   evmWalletId: z.string(),
   caip2Network: caip2Eip155Schema,
   asset: evmAddressSchema,
@@ -253,7 +256,7 @@ export const setBudgetSchemaInput = z.object({
 });
 
 export const listBudgetSchemaInput = z.object({
-  orgApiKeyId: z.string().optional(),
+  apiKeyId: z.string().optional(),
 });
 
 export const listBudgetSchemaOutput = z.object({
@@ -277,7 +280,7 @@ export const x402PaymentAttemptSchema = z
     direction: z.nativeEnum(X402PaymentDirection),
     status: z.nativeEnum(X402PaymentStatus),
     userId: z.string(),
-    orgApiKeyId: z.string().nullable(),
+    apiKeyId: z.string().nullable(),
     evmWalletId: z.string().nullable(),
     agentId: z.string().nullable(),
     supportedPaymentSourceId: z.string().nullable(),

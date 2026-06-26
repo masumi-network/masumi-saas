@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => {
     mockX402PaymentAttemptCreate: vi.fn() as MockFn,
     mockX402PaymentAttemptUpdate: vi.fn() as MockFn,
     mockX402EvmWalletFindFirst: vi.fn() as MockFn,
-    mockOrgApiKeyFindUnique: vi.fn() as MockFn,
+    mockApiKeyFindFirst: vi.fn() as MockFn,
     mockX402EvmWalletCreate: vi.fn() as MockFn,
     mockBudgetFindFirst: vi.fn() as MockFn,
     mockBudgetUpdateMany: vi.fn() as MockFn,
@@ -82,8 +82,8 @@ vi.mock("@masumi/database/client", () => ({
       update: vi.fn(),
       create: vi.fn(),
     },
-    orgApiKey: {
-      findUnique: mocks.mockOrgApiKeyFindUnique,
+    apikey: {
+      findFirst: mocks.mockApiKeyFindFirst,
     },
     x402Settlement: {
       findUnique: mocks.mockX402SettlementFindUnique,
@@ -203,7 +203,7 @@ vi.mock("viem/accounts", () => ({
 }));
 
 const USER_ID = "user-1";
-const ORG_API_KEY_ID = "org-api-key-1";
+const API_KEY_ID = "api-key-1";
 
 const source = {
   id: "source-1",
@@ -281,9 +281,8 @@ function resetDefaultMocks() {
     encryptedPrivateKey: "encrypted-private-key",
     deletedAt: null,
   });
-  mocks.mockOrgApiKeyFindUnique.mockResolvedValue({
-    id: ORG_API_KEY_ID,
-    organizationId: null,
+  mocks.mockApiKeyFindFirst.mockResolvedValue({
+    id: API_KEY_ID,
   });
   mocks.mockX402EvmWalletCreate.mockResolvedValue({
     id: "wallet-new",
@@ -321,7 +320,7 @@ function resetDefaultMocks() {
   mocks.mockBudgetUpdate.mockResolvedValue({ id: "budget-1" });
   mocks.mockBudgetUpsert.mockResolvedValue({
     id: "budget-1",
-    orgApiKeyId: ORG_API_KEY_ID,
+    apiKeyId: API_KEY_ID,
     evmWalletId: "wallet-1",
     caip2Network: source.network,
     asset: source.asset.toLowerCase(),
@@ -388,7 +387,7 @@ describe("x402 service", () => {
     await expect(
       settleX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: ["eip155:1"],
         supportedPaymentSourceId: source.id,
         paymentPayload: paymentPayload as never,
@@ -422,7 +421,7 @@ describe("x402 service", () => {
 
     const result = await settleX402Payment({
       userId: USER_ID,
-      orgApiKeyId: ORG_API_KEY_ID,
+      apiKeyId: API_KEY_ID,
       caip2NetworkLimit: [source.network],
       supportedPaymentSourceId: source.id,
       paymentPayload: paymentPayload as never,
@@ -473,7 +472,7 @@ describe("x402 service", () => {
     await expect(
       settleX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         supportedPaymentSourceId: source.id,
         paymentPayload: paymentPayload as never,
@@ -497,7 +496,7 @@ describe("x402 service", () => {
     await expect(
       verifyX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         supportedPaymentSourceId: source.id,
         paymentPayload: paymentPayload as never,
@@ -522,7 +521,7 @@ describe("x402 service", () => {
       await expect(
         verifyX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: [source.network],
           supportedPaymentSourceId: source.id,
           paymentPayload: {
@@ -548,7 +547,7 @@ describe("x402 service", () => {
     await expect(
       settleX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         supportedPaymentSourceId: source.id,
         paymentPayload: {
@@ -573,7 +572,7 @@ describe("x402 service", () => {
     await expect(
       verifyX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         supportedPaymentSourceId: source.id,
         paymentPayload: {
@@ -590,7 +589,7 @@ describe("x402 service", () => {
     const { setX402WalletBudget } = await import("./service.js");
     const result = await setX402WalletBudget({
       userId: USER_ID,
-      orgApiKeyId: ORG_API_KEY_ID,
+      apiKeyId: API_KEY_ID,
       evmWalletId: "wallet-1",
       caip2Network: source.network,
       asset: source.asset,
@@ -601,8 +600,8 @@ describe("x402 service", () => {
     expect(mocks.mockBudgetUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          orgApiKeyId_evmWalletId_caip2Network_asset: {
-            orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId_evmWalletId_caip2Network_asset: {
+            apiKeyId: API_KEY_ID,
             evmWalletId: "wallet-1",
             caip2Network: source.network,
             asset: source.asset.toLowerCase(),
@@ -622,7 +621,7 @@ describe("x402 service", () => {
     await expect(
       setX402WalletBudget({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         evmWalletId: "wallet-1",
         caip2Network: source.network,
         asset: source.asset,
@@ -638,7 +637,7 @@ describe("x402 service", () => {
     await expect(
       setX402WalletBudget({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         evmWalletId: "missing-wallet",
         caip2Network: source.network,
         asset: source.asset,
@@ -696,7 +695,7 @@ describe("x402 service", () => {
     await expect(
       settleX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: null,
         supportedPaymentSourceId: source.id,
         paymentPayload: paymentPayload as never,
@@ -717,7 +716,7 @@ describe("x402 service", () => {
     await expect(
       settleX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: null,
         supportedPaymentSourceId: source.id,
         paymentPayload: paymentPayload as never,
@@ -738,7 +737,7 @@ describe("x402 service", () => {
     await expect(
       setX402WalletBudget({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         evmWalletId: "wallet-selling",
         caip2Network: source.network,
         asset: source.asset,
@@ -754,7 +753,7 @@ describe("x402 service", () => {
         await import("./service.js");
       const result = await createX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         evmWalletId: "wallet-1",
         paymentRequired: paymentRequired as never,
@@ -809,7 +808,7 @@ describe("x402 service", () => {
       const { createX402Payment } = await import("./service.js");
       await createX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: [source.network],
         evmWalletId: "wallet-1",
         paymentRequired: paymentRequired as never,
@@ -830,7 +829,7 @@ describe("x402 service", () => {
       await expect(
         createX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: ["eip155:1"],
           evmWalletId: "wallet-1",
           paymentRequired: paymentRequired as never,
@@ -848,7 +847,7 @@ describe("x402 service", () => {
       await expect(
         createX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: [source.network],
           evmWalletId: "wallet-1",
           paymentRequired: paymentRequired as never,
@@ -871,7 +870,7 @@ describe("x402 service", () => {
       await expect(
         createX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: [source.network],
           evmWalletId: "wallet-1",
           paymentRequired: paymentRequired as never,
@@ -888,7 +887,7 @@ describe("x402 service", () => {
         await expect(
           createX402Payment({
             userId: USER_ID,
-            orgApiKeyId: ORG_API_KEY_ID,
+            apiKeyId: API_KEY_ID,
             caip2NetworkLimit: [source.network],
             evmWalletId: "wallet-1",
             paymentRequired: {
@@ -907,7 +906,7 @@ describe("x402 service", () => {
       const { createX402Payment } = await import("./service.js");
       const result = await createX402Payment({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         caip2NetworkLimit: null,
         evmWalletId: "wallet-1",
         paymentRequired: paymentRequired as never,
@@ -923,7 +922,7 @@ describe("x402 service", () => {
       await expect(
         createX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: [source.network],
           evmWalletId: "wallet-1",
           paymentRequired: paymentRequired as never,
@@ -956,7 +955,7 @@ describe("x402 service", () => {
       await expect(
         createX402Payment({
           userId: USER_ID,
-          orgApiKeyId: ORG_API_KEY_ID,
+          apiKeyId: API_KEY_ID,
           caip2NetworkLimit: [source.network],
           evmWalletId: "wallet-1",
           paymentRequired: paymentRequired as never,
@@ -977,7 +976,7 @@ describe("x402 service", () => {
       const { setX402WalletBudget } = await import("./service.js");
       await setX402WalletBudget({
         userId: USER_ID,
-        orgApiKeyId: ORG_API_KEY_ID,
+        apiKeyId: API_KEY_ID,
         evmWalletId: "wallet-1",
         caip2Network: source.network,
         asset: source.asset,

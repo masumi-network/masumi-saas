@@ -2,7 +2,6 @@ import prisma from "@masumi/database/client";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getActiveOrgMemberRole } from "@/lib/auth/org-admin";
-import { isOrgAdminRole } from "@/lib/auth/org-roles";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
@@ -24,15 +23,6 @@ export async function getDashboardOverview(
   const orgMemberRole = activeOrganizationId
     ? await getActiveOrgMemberRole(userId, activeOrganizationId)
     : null;
-  const apiKeysScope = activeOrganizationId
-    ? ("org" as const)
-    : ("personal" as const);
-  const apiKeysCanManage =
-    apiKeysScope === "personal" || isOrgAdminRole(orgMemberRole);
-  const orgApiKeyWhere =
-    activeOrganizationId && apiKeysCanManage
-      ? { organizationId: activeOrganizationId, enabled: true as const }
-      : null;
 
   const [
     userWithOrgs,
@@ -68,30 +58,13 @@ export async function getDashboardOverview(
       },
     }),
     getKycStatusAction(),
-    orgApiKeyWhere
-      ? prisma.orgApiKey.findMany({
-          where: orgApiKeyWhere,
-          select: {
-            id: true,
-            name: true,
-            keyPrefix: true,
-          },
-          orderBy: { createdAt: "desc" },
-          take: 5,
-        })
-      : apiKeysScope === "personal"
-        ? prisma.apikey.findMany({
-            where: { userId },
-            select: { id: true, name: true, prefix: true, start: true },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-          })
-        : Promise.resolve([]),
-    orgApiKeyWhere
-      ? prisma.orgApiKey.count({ where: orgApiKeyWhere })
-      : apiKeysScope === "personal"
-        ? prisma.apikey.count({ where: { userId } })
-        : Promise.resolve(0),
+    prisma.apikey.findMany({
+      where: { userId },
+      select: { id: true, name: true, prefix: true, start: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.apikey.count({ where: { userId } }),
     prisma.agent.count({ where: baseAgentWhere }),
     prisma.agent.count({
       where: { ...baseAgentWhere, verificationStatus: "VERIFIED" },
@@ -163,33 +136,19 @@ export async function getDashboardOverview(
     pricing: a.pricing as Record<string, unknown> | null,
   }));
 
-  const apiKeysList =
-    apiKeysScope === "org"
-      ? (
-          apiKeysResult as Array<{
-            id: string;
-            name: string;
-            keyPrefix: string;
-          }>
-        ).map((k) => ({
-          id: k.id,
-          name: k.name,
-          prefix: k.keyPrefix,
-          start: null,
-        }))
-      : (
-          apiKeysResult as Array<{
-            id: string;
-            name: string | null;
-            prefix: string | null;
-            start: string | null;
-          }>
-        ).map((k) => ({
-          id: k.id,
-          name: k.name,
-          prefix: k.prefix,
-          start: k.start,
-        }));
+  const apiKeysList = (
+    apiKeysResult as Array<{
+      id: string;
+      name: string | null;
+      prefix: string | null;
+      start: string | null;
+    }>
+  ).map((k) => ({
+    id: k.id,
+    name: k.name,
+    prefix: k.prefix,
+    start: k.start,
+  }));
 
   return {
     user: {
@@ -207,8 +166,8 @@ export async function getDashboardOverview(
     agents: agentsList,
     apiKeys: apiKeysList,
     apiKeyCount,
-    apiKeysScope,
-    apiKeysCanManage,
+    apiKeysScope: "personal" as const,
+    apiKeysCanManage: true,
     activeOrganizationName: orgWorkspace?.name ?? null,
     agentCount,
     verifiedAgentCount,

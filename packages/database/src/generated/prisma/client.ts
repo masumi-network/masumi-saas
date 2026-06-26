@@ -172,18 +172,6 @@ export type MipJob = Prisma.MipJobModel;
  */
 export type AgentActivityEvent = Prisma.AgentActivityEventModel;
 /**
- * Model OrgApiKey
- * Organization-scoped API keys for programmatic access to the platform.
- *
- * NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
- * codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
- * These are completely different — Better Auth's Apikey is user-scoped and
- * manages authentication tokens. OrgApiKey is org-scoped, supports custom
- * scopes, and is meant for machine-to-machine / programmatic access.
- * DB table: api_key
- */
-export type OrgApiKey = Prisma.OrgApiKeyModel;
-/**
  * Model KycSubmission
  * Tracks each individual KYC (Know Your Customer) document submission attempt
  * for a user via Sumsub. Provides an audit trail of all attempts.

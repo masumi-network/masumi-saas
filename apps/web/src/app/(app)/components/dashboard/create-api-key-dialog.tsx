@@ -18,21 +18,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { createOrgApiKeyAction } from "@/lib/actions/org-api-keys.action";
 import { authClient } from "@/lib/auth/auth.client";
 
 interface CreateApiKeyDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  scope?: "personal" | "org";
 }
 
 export function CreateApiKeyDialog({
   open,
   onClose,
   onSuccess,
-  scope = "personal",
 }: CreateApiKeyDialogProps) {
   const tDashboard = useTranslations("App.Home.Dashboard.ApiKey");
   const t = useTranslations("App.ApiKeys");
@@ -55,16 +52,6 @@ export function CreateApiKeyDialog({
     setIsSubmitting(true);
 
     try {
-      if (scope === "org") {
-        const result = await createOrgApiKeyAction(name.trim());
-        if (!result.success) {
-          setError(result.error || tDashboard("error"));
-          return;
-        }
-        setCreatedKey(result.key);
-        return;
-      }
-
       const { data, error: createError } = await authClient.apiKey.create({
         name: name.trim() || undefined,
       });
@@ -135,9 +122,7 @@ export function CreateApiKeyDialog({
           >
             <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
               <DialogHeader>
-                <DialogTitle>
-                  {scope === "org" ? t("addOrgKeyTitle") : t("addKeyTitle")}
-                </DialogTitle>
+                <DialogTitle>{t("addKeyTitle")}</DialogTitle>
               </DialogHeader>
             </div>
             <DialogBody stagger={false} className="grid gap-4 space-y-0">
@@ -181,11 +166,7 @@ export function CreateApiKeyDialog({
   );
 }
 
-export function DashboardCreateApiKeyButton({
-  scope = "personal",
-}: {
-  scope?: "personal" | "org";
-}) {
+export function DashboardCreateApiKeyButton() {
   const t = useTranslations("App.ApiKeys");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -198,13 +179,12 @@ export function DashboardCreateApiKeyButton({
           onClick={() => setIsOpen(true)}
         >
           <Plus className="h-4 w-4" />
-          {scope === "org" ? t("addOrgKeyTitle") : t("addApiKey")}
+          {t("addApiKey")}
         </Button>
       </div>
       <CreateApiKeyDialog
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        scope={scope}
         onSuccess={() => {
           router.refresh();
         }}

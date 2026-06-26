@@ -41,7 +41,7 @@ export type X402PaymentAttemptMinAggregateOutputType = {
   direction: $Enums.X402PaymentDirection | null;
   status: $Enums.X402PaymentStatus | null;
   userId: string | null;
-  orgApiKeyId: string | null;
+  apiKeyId: string | null;
   evmWalletId: string | null;
   agentId: string | null;
   supportedPaymentSourceId: string | null;
@@ -66,7 +66,7 @@ export type X402PaymentAttemptMaxAggregateOutputType = {
   direction: $Enums.X402PaymentDirection | null;
   status: $Enums.X402PaymentStatus | null;
   userId: string | null;
-  orgApiKeyId: string | null;
+  apiKeyId: string | null;
   evmWalletId: string | null;
   agentId: string | null;
   supportedPaymentSourceId: string | null;
@@ -91,7 +91,7 @@ export type X402PaymentAttemptCountAggregateOutputType = {
   direction: number;
   status: number;
   userId: number;
-  orgApiKeyId: number;
+  apiKeyId: number;
   evmWalletId: number;
   agentId: number;
   supportedPaymentSourceId: number;
@@ -126,7 +126,7 @@ export type X402PaymentAttemptMinAggregateInputType = {
   direction?: true;
   status?: true;
   userId?: true;
-  orgApiKeyId?: true;
+  apiKeyId?: true;
   evmWalletId?: true;
   agentId?: true;
   supportedPaymentSourceId?: true;
@@ -151,7 +151,7 @@ export type X402PaymentAttemptMaxAggregateInputType = {
   direction?: true;
   status?: true;
   userId?: true;
-  orgApiKeyId?: true;
+  apiKeyId?: true;
   evmWalletId?: true;
   agentId?: true;
   supportedPaymentSourceId?: true;
@@ -176,7 +176,7 @@ export type X402PaymentAttemptCountAggregateInputType = {
   direction?: true;
   status?: true;
   userId?: true;
-  orgApiKeyId?: true;
+  apiKeyId?: true;
   evmWalletId?: true;
   agentId?: true;
   supportedPaymentSourceId?: true;
@@ -302,7 +302,7 @@ export type X402PaymentAttemptGroupByOutputType = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId: string | null;
+  apiKeyId: string | null;
   evmWalletId: string | null;
   agentId: string | null;
   supportedPaymentSourceId: string | null;
@@ -359,10 +359,7 @@ export type X402PaymentAttemptWhereInput = {
     | Prisma.EnumX402PaymentStatusFilter<"X402PaymentAttempt">
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
-  orgApiKeyId?:
-    | Prisma.StringNullableFilter<"X402PaymentAttempt">
-    | string
-    | null;
+  apiKeyId?: Prisma.StringNullableFilter<"X402PaymentAttempt"> | string | null;
   evmWalletId?:
     | Prisma.StringNullableFilter<"X402PaymentAttempt">
     | string
@@ -400,9 +397,9 @@ export type X402PaymentAttemptWhereInput = {
     | null;
   x402NetworkId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
-  orgApiKey?: Prisma.XOR<
-    Prisma.OrgApiKeyNullableScalarRelationFilter,
-    Prisma.OrgApiKeyWhereInput
+  ApiKey?: Prisma.XOR<
+    Prisma.ApikeyNullableScalarRelationFilter,
+    Prisma.ApikeyWhereInput
   > | null;
   EvmWallet?: Prisma.XOR<
     Prisma.X402EvmWalletNullableScalarRelationFilter,
@@ -433,7 +430,7 @@ export type X402PaymentAttemptOrderByWithRelationInput = {
   direction?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
-  orgApiKeyId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  apiKeyId?: Prisma.SortOrderInput | Prisma.SortOrder;
   evmWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   supportedPaymentSourceId?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -451,7 +448,7 @@ export type X402PaymentAttemptOrderByWithRelationInput = {
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder;
   x402NetworkId?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
-  orgApiKey?: Prisma.OrgApiKeyOrderByWithRelationInput;
+  ApiKey?: Prisma.ApikeyOrderByWithRelationInput;
   EvmWallet?: Prisma.X402EvmWalletOrderByWithRelationInput;
   Agent?: Prisma.AgentOrderByWithRelationInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceOrderByWithRelationInput;
@@ -478,7 +475,7 @@ export type X402PaymentAttemptWhereUniqueInput = Prisma.AtLeast<
       | Prisma.EnumX402PaymentStatusFilter<"X402PaymentAttempt">
       | $Enums.X402PaymentStatus;
     userId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
-    orgApiKeyId?:
+    apiKeyId?:
       | Prisma.StringNullableFilter<"X402PaymentAttempt">
       | string
       | null;
@@ -522,9 +519,9 @@ export type X402PaymentAttemptWhereUniqueInput = Prisma.AtLeast<
       | null;
     x402NetworkId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
-    orgApiKey?: Prisma.XOR<
-      Prisma.OrgApiKeyNullableScalarRelationFilter,
-      Prisma.OrgApiKeyWhereInput
+    ApiKey?: Prisma.XOR<
+      Prisma.ApikeyNullableScalarRelationFilter,
+      Prisma.ApikeyWhereInput
     > | null;
     EvmWallet?: Prisma.XOR<
       Prisma.X402EvmWalletNullableScalarRelationFilter,
@@ -557,7 +554,7 @@ export type X402PaymentAttemptOrderByWithAggregationInput = {
   direction?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
-  orgApiKeyId?: Prisma.SortOrderInput | Prisma.SortOrder;
+  apiKeyId?: Prisma.SortOrderInput | Prisma.SortOrder;
   evmWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   supportedPaymentSourceId?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -605,7 +602,7 @@ export type X402PaymentAttemptScalarWhereWithAggregatesInput = {
     | Prisma.EnumX402PaymentStatusWithAggregatesFilter<"X402PaymentAttempt">
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringWithAggregatesFilter<"X402PaymentAttempt"> | string;
-  orgApiKeyId?:
+  apiKeyId?:
     | Prisma.StringNullableWithAggregatesFilter<"X402PaymentAttempt">
     | string
     | null;
@@ -682,7 +679,7 @@ export type X402PaymentAttemptCreateInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
@@ -697,7 +694,7 @@ export type X402PaymentAttemptUncheckedCreateInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -751,7 +748,7 @@ export type X402PaymentAttemptUpdateInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
@@ -770,7 +767,7 @@ export type X402PaymentAttemptUncheckedUpdateInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -811,7 +808,7 @@ export type X402PaymentAttemptCreateManyInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -876,7 +873,7 @@ export type X402PaymentAttemptUncheckedUpdateManyInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -926,7 +923,7 @@ export type X402PaymentAttemptCountOrderByAggregateInput = {
   direction?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
-  orgApiKeyId?: Prisma.SortOrder;
+  apiKeyId?: Prisma.SortOrder;
   evmWalletId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   supportedPaymentSourceId?: Prisma.SortOrder;
@@ -956,7 +953,7 @@ export type X402PaymentAttemptMaxOrderByAggregateInput = {
   direction?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
-  orgApiKeyId?: Prisma.SortOrder;
+  apiKeyId?: Prisma.SortOrder;
   evmWalletId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   supportedPaymentSourceId?: Prisma.SortOrder;
@@ -981,7 +978,7 @@ export type X402PaymentAttemptMinOrderByAggregateInput = {
   direction?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   userId?: Prisma.SortOrder;
-  orgApiKeyId?: Prisma.SortOrder;
+  apiKeyId?: Prisma.SortOrder;
   evmWalletId?: Prisma.SortOrder;
   agentId?: Prisma.SortOrder;
   supportedPaymentSourceId?: Prisma.SortOrder;
@@ -1118,6 +1115,116 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutUserNestedInput = {
     | Prisma.X402PaymentAttemptScalarWhereInput[];
 };
 
+export type X402PaymentAttemptCreateNestedManyWithoutApiKeyInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+        Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+      >
+    | Prisma.X402PaymentAttemptCreateWithoutApiKeyInput[]
+    | Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput[];
+  connectOrCreate?:
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput[];
+  createMany?: Prisma.X402PaymentAttemptCreateManyApiKeyInputEnvelope;
+  connect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+};
+
+export type X402PaymentAttemptUncheckedCreateNestedManyWithoutApiKeyInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+        Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+      >
+    | Prisma.X402PaymentAttemptCreateWithoutApiKeyInput[]
+    | Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput[];
+  connectOrCreate?:
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput[];
+  createMany?: Prisma.X402PaymentAttemptCreateManyApiKeyInputEnvelope;
+  connect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+};
+
+export type X402PaymentAttemptUpdateManyWithoutApiKeyNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+        Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+      >
+    | Prisma.X402PaymentAttemptCreateWithoutApiKeyInput[]
+    | Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput[];
+  connectOrCreate?:
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput[];
+  upsert?:
+    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutApiKeyInput[];
+  createMany?: Prisma.X402PaymentAttemptCreateManyApiKeyInputEnvelope;
+  set?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  disconnect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  delete?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  connect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  update?:
+    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutApiKeyInput[];
+  updateMany?:
+    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutApiKeyInput[];
+  deleteMany?:
+    | Prisma.X402PaymentAttemptScalarWhereInput
+    | Prisma.X402PaymentAttemptScalarWhereInput[];
+};
+
+export type X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+        Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+      >
+    | Prisma.X402PaymentAttemptCreateWithoutApiKeyInput[]
+    | Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput[];
+  connectOrCreate?:
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptCreateOrConnectWithoutApiKeyInput[];
+  upsert?:
+    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutApiKeyInput[];
+  createMany?: Prisma.X402PaymentAttemptCreateManyApiKeyInputEnvelope;
+  set?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  disconnect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  delete?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  connect?:
+    | Prisma.X402PaymentAttemptWhereUniqueInput
+    | Prisma.X402PaymentAttemptWhereUniqueInput[];
+  update?:
+    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutApiKeyInput[];
+  updateMany?:
+    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutApiKeyInput
+    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutApiKeyInput[];
+  deleteMany?:
+    | Prisma.X402PaymentAttemptScalarWhereInput
+    | Prisma.X402PaymentAttemptScalarWhereInput[];
+};
+
 export type X402PaymentAttemptCreateNestedManyWithoutAgentInput = {
   create?:
     | Prisma.XOR<
@@ -1223,116 +1330,6 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput = {
   updateMany?:
     | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutAgentInput
     | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutAgentInput[];
-  deleteMany?:
-    | Prisma.X402PaymentAttemptScalarWhereInput
-    | Prisma.X402PaymentAttemptScalarWhereInput[];
-};
-
-export type X402PaymentAttemptCreateNestedManyWithoutOrgApiKeyInput = {
-  create?:
-    | Prisma.XOR<
-        Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-        Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-      >
-    | Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput[]
-    | Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput[];
-  connectOrCreate?:
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput[];
-  createMany?: Prisma.X402PaymentAttemptCreateManyOrgApiKeyInputEnvelope;
-  connect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-};
-
-export type X402PaymentAttemptUncheckedCreateNestedManyWithoutOrgApiKeyInput = {
-  create?:
-    | Prisma.XOR<
-        Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-        Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-      >
-    | Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput[]
-    | Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput[];
-  connectOrCreate?:
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput[];
-  createMany?: Prisma.X402PaymentAttemptCreateManyOrgApiKeyInputEnvelope;
-  connect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-};
-
-export type X402PaymentAttemptUpdateManyWithoutOrgApiKeyNestedInput = {
-  create?:
-    | Prisma.XOR<
-        Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-        Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-      >
-    | Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput[]
-    | Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput[];
-  connectOrCreate?:
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput[];
-  upsert?:
-    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutOrgApiKeyInput[];
-  createMany?: Prisma.X402PaymentAttemptCreateManyOrgApiKeyInputEnvelope;
-  set?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  disconnect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  delete?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  connect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  update?:
-    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutOrgApiKeyInput[];
-  updateMany?:
-    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutOrgApiKeyInput[];
-  deleteMany?:
-    | Prisma.X402PaymentAttemptScalarWhereInput
-    | Prisma.X402PaymentAttemptScalarWhereInput[];
-};
-
-export type X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyNestedInput = {
-  create?:
-    | Prisma.XOR<
-        Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-        Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-      >
-    | Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput[]
-    | Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput[];
-  connectOrCreate?:
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput[];
-  upsert?:
-    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpsertWithWhereUniqueWithoutOrgApiKeyInput[];
-  createMany?: Prisma.X402PaymentAttemptCreateManyOrgApiKeyInputEnvelope;
-  set?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  disconnect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  delete?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  connect?:
-    | Prisma.X402PaymentAttemptWhereUniqueInput
-    | Prisma.X402PaymentAttemptWhereUniqueInput[];
-  update?:
-    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpdateWithWhereUniqueWithoutOrgApiKeyInput[];
-  updateMany?:
-    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutOrgApiKeyInput
-    | Prisma.X402PaymentAttemptUpdateManyWithWhereWithoutOrgApiKeyInput[];
   deleteMany?:
     | Prisma.X402PaymentAttemptScalarWhereInput
     | Prisma.X402PaymentAttemptScalarWhereInput[];
@@ -1728,7 +1725,7 @@ export type X402PaymentAttemptCreateWithoutUserInput = {
   paymentIdentifier?: string | null;
   errorReason?: string | null;
   errorMessage?: string | null;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
@@ -1742,7 +1739,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string;
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -1823,10 +1820,7 @@ export type X402PaymentAttemptScalarWhereInput = {
     | Prisma.EnumX402PaymentStatusFilter<"X402PaymentAttempt">
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
-  orgApiKeyId?:
-    | Prisma.StringNullableFilter<"X402PaymentAttempt">
-    | string
-    | null;
+  apiKeyId?: Prisma.StringNullableFilter<"X402PaymentAttempt"> | string | null;
   evmWalletId?:
     | Prisma.StringNullableFilter<"X402PaymentAttempt">
     | string
@@ -1865,6 +1859,101 @@ export type X402PaymentAttemptScalarWhereInput = {
   x402NetworkId?: Prisma.StringFilter<"X402PaymentAttempt"> | string;
 };
 
+export type X402PaymentAttemptCreateWithoutApiKeyInput = {
+  id?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  direction: $Enums.X402PaymentDirection;
+  status: $Enums.X402PaymentStatus;
+  caip2Network: string;
+  scheme?: $Enums.X402PaymentScheme;
+  asset: string;
+  amount: bigint | number;
+  payTo: string;
+  payer?: string | null;
+  resource?: string | null;
+  paymentPayloadHash?: string | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?: string | null;
+  errorReason?: string | null;
+  errorMessage?: string | null;
+  user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
+  EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
+  Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
+  SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
+  Network: Prisma.X402NetworkCreateNestedOneWithoutPaymentAttemptsInput;
+  Settlement?: Prisma.X402SettlementCreateNestedOneWithoutPaymentAttemptInput;
+};
+
+export type X402PaymentAttemptUncheckedCreateWithoutApiKeyInput = {
+  id?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  direction: $Enums.X402PaymentDirection;
+  status: $Enums.X402PaymentStatus;
+  userId: string;
+  evmWalletId?: string | null;
+  agentId?: string | null;
+  supportedPaymentSourceId?: string | null;
+  caip2Network: string;
+  scheme?: $Enums.X402PaymentScheme;
+  asset: string;
+  amount: bigint | number;
+  payTo: string;
+  payer?: string | null;
+  resource?: string | null;
+  paymentPayloadHash?: string | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?: string | null;
+  errorReason?: string | null;
+  errorMessage?: string | null;
+  x402NetworkId: string;
+  Settlement?: Prisma.X402SettlementUncheckedCreateNestedOneWithoutPaymentAttemptInput;
+};
+
+export type X402PaymentAttemptCreateOrConnectWithoutApiKeyInput = {
+  where: Prisma.X402PaymentAttemptWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+    Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+  >;
+};
+
+export type X402PaymentAttemptCreateManyApiKeyInputEnvelope = {
+  data:
+    | Prisma.X402PaymentAttemptCreateManyApiKeyInput
+    | Prisma.X402PaymentAttemptCreateManyApiKeyInput[];
+  skipDuplicates?: boolean;
+};
+
+export type X402PaymentAttemptUpsertWithWhereUniqueWithoutApiKeyInput = {
+  where: Prisma.X402PaymentAttemptWhereUniqueInput;
+  update: Prisma.XOR<
+    Prisma.X402PaymentAttemptUpdateWithoutApiKeyInput,
+    Prisma.X402PaymentAttemptUncheckedUpdateWithoutApiKeyInput
+  >;
+  create: Prisma.XOR<
+    Prisma.X402PaymentAttemptCreateWithoutApiKeyInput,
+    Prisma.X402PaymentAttemptUncheckedCreateWithoutApiKeyInput
+  >;
+};
+
+export type X402PaymentAttemptUpdateWithWhereUniqueWithoutApiKeyInput = {
+  where: Prisma.X402PaymentAttemptWhereUniqueInput;
+  data: Prisma.XOR<
+    Prisma.X402PaymentAttemptUpdateWithoutApiKeyInput,
+    Prisma.X402PaymentAttemptUncheckedUpdateWithoutApiKeyInput
+  >;
+};
+
+export type X402PaymentAttemptUpdateManyWithWhereWithoutApiKeyInput = {
+  where: Prisma.X402PaymentAttemptScalarWhereInput;
+  data: Prisma.XOR<
+    Prisma.X402PaymentAttemptUpdateManyMutationInput,
+    Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyInput
+  >;
+};
+
 export type X402PaymentAttemptCreateWithoutAgentInput = {
   id?: string;
   createdAt?: Date | string;
@@ -1884,7 +1973,7 @@ export type X402PaymentAttemptCreateWithoutAgentInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
   Network: Prisma.X402NetworkCreateNestedOneWithoutPaymentAttemptsInput;
@@ -1898,7 +1987,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutAgentInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   supportedPaymentSourceId?: string | null;
   caip2Network: string;
@@ -1960,101 +2049,6 @@ export type X402PaymentAttemptUpdateManyWithWhereWithoutAgentInput = {
   >;
 };
 
-export type X402PaymentAttemptCreateWithoutOrgApiKeyInput = {
-  id?: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  direction: $Enums.X402PaymentDirection;
-  status: $Enums.X402PaymentStatus;
-  caip2Network: string;
-  scheme?: $Enums.X402PaymentScheme;
-  asset: string;
-  amount: bigint | number;
-  payTo: string;
-  payer?: string | null;
-  resource?: string | null;
-  paymentPayloadHash?: string | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?: string | null;
-  errorReason?: string | null;
-  errorMessage?: string | null;
-  user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
-  Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
-  SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
-  Network: Prisma.X402NetworkCreateNestedOneWithoutPaymentAttemptsInput;
-  Settlement?: Prisma.X402SettlementCreateNestedOneWithoutPaymentAttemptInput;
-};
-
-export type X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput = {
-  id?: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  direction: $Enums.X402PaymentDirection;
-  status: $Enums.X402PaymentStatus;
-  userId: string;
-  evmWalletId?: string | null;
-  agentId?: string | null;
-  supportedPaymentSourceId?: string | null;
-  caip2Network: string;
-  scheme?: $Enums.X402PaymentScheme;
-  asset: string;
-  amount: bigint | number;
-  payTo: string;
-  payer?: string | null;
-  resource?: string | null;
-  paymentPayloadHash?: string | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?: string | null;
-  errorReason?: string | null;
-  errorMessage?: string | null;
-  x402NetworkId: string;
-  Settlement?: Prisma.X402SettlementUncheckedCreateNestedOneWithoutPaymentAttemptInput;
-};
-
-export type X402PaymentAttemptCreateOrConnectWithoutOrgApiKeyInput = {
-  where: Prisma.X402PaymentAttemptWhereUniqueInput;
-  create: Prisma.XOR<
-    Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-    Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-  >;
-};
-
-export type X402PaymentAttemptCreateManyOrgApiKeyInputEnvelope = {
-  data:
-    | Prisma.X402PaymentAttemptCreateManyOrgApiKeyInput
-    | Prisma.X402PaymentAttemptCreateManyOrgApiKeyInput[];
-  skipDuplicates?: boolean;
-};
-
-export type X402PaymentAttemptUpsertWithWhereUniqueWithoutOrgApiKeyInput = {
-  where: Prisma.X402PaymentAttemptWhereUniqueInput;
-  update: Prisma.XOR<
-    Prisma.X402PaymentAttemptUpdateWithoutOrgApiKeyInput,
-    Prisma.X402PaymentAttemptUncheckedUpdateWithoutOrgApiKeyInput
-  >;
-  create: Prisma.XOR<
-    Prisma.X402PaymentAttemptCreateWithoutOrgApiKeyInput,
-    Prisma.X402PaymentAttemptUncheckedCreateWithoutOrgApiKeyInput
-  >;
-};
-
-export type X402PaymentAttemptUpdateWithWhereUniqueWithoutOrgApiKeyInput = {
-  where: Prisma.X402PaymentAttemptWhereUniqueInput;
-  data: Prisma.XOR<
-    Prisma.X402PaymentAttemptUpdateWithoutOrgApiKeyInput,
-    Prisma.X402PaymentAttemptUncheckedUpdateWithoutOrgApiKeyInput
-  >;
-};
-
-export type X402PaymentAttemptUpdateManyWithWhereWithoutOrgApiKeyInput = {
-  where: Prisma.X402PaymentAttemptScalarWhereInput;
-  data: Prisma.XOR<
-    Prisma.X402PaymentAttemptUpdateManyMutationInput,
-    Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyInput
-  >;
-};
-
 export type X402PaymentAttemptCreateWithoutSupportedPaymentSourceInput = {
   id?: string;
   createdAt?: Date | string;
@@ -2074,7 +2068,7 @@ export type X402PaymentAttemptCreateWithoutSupportedPaymentSourceInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   Network: Prisma.X402NetworkCreateNestedOneWithoutPaymentAttemptsInput;
@@ -2089,7 +2083,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutSupportedPaymentSourceInput 
     direction: $Enums.X402PaymentDirection;
     status: $Enums.X402PaymentStatus;
     userId: string;
-    orgApiKeyId?: string | null;
+    apiKeyId?: string | null;
     evmWalletId?: string | null;
     agentId?: string | null;
     caip2Network: string;
@@ -2174,7 +2168,7 @@ export type X402PaymentAttemptCreateWithoutNetworkInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
@@ -2188,7 +2182,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutNetworkInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -2269,7 +2263,7 @@ export type X402PaymentAttemptCreateWithoutEvmWalletInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
   Network: Prisma.X402NetworkCreateNestedOneWithoutPaymentAttemptsInput;
@@ -2283,7 +2277,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutEvmWalletInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
   caip2Network: string;
@@ -2364,7 +2358,7 @@ export type X402PaymentAttemptCreateWithoutSettlementInput = {
   errorReason?: string | null;
   errorMessage?: string | null;
   user: Prisma.UserCreateNestedOneWithoutX402PaymentAttemptsInput;
-  orgApiKey?: Prisma.OrgApiKeyCreateNestedOneWithoutX402PaymentAttemptsInput;
+  ApiKey?: Prisma.ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput;
   EvmWallet?: Prisma.X402EvmWalletCreateNestedOneWithoutPaymentAttemptsInput;
   Agent?: Prisma.AgentCreateNestedOneWithoutX402PaymentAttemptsInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceCreateNestedOneWithoutX402PaymentAttemptsInput;
@@ -2378,7 +2372,7 @@ export type X402PaymentAttemptUncheckedCreateWithoutSettlementInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -2459,7 +2453,7 @@ export type X402PaymentAttemptUpdateWithoutSettlementInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
@@ -2477,7 +2471,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutSettlementInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -2516,7 +2510,7 @@ export type X402PaymentAttemptCreateManyUserInput = {
   updatedAt?: Date | string;
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -2568,7 +2562,7 @@ export type X402PaymentAttemptUpdateWithoutUserInput = {
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
     | null;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
@@ -2586,7 +2580,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutUserInput = {
   status?:
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -2630,7 +2624,160 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutUserInput = {
   status?:
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  supportedPaymentSourceId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
+  scheme?:
+    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
+    | $Enums.X402PaymentScheme;
+  asset?: Prisma.StringFieldUpdateOperationsInput | string;
+  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
+  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
+  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  paymentPayloadHash?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  errorMessage?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string;
+};
+
+export type X402PaymentAttemptCreateManyApiKeyInput = {
+  id?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  direction: $Enums.X402PaymentDirection;
+  status: $Enums.X402PaymentStatus;
+  userId: string;
+  evmWalletId?: string | null;
+  agentId?: string | null;
+  supportedPaymentSourceId?: string | null;
+  caip2Network: string;
+  scheme?: $Enums.X402PaymentScheme;
+  asset: string;
+  amount: bigint | number;
+  payTo: string;
+  payer?: string | null;
+  resource?: string | null;
+  paymentPayloadHash?: string | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?: string | null;
+  errorReason?: string | null;
+  errorMessage?: string | null;
+  x402NetworkId: string;
+};
+
+export type X402PaymentAttemptUpdateWithoutApiKeyInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  direction?:
+    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
+    | $Enums.X402PaymentDirection;
+  status?:
+    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
+    | $Enums.X402PaymentStatus;
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
+  scheme?:
+    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
+    | $Enums.X402PaymentScheme;
+  asset?: Prisma.StringFieldUpdateOperationsInput | string;
+  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
+  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
+  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  paymentPayloadHash?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  errorMessage?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
+  EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
+  Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  Network?: Prisma.X402NetworkUpdateOneRequiredWithoutPaymentAttemptsNestedInput;
+  Settlement?: Prisma.X402SettlementUpdateOneWithoutPaymentAttemptNestedInput;
+};
+
+export type X402PaymentAttemptUncheckedUpdateWithoutApiKeyInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  direction?:
+    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
+    | $Enums.X402PaymentDirection;
+  status?:
+    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
+    | $Enums.X402PaymentStatus;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  supportedPaymentSourceId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
+  scheme?:
+    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
+    | $Enums.X402PaymentScheme;
+  asset?: Prisma.StringFieldUpdateOperationsInput | string;
+  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
+  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
+  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  paymentPayloadHash?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  paymentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  errorMessage?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string;
+  Settlement?: Prisma.X402SettlementUncheckedUpdateOneWithoutPaymentAttemptNestedInput;
+};
+
+export type X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  direction?:
+    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
+    | $Enums.X402PaymentDirection;
+  status?:
+    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
+    | $Enums.X402PaymentStatus;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -2670,7 +2817,7 @@ export type X402PaymentAttemptCreateManyAgentInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   supportedPaymentSourceId?: string | null;
   caip2Network: string;
@@ -2722,7 +2869,7 @@ export type X402PaymentAttemptUpdateWithoutAgentInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
   Network?: Prisma.X402NetworkUpdateOneRequiredWithoutPaymentAttemptsNestedInput;
@@ -2740,7 +2887,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutAgentInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
@@ -2784,161 +2931,8 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutAgentInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  supportedPaymentSourceId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
-  scheme?:
-    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
-    | $Enums.X402PaymentScheme;
-  asset?: Prisma.StringFieldUpdateOperationsInput | string;
-  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
-  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
-  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  paymentPayloadHash?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  errorMessage?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string;
-};
-
-export type X402PaymentAttemptCreateManyOrgApiKeyInput = {
-  id?: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  direction: $Enums.X402PaymentDirection;
-  status: $Enums.X402PaymentStatus;
-  userId: string;
-  evmWalletId?: string | null;
-  agentId?: string | null;
-  supportedPaymentSourceId?: string | null;
-  caip2Network: string;
-  scheme?: $Enums.X402PaymentScheme;
-  asset: string;
-  amount: bigint | number;
-  payTo: string;
-  payer?: string | null;
-  resource?: string | null;
-  paymentPayloadHash?: string | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?: string | null;
-  errorReason?: string | null;
-  errorMessage?: string | null;
-  x402NetworkId: string;
-};
-
-export type X402PaymentAttemptUpdateWithoutOrgApiKeyInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  direction?:
-    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
-    | $Enums.X402PaymentDirection;
-  status?:
-    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
-    | $Enums.X402PaymentStatus;
-  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
-  scheme?:
-    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
-    | $Enums.X402PaymentScheme;
-  asset?: Prisma.StringFieldUpdateOperationsInput | string;
-  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
-  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
-  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  paymentPayloadHash?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  errorMessage?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
-  Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
-  SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
-  Network?: Prisma.X402NetworkUpdateOneRequiredWithoutPaymentAttemptsNestedInput;
-  Settlement?: Prisma.X402SettlementUpdateOneWithoutPaymentAttemptNestedInput;
-};
-
-export type X402PaymentAttemptUncheckedUpdateWithoutOrgApiKeyInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  direction?:
-    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
-    | $Enums.X402PaymentDirection;
-  status?:
-    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
-    | $Enums.X402PaymentStatus;
-  userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  supportedPaymentSourceId?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string;
-  scheme?:
-    | Prisma.EnumX402PaymentSchemeFieldUpdateOperationsInput
-    | $Enums.X402PaymentScheme;
-  asset?: Prisma.StringFieldUpdateOperationsInput | string;
-  amount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number;
-  payTo?: Prisma.StringFieldUpdateOperationsInput | string;
-  payer?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  resource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  paymentPayloadHash?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  paymentPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
-  paymentIdentifier?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  errorReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  errorMessage?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string;
-  Settlement?: Prisma.X402SettlementUncheckedUpdateOneWithoutPaymentAttemptNestedInput;
-};
-
-export type X402PaymentAttemptUncheckedUpdateManyWithoutOrgApiKeyInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string;
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  direction?:
-    | Prisma.EnumX402PaymentDirectionFieldUpdateOperationsInput
-    | $Enums.X402PaymentDirection;
-  status?:
-    | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
-    | $Enums.X402PaymentStatus;
-  userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -2976,7 +2970,7 @@ export type X402PaymentAttemptCreateManySupportedPaymentSourceInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   caip2Network: string;
@@ -3028,7 +3022,7 @@ export type X402PaymentAttemptUpdateWithoutSupportedPaymentSourceInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   Network?: Prisma.X402NetworkUpdateOneRequiredWithoutPaymentAttemptsNestedInput;
@@ -3047,10 +3041,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutSupportedPaymentSourceInput 
       | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
       | $Enums.X402PaymentStatus;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    orgApiKeyId?:
-      | Prisma.NullableStringFieldUpdateOperationsInput
-      | string
-      | null;
+    apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     evmWalletId?:
       | Prisma.NullableStringFieldUpdateOperationsInput
       | string
@@ -3098,10 +3089,7 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutSupportedPaymentSourceIn
       | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
       | $Enums.X402PaymentStatus;
     userId?: Prisma.StringFieldUpdateOperationsInput | string;
-    orgApiKeyId?:
-      | Prisma.NullableStringFieldUpdateOperationsInput
-      | string
-      | null;
+    apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     evmWalletId?:
       | Prisma.NullableStringFieldUpdateOperationsInput
       | string
@@ -3143,7 +3131,7 @@ export type X402PaymentAttemptCreateManyNetworkInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   evmWalletId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
@@ -3195,7 +3183,7 @@ export type X402PaymentAttemptUpdateWithoutNetworkInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   EvmWallet?: Prisma.X402EvmWalletUpdateOneWithoutPaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
@@ -3213,7 +3201,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutNetworkInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -3257,7 +3245,7 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutNetworkInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   evmWalletId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
@@ -3296,7 +3284,7 @@ export type X402PaymentAttemptCreateManyEvmWalletInput = {
   direction: $Enums.X402PaymentDirection;
   status: $Enums.X402PaymentStatus;
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   agentId?: string | null;
   supportedPaymentSourceId?: string | null;
   caip2Network: string;
@@ -3348,7 +3336,7 @@ export type X402PaymentAttemptUpdateWithoutEvmWalletInput = {
     | string
     | null;
   user?: Prisma.UserUpdateOneRequiredWithoutX402PaymentAttemptsNestedInput;
-  orgApiKey?: Prisma.OrgApiKeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
+  ApiKey?: Prisma.ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput;
   Agent?: Prisma.AgentUpdateOneWithoutX402PaymentAttemptsNestedInput;
   SupportedPaymentSource?: Prisma.SupportedPaymentSourceUpdateOneWithoutX402PaymentAttemptsNestedInput;
   Network?: Prisma.X402NetworkUpdateOneRequiredWithoutPaymentAttemptsNestedInput;
@@ -3366,7 +3354,7 @@ export type X402PaymentAttemptUncheckedUpdateWithoutEvmWalletInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
@@ -3410,7 +3398,7 @@ export type X402PaymentAttemptUncheckedUpdateManyWithoutEvmWalletInput = {
     | Prisma.EnumX402PaymentStatusFieldUpdateOperationsInput
     | $Enums.X402PaymentStatus;
   userId?: Prisma.StringFieldUpdateOperationsInput | string;
-  orgApiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   supportedPaymentSourceId?:
     | Prisma.NullableStringFieldUpdateOperationsInput
@@ -3453,7 +3441,7 @@ export type X402PaymentAttemptSelect<
     direction?: boolean;
     status?: boolean;
     userId?: boolean;
-    orgApiKeyId?: boolean;
+    apiKeyId?: boolean;
     evmWalletId?: boolean;
     agentId?: boolean;
     supportedPaymentSourceId?: boolean;
@@ -3471,7 +3459,7 @@ export type X402PaymentAttemptSelect<
     errorMessage?: boolean;
     x402NetworkId?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-    orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+    ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
     EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
     Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
     SupportedPaymentSource?:
@@ -3494,7 +3482,7 @@ export type X402PaymentAttemptSelectCreateManyAndReturn<
     direction?: boolean;
     status?: boolean;
     userId?: boolean;
-    orgApiKeyId?: boolean;
+    apiKeyId?: boolean;
     evmWalletId?: boolean;
     agentId?: boolean;
     supportedPaymentSourceId?: boolean;
@@ -3512,7 +3500,7 @@ export type X402PaymentAttemptSelectCreateManyAndReturn<
     errorMessage?: boolean;
     x402NetworkId?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-    orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+    ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
     EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
     Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
     SupportedPaymentSource?:
@@ -3534,7 +3522,7 @@ export type X402PaymentAttemptSelectUpdateManyAndReturn<
     direction?: boolean;
     status?: boolean;
     userId?: boolean;
-    orgApiKeyId?: boolean;
+    apiKeyId?: boolean;
     evmWalletId?: boolean;
     agentId?: boolean;
     supportedPaymentSourceId?: boolean;
@@ -3552,7 +3540,7 @@ export type X402PaymentAttemptSelectUpdateManyAndReturn<
     errorMessage?: boolean;
     x402NetworkId?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-    orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+    ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
     EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
     Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
     SupportedPaymentSource?:
@@ -3570,7 +3558,7 @@ export type X402PaymentAttemptSelectScalar = {
   direction?: boolean;
   status?: boolean;
   userId?: boolean;
-  orgApiKeyId?: boolean;
+  apiKeyId?: boolean;
   evmWalletId?: boolean;
   agentId?: boolean;
   supportedPaymentSourceId?: boolean;
@@ -3599,7 +3587,7 @@ export type X402PaymentAttemptOmit<
   | "direction"
   | "status"
   | "userId"
-  | "orgApiKeyId"
+  | "apiKeyId"
   | "evmWalletId"
   | "agentId"
   | "supportedPaymentSourceId"
@@ -3623,7 +3611,7 @@ export type X402PaymentAttemptInclude<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-  orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+  ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
   EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
   Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
   SupportedPaymentSource?:
@@ -3637,7 +3625,7 @@ export type X402PaymentAttemptIncludeCreateManyAndReturn<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-  orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+  ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
   EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
   Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
   SupportedPaymentSource?:
@@ -3650,7 +3638,7 @@ export type X402PaymentAttemptIncludeUpdateManyAndReturn<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
-  orgApiKey?: boolean | Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>;
+  ApiKey?: boolean | Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>;
   EvmWallet?: boolean | Prisma.X402PaymentAttempt$EvmWalletArgs<ExtArgs>;
   Agent?: boolean | Prisma.X402PaymentAttempt$AgentArgs<ExtArgs>;
   SupportedPaymentSource?:
@@ -3666,7 +3654,7 @@ export type $X402PaymentAttemptPayload<
   name: "X402PaymentAttempt";
   objects: {
     user: Prisma.$UserPayload<ExtArgs>;
-    orgApiKey: Prisma.$OrgApiKeyPayload<ExtArgs> | null;
+    ApiKey: Prisma.$ApikeyPayload<ExtArgs> | null;
     EvmWallet: Prisma.$X402EvmWalletPayload<ExtArgs> | null;
     Agent: Prisma.$AgentPayload<ExtArgs> | null;
     SupportedPaymentSource: Prisma.$SupportedPaymentSourcePayload<ExtArgs> | null;
@@ -3681,7 +3669,7 @@ export type $X402PaymentAttemptPayload<
       direction: $Enums.X402PaymentDirection;
       status: $Enums.X402PaymentStatus;
       userId: string;
-      orgApiKeyId: string | null;
+      apiKeyId: string | null;
       evmWalletId: string | null;
       agentId: string | null;
       supportedPaymentSourceId: string | null;
@@ -4284,11 +4272,11 @@ export interface Prisma__X402PaymentAttemptClient<
     ExtArgs,
     GlobalOmitOptions
   >;
-  orgApiKey<T extends Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.X402PaymentAttempt$orgApiKeyArgs<ExtArgs>>,
-  ): Prisma.Prisma__OrgApiKeyClient<
+  ApiKey<T extends Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.X402PaymentAttempt$ApiKeyArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApikeyClient<
     runtime.Types.Result.GetResult<
-      Prisma.$OrgApiKeyPayload<ExtArgs>,
+      Prisma.$ApikeyPayload<ExtArgs>,
       T,
       "findUniqueOrThrow",
       GlobalOmitOptions
@@ -4420,7 +4408,7 @@ export interface X402PaymentAttemptFieldRefs {
   >;
   readonly status: Prisma.FieldRef<"X402PaymentAttempt", "X402PaymentStatus">;
   readonly userId: Prisma.FieldRef<"X402PaymentAttempt", "String">;
-  readonly orgApiKeyId: Prisma.FieldRef<"X402PaymentAttempt", "String">;
+  readonly apiKeyId: Prisma.FieldRef<"X402PaymentAttempt", "String">;
   readonly evmWalletId: Prisma.FieldRef<"X402PaymentAttempt", "String">;
   readonly agentId: Prisma.FieldRef<"X402PaymentAttempt", "String">;
   readonly supportedPaymentSourceId: Prisma.FieldRef<
@@ -4911,25 +4899,25 @@ export type X402PaymentAttemptDeleteManyArgs<
 };
 
 /**
- * X402PaymentAttempt.orgApiKey
+ * X402PaymentAttempt.ApiKey
  */
-export type X402PaymentAttempt$orgApiKeyArgs<
+export type X402PaymentAttempt$ApiKeyArgs<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the OrgApiKey
+   * Select specific fields to fetch from the Apikey
    */
-  select?: Prisma.OrgApiKeySelect<ExtArgs> | null;
+  select?: Prisma.ApikeySelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the OrgApiKey
+   * Omit specific fields from the Apikey
    */
-  omit?: Prisma.OrgApiKeyOmit<ExtArgs> | null;
+  omit?: Prisma.ApikeyOmit<ExtArgs> | null;
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.OrgApiKeyInclude<ExtArgs> | null;
-  where?: Prisma.OrgApiKeyWhereInput;
+  include?: Prisma.ApikeyInclude<ExtArgs> | null;
+  where?: Prisma.ApikeyWhereInput;
 };
 
 /**

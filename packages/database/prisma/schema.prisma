@@ -49,7 +49,6 @@ model User {
   kycVerification   KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
 
   // New domain relations
-  createdOrgApiKeys       OrgApiKey[]
   kycSubmissions          KycSubmission[]
   walletCaches            WalletCache[]
   x402EvmWallets          X402EvmWallet[]
@@ -158,7 +157,6 @@ model Organization {
 
   // Domain relations
   agents                 Agent[]
-  orgApiKeys             OrgApiKey[]
   kybSubmissions         KybSubmission[]
   integrationConnections IntegrationConnection[]
   x402EvmWallets         X402EvmWallet[]
@@ -235,6 +233,8 @@ model Apikey {
   metadata            String? // Better Auth apiKey plugin (enableMetadata: true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  x402WalletBudgets   X402WalletBudget[]
+  x402PaymentAttempts X402PaymentAttempt[]
 
   @@map("apikey")
 }
@@ -571,38 +571,6 @@ enum AgentActivityEventType {
 
 // ─── New Domain Entity Models ─────────────────────────────────────────────────
 
-/// Organization-scoped API keys for programmatic access to the platform.
-///
-/// NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
-/// codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
-/// These are completely different — Better Auth's Apikey is user-scoped and
-/// manages authentication tokens. OrgApiKey is org-scoped, supports custom
-/// scopes, and is meant for machine-to-machine / programmatic access.
-/// DB table: api_key
-model OrgApiKey {
-  id             String       @id @default(cuid())
-  name           String
-  keyHash        String       @unique // Hashed full key — never store plaintext
-  keyPrefix      String // First 8 chars shown in UI for identification
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById    String?
-  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  scopes              String[]             @default([]) // Valid: "agents:read", "agents:write", "billing:read", "billing:write", "members:read", "members:write"
-  enabled             Boolean              @default(true)
-  lastUsedAt          DateTime?
-  expiresAt           DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  x402WalletBudgets   X402WalletBudget[]
-  x402PaymentAttempts X402PaymentAttempt[]
-
-  @@index([organizationId])
-  @@index([createdById])
-  @@index([organizationId, enabled, lastUsedAt]) // Compound: API key usage tracking
-  @@map("api_key")
-}
-
 /// Tracks each individual KYC (Know Your Customer) document submission attempt
 /// for a user via Sumsub. Provides an audit trail of all attempts.
 ///
@@ -892,8 +860,8 @@ model X402WalletBudget {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   userId          String
-  orgApiKeyId     String
-  orgApiKey       OrgApiKey     @relation(fields: [orgApiKeyId], references: [id], onDelete: Cascade)
+  apiKeyId        String
+  ApiKey          Apikey        @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
   evmWalletId     String
   caip2Network    String
   asset           String
@@ -906,8 +874,8 @@ model X402WalletBudget {
   x402NetworkId   String
   Network         X402Network   @relation(fields: [x402NetworkId], references: [id], onDelete: Restrict)
 
-  @@unique([orgApiKeyId, evmWalletId, caip2Network, asset])
-  @@index([orgApiKeyId, enabled])
+  @@unique([apiKeyId, evmWalletId, caip2Network, asset])
+  @@index([apiKeyId, enabled])
   @@index([evmWalletId, enabled])
   @@index([caip2Network, asset])
   @@index([createdByUserId])
@@ -924,8 +892,8 @@ model X402PaymentAttempt {
   status                   X402PaymentStatus
   userId                   String
   user                     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orgApiKeyId              String?
-  orgApiKey                OrgApiKey?              @relation(fields: [orgApiKeyId], references: [id], onDelete: SetNull)
+  apiKeyId                 String?
+  ApiKey                   Apikey?                 @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
   evmWalletId              String?
   agentId                  String?
   supportedPaymentSourceId String?
@@ -949,7 +917,7 @@ model X402PaymentAttempt {
   Settlement               X402Settlement?
 
   @@index([userId, createdAt])
-  @@index([orgApiKeyId, createdAt])
+  @@index([apiKeyId, createdAt])
   @@index([agentId, createdAt])
   @@index([supportedPaymentSourceId])
   @@index([paymentIdentifier])

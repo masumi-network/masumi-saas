@@ -28,6 +28,10 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
 import {
+  requireX402ApiKeyIdForPay,
+  resolveX402ApiKeyId,
+} from "@/lib/x402/resolve-api-key";
+import {
   getCaip2NetworkLimitFromAuth,
   requireX402AdminRead,
   requireX402AdminWrite,
@@ -146,7 +150,7 @@ export function registerX402Routes(app: X402App): void {
 
         const result = await verifyX402Payment({
           userId: authContext.user.id,
-          orgApiKeyId: input.orgApiKeyId,
+          apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
@@ -192,7 +196,7 @@ export function registerX402Routes(app: X402App): void {
 
         const { webhook, ...result } = await settleX402Payment({
           userId: authContext.user.id,
-          orgApiKeyId: input.orgApiKeyId,
+          apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
@@ -258,7 +262,10 @@ export function registerX402Routes(app: X402App): void {
 
         const result = await createX402Payment({
           ...x402Scope(authContext),
-          orgApiKeyId: input.orgApiKeyId,
+          apiKeyId: await requireX402ApiKeyIdForPay(
+            authContext,
+            input.apiKeyId,
+          ),
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           evmWalletId: input.evmWalletId,
           paymentRequired:
@@ -581,7 +588,7 @@ export function registerX402Routes(app: X402App): void {
         const Budgets = (
           await listX402WalletBudgets({
             ...x402Scope(authContext),
-            orgApiKeyId: query.orgApiKeyId,
+            apiKeyId: query.apiKeyId,
           })
         ).map(serializeBudget);
 
@@ -619,12 +626,17 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402BudgetWrite(authContext);
         const input = c.req.valid("json");
+        const apiKeyId = await requireX402ApiKeyIdForPay(
+          authContext,
+          input.apiKeyId,
+        );
 
         const budget = serializeBudget(
           await setX402WalletBudget({
             ...x402Scope(authContext),
             createdByUserId: authContext.user.id,
             ...input,
+            apiKeyId,
           }),
         );
 

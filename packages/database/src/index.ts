@@ -39,7 +39,6 @@ export type {
   KycVerification,
   Member,
   Organization,
-  OrgApiKey,
   SupportedPaymentSource,
   User,
   VeridianCredential,

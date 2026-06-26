@@ -14,14 +14,10 @@ export function canAccessX402Workspace(
   return isOrgAdminRole(memberRole);
 }
 
-/** Org API key budgets: active org + owner/admin only (not personal account). */
+/** @deprecated Use canAccessX402Workspace — budgets follow the same workspace access as x402. */
 export function canManageX402OrgBudgets(
   activeOrganizationId: string | null | undefined,
   memberRole: string | null | undefined,
 ): boolean {
-  if (!activeOrganizationId) {
-    return false;
-  }
-
-  return isOrgAdminRole(memberRole);
+  return canAccessX402Workspace(activeOrganizationId, memberRole);
 }

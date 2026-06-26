@@ -22,9 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { createOrgApiKeyAction } from "@/lib/actions/org-api-keys.action";
+import { authClient } from "@/lib/auth/auth.client";
 import {
-  useOrgApiKeys,
+  useUserApiKeys,
   useX402Budgets,
   useX402Networks,
   useX402Wallets,
@@ -37,7 +37,7 @@ import type { X402Budget } from "@/lib/x402/types";
 import { X402FormDialog } from "./x402-form-dialog";
 
 const budgetFormSchema = z.object({
-  orgApiKeyId: z.string().min(1, "Required"),
+  apiKeyId: z.string().min(1, "Required"),
   evmWalletId: z.string().min(1, "Required"),
   caip2Network: z.string().regex(/^eip155:\d+$/, "Required"),
   asset: z
@@ -53,9 +53,35 @@ type BudgetFormValues = z.infer<typeof budgetFormSchema>;
 export function BudgetsTab() {
   const t = useTranslations("App.X402.Budgets");
   const { budgets, isLoading, isRefetching, refetch } = useX402Budgets();
+  const { apiKeys } = useUserApiKeys();
   const { networks, isLoading: networksLoading } = useX402Networks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Budget | null>(null);
+
+  const apiKeyLabelById = useMemo(
+    () =>
+      new Map(
+        apiKeys.map((key) => [
+          key.id,
+          {
+            prefix: key.start ?? key.prefix ?? key.id.slice(0, 8),
+            name: key.name ?? "API Key",
+          },
+        ]),
+      ),
+    [apiKeys],
+  );
+
+  const apiKeyLabel = (apiKeyId: string) => {
+    const key = apiKeyLabelById.get(apiKeyId);
+    if (key == null) return apiKeyId;
+    return (
+      <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="font-mono">{key.prefix}</span>
+        <span className="text-muted-foreground">{key.name}</span>
+      </span>
+    );
+  };
 
   const chainLabel = (caip2: string) =>
     networks.find((n) => n.caip2Id === caip2)?.displayName ?? caip2;
@@ -94,7 +120,7 @@ export function BudgetsTab() {
             <tr className="border-b">
               {(
                 [
-                  "orgApiKey",
+                  "apiKey",
                   "wallet",
                   "chain",
                   "asset",
@@ -143,8 +169,8 @@ export function BudgetsTab() {
             ) : (
               envBudgets.map((budget) => (
                 <tr key={budget.id} className="border-b last:border-0">
-                  <td className="p-4 font-mono text-xs">
-                    {budget.orgApiKeyId}
+                  <td className="p-4 text-xs">
+                    {apiKeyLabel(budget.apiKeyId)}
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-1">
@@ -221,7 +247,7 @@ export function BudgetDialog({
 }) {
   const t = useTranslations("App.X402.Budgets");
   const queryClient = useQueryClient();
-  const { orgApiKeys } = useOrgApiKeys();
+  const { apiKeys } = useUserApiKeys();
   const { networks } = useX402Networks();
   const { wallets } = useX402Wallets(open, "Purchasing");
   const [isSaving, setIsSaving] = useState(false);
@@ -239,7 +265,7 @@ export function BudgetDialog({
   } = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      orgApiKeyId: editing?.orgApiKeyId ?? "",
+      apiKeyId: editing?.apiKeyId ?? "",
       evmWalletId: editing?.evmWalletId ?? "",
       caip2Network: editing?.caip2Network ?? "",
       asset: editing?.asset ?? "",
@@ -259,18 +285,24 @@ export function BudgetDialog({
     [selectedChain?.defaultAsset, selectedNetwork],
   );
 
-  const handleCreateOrgApiKey = async () => {
+  const handleCreateApiKey = async () => {
     setCreateKeyError(null);
     setIsCreatingKey(true);
-    const result = await createOrgApiKeyAction(keyName);
+    const { data, error } = await authClient.apiKey.create({
+      name: keyName.trim() || undefined,
+    });
     setIsCreatingKey(false);
-    if (!result.success) {
-      setCreateKeyError(result.error);
+    if (error) {
+      setCreateKeyError(error.message || t("createApiKeyFailed"));
       return;
     }
-    setCreatedKey(result.key);
-    setValue("orgApiKeyId", result.item.id, { shouldValidate: true });
-    await queryClient.invalidateQueries({ queryKey: ["org-api-keys"] });
+    if (!data?.key || !data?.id) {
+      setCreateKeyError(t("createApiKeyFailed"));
+      return;
+    }
+    setCreatedKey(data.key);
+    setValue("apiKeyId", data.id, { shouldValidate: true });
+    await queryClient.invalidateQueries({ queryKey: ["user-api-keys"] });
   };
 
   const onSelectNetwork = (caip2: string) => {
@@ -288,7 +320,7 @@ export function BudgetDialog({
       {
         method: "POST",
         body: JSON.stringify({
-          orgApiKeyId: data.orgApiKeyId,
+          apiKeyId: data.apiKeyId,
           evmWalletId: data.evmWalletId,
           caip2Network: data.caip2Network,
           asset: data.asset,
@@ -333,14 +365,14 @@ export function BudgetDialog({
       }
     >
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t("fields.orgApiKey")}</label>
-        {orgApiKeys.length === 0 && !createdKey ? (
+        <label className="text-sm font-medium">{t("fields.apiKey")}</label>
+        {apiKeys.length === 0 && !createdKey ? (
           <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-            <p className="text-xs text-muted-foreground">{t("noOrgApiKeys")}</p>
+            <p className="text-xs text-muted-foreground">{t("noApiKeys")}</p>
             <Input
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
-              placeholder={t("orgApiKeyNamePlaceholder")}
+              placeholder={t("apiKeyNamePlaceholder")}
               disabled={isCreatingKey}
             />
             {createKeyError && (
@@ -350,17 +382,26 @@ export function BudgetDialog({
               type="button"
               size="sm"
               disabled={isCreatingKey || !keyName.trim()}
-              onClick={() => void handleCreateOrgApiKey()}
+              onClick={() => void handleCreateApiKey()}
             >
-              {isCreatingKey ? t("saving") : t("createOrgApiKey")}
+              {isCreatingKey ? t("saving") : t("createApiKey")}
             </Button>
+            <p className="text-xs text-muted-foreground">
+              {t("manageApiKeysHint")}{" "}
+              <Link
+                href="/api-keys"
+                className="underline hover:text-foreground"
+              >
+                {t("apiKeysPath")}
+              </Link>
+            </p>
           </div>
         ) : (
           <>
             {createdKey && (
               <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                 <p className="text-xs text-muted-foreground">
-                  {t("orgApiKeyCreated")}
+                  {t("apiKeyCreated")}
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 truncate rounded bg-muted px-2 py-1 font-mono text-xs">
@@ -372,26 +413,24 @@ export function BudgetDialog({
             )}
             <Controller
               control={control}
-              name="orgApiKeyId"
+              name="apiKeyId"
               render={({ field }) => (
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
                   disabled={!!editing}
                 >
-                  <SelectTrigger aria-label={t("fields.orgApiKey")}>
-                    <SelectValue
-                      placeholder={t("fields.orgApiKeyPlaceholder")}
-                    />
+                  <SelectTrigger aria-label={t("fields.apiKey")}>
+                    <SelectValue placeholder={t("fields.apiKeyPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {orgApiKeys.map((key) => (
+                    {apiKeys.map((key) => (
                       <SelectItem key={key.id} value={key.id}>
                         <span className="font-mono text-xs">
-                          {key.keyPrefix}
+                          {key.start ?? key.prefix ?? key.id.slice(0, 8)}
                         </span>
                         <span className="ml-2 text-muted-foreground">
-                          {key.name}
+                          {key.name ?? "API Key"}
                         </span>
                       </SelectItem>
                     ))}
@@ -401,10 +440,8 @@ export function BudgetDialog({
             />
           </>
         )}
-        {errors.orgApiKeyId && (
-          <p className="text-xs text-destructive">
-            {errors.orgApiKeyId.message}
-          </p>
+        {errors.apiKeyId && (
+          <p className="text-xs text-destructive">{errors.apiKeyId.message}</p>
         )}
       </div>
 

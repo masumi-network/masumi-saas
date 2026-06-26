@@ -883,10 +883,10 @@
         "saving": "Saving…"
       },
       "Budgets": {
-        "description": "Per-org-API-key spend limits for managed wallets. Amounts are in the token's base units.",
+        "description": "Per-API-key spend limits for managed wallets. Amounts are in the token's base units.",
         "setBudget": "Set budget",
         "columns": {
-          "orgApiKey": "Org API key",
+          "apiKey": "API key",
           "wallet": "Wallet",
           "chain": "Chain",
           "asset": "Asset",
@@ -895,15 +895,15 @@
           "actions": "Actions"
         },
         "emptyTitle": "No budgets set",
-        "emptyDescription": "Grant an org API key a spend budget against a Purchasing wallet.",
+        "emptyDescription": "Grant an API key a spend budget against a Purchasing wallet.",
         "goToWallets": "Go to Wallets",
         "editBudget": "Edit budget",
         "editTitle": "Update budget",
         "setTitle": "Set budget",
-        "dialogDescription": "Grant an org API key a spendable budget against a managed wallet for a specific chain and token.",
+        "dialogDescription": "Grant an API key a spendable budget against a managed wallet for a specific chain and token.",
         "fields": {
-          "orgApiKey": "Org API key",
-          "orgApiKeyPlaceholder": "Select an org API key",
+          "apiKey": "API key",
+          "apiKeyPlaceholder": "Select an API key",
           "wallet": "Managed wallet",
           "walletPlaceholder": "Select a wallet",
           "chain": "Chain",
@@ -918,12 +918,13 @@
         "updated": "Budget updated",
         "set": "Budget set",
         "saveFailed": "Failed to save budget",
-        "noOrgApiKeys": "Create an org API key to attach budgets to programmatic clients.",
-        "createOrgApiKey": "Create org API key",
-        "orgApiKeyName": "Key name",
-        "orgApiKeyNamePlaceholder": "e.g. production agent",
-        "orgApiKeyCreated": "Org API key created — copy it now; it won't be shown again.",
-        "createOrgApiKeyFailed": "Failed to create org API key"
+        "noApiKeys": "Create an API key to attach budgets to programmatic clients.",
+        "createApiKey": "Create API key",
+        "apiKeyNamePlaceholder": "e.g. production agent",
+        "apiKeyCreated": "API key created — copy it now; it won't be shown again.",
+        "createApiKeyFailed": "Failed to create API key",
+        "manageApiKeysHint": "You can also manage keys at",
+        "apiKeysPath": "/api-keys"
       },
       "Alerts": {
         "description": "Get alerted when a managed wallet runs low. Alerts fire as webhooks.",

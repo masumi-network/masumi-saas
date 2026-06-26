@@ -257,9 +257,7 @@ export default async function DashboardOverview({
                 ))}
               </ul>
             )}
-            {apiKeysCanManage ? (
-              <DashboardCreateApiKeyButton scope={apiKeysScope} />
-            ) : null}
+            {apiKeysCanManage ? <DashboardCreateApiKeyButton /> : null}
           </CardContent>
         </Card>
       </div>
