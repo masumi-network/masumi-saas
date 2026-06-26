@@ -1,4 +1,8 @@
-import { X402PaymentDirection, X402PaymentStatus } from "@masumi/database";
+import {
+  LowBalanceStatus,
+  X402PaymentDirection,
+  X402PaymentStatus,
+} from "@masumi/database";
 import {
   BASE_MAINNET_CAIP2,
   BASE_SEPOLIA_CAIP2,
@@ -8,6 +12,11 @@ import {
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
+import {
+  requireX402SessionAccess,
+  requireX402SessionBudgetAccess,
+  requireX402SessionBudgetReadAccess,
+} from "@/lib/auth/org-admin";
 import { type AuthenticatedApiContext } from "@/lib/auth/utils";
 import { buildNetworkedOidcScope } from "@/lib/config/oidc-scopes.config";
 import { ApiError } from "@/server/hono/errors";
@@ -27,31 +36,74 @@ export function rethrowIfHttpError(err: unknown): void {
   }
 }
 
-export function requireX402PayAccess(
+export async function requireX402PayAccess(
   authContext: AuthenticatedApiContext,
-): void {
-  requireAnyNetworkedOidcApiScope(authContext, {
-    resource: "payments",
-    action: "write",
-  });
+): Promise<void> {
+  if (authContext.authMethod === "oidcAccessToken") {
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "payments",
+      action: "write",
+    });
+    return;
+  }
+
+  await requireX402SessionAccess(authContext);
 }
 
-export function requireX402AdminRead(
+export async function requireX402AdminRead(
   authContext: AuthenticatedApiContext,
-): void {
-  requireAnyNetworkedOidcApiScope(authContext, {
-    resource: "payments",
-    action: "read",
-  });
+): Promise<void> {
+  if (authContext.authMethod === "oidcAccessToken") {
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "payments",
+      action: "read",
+    });
+    return;
+  }
+
+  await requireX402SessionAccess(authContext);
 }
 
-export function requireX402AdminWrite(
+export async function requireX402AdminWrite(
   authContext: AuthenticatedApiContext,
-): void {
-  requireAnyNetworkedOidcApiScope(authContext, {
-    resource: "payments",
-    action: "write",
-  });
+): Promise<void> {
+  if (authContext.authMethod === "oidcAccessToken") {
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "payments",
+      action: "write",
+    });
+    return;
+  }
+
+  await requireX402SessionAccess(authContext);
+}
+
+export async function requireX402BudgetRead(
+  authContext: AuthenticatedApiContext,
+): Promise<void> {
+  if (authContext.authMethod === "oidcAccessToken") {
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "payments",
+      action: "read",
+    });
+    return;
+  }
+
+  await requireX402SessionBudgetReadAccess(authContext);
+}
+
+export async function requireX402BudgetWrite(
+  authContext: AuthenticatedApiContext,
+): Promise<void> {
+  if (authContext.authMethod === "oidcAccessToken") {
+    requireAnyNetworkedOidcApiScope(authContext, {
+      resource: "payments",
+      action: "write",
+    });
+    return;
+  }
+
+  await requireX402SessionBudgetAccess(authContext);
 }
 
 export function getCaip2NetworkLimitFromAuth(
@@ -213,5 +265,33 @@ export function serializeSettlement(settlement: {
     amount: settlement.amount?.toString() ?? null,
     createdAt: toIsoString(settlement.createdAt),
     updatedAt: toIsoString(settlement.updatedAt),
+  };
+}
+
+export function serializeLowBalanceRule(rule: {
+  id: string;
+  evmWalletId: string;
+  EvmWallet: { address: string };
+  caip2Network: string;
+  asset: string;
+  thresholdAmount: bigint;
+  enabled: boolean;
+  status: LowBalanceStatus;
+  lastKnownAmount: bigint | null;
+  lastCheckedAt: Date | null;
+  lastAlertedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  const { EvmWallet, ...rest } = rule;
+  return {
+    ...rest,
+    evmWalletAddress: EvmWallet.address,
+    thresholdAmount: rule.thresholdAmount.toString(),
+    lastKnownAmount: rule.lastKnownAmount?.toString() ?? null,
+    lastCheckedAt: rule.lastCheckedAt ? toIsoString(rule.lastCheckedAt) : null,
+    lastAlertedAt: rule.lastAlertedAt ? toIsoString(rule.lastAlertedAt) : null,
+    createdAt: toIsoString(rule.createdAt),
+    updatedAt: toIsoString(rule.updatedAt),
   };
 }

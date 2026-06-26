@@ -156,6 +156,35 @@ export async function loadSupportedPaymentSourcesForAgent(
   return serializeSupportedPaymentSources(rows);
 }
 
+/** Batch-load advertised payment sources for agent API responses. */
+export async function loadSupportedPaymentSourcesMap(
+  agentIds: string[],
+): Promise<Map<string, SupportedPaymentSource[] | null>> {
+  const map = new Map<string, SupportedPaymentSource[] | null>();
+  if (agentIds.length === 0) return map;
+
+  const rows = await prisma.supportedPaymentSource.findMany({
+    where: { agentId: { in: agentIds } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const rowsByAgentId = new Map<string, DbSupportedPaymentSource[]>();
+  for (const row of rows) {
+    const bucket = rowsByAgentId.get(row.agentId) ?? [];
+    bucket.push(row);
+    rowsByAgentId.set(row.agentId, bucket);
+  }
+
+  for (const agentId of agentIds) {
+    map.set(
+      agentId,
+      serializeSupportedPaymentSources(rowsByAgentId.get(agentId) ?? []),
+    );
+  }
+
+  return map;
+}
+
 export function buildDefaultCardanoSupportedPaymentSource(
   network: CardanoNetwork,
   smartContractAddress: string,

@@ -1,4 +1,8 @@
+export * from "./analytics.js";
+export * from "./balance.js";
+export * from "./counts.js";
 export * from "./encryption.js";
+export * from "./low-balance.js";
 export * from "./network.js";
 export * from "./payment-source.js";
 export {

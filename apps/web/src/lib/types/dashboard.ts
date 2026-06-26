@@ -41,6 +41,9 @@ export type DashboardOverview = {
     start: string | null;
   }>;
   apiKeyCount: number;
+  apiKeysScope: "personal" | "org";
+  apiKeysCanManage: boolean;
+  activeOrganizationName: string | null;
   agentCount: number;
   verifiedAgentCount: number;
   runningAgentCount: number;

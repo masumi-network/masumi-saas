@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/page-header";
-import { getApiKeysAction } from "@/lib/actions/auth.action";
+import { getApiKeysPageDataAction } from "@/lib/actions/org-api-keys.action";
 import { getAuthContext } from "@/lib/auth/utils";
 
 import { ApiKeysList } from "./components/api-keys-list";
@@ -25,7 +25,7 @@ export default async function ApiKeysPage() {
     redirect("/signin?callbackUrl=" + encodeURIComponent("/api-keys"));
   }
 
-  const result = await getApiKeysAction();
+  const result = await getApiKeysPageDataAction();
   if (!result.success) {
     return (
       <AppPage>
@@ -35,10 +35,15 @@ export default async function ApiKeysPage() {
     );
   }
 
+  const pageDescription =
+    result.data.scope === "org"
+      ? t("orgDescription", { organization: result.data.organizationName })
+      : t("description");
+
   return (
     <AppPage>
-      <PageHeader title={t("title")} description={t("description")} />
-      <ApiKeysList keys={result.keys} />
+      <PageHeader title={t("title")} description={pageDescription} />
+      <ApiKeysList data={result.data} />
     </AppPage>
   );
 }

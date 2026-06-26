@@ -8,6 +8,8 @@
  * routes import.
  */
 
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
+
 import {
   registerAgentOpenApiBodySchema,
   verifyAgentBodySchema,
@@ -87,6 +89,7 @@ const agentListItemSchema = z.object({
   agentIdentifier: z.string().nullable(),
   networkIdentifier: z.string().nullable(),
   pricing: z.any().nullable().optional(),
+  supportedPaymentSources: supportedPaymentSourcesSchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   veridianCredentialId: z.string().nullable(),

@@ -204,6 +204,113 @@ function validateRegistrationFundingWalletNetwork(params: {
 }
 
 /**
+ * Merge and validate advertised payment sources before wallet provisioning or credit debit.
+ * Throws when x402/EVM options are submitted without a V2 smart contract address.
+ */
+export function prepareSupportedPaymentSourcesForRegistration(
+  network: PaymentNodeNetwork,
+  smartContractAddress: string | null | undefined,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+): SupportedPaymentSource[] | null {
+  const userSources = (supportedPaymentSources ?? []).map(
+    normalizeSupportedPaymentSourceInput,
+  );
+  if (userSources.length === 0) {
+    return null;
+  }
+
+  const contractAddress = smartContractAddress?.trim();
+  if (!contractAddress) {
+    throw new Error(
+      "Supported payment sources require a configured V2 payment source smart contract address.",
+    );
+  }
+
+  const mergedSources = mergeWithDefaultCardanoSource(
+    network,
+    contractAddress,
+    userSources,
+  );
+  validateSupportedPaymentSourcesOrThrow(
+    mergedSources,
+    network,
+    PaymentSourceType.Web3CardanoV2,
+  );
+  return mergedSources;
+}
+
+function formatSupportedPaymentSourceError(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Invalid supported payment sources";
+}
+
+/**
+ * Read-only preflight: load the configured payment source contract and validate
+ * supported payment sources before registration credits are consumed.
+ */
+export async function validateAgentRegistrationPaymentSourcesPreflight(
+  network: PaymentNodeNetwork,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!supportedPaymentSources?.length) {
+    return { ok: true };
+  }
+
+  let baseUrl: string;
+  let adminKey: string;
+  let paymentSourceId: string;
+  try {
+    baseUrl = paymentNodeConfig.getBaseUrl();
+    adminKey = paymentNodeConfig.getAdminApiKey();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+  } catch (error) {
+    console.error("Payment node config missing for x402 preflight:", error);
+    return {
+      ok: false,
+      error: "Something went wrong. Please try again later.",
+    };
+  }
+
+  const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+  const configuredPaymentSource = await getConfiguredPaymentSource(
+    adminClient,
+    paymentSourceId,
+  );
+  if (!configuredPaymentSource) {
+    return {
+      ok: false,
+      error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+    };
+  }
+
+  if (
+    configuredPaymentSource.network &&
+    configuredPaymentSource.network !== network
+  ) {
+    return {
+      ok: false,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: configuredPaymentSource.network,
+      }),
+    };
+  }
+
+  try {
+    prepareSupportedPaymentSourcesForRegistration(
+      network,
+      configuredPaymentSource.smartContractAddress,
+      supportedPaymentSources,
+    );
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: formatSupportedPaymentSourceError(error) };
+  }
+}
+
+/**
  * Fast path: create agent wallet, ref, and persist funding-wallet context; return agentId immediately.
  * Completion (registerAgent + confirmation polling) is done by POST /api/agents/:id/complete-registration.
  */
@@ -316,6 +423,21 @@ async function registerAgentOnChainUntilSetup(
   });
   if (fundingWalletNetworkError) {
     return { success: false, error: fundingWalletNetworkError };
+  }
+
+  let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
+  try {
+    mergedSupportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        configuredPaymentSource.smartContractAddress,
+        params.supportedPaymentSources,
+      );
+  } catch (error) {
+    return {
+      success: false,
+      error: formatSupportedPaymentSourceError(error),
+    };
   }
 
   const sellingWallet = await adminClient.generateWallet(network);
@@ -477,35 +599,11 @@ async function registerAgentOnChainUntilSetup(
     },
   });
 
-  const smartContractAddress =
-    paymentSource.smartContractAddress ??
-    configuredPaymentSource.smartContractAddress;
-  if (smartContractAddress) {
-    const userSources = (params.supportedPaymentSources ?? []).map(
-      normalizeSupportedPaymentSourceInput,
+  if (mergedSupportedPaymentSources) {
+    await replaceSupportedPaymentSourcesForAgent(
+      agent.id,
+      mergedSupportedPaymentSources,
     );
-    const mergedSources = mergeWithDefaultCardanoSource(
-      network,
-      smartContractAddress,
-      userSources,
-    );
-    try {
-      validateSupportedPaymentSourcesOrThrow(
-        mergedSources,
-        network,
-        PaymentSourceType.Web3CardanoV2,
-      );
-    } catch (error) {
-      await prisma.agent.delete({ where: { id: agent.id } });
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Invalid supported payment sources",
-      };
-    }
-    await replaceSupportedPaymentSourcesForAgent(agent.id, mergedSources);
   }
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");

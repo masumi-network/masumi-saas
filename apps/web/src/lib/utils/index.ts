@@ -6,6 +6,7 @@ export {
   formatBalance,
   formatPricingDisplay,
 } from "./format-price";
+export { formatX402Amount, groupDigits } from "./x402-format";
 
 export function shortenAddress(address: string, length = 6): string {
   if (!address) return "";

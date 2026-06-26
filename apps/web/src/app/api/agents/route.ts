@@ -2,15 +2,17 @@ import { randomUUID } from "node:crypto";
 
 import { createRoute } from "@hono/zod-openapi";
 import prisma, { RegistrationState } from "@masumi/database/client";
+import { loadSupportedPaymentSourcesMap } from "@masumi/payment-source-x402/supported-payment-sources";
 import { getCookie } from "hono/cookie";
 
 import {
   buildAgentPricing,
   type RegisterAgentParams,
   startAgentRegistration,
+  validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
-import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -197,15 +199,23 @@ app.openapi(
       const nextCursor =
         hasMore && page.length > 0 ? (page[page.length - 1]?.id ?? null) : null;
 
+      const sourcesByAgentId = await loadSupportedPaymentSourcesMap(
+        page.map((agent) => agent.id),
+      );
+
       // Prisma `verificationStatus`/dates are looser than the OpenAPI response
       // schema. Cast so Hono accepts the response body shape.
       type AgentsListData = z.infer<typeof agentsListSuccessSchema>["data"];
       return c.json(
         {
           success: true as const,
-          data: page.map(
-            ({ agentReference: _agentReference, ...agent }) => agent,
-          ) as unknown as AgentsListData,
+          data: page.map((agent) => {
+            const { agentReference: _agentReference, ...rest } = agent;
+            return shapeAgentForApi(
+              agent,
+              sourcesByAgentId.get(agent.id) ?? null,
+            );
+          }) as unknown as AgentsListData,
           nextCursor,
         },
         200,
@@ -401,6 +411,26 @@ app.openapi(
 
       const agentPricing = buildAgentPricing(network, pricing ?? undefined);
 
+      if (
+        agentPricing.pricingType === "Free" &&
+        supportedPaymentSources &&
+        supportedPaymentSources.length > 0
+      ) {
+        throw new ApiError(
+          400,
+          "Free agents cannot include x402 payment options.",
+        );
+      }
+
+      const paymentSourcesPreflight =
+        await validateAgentRegistrationPaymentSourcesPreflight(
+          network,
+          supportedPaymentSources,
+        );
+      if (!paymentSourcesPreflight.ok) {
+        throw new ApiError(400, paymentSourcesPreflight.error);
+      }
+
       await consumeCreditIfRequired({
         userId: user.id,
         reason: "agent_register",
@@ -459,7 +489,13 @@ app.openapi(
         if (!agent) {
           throw new ApiError(500, "Failed to load created agent");
         }
-        const data = shapeAgentWithMergedMetadata(agent);
+        const sourcesByAgentId = await loadSupportedPaymentSourcesMap([
+          agent.id,
+        ]);
+        const data = shapeAgentForApi(
+          agent,
+          sourcesByAgentId.get(agent.id) ?? null,
+        );
         // Prisma types are looser than the OpenAPI response schema. Cast.
         type StartRegistrationData = z.infer<
           typeof startRegistrationSuccessSchema
