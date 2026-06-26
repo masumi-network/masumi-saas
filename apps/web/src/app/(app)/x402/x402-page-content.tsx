@@ -79,7 +79,7 @@ function X402PageContentInner() {
 
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <div className="pt-2">
+      <div>
         {activeTab === "Chains" && <ChainsTab />}
         {activeTab === "Wallets" && <WalletsTab />}
         {activeTab === "Budgets" && showBudgetsTab && <BudgetsTab />}

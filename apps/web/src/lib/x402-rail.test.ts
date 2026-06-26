@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { X402Network } from "@/lib/x402/types";
 
-import {
-  chainsForIsTestnet,
-  isTestnetEnv,
-  isX402SetUpForIsTestnet,
-} from "./x402-rail";
+import { chainsForEnv, isTestnetEnv, isX402SetUpForEnv } from "./x402-rail";
 
 function chain(
   overrides: Partial<X402Network> & Pick<X402Network, "id" | "isTestnet">,
@@ -36,20 +32,20 @@ describe("x402-rail environment pairing", () => {
     }),
   ];
 
-  it("filters enabled chains by isTestnet", () => {
-    expect(chainsForIsTestnet(chains, true).map((c) => c.id)).toEqual([
+  it("pairs testnet chains with Preprod and mainnet chains with Mainnet", () => {
+    expect(chainsForEnv(chains, "Preprod").map((c) => c.id)).toEqual([
       "base-sepolia",
     ]);
-    expect(chainsForIsTestnet(chains, false).map((c) => c.id)).toEqual([
+    expect(chainsForEnv(chains, "Mainnet").map((c) => c.id)).toEqual([
       "base-mainnet",
     ]);
   });
 
   it("detects setup when a usable chain exists for the environment", () => {
-    expect(isX402SetUpForIsTestnet(chains, true)).toBe(true);
-    expect(isX402SetUpForIsTestnet(chains, false)).toBe(true);
+    expect(isX402SetUpForEnv(chains, "Preprod")).toBe(true);
+    expect(isX402SetUpForEnv(chains, "Mainnet")).toBe(true);
     expect(
-      isX402SetUpForIsTestnet(
+      isX402SetUpForEnv(
         [
           chain({
             id: "no-facilitator",
@@ -57,12 +53,12 @@ describe("x402-rail environment pairing", () => {
             facilitatorWalletId: null,
           }),
         ],
-        false,
+        "Mainnet",
       ),
     ).toBe(false);
   });
 
-  it("keeps Cardano isTestnetEnv for non-x402 callers", () => {
+  it("maps Cardano network to isTestnet", () => {
     expect(isTestnetEnv("Preprod")).toBe(true);
     expect(isTestnetEnv("Mainnet")).toBe(false);
   });

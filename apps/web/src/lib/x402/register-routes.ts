@@ -8,6 +8,7 @@ import {
   createX402Payment,
   deleteX402LowBalanceRule,
   deleteX402ManagedWallet,
+  deleteX402WalletBudget,
   getX402Analytics,
   getX402WalletBalances,
   listX402LowBalanceRules,
@@ -55,6 +56,8 @@ import {
   createPaymentSchemaOutput,
   createWalletSchemaInput,
   createWalletSchemaOutput,
+  deleteBudgetSchemaInput,
+  deleteBudgetSchemaOutput,
   deleteLowBalanceRuleSchemaInput,
   deleteLowBalanceRuleSchemaOutput,
   deleteWalletSchemaInput,
@@ -643,6 +646,54 @@ export function registerX402Routes(app: X402App): void {
         return c.json(budget, 200);
       } catch (error) {
         handleRouteError(error, "x402 set budget failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/budgets",
+      tags: ["x402"],
+      summary: "Delete x402 wallet budget",
+      security,
+      request: {
+        body: {
+          content: { "application/json": { schema: deleteBudgetSchemaInput } },
+        },
+      },
+      responses: {
+        200: {
+          description: "Budget deleted",
+          content: {
+            "application/json": { schema: deleteBudgetSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402BudgetWrite(authContext);
+        const { budgetId } = c.req.valid("json");
+
+        const result = await deleteX402WalletBudget(
+          x402Scope(authContext),
+          budgetId,
+        );
+
+        return c.json(
+          {
+            budgetId: result.budgetId,
+            deletedAt: result.deletedAt.toISOString(),
+          },
+          200,
+        );
+      } catch (error) {
+        handleRouteError(error, "x402 delete budget failed");
       }
     },
   );

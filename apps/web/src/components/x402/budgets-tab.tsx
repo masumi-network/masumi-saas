@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus } from "lucide-react";
+import { CircleDollarSign, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -10,8 +10,8 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -21,7 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { authClient } from "@/lib/auth/auth.client";
 import {
   useUserApiKeys,
@@ -35,6 +42,12 @@ import { getEvmTokenPresetsForChain } from "@/lib/x402/evm-token-presets";
 import type { X402Budget } from "@/lib/x402/types";
 
 import { X402FormDialog } from "./x402-form-dialog";
+import {
+  x402ActionsCellClass,
+  x402ActionsHeadClass,
+  X402TableEmptyState,
+  X402TableLoading,
+} from "./x402-table-ui";
 
 const budgetFormSchema = z.object({
   apiKeyId: z.string().min(1, "Required"),
@@ -57,6 +70,8 @@ export function BudgetsTab() {
   const { networks, isLoading: networksLoading } = useX402Networks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Budget | null>(null);
+  const [budgetToDelete, setBudgetToDelete] = useState<X402Budget | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const apiKeyLabelById = useMemo(
     () =>
@@ -95,8 +110,22 @@ export function BudgetsTab() {
     [budgets, envChainIds],
   );
 
+  const confirmDelete = async () => {
+    if (!budgetToDelete) return;
+    const budgetId = budgetToDelete.id;
+    setBusyId(budgetId);
+    const result = await x402Mutate(
+      "/budgets",
+      { method: "DELETE", body: JSON.stringify({ budgetId }) },
+      { successMessage: t("deleted"), errorMessage: t("deleteFailed") },
+    );
+    setBusyId(null);
+    setBudgetToDelete(null);
+    if (result) refetch();
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         <div className="flex shrink-0 items-center gap-2">
@@ -114,65 +143,55 @@ export function BudgetsTab() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-muted/30 dark:bg-muted/15">
-            <tr className="border-b">
-              {(
-                [
-                  "apiKey",
-                  "wallet",
-                  "chain",
-                  "asset",
-                  "remaining",
-                  "spent",
-                  "actions",
-                ] as const
-              ).map((col) => (
-                <th
-                  key={col}
-                  scope="col"
-                  className={`p-4 text-sm font-medium text-muted-foreground ${
-                    col === "remaining" || col === "spent" || col === "actions"
-                      ? "text-right"
-                      : "text-left"
-                  }`}
-                >
-                  {t(`columns.${col}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading || networksLoading ? (
-              <tr>
-                <td colSpan={7} className="py-10">
-                  <div className="flex justify-center">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : envBudgets.length === 0 ? (
-              <tr>
-                <td colSpan={7}>
-                  <EmptyState
-                    title={t("emptyTitle")}
-                    description={t("emptyDescription")}
-                    action={
-                      <Button asChild variant="outline" size="sm">
-                        <Link href="/x402?tab=Wallets">{t("goToWallets")}</Link>
-                      </Button>
+      {isLoading || networksLoading ? (
+        <X402TableLoading />
+      ) : envBudgets.length === 0 ? (
+        <X402TableEmptyState
+          icon={CircleDollarSign}
+          message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/80">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {(
+                  [
+                    "apiKey",
+                    "wallet",
+                    "chain",
+                    "asset",
+                    "remaining",
+                    "spent",
+                  ] as const
+                ).map((col) => (
+                  <TableHead
+                    key={col}
+                    className={
+                      col === "remaining" || col === "spent"
+                        ? "text-right"
+                        : undefined
                     }
-                  />
-                </td>
-              </tr>
-            ) : (
-              envBudgets.map((budget) => (
-                <tr key={budget.id} className="border-b last:border-0">
-                  <td className="p-4 text-xs">
+                  >
+                    {t(`columns.${col}`)}
+                  </TableHead>
+                ))}
+                <TableHead className={x402ActionsHeadClass}>
+                  {t("columns.actions")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {envBudgets.map((budget, index) => (
+                <TableRow
+                  key={budget.id}
+                  className="animate-table-row-in transition-[background-color,opacity] duration-150"
+                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+                >
+                  <TableCell className="text-xs">
                     {apiKeyLabel(budget.apiKeyId)}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <span
                         className="font-mono text-sm"
@@ -182,43 +201,56 @@ export function BudgetsTab() {
                       </span>
                       <CopyButton value={budget.evmWalletAddress} />
                     </div>
-                  </td>
-                  <td className="p-4 text-sm">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {chainLabel(budget.caip2Network)}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <span className="font-mono text-sm" title={budget.asset}>
                         {shortenAddress(budget.asset, 6)}
                       </span>
                       <CopyButton value={budget.asset} />
                     </div>
-                  </td>
-                  <td className="p-4 text-right font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">
                     {groupDigits(budget.remainingAmount)}
-                  </td>
-                  <td className="p-4 text-right font-mono text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm text-muted-foreground">
                     {groupDigits(budget.spentAmount)}
-                  </td>
-                  <td className="p-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={t("editBudget")}
-                      onClick={() => {
-                        setEditing(budget);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                  <TableCell className={x402ActionsCellClass}>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={t("editBudget")}
+                        onClick={() => {
+                          setEditing(budget);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        aria-label={t("deleteBudget")}
+                        disabled={busyId === budget.id}
+                        onClick={() => setBudgetToDelete(budget)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <BudgetDialog
         key={editing?.id ?? "new"}
@@ -229,6 +261,17 @@ export function BudgetsTab() {
           setDialogOpen(false);
           refetch();
         }}
+      />
+
+      <ConfirmDialog
+        open={budgetToDelete !== null}
+        onOpenChange={(open) => !open && setBudgetToDelete(null)}
+        title={t("deleteTitle")}
+        description={t("deleteDescription")}
+        onConfirm={confirmDelete}
+        isLoading={busyId !== null && busyId === budgetToDelete?.id}
+        variant="destructive"
+        confirmText={t("delete")}
       />
     </div>
   );

@@ -793,7 +793,7 @@
         "environmentBadge": "{evmEnvironment} EVM",
         "none": "None",
         "facilitatorHint": "Signs settlements for inbound payments on this chain. Required to enable the chain.",
-        "testnetHint": "Testnet chains for development and staging.",
+        "testnetHint": "Pairs with the Preprod environment.",
         "environmentLockedHint": "Locked to {evmEnvironment}. Use the sidebar toggle to add chains in the other environment.",
         "chainPresetsAria": "Choose a common EVM chain preset",
         "chainPresetPlaceholder": "Choose chain…",
@@ -806,7 +806,7 @@
         "saveFailed": "Failed to save chain"
       },
       "Wallets": {
-        "description": "Managed EVM wallets are split by direction: Purchasing wallets fund outbound x402 payments, Selling wallets settle inbound ones as chain facilitators.",
+        "description": "Purchasing wallets pay out; Selling wallets settle inbound.",
         "createWallet": "Create wallet",
         "columns": {
           "address": "Address",
@@ -816,8 +816,8 @@
           "actions": "Actions"
         },
         "types": {
-          "Purchasing": "Purchasing · outbound",
-          "Selling": "Selling · facilitator"
+          "Purchasing": "Purchasing",
+          "Selling": "Selling"
         },
         "emptyTitle": "No managed wallets",
         "emptyDescription": "Create a wallet to fund and settle x402 payments.",
@@ -920,6 +920,12 @@
         "updated": "Budget updated",
         "set": "Budget set",
         "saveFailed": "Failed to save budget",
+        "deleteBudget": "Delete budget",
+        "deleteTitle": "Delete spend budget",
+        "deleteDescription": "This removes the spend limit for this API key, wallet, chain, and token. It does not affect wallets or API keys.",
+        "delete": "Delete",
+        "deleted": "Budget deleted",
+        "deleteFailed": "Failed to delete budget",
         "noApiKeys": "Create an API key to attach budgets to programmatic clients.",
         "createApiKey": "Create API key",
         "apiKeyNamePlaceholder": "e.g. production agent",
@@ -1356,6 +1362,13 @@
         "activity": "Activity",
         "earnings": "Earnings",
         "topUp": "Top up",
+        "x402": "x402",
+        "x402Chains": "x402 · Chains",
+        "x402Wallets": "x402 · Wallets",
+        "x402Budgets": "x402 · Budgets",
+        "x402Alerts": "x402 · Alerts",
+        "x402Payments": "x402 · Payments",
+        "x402Setup": "x402 setup",
         "analytics": "Analytics",
         "organizations": "Organizations",
         "wallets": "Wallets",

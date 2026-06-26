@@ -12,12 +12,7 @@ import {
 
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402NetworksAll } from "@/lib/hooks/use-x402";
-import {
-  chainsForIsTestnet,
-  isX402ChainUsable,
-  readX402IsTestnetFromStorage,
-  X402_ENV_STORAGE_KEY,
-} from "@/lib/x402-rail";
+import { chainsForEnv, isX402ChainUsable } from "@/lib/x402-rail";
 import { isCardanoOnlyPage, isX402OnlyPage } from "@/lib/x402-rail-pages";
 
 export type PaymentRail = "cardano" | "x402";
@@ -27,9 +22,6 @@ type X402RailContextValue = {
   setActiveRail: (rail: PaymentRail) => void;
   selectedX402ChainId: string | null;
   setSelectedX402ChainId: (id: string | null) => void;
-  /** x402 EVM environment — independent of Cardano Preprod/Mainnet after first persist. */
-  x402IsTestnet: boolean;
-  setX402IsTestnet: (isTestnet: boolean) => void;
   isSetupMode: boolean;
   setIsSetupMode: (value: boolean) => void;
 };
@@ -62,7 +54,6 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
   const [selectedX402ChainId, setSelectedX402ChainIdState] = useState<
     string | null
   >(null);
-  const [x402IsTestnet, setX402IsTestnetState] = useState(false);
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -70,14 +61,9 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
     const id = setTimeout(() => {
       setActiveRailState(readRail());
       setSelectedX402ChainIdState(readChainId());
-      setX402IsTestnetState(
-        readX402IsTestnetFromStorage(cardanoNetwork === "Preprod"),
-      );
       setHydrated(true);
     }, 0);
     return () => clearTimeout(id);
-    // Cardano network is only a one-time default when x402 env was never stored.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setActiveRail = useCallback(
@@ -103,19 +89,12 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
     else localStorage.removeItem(CHAIN_STORAGE_KEY);
   }, []);
 
-  const setX402IsTestnet = useCallback((isTestnet: boolean) => {
-    setX402IsTestnetState(isTestnet);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(X402_ENV_STORAGE_KEY, String(isTestnet));
-    }
-  }, []);
-
   const envChains = useMemo(
-    () => chainsForIsTestnet(networks, x402IsTestnet),
-    [networks, x402IsTestnet],
+    () => chainsForEnv(networks, cardanoNetwork),
+    [networks, cardanoNetwork],
   );
 
-  // Keep x402 chain selection coherent with the active x402 environment.
+  // Keep x402 chain selection coherent with the active Cardano environment.
   useEffect(() => {
     if (!hydrated || networksLoading) return;
     if (activeRail !== "x402") return;
@@ -164,6 +143,7 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
     selectedX402ChainId,
     envChains,
     pathname,
+    cardanoNetwork,
   ]);
 
   // Auto-select rail from route.
@@ -184,8 +164,6 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
       setActiveRail,
       selectedX402ChainId,
       setSelectedX402ChainId,
-      x402IsTestnet,
-      setX402IsTestnet,
       isSetupMode,
       setIsSetupMode,
     }),
@@ -194,8 +172,6 @@ export function X402RailProvider({ children }: { children: React.ReactNode }) {
       setActiveRail,
       selectedX402ChainId,
       setSelectedX402ChainId,
-      x402IsTestnet,
-      setX402IsTestnet,
       isSetupMode,
     ],
   );
