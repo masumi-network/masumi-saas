@@ -1170,7 +1170,9 @@
         "x402Amount": "Amount (base units)",
         "x402AmountHint": "最小単位のトークン量 — 例: 6 桁小数なら 1000000 = 1.00 USDC",
         "x402Decimals": "Decimals",
-        "x402PayTo": "Pay to (recipient)",
+        "x402PayTo": "受取先 (pay to)",
+        "x402PayToHint": "決済後にバイヤーがステーブルコインを送るアドレスです。通常はこのチェーンのファシリテーターに設定した販売用ウォレットです。",
+        "x402PayToNoFacilitator": "このチェーンにはファシリテーターが未設定です。x402 → チェーンで販売用ウォレットを割り当てるか、管理している別の受取先を入力してください。",
         "x402Resource": "Resource URL (optional)"
       },
       "Edit": {

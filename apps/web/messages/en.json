@@ -1730,6 +1730,8 @@
         "x402AmountHint": "Token amount in smallest units — e.g. 1000000 with 6 decimals is 1.00 USDC.",
         "x402Decimals": "Decimals",
         "x402PayTo": "Pay to (recipient)",
+        "x402PayToHint": "Where buyers send stablecoins after settlement. Usually your selling wallet assigned as facilitator on this chain.",
+        "x402PayToNoFacilitator": "This chain has no facilitator yet — assign a selling wallet under x402 → Chains, or enter another recipient you control.",
         "x402Resource": "Resource URL (optional)"
       },
       "Edit": {

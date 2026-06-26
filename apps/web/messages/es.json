@@ -1170,7 +1170,9 @@
         "x402Amount": "Amount (base units)",
         "x402AmountHint": "Importe en unidades mínimas — p. ej. 1000000 con 6 decimales = 1,00 USDC.",
         "x402Decimals": "Decimals",
-        "x402PayTo": "Pay to (recipient)",
+        "x402PayTo": "Destinatario (pay to)",
+        "x402PayToHint": "Dirección a la que los compradores envían stablecoins tras la liquidación. Suele ser su cartera de venta asignada como facilitador en esta cadena.",
+        "x402PayToNoFacilitator": "Esta cadena aún no tiene facilitador — asigne una cartera de venta en x402 → Cadenas o introduzca otro destinatario que controle.",
         "x402Resource": "Resource URL (optional)"
       },
       "Edit": {

@@ -1170,7 +1170,9 @@
         "x402Amount": "Amount (base units)",
         "x402AmountHint": "Montant en unités minimales — ex. 1000000 avec 6 décimales = 1,00 USDC.",
         "x402Decimals": "Decimals",
-        "x402PayTo": "Pay to (recipient)",
+        "x402PayTo": "Destinataire (pay to)",
+        "x402PayToHint": "Adresse où les acheteurs envoient les stablecoins après règlement. En général votre portefeuille de vente assigné comme facilitateur sur cette chaîne.",
+        "x402PayToNoFacilitator": "Cette chaîne n'a pas encore de facilitateur — assignez un portefeuille de vente dans x402 → Chaînes, ou saisissez un autre destinataire que vous contrôlez.",
         "x402Resource": "Resource URL (optional)"
       },
       "Edit": {

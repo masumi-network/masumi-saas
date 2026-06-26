@@ -1170,7 +1170,9 @@
         "x402Amount": "Amount (base units)",
         "x402AmountHint": "Tokenbetrag in kleinsten Einheiten — z. B. 1000000 bei 6 Dezimalstellen = 1,00 USDC.",
         "x402Decimals": "Decimals",
-        "x402PayTo": "Pay to (recipient)",
+        "x402PayTo": "Empfänger (pay to)",
+        "x402PayToHint": "Adresse, an die Käufer nach der Abwicklung Stablecoins senden. In der Regel Ihre Selling-Wallet als Facilitator auf dieser Chain.",
+        "x402PayToNoFacilitator": "Für diese Chain ist noch kein Facilitator gesetzt — weisen Sie unter x402 → Chains eine Selling-Wallet zu oder geben Sie einen anderen Empfänger ein, den Sie kontrollieren.",
         "x402Resource": "Resource URL (optional)"
       },
       "Edit": {
