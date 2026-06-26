@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { getApiKeysAction } from "@/lib/actions/auth.action";
-import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { useX402Rail } from "@/lib/context/x402-rail-context";
 import {
   appendInclusiveCursorPage,
   flattenInclusiveCursorPages,
@@ -21,7 +21,6 @@ import type {
   X402WalletBalance,
   X402WalletType,
 } from "@/lib/x402/types";
-import { isTestnetEnv } from "@/lib/x402-rail";
 
 const PAGE_SIZE = 20;
 
@@ -59,16 +58,16 @@ export function useOrgApiKeys(options?: { enabled?: boolean }) {
   };
 }
 
-export function useX402Networks(options?: {
+const PAGE_SIZE = 20;
+
+function useX402NetworksQuery(options: {
   silentErrors?: boolean;
-  network?: PaymentNodeNetwork;
+  isTestnet?: boolean;
   allEnvironments?: boolean;
 }) {
-  const { network: activeNetwork } = usePaymentNetwork();
-  const silentErrors = options?.silentErrors ?? false;
-  const network = options?.network ?? activeNetwork;
-  const isTestnet = isTestnetEnv(network);
-  const allEnvironments = options?.allEnvironments ?? false;
+  const silentErrors = options.silentErrors ?? false;
+  const allEnvironments = options.allEnvironments ?? false;
+  const isTestnet = options.isTestnet ?? false;
 
   const query = useQuery({
     queryKey: [
@@ -101,6 +100,34 @@ export function useX402Networks(options?: {
       await query.refetch();
     },
   };
+}
+
+export function useX402Networks(options?: {
+  silentErrors?: boolean;
+  /** When omitted, uses the x402 rail environment (not Cardano network). */
+  isTestnet?: boolean;
+  network?: PaymentNodeNetwork;
+  allEnvironments?: boolean;
+}) {
+  const { x402IsTestnet } = useX402Rail();
+  const allEnvironments = options?.allEnvironments ?? false;
+  const isTestnet =
+    options?.isTestnet ??
+    (options?.network != null ? options.network === "Preprod" : x402IsTestnet);
+
+  return useX402NetworksQuery({
+    silentErrors: options?.silentErrors,
+    isTestnet,
+    allEnvironments,
+  });
+}
+
+/** For providers that must not call useX402Rail (avoids circular context). */
+export function useX402NetworksAll(options?: { silentErrors?: boolean }) {
+  return useX402NetworksQuery({
+    silentErrors: options?.silentErrors,
+    allEnvironments: true,
+  });
 }
 
 export function useX402Wallets(enabled = true, type?: X402WalletType) {

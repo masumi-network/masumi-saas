@@ -29,7 +29,10 @@ export function AgentX402Options({
   sources: SupportedPaymentSource[] | null | undefined;
 }) {
   const t = useTranslations("App.X402.AgentOptions");
-  const { networks } = useX402Networks({ silentErrors: true });
+  const { networks } = useX402Networks({
+    silentErrors: true,
+    allEnvironments: true,
+  });
   const evmSources = (sources ?? []).filter(
     (source): source is EvmPaymentSource => source.chain === "EVM",
   );

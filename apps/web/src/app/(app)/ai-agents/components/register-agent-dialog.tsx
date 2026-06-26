@@ -43,7 +43,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { useX402Networks } from "@/lib/hooks/use-x402-networks";
@@ -308,9 +307,8 @@ export function RegisterAgentDialog({
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
-  const { network } = usePaymentNetwork();
   const { networks: x402Networks, isLoading: x402NetworksLoading } =
-    useX402Networks({ network, silentErrors: true });
+    useX402Networks({ silentErrors: true });
   const [x402Options, setX402Options] = useState<X402OptionDraft[]>([]);
   const [x402Error, setX402Error] = useState<string | null>(null);
 

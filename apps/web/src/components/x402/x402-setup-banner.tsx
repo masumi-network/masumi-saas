@@ -7,10 +7,10 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useX402SetupDialog } from "@/components/x402/x402-setup-dialog";
-import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { useX402Rail } from "@/lib/context/x402-rail-context";
 import { useX402Networks } from "@/lib/hooks/use-x402";
 import { cn } from "@/lib/utils";
-import { isX402SetUpForEnv, X402_ACCENT } from "@/lib/x402-rail";
+import { isX402SetUpForIsTestnet, X402_ACCENT } from "@/lib/x402-rail";
 
 const DISMISSED_KEY_PREFIX = "masumi_x402_banner_dismissed_";
 
@@ -26,8 +26,11 @@ function subscribe(callback: () => void) {
 
 export function X402SetupBanner() {
   const t = useTranslations("App.X402.SetupBanner");
+  const tChains = useTranslations("App.X402.Chains");
   const { openSetup } = useX402SetupDialog();
-  const { network } = usePaymentNetwork();
+  const { x402IsTestnet } = useX402Rail();
+  const environment = x402IsTestnet ? tChains("testnet") : tChains("mainnet");
+  const dismissKey = `${DISMISSED_KEY_PREFIX}${x402IsTestnet ? "testnet" : "mainnet"}`;
   const { networks, isLoading } = useX402Networks({
     silentErrors: true,
     allEnvironments: true,
@@ -37,8 +40,8 @@ export function X402SetupBanner() {
     () =>
       typeof window === "undefined"
         ? false
-        : localStorage.getItem(DISMISSED_KEY_PREFIX + network) === "true",
-    [network],
+        : localStorage.getItem(dismissKey) === "true",
+    [dismissKey],
   );
   const isDismissedFromStorage = useSyncExternalStore(
     subscribe,
@@ -48,13 +51,13 @@ export function X402SetupBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   if (isLoading) return null;
-  if (isX402SetUpForEnv(networks, network)) return null;
+  if (isX402SetUpForIsTestnet(networks, x402IsTestnet)) return null;
   if (isDismissedFromStorage || dismissed) return null;
 
   const handleDismiss = () => {
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(DISMISSED_KEY_PREFIX + network, "true");
+        localStorage.setItem(dismissKey, "true");
       } catch {
         // Safari private mode / quota exceeded
       }
@@ -87,13 +90,13 @@ export function X402SetupBanner() {
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold tracking-tight">
-                {t("title", { network })}
+                {t("title", { environment })}
               </h2>
               <Badge variant="outline" className="font-medium">
                 {t("evmBadge")}
               </Badge>
               <Badge variant="secondary" className="font-medium">
-                {network}
+                {environment}
               </Badge>
             </div>
             <p className="max-w-2xl text-sm text-muted-foreground">
