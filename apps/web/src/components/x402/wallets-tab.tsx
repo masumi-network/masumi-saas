@@ -338,10 +338,7 @@ export function CreateWalletDialog({
             title={t("createTitle")}
             description={t("createDescription")}
           />
-          <DialogBody
-            stagger={false}
-            className="min-h-0 flex-1 space-y-5 overflow-y-auto"
-          >
+          <DialogBody className="min-h-0 flex-1 space-y-5 overflow-y-auto">
             <div className="space-y-2">
               <Label className="text-sm font-medium">{t("direction")}</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -527,10 +524,7 @@ function BackupKeyStep({
         title={t("backupTitle")}
         description={t("backupDescription")}
       />
-      <DialogBody
-        stagger={false}
-        className="min-h-0 flex-1 space-y-5 overflow-y-auto"
-      >
+      <DialogBody className="min-h-0 flex-1 space-y-5 overflow-y-auto">
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
           <KeyRound className="h-5 w-5 text-primary" />
         </div>
