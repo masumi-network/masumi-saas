@@ -2,6 +2,8 @@
  * Shared agent API types. Used by server functions and client/UI.
  */
 
+import type { SupportedPaymentSource } from "@masumi/payment-source-x402/payment-source";
+
 import type { AgentPricing } from "@/lib/utils";
 
 export type Agent = {
@@ -16,6 +18,7 @@ export type Agent = {
   agentIdentifier: string | null;
   networkIdentifier: string | null;
   pricing: AgentPricing | null;
+  supportedPaymentSources: SupportedPaymentSource[] | null;
   registrationState:
     | "RegistrationRequested"
     | "RegistrationInitiated"

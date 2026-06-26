@@ -66,7 +66,7 @@ import routeApp57 from "../../../app/api/v1/registry/count/route";
 import routeApp58 from "../../../app/api/v1/registry/deregister/route";
 import routeApp59 from "../../../app/api/v1/registry/diff/route";
 import routeApp60 from "../../../app/api/v1/registry/route";
-import routeApp61, { routeMeta as routeMeta61 } from "../../../app/api/v1/x402/route";
+import routeApp61, { routeMeta as routeMeta61 } from "../../../app/api/v1/x402/[[...path]]/route";
 import routeApp62 from "../../../app/api/webhooks/sumsub/route";
 
 export type RouteDocumentKey = "platform" | "public-v1";
@@ -143,6 +143,6 @@ export const routeAppManifest = [
   { app: routeApp58 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/deregister/route.ts" },
   { app: routeApp59 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/diff/route.ts" },
   { app: routeApp60 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/route.ts" },
-  { app: routeApp61 as unknown as OpenAPIHono, meta: routeMeta61, filePath: "src/app/api/v1/x402/route.ts" },
+  { app: routeApp61 as unknown as OpenAPIHono, meta: routeMeta61, filePath: "src/app/api/v1/x402/[[...path]]/route.ts" },
   { app: routeApp62 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/webhooks/sumsub/route.ts" },
 ] satisfies RouteAppManifestEntry[];

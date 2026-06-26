@@ -32,14 +32,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFormatDate } from "@/hooks/use-format-date";
-import type { ApiKeyListItem } from "@/lib/actions/auth.action";
+import {
+  type ApiKeysPageData,
+  revokeOrgApiKeyAction,
+} from "@/lib/actions/org-api-keys.action";
 import { authClient } from "@/lib/auth/auth.client";
 
 import { CreateApiKeyDialog } from "../../components/dashboard/create-api-key-dialog";
 
 const EMPTY_CELL = "\u2014";
 
-export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
+type DisplayApiKey = {
+  id: string;
+  name: string;
+  keyPreview: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+};
+
+function toDisplayKeys(data: ApiKeysPageData): DisplayApiKey[] {
+  if (data.scope === "personal") {
+    return data.keys.map((key) => ({
+      id: key.id,
+      name: key.name || key.prefix || key.start || "API Key",
+      keyPreview: key.start ?? key.prefix,
+      createdAt: key.createdAt,
+      lastUsedAt: key.lastRequest,
+    }));
+  }
+
+  return data.keys.map((key) => ({
+    id: key.id,
+    name: key.name,
+    keyPreview: key.keyPrefix,
+    createdAt: key.createdAt,
+    lastUsedAt: key.lastUsedAt,
+  }));
+}
+
+export function ApiKeysList({ data }: { data: ApiKeysPageData }) {
   const t = useTranslations("App.ApiKeys");
   const { formatRelativeDate } = useFormatDate();
   const router = useRouter();
@@ -50,14 +81,17 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
   const [revokeLoading, setRevokeLoading] = useState(false);
   const [revokeError, setRevokeError] = useState<string | null>(null);
 
+  const keys = useMemo(() => toDisplayKeys(data), [data]);
+  const isOrgScope = data.scope === "org";
+  const canManage = data.scope === "personal" || data.canManage;
+
   const filteredKeys = useMemo(() => {
     if (!searchQuery.trim()) return keys;
     const q = searchQuery.toLowerCase().trim();
     return keys.filter(
       (k) =>
-        k.name?.toLowerCase().includes(q) ||
-        k.prefix?.toLowerCase().includes(q) ||
-        k.start?.toLowerCase().includes(q),
+        k.name.toLowerCase().includes(q) ||
+        k.keyPreview?.toLowerCase().includes(q),
     );
   }, [keys, searchQuery]);
 
@@ -65,10 +99,18 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
     setRevokeError(null);
     setRevokeLoading(true);
     try {
-      const { error } = await authClient.apiKey.delete({ keyId });
-      if (error) {
-        setRevokeError(error.message || t("revokeError"));
-        return;
+      if (data.scope === "org") {
+        const result = await revokeOrgApiKeyAction(keyId);
+        if (!result.success) {
+          setRevokeError(result.error || t("revokeError"));
+          return;
+        }
+      } else {
+        const { error } = await authClient.apiKey.delete({ keyId });
+        if (error) {
+          setRevokeError(error.message || t("revokeError"));
+          return;
+        }
       }
       setRevokeKeyId(null);
       router.refresh();
@@ -86,6 +128,12 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
   return (
     <>
       <div className="min-w-0 space-y-6">
+        {isOrgScope && !canManage ? (
+          <div className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            {t("orgAdminOnly", { organization: data.organizationName })}
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex w-64 items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -109,12 +157,14 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
               size="icon"
               className="md:hidden"
               aria-label={t("addApiKey")}
+              disabled={!canManage}
             >
               <Plus className="h-4 w-4" />
             </Button>
             <Button
               onClick={() => setCreateOpen(true)}
               className="hidden md:flex items-center gap-2"
+              disabled={!canManage}
             >
               <Plus className="h-4 w-4" />
               {t("addApiKey")}
@@ -130,7 +180,11 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
             <p className="text-muted-foreground text-sm">
               {searchQuery.trim()
                 ? t("noKeysMatchingSearch")
-                : t("emptyDescription")}
+                : isOrgScope
+                  ? canManage
+                    ? t("orgEmptyDescription")
+                    : t("orgAdminOnly", { organization: data.organizationName })
+                  : t("emptyDescription")}
             </p>
           </div>
         ) : (
@@ -157,49 +211,51 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                     }}
                   >
                     <TableCell className="p-4 pl-6 font-medium">
-                      {key.name || key.prefix || key.start || "API Key"}
+                      {key.name}
                     </TableCell>
                     <TableCell className="p-4 font-mono text-sm text-muted-foreground">
-                      {(key.start ?? key.prefix)
-                        ? `${key.start ?? key.prefix}…`
-                        : EMPTY_CELL}
+                      {key.keyPreview ? `${key.keyPreview}…` : EMPTY_CELL}
                     </TableCell>
                     <TableCell className="p-4 text-sm text-muted-foreground">
                       {formatRelativeDate(key.createdAt)}
                     </TableCell>
                     <TableCell className="p-4 text-sm text-muted-foreground">
-                      {key.lastRequest
-                        ? formatRelativeDate(key.lastRequest)
+                      {key.lastUsedAt
+                        ? formatRelativeDate(key.lastUsedAt)
                         : t("neverUsed")}
                     </TableCell>
                     <TableCell className="sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background p-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label={t("actions")}
+                      {canManage ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={t("actions")}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="min-w-[120px]"
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="min-w-[120px]"
-                        >
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setRevokeError(null);
-                              setRevokeKeyId(key.id);
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4 shrink-0" />
-                            {t("revoke")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRevokeError(null);
+                                setRevokeKeyId(key.id);
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4 shrink-0" />
+                              {t("revoke")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        EMPTY_CELL
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -212,6 +268,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
       <CreateApiKeyDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
+        scope={isOrgScope ? "org" : "personal"}
         onSuccess={() => {
           setCreateOpen(false);
           router.refresh();

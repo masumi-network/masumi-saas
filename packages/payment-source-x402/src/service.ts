@@ -596,6 +596,7 @@ export async function upsertX402Network(input: {
 export async function setX402WalletBudget(input: {
   userId: string;
   orgApiKeyId: string;
+  organizationId?: string | null;
   evmWalletId: string;
   caip2Network: string;
   asset: string;
@@ -618,7 +619,7 @@ export async function setX402WalletBudget(input: {
     }),
     prisma.orgApiKey.findUnique({
       where: { id: input.orgApiKeyId },
-      select: { id: true },
+      select: { id: true, organizationId: true },
     }),
   ]);
   if (network == null) {
@@ -629,6 +630,15 @@ export async function setX402WalletBudget(input: {
   }
   if (orgApiKey == null) {
     throw createHttpError(404, "Org API key not found");
+  }
+  if (
+    input.organizationId != null &&
+    orgApiKey.organizationId !== input.organizationId
+  ) {
+    throw createHttpError(
+      403,
+      "Org API key does not belong to the active organization",
+    );
   }
   // Budgets fund outbound payments, so they may only be granted to a Purchasing wallet.
   await getManagedWalletOrThrow(

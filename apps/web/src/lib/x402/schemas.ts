@@ -1,4 +1,5 @@
 import {
+  LowBalanceStatus,
   X402EvmWalletType,
   X402PaymentDirection,
   X402PaymentStatus,
@@ -327,4 +328,150 @@ export const listSettlementsSchemaInput = z.object({
 
 export const listSettlementsSchemaOutput = z.object({
   Settlements: z.array(x402SettlementSchema),
+});
+
+export const countSchemaOutput = z.object({
+  total: z.number(),
+});
+
+export const paymentAttemptsCountSchemaInput = z.object({
+  status: z.nativeEnum(X402PaymentStatus).optional(),
+  direction: z.nativeEnum(X402PaymentDirection).optional(),
+  caip2Network: caip2Eip155Schema.optional(),
+});
+
+export const settlementsCountSchemaInput = z.object({
+  caip2Network: caip2Eip155Schema.optional(),
+  success: booleanQuerySchema.optional(),
+});
+
+export const walletsCountSchemaInput = z.object({
+  type: z.nativeEnum(X402EvmWalletType).optional(),
+});
+
+export const walletBalanceSchemaInput = z.object({
+  id: z.string(),
+  caip2Network: caip2Eip155Schema.optional(),
+});
+
+export const walletBalanceSchemaOutput = z.object({
+  evmWalletId: z.string(),
+  address: evmAddressSchema,
+  Balances: z.array(
+    z.object({
+      caip2Network: caip2Eip155Schema,
+      displayName: z.string(),
+      native: z
+        .object({
+          symbol: z.string(),
+          decimals: z.number(),
+          amount: z.string(),
+        })
+        .nullable(),
+      asset: z
+        .object({
+          asset: evmAddressSchema,
+          symbol: z.string().nullable(),
+          decimals: z.number(),
+          amount: z.string(),
+        })
+        .nullable(),
+      error: z.string().nullable(),
+    }),
+  ),
+});
+
+export const lowBalanceAssetSchema = z.union([
+  z.literal("native"),
+  evmAddressSchema,
+]);
+
+export const lowBalanceRuleSchema = z
+  .object({
+    id: z.string(),
+    evmWalletId: z.string(),
+    evmWalletAddress: z.string(),
+    caip2Network: caip2Eip155Schema,
+    asset: z.string(),
+    thresholdAmount: z.string(),
+    enabled: z.boolean(),
+    status: z.nativeEnum(LowBalanceStatus),
+    lastKnownAmount: z.string().nullable(),
+    lastCheckedAt: z.date().nullable(),
+    lastAlertedAt: z.date().nullable(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+  })
+  .openapi("X402LowBalanceRule");
+
+export const setLowBalanceRuleSchemaInput = z.object({
+  evmWalletId: z.string(),
+  caip2Network: caip2Eip155Schema,
+  asset: lowBalanceAssetSchema,
+  thresholdAmount: uintStringSchema,
+  enabled: z.boolean().optional(),
+});
+
+export const listLowBalanceRulesSchemaInput = z.object({
+  evmWalletId: z.string().optional(),
+  onlyLow: booleanQuerySchema.optional(),
+  includeDisabled: booleanQuerySchema.optional(),
+});
+
+export const updateLowBalanceRuleSchemaInput = z.object({
+  ruleId: z.string(),
+  thresholdAmount: uintStringSchema.optional(),
+  enabled: z.boolean().optional(),
+});
+
+export const deleteLowBalanceRuleSchemaInput = z.object({
+  ruleId: z.string(),
+});
+
+export const deleteLowBalanceRuleSchemaOutput = z.object({
+  ruleId: z.string(),
+  deletedAt: z.date(),
+});
+
+export const listLowBalanceRulesSchemaOutput = z.object({
+  Rules: z.array(lowBalanceRuleSchema),
+});
+
+const analyticsUnitSchema = z.object({
+  caip2Network: caip2Eip155Schema,
+  asset: z.string(),
+  amount: z.string(),
+});
+
+export const analyticsSchemaInput = z.object({
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  caip2Network: caip2Eip155Schema.optional(),
+  timeZone: z.string().optional(),
+});
+
+export const analyticsSchemaOutput = z.object({
+  periodStart: z.date(),
+  periodEnd: z.date(),
+  incomeCount: z.number(),
+  spendCount: z.number(),
+  TotalIncome: z.array(analyticsUnitSchema),
+  TotalSpend: z.array(analyticsUnitSchema),
+  Daily: z.array(
+    z.object({
+      year: z.number(),
+      month: z.number(),
+      day: z.number(),
+      Income: z.array(analyticsUnitSchema),
+      Spend: z.array(analyticsUnitSchema),
+    }),
+  ),
+  Monthly: z.array(
+    z.object({
+      year: z.number(),
+      month: z.number(),
+      Income: z.array(analyticsUnitSchema),
+      Spend: z.array(analyticsUnitSchema),
+    }),
+  ),
 });

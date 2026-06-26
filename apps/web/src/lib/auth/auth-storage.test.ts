@@ -197,6 +197,41 @@ describe("securePrismaAuthAdapter", () => {
     );
   });
 
+  it("does not double-hash session tokens already loaded from storage on update", async () => {
+    const authStorageModule = await import("./auth-storage");
+    const storedToken = authStorageModule.hashAuthLookupValue(
+      "raw-session-token",
+      "session.token",
+    );
+
+    adapterMethods.update.mockImplementation(async ({ where, update }) => ({
+      id: "session-1",
+      token: where[0].value,
+      ...update,
+    }));
+
+    const adapterFactory = authStorageModule.securePrismaAuthAdapter(
+      {} as never,
+      {
+        provider: "postgresql",
+      },
+    );
+    const adapter = adapterFactory({} as never);
+
+    await adapter.update({
+      model: "session",
+      where: [{ field: "token", value: storedToken }],
+      update: { activeOrganizationId: "org-1" },
+    });
+
+    expect(adapterMethods.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: [{ field: "token", value: storedToken }],
+        update: { activeOrganizationId: "org-1" },
+      }),
+    );
+  });
+
   it("writes a resolved OIDC session id to the rotated refresh token record", async () => {
     const authStorageModule = await import("./auth-storage");
     prismaMock.oauthAccessToken.updateMany.mockResolvedValue({ count: 1 });

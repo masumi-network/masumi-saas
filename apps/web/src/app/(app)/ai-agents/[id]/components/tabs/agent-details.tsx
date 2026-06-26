@@ -38,6 +38,10 @@ import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
 } from "../../../components/agent-utils";
+import {
+  AgentX402Options,
+  shouldShowAgentX402Options,
+} from "../../../components/agent-x402-options";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
 interface AgentDetailsProps {
@@ -329,6 +333,13 @@ export function AgentDetails({
             )}
           </CardContent>
         </Card>
+
+        {shouldShowAgentX402Options(
+          agent.supportedPaymentSources,
+          agent.pricing as { pricingType?: string } | null,
+        ) ? (
+          <AgentX402Options sources={agent.supportedPaymentSources} />
+        ) : null}
 
         <RequestVerificationDialog
           open={verificationDialogOpen}

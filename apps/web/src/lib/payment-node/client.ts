@@ -23,6 +23,7 @@ import type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -50,6 +51,7 @@ import {
   inboxAgentIdentifierMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
+  listWebhooksOutputSchema,
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
   paymentNodeApiKeySchema,
@@ -84,6 +86,7 @@ export type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -104,6 +107,8 @@ export type {
   Utxo,
   UtxoAmount,
   WalletStatus,
+  WebhookEndpoint,
+  WebhookEventType,
 } from "./schemas";
 
 const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
@@ -912,6 +917,30 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: parsedBody,
         },
         runtimePaymentResponseSchema,
+      );
+    },
+
+    /** List webhook endpoints registered for the authenticated API key. */
+    async listWebhooks(params?: {
+      paymentSourceId?: string | null;
+      cursorId?: string;
+      limit?: number;
+    }): Promise<ListWebhooksOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/webhooks`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.paymentSourceId != null && {
+              paymentSourceId: params.paymentSourceId,
+            }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+            ...(params?.limit != null && { limit: String(params.limit) }),
+          },
+        },
+        listWebhooksOutputSchema,
       );
     },
   };

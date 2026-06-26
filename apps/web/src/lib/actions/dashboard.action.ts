@@ -21,13 +21,17 @@ export async function getDashboardOverviewAction(
   { success: true; data: DashboardOverview } | { success: false; error: string }
 > {
   try {
-    const { user } = await getAuthenticatedOrThrow({
+    const { user, activeOrganizationId } = await getAuthenticatedOrThrow({
       requireEmailVerified: false,
     });
     const resolvedNetwork =
       network === "Mainnet" || network === "Preprod" ? network : "Preprod";
 
-    const data = await getDashboardOverview(user.id, resolvedNetwork);
+    const data = await getDashboardOverview(
+      user.id,
+      resolvedNetwork,
+      activeOrganizationId,
+    );
     return { success: true, data };
   } catch (error) {
     console.error("Failed to get dashboard overview:", error);
