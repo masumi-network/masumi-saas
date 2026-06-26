@@ -3,9 +3,10 @@
 DELETE FROM "x402_wallet_budget";
 UPDATE "x402_payment_attempt" SET "orgApiKeyId" = NULL WHERE "orgApiKeyId" IS NOT NULL;
 
-ALTER TABLE "x402_wallet_budget" DROP CONSTRAINT "x402_wallet_budget_orgApiKeyId_fkey";
-DROP INDEX "x402_wallet_budget_orgApiKeyId_evmWalletId_caip2Network_asset_key";
-DROP INDEX "x402_wallet_budget_orgApiKeyId_enabled_idx";
+ALTER TABLE "x402_wallet_budget" DROP CONSTRAINT IF EXISTS "x402_wallet_budget_orgApiKeyId_fkey";
+DROP INDEX IF EXISTS "x402_wallet_budget_orgApiKeyId_evmWalletId_caip2Network_ass_key";
+DROP INDEX IF EXISTS "x402_wallet_budget_orgApiKeyId_evmWalletId_caip2Network_asset_key";
+DROP INDEX IF EXISTS "x402_wallet_budget_orgApiKeyId_enabled_idx";
 
 ALTER TABLE "x402_wallet_budget" RENAME COLUMN "orgApiKeyId" TO "apiKeyId";
 
@@ -18,8 +19,8 @@ CREATE UNIQUE INDEX "x402_wallet_budget_apiKeyId_evmWalletId_caip2Network_asset_
 CREATE INDEX "x402_wallet_budget_apiKeyId_enabled_idx"
   ON "x402_wallet_budget"("apiKeyId", "enabled");
 
-ALTER TABLE "x402_payment_attempt" DROP CONSTRAINT "x402_payment_attempt_orgApiKeyId_fkey";
-DROP INDEX "x402_payment_attempt_orgApiKeyId_createdAt_idx";
+ALTER TABLE "x402_payment_attempt" DROP CONSTRAINT IF EXISTS "x402_payment_attempt_orgApiKeyId_fkey";
+DROP INDEX IF EXISTS "x402_payment_attempt_orgApiKeyId_createdAt_idx";
 
 ALTER TABLE "x402_payment_attempt" RENAME COLUMN "orgApiKeyId" TO "apiKeyId";
 

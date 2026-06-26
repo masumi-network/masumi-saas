@@ -274,6 +274,7 @@ export function BudgetDialog({
   });
 
   const selectedNetwork = useWatch({ control, name: "caip2Network" });
+  const assetValue = useWatch({ control, name: "asset" });
   const selectedChain = useMemo(
     () =>
       networks.find((network) => network.caip2Id === selectedNetwork) ?? null,
@@ -283,6 +284,14 @@ export function BudgetDialog({
     () =>
       getEvmTokenPresetsForChain(selectedNetwork, selectedChain?.defaultAsset),
     [selectedChain?.defaultAsset, selectedNetwork],
+  );
+  const selectedPresetId = useMemo(
+    () =>
+      tokenPresets.find(
+        (preset) =>
+          preset.address.toLowerCase() === (assetValue ?? "").toLowerCase(),
+      )?.id,
+    [assetValue, tokenPresets],
   );
 
   const handleCreateApiKey = async () => {
@@ -512,31 +521,40 @@ export function BudgetDialog({
         <label htmlFor="budget-asset" className="text-sm font-medium">
           {t("fields.asset")}
         </label>
-        {tokenPresets.length > 0 && !editing ? (
-          <div className="flex flex-wrap gap-2">
-            {tokenPresets.map((preset) => (
-              <Button
-                key={`${preset.id}-${preset.address}`}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() =>
-                  setValue("asset", preset.address, { shouldValidate: true })
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            id="budget-asset"
+            placeholder="0x…"
+            className="font-mono sm:min-w-0 sm:flex-1"
+            readOnly={!!editing}
+            {...register("asset")}
+          />
+          {tokenPresets.length > 0 && !editing ? (
+            <Select
+              value={selectedPresetId}
+              onValueChange={(id) => {
+                const preset = tokenPresets.find((item) => item.id === id);
+                if (preset) {
+                  setValue("asset", preset.address, { shouldValidate: true });
                 }
+              }}
+            >
+              <SelectTrigger
+                className="w-full shrink-0 sm:w-40"
+                aria-label={t("assetPresetsAria")}
               >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-        ) : null}
-        <Input
-          id="budget-asset"
-          placeholder="0x…"
-          className="font-mono"
-          readOnly={!!editing}
-          {...register("asset")}
-        />
+                <SelectValue placeholder={t("assetPresetPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {tokenPresets.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
         {errors.asset ? (
           <p className="text-xs text-destructive">{errors.asset.message}</p>
         ) : (
