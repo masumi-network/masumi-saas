@@ -751,7 +751,8 @@
         "back": "Retour aux organisations",
         "backToDashboard": "Retour au tableau de bord",
         "current": "Actuel",
-        "switchTo": "Passer à cette organisation"
+        "switchTo": "Passer à cette organisation",
+        "switchToPersonal": "Switch to personal workspace"
       },
       "Dashboard": {
         "memberCount": "{count, plural, one {# membre} other {# membres}}",
@@ -1837,7 +1838,7 @@
     },
     "X402": {
       "title": "x402",
-      "description": "Manage the EVM payment rail: chains, managed wallets, spend budgets, balance alerts and payment activity. Configuration is tied to your user account — org workspaces require admin access and do not share x402 settings between members.",
+      "description": "Manage chains, wallets, and x402 payments.",
       "docs": "Docs",
       "tabs": {
         "Chains": "Chains",
@@ -1867,7 +1868,11 @@
         "editChain": "Edit chain",
         "editTitle": "Edit chain",
         "addTitle": "Add chain",
-        "dialogDescription": "Configure an EVM chain for the x402 payment rail. The CAIP-2 id is the unique key.",
+        "dialogDescription": "Configure an EVM chain for the x402 payment rail.",
+        "dialogDescriptionLocked": "Only {evmEnvironment} EVM chains can be added while {network} is selected.",
+        "environmentLockedTitle": "Locked to {network}",
+        "chainEnvironmentMismatch": "This chain is not valid for {evmEnvironment} EVM. Choose a preset from the list.",
+        "switchNetwork": "Switch to {network}",
         "fields": {
           "caip2Id": "CAIP-2 chain id",
           "displayName": "Display name",
@@ -1879,10 +1884,13 @@
           "enabled": "Enabled",
           "environment": "Environment"
         },
+        "environmentBadge": "{network} · {evmEnvironment} EVM",
         "none": "None",
         "facilitatorHint": "Signs settlements for inbound payments on this chain. Required to enable the chain.",
         "testnetHint": "Pairs with the Preprod environment.",
         "environmentLockedHint": "Locked to {network}. Testnet EVM chains pair with Preprod; mainnet chains pair with Mainnet.",
+        "chainPresetsAria": "Choose a common EVM chain preset",
+        "chainPresetPlaceholder": "Choose chain…",
         "enabledHint": "Allow x402 payments on this chain.",
         "cancel": "Cancel",
         "saving": "Saving…",
@@ -2145,6 +2153,14 @@
           "budget": "Fund a spend budget (optional)"
         },
         "getStarted": "Get started",
+        "walletStepTitle": "Create selling wallet",
+        "walletStepDescription": "Create a managed Selling wallet. It signs settlements as the chain facilitator.",
+        "sellingWalletCreated": "Selling wallet created",
+        "addSellingWallet": "Add another wallet",
+        "facilitatorStepTitle": "Assign facilitator",
+        "facilitatorStepDescription": "Set your Selling wallet as facilitator on a {network} EVM chain.",
+        "walletRequiredFirst": "Create a Selling wallet in the previous step first.",
+        "walletStepComplete": "Selling wallet created",
         "receivingTitle": "Enable receiving payments",
         "receivingDescription": "Add a Selling wallet and set it as facilitator on a {network} EVM chain.",
         "facilitatorSet": "Facilitator set on {chain}",

@@ -33,7 +33,8 @@
     "clean": "rm -rf dist",
     "prepare": "pnpm build",
     "lint": "eslint --max-warnings 0 .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@masumi/database": "workspace:*",
@@ -48,6 +49,7 @@
   "devDependencies": {
     "@types/http-errors": "2.0.4",
     "@types/node": "22.19.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "4.1.1"
   }
 }

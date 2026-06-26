@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const findUniqueNetworkMock = vi.fn();
+const findFirstNetworkMock = vi.fn();
 const findUniqueOrgKeyMock = vi.fn();
 const findFirstWalletMock = vi.fn();
 const upsertBudgetMock = vi.fn();
@@ -8,7 +8,7 @@ const upsertBudgetMock = vi.fn();
 vi.mock("@masumi/database/client", () => ({
   default: {
     x402Network: {
-      findUnique: findUniqueNetworkMock,
+      findFirst: findFirstNetworkMock,
     },
     orgApiKey: {
       findUnique: findUniqueOrgKeyMock,
@@ -29,7 +29,10 @@ vi.mock("@masumi/database/client", () => ({
 describe("setX402WalletBudget org API key scope", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUniqueNetworkMock.mockResolvedValue({ caip2Id: "eip155:84532" });
+    findFirstNetworkMock.mockResolvedValue({
+      caip2Id: "eip155:84532",
+      userId: "user-1",
+    });
     findFirstWalletMock.mockResolvedValue({
       id: "wallet-1",
       type: "Purchasing",

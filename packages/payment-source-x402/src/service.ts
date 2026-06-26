@@ -46,6 +46,13 @@ import {
 } from "./internal.js";
 import { logger } from "./logger.js";
 import { isAllowedCaip2Network } from "./network.js";
+import {
+  budgetOwnershipWhere,
+  networkOwnershipWhere,
+  paymentAttemptOwnershipWhere,
+  resolveX402TenantScope,
+  type X402ScopeInput,
+} from "./tenant-scope.js";
 
 // Wallet CRUD lives in ./wallets; re-exported so existing import sites
 // (`@masumi/payment-source-x402`) and the service spec keep one entry point.
@@ -210,6 +217,7 @@ async function getX402SupportedPaymentSourceOrThrow(
           apiUrl: true,
           agentIdentifier: true,
           userId: true,
+          organizationId: true,
         },
       },
     },
@@ -220,14 +228,25 @@ async function getX402SupportedPaymentSourceOrThrow(
   return source;
 }
 
+/** Inbound facilitator lookup: org agents share org x402 config; personal agents use owner userId. */
+function facilitatorScopeForAgent(
+  agent: { userId: string; organizationId: string | null } | null | undefined,
+  fallbackUserId: string,
+): X402ScopeInput {
+  if (agent?.organizationId) {
+    return { userId: fallbackUserId, organizationId: agent.organizationId };
+  }
+  return { userId: agent?.userId ?? fallbackUserId, organizationId: null };
+}
+
 async function getClientForWallet(
-  userId: string,
+  scopeInput: X402ScopeInput,
   walletId: string,
   caip2Network: string,
 ) {
   const [wallet, network] = await Promise.all([
-    getManagedWalletOrThrow(userId, walletId, X402EvmWalletType.Purchasing),
-    getX402NetworkOrThrow(userId, caip2Network),
+    getManagedWalletOrThrow(scopeInput, walletId, X402EvmWalletType.Purchasing),
+    getX402NetworkOrThrow(scopeInput, caip2Network),
   ]);
   const privateKey = decrypt(wallet.encryptedPrivateKey) as PrivateKey;
   const account = privateKeyToAccount(privateKey);
@@ -261,8 +280,11 @@ async function getClientForWallet(
   };
 }
 
-async function getFacilitatorForNetwork(userId: string, caip2Network: string) {
-  const network = await getX402NetworkOrThrow(userId, caip2Network);
+async function getFacilitatorForNetwork(
+  scopeInput: X402ScopeInput,
+  caip2Network: string,
+) {
+  const network = await getX402NetworkOrThrow(scopeInput, caip2Network);
   if (network.FacilitatorWallet == null) {
     throw createHttpError(
       400,
@@ -314,17 +336,19 @@ async function getFacilitatorForNetwork(userId: string, caip2Network: string) {
     networks: network.caip2Id as Network,
   });
 
-  return facilitator;
+  return { facilitator, network };
 }
 
 async function reserveBudgetForAttempt({
-  userId,
+  x402NetworkId,
+  networkUserId,
   orgApiKeyId,
   evmWalletId,
   requirements,
   payer,
 }: {
-  userId: string;
+  x402NetworkId: string;
+  networkUserId: string;
   orgApiKeyId: string;
   evmWalletId: string;
   requirements: PaymentRequirements;
@@ -368,7 +392,8 @@ async function reserveBudgetForAttempt({
         data: {
           direction: X402PaymentDirection.OutboundPayment,
           status: X402PaymentStatus.PaymentRequired,
-          userId,
+          userId: networkUserId,
+          x402NetworkId,
           orgApiKeyId,
           evmWalletId,
           caip2Network: requirements.network,
@@ -489,14 +514,16 @@ function assertPayloadRequirementsMatchRegisteredSource(
   }
 }
 
-export async function listX402Networks(input: {
-  userId: string;
-  isTestnet?: boolean;
-}) {
+export async function listX402Networks(
+  input: X402ScopeInput & {
+    isTestnet?: boolean;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   const networks = await prisma.x402Network.findMany({
     // Split by environment at the query level: testnet chains belong to the Preprod
     // environment, mainnet chains to Mainnet. Undefined returns every chain.
-    where: { userId: input.userId, isTestnet: input.isTestnet },
+    where: { ...networkOwnershipWhere(scope), isTestnet: input.isTestnet },
     orderBy: { caip2Id: "asc" },
     select: {
       id: true,
@@ -521,18 +548,19 @@ export async function listX402Networks(input: {
   }));
 }
 
-export async function upsertX402Network(input: {
-  userId: string;
-  organizationId?: string | null;
-  caip2Id: string;
-  displayName: string;
-  rpcUrl: string;
-  isTestnet?: boolean;
-  isEnabled?: boolean;
-  defaultAsset?: string | null;
-  facilitatorWalletId?: string | null;
-  createdByUserId?: string | null;
-}) {
+export async function upsertX402Network(
+  input: X402ScopeInput & {
+    caip2Id: string;
+    displayName: string;
+    rpcUrl: string;
+    isTestnet?: boolean;
+    isEnabled?: boolean;
+    defaultAsset?: string | null;
+    facilitatorWalletId?: string | null;
+    createdByUserId?: string | null;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   getEip155ChainId(input.caip2Id);
   assertSafeRpcUrl(input.rpcUrl);
   if (input.defaultAsset != null)
@@ -542,50 +570,99 @@ export async function upsertX402Network(input: {
   // wallet — from being wired up as a settlement signer.
   if (input.facilitatorWalletId != null) {
     await getManagedWalletOrThrow(
-      input.userId,
+      input,
       input.facilitatorWalletId,
       X402EvmWalletType.Selling,
     );
   }
 
-  const result = await prisma.x402Network.upsert({
-    where: { userId_caip2Id: { userId: input.userId, caip2Id: input.caip2Id } },
-    create: {
-      userId: input.userId,
-      organizationId: input.organizationId ?? null,
-      caip2Id: input.caip2Id,
-      displayName: input.displayName,
-      rpcUrl: input.rpcUrl,
-      isTestnet: input.isTestnet ?? false,
-      isEnabled: input.isEnabled ?? true,
-      defaultAsset: input.defaultAsset,
-      facilitatorWalletId: input.facilitatorWalletId,
-      createdByUserId: input.createdByUserId,
-    },
-    // createdById is intentionally not updated — it records the original creator.
-    update: {
-      displayName: input.displayName,
-      rpcUrl: input.rpcUrl,
-      isTestnet: input.isTestnet,
-      isEnabled: input.isEnabled,
-      defaultAsset: input.defaultAsset,
-      facilitatorWalletId: input.facilitatorWalletId,
-    },
-    select: {
-      id: true,
-      caip2Id: true,
-      displayName: true,
-      rpcUrl: true,
-      isTestnet: true,
-      isEnabled: true,
-      defaultAsset: true,
-      facilitatorWalletId: true,
-      FacilitatorWallet: { select: { address: true } },
-      createdByUserId: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const updateData = {
+    displayName: input.displayName,
+    rpcUrl: input.rpcUrl,
+    isTestnet: input.isTestnet,
+    isEnabled: input.isEnabled,
+    defaultAsset: input.defaultAsset,
+    facilitatorWalletId: input.facilitatorWalletId,
+  };
+  const select = {
+    id: true,
+    caip2Id: true,
+    displayName: true,
+    rpcUrl: true,
+    isTestnet: true,
+    isEnabled: true,
+    defaultAsset: true,
+    facilitatorWalletId: true,
+    FacilitatorWallet: { select: { address: true } },
+    createdByUserId: true,
+    createdAt: true,
+    updatedAt: true,
+  } satisfies Prisma.X402NetworkSelect;
+
+  let result: Prisma.X402NetworkGetPayload<{ select: typeof select }>;
+  if (scope.mode === "org") {
+    const existing = await prisma.x402Network.findFirst({
+      where: {
+        organizationId: scope.organizationId,
+        caip2Id: input.caip2Id,
+      },
+      select: { id: true },
+    });
+    result =
+      existing != null
+        ? await prisma.x402Network.update({
+            where: { id: existing.id },
+            data: updateData,
+            select,
+          })
+        : await prisma.x402Network.create({
+            data: {
+              userId: input.userId,
+              organizationId: scope.organizationId,
+              caip2Id: input.caip2Id,
+              displayName: input.displayName,
+              rpcUrl: input.rpcUrl,
+              isTestnet: input.isTestnet ?? false,
+              isEnabled: input.isEnabled ?? true,
+              defaultAsset: input.defaultAsset,
+              facilitatorWalletId: input.facilitatorWalletId,
+              createdByUserId: input.createdByUserId,
+            },
+            select,
+          });
+  } else {
+    const existing = await prisma.x402Network.findFirst({
+      where: {
+        userId: scope.userId,
+        caip2Id: input.caip2Id,
+        organizationId: null,
+      },
+      select: { id: true },
+    });
+    result =
+      existing != null
+        ? await prisma.x402Network.update({
+            where: { id: existing.id },
+            data: updateData,
+            select,
+          })
+        : await prisma.x402Network.create({
+            data: {
+              userId: scope.userId,
+              organizationId: null,
+              caip2Id: input.caip2Id,
+              displayName: input.displayName,
+              rpcUrl: input.rpcUrl,
+              isTestnet: input.isTestnet ?? false,
+              isEnabled: input.isEnabled ?? true,
+              defaultAsset: input.defaultAsset,
+              facilitatorWalletId: input.facilitatorWalletId,
+              createdByUserId: input.createdByUserId,
+            },
+            select,
+          });
+  }
+
   const { FacilitatorWallet, ...network } = result;
   return {
     ...network,
@@ -593,16 +670,17 @@ export async function upsertX402Network(input: {
   };
 }
 
-export async function setX402WalletBudget(input: {
-  userId: string;
-  orgApiKeyId: string;
-  organizationId?: string | null;
-  evmWalletId: string;
-  caip2Network: string;
-  asset: string;
-  remainingAmount: string;
-  createdByUserId?: string | null;
-}) {
+export async function setX402WalletBudget(
+  input: X402ScopeInput & {
+    orgApiKeyId: string;
+    evmWalletId: string;
+    caip2Network: string;
+    asset: string;
+    remainingAmount: string;
+    createdByUserId?: string | null;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   getEip155ChainId(input.caip2Network);
   assertHexAddress(input.asset, "asset");
   const asset = normalizeAddress(input.asset);
@@ -611,11 +689,12 @@ export async function setX402WalletBudget(input: {
   // Validate the referenced network, api key and wallet up front so a missing one returns
   // a clear 404 instead of an opaque foreign-key 500 from the upsert.
   const [network, orgApiKey] = await Promise.all([
-    prisma.x402Network.findUnique({
+    prisma.x402Network.findFirst({
       where: {
-        userId_caip2Id: { userId: input.userId, caip2Id: input.caip2Network },
+        ...networkOwnershipWhere(scope),
+        caip2Id: input.caip2Network,
       },
-      select: { caip2Id: true },
+      select: { caip2Id: true, userId: true, id: true },
     }),
     prisma.orgApiKey.findUnique({
       where: { id: input.orgApiKeyId },
@@ -642,7 +721,7 @@ export async function setX402WalletBudget(input: {
   }
   // Budgets fund outbound payments, so they may only be granted to a Purchasing wallet.
   await getManagedWalletOrThrow(
-    input.userId,
+    input,
     input.evmWalletId,
     X402EvmWalletType.Purchasing,
   );
@@ -657,7 +736,8 @@ export async function setX402WalletBudget(input: {
       },
     },
     create: {
-      userId: input.userId,
+      userId: network.userId,
+      x402NetworkId: network.id,
       orgApiKeyId: input.orgApiKeyId,
       evmWalletId: input.evmWalletId,
       caip2Network: input.caip2Network,
@@ -690,13 +770,15 @@ export async function setX402WalletBudget(input: {
   });
 }
 
-export async function listX402WalletBudgets(input: {
-  userId: string;
-  orgApiKeyId?: string;
-}) {
+export async function listX402WalletBudgets(
+  input: X402ScopeInput & {
+    orgApiKeyId?: string;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   return prisma.x402WalletBudget.findMany({
     where: {
-      userId: input.userId,
+      ...budgetOwnershipWhere(scope),
       ...(input.orgApiKeyId != null ? { orgApiKeyId: input.orgApiKeyId } : {}),
     },
     orderBy: { createdAt: "desc" },
@@ -716,19 +798,21 @@ export async function listX402WalletBudgets(input: {
   });
 }
 
-export async function listX402PaymentAttempts(input: {
-  userId: string;
-  take: number;
-  cursorId?: string;
-  status?: X402PaymentStatus;
-  direction?: X402PaymentDirection;
-  caip2Network?: string;
-}) {
+export async function listX402PaymentAttempts(
+  input: X402ScopeInput & {
+    take: number;
+    cursorId?: string;
+    status?: X402PaymentStatus;
+    direction?: X402PaymentDirection;
+    caip2Network?: string;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   // Explicit projection: never expose paymentPayload or encrypted material to the
   // dashboard.
   return prisma.x402PaymentAttempt.findMany({
     where: {
-      userId: input.userId,
+      ...paymentAttemptOwnershipWhere(scope),
       status: input.status,
       direction: input.direction,
       caip2Network: input.caip2Network,
@@ -770,17 +854,19 @@ export async function listX402PaymentAttempts(input: {
   });
 }
 
-export async function listX402Settlements(input: {
-  userId: string;
-  take: number;
-  cursorId?: string;
-  caip2Network?: string;
-}) {
+export async function listX402Settlements(
+  input: X402ScopeInput & {
+    take: number;
+    cursorId?: string;
+    caip2Network?: string;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   // Explicit projection: never expose rawResponse to the dashboard.
   return prisma.x402Settlement.findMany({
     where: {
       caip2Network: input.caip2Network,
-      PaymentAttempt: { userId: input.userId },
+      PaymentAttempt: paymentAttemptOwnershipWhere(scope),
     },
     orderBy: { createdAt: "desc" },
     take: input.take,
@@ -824,8 +910,9 @@ export async function verifyX402Payment({
     paymentPayload.accepted,
     requirements,
   );
-  const facilitator = await getFacilitatorForNetwork(
-    source.agent?.userId ?? userId,
+  const facilitatorScope = facilitatorScopeForAgent(source.agent, userId);
+  const { facilitator, network } = await getFacilitatorForNetwork(
+    facilitatorScope,
     requirements.network,
   );
   const paymentPayloadHash = hashX402PaymentPayload(paymentPayload);
@@ -849,7 +936,8 @@ export async function verifyX402Payment({
       status: verifyResponse.isValid
         ? X402PaymentStatus.Verified
         : X402PaymentStatus.Failed,
-      userId: source.agent?.userId ?? userId,
+      userId: network.userId,
+      x402NetworkId: network.id,
       orgApiKeyId: orgApiKeyId ?? null,
       agentId: source.agentId,
       supportedPaymentSourceId,
@@ -921,7 +1009,13 @@ export async function settleX402Payment({
     where: { paymentPayloadHash },
     include: {
       PaymentAttempt: {
-        select: { id: true, payer: true, supportedPaymentSourceId: true },
+        select: {
+          id: true,
+          payer: true,
+          supportedPaymentSourceId: true,
+          userId: true,
+          x402NetworkId: true,
+        },
       },
     },
   });
@@ -942,7 +1036,8 @@ export async function settleX402Payment({
       data: {
         direction: X402PaymentDirection.InboundSettle,
         status: X402PaymentStatus.Replayed,
-        userId: source.agent?.userId ?? userId,
+        userId: existingSettlement.PaymentAttempt.userId,
+        x402NetworkId: existingSettlement.PaymentAttempt.x402NetworkId,
         orgApiKeyId: orgApiKeyId ?? null,
         agentId: source.agentId,
         supportedPaymentSourceId,
@@ -980,8 +1075,9 @@ export async function settleX402Payment({
     };
   }
 
-  const facilitator = await getFacilitatorForNetwork(
-    source.agent?.userId ?? userId,
+  const facilitatorScope = facilitatorScopeForAgent(source.agent, userId);
+  const { facilitator, network } = await getFacilitatorForNetwork(
+    facilitatorScope,
     requirements.network,
   );
   const settleResponse = await facilitator.settle(paymentPayload, requirements);
@@ -999,7 +1095,8 @@ export async function settleX402Payment({
       status: settleResponse.success
         ? X402PaymentStatus.Settled
         : X402PaymentStatus.Failed,
-      userId: source.agent?.userId ?? userId,
+      userId: network.userId,
+      x402NetworkId: network.id,
       orgApiKeyId: orgApiKeyId ?? null,
       agentId: source.agentId,
       supportedPaymentSourceId,
@@ -1056,6 +1153,7 @@ export async function settleX402Payment({
 
 export async function createX402Payment({
   userId,
+  organizationId,
   orgApiKeyId,
   caip2NetworkLimit,
   evmWalletId,
@@ -1065,6 +1163,7 @@ export async function createX402Payment({
   paymentIdentifier,
 }: {
   userId: string;
+  organizationId?: string | null;
   orgApiKeyId: string;
   caip2NetworkLimit: string[] | null;
   evmWalletId: string;
@@ -1073,6 +1172,8 @@ export async function createX402Payment({
   preferredAsset?: string;
   paymentIdentifier?: string;
 }) {
+  const scopeInput: X402ScopeInput = { userId, organizationId };
+  const scope = resolveX402TenantScope(scopeInput);
   const accepts = paymentRequired.accepts;
   if (!Array.isArray(accepts) || accepts.length === 0) {
     throw createHttpError(
@@ -1113,10 +1214,15 @@ export async function createX402Payment({
   // Select the first candidate whose network is enabled and that has a funded
   // budget for this (apiKey, wallet, network, asset).
   let selectedRequirement: PaymentRequirements | null = null;
+  let selectedNetworkUserId: string | null = null;
+  let selectedX402NetworkId: string | null = null;
   for (const candidate of candidates) {
-    const candidateNetwork = await prisma.x402Network.findUnique({
-      where: { userId_caip2Id: { userId, caip2Id: candidate.network } },
-      select: { isEnabled: true },
+    const candidateNetwork = await prisma.x402Network.findFirst({
+      where: {
+        ...networkOwnershipWhere(scope),
+        caip2Id: candidate.network,
+      },
+      select: { isEnabled: true, userId: true, id: true },
     });
     if (candidateNetwork == null || !candidateNetwork.isEnabled) continue;
 
@@ -1134,9 +1240,15 @@ export async function createX402Payment({
     if (budget == null) continue;
 
     selectedRequirement = candidate;
+    selectedNetworkUserId = candidateNetwork.userId;
+    selectedX402NetworkId = candidateNetwork.id;
     break;
   }
-  if (selectedRequirement == null) {
+  if (
+    selectedRequirement == null ||
+    selectedNetworkUserId == null ||
+    selectedX402NetworkId == null
+  ) {
     throw createHttpError(
       402,
       "No managed wallet budget can cover the forwarded x402 payment requirements",
@@ -1145,7 +1257,7 @@ export async function createX402Payment({
   const selected = selectedRequirement;
 
   const { client, payer } = await getClientForWallet(
-    userId,
+    scopeInput,
     evmWalletId,
     selected.network,
   );
@@ -1184,7 +1296,8 @@ export async function createX402Payment({
   }
 
   const reservation = await reserveBudgetForAttempt({
-    userId,
+    x402NetworkId: selectedX402NetworkId,
+    networkUserId: selectedNetworkUserId,
     orgApiKeyId,
     evmWalletId,
     requirements: selected,

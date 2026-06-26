@@ -23,3 +23,4 @@ export {
   verifyX402Payment,
 } from "./service.js";
 export * from "./supported-payment-sources.js";
+export * from "./tenant-scope.js";

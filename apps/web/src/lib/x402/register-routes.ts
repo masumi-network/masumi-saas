@@ -96,6 +96,15 @@ type OutboundPaymentRequired = Parameters<
   typeof createX402Payment
 >[0]["paymentRequired"];
 
+function x402Scope(
+  authContext: Awaited<ReturnType<typeof getAuthenticatedOrThrow>>,
+) {
+  return {
+    userId: authContext.user.id,
+    organizationId: authContext.activeOrganizationId,
+  };
+}
+
 function handleRouteError(error: unknown, label: string): never {
   if (error instanceof ApiError) throw error;
   rethrowIfAuthOrCreditsError(error);
@@ -248,7 +257,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const result = await createX402Payment({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           orgApiKeyId: input.orgApiKeyId,
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           evmWalletId: input.evmWalletId,
@@ -301,7 +310,7 @@ export function registerX402Routes(app: X402App): void {
 
         const Wallets = (
           await listX402ManagedWallets({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             take: query.take,
             cursorId: query.cursorId,
             type: query.type,
@@ -399,7 +408,7 @@ export function registerX402Routes(app: X402App): void {
 
         const wallet = serializeWallet(
           await updateX402ManagedWallet({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             id: input.id,
             note: input.note,
           }),
@@ -445,7 +454,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const result = await deleteX402ManagedWallet(
-          authContext.user.id,
+          x402Scope(authContext),
           input.id,
         );
 
@@ -484,7 +493,7 @@ export function registerX402Routes(app: X402App): void {
 
         const Networks = (
           await listX402Networks({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             isTestnet: query.isTestnet,
           })
         ).map(serializeNetwork);
@@ -530,8 +539,7 @@ export function registerX402Routes(app: X402App): void {
 
         const network = serializeNetwork(
           await upsertX402Network({
-            userId: authContext.user.id,
-            organizationId: authContext.activeOrganizationId,
+            ...x402Scope(authContext),
             createdByUserId: authContext.user.id,
             ...input,
           }),
@@ -572,7 +580,7 @@ export function registerX402Routes(app: X402App): void {
 
         const Budgets = (
           await listX402WalletBudgets({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             orgApiKeyId: query.orgApiKeyId,
           })
         ).map(serializeBudget);
@@ -614,8 +622,7 @@ export function registerX402Routes(app: X402App): void {
 
         const budget = serializeBudget(
           await setX402WalletBudget({
-            userId: authContext.user.id,
-            organizationId: authContext.activeOrganizationId,
+            ...x402Scope(authContext),
             createdByUserId: authContext.user.id,
             ...input,
           }),
@@ -656,7 +663,7 @@ export function registerX402Routes(app: X402App): void {
 
         const PaymentAttempts = (
           await listX402PaymentAttempts({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             take: query.take,
             cursorId: query.cursorId,
             status: query.status,
@@ -700,7 +707,7 @@ export function registerX402Routes(app: X402App): void {
 
         const Settlements = (
           await listX402Settlements({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             take: query.take,
             cursorId: query.cursorId,
             caip2Network: query.caip2Network,
@@ -741,7 +748,7 @@ export function registerX402Routes(app: X402App): void {
         const query = c.req.valid("query");
 
         const balances = await getX402WalletBalances({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           evmWalletId: query.id,
           caip2Network: query.caip2Network,
         });
@@ -778,7 +785,7 @@ export function registerX402Routes(app: X402App): void {
         const query = c.req.valid("query");
 
         const total = await countX402ManagedWallets({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           type: query.type,
         });
 
@@ -814,7 +821,7 @@ export function registerX402Routes(app: X402App): void {
         const query = c.req.valid("query");
 
         const total = await countX402PaymentAttempts({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           status: query.status,
           direction: query.direction,
           caip2Network: query.caip2Network,
@@ -852,7 +859,7 @@ export function registerX402Routes(app: X402App): void {
         const query = c.req.valid("query");
 
         const total = await countX402Settlements({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           caip2Network: query.caip2Network,
           success: query.success,
         });
@@ -892,7 +899,7 @@ export function registerX402Routes(app: X402App): void {
 
         const Rules = (
           await listX402LowBalanceRules({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             evmWalletId: query.evmWalletId,
             onlyLow: query.onlyLow,
             includeDisabled: query.includeDisabled,
@@ -938,7 +945,7 @@ export function registerX402Routes(app: X402App): void {
 
         const rule = serializeLowBalanceRule(
           await setX402LowBalanceRule({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             ...input,
           }),
         );
@@ -982,7 +989,7 @@ export function registerX402Routes(app: X402App): void {
 
         const rule = serializeLowBalanceRule(
           await updateX402LowBalanceRule({
-            userId: authContext.user.id,
+            ...x402Scope(authContext),
             ...input,
           }),
         );
@@ -1027,7 +1034,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const result = await deleteX402LowBalanceRule(
-          authContext.user.id,
+          x402Scope(authContext),
           input.ruleId,
         );
 
@@ -1073,7 +1080,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const analytics = await getX402Analytics({
-          userId: authContext.user.id,
+          ...x402Scope(authContext),
           ...input,
         });
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus } from "lucide-react";
+import { ArrowLeftRight, Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +22,22 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import { useX402SetupDialog } from "@/components/x402/x402-setup-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
-import { shortenAddress } from "@/lib/utils";
+import { cn, shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
+import {
+  type EvmChainConfig,
+  getDefaultStablecoinForChain,
+  getEvmChainByCaip2Id,
+  getEvmChainPresets,
+} from "@/lib/x402/evm-config";
 import type { X402Network } from "@/lib/x402/types";
 import { isTestnetEnv } from "@/lib/x402-rail";
 
@@ -70,10 +81,14 @@ type ChainFormValues = z.infer<typeof chainSchema>;
 
 export function ChainsTab() {
   const t = useTranslations("App.X402.Chains");
-  const { openSetup } = useX402SetupDialog();
   const { networks, isLoading, isRefetching, refetch } = useX402Networks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Network | null>(null);
+
+  const openAdd = () => {
+    setEditing(null);
+    setDialogOpen(true);
+  };
 
   const openEdit = (network: X402Network) => {
     setEditing(network);
@@ -86,10 +101,7 @@ export function ChainsTab() {
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         <div className="flex shrink-0 items-center gap-2">
           <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
-          <Button
-            onClick={() => openSetup()}
-            className="flex items-center gap-2"
-          >
+          <Button onClick={openAdd} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             {t("addChain")}
           </Button>
@@ -242,27 +254,29 @@ export function ChainDialog({
   editing,
   onClose,
   onSaved,
-  environmentNetwork,
 }: {
   open: boolean;
   editing: X402Network | null;
   onClose: () => void;
   onSaved: () => void;
-  /** When set (e.g. from setup wizard), locks testnet/mainnet to match Cardano env. */
-  environmentNetwork?: PaymentNodeNetwork;
 }) {
   const t = useTranslations("App.X402.Chains");
+  const { network: paymentNetwork, setNetwork } = usePaymentNetwork();
+  const resolvedEnvironment = paymentNetwork;
+  const alternateNetwork: PaymentNodeNetwork =
+    paymentNetwork === "Mainnet" ? "Preprod" : "Mainnet";
   const { wallets } = useX402Wallets(open, "Selling");
   const [isSaving, setIsSaving] = useState(false);
-  const lockedTestnet =
-    environmentNetwork !== undefined
-      ? isTestnetEnv(environmentNetwork)
-      : undefined;
+  const [isSwitchAnimating, setIsSwitchAnimating] = useState(false);
+  const lockedTestnet = isTestnetEnv(resolvedEnvironment);
+  const evmEnvironmentLabel = lockedTestnet ? t("testnet") : t("mainnet");
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    setError,
     formState: { errors },
   } = useForm<ChainFormValues>({
     resolver: zodResolver(chainSchema),
@@ -270,16 +284,57 @@ export function ChainDialog({
       caip2Id: editing?.caip2Id ?? "",
       displayName: editing?.displayName ?? "",
       rpcUrl: editing?.rpcUrl ?? "",
-      isTestnet: editing?.isTestnet ?? lockedTestnet ?? false,
+      isTestnet: editing?.isTestnet ?? lockedTestnet,
       isEnabled: editing?.isEnabled ?? true,
       defaultAsset: editing?.defaultAsset ?? "",
       facilitatorWalletId: editing?.facilitatorWalletId ?? NO_FACILITATOR,
     },
   });
 
+  const chainPresets = useMemo(
+    () => getEvmChainPresets(lockedTestnet),
+    [lockedTestnet],
+  );
+  const selectedCaip2Id = useWatch({ control, name: "caip2Id" });
+
+  useEffect(() => {
+    if (!open || editing) return;
+    setValue("caip2Id", "");
+    setValue("displayName", "");
+    setValue("rpcUrl", "");
+    setValue("defaultAsset", "");
+    setValue("isTestnet", lockedTestnet);
+  }, [editing, lockedTestnet, open, setValue]);
+
+  const handleSwitchNetwork = () => {
+    setIsSwitchAnimating(true);
+    setNetwork(alternateNetwork);
+  };
+
+  const applyChainPreset = (chain: EvmChainConfig) => {
+    setValue("caip2Id", chain.caip2Id, { shouldValidate: true });
+    setValue("displayName", chain.displayName, { shouldValidate: true });
+    setValue("rpcUrl", chain.rpcUrl, { shouldValidate: true });
+    setValue("isTestnet", chain.isTestnet);
+    const defaultAsset = getDefaultStablecoinForChain(chain.caip2Id);
+    if (defaultAsset) {
+      setValue("defaultAsset", defaultAsset, { shouldValidate: true });
+    }
+  };
+
   const onSubmit = async (data: ChainFormValues) => {
+    const knownChain = getEvmChainByCaip2Id(data.caip2Id);
+    if (knownChain != null && knownChain.isTestnet !== lockedTestnet) {
+      setError("caip2Id", {
+        message: t("chainEnvironmentMismatch", {
+          evmEnvironment: evmEnvironmentLabel,
+        }),
+      });
+      return;
+    }
+
     setIsSaving(true);
-    const isTestnet = lockedTestnet ?? data.isTestnet;
+    const isTestnet = lockedTestnet;
     const result = await x402Mutate<X402Network>(
       "/networks",
       {
@@ -314,6 +369,7 @@ export function ChainDialog({
       title={editing ? t("editTitle") : t("addTitle")}
       description={t("dialogDescription")}
       maxWidthClassName="sm:max-w-lg"
+      bodyClassName="space-y-3 p-5"
       onSubmit={handleSubmit(onSubmit)}
       footer={
         <>
@@ -335,39 +391,86 @@ export function ChainDialog({
         </>
       }
     >
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <label htmlFor="chain-caip2Id" className="text-sm font-medium">
           {t("fields.caip2Id")}
         </label>
-        <Input
-          id="chain-caip2Id"
-          placeholder="eip155:8453"
-          className="font-mono"
-          readOnly={!!editing}
-          {...register("caip2Id")}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            id="chain-caip2Id"
+            placeholder="eip155:8453"
+            className="font-mono sm:min-w-0 sm:flex-1"
+            readOnly
+            {...register("caip2Id")}
+          />
+          {!editing && chainPresets.length > 0 ? (
+            <Select
+              value={
+                chainPresets.find((chain) => chain.caip2Id === selectedCaip2Id)
+                  ?.id
+              }
+              onValueChange={(id) => {
+                const chain = chainPresets.find((item) => item.id === id);
+                if (chain) applyChainPreset(chain);
+              }}
+            >
+              <SelectTrigger
+                className="w-full shrink-0 sm:w-44"
+                aria-label={t("chainPresetsAria")}
+              >
+                <SelectValue placeholder={t("chainPresetPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {chainPresets.map((chain) => (
+                  <SelectItem key={chain.id} value={chain.id}>
+                    {chain.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
         {errors.caip2Id && (
           <p className="text-xs text-destructive">{errors.caip2Id.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="chain-displayName" className="text-sm font-medium">
-          {t("fields.displayName")}
-        </label>
-        <Input
-          id="chain-displayName"
-          placeholder="Base"
-          {...register("displayName")}
-        />
-        {errors.displayName && (
-          <p className="text-xs text-destructive">
-            {errors.displayName.message}
-          </p>
-        )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label htmlFor="chain-displayName" className="text-sm font-medium">
+            {t("fields.displayName")}
+          </label>
+          <Input
+            id="chain-displayName"
+            placeholder="Base"
+            {...register("displayName")}
+          />
+          {errors.displayName && (
+            <p className="text-xs text-destructive">
+              {errors.displayName.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="chain-defaultAsset" className="text-sm font-medium">
+            {t("fields.defaultAsset")}
+          </label>
+          <Input
+            id="chain-defaultAsset"
+            placeholder="0x…"
+            className="font-mono"
+            {...register("defaultAsset")}
+          />
+          {errors.defaultAsset && (
+            <p className="text-xs text-destructive">
+              {errors.defaultAsset.message}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <label htmlFor="chain-rpcUrl" className="text-sm font-medium">
           {t("fields.rpcUrl")}
         </label>
@@ -381,24 +484,7 @@ export function ChainDialog({
         )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="chain-defaultAsset" className="text-sm font-medium">
-          {t("fields.defaultAsset")}
-        </label>
-        <Input
-          id="chain-defaultAsset"
-          placeholder="0x…"
-          className="font-mono"
-          {...register("defaultAsset")}
-        />
-        {errors.defaultAsset && (
-          <p className="text-xs text-destructive">
-            {errors.defaultAsset.message}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <label className="text-sm font-medium">{t("fields.facilitator")}</label>
         <Controller
           control={control}
@@ -428,60 +514,62 @@ export function ChainDialog({
             {errors.facilitatorWalletId.message}
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs leading-snug text-muted-foreground">
             {t("facilitatorHint")}
           </p>
         )}
       </div>
 
-      {lockedTestnet !== undefined && environmentNetwork ? (
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <p className="text-sm font-medium">{t("fields.environment")}</p>
-            <p className="text-xs text-muted-foreground">
-              {t("environmentLockedHint", { network: environmentNetwork })}
-            </p>
+      <div className="divide-y rounded-lg border">
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <p className="text-sm font-medium">{t("fields.environment")}</p>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="outline" className="whitespace-nowrap">
+              {t("environmentBadge", {
+                network: resolvedEnvironment,
+                evmEnvironment: evmEnvironmentLabel,
+              })}
+            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  aria-label={t("switchNetwork", { network: alternateNetwork })}
+                  onClick={handleSwitchNetwork}
+                >
+                  <ArrowLeftRight
+                    className={cn(
+                      "h-3 w-3",
+                      isSwitchAnimating && "animate-network-switch",
+                    )}
+                    onAnimationEnd={() => setIsSwitchAnimating(false)}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {t("switchNetwork", { network: alternateNetwork })}
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Badge variant="outline">
-            {lockedTestnet ? t("testnet") : t("mainnet")}
-          </Badge>
         </div>
-      ) : (
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <p className="text-sm font-medium">{t("fields.testnet")}</p>
-            <p className="text-xs text-muted-foreground">{t("testnetHint")}</p>
-          </div>
+
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <p className="text-sm font-medium">{t("fields.enabled")}</p>
           <Controller
             control={control}
-            name="isTestnet"
+            name="isEnabled"
             render={({ field }) => (
               <Switch
-                aria-label={t("fields.testnet")}
+                aria-label={t("fields.enabled")}
                 checked={field.value}
                 onCheckedChange={field.onChange}
               />
             )}
           />
         </div>
-      )}
-
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div>
-          <p className="text-sm font-medium">{t("fields.enabled")}</p>
-          <p className="text-xs text-muted-foreground">{t("enabledHint")}</p>
-        </div>
-        <Controller
-          control={control}
-          name="isEnabled"
-          render={({ field }) => (
-            <Switch
-              aria-label={t("fields.enabled")}
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-          )}
-        />
       </div>
     </X402FormDialog>
   );

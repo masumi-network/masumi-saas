@@ -105,7 +105,7 @@ export function X402SetupBanner() {
         <Button
           size="lg"
           className="shrink-0 gap-2"
-          onClick={() => openSetup({ network })}
+          onClick={() => openSetup()}
         >
           <Coins className="h-4 w-4" />
           {t("cta")}

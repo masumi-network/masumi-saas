@@ -9,6 +9,11 @@ import {
   safeHttpTransport,
 } from "./internal.js";
 import { logger } from "./logger.js";
+import {
+  networkOwnershipWhere,
+  resolveX402TenantScope,
+  type X402ScopeInput,
+} from "./tenant-scope.js";
 import { getX402ManagedWallet } from "./wallets.js";
 
 // Minimal ERC-20 read surface — balance plus display metadata.
@@ -131,21 +136,23 @@ async function readErc20Balance(
  * balance and the network's default token balance. RPC failures are captured per network so
  * one unreachable chain does not blank out the rest.
  */
-export async function getX402WalletBalances(input: {
-  userId: string;
-  evmWalletId: string;
-  caip2Network?: string;
-}): Promise<{
+export async function getX402WalletBalances(
+  input: X402ScopeInput & {
+    evmWalletId: string;
+    caip2Network?: string;
+  },
+): Promise<{
   evmWalletId: string;
   address: string;
   Balances: X402NetworkBalance[];
 }> {
-  const wallet = await getX402ManagedWallet(input.userId, input.evmWalletId);
+  const scope = resolveX402TenantScope(input);
+  const wallet = await getX402ManagedWallet(input, input.evmWalletId);
   const owner = wallet.address as HexAddress;
 
   const networks = await prisma.x402Network.findMany({
     where: {
-      userId: input.userId,
+      ...networkOwnershipWhere(scope),
       isEnabled: true,
       caip2Id: input.caip2Network,
     },

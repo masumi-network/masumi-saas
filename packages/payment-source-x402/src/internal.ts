@@ -4,6 +4,12 @@ import createHttpError from "http-errors";
 import { defineChain, http } from "viem";
 
 import { logger } from "./logger.js";
+import {
+  networkOwnershipWhere,
+  resolveX402TenantScope,
+  walletOwnershipWhere,
+  type X402ScopeInput,
+} from "./tenant-scope.js";
 
 export type HexAddress = `0x${string}`;
 export type PrivateKey = `0x${string}`;
@@ -151,15 +157,14 @@ export async function assertRpcServesDeclaredChain(
 }
 
 export async function getX402NetworkOrThrow(
-  userId: string,
+  scopeInput: X402ScopeInput,
   caip2Network: string,
 ) {
-  const network = await prisma.x402Network.findUnique({
+  const scope = resolveX402TenantScope(scopeInput);
+  const network = await prisma.x402Network.findFirst({
     where: {
-      userId_caip2Id: {
-        userId,
-        caip2Id: caip2Network,
-      },
+      ...networkOwnershipWhere(scope),
+      caip2Id: caip2Network,
     },
     include: {
       FacilitatorWallet: true,
@@ -172,12 +177,13 @@ export async function getX402NetworkOrThrow(
 }
 
 export async function getManagedWalletOrThrow(
-  userId: string,
+  scopeInput: X402ScopeInput,
   evmWalletId: string,
   expectedType?: X402EvmWalletType,
 ) {
+  const scope = resolveX402TenantScope(scopeInput);
   const wallet = await prisma.x402EvmWallet.findFirst({
-    where: { id: evmWalletId, userId, deletedAt: null },
+    where: { id: evmWalletId, ...walletOwnershipWhere(scope) },
   });
   if (wallet == null) {
     throw createHttpError(404, "Managed EVM wallet not found");
