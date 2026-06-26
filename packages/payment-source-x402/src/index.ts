@@ -9,6 +9,7 @@ export {
   createX402ManagedWallet,
   createX402Payment,
   deleteX402ManagedWallet,
+  deleteX402WalletBudget,
   getX402ManagedWallet,
   hashX402PaymentPayload,
   listX402ManagedWallets,

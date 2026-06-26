@@ -789,6 +789,22 @@ export async function listX402WalletBudgets(
   });
 }
 
+export async function deleteX402WalletBudget(
+  scopeInput: X402ScopeInput,
+  budgetId: string,
+) {
+  const scope = resolveX402TenantScope(scopeInput);
+  const existing = await prisma.x402WalletBudget.findFirst({
+    where: { id: budgetId, ...budgetOwnershipWhere(scope) },
+    select: { id: true },
+  });
+  if (existing == null) {
+    throw createHttpError(404, "x402 wallet budget not found");
+  }
+  await prisma.x402WalletBudget.delete({ where: { id: budgetId } });
+  return { budgetId, deletedAt: new Date() };
+}
+
 export async function listX402PaymentAttempts(
   input: X402ScopeInput & {
     take: number;

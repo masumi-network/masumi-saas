@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftRight, Pencil, Plus } from "lucide-react";
+import { Link2, Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -10,7 +10,6 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -20,26 +19,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useX402Rail } from "@/lib/context/x402-rail-context";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
-import { cn, shortenAddress } from "@/lib/utils";
+import { shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
 import {
   type EvmChainConfig,
   getDefaultStablecoinForChain,
-  getEvmChainByCaip2Id,
   getEvmChainPresets,
 } from "@/lib/x402/evm-config";
 import type { X402Network } from "@/lib/x402/types";
+import { isTestnetEnv } from "@/lib/x402-rail";
 
 import { X402FormDialog } from "./x402-form-dialog";
+import {
+  x402ActionsCellClass,
+  x402ActionsHeadClass,
+  X402TableEmptyState,
+  X402TableLoading,
+} from "./x402-table-ui";
+import { X402TestnetField } from "./x402-testnet-field";
 
 const NO_FACILITATOR = "__none__";
 
@@ -94,7 +102,7 @@ export function ChainsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         <div className="flex shrink-0 items-center gap-2">
@@ -106,82 +114,48 @@ export function ChainsTab() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-muted/30 dark:bg-muted/15">
-            <tr className="border-b">
-              <th
-                scope="col"
-                className="p-4 text-left text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.chain")}
-              </th>
-              <th
-                scope="col"
-                className="p-4 text-left text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.rpcUrl")}
-              </th>
-              <th
-                scope="col"
-                className="p-4 text-left text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.status")}
-              </th>
-              <th
-                scope="col"
-                className="p-4 text-left text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.defaultAsset")}
-              </th>
-              <th
-                scope="col"
-                className="p-4 text-left text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.facilitator")}
-              </th>
-              <th
-                scope="col"
-                className="p-4 text-right text-sm font-medium text-muted-foreground"
-              >
-                {t("columns.actions")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="py-10">
-                  <div className="flex justify-center">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : networks.length === 0 ? (
-              <tr>
-                <td colSpan={6}>
-                  <EmptyState
-                    title={t("emptyTitle")}
-                    description={t("emptyDescription")}
-                  />
-                </td>
-              </tr>
-            ) : (
-              networks.map((network) => (
-                <tr key={network.id} className="border-b last:border-0">
-                  <td className="p-4">
+      {isLoading ? (
+        <X402TableLoading />
+      ) : networks.length === 0 ? (
+        <X402TableEmptyState
+          icon={Link2}
+          message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/80">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>{t("columns.chain")}</TableHead>
+                <TableHead>{t("columns.rpcUrl")}</TableHead>
+                <TableHead>{t("columns.status")}</TableHead>
+                <TableHead>{t("columns.defaultAsset")}</TableHead>
+                <TableHead>{t("columns.facilitator")}</TableHead>
+                <TableHead className={x402ActionsHeadClass}>
+                  {t("columns.actions")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {networks.map((network, index) => (
+                <TableRow
+                  key={network.id}
+                  className="animate-table-row-in transition-[background-color,opacity] duration-150"
+                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+                >
+                  <TableCell>
                     <div className="font-medium">{network.displayName}</div>
                     <div className="font-mono text-xs text-muted-foreground">
                       {network.caip2Id}
                     </div>
-                  </td>
-                  <td
-                    className="max-w-[260px] truncate p-4 font-mono text-sm"
+                  </TableCell>
+                  <TableCell
+                    className="max-w-[260px] truncate font-mono text-sm"
                     title={network.rpcUrl}
                   >
                     {network.rpcUrl}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Badge
                         variant={network.isEnabled ? "success" : "secondary"}
@@ -192,8 +166,8 @@ export function ChainsTab() {
                         {network.isTestnet ? t("testnet") : t("mainnet")}
                       </Badge>
                     </div>
-                  </td>
-                  <td className="p-4 font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
                     {network.defaultAsset ? (
                       <div className="flex items-center gap-1">
                         <span title={network.defaultAsset}>
@@ -204,8 +178,8 @@ export function ChainsTab() {
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="p-4 text-sm">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {network.facilitatorWalletId ? (
                       <span className="font-mono">
                         {network.facilitatorWalletAddress
@@ -215,23 +189,24 @@ export function ChainsTab() {
                     ) : (
                       <Badge variant="warning">{t("notSet")}</Badge>
                     )}
-                  </td>
-                  <td className="p-4 text-right">
+                  </TableCell>
+                  <TableCell className={x402ActionsCellClass}>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-8 w-8"
                       aria-label={t("editChain")}
                       onClick={() => openEdit(network)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <ChainDialog
         key={editing?.id ?? "new"}
@@ -259,20 +234,16 @@ export function ChainDialog({
   onSaved: () => void;
 }) {
   const t = useTranslations("App.X402.Chains");
-  const { x402IsTestnet, setX402IsTestnet } = useX402Rail();
+  const { network } = usePaymentNetwork();
+  const wantTestnet = isTestnetEnv(network);
   const { wallets } = useX402Wallets(open, "Selling");
   const [isSaving, setIsSaving] = useState(false);
-  const [isSwitchAnimating, setIsSwitchAnimating] = useState(false);
-  const lockedTestnet = x402IsTestnet;
-  const evmEnvironmentLabel = lockedTestnet ? t("testnet") : t("mainnet");
-  const alternateEvmEnvironment = lockedTestnet ? t("mainnet") : t("testnet");
 
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    setError,
     formState: { errors },
   } = useForm<ChainFormValues>({
     resolver: zodResolver(chainSchema),
@@ -280,7 +251,7 @@ export function ChainDialog({
       caip2Id: editing?.caip2Id ?? "",
       displayName: editing?.displayName ?? "",
       rpcUrl: editing?.rpcUrl ?? "",
-      isTestnet: editing?.isTestnet ?? lockedTestnet,
+      isTestnet: editing?.isTestnet ?? wantTestnet,
       isEnabled: editing?.isEnabled ?? true,
       defaultAsset: editing?.defaultAsset ?? "",
       facilitatorWalletId: editing?.facilitatorWalletId ?? NO_FACILITATOR,
@@ -288,8 +259,9 @@ export function ChainDialog({
   });
 
   const chainPresets = useMemo(
-    () => getEvmChainPresets(lockedTestnet),
-    [lockedTestnet],
+    () =>
+      getEvmChainPresets().filter((chain) => chain.isTestnet === wantTestnet),
+    [wantTestnet],
   );
   const selectedCaip2Id = useWatch({ control, name: "caip2Id" });
 
@@ -299,13 +271,8 @@ export function ChainDialog({
     setValue("displayName", "");
     setValue("rpcUrl", "");
     setValue("defaultAsset", "");
-    setValue("isTestnet", lockedTestnet);
-  }, [editing, lockedTestnet, open, setValue]);
-
-  const handleSwitchEnvironment = () => {
-    setIsSwitchAnimating(true);
-    setX402IsTestnet(!x402IsTestnet);
-  };
+    setValue("isTestnet", wantTestnet);
+  }, [editing, open, setValue, wantTestnet]);
 
   const applyChainPreset = (chain: EvmChainConfig) => {
     setValue("caip2Id", chain.caip2Id, { shouldValidate: true });
@@ -319,18 +286,7 @@ export function ChainDialog({
   };
 
   const onSubmit = async (data: ChainFormValues) => {
-    const knownChain = getEvmChainByCaip2Id(data.caip2Id);
-    if (knownChain != null && knownChain.isTestnet !== lockedTestnet) {
-      setError("caip2Id", {
-        message: t("chainEnvironmentMismatch", {
-          evmEnvironment: evmEnvironmentLabel,
-        }),
-      });
-      return;
-    }
-
     setIsSaving(true);
-    const isTestnet = lockedTestnet;
     const result = await x402Mutate<X402Network>(
       "/networks",
       {
@@ -339,7 +295,7 @@ export function ChainDialog({
           caip2Id: data.caip2Id,
           displayName: data.displayName,
           rpcUrl: data.rpcUrl,
-          isTestnet,
+          isTestnet: wantTestnet,
           isEnabled: data.isEnabled,
           defaultAsset: data.defaultAsset ? data.defaultAsset : null,
           facilitatorWalletId:
@@ -420,6 +376,10 @@ export function ChainDialog({
                 {chainPresets.map((chain) => (
                   <SelectItem key={chain.id} value={chain.id}>
                     {chain.displayName}
+                    <span className="text-muted-foreground">
+                      {" · "}
+                      {chain.isTestnet ? t("testnet") : t("mainnet")}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -516,59 +476,34 @@ export function ChainDialog({
         )}
       </div>
 
-      <div className="divide-y rounded-lg border">
-        <div className="flex items-center justify-between gap-3 px-3 py-2">
-          <p className="text-sm font-medium">{t("fields.environment")}</p>
-          <div className="flex shrink-0 items-center gap-2">
-            <Badge variant="outline" className="whitespace-nowrap">
-              {t("environmentBadge", {
-                evmEnvironment: evmEnvironmentLabel,
-              })}
-            </Badge>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  aria-label={t("switchEnvironment", {
-                    evmEnvironment: alternateEvmEnvironment,
-                  })}
-                  onClick={handleSwitchEnvironment}
-                >
-                  <ArrowLeftRight
-                    className={cn(
-                      "h-3 w-3",
-                      isSwitchAnimating && "animate-network-switch",
-                    )}
-                    onAnimationEnd={() => setIsSwitchAnimating(false)}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                {t("switchEnvironment", {
-                  evmEnvironment: alternateEvmEnvironment,
-                })}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 px-3 py-2">
-          <p className="text-sm font-medium">{t("fields.enabled")}</p>
-          <Controller
-            control={control}
-            name="isEnabled"
-            render={({ field }) => (
-              <Switch
-                aria-label={t("fields.enabled")}
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            )}
+      <Controller
+        control={control}
+        name="isTestnet"
+        render={({ field }) => (
+          <X402TestnetField
+            checked={field.value ?? false}
+            onCheckedChange={field.onChange}
+            disabled
           />
+        )}
+      />
+
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <div>
+          <p className="text-sm font-medium">{t("fields.enabled")}</p>
+          <p className="text-xs text-muted-foreground">{t("enabledHint")}</p>
         </div>
+        <Controller
+          control={control}
+          name="isEnabled"
+          render={({ field }) => (
+            <Switch
+              aria-label={t("fields.enabled")}
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
       </div>
     </X402FormDialog>
   );

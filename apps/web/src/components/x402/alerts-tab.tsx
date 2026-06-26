@@ -1,8 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Bell, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -12,7 +11,6 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -22,7 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   useX402LowBalanceRules,
   useX402Networks,
@@ -33,6 +38,12 @@ import { x402Mutate } from "@/lib/x402/api";
 import type { X402LowBalanceRule } from "@/lib/x402/types";
 
 import { X402FormDialog } from "./x402-form-dialog";
+import {
+  x402ActionsCellWideClass,
+  x402ActionsHeadWideClass,
+  X402TableEmptyState,
+  X402TableLoading,
+} from "./x402-table-ui";
 
 const NATIVE = "native";
 
@@ -126,7 +137,7 @@ export function AlertsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         <div className="flex shrink-0 items-center gap-2">
@@ -144,70 +155,55 @@ export function AlertsTab() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-muted/30 dark:bg-muted/15">
-            <tr className="border-b">
-              {(
-                [
-                  "wallet",
-                  "chain",
-                  "asset",
-                  "threshold",
-                  "lastSeen",
-                  "status",
-                  "actions",
-                ] as const
-              ).map((col) => (
-                <th
-                  key={col}
-                  scope="col"
-                  className={`p-4 text-sm font-medium text-muted-foreground ${
-                    col === "threshold" ||
-                    col === "lastSeen" ||
-                    col === "actions"
-                      ? "text-right"
-                      : "text-left"
-                  }`}
-                >
-                  {t(`columns.${col}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading || networksLoading ? (
-              <tr>
-                <td colSpan={7} className="py-10">
-                  <div className="flex justify-center">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : envRules.length === 0 ? (
-              <tr>
-                <td colSpan={7}>
-                  <EmptyState
-                    title={t("emptyTitle")}
-                    description={t("emptyDescription")}
-                    action={
-                      <Button asChild variant="outline" size="sm">
-                        <Link href="/x402?tab=Wallets">{t("goToWallets")}</Link>
-                      </Button>
+      {isLoading || networksLoading ? (
+        <X402TableLoading />
+      ) : envRules.length === 0 ? (
+        <X402TableEmptyState
+          icon={Bell}
+          message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/80">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {(
+                  [
+                    "wallet",
+                    "chain",
+                    "asset",
+                    "threshold",
+                    "lastSeen",
+                    "status",
+                  ] as const
+                ).map((col) => (
+                  <TableHead
+                    key={col}
+                    className={
+                      col === "threshold" || col === "lastSeen"
+                        ? "text-right"
+                        : undefined
                     }
-                  />
-                </td>
-              </tr>
-            ) : (
-              envRules.map((rule) => (
-                <tr
+                  >
+                    {t(`columns.${col}`)}
+                  </TableHead>
+                ))}
+                <TableHead className={x402ActionsHeadWideClass}>
+                  {t("columns.actions")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {envRules.map((rule, index) => (
+                <TableRow
                   key={rule.id}
                   className={cn(
-                    "border-b last:border-0",
+                    "animate-table-row-in transition-[background-color,opacity] duration-150",
                     !rule.enabled && "opacity-50",
                   )}
+                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                 >
-                  <td className="p-4">
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <span
                         className="font-mono text-sm"
@@ -217,27 +213,27 @@ export function AlertsTab() {
                       </span>
                       <CopyButton value={rule.evmWalletAddress} />
                     </div>
-                  </td>
-                  <td className="p-4 text-sm">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {chainLabel(rule.caip2Network)}
-                  </td>
-                  <td className="p-4 font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
                     {assetLabel(rule.asset)}
-                  </td>
-                  <td className="p-4 text-right font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">
                     {formatRuleAmount(rule.thresholdAmount, rule.asset)}
-                  </td>
-                  <td className="p-4 text-right font-mono text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm text-muted-foreground">
                     {rule.lastKnownAmount != null
                       ? formatRuleAmount(rule.lastKnownAmount, rule.asset)
                       : "—"}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={STATUS_VARIANT[rule.status]}>
                       {rule.status}
                     </Badge>
-                  </td>
-                  <td className="p-4 text-right">
+                  </TableCell>
+                  <TableCell className={x402ActionsCellWideClass}>
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
@@ -249,7 +245,8 @@ export function AlertsTab() {
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8"
                         aria-label={t("editAlert")}
                         onClick={() => {
                           setEditing(rule);
@@ -260,22 +257,22 @@ export function AlertsTab() {
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         aria-label={t("deleteAlert")}
-                        className="text-destructive hover:text-destructive"
                         disabled={busyId === rule.id}
                         onClick={() => setRuleToDelete(rule)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <AlertDialog
         key={editing?.id ?? "new"}

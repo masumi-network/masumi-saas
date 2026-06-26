@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     mockApiKeyFindFirst: vi.fn() as MockFn,
     mockX402EvmWalletCreate: vi.fn() as MockFn,
     mockBudgetFindFirst: vi.fn() as MockFn,
+    mockBudgetDelete: vi.fn() as MockFn,
     mockBudgetUpdateMany: vi.fn() as MockFn,
     mockBudgetUpdate: vi.fn() as MockFn,
     mockBudgetUpsert: vi.fn() as MockFn,
@@ -102,6 +103,7 @@ vi.mock("@masumi/database/client", () => ({
       findFirst: mocks.mockBudgetFindFirst,
       update: mocks.mockBudgetUpdate,
       upsert: mocks.mockBudgetUpsert,
+      delete: mocks.mockBudgetDelete,
       findMany: vi.fn(),
     },
     $transaction: mocks.mockPrismaTransaction,
@@ -316,6 +318,7 @@ function resetDefaultMocks() {
   );
   mocks.mockCreatePaymentPayload.mockResolvedValue(paymentPayload);
   mocks.mockBudgetFindFirst.mockResolvedValue({ id: "budget-1" });
+  mocks.mockBudgetDelete.mockResolvedValue({ id: "budget-1" });
   mocks.mockBudgetUpdateMany.mockResolvedValue({ count: 1 });
   mocks.mockBudgetUpdate.mockResolvedValue({ id: "budget-1" });
   mocks.mockBudgetUpsert.mockResolvedValue({
@@ -645,6 +648,34 @@ describe("x402 service", () => {
       }),
     ).rejects.toMatchObject({ statusCode: 404 });
     expect(mocks.mockBudgetUpsert).not.toHaveBeenCalled();
+  });
+
+  it("deletes an owned x402 wallet budget", async () => {
+    const { deleteX402WalletBudget } = await import("./service.js");
+    const result = await deleteX402WalletBudget(
+      { userId: USER_ID },
+      "budget-1",
+    );
+
+    expect(result.budgetId).toBe("budget-1");
+    expect(result.deletedAt).toBeInstanceOf(Date);
+    expect(mocks.mockBudgetFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "budget-1" }),
+      }),
+    );
+    expect(mocks.mockBudgetDelete).toHaveBeenCalledWith({
+      where: { id: "budget-1" },
+    });
+  });
+
+  it("rejects deleting a missing x402 wallet budget with a 404", async () => {
+    const { deleteX402WalletBudget } = await import("./service.js");
+    mocks.mockBudgetFindFirst.mockResolvedValueOnce(null);
+    await expect(
+      deleteX402WalletBudget({ userId: USER_ID }, "missing-budget"),
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(mocks.mockBudgetDelete).not.toHaveBeenCalled();
   });
 
   it("maps a duplicate managed wallet address to a 409", async () => {

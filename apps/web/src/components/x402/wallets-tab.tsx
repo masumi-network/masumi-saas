@@ -27,11 +27,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DialogBody, DialogFooter } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useFormatDate } from "@/hooks/use-format-date";
 import { useX402WalletsPaginated } from "@/lib/hooks/use-x402";
 import { cn, shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
@@ -39,6 +52,12 @@ import type { X402Wallet } from "@/lib/x402/types";
 
 import { EditWalletNoteDialog, WalletBalanceDialog } from "./wallet-extras";
 import { X402DialogChrome, X402DialogHeader } from "./x402-form-dialog";
+import {
+  x402ActionsCellClass,
+  x402ActionsHeadClass,
+  X402TableEmptyState,
+  X402TableLoading,
+} from "./x402-table-ui";
 
 const PRIVATE_KEY_REGEX = /^0x[a-fA-F0-9]{64}$/;
 
@@ -47,6 +66,7 @@ type KeySource = "generate" | "import";
 
 export function WalletsTab() {
   const t = useTranslations("App.X402.Wallets");
+  const { formatRelativeDate } = useFormatDate();
   const queryClient = useQueryClient();
   const {
     wallets,
@@ -82,9 +102,11 @@ export function WalletsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
+        <p className="min-w-0 text-sm text-muted-foreground">
+          {t("description")}
+        </p>
         <div className="flex shrink-0 items-center gap-2">
           <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
           <Button
@@ -97,48 +119,36 @@ export function WalletsTab() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-muted/30 dark:bg-muted/15">
-            <tr className="border-b">
-              {(["address", "type", "note", "created", "actions"] as const).map(
-                (col) => (
-                  <th
-                    key={col}
-                    scope="col"
-                    className={cn(
-                      "p-4 text-sm font-medium text-muted-foreground",
-                      col === "actions" ? "text-right" : "text-left",
-                    )}
-                  >
-                    {t(`columns.${col}`)}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={5} className="py-10">
-                  <div className="flex justify-center">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : wallets.length === 0 ? (
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState
-                    title={t("emptyTitle")}
-                    description={t("emptyDescription")}
-                  />
-                </td>
-              </tr>
-            ) : (
-              wallets.map((wallet) => (
-                <tr key={wallet.id} className="border-b last:border-0">
-                  <td className="p-4">
+      {isLoading ? (
+        <X402TableLoading />
+      ) : wallets.length === 0 ? (
+        <X402TableEmptyState
+          icon={WalletIcon}
+          message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/80">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {(["address", "type", "note", "created"] as const).map(
+                  (col) => (
+                    <TableHead key={col}>{t(`columns.${col}`)}</TableHead>
+                  ),
+                )}
+                <TableHead className={x402ActionsHeadClass}>
+                  {t("columns.actions")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {wallets.map((wallet, index) => (
+                <TableRow
+                  key={wallet.id}
+                  className="animate-table-row-in transition-[background-color,opacity] duration-150"
+                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+                >
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <span
                         className="font-mono text-sm"
@@ -148,54 +158,76 @@ export function WalletsTab() {
                       </span>
                       <CopyButton value={wallet.address} />
                     </div>
-                  </td>
-                  <td className="p-4 text-sm">{t(`types.${wallet.type}`)}</td>
-                  <td className="p-4 text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {t(`types.${wallet.type}`)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {wallet.note || (
                       <span className="italic opacity-60">
                         {t("emptyNote")}
                       </span>
                     )}
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground">
-                    {new Date(wallet.createdAt).toLocaleString()}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setBalanceWallet(wallet)}
-                      >
-                        <WalletIcon className="h-4 w-4" />
-                        {t("balances")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t("rename")}
-                        onClick={() => setEditWallet(wallet)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        disabled={retiringId === wallet.id}
-                        onClick={() => setWalletToRetire(wallet)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {retiringId === wallet.id ? t("retiring") : t("retire")}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                  <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
+                    {formatRelativeDate(wallet.createdAt)}
+                  </TableCell>
+                  <TableCell className={x402ActionsCellClass}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("balances")}
+                          onClick={() => setBalanceWallet(wallet)}
+                        >
+                          <WalletIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t("balances")}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("rename")}
+                          onClick={() => setEditWallet(wallet)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t("rename")}</TooltipContent>
+                    </Tooltip>
+                    {retiringId === wallet.id ? (
+                      <span className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground">
+                        <Spinner size={16} />
+                      </span>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            aria-label={t("retire")}
+                            onClick={() => setWalletToRetire(wallet)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("retire")}</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {hasMore && (
         <div className="flex justify-center">

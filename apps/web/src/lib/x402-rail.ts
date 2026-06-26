@@ -10,20 +10,22 @@ export const X402_ACCENT = {
   icon: "text-indigo-600 dark:text-indigo-400",
 } as const;
 
-export const X402_ENV_STORAGE_KEY = "masumi_x402_is_testnet";
-
-/** Cardano Preprod/Mainnet — used only for Cardano-scoped features, not x402 env. */
+/**
+ * x402 chains are grouped into the active Cardano environment by `isTestnet`:
+ * testnet chains ↔ Preprod, mainnet chains ↔ Mainnet.
+ */
 export function isTestnetEnv(network: PaymentNodeNetwork): boolean {
   return network === "Preprod";
 }
 
-/** Enabled EVM chains for the active x402 environment (testnet vs mainnet). */
-export function chainsForIsTestnet(
+/** Enabled EVM chains for the given Cardano environment. */
+export function chainsForEnv(
   chains: X402Network[],
-  isTestnet: boolean,
+  network: PaymentNodeNetwork,
 ): X402Network[] {
+  const wantTestnet = isTestnetEnv(network);
   return chains.filter(
-    (chain) => chain.isEnabled && chain.isTestnet === isTestnet,
+    (chain) => chain.isEnabled && chain.isTestnet === wantTestnet,
   );
 }
 
@@ -31,19 +33,9 @@ export function isX402ChainUsable(chain: X402Network): boolean {
   return chain.isEnabled && !!chain.facilitatorWalletId && !!chain.rpcUrl;
 }
 
-export function isX402SetUpForIsTestnet(
+export function isX402SetUpForEnv(
   chains: X402Network[],
-  isTestnet: boolean,
+  network: PaymentNodeNetwork,
 ): boolean {
-  return chainsForIsTestnet(chains, isTestnet).some(isX402ChainUsable);
-}
-
-export function readX402IsTestnetFromStorage(
-  fallbackIsTestnet: boolean,
-): boolean {
-  if (typeof window === "undefined") return fallbackIsTestnet;
-  const stored = localStorage.getItem(X402_ENV_STORAGE_KEY);
-  if (stored === "true") return true;
-  if (stored === "false") return false;
-  return fallbackIsTestnet;
+  return chainsForEnv(chains, network).some(isX402ChainUsable);
 }

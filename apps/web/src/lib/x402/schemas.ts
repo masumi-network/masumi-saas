@@ -263,6 +263,15 @@ export const listBudgetSchemaOutput = z.object({
   Budgets: z.array(budgetSchema),
 });
 
+export const deleteBudgetSchemaInput = z.object({
+  budgetId: z.string(),
+});
+
+export const deleteBudgetSchemaOutput = z.object({
+  budgetId: z.string(),
+  deletedAt: z.date(),
+});
+
 export const x402SettlementSummarySchema = z.object({
   id: z.string(),
   success: z.boolean(),

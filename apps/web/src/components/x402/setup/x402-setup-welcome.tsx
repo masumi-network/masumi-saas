@@ -22,6 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Steps } from "@/components/ui/steps";
 import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import { useOrganizationContext } from "@/lib/context/organization-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
 import type { DialogStepDirection } from "@/lib/dialog-motion";
 import {
@@ -31,7 +32,7 @@ import {
 } from "@/lib/hooks/use-x402";
 import { cn, shortenAddress } from "@/lib/utils";
 import type { X402Network, X402Wallet } from "@/lib/x402/types";
-import { chainsForIsTestnet } from "@/lib/x402-rail";
+import { chainsForEnv, isTestnetEnv } from "@/lib/x402-rail";
 
 import { BudgetDialog } from "../budgets-tab";
 import { ChainDialog } from "../chains-tab";
@@ -49,22 +50,18 @@ export function X402SetupWelcome({
   const t = useTranslations("App.X402.Setup");
   const tChains = useTranslations("App.X402.Chains");
   const queryClient = useQueryClient();
-  const {
-    x402IsTestnet,
-    setActiveRail,
-    setSelectedX402ChainId,
-    setIsSetupMode,
-  } = useX402Rail();
-  const environment = x402IsTestnet ? tChains("testnet") : tChains("mainnet");
+  const { network } = usePaymentNetwork();
+  const wantTestnet = isTestnetEnv(network);
+  const { setActiveRail, setSelectedX402ChainId, setIsSetupMode } =
+    useX402Rail();
+  const environment = network;
   const { activeOrganization, activeOrganizationId } = useOrganizationContext();
   const showBudgetFeatures = canAccessX402Workspace(
     activeOrganizationId,
     activeOrganization?.role,
   );
   const { wallets, isLoading: walletsLoading } = useX402Wallets();
-  const { networks, isLoading: networksLoading } = useX402Networks({
-    allEnvironments: true,
-  });
+  const { networks, isLoading: networksLoading } = useX402Networks({ network });
   const { budgets, isLoading: budgetsLoading } = useX402Budgets({
     enabled: showBudgetFeatures,
   });
@@ -83,8 +80,8 @@ export function X402SetupWelcome({
   const loading =
     walletsLoading || networksLoading || (showBudgetFeatures && budgetsLoading);
   const envChains = useMemo(
-    () => chainsForIsTestnet(networks, x402IsTestnet),
-    [networks, x402IsTestnet],
+    () => chainsForEnv(networks, network),
+    [networks, network],
   );
   const hasSellingWallet = wallets.some((wallet) => wallet.type === "Selling");
   const hasPurchasingWallet = wallets.some(
@@ -100,27 +97,25 @@ export function X402SetupWelcome({
         (chain) =>
           chain.isEnabled &&
           !!chain.facilitatorWalletId &&
-          chain.isTestnet !== x402IsTestnet,
+          chain.isTestnet !== wantTestnet,
       ) ?? null
     );
-  }, [hasFacilitator, x402IsTestnet, networks]);
+  }, [hasFacilitator, wantTestnet, networks]);
   const envCaip2 = useMemo(() => {
     return new Set(
-      networks
-        .filter((n) => n.isTestnet === x402IsTestnet)
-        .map((n) => n.caip2Id),
+      networks.filter((n) => n.isTestnet === wantTestnet).map((n) => n.caip2Id),
     );
-  }, [networks, x402IsTestnet]);
+  }, [networks, wantTestnet]);
   const hasBudget = budgets.some((budget) => envCaip2.has(budget.caip2Network));
 
   const chainToConfigure: X402Network | null = useMemo(() => {
-    const envScoped = networks.filter((n) => n.isTestnet === x402IsTestnet);
+    const envScoped = networks.filter((n) => n.isTestnet === wantTestnet);
     return (
       envScoped.find((n) => n.isEnabled && !n.facilitatorWalletId) ??
       envScoped[0] ??
       null
     );
-  }, [networks, x402IsTestnet]);
+  }, [networks, wantTestnet]);
 
   const wizardSteps = useMemo(
     () =>
@@ -582,7 +577,7 @@ export function X402SetupWelcome({
             </div>
           )}
 
-          <DialogBody className="min-h-0 flex-1 space-y-4">
+          <DialogBody className="min-h-0 flex-1 space-y-4 py-10">
             {stepHeader}
             {stepBody}
           </DialogBody>
@@ -617,7 +612,7 @@ export function X402SetupWelcome({
         <ChainDialog
           key={
             openDialog === "chain"
-              ? `chain-${chainToConfigure?.id ?? "new"}-${x402IsTestnet ? "testnet" : "mainnet"}`
+              ? `chain-${chainToConfigure?.id ?? "new"}-${network}`
               : "chain-closed"
           }
           open={openDialog === "chain"}

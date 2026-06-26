@@ -1,12 +1,12 @@
 "use client";
 
+import { ArrowLeftRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Select,
@@ -15,7 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
 import {
   useX402Networks,
@@ -26,6 +33,7 @@ import { groupDigits, shortenAddress } from "@/lib/utils";
 import type { X402PaymentAttempt } from "@/lib/x402/types";
 
 import { X402ViewDialog } from "./x402-form-dialog";
+import { X402TableEmptyState, X402TableLoading } from "./x402-table-ui";
 
 const ALL = "__all__";
 
@@ -103,134 +111,124 @@ export function PaymentsTab() {
   ];
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">{t("description")}</p>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            value={filters.status ?? ALL}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                status:
-                  value === ALL
-                    ? undefined
-                    : (value as X402PaymentAttempt["status"]),
-              }))
-            }
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder={t("allStatuses")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t("allStatuses")}</SelectItem>
-              {statusOptions.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={filters.status ?? ALL}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  status:
+                    value === ALL
+                      ? undefined
+                      : (value as X402PaymentAttempt["status"]),
+                }))
+              }
+            >
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder={t("allStatuses")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allStatuses")}</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={filters.direction ?? ALL}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                direction:
-                  value === ALL
-                    ? undefined
-                    : (value as X402PaymentAttempt["direction"]),
-              }))
-            }
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("allDirections")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t("allDirections")}</SelectItem>
-              {directionOptions.map((direction) => (
-                <SelectItem key={direction} value={direction}>
-                  {t(`directions.${direction}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select
+              value={filters.direction ?? ALL}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  direction:
+                    value === ALL
+                      ? undefined
+                      : (value as X402PaymentAttempt["direction"]),
+                }))
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("allDirections")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allDirections")}</SelectItem>
+                {directionOptions.map((direction) => (
+                  <SelectItem key={direction} value={direction}>
+                    {t(`directions.${direction}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={filters.caip2Network ?? ALL}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                caip2Network: value === ALL ? undefined : value,
-              }))
-            }
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder={t("allChains")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t("allChains")}</SelectItem>
-              {networks.map((network) => (
-                <SelectItem key={network.id} value={network.caip2Id}>
-                  {network.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select
+              value={filters.caip2Network ?? ALL}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  caip2Network: value === ALL ? undefined : value,
+                }))
+              }
+            >
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder={t("allChains")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allChains")}</SelectItem>
+                {networks.map((network) => (
+                  <SelectItem key={network.id} value={network.caip2Id}>
+                    {network.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
         </div>
-        <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-muted/30 dark:bg-muted/15">
-            <tr className="border-b">
-              {(
-                [
-                  "direction",
-                  "status",
-                  "chain",
-                  "amount",
-                  "asset",
-                  "created",
-                ] as const
-              ).map((col) => (
-                <th
-                  key={col}
-                  scope="col"
-                  className={`p-4 text-sm font-medium text-muted-foreground ${
-                    col === "amount" ? "text-right" : "text-left"
-                  }`}
-                >
-                  {t(`columns.${col}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="py-10">
-                  <div className="flex justify-center">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : attempts.length === 0 ? (
-              <tr>
-                <td colSpan={6}>
-                  <EmptyState
-                    title={t("emptyTitle")}
-                    description={t("emptyDescription")}
-                  />
-                </td>
-              </tr>
-            ) : (
-              attempts.map((attempt) => (
-                <tr
+      {isLoading ? (
+        <X402TableLoading />
+      ) : attempts.length === 0 ? (
+        <X402TableEmptyState
+          icon={ArrowLeftRight}
+          message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/80">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {(
+                  [
+                    "direction",
+                    "status",
+                    "chain",
+                    "amount",
+                    "asset",
+                    "created",
+                  ] as const
+                ).map((col) => (
+                  <TableHead
+                    key={col}
+                    className={col === "amount" ? "text-right" : undefined}
+                  >
+                    {t(`columns.${col}`)}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {attempts.map((attempt, index) => (
+                <TableRow
                   key={attempt.id}
-                  className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
+                  className="cursor-pointer animate-table-row-in transition-[background-color,opacity] duration-150 hover:bg-muted/50"
+                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                   onClick={() => setSelected(attempt)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -242,32 +240,32 @@ export function PaymentsTab() {
                   role="button"
                   aria-label={t("viewDetails")}
                 >
-                  <td className="p-4 text-sm">
+                  <TableCell className="text-sm">
                     {t(`directions.${attempt.direction}`)}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={STATUS_VARIANT[attempt.status]}>
                       {attempt.status}
                     </Badge>
-                  </td>
-                  <td className="p-4 text-sm">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {chainLabel(attempt.caip2Network)}
-                  </td>
-                  <td className="p-4 text-right font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">
                     {groupDigits(attempt.amount)}
-                  </td>
-                  <td className="p-4 font-mono text-sm">
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
                     {shortenAddress(attempt.asset, 6)}
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {new Date(attempt.createdAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {hasMore && (
         <div className="flex justify-center">

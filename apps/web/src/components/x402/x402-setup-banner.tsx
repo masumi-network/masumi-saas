@@ -7,10 +7,10 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useX402SetupDialog } from "@/components/x402/x402-setup-dialog";
-import { useX402Rail } from "@/lib/context/x402-rail-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks } from "@/lib/hooks/use-x402";
 import { cn } from "@/lib/utils";
-import { isX402SetUpForIsTestnet, X402_ACCENT } from "@/lib/x402-rail";
+import { isX402SetUpForEnv, X402_ACCENT } from "@/lib/x402-rail";
 
 const DISMISSED_KEY_PREFIX = "masumi_x402_banner_dismissed_";
 
@@ -26,11 +26,10 @@ function subscribe(callback: () => void) {
 
 export function X402SetupBanner() {
   const t = useTranslations("App.X402.SetupBanner");
-  const tChains = useTranslations("App.X402.Chains");
   const { openSetup } = useX402SetupDialog();
-  const { x402IsTestnet } = useX402Rail();
-  const environment = x402IsTestnet ? tChains("testnet") : tChains("mainnet");
-  const dismissKey = `${DISMISSED_KEY_PREFIX}${x402IsTestnet ? "testnet" : "mainnet"}`;
+  const { network } = usePaymentNetwork();
+  const environment = network;
+  const dismissKey = `${DISMISSED_KEY_PREFIX}${network}`;
   const { networks, isLoading } = useX402Networks({
     silentErrors: true,
     allEnvironments: true,
@@ -51,7 +50,7 @@ export function X402SetupBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   if (isLoading) return null;
-  if (isX402SetUpForIsTestnet(networks, x402IsTestnet)) return null;
+  if (isX402SetUpForEnv(networks, network)) return null;
   if (isDismissedFromStorage || dismissed) return null;
 
   const handleDismiss = () => {

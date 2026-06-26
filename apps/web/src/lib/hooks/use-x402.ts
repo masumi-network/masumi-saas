@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { getApiKeysAction } from "@/lib/actions/auth.action";
-import { useX402Rail } from "@/lib/context/x402-rail-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
   appendInclusiveCursorPage,
   flattenInclusiveCursorPages,
@@ -21,6 +21,7 @@ import type {
   X402WalletBalance,
   X402WalletType,
 } from "@/lib/x402/types";
+import { isTestnetEnv } from "@/lib/x402-rail";
 
 const PAGE_SIZE = 20;
 
@@ -102,16 +103,14 @@ function useX402NetworksQuery(options: {
 
 export function useX402Networks(options?: {
   silentErrors?: boolean;
-  /** When omitted, uses the x402 rail environment (not Cardano network). */
-  isTestnet?: boolean;
+  /** When omitted, uses the sidebar Preprod/Mainnet selection. */
   network?: PaymentNodeNetwork;
   allEnvironments?: boolean;
 }) {
-  const { x402IsTestnet } = useX402Rail();
+  const { network: activeNetwork } = usePaymentNetwork();
   const allEnvironments = options?.allEnvironments ?? false;
-  const isTestnet =
-    options?.isTestnet ??
-    (options?.network != null ? options.network === "Preprod" : x402IsTestnet);
+  const network = options?.network ?? activeNetwork;
+  const isTestnet = isTestnetEnv(network);
 
   return useX402NetworksQuery({
     silentErrors: options?.silentErrors,
