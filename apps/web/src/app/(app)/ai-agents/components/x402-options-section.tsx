@@ -28,6 +28,8 @@ import {
   getEvmTokenPresetsForChain,
 } from "@/lib/x402/evm-token-presets";
 
+import { resolvePayToOnChainChange } from "./x402-option-pay-to";
+
 export type X402OptionDraft = {
   caip2Network: string;
   asset: string;
@@ -96,6 +98,8 @@ type X402OptionsTranslator = (
     | "x402AmountHint"
     | "x402Decimals"
     | "x402PayTo"
+    | "x402PayToHint"
+    | "x402PayToNoFacilitator"
     | "x402Resource",
   values?: { n?: number },
 ) => string;
@@ -150,6 +154,9 @@ function X402OptionCard({
 
   const handleChainChange = (value: string) => {
     const network = networks.find((item) => item.caip2Id === value);
+    const previousNetwork = networks.find(
+      (item) => item.caip2Id === option.caip2Network,
+    );
     const defaultAsset =
       network?.defaultAsset ?? getDefaultStablecoinForChain(value);
     const patch: Partial<X402OptionDraft> = { caip2Network: value };
@@ -158,6 +165,14 @@ function X402OptionCard({
       if (!option.decimals.trim()) {
         patch.decimals = "6";
       }
+    }
+    const payTo = resolvePayToOnChainChange({
+      currentPayTo: option.payTo,
+      previousFacilitatorAddress: previousNetwork?.facilitatorWalletAddress,
+      nextFacilitatorAddress: network?.facilitatorWalletAddress,
+    });
+    if (payTo != null) {
+      patch.payTo = payTo;
     }
     onUpdate(patch);
   };
@@ -288,7 +303,20 @@ function X402OptionCard({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-sm font-medium">{t("x402PayTo")}</Label>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">{t("x402PayTo")}</Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                  <CircleHelp className="h-3.5 w-3.5" />
+                  <span className="sr-only">{t("x402PayToHint")}</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {t("x402PayToHint")}
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <Input
             className="h-11 font-mono"
             placeholder="0x…"
@@ -297,6 +325,11 @@ function X402OptionCard({
             spellCheck={false}
             autoComplete="off"
           />
+          {option.caip2Network && !selectedNetwork?.facilitatorWalletAddress ? (
+            <p className="text-xs leading-relaxed text-amber-600 dark:text-amber-500">
+              {t("x402PayToNoFacilitator")}
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">

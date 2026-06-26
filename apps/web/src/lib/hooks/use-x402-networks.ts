@@ -11,6 +11,7 @@ export type X402NetworkOption = {
   isTestnet: boolean;
   isEnabled: boolean;
   defaultAsset: string | null;
+  facilitatorWalletAddress: string | null;
 };
 
 export function useX402Networks(options?: {
@@ -31,6 +32,7 @@ export function useX402Networks(options?: {
       isTestnet: network.isTestnet,
       isEnabled: network.isEnabled,
       defaultAsset: network.defaultAsset,
+      facilitatorWalletAddress: network.facilitatorWalletAddress,
     }));
 
   return {
