@@ -70,7 +70,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:84532",
     displayName: "Base Sepolia",
     shortName: "Base Sepolia",
-    rpcUrl: "https://sepolia.base.org",
+    rpcUrl: "https://base-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
       usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
@@ -81,7 +81,8 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:11155111",
     displayName: "Ethereum Sepolia",
     shortName: "Sepolia",
-    rpcUrl: "https://rpc.sepolia.org",
+    // rpc.sepolia.org was discontinued; use PublicNode (same family as mainnet preset).
+    rpcUrl: "https://ethereum-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
       usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
@@ -92,7 +93,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:421614",
     displayName: "Arbitrum Sepolia",
     shortName: "Arb Sepolia",
-    rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
+    rpcUrl: "https://arbitrum-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
       usdc: "0x75faf114eafb1BDbe2F5b6aB59B5a9fc65cAe626",
@@ -103,7 +104,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:11155420",
     displayName: "Optimism Sepolia",
     shortName: "OP Sepolia",
-    rpcUrl: "https://sepolia.optimism.io",
+    rpcUrl: "https://optimism-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
       usdc: "0x5fd84259d066Cb710f212f7dE9b369A86B3f7E6F",
