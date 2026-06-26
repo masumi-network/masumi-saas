@@ -3,8 +3,8 @@ import prisma from "@masumi/database/client";
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
+import { resolveSmartContractAddressForDeregister } from "@/lib/payment-node/resolve-deregister-smart-contract";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -49,13 +49,7 @@ export async function deregisterAgentForUser(
       };
     }
 
-    const userClient = await getPaymentNodeClientForUser(userId);
-    if (!userClient) {
-      return {
-        success: false,
-        error: "Something went wrong. Please try again.",
-      };
-    }
+    const paymentNodeClient = createAdminPaymentNodeClient();
 
     const network = (agent.agentReference?.networkIdentifier ??
       options?.networkFallback ??
@@ -63,21 +57,18 @@ export async function deregisterAgentForUser(
 
     const refMeta = (agent.agentReference?.metadata ?? {}) as {
       smartContractAddress?: string;
+      paymentSourceId?: string;
     };
-    let smartContractAddress =
-      typeof refMeta.smartContractAddress === "string"
-        ? refMeta.smartContractAddress
-        : undefined;
-    if (!smartContractAddress) {
-      smartContractAddress =
-        (await getSmartContractAddressForConfiguredSource(
-          userClient,
-          userId,
-          network,
-        )) ?? undefined;
-    }
+    const smartContractAddress =
+      (await resolveSmartContractAddressForDeregister(
+        paymentNodeClient,
+        userId,
+        network,
+        agentIdentifier,
+        refMeta,
+      )) ?? undefined;
 
-    await userClient.deregisterAgent({
+    await paymentNodeClient.deregisterAgent({
       network,
       agentIdentifier,
       ...(smartContractAddress && { smartContractAddress }),

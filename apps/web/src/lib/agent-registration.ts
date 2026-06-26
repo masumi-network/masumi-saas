@@ -454,6 +454,7 @@ async function registerAgentOnChainUntilSetup(
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
+        paymentSourceId,
         ...((paymentSource.smartContractAddress ||
           configuredPaymentSource.smartContractAddress) && {
           smartContractAddress:
