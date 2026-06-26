@@ -744,7 +744,8 @@
     },
     "X402": {
       "title": "x402",
-      "description": "Manage chains, wallets, and x402 payments.",
+      "description": "Manage chains, wallets, budgets, alerts, and payments on the EVM rail. <docs>Docs</docs>",
+      "metaDescription": "Manage chains, wallets, budgets, alerts, and payments on the EVM rail.",
       "docs": "Docs",
       "tabs": {
         "Chains": "Chains",
@@ -755,6 +756,20 @@
       },
       "Chains": {
         "description": "EVM chains available to the x402 payment rail. Testnet chains pair with the Preprod environment.",
+        "searchPlaceholder": "Search chains…",
+        "searchShortcut": "F",
+        "noSearchResults": "No chains match your search or filters.",
+        "filters": "Filters",
+        "filtersAria": "Filter chains",
+        "clearFilters": "Clear filters",
+        "filterStatus": "Status",
+        "filterFacilitator": "Facilitator",
+        "allStatuses": "All statuses",
+        "enabledOnly": "Enabled only",
+        "disabledOnly": "Disabled only",
+        "allFacilitators": "All facilitators",
+        "facilitatorConfigured": "Configured",
+        "facilitatorNotConfigured": "Not configured",
         "addChain": "Add chain",
         "columns": {
           "chain": "Chain",
@@ -807,6 +822,14 @@
       },
       "Wallets": {
         "description": "Purchasing wallets pay out; Selling wallets settle inbound.",
+        "searchPlaceholder": "Search wallets…",
+        "searchShortcut": "F",
+        "noSearchResults": "No wallets match your search or filters.",
+        "filters": "Filters",
+        "filtersAria": "Filter wallets",
+        "clearFilters": "Clear filters",
+        "filterType": "Type",
+        "allTypes": "All types",
         "createWallet": "Create wallet",
         "columns": {
           "address": "Address",
@@ -982,7 +1005,13 @@
         "saveFailed": "Failed to save alert"
       },
       "Payments": {
-        "description": "Every x402 payment this service signed or verified and settled, newest first.",
+        "description": "x402 verify, settle, and payment attempts, newest first.",
+        "searchPlaceholder": "Search payments…",
+        "searchShortcut": "F",
+        "noSearchResults": "No payments match your search or filters.",
+        "filters": "Filters",
+        "filtersAria": "Filter payments",
+        "clearFilters": "Clear filters",
         "allStatuses": "All statuses",
         "allDirections": "All directions",
         "allChains": "All chains",

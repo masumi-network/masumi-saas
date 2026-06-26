@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link2, Pencil, Plus } from "lucide-react";
+import { Link2, ListFilter, Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -11,6 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Select,
@@ -28,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
 import { shortenAddress } from "@/lib/utils";
@@ -46,10 +53,17 @@ import {
   x402ActionsHeadClass,
   X402TableEmptyState,
   X402TableLoading,
+  X402TableSearch,
 } from "./x402-table-ui";
 import { X402TestnetField } from "./x402-testnet-field";
 
 const NO_FACILITATOR = "__none__";
+const FILTER_ALL = "__all__";
+
+type ChainListFilters = {
+  enabled?: boolean;
+  facilitatorSet?: boolean;
+};
 
 const chainSchema = z
   .object({
@@ -90,6 +104,75 @@ export function ChainsTab() {
   const { networks, isLoading, isRefetching, refetch } = useX402Networks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Network | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [listFilters, setListFilters] = useState<ChainListFilters>({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchQuery, 200);
+
+  const activeFilterCount = useMemo(
+    () =>
+      [listFilters.enabled, listFilters.facilitatorSet].filter(
+        (value) => value !== undefined,
+      ).length,
+    [listFilters],
+  );
+
+  const filteredNetworks = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
+
+    return networks.filter((network) => {
+      if (
+        listFilters.enabled !== undefined &&
+        network.isEnabled !== listFilters.enabled
+      ) {
+        return false;
+      }
+
+      if (listFilters.facilitatorSet === true && !network.facilitatorWalletId) {
+        return false;
+      }
+
+      if (listFilters.facilitatorSet === false && network.facilitatorWalletId) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      return (
+        network.displayName.toLowerCase().includes(query) ||
+        network.caip2Id.toLowerCase().includes(query) ||
+        network.rpcUrl.toLowerCase().includes(query) ||
+        network.defaultAsset?.toLowerCase().includes(query) ||
+        network.facilitatorWalletAddress?.toLowerCase().includes(query) ||
+        network.facilitatorWalletId?.toLowerCase().includes(query)
+      );
+    });
+  }, [debouncedSearch, listFilters, networks]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const clearFilters = () => setListFilters({});
 
   const openAdd = () => {
     setEditing(null);
@@ -103,24 +186,57 @@ export function ChainsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-        <div className="flex shrink-0 items-center gap-2">
-          <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
-          <Button onClick={openAdd} className="flex items-center gap-2">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <X402TableSearch
+          inputRef={searchInputRef}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("searchPlaceholder")}
+          shortcutLabel={t("searchShortcut")}
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <ChainsFiltersPopover
+            filters={listFilters}
+            activeFilterCount={activeFilterCount}
+            onChange={setListFilters}
+            onClear={clearFilters}
+          />
+          <RefreshButton
+            onRefresh={refetch}
+            isRefreshing={isRefetching}
+            size="md"
+          />
+          <Button
+            onClick={openAdd}
+            size="icon"
+            className="md:hidden"
+            aria-label={t("addChain")}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={openAdd}
+            className="hidden items-center gap-2 md:flex"
+          >
             <Plus className="h-4 w-4" />
             {t("addChain")}
           </Button>
         </div>
       </div>
 
+      {activeFilterCount > 0 ? (
+        <ChainsActiveFilters filters={listFilters} onClear={clearFilters} />
+      ) : null}
+
       {isLoading ? (
-        <X402TableLoading />
+        <X402TableLoading columns={5} withActions />
       ) : networks.length === 0 ? (
         <X402TableEmptyState
           icon={Link2}
           message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
         />
+      ) : filteredNetworks.length === 0 ? (
+        <X402TableEmptyState icon={Link2} message={t("noSearchResults")} />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border/80">
           <Table>
@@ -137,7 +253,7 @@ export function ChainsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {networks.map((network, index) => (
+              {filteredNetworks.map((network, index) => (
                 <TableRow
                   key={network.id}
                   className="animate-table-row-in transition-[background-color,opacity] duration-150"
@@ -218,6 +334,163 @@ export function ChainsTab() {
           refetch();
         }}
       />
+    </div>
+  );
+}
+
+function ChainsFiltersPopover({
+  filters,
+  activeFilterCount,
+  onChange,
+  onClear,
+}: {
+  filters: ChainListFilters;
+  activeFilterCount: number;
+  onChange: React.Dispatch<React.SetStateAction<ChainListFilters>>;
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Chains");
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="relative h-9 w-9 shrink-0"
+          aria-label={t("filtersAria")}
+        >
+          <ListFilter className="h-4 w-4" />
+          {activeFilterCount > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 overflow-hidden rounded-xl border-border/80 p-0 shadow-lg"
+        align="end"
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <p className="text-sm font-medium">{t("filters")}</p>
+          {activeFilterCount > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={onClear}
+            >
+              {t("clearFilters")}
+            </Button>
+          ) : null}
+        </div>
+        <div className="space-y-4 p-4">
+          <div className="space-y-2">
+            <Label htmlFor="chains-filter-status">{t("filterStatus")}</Label>
+            <Select
+              value={
+                filters.enabled === undefined
+                  ? FILTER_ALL
+                  : filters.enabled
+                    ? "enabled"
+                    : "disabled"
+              }
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  enabled:
+                    value === FILTER_ALL ? undefined : value === "enabled",
+                }))
+              }
+            >
+              <SelectTrigger id="chains-filter-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>{t("allStatuses")}</SelectItem>
+                <SelectItem value="enabled">{t("enabledOnly")}</SelectItem>
+                <SelectItem value="disabled">{t("disabledOnly")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="chains-filter-facilitator">
+              {t("filterFacilitator")}
+            </Label>
+            <Select
+              value={
+                filters.facilitatorSet === undefined
+                  ? FILTER_ALL
+                  : filters.facilitatorSet
+                    ? "set"
+                    : "not_set"
+              }
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  facilitatorSet:
+                    value === FILTER_ALL ? undefined : value === "set",
+                }))
+              }
+            >
+              <SelectTrigger id="chains-filter-facilitator" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>
+                  {t("allFacilitators")}
+                </SelectItem>
+                <SelectItem value="set">
+                  {t("facilitatorConfigured")}
+                </SelectItem>
+                <SelectItem value="not_set">
+                  {t("facilitatorNotConfigured")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ChainsActiveFilters({
+  filters,
+  onClear,
+}: {
+  filters: ChainListFilters;
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Chains");
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {filters.enabled !== undefined ? (
+        <Badge variant="outline" className="font-normal">
+          {filters.enabled ? t("enabled") : t("disabled")}
+        </Badge>
+      ) : null}
+      {filters.facilitatorSet !== undefined ? (
+        <Badge variant="outline" className="font-normal">
+          {filters.facilitatorSet
+            ? t("facilitatorConfigured")
+            : t("facilitatorNotConfigured")}
+        </Badge>
+      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground"
+        onClick={onClear}
+      >
+        {t("clearFilters")}
+      </Button>
     </div>
   );
 }

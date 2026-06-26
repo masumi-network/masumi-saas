@@ -1,12 +1,18 @@
 "use client";
 
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, ListFilter } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Select,
@@ -23,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
 import {
   useX402Networks,
@@ -33,7 +40,11 @@ import { groupDigits, shortenAddress } from "@/lib/utils";
 import type { X402PaymentAttempt } from "@/lib/x402/types";
 
 import { X402ViewDialog } from "./x402-form-dialog";
-import { X402TableEmptyState, X402TableLoading } from "./x402-table-ui";
+import {
+  X402TableEmptyState,
+  X402TableLoading,
+  X402TableSearch,
+} from "./x402-table-ui";
 
 const ALL = "__all__";
 
@@ -53,7 +64,10 @@ export function PaymentsTab() {
   const { networks } = useX402Networks();
   const { activeRail, selectedX402ChainId } = useX402Rail();
   const [filters, setFilters] = useState<X402PaymentFilters>({});
+  const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<X402PaymentAttempt | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchQuery, 200);
 
   const selectedCaip2 = networks.find(
     (n) => n.id === selectedX402ChainId,
@@ -110,94 +124,114 @@ export function PaymentsTab() {
     "OutboundPayment",
   ];
 
+  const activeFilterCount = useMemo(
+    () =>
+      [filters.status, filters.direction, filters.caip2Network].filter(Boolean)
+        .length,
+    [filters],
+  );
+
+  const clearFilters = () => {
+    setFilters({});
+    lastAppliedCaip2.current = undefined;
+  };
+
+  const filteredAttempts = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
+    if (!query) return attempts;
+
+    return attempts.filter((attempt) => {
+      const chain =
+        networks
+          .find((network) => network.caip2Id === attempt.caip2Network)
+          ?.displayName?.toLowerCase() ?? attempt.caip2Network.toLowerCase();
+
+      return (
+        attempt.status.toLowerCase().includes(query) ||
+        attempt.direction.toLowerCase().includes(query) ||
+        t(`directions.${attempt.direction}`).toLowerCase().includes(query) ||
+        chain.includes(query) ||
+        attempt.caip2Network.toLowerCase().includes(query) ||
+        attempt.asset.toLowerCase().includes(query) ||
+        attempt.amount.includes(query) ||
+        attempt.payTo.toLowerCase().includes(query) ||
+        attempt.payer?.toLowerCase().includes(query) ||
+        attempt.resource?.toLowerCase().includes(query) ||
+        attempt.paymentIdentifier?.toLowerCase().includes(query)
+      );
+    });
+  }, [attempts, debouncedSearch, networks, t]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={filters.status ?? ALL}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  status:
-                    value === ALL
-                      ? undefined
-                      : (value as X402PaymentAttempt["status"]),
-                }))
-              }
-            >
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder={t("allStatuses")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t("allStatuses")}</SelectItem>
-                {statusOptions.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.direction ?? ALL}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  direction:
-                    value === ALL
-                      ? undefined
-                      : (value as X402PaymentAttempt["direction"]),
-                }))
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("allDirections")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t("allDirections")}</SelectItem>
-                {directionOptions.map((direction) => (
-                  <SelectItem key={direction} value={direction}>
-                    {t(`directions.${direction}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.caip2Network ?? ALL}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  caip2Network: value === ALL ? undefined : value,
-                }))
-              }
-            >
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder={t("allChains")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t("allChains")}</SelectItem>
-                {networks.map((network) => (
-                  <SelectItem key={network.id} value={network.caip2Id}>
-                    {network.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <X402TableSearch
+          inputRef={searchInputRef}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("searchPlaceholder")}
+          shortcutLabel={t("searchShortcut")}
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <PaymentsFiltersPopover
+            filters={filters}
+            networks={networks}
+            statusOptions={statusOptions}
+            directionOptions={directionOptions}
+            activeFilterCount={activeFilterCount}
+            onChange={setFilters}
+            onClear={clearFilters}
+          />
+          <RefreshButton
+            onRefresh={refetch}
+            isRefreshing={isRefetching}
+            size="md"
+          />
         </div>
       </div>
 
+      {activeFilterCount > 0 && (
+        <PaymentsActiveFilters
+          filters={filters}
+          networks={networks}
+          onClear={clearFilters}
+        />
+      )}
+
       {isLoading ? (
-        <X402TableLoading />
+        <X402TableLoading columns={6} withActions={false} />
       ) : attempts.length === 0 ? (
         <X402TableEmptyState
           icon={ArrowLeftRight}
           message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
+        />
+      ) : filteredAttempts.length === 0 ? (
+        <X402TableEmptyState
+          icon={ArrowLeftRight}
+          message={t("noSearchResults")}
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border/80">
@@ -224,7 +258,7 @@ export function PaymentsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attempts.map((attempt, index) => (
+              {filteredAttempts.map((attempt, index) => (
                 <TableRow
                   key={attempt.id}
                   className="cursor-pointer animate-table-row-in transition-[background-color,opacity] duration-150 hover:bg-muted/50"
@@ -284,6 +318,197 @@ export function PaymentsTab() {
         chainLabel={selected ? chainLabel(selected.caip2Network) : ""}
         onClose={() => setSelected(null)}
       />
+    </div>
+  );
+}
+
+function PaymentsFiltersPopover({
+  filters,
+  networks,
+  statusOptions,
+  directionOptions,
+  activeFilterCount,
+  onChange,
+  onClear,
+}: {
+  filters: X402PaymentFilters;
+  networks: { id: string; caip2Id: string; displayName: string }[];
+  statusOptions: X402PaymentAttempt["status"][];
+  directionOptions: X402PaymentAttempt["direction"][];
+  activeFilterCount: number;
+  onChange: React.Dispatch<React.SetStateAction<X402PaymentFilters>>;
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Payments");
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="relative h-9 w-9 shrink-0"
+          aria-label={t("filtersAria")}
+        >
+          <ListFilter className="h-4 w-4" />
+          {activeFilterCount > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 overflow-hidden rounded-xl border-border/80 p-0 shadow-lg"
+        align="end"
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <p className="text-sm font-medium">{t("filters")}</p>
+          {activeFilterCount > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={onClear}
+            >
+              {t("clearFilters")}
+            </Button>
+          ) : null}
+        </div>
+        <div className="space-y-4 p-4">
+          <div className="space-y-2">
+            <Label htmlFor="payments-filter-status">
+              {t("columns.status")}
+            </Label>
+            <Select
+              value={filters.status ?? ALL}
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  status:
+                    value === ALL
+                      ? undefined
+                      : (value as X402PaymentAttempt["status"]),
+                }))
+              }
+            >
+              <SelectTrigger id="payments-filter-status" className="w-full">
+                <SelectValue placeholder={t("allStatuses")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allStatuses")}</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payments-filter-direction">
+              {t("columns.direction")}
+            </Label>
+            <Select
+              value={filters.direction ?? ALL}
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  direction:
+                    value === ALL
+                      ? undefined
+                      : (value as X402PaymentAttempt["direction"]),
+                }))
+              }
+            >
+              <SelectTrigger id="payments-filter-direction" className="w-full">
+                <SelectValue placeholder={t("allDirections")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allDirections")}</SelectItem>
+                {directionOptions.map((direction) => (
+                  <SelectItem key={direction} value={direction}>
+                    {t(`directions.${direction}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payments-filter-chain">{t("columns.chain")}</Label>
+            <Select
+              value={filters.caip2Network ?? ALL}
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  caip2Network: value === ALL ? undefined : value,
+                }))
+              }
+            >
+              <SelectTrigger id="payments-filter-chain" className="w-full">
+                <SelectValue placeholder={t("allChains")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t("allChains")}</SelectItem>
+                {networks.map((network) => (
+                  <SelectItem key={network.id} value={network.caip2Id}>
+                    {network.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function PaymentsActiveFilters({
+  filters,
+  networks,
+  onClear,
+}: {
+  filters: X402PaymentFilters;
+  networks: { id: string; caip2Id: string; displayName: string }[];
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Payments");
+
+  const chainName =
+    networks.find((network) => network.caip2Id === filters.caip2Network)
+      ?.displayName ?? filters.caip2Network;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {filters.status ? (
+        <Badge variant="outline" className="font-normal">
+          {filters.status}
+        </Badge>
+      ) : null}
+      {filters.direction ? (
+        <Badge variant="outline" className="font-normal">
+          {t(`directions.${filters.direction}`)}
+        </Badge>
+      ) : null}
+      {filters.caip2Network ? (
+        <Badge variant="outline" className="font-normal">
+          {chainName}
+        </Badge>
+      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground"
+        onClick={onClear}
+      >
+        {t("clearFilters")}
+      </Button>
     </div>
   );
 }
