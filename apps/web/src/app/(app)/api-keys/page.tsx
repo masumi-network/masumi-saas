@@ -35,14 +35,9 @@ export default async function ApiKeysPage() {
     );
   }
 
-  const pageDescription =
-    result.data.scope === "org"
-      ? t("orgDescription", { organization: result.data.organizationName })
-      : t("description");
-
   return (
     <AppPage>
-      <PageHeader title={t("title")} description={pageDescription} />
+      <PageHeader title={t("title")} description={t("description")} />
       <ApiKeysList data={result.data} />
     </AppPage>
   );
