@@ -276,7 +276,6 @@ export type X402NetworkOrderByWithRelationInput = {
 
 export type X402NetworkWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  userId_caip2Id?: Prisma.X402NetworkUserIdCaip2IdCompoundUniqueInput
   AND?: Prisma.X402NetworkWhereInput | Prisma.X402NetworkWhereInput[]
   OR?: Prisma.X402NetworkWhereInput[]
   NOT?: Prisma.X402NetworkWhereInput | Prisma.X402NetworkWhereInput[]
@@ -297,7 +296,7 @@ export type X402NetworkWhereUniqueInput = Prisma.AtLeast<{
   FacilitatorWallet?: Prisma.XOR<Prisma.X402EvmWalletNullableScalarRelationFilter, Prisma.X402EvmWalletWhereInput> | null
   WalletBudgets?: Prisma.X402WalletBudgetListRelationFilter
   PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter
-}, "id" | "userId_caip2Id">
+}, "id">
 
 export type X402NetworkOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -462,11 +461,6 @@ export type X402NetworkListRelationFilter = {
 
 export type X402NetworkOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
-}
-
-export type X402NetworkUserIdCaip2IdCompoundUniqueInput = {
-  userId: string
-  caip2Id: string
 }
 
 export type X402NetworkCountOrderByAggregateInput = {

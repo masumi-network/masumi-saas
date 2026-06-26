@@ -334,3 +334,8 @@ ALTER TABLE "x402_payment_attempt" ADD CONSTRAINT "x402_payment_attempt_userId_c
 
 -- AddForeignKey
 ALTER TABLE "x402_settlement" ADD CONSTRAINT "x402_settlement_paymentAttemptId_fkey" FOREIGN KEY ("paymentAttemptId") REFERENCES "x402_payment_attempt"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- One CAIP-2 chain per organization (org-shared x402 config).
+CREATE UNIQUE INDEX IF NOT EXISTS "x402_network_organization_id_caip2_id_key"
+ON "x402_network" ("organization_id", "caip2_id")
+WHERE "organization_id" IS NOT NULL;

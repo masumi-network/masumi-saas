@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/tooltip";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
-import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 import { X402SetupWelcome } from "./setup/x402-setup-welcome";
 
@@ -34,16 +33,12 @@ const SETUP_QUERY = "setup";
 
 type X402SetupDialogContextValue = {
   open: boolean;
-  openSetup: (options?: { network?: PaymentNodeNetwork }) => void;
+  openSetup: () => void;
   closeSetup: () => void;
 };
 
 const X402SetupDialogContext =
   createContext<X402SetupDialogContextValue | null>(null);
-
-function isValidNetwork(value: string | null): value is PaymentNodeNetwork {
-  return value === "Preprod" || value === "Mainnet";
-}
 
 function buildX402Path(params: URLSearchParams): string {
   const query = params.toString();
@@ -59,16 +54,9 @@ export function X402SetupDialogProvider({
   const searchParams = useSearchParams();
   const { setIsSetupMode } = useX402Rail();
   const [openExplicit, setOpenExplicit] = useState(false);
-  const [networkOverride, setNetworkOverride] = useState<
-    PaymentNodeNetwork | undefined
-  >();
 
   const setupFromUrl = searchParams.get(SETUP_QUERY) === "1";
-  const networkFromUrl = searchParams.get("network");
   const isOpen = openExplicit || setupFromUrl;
-  const dialogNetwork =
-    networkOverride ??
-    (isValidNetwork(networkFromUrl) ? networkFromUrl : undefined);
 
   const clearSetupQuery = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -79,25 +67,18 @@ export function X402SetupDialogProvider({
 
   const closeSetup = useCallback(() => {
     setOpenExplicit(false);
-    setNetworkOverride(undefined);
     setIsSetupMode(false);
     clearSetupQuery();
   }, [clearSetupQuery, setIsSetupMode]);
 
-  const openSetup = useCallback(
-    (options?: { network?: PaymentNodeNetwork }) => {
-      setNetworkOverride(options?.network);
-      setOpenExplicit(true);
-      setIsSetupMode(true);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(SETUP_QUERY, "1");
-      if (options?.network) {
-        params.set("network", options.network);
-      }
-      router.replace(buildX402Path(params), { scroll: false });
-    },
-    [router, searchParams, setIsSetupMode],
-  );
+  const openSetup = useCallback(() => {
+    setOpenExplicit(true);
+    setIsSetupMode(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(SETUP_QUERY, "1");
+    params.delete("network");
+    router.replace(buildX402Path(params), { scroll: false });
+  }, [router, searchParams, setIsSetupMode]);
 
   useEffect(() => {
     setIsSetupMode(isOpen);
@@ -111,11 +92,7 @@ export function X402SetupDialogProvider({
   return (
     <X402SetupDialogContext.Provider value={value}>
       {children}
-      <X402SetupDialog
-        open={isOpen}
-        onClose={closeSetup}
-        network={dialogNetwork}
-      />
+      <X402SetupDialog open={isOpen} onClose={closeSetup} />
     </X402SetupDialogContext.Provider>
   );
 }
@@ -133,11 +110,9 @@ export function useX402SetupDialog(): X402SetupDialogContextValue {
 function X402SetupDialog({
   open,
   onClose,
-  network,
 }: {
   open: boolean;
   onClose: () => void;
-  network?: PaymentNodeNetwork;
 }) {
   const t = useTranslations("App.X402.Setup");
 
@@ -162,7 +137,7 @@ function X402SetupDialog({
                       <span className="sr-only">{t("pageDescription")}</span>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
+                  <TooltipContent side="bottom">
                     {t("pageDescription")}
                   </TooltipContent>
                 </Tooltip>
@@ -174,7 +149,7 @@ function X402SetupDialog({
           </DialogHeader>
         </div>
 
-        <X402SetupWelcome embedded networkType={network} onFinish={onClose} />
+        <X402SetupWelcome embedded onFinish={onClose} />
       </DialogContent>
     </Dialog>
   );

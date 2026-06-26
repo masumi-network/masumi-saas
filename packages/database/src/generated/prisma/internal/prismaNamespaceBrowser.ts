@@ -711,7 +711,8 @@ export const X402WalletBudgetScalarFieldEnum = {
   remainingAmount: 'remainingAmount',
   spentAmount: 'spentAmount',
   enabled: 'enabled',
-  createdByUserId: 'createdByUserId'
+  createdByUserId: 'createdByUserId',
+  x402NetworkId: 'x402NetworkId'
 } as const
 
 export type X402WalletBudgetScalarFieldEnum = (typeof X402WalletBudgetScalarFieldEnum)[keyof typeof X402WalletBudgetScalarFieldEnum]
@@ -739,7 +740,8 @@ export const X402PaymentAttemptScalarFieldEnum = {
   paymentPayload: 'paymentPayload',
   paymentIdentifier: 'paymentIdentifier',
   errorReason: 'errorReason',
-  errorMessage: 'errorMessage'
+  errorMessage: 'errorMessage',
+  x402NetworkId: 'x402NetworkId'
 } as const
 
 export type X402PaymentAttemptScalarFieldEnum = (typeof X402PaymentAttemptScalarFieldEnum)[keyof typeof X402PaymentAttemptScalarFieldEnum]

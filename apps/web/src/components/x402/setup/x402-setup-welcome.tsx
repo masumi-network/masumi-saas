@@ -28,7 +28,6 @@ import {
   useX402Networks,
   useX402Wallets,
 } from "@/lib/hooks/use-x402";
-import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { cn, shortenAddress } from "@/lib/utils";
 import type { X402Network, X402Wallet } from "@/lib/x402/types";
 import { chainsForEnv, isTestnetEnv } from "@/lib/x402-rail";
@@ -40,19 +39,16 @@ import { CreateWalletDialog } from "../wallets-tab";
 type DialogKind = "wallet" | "chain" | "budget" | null;
 
 export function X402SetupWelcome({
-  networkType,
   embedded = false,
   onFinish,
 }: {
-  networkType?: PaymentNodeNetwork;
   embedded?: boolean;
   onFinish?: () => void;
 }) {
   const t = useTranslations("App.X402.Setup");
   const tChains = useTranslations("App.X402.Chains");
   const queryClient = useQueryClient();
-  const { network: contextNetwork } = usePaymentNetwork();
-  const network = networkType ?? contextNetwork;
+  const { network } = usePaymentNetwork();
   const { setActiveRail, setSelectedX402ChainId, setIsSetupMode } =
     useX402Rail();
   const { activeOrganization, activeOrganizationId } = useOrganizationContext();
@@ -118,8 +114,12 @@ export function X402SetupWelcome({
       showBudgetFeatures
         ? [
             {
-              title: t("receivingTitle"),
-              description: t("receivingDescription", { network }),
+              title: t("walletStepTitle"),
+              description: t("walletStepDescription"),
+            },
+            {
+              title: t("facilitatorStepTitle"),
+              description: t("facilitatorStepDescription", { network }),
             },
             {
               title: t("payingTitle"),
@@ -133,8 +133,12 @@ export function X402SetupWelcome({
           ]
         : [
             {
-              title: t("receivingTitle"),
-              description: t("receivingDescription", { network }),
+              title: t("walletStepTitle"),
+              description: t("walletStepDescription"),
+            },
+            {
+              title: t("facilitatorStepTitle"),
+              description: t("facilitatorStepDescription", { network }),
             },
             {
               title: t("readyTitle"),
@@ -211,14 +215,49 @@ export function X402SetupWelcome({
     </div>
   );
 
-  const receivingContent = (
+  const walletStepContent = (
+    <div
+      className={cn(
+        "space-y-4 rounded-lg border bg-muted/40 p-4",
+        hasSellingWallet && "border-green-500/20 bg-green-500/[0.04]",
+      )}
+    >
+      {walletChips("Selling")}
+      {hasSellingWallet ? (
+        <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-500">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {t("sellingWalletCreated")}
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {t("createSellingHint")}
+        </p>
+      )}
+      <Button
+        variant={hasSellingWallet ? "outline" : "default"}
+        className="gap-2"
+        onClick={() => openWalletDialog("Selling")}
+      >
+        {hasSellingWallet ? t("addSellingWallet") : t("createSellingWallet")}
+      </Button>
+    </div>
+  );
+
+  const facilitatorStepContent = (
     <div
       className={cn(
         "space-y-4 rounded-lg border bg-muted/40 p-4",
         hasFacilitator && "border-green-500/20 bg-green-500/[0.04]",
       )}
     >
-      {walletChips("Selling")}
+      {!hasSellingWallet ? (
+        <p className="flex items-start gap-1.5 text-sm text-amber-600 dark:text-amber-500">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          {t("walletRequiredFirst")}
+        </p>
+      ) : (
+        walletChips("Selling")
+      )}
       {hasFacilitator && configuredChain ? (
         <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-500">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -243,17 +282,10 @@ export function X402SetupWelcome({
       <Button
         variant={hasFacilitator ? "outline" : "default"}
         className="gap-2"
-        onClick={() =>
-          hasSellingWallet
-            ? setOpenDialog("chain")
-            : openWalletDialog("Selling")
-        }
+        disabled={!hasSellingWallet}
+        onClick={() => setOpenDialog("chain")}
       >
-        {!hasSellingWallet
-          ? t("createSellingWallet")
-          : hasFacilitator
-            ? t("manageChain")
-            : t("assignFacilitator")}
+        {hasFacilitator ? t("manageChain") : t("assignFacilitator")}
       </Button>
     </div>
   );
@@ -295,8 +327,21 @@ export function X402SetupWelcome({
   const successContent = (
     <ul className="space-y-3">
       {[
+        {
+          label: t("walletStepComplete"),
+          done: hasSellingWallet,
+          optional: false,
+        },
         { label: t("receivingEnabled"), done: hasFacilitator, optional: false },
-        { label: t("payingEnabled"), done: hasBudget, optional: true },
+        ...(showBudgetFeatures
+          ? [
+              {
+                label: t("payingEnabled"),
+                done: hasBudget,
+                optional: true as const,
+              },
+            ]
+          : []),
       ].map((item) => (
         <li
           key={item.label}
@@ -325,11 +370,23 @@ export function X402SetupWelcome({
   );
 
   const stepContents = showBudgetFeatures
-    ? [welcomeContent, receivingContent, payingContent, successContent]
-    : [welcomeContent, receivingContent, successContent];
+    ? [
+        welcomeContent,
+        walletStepContent,
+        facilitatorStepContent,
+        payingContent,
+        successContent,
+      ]
+    : [
+        welcomeContent,
+        walletStepContent,
+        facilitatorStepContent,
+        successContent,
+      ];
 
   const successStepIndex = stepContents.length - 1;
-  const payingStepIndex = showBudgetFeatures ? 2 : -1;
+  const facilitatorStepIndex = 2;
+  const payingStepIndex = showBudgetFeatures ? 3 : -1;
 
   const footer = (() => {
     if (currentStep === 0) {
@@ -348,17 +405,31 @@ export function X402SetupWelcome({
     }
 
     if (currentStep === successStepIndex) {
+      const previousStep = showBudgetFeatures
+        ? payingStepIndex
+        : facilitatorStepIndex;
       return (
-        <Button
-          id="x402-setup-finish"
-          key="x402-setup-finish"
-          onClick={finish}
-          className="gap-2"
-          variant="primary"
-        >
-          {embedded ? t("finishSetup") : t("goToX402")}
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <>
+          <Button
+            id="x402-setup-back-ready"
+            key="x402-setup-back-ready"
+            variant="outline"
+            onClick={() => setCurrentStep(previousStep)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("back")}
+          </Button>
+          <Button
+            id="x402-setup-finish"
+            key="x402-setup-finish"
+            onClick={finish}
+            className="gap-2"
+            variant="primary"
+          >
+            {embedded ? t("finishSetup") : t("goToX402")}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </>
       );
     }
 
@@ -366,8 +437,8 @@ export function X402SetupWelcome({
       return (
         <>
           <Button
-            id="x402-setup-back-receiving"
-            key="x402-setup-back-receiving"
+            id="x402-setup-back-wallet"
+            key="x402-setup-back-wallet"
             variant="outline"
             onClick={() => setCurrentStep(0)}
           >
@@ -375,12 +446,40 @@ export function X402SetupWelcome({
             {t("back")}
           </Button>
           <Button
-            id="x402-setup-continue-receiving"
-            key="x402-setup-continue-receiving"
+            id="x402-setup-continue-wallet"
+            key="x402-setup-continue-wallet"
+            className="gap-2"
+            variant="primary"
+            disabled={!hasSellingWallet}
+            onClick={() => setCurrentStep(2)}
+          >
+            {t("continue")}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </>
+      );
+    }
+
+    if (currentStep === facilitatorStepIndex) {
+      const nextStep = showBudgetFeatures ? payingStepIndex : successStepIndex;
+      return (
+        <>
+          <Button
+            id="x402-setup-back-facilitator"
+            key="x402-setup-back-facilitator"
+            variant="outline"
+            onClick={() => setCurrentStep(1)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("back")}
+          </Button>
+          <Button
+            id="x402-setup-continue-facilitator"
+            key="x402-setup-continue-facilitator"
             className="gap-2"
             variant="primary"
             disabled={!hasFacilitator}
-            onClick={() => setCurrentStep(2)}
+            onClick={() => setCurrentStep(nextStep)}
           >
             {t("continue")}
             <ArrowRight className="h-4 w-4" />
@@ -396,7 +495,7 @@ export function X402SetupWelcome({
             id="x402-setup-back-paying"
             key="x402-setup-back-paying"
             variant="outline"
-            onClick={() => setCurrentStep(1)}
+            onClick={() => setCurrentStep(facilitatorStepIndex)}
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back")}
@@ -406,7 +505,7 @@ export function X402SetupWelcome({
             key="x402-setup-continue-paying"
             className="gap-2"
             variant="primary"
-            onClick={() => setCurrentStep(3)}
+            onClick={() => setCurrentStep(successStepIndex)}
           >
             {hasBudget ? t("continue") : t("skipForNow")}
             <ArrowRight className="h-4 w-4" />
@@ -465,9 +564,7 @@ export function X402SetupWelcome({
               key={`x402-setup-footer-${currentStep}`}
               className={cn(
                 "shrink-0 border-t bg-background px-6 py-4",
-                currentStep > 0 &&
-                  currentStep < successStepIndex &&
-                  "sm:justify-between",
+                currentStep > 0 && "sm:justify-between",
               )}
             >
               {footer}
@@ -497,7 +594,6 @@ export function X402SetupWelcome({
           }
           open={openDialog === "chain"}
           editing={chainToConfigure}
-          environmentNetwork={network}
           onClose={() => setOpenDialog(null)}
           onSaved={() => {
             setOpenDialog(null);

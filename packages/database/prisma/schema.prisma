@@ -833,10 +833,10 @@ model X402Network {
   WalletBudgets       X402WalletBudget[]
   PaymentAttempts     X402PaymentAttempt[]
 
-  @@unique([userId, caip2Id])
   @@index([isEnabled])
   @@index([userId])
   @@index([organizationId])
+  @@index([userId, caip2Id])
   @@map("x402_network")
 }
 
@@ -904,7 +904,8 @@ model X402WalletBudget {
   createdByUserId String?
   CreatedByUser   User?         @relation("X402WalletBudgetCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   EvmWallet       X402EvmWallet @relation(fields: [evmWalletId], references: [id], onDelete: Cascade)
-  Network         X402Network   @relation(fields: [userId, caip2Network], references: [userId, caip2Id], onDelete: Restrict)
+  x402NetworkId   String
+  Network         X402Network   @relation(fields: [x402NetworkId], references: [id], onDelete: Restrict)
 
   @@unique([orgApiKeyId, evmWalletId, caip2Network, asset])
   @@index([orgApiKeyId, enabled])
@@ -912,6 +913,7 @@ model X402WalletBudget {
   @@index([caip2Network, asset])
   @@index([createdByUserId])
   @@index([userId])
+  @@index([x402NetworkId])
   @@map("x402_wallet_budget")
 }
 
@@ -943,7 +945,8 @@ model X402PaymentAttempt {
   EvmWallet                X402EvmWallet?          @relation(fields: [evmWalletId], references: [id], onDelete: SetNull)
   Agent                    Agent?                  @relation(fields: [agentId], references: [id], onDelete: SetNull)
   SupportedPaymentSource   SupportedPaymentSource? @relation(fields: [supportedPaymentSourceId], references: [id], onDelete: SetNull)
-  Network                  X402Network             @relation(fields: [userId, caip2Network], references: [userId, caip2Id], onDelete: Restrict)
+  x402NetworkId            String
+  Network                  X402Network             @relation(fields: [x402NetworkId], references: [id], onDelete: Restrict)
   Settlement               X402Settlement?
 
   @@index([userId, createdAt])
@@ -953,6 +956,7 @@ model X402PaymentAttempt {
   @@index([paymentIdentifier])
   @@index([caip2Network, asset])
   @@index([status, createdAt])
+  @@index([x402NetworkId])
   @@map("x402_payment_attempt")
 }
 

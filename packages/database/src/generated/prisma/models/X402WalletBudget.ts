@@ -49,6 +49,7 @@ export type X402WalletBudgetMinAggregateOutputType = {
   spentAmount: bigint | null
   enabled: boolean | null
   createdByUserId: string | null
+  x402NetworkId: string | null
 }
 
 export type X402WalletBudgetMaxAggregateOutputType = {
@@ -64,6 +65,7 @@ export type X402WalletBudgetMaxAggregateOutputType = {
   spentAmount: bigint | null
   enabled: boolean | null
   createdByUserId: string | null
+  x402NetworkId: string | null
 }
 
 export type X402WalletBudgetCountAggregateOutputType = {
@@ -79,6 +81,7 @@ export type X402WalletBudgetCountAggregateOutputType = {
   spentAmount: number
   enabled: number
   createdByUserId: number
+  x402NetworkId: number
   _all: number
 }
 
@@ -106,6 +109,7 @@ export type X402WalletBudgetMinAggregateInputType = {
   spentAmount?: true
   enabled?: true
   createdByUserId?: true
+  x402NetworkId?: true
 }
 
 export type X402WalletBudgetMaxAggregateInputType = {
@@ -121,6 +125,7 @@ export type X402WalletBudgetMaxAggregateInputType = {
   spentAmount?: true
   enabled?: true
   createdByUserId?: true
+  x402NetworkId?: true
 }
 
 export type X402WalletBudgetCountAggregateInputType = {
@@ -136,6 +141,7 @@ export type X402WalletBudgetCountAggregateInputType = {
   spentAmount?: true
   enabled?: true
   createdByUserId?: true
+  x402NetworkId?: true
   _all?: true
 }
 
@@ -238,6 +244,7 @@ export type X402WalletBudgetGroupByOutputType = {
   spentAmount: bigint
   enabled: boolean
   createdByUserId: string | null
+  x402NetworkId: string
   _count: X402WalletBudgetCountAggregateOutputType | null
   _avg: X402WalletBudgetAvgAggregateOutputType | null
   _sum: X402WalletBudgetSumAggregateOutputType | null
@@ -276,6 +283,7 @@ export type X402WalletBudgetWhereInput = {
   spentAmount?: Prisma.BigIntFilter<"X402WalletBudget"> | bigint | number
   enabled?: Prisma.BoolFilter<"X402WalletBudget"> | boolean
   createdByUserId?: Prisma.StringNullableFilter<"X402WalletBudget"> | string | null
+  x402NetworkId?: Prisma.StringFilter<"X402WalletBudget"> | string
   orgApiKey?: Prisma.XOR<Prisma.OrgApiKeyScalarRelationFilter, Prisma.OrgApiKeyWhereInput>
   CreatedByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   EvmWallet?: Prisma.XOR<Prisma.X402EvmWalletScalarRelationFilter, Prisma.X402EvmWalletWhereInput>
@@ -295,6 +303,7 @@ export type X402WalletBudgetOrderByWithRelationInput = {
   spentAmount?: Prisma.SortOrder
   enabled?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  x402NetworkId?: Prisma.SortOrder
   orgApiKey?: Prisma.OrgApiKeyOrderByWithRelationInput
   CreatedByUser?: Prisma.UserOrderByWithRelationInput
   EvmWallet?: Prisma.X402EvmWalletOrderByWithRelationInput
@@ -318,6 +327,7 @@ export type X402WalletBudgetWhereUniqueInput = Prisma.AtLeast<{
   spentAmount?: Prisma.BigIntFilter<"X402WalletBudget"> | bigint | number
   enabled?: Prisma.BoolFilter<"X402WalletBudget"> | boolean
   createdByUserId?: Prisma.StringNullableFilter<"X402WalletBudget"> | string | null
+  x402NetworkId?: Prisma.StringFilter<"X402WalletBudget"> | string
   orgApiKey?: Prisma.XOR<Prisma.OrgApiKeyScalarRelationFilter, Prisma.OrgApiKeyWhereInput>
   CreatedByUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   EvmWallet?: Prisma.XOR<Prisma.X402EvmWalletScalarRelationFilter, Prisma.X402EvmWalletWhereInput>
@@ -337,6 +347,7 @@ export type X402WalletBudgetOrderByWithAggregationInput = {
   spentAmount?: Prisma.SortOrder
   enabled?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
+  x402NetworkId?: Prisma.SortOrder
   _count?: Prisma.X402WalletBudgetCountOrderByAggregateInput
   _avg?: Prisma.X402WalletBudgetAvgOrderByAggregateInput
   _max?: Prisma.X402WalletBudgetMaxOrderByAggregateInput
@@ -360,12 +371,15 @@ export type X402WalletBudgetScalarWhereWithAggregatesInput = {
   spentAmount?: Prisma.BigIntWithAggregatesFilter<"X402WalletBudget"> | bigint | number
   enabled?: Prisma.BoolWithAggregatesFilter<"X402WalletBudget"> | boolean
   createdByUserId?: Prisma.StringNullableWithAggregatesFilter<"X402WalletBudget"> | string | null
+  x402NetworkId?: Prisma.StringWithAggregatesFilter<"X402WalletBudget"> | string
 }
 
 export type X402WalletBudgetCreateInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -389,12 +403,15 @@ export type X402WalletBudgetUncheckedCreateInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -418,6 +435,7 @@ export type X402WalletBudgetUncheckedUpdateInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetCreateManyInput = {
@@ -433,12 +451,15 @@ export type X402WalletBudgetCreateManyInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -458,6 +479,7 @@ export type X402WalletBudgetUncheckedUpdateManyInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetListRelationFilter = {
@@ -490,6 +512,7 @@ export type X402WalletBudgetCountOrderByAggregateInput = {
   spentAmount?: Prisma.SortOrder
   enabled?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
+  x402NetworkId?: Prisma.SortOrder
 }
 
 export type X402WalletBudgetAvgOrderByAggregateInput = {
@@ -510,6 +533,7 @@ export type X402WalletBudgetMaxOrderByAggregateInput = {
   spentAmount?: Prisma.SortOrder
   enabled?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
+  x402NetworkId?: Prisma.SortOrder
 }
 
 export type X402WalletBudgetMinOrderByAggregateInput = {
@@ -525,6 +549,7 @@ export type X402WalletBudgetMinOrderByAggregateInput = {
   spentAmount?: Prisma.SortOrder
   enabled?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
+  x402NetworkId?: Prisma.SortOrder
 }
 
 export type X402WalletBudgetSumOrderByAggregateInput = {
@@ -704,6 +729,8 @@ export type X402WalletBudgetCreateWithoutCreatedByUserInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -725,6 +752,7 @@ export type X402WalletBudgetUncheckedCreateWithoutCreatedByUserInput = {
   remainingAmount: bigint | number
   spentAmount?: bigint | number
   enabled?: boolean
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetCreateOrConnectWithoutCreatedByUserInput = {
@@ -769,12 +797,15 @@ export type X402WalletBudgetScalarWhereInput = {
   spentAmount?: Prisma.BigIntFilter<"X402WalletBudget"> | bigint | number
   enabled?: Prisma.BoolFilter<"X402WalletBudget"> | boolean
   createdByUserId?: Prisma.StringNullableFilter<"X402WalletBudget"> | string | null
+  x402NetworkId?: Prisma.StringFilter<"X402WalletBudget"> | string
 }
 
 export type X402WalletBudgetCreateWithoutOrgApiKeyInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -796,6 +827,7 @@ export type X402WalletBudgetUncheckedCreateWithoutOrgApiKeyInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetCreateOrConnectWithoutOrgApiKeyInput = {
@@ -828,6 +860,8 @@ export type X402WalletBudgetCreateWithoutNetworkInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -841,8 +875,10 @@ export type X402WalletBudgetUncheckedCreateWithoutNetworkInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
   orgApiKeyId: string
   evmWalletId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -880,6 +916,8 @@ export type X402WalletBudgetCreateWithoutEvmWalletInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -901,6 +939,7 @@ export type X402WalletBudgetUncheckedCreateWithoutEvmWalletInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetCreateOrConnectWithoutEvmWalletInput = {
@@ -941,12 +980,15 @@ export type X402WalletBudgetCreateManyCreatedByUserInput = {
   remainingAmount: bigint | number
   spentAmount?: bigint | number
   enabled?: boolean
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetUpdateWithoutCreatedByUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -968,6 +1010,7 @@ export type X402WalletBudgetUncheckedUpdateWithoutCreatedByUserInput = {
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetUncheckedUpdateManyWithoutCreatedByUserInput = {
@@ -982,6 +1025,7 @@ export type X402WalletBudgetUncheckedUpdateManyWithoutCreatedByUserInput = {
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetCreateManyOrgApiKeyInput = {
@@ -996,12 +1040,15 @@ export type X402WalletBudgetCreateManyOrgApiKeyInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetUpdateWithoutOrgApiKeyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -1023,6 +1070,7 @@ export type X402WalletBudgetUncheckedUpdateWithoutOrgApiKeyInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyInput = {
@@ -1037,14 +1085,17 @@ export type X402WalletBudgetUncheckedUpdateManyWithoutOrgApiKeyInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetCreateManyNetworkInput = {
   id?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  userId: string
   orgApiKeyId: string
   evmWalletId: string
+  caip2Network: string
   asset: string
   remainingAmount: bigint | number
   spentAmount?: bigint | number
@@ -1056,6 +1107,8 @@ export type X402WalletBudgetUpdateWithoutNetworkInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -1069,8 +1122,10 @@ export type X402WalletBudgetUncheckedUpdateWithoutNetworkInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
   orgApiKeyId?: Prisma.StringFieldUpdateOperationsInput | string
   evmWalletId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -1082,8 +1137,10 @@ export type X402WalletBudgetUncheckedUpdateManyWithoutNetworkInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
   orgApiKeyId?: Prisma.StringFieldUpdateOperationsInput | string
   evmWalletId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -1103,12 +1160,15 @@ export type X402WalletBudgetCreateManyEvmWalletInput = {
   spentAmount?: bigint | number
   enabled?: boolean
   createdByUserId?: string | null
+  x402NetworkId: string
 }
 
 export type X402WalletBudgetUpdateWithoutEvmWalletInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  caip2Network?: Prisma.StringFieldUpdateOperationsInput | string
   asset?: Prisma.StringFieldUpdateOperationsInput | string
   remainingAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
@@ -1130,6 +1190,7 @@ export type X402WalletBudgetUncheckedUpdateWithoutEvmWalletInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type X402WalletBudgetUncheckedUpdateManyWithoutEvmWalletInput = {
@@ -1144,6 +1205,7 @@ export type X402WalletBudgetUncheckedUpdateManyWithoutEvmWalletInput = {
   spentAmount?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  x402NetworkId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -1161,6 +1223,7 @@ export type X402WalletBudgetSelect<ExtArgs extends runtime.Types.Extensions.Inte
   spentAmount?: boolean
   enabled?: boolean
   createdByUserId?: boolean
+  x402NetworkId?: boolean
   orgApiKey?: boolean | Prisma.OrgApiKeyDefaultArgs<ExtArgs>
   CreatedByUser?: boolean | Prisma.X402WalletBudget$CreatedByUserArgs<ExtArgs>
   EvmWallet?: boolean | Prisma.X402EvmWalletDefaultArgs<ExtArgs>
@@ -1180,6 +1243,7 @@ export type X402WalletBudgetSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   spentAmount?: boolean
   enabled?: boolean
   createdByUserId?: boolean
+  x402NetworkId?: boolean
   orgApiKey?: boolean | Prisma.OrgApiKeyDefaultArgs<ExtArgs>
   CreatedByUser?: boolean | Prisma.X402WalletBudget$CreatedByUserArgs<ExtArgs>
   EvmWallet?: boolean | Prisma.X402EvmWalletDefaultArgs<ExtArgs>
@@ -1199,6 +1263,7 @@ export type X402WalletBudgetSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   spentAmount?: boolean
   enabled?: boolean
   createdByUserId?: boolean
+  x402NetworkId?: boolean
   orgApiKey?: boolean | Prisma.OrgApiKeyDefaultArgs<ExtArgs>
   CreatedByUser?: boolean | Prisma.X402WalletBudget$CreatedByUserArgs<ExtArgs>
   EvmWallet?: boolean | Prisma.X402EvmWalletDefaultArgs<ExtArgs>
@@ -1218,9 +1283,10 @@ export type X402WalletBudgetSelectScalar = {
   spentAmount?: boolean
   enabled?: boolean
   createdByUserId?: boolean
+  x402NetworkId?: boolean
 }
 
-export type X402WalletBudgetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "userId" | "orgApiKeyId" | "evmWalletId" | "caip2Network" | "asset" | "remainingAmount" | "spentAmount" | "enabled" | "createdByUserId", ExtArgs["result"]["x402WalletBudget"]>
+export type X402WalletBudgetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "userId" | "orgApiKeyId" | "evmWalletId" | "caip2Network" | "asset" | "remainingAmount" | "spentAmount" | "enabled" | "createdByUserId" | "x402NetworkId", ExtArgs["result"]["x402WalletBudget"]>
 export type X402WalletBudgetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   orgApiKey?: boolean | Prisma.OrgApiKeyDefaultArgs<ExtArgs>
   CreatedByUser?: boolean | Prisma.X402WalletBudget$CreatedByUserArgs<ExtArgs>
@@ -1261,6 +1327,7 @@ export type $X402WalletBudgetPayload<ExtArgs extends runtime.Types.Extensions.In
     spentAmount: bigint
     enabled: boolean
     createdByUserId: string | null
+    x402NetworkId: string
   }, ExtArgs["result"]["x402WalletBudget"]>
   composites: {}
 }
@@ -1700,6 +1767,7 @@ export interface X402WalletBudgetFieldRefs {
   readonly spentAmount: Prisma.FieldRef<"X402WalletBudget", 'BigInt'>
   readonly enabled: Prisma.FieldRef<"X402WalletBudget", 'Boolean'>
   readonly createdByUserId: Prisma.FieldRef<"X402WalletBudget", 'String'>
+  readonly x402NetworkId: Prisma.FieldRef<"X402WalletBudget", 'String'>
 }
     
 

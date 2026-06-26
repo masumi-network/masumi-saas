@@ -81,13 +81,20 @@ export function OrganizationDetailContent({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {!isActive && (
+        <CardContent className="flex flex-wrap gap-3">
+          {!isActive ? (
             <Button
               variant="default"
               onClick={() => setActiveOrganization(organization.id)}
             >
               {t("switchTo")}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setActiveOrganization(null)}
+            >
+              {t("switchToPersonal")}
             </Button>
           )}
         </CardContent>

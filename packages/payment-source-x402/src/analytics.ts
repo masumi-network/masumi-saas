@@ -1,6 +1,12 @@
 import { X402PaymentDirection, X402PaymentStatus } from "@masumi/database";
 import prisma from "@masumi/database/client";
 
+import {
+  paymentAttemptOwnershipWhere,
+  resolveX402TenantScope,
+  type X402ScopeInput,
+} from "./tenant-scope.js";
+
 export type X402UnitAmount = {
   caip2Network: string;
   asset: string;
@@ -63,13 +69,15 @@ function unitsFromMap(map: UnitMap): X402UnitAmount[] {
  * sell side) and outbound signed payments (spend, the buy side), bucketed by day and month
  * in the caller's timezone and split by (network, asset).
  */
-export async function getX402Analytics(input: {
-  userId: string;
-  startDate?: Date | null;
-  endDate?: Date | null;
-  caip2Network?: string;
-  timeZone?: string;
-}) {
+export async function getX402Analytics(
+  input: X402ScopeInput & {
+    startDate?: Date | null;
+    endDate?: Date | null;
+    caip2Network?: string;
+    timeZone?: string;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   const timeZone = resolveTimeZone(input.timeZone);
   const periodEnd = input.endDate ?? new Date();
   const periodStart =
@@ -78,7 +86,7 @@ export async function getX402Analytics(input: {
 
   const attempts = await prisma.x402PaymentAttempt.findMany({
     where: {
-      userId: input.userId,
+      ...paymentAttemptOwnershipWhere(scope),
       createdAt: { gte: periodStart, lte: periodEnd },
       caip2Network: input.caip2Network,
       OR: [

@@ -5,24 +5,35 @@ import {
 } from "@masumi/database";
 import prisma from "@masumi/database/client";
 
-export async function countX402ManagedWallets(input: {
-  userId: string;
-  type?: X402EvmWalletType;
-}) {
+import {
+  paymentAttemptOwnershipWhere,
+  resolveX402TenantScope,
+  walletOwnershipWhere,
+  type X402ScopeInput,
+} from "./tenant-scope.js";
+
+export async function countX402ManagedWallets(
+  input: X402ScopeInput & {
+    type?: X402EvmWalletType;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   return prisma.x402EvmWallet.count({
-    where: { userId: input.userId, deletedAt: null, type: input.type },
+    where: { ...walletOwnershipWhere(scope), type: input.type },
   });
 }
 
-export async function countX402PaymentAttempts(input: {
-  userId: string;
-  status?: X402PaymentStatus;
-  direction?: X402PaymentDirection;
-  caip2Network?: string;
-}) {
+export async function countX402PaymentAttempts(
+  input: X402ScopeInput & {
+    status?: X402PaymentStatus;
+    direction?: X402PaymentDirection;
+    caip2Network?: string;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   return prisma.x402PaymentAttempt.count({
     where: {
-      userId: input.userId,
+      ...paymentAttemptOwnershipWhere(scope),
       status: input.status,
       direction: input.direction,
       caip2Network: input.caip2Network,
@@ -30,16 +41,18 @@ export async function countX402PaymentAttempts(input: {
   });
 }
 
-export async function countX402Settlements(input: {
-  userId: string;
-  caip2Network?: string;
-  success?: boolean;
-}) {
+export async function countX402Settlements(
+  input: X402ScopeInput & {
+    caip2Network?: string;
+    success?: boolean;
+  },
+) {
+  const scope = resolveX402TenantScope(input);
   return prisma.x402Settlement.count({
     where: {
       caip2Network: input.caip2Network,
       success: input.success,
-      PaymentAttempt: { userId: input.userId },
+      PaymentAttempt: paymentAttemptOwnershipWhere(scope),
     },
   });
 }
