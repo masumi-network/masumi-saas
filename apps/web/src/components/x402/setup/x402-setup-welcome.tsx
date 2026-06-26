@@ -17,11 +17,13 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { DialogStepPanel } from "@/components/ui/dialog-step-panel";
 import { Spinner } from "@/components/ui/spinner";
 import { Steps } from "@/components/ui/steps";
 import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
+import type { DialogStepDirection } from "@/lib/dialog-motion";
 import {
   useX402Budgets,
   useX402Networks,
@@ -70,6 +72,13 @@ export function X402SetupWelcome({
   const [currentStep, setCurrentStep] = useState(0);
   const [openDialog, setOpenDialog] = useState<DialogKind>(null);
   const [walletType, setWalletType] = useState<X402Wallet["type"]>("Selling");
+  const [stepDirection, setStepDirection] =
+    useState<DialogStepDirection>("forward");
+
+  const goToStep = (next: number) => {
+    setStepDirection(next >= currentStep ? "forward" : "back");
+    setCurrentStep(next);
+  };
 
   const loading =
     walletsLoading || networksLoading || (showBudgetFeatures && budgetsLoading);
@@ -398,7 +407,7 @@ export function X402SetupWelcome({
         <Button
           id="x402-setup-get-started"
           key="x402-setup-get-started"
-          onClick={() => setCurrentStep(1)}
+          onClick={() => goToStep(1)}
           className="gap-2"
           variant="primary"
         >
@@ -418,7 +427,7 @@ export function X402SetupWelcome({
             id="x402-setup-back-ready"
             key="x402-setup-back-ready"
             variant="outline"
-            onClick={() => setCurrentStep(previousStep)}
+            onClick={() => goToStep(previousStep)}
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back")}
@@ -444,7 +453,7 @@ export function X402SetupWelcome({
             id="x402-setup-back-wallet"
             key="x402-setup-back-wallet"
             variant="outline"
-            onClick={() => setCurrentStep(0)}
+            onClick={() => goToStep(0)}
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back")}
@@ -455,7 +464,7 @@ export function X402SetupWelcome({
             className="gap-2"
             variant="primary"
             disabled={!hasSellingWallet}
-            onClick={() => setCurrentStep(2)}
+            onClick={() => goToStep(2)}
           >
             {t("continue")}
             <ArrowRight className="h-4 w-4" />
@@ -472,7 +481,7 @@ export function X402SetupWelcome({
             id="x402-setup-back-facilitator"
             key="x402-setup-back-facilitator"
             variant="outline"
-            onClick={() => setCurrentStep(1)}
+            onClick={() => goToStep(1)}
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back")}
@@ -483,7 +492,7 @@ export function X402SetupWelcome({
             className="gap-2"
             variant="primary"
             disabled={!hasFacilitator}
-            onClick={() => setCurrentStep(nextStep)}
+            onClick={() => goToStep(nextStep)}
           >
             {t("continue")}
             <ArrowRight className="h-4 w-4" />
@@ -499,7 +508,7 @@ export function X402SetupWelcome({
             id="x402-setup-back-paying"
             key="x402-setup-back-paying"
             variant="outline"
-            onClick={() => setCurrentStep(facilitatorStepIndex)}
+            onClick={() => goToStep(facilitatorStepIndex)}
           >
             <ArrowLeft className="h-4 w-4" />
             {t("back")}
@@ -509,7 +518,7 @@ export function X402SetupWelcome({
             key="x402-setup-continue-paying"
             className="gap-2"
             variant="primary"
-            onClick={() => setCurrentStep(successStepIndex)}
+            onClick={() => goToStep(successStepIndex)}
           >
             {hasBudget ? t("continue") : t("skipForNow")}
             <ArrowRight className="h-4 w-4" />
@@ -524,6 +533,45 @@ export function X402SetupWelcome({
   const activeWizardStep =
     currentStep > 0 ? wizardSteps[currentStep - 1] : undefined;
 
+  const stepHeader = activeWizardStep ? (
+    <DialogStepPanel
+      stepKey={`setup-header-${currentStep}`}
+      direction={stepDirection}
+    >
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-medium">{activeWizardStep.title}</h3>
+          <Badge variant="outline">{environment}</Badge>
+          {"optional" in activeWizardStep && activeWizardStep.optional ? (
+            <Badge variant="secondary">{t("optional")}</Badge>
+          ) : null}
+        </div>
+        {activeWizardStep.description ? (
+          <p className="text-sm text-muted-foreground">
+            {activeWizardStep.description}
+          </p>
+        ) : null}
+      </div>
+    </DialogStepPanel>
+  ) : null;
+
+  const stepBody =
+    loading && currentStep > 0 ? (
+      <div className="flex justify-center py-10">
+        <Spinner />
+      </div>
+    ) : (
+      <DialogStepPanel
+        stepKey={`setup-body-${currentStep}`}
+        direction={stepDirection}
+        className={
+          currentStep === 0 ? undefined : "dialog-stagger-in space-y-4"
+        }
+      >
+        {stepContents[currentStep]}
+      </DialogStepPanel>
+    );
+
   if (embedded) {
     return (
       <>
@@ -534,40 +582,16 @@ export function X402SetupWelcome({
             </div>
           )}
 
-          <DialogBody stagger={false} className="min-h-0 flex-1 space-y-4">
-            {activeWizardStep ? (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">
-                    {activeWizardStep.title}
-                  </h3>
-                  <Badge variant="outline">{environment}</Badge>
-                  {"optional" in activeWizardStep &&
-                  activeWizardStep.optional ? (
-                    <Badge variant="secondary">{t("optional")}</Badge>
-                  ) : null}
-                </div>
-                {activeWizardStep.description ? (
-                  <p className="text-sm text-muted-foreground">
-                    {activeWizardStep.description}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-            {loading && currentStep > 0 ? (
-              <div className="flex justify-center py-10">
-                <Spinner />
-              </div>
-            ) : (
-              <div key={currentStep}>{stepContents[currentStep]}</div>
-            )}
+          <DialogBody className="min-h-0 flex-1 space-y-4">
+            {stepHeader}
+            {stepBody}
           </DialogBody>
 
           {footer ? (
             <DialogFooter
               key={`x402-setup-footer-${currentStep}`}
               className={cn(
-                "shrink-0 border-t bg-background px-6 py-4",
+                "shrink-0 border-t bg-background px-6 py-4 animate-fade-in-up",
                 currentStep > 0 && "sm:justify-between",
               )}
             >
@@ -623,11 +647,10 @@ export function X402SetupWelcome({
       {currentStep > 0 && (
         <Steps currentStep={currentStep} steps={wizardSteps} className="mb-6" />
       )}
-      {loading && currentStep > 0 ? (
-        <Spinner />
-      ) : (
-        <div key={currentStep}>{stepContents[currentStep]}</div>
-      )}
+      <div className="space-y-4">
+        {stepHeader}
+        {stepBody}
+      </div>
     </div>
   );
 }

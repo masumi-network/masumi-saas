@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { cn } from "@/lib/utils";
 
 export const X402_DIALOG_CONTENT_CLASS =
@@ -61,7 +62,12 @@ export function X402DialogHeader({
   description?: ReactNode;
 }) {
   return (
-    <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+    <div
+      className={cn(
+        "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+        dialogHeaderEnterClass,
+      )}
+    >
       <DialogHeader className="text-left">
         <DialogTitle>{title}</DialogTitle>
         {description ? (
@@ -81,6 +87,7 @@ type X402FormDialogProps = DialogChromeProps & {
   description?: ReactNode;
   onSubmit: (event: FormEvent) => void;
   bodyClassName?: string;
+  bodyStagger?: boolean;
   footer: ReactNode;
   children: ReactNode;
 };
@@ -96,6 +103,7 @@ export function X402FormDialog({
   onEscapeKeyDown,
   onSubmit,
   bodyClassName,
+  bodyStagger = true,
   footer,
   children,
 }: X402FormDialogProps) {
@@ -114,7 +122,7 @@ export function X402FormDialog({
       >
         <X402DialogHeader title={title} description={description} />
         <DialogBody
-          stagger={false}
+          stagger={bodyStagger}
           className={cn(
             "min-h-0 flex-1 space-y-4 overflow-y-auto",
             bodyClassName,
@@ -134,6 +142,7 @@ type X402ViewDialogProps = DialogChromeProps & {
   title: string;
   description?: ReactNode;
   bodyClassName?: string;
+  bodyStagger?: boolean;
   footer?: ReactNode;
   children: ReactNode;
 };
@@ -148,6 +157,7 @@ export function X402ViewDialog({
   onInteractOutside,
   onEscapeKeyDown,
   bodyClassName,
+  bodyStagger = true,
   footer,
   children,
 }: X402ViewDialogProps) {
@@ -162,7 +172,7 @@ export function X402ViewDialog({
     >
       <X402DialogHeader title={title} description={description} />
       <DialogBody
-        stagger={false}
+        stagger={bodyStagger}
         className={cn(
           "min-h-0 flex-1 space-y-4 overflow-y-auto",
           bodyClassName,

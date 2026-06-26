@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/tooltip";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
+import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
+import { cn } from "@/lib/utils";
 
 import { X402SetupWelcome } from "./setup/x402-setup-welcome";
 
@@ -122,7 +124,12 @@ function X402SetupDialog({
         className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
         closeButtonClassName="top-8 right-4 -translate-y-1/2"
       >
-        <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+        <div
+          className={cn(
+            "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+            dialogHeaderEnterClass,
+          )}
+        >
           <DialogHeader className="text-left">
             <div className="flex items-center gap-3 -mb-2">
               <X402Logo className="h-10 shrink-0" />
