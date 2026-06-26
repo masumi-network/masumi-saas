@@ -144,7 +144,7 @@ export function BudgetsTab() {
       </div>
 
       {isLoading || networksLoading ? (
-        <X402TableLoading />
+        <X402TableLoading columns={6} withActions />
       ) : envBudgets.length === 0 ? (
         <X402TableEmptyState
           icon={CircleDollarSign}

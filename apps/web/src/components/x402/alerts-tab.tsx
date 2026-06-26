@@ -156,7 +156,7 @@ export function AlertsTab() {
       </div>
 
       {isLoading || networksLoading ? (
-        <X402TableLoading />
+        <X402TableLoading columns={6} withActions wideActions />
       ) : envRules.length === 0 ? (
         <X402TableEmptyState
           icon={Bell}

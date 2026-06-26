@@ -5,10 +5,12 @@ import {
   ArrowDownToLine,
   Check,
   CheckCircle2,
+  CircleHelp,
   Copy,
   Eye,
   EyeOff,
   KeyRound,
+  ListFilter,
   Pencil,
   Plus,
   ShieldCheck,
@@ -18,7 +20,7 @@ import {
   Wallet as WalletIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +30,19 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -44,6 +58,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useX402WalletsPaginated } from "@/lib/hooks/use-x402";
 import { cn, shortenAddress } from "@/lib/utils";
@@ -57,9 +72,15 @@ import {
   x402ActionsHeadClass,
   X402TableEmptyState,
   X402TableLoading,
+  X402TableSearch,
 } from "./x402-table-ui";
 
 const PRIVATE_KEY_REGEX = /^0x[a-fA-F0-9]{64}$/;
+const FILTER_ALL = "__all__";
+
+type WalletListFilters = {
+  type?: WalletType;
+};
 
 type WalletType = X402Wallet["type"];
 type KeySource = "generate" | "import";
@@ -78,10 +99,64 @@ export function WalletsTab() {
     loadMore,
   } = useX402WalletsPaginated();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [listFilters, setListFilters] = useState<WalletListFilters>({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchQuery, 200);
   const [retiringId, setRetiringId] = useState<string | null>(null);
   const [balanceWallet, setBalanceWallet] = useState<X402Wallet | null>(null);
   const [editWallet, setEditWallet] = useState<X402Wallet | null>(null);
   const [walletToRetire, setWalletToRetire] = useState<X402Wallet | null>(null);
+
+  const activeFilterCount = useMemo(
+    () => (listFilters.type !== undefined ? 1 : 0),
+    [listFilters],
+  );
+
+  const filteredWallets = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
+
+    return wallets.filter((wallet) => {
+      if (listFilters.type !== undefined && wallet.type !== listFilters.type) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      const typeLabel = t(`types.${wallet.type}`).toLowerCase();
+
+      return (
+        wallet.address.toLowerCase().includes(query) ||
+        wallet.note?.toLowerCase().includes(query) ||
+        typeLabel.includes(query)
+      );
+    });
+  }, [debouncedSearch, listFilters, t, wallets]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const clearFilters = () => setListFilters({});
 
   const confirmRetire = async () => {
     if (!walletToRetire) return;
@@ -103,15 +178,37 @@ export function WalletsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 text-sm text-muted-foreground">
-          {t("description")}
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <RefreshButton onRefresh={refetch} isRefreshing={isRefetching} />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <X402TableSearch
+          inputRef={searchInputRef}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("searchPlaceholder")}
+          shortcutLabel={t("searchShortcut")}
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <WalletsFiltersPopover
+            filters={listFilters}
+            activeFilterCount={activeFilterCount}
+            onChange={setListFilters}
+            onClear={clearFilters}
+          />
+          <RefreshButton
+            onRefresh={refetch}
+            isRefreshing={isRefetching}
+            size="md"
+          />
           <Button
             onClick={() => setDialogOpen(true)}
-            className="flex items-center gap-2"
+            size="icon"
+            className="md:hidden"
+            aria-label={t("createWallet")}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="hidden items-center gap-2 md:flex"
           >
             <Plus className="h-4 w-4" />
             {t("createWallet")}
@@ -119,13 +216,19 @@ export function WalletsTab() {
         </div>
       </div>
 
+      {activeFilterCount > 0 ? (
+        <WalletsActiveFilters filters={listFilters} onClear={clearFilters} />
+      ) : null}
+
       {isLoading ? (
-        <X402TableLoading />
+        <X402TableLoading columns={4} withActions />
       ) : wallets.length === 0 ? (
         <X402TableEmptyState
           icon={WalletIcon}
           message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
         />
+      ) : filteredWallets.length === 0 ? (
+        <X402TableEmptyState icon={WalletIcon} message={t("noSearchResults")} />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border/80">
           <Table>
@@ -142,7 +245,7 @@ export function WalletsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {wallets.map((wallet, index) => (
+              {filteredWallets.map((wallet, index) => (
                 <TableRow
                   key={wallet.id}
                   className="animate-table-row-in transition-[background-color,opacity] duration-150"
@@ -160,7 +263,7 @@ export function WalletsTab() {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {t(`types.${wallet.type}`)}
+                    <WalletTypeLabel type={wallet.type} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {wallet.note || (
@@ -280,6 +383,135 @@ export function WalletsTab() {
         variant="destructive"
         confirmText={t("retire")}
       />
+    </div>
+  );
+}
+
+function WalletTypeLabel({ type }: { type: WalletType }) {
+  const t = useTranslations("App.X402.Wallets");
+  const hintKey = type === "Purchasing" ? "purchasingHint" : "sellingHint";
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span>{t(`types.${type}`)}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+            <CircleHelp className="h-3.5 w-3.5" />
+            <span className="sr-only">{t(hintKey)}</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">{t(hintKey)}</TooltipContent>
+      </Tooltip>
+    </span>
+  );
+}
+
+function WalletsFiltersPopover({
+  filters,
+  activeFilterCount,
+  onChange,
+  onClear,
+}: {
+  filters: WalletListFilters;
+  activeFilterCount: number;
+  onChange: React.Dispatch<React.SetStateAction<WalletListFilters>>;
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Wallets");
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="relative h-9 w-9 shrink-0"
+          aria-label={t("filtersAria")}
+        >
+          <ListFilter className="h-4 w-4" />
+          {activeFilterCount > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 overflow-hidden rounded-xl border-border/80 p-0 shadow-lg"
+        align="end"
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <p className="text-sm font-medium">{t("filters")}</p>
+          {activeFilterCount > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={onClear}
+            >
+              {t("clearFilters")}
+            </Button>
+          ) : null}
+        </div>
+        <div className="space-y-4 p-4">
+          <div className="space-y-2">
+            <Label htmlFor="wallets-filter-type">{t("filterType")}</Label>
+            <Select
+              value={filters.type ?? FILTER_ALL}
+              onValueChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  type:
+                    value === FILTER_ALL ? undefined : (value as WalletType),
+                }))
+              }
+            >
+              <SelectTrigger id="wallets-filter-type" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>{t("allTypes")}</SelectItem>
+                <SelectItem value="Purchasing">
+                  {t("types.Purchasing")}
+                </SelectItem>
+                <SelectItem value="Selling">{t("types.Selling")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function WalletsActiveFilters({
+  filters,
+  onClear,
+}: {
+  filters: WalletListFilters;
+  onClear: () => void;
+}) {
+  const t = useTranslations("App.X402.Wallets");
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {filters.type !== undefined ? (
+        <Badge variant="outline" className="font-normal">
+          {t(`types.${filters.type}`)}
+        </Badge>
+      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground"
+        onClick={onClear}
+      >
+        {t("clearFilters")}
+      </Button>
     </div>
   );
 }
