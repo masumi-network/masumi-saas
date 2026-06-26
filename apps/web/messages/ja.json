@@ -2006,6 +2006,8 @@
           "remainingAmount": "Remaining amount (base units)"
         },
         "assetHint": "ERC-20 contract for the token you pay with over x402. Must match the asset in payment requirements — use a preset or your chain default.",
+        "assetPresetPlaceholder": "Token preset",
+        "assetPresetsAria": "Choose a token preset",
         "cancel": "Cancel",
         "saving": "Saving…",
         "updateBudget": "Update budget",
