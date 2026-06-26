@@ -10,6 +10,7 @@ export type X402NetworkOption = {
   displayName: string;
   isTestnet: boolean;
   isEnabled: boolean;
+  defaultAsset: string | null;
 };
 
 export function useX402Networks(options?: {
@@ -29,6 +30,7 @@ export function useX402Networks(options?: {
       displayName: network.displayName,
       isTestnet: network.isTestnet,
       isEnabled: network.isEnabled,
+      defaultAsset: network.defaultAsset,
     }));
 
   return {
