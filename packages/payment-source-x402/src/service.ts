@@ -342,14 +342,14 @@ async function getFacilitatorForNetwork(
 async function reserveBudgetForAttempt({
   x402NetworkId,
   networkUserId,
-  orgApiKeyId,
+  apiKeyId,
   evmWalletId,
   requirements,
   payer,
 }: {
   x402NetworkId: string;
   networkUserId: string;
-  orgApiKeyId: string;
+  apiKeyId: string;
   evmWalletId: string;
   requirements: PaymentRequirements;
   payer: string;
@@ -361,7 +361,7 @@ async function reserveBudgetForAttempt({
     async (tx: Prisma.TransactionClient) => {
       const budget = await tx.x402WalletBudget.findFirst({
         where: {
-          orgApiKeyId,
+          apiKeyId,
           evmWalletId,
           caip2Network: requirements.network,
           asset,
@@ -394,7 +394,7 @@ async function reserveBudgetForAttempt({
           status: X402PaymentStatus.PaymentRequired,
           userId: networkUserId,
           x402NetworkId,
-          orgApiKeyId,
+          apiKeyId,
           evmWalletId,
           caip2Network: requirements.network,
           scheme: X402PaymentScheme.Exact,
@@ -672,7 +672,7 @@ export async function upsertX402Network(
 
 export async function setX402WalletBudget(
   input: X402ScopeInput & {
-    orgApiKeyId: string;
+    apiKeyId: string;
     evmWalletId: string;
     caip2Network: string;
     asset: string;
@@ -688,7 +688,7 @@ export async function setX402WalletBudget(
 
   // Validate the referenced network, api key and wallet up front so a missing one returns
   // a clear 404 instead of an opaque foreign-key 500 from the upsert.
-  const [network, orgApiKey] = await Promise.all([
+  const [network, apiKey] = await Promise.all([
     prisma.x402Network.findFirst({
       where: {
         ...networkOwnershipWhere(scope),
@@ -696,9 +696,9 @@ export async function setX402WalletBudget(
       },
       select: { caip2Id: true, userId: true, id: true },
     }),
-    prisma.orgApiKey.findUnique({
-      where: { id: input.orgApiKeyId },
-      select: { id: true, organizationId: true },
+    prisma.apikey.findFirst({
+      where: { id: input.apiKeyId, userId: input.userId },
+      select: { id: true },
     }),
   ]);
   if (network == null) {
@@ -707,17 +707,8 @@ export async function setX402WalletBudget(
       "x402 network is not registered; add the network before granting a budget",
     );
   }
-  if (orgApiKey == null) {
-    throw createHttpError(404, "Org API key not found");
-  }
-  if (
-    input.organizationId != null &&
-    orgApiKey.organizationId !== input.organizationId
-  ) {
-    throw createHttpError(
-      403,
-      "Org API key does not belong to the active organization",
-    );
+  if (apiKey == null) {
+    throw createHttpError(404, "API key not found");
   }
   // Budgets fund outbound payments, so they may only be granted to a Purchasing wallet.
   await getManagedWalletOrThrow(
@@ -728,8 +719,8 @@ export async function setX402WalletBudget(
 
   return prisma.x402WalletBudget.upsert({
     where: {
-      orgApiKeyId_evmWalletId_caip2Network_asset: {
-        orgApiKeyId: input.orgApiKeyId,
+      apiKeyId_evmWalletId_caip2Network_asset: {
+        apiKeyId: input.apiKeyId,
         evmWalletId: input.evmWalletId,
         caip2Network: input.caip2Network,
         asset,
@@ -738,7 +729,7 @@ export async function setX402WalletBudget(
     create: {
       userId: network.userId,
       x402NetworkId: network.id,
-      orgApiKeyId: input.orgApiKeyId,
+      apiKeyId: input.apiKeyId,
       evmWalletId: input.evmWalletId,
       caip2Network: input.caip2Network,
       asset,
@@ -756,7 +747,7 @@ export async function setX402WalletBudget(
     },
     select: {
       id: true,
-      orgApiKeyId: true,
+      apiKeyId: true,
       evmWalletId: true,
       EvmWallet: { select: { address: true } },
       caip2Network: true,
@@ -772,19 +763,19 @@ export async function setX402WalletBudget(
 
 export async function listX402WalletBudgets(
   input: X402ScopeInput & {
-    orgApiKeyId?: string;
+    apiKeyId?: string;
   },
 ) {
   const scope = resolveX402TenantScope(input);
   return prisma.x402WalletBudget.findMany({
     where: {
       ...budgetOwnershipWhere(scope),
-      ...(input.orgApiKeyId != null ? { orgApiKeyId: input.orgApiKeyId } : {}),
+      ...(input.apiKeyId != null ? { apiKeyId: input.apiKeyId } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      orgApiKeyId: true,
+      apiKeyId: true,
       evmWalletId: true,
       EvmWallet: { select: { address: true } },
       caip2Network: true,
@@ -827,7 +818,7 @@ export async function listX402PaymentAttempts(
       direction: true,
       status: true,
       userId: true,
-      orgApiKeyId: true,
+      apiKeyId: true,
       evmWalletId: true,
       agentId: true,
       supportedPaymentSourceId: true,
@@ -887,13 +878,13 @@ export async function listX402Settlements(
 
 export async function verifyX402Payment({
   userId,
-  orgApiKeyId,
+  apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
   paymentPayload: PaymentPayload;
@@ -938,7 +929,7 @@ export async function verifyX402Payment({
         : X402PaymentStatus.Failed,
       userId: network.userId,
       x402NetworkId: network.id,
-      orgApiKeyId: orgApiKeyId ?? null,
+      apiKeyId: apiKeyId ?? null,
       agentId: source.agentId,
       supportedPaymentSourceId,
       caip2Network: requirements.network,
@@ -969,13 +960,13 @@ export async function verifyX402Payment({
 
 export async function settleX402Payment({
   userId,
-  orgApiKeyId,
+  apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
-  orgApiKeyId?: string | null;
+  apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
   paymentPayload: PaymentPayload;
@@ -1038,7 +1029,7 @@ export async function settleX402Payment({
         status: X402PaymentStatus.Replayed,
         userId: existingSettlement.PaymentAttempt.userId,
         x402NetworkId: existingSettlement.PaymentAttempt.x402NetworkId,
-        orgApiKeyId: orgApiKeyId ?? null,
+        apiKeyId: apiKeyId ?? null,
         agentId: source.agentId,
         supportedPaymentSourceId,
         caip2Network: requirements.network,
@@ -1097,7 +1088,7 @@ export async function settleX402Payment({
         : X402PaymentStatus.Failed,
       userId: network.userId,
       x402NetworkId: network.id,
-      orgApiKeyId: orgApiKeyId ?? null,
+      apiKeyId: apiKeyId ?? null,
       agentId: source.agentId,
       supportedPaymentSourceId,
       caip2Network: requirements.network,
@@ -1154,7 +1145,7 @@ export async function settleX402Payment({
 export async function createX402Payment({
   userId,
   organizationId,
-  orgApiKeyId,
+  apiKeyId,
   caip2NetworkLimit,
   evmWalletId,
   paymentRequired,
@@ -1164,7 +1155,7 @@ export async function createX402Payment({
 }: {
   userId: string;
   organizationId?: string | null;
-  orgApiKeyId: string;
+  apiKeyId: string;
   caip2NetworkLimit: string[] | null;
   evmWalletId: string;
   paymentRequired: PaymentRequired;
@@ -1228,7 +1219,7 @@ export async function createX402Payment({
 
     const budget = await prisma.x402WalletBudget.findFirst({
       where: {
-        orgApiKeyId,
+        apiKeyId,
         evmWalletId,
         caip2Network: candidate.network,
         asset: normalizeAddress(candidate.asset),
@@ -1298,7 +1289,7 @@ export async function createX402Payment({
   const reservation = await reserveBudgetForAttempt({
     x402NetworkId: selectedX402NetworkId,
     networkUserId: selectedNetworkUserId,
-    orgApiKeyId,
+    apiKeyId,
     evmWalletId,
     requirements: selected,
     payer,

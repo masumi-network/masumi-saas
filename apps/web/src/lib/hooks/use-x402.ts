@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
-import { getOrgApiKeysAction } from "@/lib/actions/org-api-keys.action";
+import { getApiKeysAction } from "@/lib/actions/auth.action";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import {
   appendInclusiveCursorPage,
@@ -12,7 +12,7 @@ import {
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { x402Fetch } from "@/lib/x402/api";
 import type {
-  OrgApiKeyOption,
+  UserApiKeyOption,
   X402Budget,
   X402LowBalanceRule,
   X402Network,
@@ -25,12 +25,12 @@ import { isTestnetEnv } from "@/lib/x402-rail";
 
 const PAGE_SIZE = 20;
 
-export function useOrgApiKeys(options?: { enabled?: boolean }) {
+export function useUserApiKeys(options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
   const query = useQuery({
-    queryKey: ["org-api-keys"],
-    queryFn: async (): Promise<OrgApiKeyOption[]> => {
-      const result = await getOrgApiKeysAction();
+    queryKey: ["user-api-keys"],
+    queryFn: async (): Promise<UserApiKeyOption[]> => {
+      const result = await getApiKeysAction();
       if (!result.success) throw new Error(result.error);
       return result.keys;
     },
@@ -39,9 +39,23 @@ export function useOrgApiKeys(options?: { enabled?: boolean }) {
   });
 
   return {
-    orgApiKeys: query.data ?? [],
+    apiKeys: query.data ?? [],
     isLoading: query.isLoading,
     refetch: query.refetch,
+  };
+}
+
+/** @deprecated Use useUserApiKeys */
+export function useOrgApiKeys(options?: { enabled?: boolean }) {
+  const { apiKeys, isLoading, refetch } = useUserApiKeys(options);
+  return {
+    orgApiKeys: apiKeys.map((key) => ({
+      id: key.id,
+      name: key.name ?? "API Key",
+      keyPrefix: key.start ?? key.prefix ?? key.id.slice(0, 8),
+    })),
+    isLoading,
+    refetch,
   };
 }
 

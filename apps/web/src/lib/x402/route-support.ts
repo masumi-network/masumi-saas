@@ -183,7 +183,7 @@ export function serializeNetwork<
 
 export function serializeBudget(budget: {
   id: string;
-  orgApiKeyId: string;
+  apiKeyId: string;
   evmWalletId: string;
   EvmWallet: { address: string };
   caip2Network: string;
@@ -212,7 +212,7 @@ export function serializePaymentAttempt(attempt: {
   direction: X402PaymentDirection;
   status: X402PaymentStatus;
   userId: string;
-  orgApiKeyId: string | null;
+  apiKeyId: string | null;
   evmWalletId: string | null;
   agentId: string | null;
   supportedPaymentSourceId: string | null;

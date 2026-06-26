@@ -31,7 +31,7 @@ export type X402Wallet = {
 
 export type X402Budget = {
   id: string;
-  orgApiKeyId: string;
+  apiKeyId: string;
   evmWalletId: string;
   evmWalletAddress: string;
   caip2Network: string;
@@ -64,7 +64,7 @@ export type X402PaymentAttempt = {
   updatedAt: string;
   direction: X402PaymentDirection;
   status: X402PaymentStatus;
-  orgApiKeyId: string | null;
+  apiKeyId: string | null;
   evmWalletId: string | null;
   caip2Network: string;
   asset: string;
@@ -93,8 +93,9 @@ export type X402WalletBalance = {
   asset?: { symbol: string | null; amount: string; decimals: number };
 };
 
-export type OrgApiKeyOption = {
+export type UserApiKeyOption = {
   id: string;
-  name: string;
-  keyPrefix: string;
+  name: string | null;
+  prefix: string | null;
+  start: string | null;
 };

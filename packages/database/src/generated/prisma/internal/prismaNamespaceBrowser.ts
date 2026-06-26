@@ -75,7 +75,6 @@ export const ModelName = {
   IntegrationConnection: 'IntegrationConnection',
   MipJob: 'MipJob',
   AgentActivityEvent: 'AgentActivityEvent',
-  OrgApiKey: 'OrgApiKey',
   KycSubmission: 'KycSubmission',
   KybSubmission: 'KybSubmission',
   WalletCache: 'WalletCache',
@@ -492,24 +491,6 @@ export const AgentActivityEventScalarFieldEnum = {
 export type AgentActivityEventScalarFieldEnum = (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum]
 
 
-export const OrgApiKeyScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  keyHash: 'keyHash',
-  keyPrefix: 'keyPrefix',
-  organizationId: 'organizationId',
-  createdById: 'createdById',
-  scopes: 'scopes',
-  enabled: 'enabled',
-  lastUsedAt: 'lastUsedAt',
-  expiresAt: 'expiresAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type OrgApiKeyScalarFieldEnum = (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum]
-
-
 export const KycSubmissionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -704,7 +685,7 @@ export const X402WalletBudgetScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   userId: 'userId',
-  orgApiKeyId: 'orgApiKeyId',
+  apiKeyId: 'apiKeyId',
   evmWalletId: 'evmWalletId',
   caip2Network: 'caip2Network',
   asset: 'asset',
@@ -725,7 +706,7 @@ export const X402PaymentAttemptScalarFieldEnum = {
   direction: 'direction',
   status: 'status',
   userId: 'userId',
-  orgApiKeyId: 'orgApiKeyId',
+  apiKeyId: 'apiKeyId',
   evmWalletId: 'evmWalletId',
   agentId: 'agentId',
   supportedPaymentSourceId: 'supportedPaymentSourceId',

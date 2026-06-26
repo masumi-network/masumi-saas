@@ -4,10 +4,7 @@ import prisma from "@masumi/database/client";
 import { redirect } from "next/navigation";
 
 import { requireAnyNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
-import {
-  canAccessX402Workspace,
-  canManageX402OrgBudgets,
-} from "@/lib/auth/org-roles";
+import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import {
   type AuthenticatedApiContext,
   ForbiddenError,
@@ -64,7 +61,7 @@ export async function requireX402SessionAccess(
   );
 }
 
-/** Budgets require an active org and org admin (session) or payments OIDC scopes. */
+/** Budgets: same workspace access as other x402 features (personal or org admin). */
 export async function requireX402SessionBudgetAccess(
   authContext: AuthenticatedApiContext,
 ): Promise<void> {
@@ -77,9 +74,9 @@ export async function requireX402SessionBudgetAccess(
   }
 
   const role = await memberRoleForAuth(authContext);
-  if (!canManageX402OrgBudgets(authContext.activeOrganizationId, role)) {
+  if (!canAccessX402Workspace(authContext.activeOrganizationId, role)) {
     throw new ForbiddenError(
-      "x402 budgets require an organization workspace and admin access",
+      "x402 budgets require access to the x402 workspace",
     );
   }
 }
@@ -96,9 +93,9 @@ export async function requireX402SessionBudgetReadAccess(
   }
 
   const role = await memberRoleForAuth(authContext);
-  if (!canManageX402OrgBudgets(authContext.activeOrganizationId, role)) {
+  if (!canAccessX402Workspace(authContext.activeOrganizationId, role)) {
     throw new ForbiddenError(
-      "x402 budgets require an organization workspace and admin access",
+      "x402 budgets require access to the x402 workspace",
     );
   }
 }

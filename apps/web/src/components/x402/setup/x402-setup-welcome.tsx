@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Steps } from "@/components/ui/steps";
-import { canManageX402OrgBudgets } from "@/lib/auth/org-roles";
+import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
@@ -52,7 +52,7 @@ export function X402SetupWelcome({
   const { setActiveRail, setSelectedX402ChainId, setIsSetupMode } =
     useX402Rail();
   const { activeOrganization, activeOrganizationId } = useOrganizationContext();
-  const showBudgetFeatures = canManageX402OrgBudgets(
+  const showBudgetFeatures = canAccessX402Workspace(
     activeOrganizationId,
     activeOrganization?.role,
   );

@@ -365,6 +365,8 @@ export type ApikeyWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  x402WalletBudgets?: Prisma.X402WalletBudgetListRelationFilter
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter
 }
 
 export type ApikeyOrderByWithRelationInput = {
@@ -390,6 +392,8 @@ export type ApikeyOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  x402WalletBudgets?: Prisma.X402WalletBudgetOrderByRelationAggregateInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptOrderByRelationAggregateInput
 }
 
 export type ApikeyWhereUniqueInput = Prisma.AtLeast<{
@@ -418,6 +422,8 @@ export type ApikeyWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  x402WalletBudgets?: Prisma.X402WalletBudgetListRelationFilter
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter
 }, "id">
 
 export type ApikeyOrderByWithAggregationInput = {
@@ -498,6 +504,8 @@ export type ApikeyCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutApikeysInput
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutApiKeyInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutApiKeyInput
 }
 
 export type ApikeyUncheckedCreateInput = {
@@ -522,6 +530,8 @@ export type ApikeyUncheckedCreateInput = {
   metadata?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutApiKeyInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutApiKeyInput
 }
 
 export type ApikeyUpdateInput = {
@@ -546,6 +556,8 @@ export type ApikeyUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutApikeysNestedInput
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutApiKeyNestedInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutApiKeyNestedInput
 }
 
 export type ApikeyUncheckedUpdateInput = {
@@ -570,6 +582,8 @@ export type ApikeyUncheckedUpdateInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutApiKeyNestedInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyNestedInput
 }
 
 export type ApikeyCreateManyInput = {
@@ -743,6 +757,16 @@ export type ApikeySumOrderByAggregateInput = {
   remaining?: Prisma.SortOrder
 }
 
+export type ApikeyScalarRelationFilter = {
+  is?: Prisma.ApikeyWhereInput
+  isNot?: Prisma.ApikeyWhereInput
+}
+
+export type ApikeyNullableScalarRelationFilter = {
+  is?: Prisma.ApikeyWhereInput | null
+  isNot?: Prisma.ApikeyWhereInput | null
+}
+
 export type ApikeyCreateNestedManyWithoutUserInput = {
   create?: Prisma.XOR<Prisma.ApikeyCreateWithoutUserInput, Prisma.ApikeyUncheckedCreateWithoutUserInput> | Prisma.ApikeyCreateWithoutUserInput[] | Prisma.ApikeyUncheckedCreateWithoutUserInput[]
   connectOrCreate?: Prisma.ApikeyCreateOrConnectWithoutUserInput | Prisma.ApikeyCreateOrConnectWithoutUserInput[]
@@ -797,6 +821,36 @@ export type NullableBoolFieldUpdateOperationsInput = {
   set?: boolean | null
 }
 
+export type ApikeyCreateNestedOneWithoutX402WalletBudgetsInput = {
+  create?: Prisma.XOR<Prisma.ApikeyCreateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedCreateWithoutX402WalletBudgetsInput>
+  connectOrCreate?: Prisma.ApikeyCreateOrConnectWithoutX402WalletBudgetsInput
+  connect?: Prisma.ApikeyWhereUniqueInput
+}
+
+export type ApikeyUpdateOneRequiredWithoutX402WalletBudgetsNestedInput = {
+  create?: Prisma.XOR<Prisma.ApikeyCreateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedCreateWithoutX402WalletBudgetsInput>
+  connectOrCreate?: Prisma.ApikeyCreateOrConnectWithoutX402WalletBudgetsInput
+  upsert?: Prisma.ApikeyUpsertWithoutX402WalletBudgetsInput
+  connect?: Prisma.ApikeyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ApikeyUpdateToOneWithWhereWithoutX402WalletBudgetsInput, Prisma.ApikeyUpdateWithoutX402WalletBudgetsInput>, Prisma.ApikeyUncheckedUpdateWithoutX402WalletBudgetsInput>
+}
+
+export type ApikeyCreateNestedOneWithoutX402PaymentAttemptsInput = {
+  create?: Prisma.XOR<Prisma.ApikeyCreateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedCreateWithoutX402PaymentAttemptsInput>
+  connectOrCreate?: Prisma.ApikeyCreateOrConnectWithoutX402PaymentAttemptsInput
+  connect?: Prisma.ApikeyWhereUniqueInput
+}
+
+export type ApikeyUpdateOneWithoutX402PaymentAttemptsNestedInput = {
+  create?: Prisma.XOR<Prisma.ApikeyCreateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedCreateWithoutX402PaymentAttemptsInput>
+  connectOrCreate?: Prisma.ApikeyCreateOrConnectWithoutX402PaymentAttemptsInput
+  upsert?: Prisma.ApikeyUpsertWithoutX402PaymentAttemptsInput
+  disconnect?: Prisma.ApikeyWhereInput | boolean
+  delete?: Prisma.ApikeyWhereInput | boolean
+  connect?: Prisma.ApikeyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ApikeyUpdateToOneWithWhereWithoutX402PaymentAttemptsInput, Prisma.ApikeyUpdateWithoutX402PaymentAttemptsInput>, Prisma.ApikeyUncheckedUpdateWithoutX402PaymentAttemptsInput>
+}
+
 export type ApikeyCreateWithoutUserInput = {
   id: string
   name?: string | null
@@ -818,6 +872,8 @@ export type ApikeyCreateWithoutUserInput = {
   metadata?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutApiKeyInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutApiKeyInput
 }
 
 export type ApikeyUncheckedCreateWithoutUserInput = {
@@ -841,6 +897,8 @@ export type ApikeyUncheckedCreateWithoutUserInput = {
   metadata?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutApiKeyInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutApiKeyInput
 }
 
 export type ApikeyCreateOrConnectWithoutUserInput = {
@@ -896,6 +954,238 @@ export type ApikeyScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Apikey"> | Date | string
 }
 
+export type ApikeyCreateWithoutX402WalletBudgetsInput = {
+  id: string
+  name?: string | null
+  start?: string | null
+  prefix?: string | null
+  key: string
+  refillInterval?: number | null
+  refillAmount?: number | null
+  lastRefillAt?: Date | string | null
+  enabled?: boolean | null
+  rateLimitEnabled?: boolean | null
+  rateLimitTimeWindow?: number | null
+  rateLimitMax?: number | null
+  requestCount?: number | null
+  remaining?: number | null
+  lastRequest?: Date | string | null
+  expiresAt?: Date | string | null
+  permissions?: string | null
+  metadata?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutApikeysInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutApiKeyInput
+}
+
+export type ApikeyUncheckedCreateWithoutX402WalletBudgetsInput = {
+  id: string
+  name?: string | null
+  start?: string | null
+  prefix?: string | null
+  key: string
+  userId: string
+  refillInterval?: number | null
+  refillAmount?: number | null
+  lastRefillAt?: Date | string | null
+  enabled?: boolean | null
+  rateLimitEnabled?: boolean | null
+  rateLimitTimeWindow?: number | null
+  rateLimitMax?: number | null
+  requestCount?: number | null
+  remaining?: number | null
+  lastRequest?: Date | string | null
+  expiresAt?: Date | string | null
+  permissions?: string | null
+  metadata?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutApiKeyInput
+}
+
+export type ApikeyCreateOrConnectWithoutX402WalletBudgetsInput = {
+  where: Prisma.ApikeyWhereUniqueInput
+  create: Prisma.XOR<Prisma.ApikeyCreateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedCreateWithoutX402WalletBudgetsInput>
+}
+
+export type ApikeyUpsertWithoutX402WalletBudgetsInput = {
+  update: Prisma.XOR<Prisma.ApikeyUpdateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedUpdateWithoutX402WalletBudgetsInput>
+  create: Prisma.XOR<Prisma.ApikeyCreateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedCreateWithoutX402WalletBudgetsInput>
+  where?: Prisma.ApikeyWhereInput
+}
+
+export type ApikeyUpdateToOneWithWhereWithoutX402WalletBudgetsInput = {
+  where?: Prisma.ApikeyWhereInput
+  data: Prisma.XOR<Prisma.ApikeyUpdateWithoutX402WalletBudgetsInput, Prisma.ApikeyUncheckedUpdateWithoutX402WalletBudgetsInput>
+}
+
+export type ApikeyUpdateWithoutX402WalletBudgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRefillAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  enabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitEnabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitTimeWindow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  rateLimitMax?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requestCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  remaining?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRequest?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutApikeysNestedInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutApiKeyNestedInput
+}
+
+export type ApikeyUncheckedUpdateWithoutX402WalletBudgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRefillAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  enabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitEnabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitTimeWindow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  rateLimitMax?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requestCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  remaining?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRequest?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyNestedInput
+}
+
+export type ApikeyCreateWithoutX402PaymentAttemptsInput = {
+  id: string
+  name?: string | null
+  start?: string | null
+  prefix?: string | null
+  key: string
+  refillInterval?: number | null
+  refillAmount?: number | null
+  lastRefillAt?: Date | string | null
+  enabled?: boolean | null
+  rateLimitEnabled?: boolean | null
+  rateLimitTimeWindow?: number | null
+  rateLimitMax?: number | null
+  requestCount?: number | null
+  remaining?: number | null
+  lastRequest?: Date | string | null
+  expiresAt?: Date | string | null
+  permissions?: string | null
+  metadata?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutApikeysInput
+  x402WalletBudgets?: Prisma.X402WalletBudgetCreateNestedManyWithoutApiKeyInput
+}
+
+export type ApikeyUncheckedCreateWithoutX402PaymentAttemptsInput = {
+  id: string
+  name?: string | null
+  start?: string | null
+  prefix?: string | null
+  key: string
+  userId: string
+  refillInterval?: number | null
+  refillAmount?: number | null
+  lastRefillAt?: Date | string | null
+  enabled?: boolean | null
+  rateLimitEnabled?: boolean | null
+  rateLimitTimeWindow?: number | null
+  rateLimitMax?: number | null
+  requestCount?: number | null
+  remaining?: number | null
+  lastRequest?: Date | string | null
+  expiresAt?: Date | string | null
+  permissions?: string | null
+  metadata?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutApiKeyInput
+}
+
+export type ApikeyCreateOrConnectWithoutX402PaymentAttemptsInput = {
+  where: Prisma.ApikeyWhereUniqueInput
+  create: Prisma.XOR<Prisma.ApikeyCreateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedCreateWithoutX402PaymentAttemptsInput>
+}
+
+export type ApikeyUpsertWithoutX402PaymentAttemptsInput = {
+  update: Prisma.XOR<Prisma.ApikeyUpdateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedUpdateWithoutX402PaymentAttemptsInput>
+  create: Prisma.XOR<Prisma.ApikeyCreateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedCreateWithoutX402PaymentAttemptsInput>
+  where?: Prisma.ApikeyWhereInput
+}
+
+export type ApikeyUpdateToOneWithWhereWithoutX402PaymentAttemptsInput = {
+  where?: Prisma.ApikeyWhereInput
+  data: Prisma.XOR<Prisma.ApikeyUpdateWithoutX402PaymentAttemptsInput, Prisma.ApikeyUncheckedUpdateWithoutX402PaymentAttemptsInput>
+}
+
+export type ApikeyUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRefillAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  enabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitEnabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitTimeWindow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  rateLimitMax?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requestCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  remaining?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRequest?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutApikeysNestedInput
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutApiKeyNestedInput
+}
+
+export type ApikeyUncheckedUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prefix?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  refillInterval?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refillAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRefillAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  enabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitEnabled?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  rateLimitTimeWindow?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  rateLimitMax?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requestCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  remaining?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  lastRequest?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutApiKeyNestedInput
+}
+
 export type ApikeyCreateManyUserInput = {
   id: string
   name?: string | null
@@ -940,6 +1230,8 @@ export type ApikeyUpdateWithoutUserInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUpdateManyWithoutApiKeyNestedInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutApiKeyNestedInput
 }
 
 export type ApikeyUncheckedUpdateWithoutUserInput = {
@@ -963,6 +1255,8 @@ export type ApikeyUncheckedUpdateWithoutUserInput = {
   metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  x402WalletBudgets?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutApiKeyNestedInput
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutApiKeyNestedInput
 }
 
 export type ApikeyUncheckedUpdateManyWithoutUserInput = {
@@ -989,6 +1283,44 @@ export type ApikeyUncheckedUpdateManyWithoutUserInput = {
 }
 
 
+/**
+ * Count Type ApikeyCountOutputType
+ */
+
+export type ApikeyCountOutputType = {
+  x402WalletBudgets: number
+  x402PaymentAttempts: number
+}
+
+export type ApikeyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  x402WalletBudgets?: boolean | ApikeyCountOutputTypeCountX402WalletBudgetsArgs
+  x402PaymentAttempts?: boolean | ApikeyCountOutputTypeCountX402PaymentAttemptsArgs
+}
+
+/**
+ * ApikeyCountOutputType without action
+ */
+export type ApikeyCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ApikeyCountOutputType
+   */
+  select?: Prisma.ApikeyCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ApikeyCountOutputType without action
+ */
+export type ApikeyCountOutputTypeCountX402WalletBudgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.X402WalletBudgetWhereInput
+}
+
+/**
+ * ApikeyCountOutputType without action
+ */
+export type ApikeyCountOutputTypeCountX402PaymentAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.X402PaymentAttemptWhereInput
+}
+
 
 export type ApikeySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1013,6 +1345,9 @@ export type ApikeySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  x402WalletBudgets?: boolean | Prisma.Apikey$x402WalletBudgetsArgs<ExtArgs>
+  x402PaymentAttempts?: boolean | Prisma.Apikey$x402PaymentAttemptsArgs<ExtArgs>
+  _count?: boolean | Prisma.ApikeyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["apikey"]>
 
 export type ApikeySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1092,6 +1427,9 @@ export type ApikeySelectScalar = {
 export type ApikeyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "start" | "prefix" | "key" | "userId" | "refillInterval" | "refillAmount" | "lastRefillAt" | "enabled" | "rateLimitEnabled" | "rateLimitTimeWindow" | "rateLimitMax" | "requestCount" | "remaining" | "lastRequest" | "expiresAt" | "permissions" | "metadata" | "createdAt" | "updatedAt", ExtArgs["result"]["apikey"]>
 export type ApikeyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  x402WalletBudgets?: boolean | Prisma.Apikey$x402WalletBudgetsArgs<ExtArgs>
+  x402PaymentAttempts?: boolean | Prisma.Apikey$x402PaymentAttemptsArgs<ExtArgs>
+  _count?: boolean | Prisma.ApikeyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ApikeyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1104,6 +1442,8 @@ export type $ApikeyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name: "Apikey"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    x402WalletBudgets: Prisma.$X402WalletBudgetPayload<ExtArgs>[]
+    x402PaymentAttempts: Prisma.$X402PaymentAttemptPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1522,6 +1862,8 @@ readonly fields: ApikeyFieldRefs;
 export interface Prisma__ApikeyClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  x402WalletBudgets<T extends Prisma.Apikey$x402WalletBudgetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Apikey$x402WalletBudgetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$X402WalletBudgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  x402PaymentAttempts<T extends Prisma.Apikey$x402PaymentAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Apikey$x402PaymentAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$X402PaymentAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1965,6 +2307,54 @@ export type ApikeyDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Limit how many Apikeys to delete.
    */
   limit?: number
+}
+
+/**
+ * Apikey.x402WalletBudgets
+ */
+export type Apikey$x402WalletBudgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the X402WalletBudget
+   */
+  select?: Prisma.X402WalletBudgetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the X402WalletBudget
+   */
+  omit?: Prisma.X402WalletBudgetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.X402WalletBudgetInclude<ExtArgs> | null
+  where?: Prisma.X402WalletBudgetWhereInput
+  orderBy?: Prisma.X402WalletBudgetOrderByWithRelationInput | Prisma.X402WalletBudgetOrderByWithRelationInput[]
+  cursor?: Prisma.X402WalletBudgetWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.X402WalletBudgetScalarFieldEnum | Prisma.X402WalletBudgetScalarFieldEnum[]
+}
+
+/**
+ * Apikey.x402PaymentAttempts
+ */
+export type Apikey$x402PaymentAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the X402PaymentAttempt
+   */
+  select?: Prisma.X402PaymentAttemptSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the X402PaymentAttempt
+   */
+  omit?: Prisma.X402PaymentAttemptOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.X402PaymentAttemptInclude<ExtArgs> | null
+  where?: Prisma.X402PaymentAttemptWhereInput
+  orderBy?: Prisma.X402PaymentAttemptOrderByWithRelationInput | Prisma.X402PaymentAttemptOrderByWithRelationInput[]
+  cursor?: Prisma.X402PaymentAttemptWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.X402PaymentAttemptScalarFieldEnum | Prisma.X402PaymentAttemptScalarFieldEnum[]
 }
 
 /**

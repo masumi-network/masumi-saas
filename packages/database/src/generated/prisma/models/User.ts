@@ -352,7 +352,6 @@ export type UserWhereInput = {
   integrationConnections?: Prisma.IntegrationConnectionListRelationFilter
   veridianCredentials?: Prisma.VeridianCredentialListRelationFilter
   kycVerification?: Prisma.XOR<Prisma.KycVerificationNullableScalarRelationFilter, Prisma.KycVerificationWhereInput> | null
-  createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter
   kycSubmissions?: Prisma.KycSubmissionListRelationFilter
   walletCaches?: Prisma.WalletCacheListRelationFilter
   x402EvmWallets?: Prisma.X402EvmWalletListRelationFilter
@@ -399,7 +398,6 @@ export type UserOrderByWithRelationInput = {
   integrationConnections?: Prisma.IntegrationConnectionOrderByRelationAggregateInput
   veridianCredentials?: Prisma.VeridianCredentialOrderByRelationAggregateInput
   kycVerification?: Prisma.KycVerificationOrderByWithRelationInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyOrderByRelationAggregateInput
   kycSubmissions?: Prisma.KycSubmissionOrderByRelationAggregateInput
   walletCaches?: Prisma.WalletCacheOrderByRelationAggregateInput
   x402EvmWallets?: Prisma.X402EvmWalletOrderByRelationAggregateInput
@@ -449,7 +447,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   integrationConnections?: Prisma.IntegrationConnectionListRelationFilter
   veridianCredentials?: Prisma.VeridianCredentialListRelationFilter
   kycVerification?: Prisma.XOR<Prisma.KycVerificationNullableScalarRelationFilter, Prisma.KycVerificationWhereInput> | null
-  createdOrgApiKeys?: Prisma.OrgApiKeyListRelationFilter
   kycSubmissions?: Prisma.KycSubmissionListRelationFilter
   walletCaches?: Prisma.WalletCacheListRelationFilter
   x402EvmWallets?: Prisma.X402EvmWalletListRelationFilter
@@ -549,7 +546,6 @@ export type UserCreateInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -595,7 +591,6 @@ export type UserUncheckedCreateInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -641,7 +636,6 @@ export type UserUpdateInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -687,7 +681,6 @@ export type UserUncheckedUpdateInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -1112,22 +1105,6 @@ export type UserUpdateOneRequiredWithoutAgentActivityEventsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAgentActivityEventsInput, Prisma.UserUpdateWithoutAgentActivityEventsInput>, Prisma.UserUncheckedUpdateWithoutAgentActivityEventsInput>
 }
 
-export type UserCreateNestedOneWithoutCreatedOrgApiKeysInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedCreateWithoutCreatedOrgApiKeysInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedOrgApiKeysInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneWithoutCreatedOrgApiKeysNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedCreateWithoutCreatedOrgApiKeysInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedOrgApiKeysInput
-  upsert?: Prisma.UserUpsertWithoutCreatedOrgApiKeysInput
-  disconnect?: Prisma.UserWhereInput | boolean
-  delete?: Prisma.UserWhereInput | boolean
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedOrgApiKeysInput, Prisma.UserUpdateWithoutCreatedOrgApiKeysInput>, Prisma.UserUncheckedUpdateWithoutCreatedOrgApiKeysInput>
-}
-
 export type UserCreateNestedOneWithoutKycSubmissionsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutKycSubmissionsInput, Prisma.UserUncheckedCreateWithoutKycSubmissionsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutKycSubmissionsInput
@@ -1280,7 +1257,6 @@ export type UserCreateWithoutTwoFactorInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -1325,7 +1301,6 @@ export type UserUncheckedCreateWithoutTwoFactorInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1386,7 +1361,6 @@ export type UserUpdateWithoutTwoFactorInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -1431,7 +1405,6 @@ export type UserUncheckedUpdateWithoutTwoFactorInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -1475,7 +1448,6 @@ export type UserCreateWithoutSessionsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -1520,7 +1492,6 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1581,7 +1552,6 @@ export type UserUpdateWithoutSessionsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -1626,7 +1596,6 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -1671,7 +1640,6 @@ export type UserCreateWithoutAccountsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -1716,7 +1684,6 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1777,7 +1744,6 @@ export type UserUpdateWithoutAccountsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -1822,7 +1788,6 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -1867,7 +1832,6 @@ export type UserCreateWithoutMembersInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -1912,7 +1876,6 @@ export type UserUncheckedCreateWithoutMembersInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1973,7 +1936,6 @@ export type UserUpdateWithoutMembersInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2018,7 +1980,6 @@ export type UserUncheckedUpdateWithoutMembersInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2063,7 +2024,6 @@ export type UserCreateWithoutInvitationsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -2108,7 +2068,6 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2169,7 +2128,6 @@ export type UserUpdateWithoutInvitationsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2214,7 +2172,6 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2259,7 +2216,6 @@ export type UserCreateWithoutApikeysInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -2304,7 +2260,6 @@ export type UserUncheckedCreateWithoutApikeysInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2365,7 +2320,6 @@ export type UserUpdateWithoutApikeysInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2410,7 +2364,6 @@ export type UserUncheckedUpdateWithoutApikeysInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2455,7 +2408,6 @@ export type UserCreateWithoutOauthApplicationsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -2500,7 +2452,6 @@ export type UserUncheckedCreateWithoutOauthApplicationsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2561,7 +2512,6 @@ export type UserUpdateWithoutOauthApplicationsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2606,7 +2556,6 @@ export type UserUncheckedUpdateWithoutOauthApplicationsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2651,7 +2600,6 @@ export type UserCreateWithoutOauthAccessTokensInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -2696,7 +2644,6 @@ export type UserUncheckedCreateWithoutOauthAccessTokensInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2757,7 +2704,6 @@ export type UserUpdateWithoutOauthAccessTokensInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2802,7 +2748,6 @@ export type UserUncheckedUpdateWithoutOauthAccessTokensInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2847,7 +2792,6 @@ export type UserCreateWithoutOauthConsentsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -2892,7 +2836,6 @@ export type UserUncheckedCreateWithoutOauthConsentsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2953,7 +2896,6 @@ export type UserUpdateWithoutOauthConsentsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -2998,7 +2940,6 @@ export type UserUncheckedUpdateWithoutOauthConsentsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3043,7 +2984,6 @@ export type UserCreateWithoutOidcUserGrantsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -3088,7 +3028,6 @@ export type UserUncheckedCreateWithoutOidcUserGrantsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3149,7 +3088,6 @@ export type UserUpdateWithoutOidcUserGrantsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -3194,7 +3132,6 @@ export type UserUncheckedUpdateWithoutOidcUserGrantsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3239,7 +3176,6 @@ export type UserCreateWithoutCreditLedgerEntriesInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -3284,7 +3220,6 @@ export type UserUncheckedCreateWithoutCreditLedgerEntriesInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3345,7 +3280,6 @@ export type UserUpdateWithoutCreditLedgerEntriesInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -3390,7 +3324,6 @@ export type UserUncheckedUpdateWithoutCreditLedgerEntriesInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3435,7 +3368,6 @@ export type UserCreateWithoutKycVerificationInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -3480,7 +3412,6 @@ export type UserUncheckedCreateWithoutKycVerificationInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3541,7 +3472,6 @@ export type UserUpdateWithoutKycVerificationInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -3586,7 +3516,6 @@ export type UserUncheckedUpdateWithoutKycVerificationInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3631,7 +3560,6 @@ export type UserCreateWithoutAgentsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -3676,7 +3604,6 @@ export type UserUncheckedCreateWithoutAgentsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3737,7 +3664,6 @@ export type UserUpdateWithoutAgentsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -3782,7 +3708,6 @@ export type UserUncheckedUpdateWithoutAgentsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3827,7 +3752,6 @@ export type UserCreateWithoutIntegrationConnectionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -3872,7 +3796,6 @@ export type UserUncheckedCreateWithoutIntegrationConnectionsInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3933,7 +3856,6 @@ export type UserUpdateWithoutIntegrationConnectionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -3978,7 +3900,6 @@ export type UserUncheckedUpdateWithoutIntegrationConnectionsInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -4023,7 +3944,6 @@ export type UserCreateWithoutAgentActivityEventsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -4068,7 +3988,6 @@ export type UserUncheckedCreateWithoutAgentActivityEventsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4129,7 +4048,6 @@ export type UserUpdateWithoutAgentActivityEventsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -4171,203 +4089,6 @@ export type UserUncheckedUpdateWithoutAgentActivityEventsInput = {
   oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput
   creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput
-  inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
-  integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
-  kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
-  walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
-  x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
-  x402Networks?: Prisma.X402NetworkUncheckedUpdateManyWithoutUserNestedInput
-  x402BudgetsCreated?: Prisma.X402WalletBudgetUncheckedUpdateManyWithoutCreatedByUserNestedInput
-  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutUserNestedInput
-  twoFactor?: Prisma.TwoFactorUncheckedUpdateOneWithoutUserNestedInput
-}
-
-export type UserCreateWithoutCreatedOrgApiKeysInput = {
-  id?: string
-  name: string
-  email: string
-  emailVerified?: boolean
-  creditsRemaining?: number
-  image?: string | null
-  imageHash?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  termsAccepted?: boolean
-  marketingOptIn?: boolean
-  onboardingCompleted?: boolean
-  stripeCustomerId?: string | null
-  twoFactorEnabled?: boolean
-  paymentNodeApiKeyEncrypted?: string | null
-  role?: string
-  banned?: boolean
-  banReason?: string | null
-  banExpires?: Date | string | null
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
-  members?: Prisma.MemberCreateNestedManyWithoutUserInput
-  invitations?: Prisma.InvitationCreateNestedManyWithoutInviterInput
-  apikeys?: Prisma.ApikeyCreateNestedManyWithoutUserInput
-  oauthApplications?: Prisma.OauthApplicationCreateNestedManyWithoutUserInput
-  oauthAccessTokens?: Prisma.OauthAccessTokenCreateNestedManyWithoutUserInput
-  oauthConsents?: Prisma.OauthConsentCreateNestedManyWithoutUserInput
-  oidcUserGrants?: Prisma.OidcUserGrantCreateNestedManyWithoutUserInput
-  creditLedgerEntries?: Prisma.CreditLedgerEntryCreateNestedManyWithoutUserInput
-  agents?: Prisma.AgentCreateNestedManyWithoutUserInput
-  agentActivityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutUserInput
-  inboxAgentReferences?: Prisma.InboxAgentReferenceCreateNestedManyWithoutUserInput
-  integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
-  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
-  kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
-  walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
-  x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
-  x402Networks?: Prisma.X402NetworkCreateNestedManyWithoutUserInput
-  x402BudgetsCreated?: Prisma.X402WalletBudgetCreateNestedManyWithoutCreatedByUserInput
-  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutUserInput
-  twoFactor?: Prisma.TwoFactorCreateNestedOneWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutCreatedOrgApiKeysInput = {
-  id?: string
-  name: string
-  email: string
-  emailVerified?: boolean
-  creditsRemaining?: number
-  image?: string | null
-  imageHash?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  termsAccepted?: boolean
-  marketingOptIn?: boolean
-  onboardingCompleted?: boolean
-  stripeCustomerId?: string | null
-  twoFactorEnabled?: boolean
-  kycVerificationId?: string | null
-  paymentNodeApiKeyEncrypted?: string | null
-  role?: string
-  banned?: boolean
-  banReason?: string | null
-  banExpires?: Date | string | null
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
-  members?: Prisma.MemberUncheckedCreateNestedManyWithoutUserInput
-  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutInviterInput
-  apikeys?: Prisma.ApikeyUncheckedCreateNestedManyWithoutUserInput
-  oauthApplications?: Prisma.OauthApplicationUncheckedCreateNestedManyWithoutUserInput
-  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedCreateNestedManyWithoutUserInput
-  oauthConsents?: Prisma.OauthConsentUncheckedCreateNestedManyWithoutUserInput
-  oidcUserGrants?: Prisma.OidcUserGrantUncheckedCreateNestedManyWithoutUserInput
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedCreateNestedManyWithoutUserInput
-  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutUserInput
-  agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput
-  inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
-  integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
-  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
-  walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
-  x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
-  x402Networks?: Prisma.X402NetworkUncheckedCreateNestedManyWithoutUserInput
-  x402BudgetsCreated?: Prisma.X402WalletBudgetUncheckedCreateNestedManyWithoutCreatedByUserInput
-  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutUserInput
-  twoFactor?: Prisma.TwoFactorUncheckedCreateNestedOneWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutCreatedOrgApiKeysInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedCreateWithoutCreatedOrgApiKeysInput>
-}
-
-export type UserUpsertWithoutCreatedOrgApiKeysInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedUpdateWithoutCreatedOrgApiKeysInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedCreateWithoutCreatedOrgApiKeysInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutCreatedOrgApiKeysInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedOrgApiKeysInput, Prisma.UserUncheckedUpdateWithoutCreatedOrgApiKeysInput>
-}
-
-export type UserUpdateWithoutCreatedOrgApiKeysInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  paymentNodeApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
-  members?: Prisma.MemberUpdateManyWithoutUserNestedInput
-  invitations?: Prisma.InvitationUpdateManyWithoutInviterNestedInput
-  apikeys?: Prisma.ApikeyUpdateManyWithoutUserNestedInput
-  oauthApplications?: Prisma.OauthApplicationUpdateManyWithoutUserNestedInput
-  oauthAccessTokens?: Prisma.OauthAccessTokenUpdateManyWithoutUserNestedInput
-  oauthConsents?: Prisma.OauthConsentUpdateManyWithoutUserNestedInput
-  oidcUserGrants?: Prisma.OidcUserGrantUpdateManyWithoutUserNestedInput
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUpdateManyWithoutUserNestedInput
-  agents?: Prisma.AgentUpdateManyWithoutUserNestedInput
-  agentActivityEvents?: Prisma.AgentActivityEventUpdateManyWithoutUserNestedInput
-  inboxAgentReferences?: Prisma.InboxAgentReferenceUpdateManyWithoutUserNestedInput
-  integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
-  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
-  kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
-  walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
-  x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
-  x402Networks?: Prisma.X402NetworkUpdateManyWithoutUserNestedInput
-  x402BudgetsCreated?: Prisma.X402WalletBudgetUpdateManyWithoutCreatedByUserNestedInput
-  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutUserNestedInput
-  twoFactor?: Prisma.TwoFactorUpdateOneWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutCreatedOrgApiKeysInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  creditsRemaining?: Prisma.IntFieldUpdateOperationsInput | number
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  imageHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  termsAccepted?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  marketingOptIn?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  onboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  twoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  kycVerificationId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentNodeApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  banned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  banReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  banExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
-  members?: Prisma.MemberUncheckedUpdateManyWithoutUserNestedInput
-  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutInviterNestedInput
-  apikeys?: Prisma.ApikeyUncheckedUpdateManyWithoutUserNestedInput
-  oauthApplications?: Prisma.OauthApplicationUncheckedUpdateManyWithoutUserNestedInput
-  oauthAccessTokens?: Prisma.OauthAccessTokenUncheckedUpdateManyWithoutUserNestedInput
-  oauthConsents?: Prisma.OauthConsentUncheckedUpdateManyWithoutUserNestedInput
-  oidcUserGrants?: Prisma.OidcUserGrantUncheckedUpdateManyWithoutUserNestedInput
-  creditLedgerEntries?: Prisma.CreditLedgerEntryUncheckedUpdateManyWithoutUserNestedInput
-  agents?: Prisma.AgentUncheckedUpdateManyWithoutUserNestedInput
-  agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
@@ -4416,7 +4137,6 @@ export type UserCreateWithoutKycSubmissionsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkCreateNestedManyWithoutUserInput
@@ -4461,7 +4181,6 @@ export type UserUncheckedCreateWithoutKycSubmissionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkUncheckedCreateNestedManyWithoutUserInput
@@ -4522,7 +4241,6 @@ export type UserUpdateWithoutKycSubmissionsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUpdateManyWithoutUserNestedInput
@@ -4567,7 +4285,6 @@ export type UserUncheckedUpdateWithoutKycSubmissionsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUncheckedUpdateManyWithoutUserNestedInput
@@ -4612,7 +4329,6 @@ export type UserCreateWithoutWalletCachesInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkCreateNestedManyWithoutUserInput
@@ -4657,7 +4373,6 @@ export type UserUncheckedCreateWithoutWalletCachesInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkUncheckedCreateNestedManyWithoutUserInput
@@ -4718,7 +4433,6 @@ export type UserUpdateWithoutWalletCachesInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUpdateManyWithoutUserNestedInput
@@ -4763,7 +4477,6 @@ export type UserUncheckedUpdateWithoutWalletCachesInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUncheckedUpdateManyWithoutUserNestedInput
@@ -4807,7 +4520,6 @@ export type UserCreateWithoutInboxAgentReferencesInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -4852,7 +4564,6 @@ export type UserUncheckedCreateWithoutInboxAgentReferencesInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4913,7 +4624,6 @@ export type UserUpdateWithoutInboxAgentReferencesInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -4958,7 +4668,6 @@ export type UserUncheckedUpdateWithoutInboxAgentReferencesInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5003,7 +4712,6 @@ export type UserCreateWithoutVeridianCredentialsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -5048,7 +4756,6 @@ export type UserUncheckedCreateWithoutVeridianCredentialsInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutUserInput
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5109,7 +4816,6 @@ export type UserUpdateWithoutVeridianCredentialsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -5154,7 +4860,6 @@ export type UserUncheckedUpdateWithoutVeridianCredentialsInput = {
   agentActivityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutUserNestedInput
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5200,7 +4905,6 @@ export type UserCreateWithoutX402NetworksInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -5245,7 +4949,6 @@ export type UserUncheckedCreateWithoutX402NetworksInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5306,7 +5009,6 @@ export type UserUpdateWithoutX402NetworksInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -5351,7 +5053,6 @@ export type UserUncheckedUpdateWithoutX402NetworksInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5396,7 +5097,6 @@ export type UserCreateWithoutX402EvmWalletsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkCreateNestedManyWithoutUserInput
@@ -5441,7 +5141,6 @@ export type UserUncheckedCreateWithoutX402EvmWalletsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402Networks?: Prisma.X402NetworkUncheckedCreateNestedManyWithoutUserInput
@@ -5502,7 +5201,6 @@ export type UserUpdateWithoutX402EvmWalletsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUpdateManyWithoutUserNestedInput
@@ -5547,7 +5245,6 @@ export type UserUncheckedUpdateWithoutX402EvmWalletsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402Networks?: Prisma.X402NetworkUncheckedUpdateManyWithoutUserNestedInput
@@ -5592,7 +5289,6 @@ export type UserCreateWithoutX402BudgetsCreatedInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -5637,7 +5333,6 @@ export type UserUncheckedCreateWithoutX402BudgetsCreatedInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5698,7 +5393,6 @@ export type UserUpdateWithoutX402BudgetsCreatedInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -5743,7 +5437,6 @@ export type UserUncheckedUpdateWithoutX402BudgetsCreatedInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5788,7 +5481,6 @@ export type UserCreateWithoutX402PaymentAttemptsInput = {
   integrationConnections?: Prisma.IntegrationConnectionCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutUserInput
   kycVerification?: Prisma.KycVerificationCreateNestedOneWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletCreateNestedManyWithoutUserInput
@@ -5833,7 +5525,6 @@ export type UserUncheckedCreateWithoutX402PaymentAttemptsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedCreateNestedManyWithoutUserInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedCreateNestedManyWithoutUserInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutUserInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedCreateNestedManyWithoutCreatedByInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedCreateNestedManyWithoutUserInput
   walletCaches?: Prisma.WalletCacheUncheckedCreateNestedManyWithoutUserInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5894,7 +5585,6 @@ export type UserUpdateWithoutX402PaymentAttemptsInput = {
   integrationConnections?: Prisma.IntegrationConnectionUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutUserNestedInput
   kycVerification?: Prisma.KycVerificationUpdateOneWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUpdateManyWithoutUserNestedInput
@@ -5939,7 +5629,6 @@ export type UserUncheckedUpdateWithoutX402PaymentAttemptsInput = {
   inboxAgentReferences?: Prisma.InboxAgentReferenceUncheckedUpdateManyWithoutUserNestedInput
   integrationConnections?: Prisma.IntegrationConnectionUncheckedUpdateManyWithoutUserNestedInput
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutUserNestedInput
-  createdOrgApiKeys?: Prisma.OrgApiKeyUncheckedUpdateManyWithoutCreatedByNestedInput
   kycSubmissions?: Prisma.KycSubmissionUncheckedUpdateManyWithoutUserNestedInput
   walletCaches?: Prisma.WalletCacheUncheckedUpdateManyWithoutUserNestedInput
   x402EvmWallets?: Prisma.X402EvmWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5969,7 +5658,6 @@ export type UserCountOutputType = {
   inboxAgentReferences: number
   integrationConnections: number
   veridianCredentials: number
-  createdOrgApiKeys: number
   kycSubmissions: number
   walletCaches: number
   x402EvmWallets: number
@@ -5994,7 +5682,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   inboxAgentReferences?: boolean | UserCountOutputTypeCountInboxAgentReferencesArgs
   integrationConnections?: boolean | UserCountOutputTypeCountIntegrationConnectionsArgs
   veridianCredentials?: boolean | UserCountOutputTypeCountVeridianCredentialsArgs
-  createdOrgApiKeys?: boolean | UserCountOutputTypeCountCreatedOrgApiKeysArgs
   kycSubmissions?: boolean | UserCountOutputTypeCountKycSubmissionsArgs
   walletCaches?: boolean | UserCountOutputTypeCountWalletCachesArgs
   x402EvmWallets?: boolean | UserCountOutputTypeCountX402EvmWalletsArgs
@@ -6121,13 +5808,6 @@ export type UserCountOutputTypeCountVeridianCredentialsArgs<ExtArgs extends runt
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountCreatedOrgApiKeysArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.OrgApiKeyWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountKycSubmissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.KycSubmissionWhereInput
 }
@@ -6205,7 +5885,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   integrationConnections?: boolean | Prisma.User$integrationConnectionsArgs<ExtArgs>
   veridianCredentials?: boolean | Prisma.User$veridianCredentialsArgs<ExtArgs>
   kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>
-  createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>
   kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>
   walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>
   x402EvmWallets?: boolean | Prisma.User$x402EvmWalletsArgs<ExtArgs>
@@ -6305,7 +5984,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   integrationConnections?: boolean | Prisma.User$integrationConnectionsArgs<ExtArgs>
   veridianCredentials?: boolean | Prisma.User$veridianCredentialsArgs<ExtArgs>
   kycVerification?: boolean | Prisma.User$kycVerificationArgs<ExtArgs>
-  createdOrgApiKeys?: boolean | Prisma.User$createdOrgApiKeysArgs<ExtArgs>
   kycSubmissions?: boolean | Prisma.User$kycSubmissionsArgs<ExtArgs>
   walletCaches?: boolean | Prisma.User$walletCachesArgs<ExtArgs>
   x402EvmWallets?: boolean | Prisma.User$x402EvmWalletsArgs<ExtArgs>
@@ -6341,7 +6019,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     integrationConnections: Prisma.$IntegrationConnectionPayload<ExtArgs>[]
     veridianCredentials: Prisma.$VeridianCredentialPayload<ExtArgs>[]
     kycVerification: Prisma.$KycVerificationPayload<ExtArgs> | null
-    createdOrgApiKeys: Prisma.$OrgApiKeyPayload<ExtArgs>[]
     kycSubmissions: Prisma.$KycSubmissionPayload<ExtArgs>[]
     walletCaches: Prisma.$WalletCachePayload<ExtArgs>[]
     x402EvmWallets: Prisma.$X402EvmWalletPayload<ExtArgs>[]
@@ -6781,7 +6458,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   integrationConnections<T extends Prisma.User$integrationConnectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$integrationConnectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IntegrationConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   veridianCredentials<T extends Prisma.User$veridianCredentialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$veridianCredentialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VeridianCredentialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   kycVerification<T extends Prisma.User$kycVerificationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$kycVerificationArgs<ExtArgs>>): Prisma.Prisma__KycVerificationClient<runtime.Types.Result.GetResult<Prisma.$KycVerificationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  createdOrgApiKeys<T extends Prisma.User$createdOrgApiKeysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdOrgApiKeysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrgApiKeyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   kycSubmissions<T extends Prisma.User$kycSubmissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$kycSubmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KycSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   walletCaches<T extends Prisma.User$walletCachesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$walletCachesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WalletCachePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   x402EvmWallets<T extends Prisma.User$x402EvmWalletsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$x402EvmWalletsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$X402EvmWalletPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -7610,30 +7286,6 @@ export type User$kycVerificationArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   include?: Prisma.KycVerificationInclude<ExtArgs> | null
   where?: Prisma.KycVerificationWhereInput
-}
-
-/**
- * User.createdOrgApiKeys
- */
-export type User$createdOrgApiKeysArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the OrgApiKey
-   */
-  select?: Prisma.OrgApiKeySelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the OrgApiKey
-   */
-  omit?: Prisma.OrgApiKeyOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.OrgApiKeyInclude<ExtArgs> | null
-  where?: Prisma.OrgApiKeyWhereInput
-  orderBy?: Prisma.OrgApiKeyOrderByWithRelationInput | Prisma.OrgApiKeyOrderByWithRelationInput[]
-  cursor?: Prisma.OrgApiKeyWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.OrgApiKeyScalarFieldEnum | Prisma.OrgApiKeyScalarFieldEnum[]
 }
 
 /**

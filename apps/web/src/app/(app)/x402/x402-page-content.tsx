@@ -12,7 +12,7 @@ import { PaymentsTab } from "@/components/x402/payments-tab";
 import { WalletsTab } from "@/components/x402/wallets-tab";
 import { X402SetupBanner } from "@/components/x402/x402-setup-banner";
 import { X402SetupDialogProvider } from "@/components/x402/x402-setup-dialog";
-import { canManageX402OrgBudgets } from "@/lib/auth/org-roles";
+import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 
 const ALL_TABS = [
@@ -36,7 +36,7 @@ function X402PageContentInner() {
   const searchParams = useSearchParams();
   const { activeOrganization, activeOrganizationId } = useOrganizationContext();
 
-  const showBudgetsTab = canManageX402OrgBudgets(
+  const showBudgetsTab = canAccessX402Workspace(
     activeOrganizationId,
     activeOrganization?.role,
   );
