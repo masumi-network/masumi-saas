@@ -1,8 +1,9 @@
 import { createRoute } from "@hono/zod-openapi";
+import { loadSupportedPaymentSourcesForAgent } from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { deleteAgentAction } from "@/lib/actions/agent.action";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
-import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
@@ -66,7 +67,9 @@ app.openapi(
         network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
 
-      const data = shapeAgentWithMergedMetadata(agent);
+      const supportedPaymentSources =
+        await loadSupportedPaymentSourcesForAgent(agentId);
+      const data = shapeAgentForApi(agent, supportedPaymentSources);
 
       // Prisma `verificationStatus`/dates are looser than the OpenAPI response
       // schema. Cast so Hono accepts the response body shape.

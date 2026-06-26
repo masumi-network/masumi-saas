@@ -37,13 +37,39 @@ export default async function DashboardOverview({
     "App.Agents.registrationStatus",
   );
 
-  const { user, agents, apiKeys, organizationCount, apiKeyCount, agentCount } =
-    data;
+  const {
+    user,
+    agents,
+    apiKeys,
+    organizationCount,
+    apiKeyCount,
+    agentCount,
+    apiKeysScope,
+    apiKeysCanManage,
+    activeOrganizationName,
+  } = data;
 
   const userName = user.name || user.email || "User";
   const greeting = getGreeting();
   const isNewUser =
     organizationCount === 0 && apiKeyCount === 0 && agentCount === 0;
+  const isOrgApiKeys = apiKeysScope === "org";
+  const apiKeysSectionDescription = isOrgApiKeys
+    ? t("orgApiKeysSectionDescription", {
+        organization: activeOrganizationName ?? t("stats.apiKeys"),
+      })
+    : t("apiKeysSectionDescription");
+  const noApiKeysYetDescription =
+    isOrgApiKeys && !apiKeysCanManage
+      ? t("orgApiKeysAdminOnly", {
+          organization: activeOrganizationName ?? t("stats.apiKeys"),
+        })
+      : isOrgApiKeys
+        ? t("noOrgApiKeysYetDescription")
+        : t("noApiKeysYetDescription");
+  const noApiKeysYetTitle = isOrgApiKeys
+    ? t("noOrgApiKeysYet")
+    : t("noApiKeysYet");
 
   return (
     <div className="min-w-0 space-y-8 animate-in fade-in duration-300">
@@ -191,9 +217,7 @@ export default async function DashboardOverview({
                 {t("stats.apiKeys")}
                 <ChevronRight className="h-4 w-4" />
               </Link>
-              <CardDescription>
-                {t("apiKeysSectionDescription")}
-              </CardDescription>
+              <CardDescription>{apiKeysSectionDescription}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -203,10 +227,10 @@ export default async function DashboardOverview({
                   <Key className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-center text-sm font-medium text-foreground">
-                  {t("noApiKeysYet")}
+                  {noApiKeysYetTitle}
                 </p>
                 <p className="mt-1 text-center text-xs text-muted-foreground">
-                  {t("noApiKeysYetDescription")}
+                  {noApiKeysYetDescription}
                 </p>
               </div>
             ) : (
@@ -233,7 +257,7 @@ export default async function DashboardOverview({
                 ))}
               </ul>
             )}
-            <DashboardCreateApiKeyButton />
+            {apiKeysCanManage ? <DashboardCreateApiKeyButton /> : null}
           </CardContent>
         </Card>
       </div>

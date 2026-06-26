@@ -20,6 +20,7 @@ const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const ENCRYPTION_KEY_LENGTH = 32;
 const ENCRYPTION_IV_LENGTH = 12;
 const ENCRYPTION_TAG_LENGTH = 16;
+const STORED_HASH_DIGEST_RE = /^[a-f0-9]{64}$/i;
 
 const HASHED_FIELDS = {
   session: new Set(["token"]),
@@ -109,6 +110,10 @@ function isEncryptedField(model: string, field: string): boolean {
   return fields?.has(field as never) ?? false;
 }
 
+function isStoredAuthHashDigest(value: string): boolean {
+  return STORED_HASH_DIGEST_RE.test(value);
+}
+
 export function hashAuthLookupValue(value: string, label: string): string {
   // Deterministic keyed hashing is intentional here so opaque random tokens can
   // be matched without storing them in plaintext.
@@ -180,6 +185,12 @@ function transformStoredWhere(
       isHashedField(model, clause.field) &&
       (clause.operator === undefined || clause.operator === "eq")
     ) {
+      // Session reads return the persisted digest. Better Auth reuses that value
+      // for update/delete lookups; hashing again would miss the row (Prisma P2025).
+      if (isStoredAuthHashDigest(clause.value)) {
+        return clause;
+      }
+
       return {
         ...clause,
         value: hashAuthLookupValue(

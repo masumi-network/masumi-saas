@@ -144,18 +144,6 @@ export type MipJob = Prisma.MipJobModel;
  */
 export type AgentActivityEvent = Prisma.AgentActivityEventModel;
 /**
- * Model OrgApiKey
- * Organization-scoped API keys for programmatic access to the platform.
- *
- * NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
- * codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
- * These are completely different — Better Auth's Apikey is user-scoped and
- * manages authentication tokens. OrgApiKey is org-scoped, supports custom
- * scopes, and is meant for machine-to-machine / programmatic access.
- * DB table: api_key
- */
-export type OrgApiKey = Prisma.OrgApiKeyModel;
-/**
  * Model KycSubmission
  * Tracks each individual KYC (Know Your Customer) document submission attempt
  * for a user via Sumsub. Provides an audit trail of all attempts.
@@ -211,3 +199,39 @@ export type InboxAgentReference = Prisma.InboxAgentReferenceModel;
  *
  */
 export type VeridianCredential = Prisma.VeridianCredentialModel;
+/**
+ * Model SupportedPaymentSource
+ * Advertised payment option on an agent (Cardano escrow and/or EVM x402 Exact).
+ */
+export type SupportedPaymentSource = Prisma.SupportedPaymentSourceModel;
+/**
+ * Model X402Network
+ *
+ */
+export type X402Network = Prisma.X402NetworkModel;
+/**
+ * Model X402EvmWallet
+ *
+ */
+export type X402EvmWallet = Prisma.X402EvmWalletModel;
+/**
+ * Model X402EvmWalletLowBalanceRule
+ *
+ */
+export type X402EvmWalletLowBalanceRule =
+  Prisma.X402EvmWalletLowBalanceRuleModel;
+/**
+ * Model X402WalletBudget
+ *
+ */
+export type X402WalletBudget = Prisma.X402WalletBudgetModel;
+/**
+ * Model X402PaymentAttempt
+ *
+ */
+export type X402PaymentAttempt = Prisma.X402PaymentAttemptModel;
+/**
+ * Model X402Settlement
+ *
+ */
+export type X402Settlement = Prisma.X402SettlementModel;

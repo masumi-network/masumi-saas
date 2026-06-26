@@ -450,6 +450,30 @@ input[type="number"] {
   animation: checkIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+@keyframes network-switch {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+
+  35% {
+    transform: translateX(-3px) scale(0.88);
+  }
+
+  65% {
+    transform: translateX(3px) scale(0.88);
+  }
+
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-network-switch {
+    animation: network-switch 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+}
+
 @keyframes masumi-logo-enter {
   from {
     opacity: 0;
@@ -589,6 +613,61 @@ input[type="number"] {
 }
 .dialog-stagger-in > *:nth-child(n + 9) {
   animation-delay: 0.45s;
+}
+
+@keyframes dialogStepInForward {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dialogStepInBack {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dialogHeaderIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-dialog-step-in-forward {
+    animation: dialogStepInForward 0.28s ease-out both;
+  }
+
+  .animate-dialog-step-in-back {
+    animation: dialogStepInBack 0.28s ease-out both;
+  }
+
+  .animate-dialog-header-in {
+    animation: dialogHeaderIn 0.24s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dialog-step-in-forward,
+  .animate-dialog-step-in-back,
+  .animate-dialog-header-in {
+    animation: none;
+  }
 }
 
 .grid-expand-wrapper {

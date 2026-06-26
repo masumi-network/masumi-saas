@@ -436,13 +436,19 @@ export const ModelName = {
   IntegrationConnection: "IntegrationConnection",
   MipJob: "MipJob",
   AgentActivityEvent: "AgentActivityEvent",
-  OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
   InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
+  SupportedPaymentSource: "SupportedPaymentSource",
+  X402Network: "X402Network",
+  X402EvmWallet: "X402EvmWallet",
+  X402EvmWalletLowBalanceRule: "X402EvmWalletLowBalanceRule",
+  X402WalletBudget: "X402WalletBudget",
+  X402PaymentAttempt: "X402PaymentAttempt",
+  X402Settlement: "X402Settlement",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -489,13 +495,19 @@ export type TypeMap<
       | "integrationConnection"
       | "mipJob"
       | "agentActivityEvent"
-      | "orgApiKey"
       | "kycSubmission"
       | "kybSubmission"
       | "walletCache"
       | "agentReference"
       | "inboxAgentReference"
-      | "veridianCredential";
+      | "veridianCredential"
+      | "supportedPaymentSource"
+      | "x402Network"
+      | "x402EvmWallet"
+      | "x402EvmWalletLowBalanceRule"
+      | "x402WalletBudget"
+      | "x402PaymentAttempt"
+      | "x402Settlement";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -2323,82 +2335,6 @@ export type TypeMap<
         };
       };
     };
-    OrgApiKey: {
-      payload: Prisma.$OrgApiKeyPayload<ExtArgs>;
-      fields: Prisma.OrgApiKeyFieldRefs;
-      operations: {
-        findUnique: {
-          args: Prisma.OrgApiKeyFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
-        };
-        findUniqueOrThrow: {
-          args: Prisma.OrgApiKeyFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        findFirst: {
-          args: Prisma.OrgApiKeyFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload> | null;
-        };
-        findFirstOrThrow: {
-          args: Prisma.OrgApiKeyFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        findMany: {
-          args: Prisma.OrgApiKeyFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        create: {
-          args: Prisma.OrgApiKeyCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        createMany: {
-          args: Prisma.OrgApiKeyCreateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        createManyAndReturn: {
-          args: Prisma.OrgApiKeyCreateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        delete: {
-          args: Prisma.OrgApiKeyDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        update: {
-          args: Prisma.OrgApiKeyUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        deleteMany: {
-          args: Prisma.OrgApiKeyDeleteManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateMany: {
-          args: Prisma.OrgApiKeyUpdateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateManyAndReturn: {
-          args: Prisma.OrgApiKeyUpdateManyAndReturnArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>[];
-        };
-        upsert: {
-          args: Prisma.OrgApiKeyUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrgApiKeyPayload>;
-        };
-        aggregate: {
-          args: Prisma.OrgApiKeyAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateOrgApiKey>;
-        };
-        groupBy: {
-          args: Prisma.OrgApiKeyGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.OrgApiKeyGroupByOutputType>[];
-        };
-        count: {
-          args: Prisma.OrgApiKeyCountArgs<ExtArgs>;
-          result:
-            | runtime.Types.Utils.Optional<Prisma.OrgApiKeyCountAggregateOutputType>
-            | number;
-        };
-      };
-    };
     KycSubmission: {
       payload: Prisma.$KycSubmissionPayload<ExtArgs>;
       fields: Prisma.KycSubmissionFieldRefs;
@@ -2855,6 +2791,538 @@ export type TypeMap<
         };
       };
     };
+    SupportedPaymentSource: {
+      payload: Prisma.$SupportedPaymentSourcePayload<ExtArgs>;
+      fields: Prisma.SupportedPaymentSourceFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.SupportedPaymentSourceFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.SupportedPaymentSourceFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        findFirst: {
+          args: Prisma.SupportedPaymentSourceFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.SupportedPaymentSourceFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        findMany: {
+          args: Prisma.SupportedPaymentSourceFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>[];
+        };
+        create: {
+          args: Prisma.SupportedPaymentSourceCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        createMany: {
+          args: Prisma.SupportedPaymentSourceCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.SupportedPaymentSourceCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>[];
+        };
+        delete: {
+          args: Prisma.SupportedPaymentSourceDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        update: {
+          args: Prisma.SupportedPaymentSourceUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        deleteMany: {
+          args: Prisma.SupportedPaymentSourceDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.SupportedPaymentSourceUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.SupportedPaymentSourceUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>[];
+        };
+        upsert: {
+          args: Prisma.SupportedPaymentSourceUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupportedPaymentSourcePayload>;
+        };
+        aggregate: {
+          args: Prisma.SupportedPaymentSourceAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupportedPaymentSource>;
+        };
+        groupBy: {
+          args: Prisma.SupportedPaymentSourceGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.SupportedPaymentSourceGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.SupportedPaymentSourceCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.SupportedPaymentSourceCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402Network: {
+      payload: Prisma.$X402NetworkPayload<ExtArgs>;
+      fields: Prisma.X402NetworkFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402NetworkFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402NetworkFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        findFirst: {
+          args: Prisma.X402NetworkFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402NetworkFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        findMany: {
+          args: Prisma.X402NetworkFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>[];
+        };
+        create: {
+          args: Prisma.X402NetworkCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        createMany: {
+          args: Prisma.X402NetworkCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402NetworkCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>[];
+        };
+        delete: {
+          args: Prisma.X402NetworkDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        update: {
+          args: Prisma.X402NetworkUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402NetworkDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402NetworkUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402NetworkUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>[];
+        };
+        upsert: {
+          args: Prisma.X402NetworkUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402NetworkPayload>;
+        };
+        aggregate: {
+          args: Prisma.X402NetworkAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402Network>;
+        };
+        groupBy: {
+          args: Prisma.X402NetworkGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402NetworkGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402NetworkCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402NetworkCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402EvmWallet: {
+      payload: Prisma.$X402EvmWalletPayload<ExtArgs>;
+      fields: Prisma.X402EvmWalletFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402EvmWalletFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402EvmWalletFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        findFirst: {
+          args: Prisma.X402EvmWalletFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402EvmWalletFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        findMany: {
+          args: Prisma.X402EvmWalletFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>[];
+        };
+        create: {
+          args: Prisma.X402EvmWalletCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        createMany: {
+          args: Prisma.X402EvmWalletCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402EvmWalletCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>[];
+        };
+        delete: {
+          args: Prisma.X402EvmWalletDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        update: {
+          args: Prisma.X402EvmWalletUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402EvmWalletDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402EvmWalletUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402EvmWalletUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>[];
+        };
+        upsert: {
+          args: Prisma.X402EvmWalletUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletPayload>;
+        };
+        aggregate: {
+          args: Prisma.X402EvmWalletAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402EvmWallet>;
+        };
+        groupBy: {
+          args: Prisma.X402EvmWalletGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402EvmWalletGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402EvmWalletCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402EvmWalletCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402EvmWalletLowBalanceRule: {
+      payload: Prisma.$X402EvmWalletLowBalanceRulePayload<ExtArgs>;
+      fields: Prisma.X402EvmWalletLowBalanceRuleFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402EvmWalletLowBalanceRuleFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402EvmWalletLowBalanceRuleFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        findFirst: {
+          args: Prisma.X402EvmWalletLowBalanceRuleFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402EvmWalletLowBalanceRuleFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        findMany: {
+          args: Prisma.X402EvmWalletLowBalanceRuleFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>[];
+        };
+        create: {
+          args: Prisma.X402EvmWalletLowBalanceRuleCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        createMany: {
+          args: Prisma.X402EvmWalletLowBalanceRuleCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402EvmWalletLowBalanceRuleCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>[];
+        };
+        delete: {
+          args: Prisma.X402EvmWalletLowBalanceRuleDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        update: {
+          args: Prisma.X402EvmWalletLowBalanceRuleUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402EvmWalletLowBalanceRuleDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402EvmWalletLowBalanceRuleUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402EvmWalletLowBalanceRuleUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>[];
+        };
+        upsert: {
+          args: Prisma.X402EvmWalletLowBalanceRuleUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402EvmWalletLowBalanceRulePayload>;
+        };
+        aggregate: {
+          args: Prisma.X402EvmWalletLowBalanceRuleAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402EvmWalletLowBalanceRule>;
+        };
+        groupBy: {
+          args: Prisma.X402EvmWalletLowBalanceRuleGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402EvmWalletLowBalanceRuleGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402EvmWalletLowBalanceRuleCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402EvmWalletLowBalanceRuleCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402WalletBudget: {
+      payload: Prisma.$X402WalletBudgetPayload<ExtArgs>;
+      fields: Prisma.X402WalletBudgetFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402WalletBudgetFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402WalletBudgetFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        findFirst: {
+          args: Prisma.X402WalletBudgetFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402WalletBudgetFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        findMany: {
+          args: Prisma.X402WalletBudgetFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>[];
+        };
+        create: {
+          args: Prisma.X402WalletBudgetCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        createMany: {
+          args: Prisma.X402WalletBudgetCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402WalletBudgetCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>[];
+        };
+        delete: {
+          args: Prisma.X402WalletBudgetDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        update: {
+          args: Prisma.X402WalletBudgetUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402WalletBudgetDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402WalletBudgetUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402WalletBudgetUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>[];
+        };
+        upsert: {
+          args: Prisma.X402WalletBudgetUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402WalletBudgetPayload>;
+        };
+        aggregate: {
+          args: Prisma.X402WalletBudgetAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402WalletBudget>;
+        };
+        groupBy: {
+          args: Prisma.X402WalletBudgetGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402WalletBudgetGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402WalletBudgetCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402WalletBudgetCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402PaymentAttempt: {
+      payload: Prisma.$X402PaymentAttemptPayload<ExtArgs>;
+      fields: Prisma.X402PaymentAttemptFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402PaymentAttemptFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402PaymentAttemptFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        findFirst: {
+          args: Prisma.X402PaymentAttemptFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402PaymentAttemptFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        findMany: {
+          args: Prisma.X402PaymentAttemptFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>[];
+        };
+        create: {
+          args: Prisma.X402PaymentAttemptCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        createMany: {
+          args: Prisma.X402PaymentAttemptCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402PaymentAttemptCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>[];
+        };
+        delete: {
+          args: Prisma.X402PaymentAttemptDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        update: {
+          args: Prisma.X402PaymentAttemptUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402PaymentAttemptDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402PaymentAttemptUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402PaymentAttemptUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>[];
+        };
+        upsert: {
+          args: Prisma.X402PaymentAttemptUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402PaymentAttemptPayload>;
+        };
+        aggregate: {
+          args: Prisma.X402PaymentAttemptAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402PaymentAttempt>;
+        };
+        groupBy: {
+          args: Prisma.X402PaymentAttemptGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402PaymentAttemptGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402PaymentAttemptCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402PaymentAttemptCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    X402Settlement: {
+      payload: Prisma.$X402SettlementPayload<ExtArgs>;
+      fields: Prisma.X402SettlementFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.X402SettlementFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.X402SettlementFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        findFirst: {
+          args: Prisma.X402SettlementFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.X402SettlementFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        findMany: {
+          args: Prisma.X402SettlementFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>[];
+        };
+        create: {
+          args: Prisma.X402SettlementCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        createMany: {
+          args: Prisma.X402SettlementCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.X402SettlementCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>[];
+        };
+        delete: {
+          args: Prisma.X402SettlementDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        update: {
+          args: Prisma.X402SettlementUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        deleteMany: {
+          args: Prisma.X402SettlementDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.X402SettlementUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.X402SettlementUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>[];
+        };
+        upsert: {
+          args: Prisma.X402SettlementUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$X402SettlementPayload>;
+        };
+        aggregate: {
+          args: Prisma.X402SettlementAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateX402Settlement>;
+        };
+        groupBy: {
+          args: Prisma.X402SettlementGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.X402SettlementGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.X402SettlementCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.X402SettlementCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -3278,24 +3746,6 @@ export const AgentActivityEventScalarFieldEnum = {
 export type AgentActivityEventScalarFieldEnum =
   (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum];
 
-export const OrgApiKeyScalarFieldEnum = {
-  id: "id",
-  name: "name",
-  keyHash: "keyHash",
-  keyPrefix: "keyPrefix",
-  organizationId: "organizationId",
-  createdById: "createdById",
-  scopes: "scopes",
-  enabled: "enabled",
-  lastUsedAt: "lastUsedAt",
-  expiresAt: "expiresAt",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type OrgApiKeyScalarFieldEnum =
-  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
-
 export const KycSubmissionScalarFieldEnum = {
   id: "id",
   userId: "userId",
@@ -3409,6 +3859,146 @@ export const VeridianCredentialScalarFieldEnum = {
 
 export type VeridianCredentialScalarFieldEnum =
   (typeof VeridianCredentialScalarFieldEnum)[keyof typeof VeridianCredentialScalarFieldEnum];
+
+export const SupportedPaymentSourceScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  agentId: "agentId",
+  chain: "chain",
+  network: "network",
+  paymentSourceType: "paymentSourceType",
+  address: "address",
+  scheme: "scheme",
+  asset: "asset",
+  amount: "amount",
+  decimals: "decimals",
+  payTo: "payTo",
+  resource: "resource",
+  extra: "extra",
+} as const;
+
+export type SupportedPaymentSourceScalarFieldEnum =
+  (typeof SupportedPaymentSourceScalarFieldEnum)[keyof typeof SupportedPaymentSourceScalarFieldEnum];
+
+export const X402NetworkScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  organizationId: "organizationId",
+  caip2Id: "caip2Id",
+  displayName: "displayName",
+  rpcUrl: "rpcUrl",
+  isTestnet: "isTestnet",
+  isEnabled: "isEnabled",
+  defaultAsset: "defaultAsset",
+  facilitatorWalletId: "facilitatorWalletId",
+  createdByUserId: "createdByUserId",
+} as const;
+
+export type X402NetworkScalarFieldEnum =
+  (typeof X402NetworkScalarFieldEnum)[keyof typeof X402NetworkScalarFieldEnum];
+
+export const X402EvmWalletScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  organizationId: "organizationId",
+  address: "address",
+  type: "type",
+  encryptedPrivateKey: "encryptedPrivateKey",
+  note: "note",
+  deletedAt: "deletedAt",
+  createdByUserId: "createdByUserId",
+} as const;
+
+export type X402EvmWalletScalarFieldEnum =
+  (typeof X402EvmWalletScalarFieldEnum)[keyof typeof X402EvmWalletScalarFieldEnum];
+
+export const X402EvmWalletLowBalanceRuleScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  evmWalletId: "evmWalletId",
+  caip2Network: "caip2Network",
+  asset: "asset",
+  thresholdAmount: "thresholdAmount",
+  enabled: "enabled",
+  status: "status",
+  lastKnownAmount: "lastKnownAmount",
+  lastCheckedAt: "lastCheckedAt",
+  lastAlertedAt: "lastAlertedAt",
+} as const;
+
+export type X402EvmWalletLowBalanceRuleScalarFieldEnum =
+  (typeof X402EvmWalletLowBalanceRuleScalarFieldEnum)[keyof typeof X402EvmWalletLowBalanceRuleScalarFieldEnum];
+
+export const X402WalletBudgetScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  apiKeyId: "apiKeyId",
+  evmWalletId: "evmWalletId",
+  caip2Network: "caip2Network",
+  asset: "asset",
+  remainingAmount: "remainingAmount",
+  spentAmount: "spentAmount",
+  enabled: "enabled",
+  createdByUserId: "createdByUserId",
+  x402NetworkId: "x402NetworkId",
+} as const;
+
+export type X402WalletBudgetScalarFieldEnum =
+  (typeof X402WalletBudgetScalarFieldEnum)[keyof typeof X402WalletBudgetScalarFieldEnum];
+
+export const X402PaymentAttemptScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  direction: "direction",
+  status: "status",
+  userId: "userId",
+  apiKeyId: "apiKeyId",
+  evmWalletId: "evmWalletId",
+  agentId: "agentId",
+  supportedPaymentSourceId: "supportedPaymentSourceId",
+  caip2Network: "caip2Network",
+  scheme: "scheme",
+  asset: "asset",
+  amount: "amount",
+  payTo: "payTo",
+  payer: "payer",
+  resource: "resource",
+  paymentPayloadHash: "paymentPayloadHash",
+  paymentPayload: "paymentPayload",
+  paymentIdentifier: "paymentIdentifier",
+  errorReason: "errorReason",
+  errorMessage: "errorMessage",
+  x402NetworkId: "x402NetworkId",
+} as const;
+
+export type X402PaymentAttemptScalarFieldEnum =
+  (typeof X402PaymentAttemptScalarFieldEnum)[keyof typeof X402PaymentAttemptScalarFieldEnum];
+
+export const X402SettlementScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  paymentAttemptId: "paymentAttemptId",
+  paymentPayloadHash: "paymentPayloadHash",
+  success: "success",
+  txHash: "txHash",
+  caip2Network: "caip2Network",
+  amount: "amount",
+  payer: "payer",
+  rawResponse: "rawResponse",
+} as const;
+
+export type X402SettlementScalarFieldEnum =
+  (typeof X402SettlementScalarFieldEnum)[keyof typeof X402SettlementScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
@@ -3678,6 +4268,68 @@ export type ListEnumCredentialStatusFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "CredentialStatus[]">;
 
 /**
+ * Reference to a field of type 'X402PaymentScheme'
+ */
+export type EnumX402PaymentSchemeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentScheme">;
+
+/**
+ * Reference to a field of type 'X402PaymentScheme[]'
+ */
+export type ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentScheme[]">;
+
+/**
+ * Reference to a field of type 'X402EvmWalletType'
+ */
+export type EnumX402EvmWalletTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402EvmWalletType">;
+
+/**
+ * Reference to a field of type 'X402EvmWalletType[]'
+ */
+export type ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402EvmWalletType[]">;
+
+/**
+ * Reference to a field of type 'LowBalanceStatus'
+ */
+export type EnumLowBalanceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "LowBalanceStatus"
+>;
+
+/**
+ * Reference to a field of type 'LowBalanceStatus[]'
+ */
+export type ListEnumLowBalanceStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "LowBalanceStatus[]">;
+
+/**
+ * Reference to a field of type 'X402PaymentDirection'
+ */
+export type EnumX402PaymentDirectionFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentDirection">;
+
+/**
+ * Reference to a field of type 'X402PaymentDirection[]'
+ */
+export type ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentDirection[]">;
+
+/**
+ * Reference to a field of type 'X402PaymentStatus'
+ */
+export type EnumX402PaymentStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentStatus">;
+
+/**
+ * Reference to a field of type 'X402PaymentStatus[]'
+ */
+export type ListEnumX402PaymentStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "X402PaymentStatus[]">;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -3804,13 +4456,19 @@ export type GlobalOmitConfig = {
   integrationConnection?: Prisma.IntegrationConnectionOmit;
   mipJob?: Prisma.MipJobOmit;
   agentActivityEvent?: Prisma.AgentActivityEventOmit;
-  orgApiKey?: Prisma.OrgApiKeyOmit;
   kycSubmission?: Prisma.KycSubmissionOmit;
   kybSubmission?: Prisma.KybSubmissionOmit;
   walletCache?: Prisma.WalletCacheOmit;
   agentReference?: Prisma.AgentReferenceOmit;
   inboxAgentReference?: Prisma.InboxAgentReferenceOmit;
   veridianCredential?: Prisma.VeridianCredentialOmit;
+  supportedPaymentSource?: Prisma.SupportedPaymentSourceOmit;
+  x402Network?: Prisma.X402NetworkOmit;
+  x402EvmWallet?: Prisma.X402EvmWalletOmit;
+  x402EvmWalletLowBalanceRule?: Prisma.X402EvmWalletLowBalanceRuleOmit;
+  x402WalletBudget?: Prisma.X402WalletBudgetOmit;
+  x402PaymentAttempt?: Prisma.X402PaymentAttemptOmit;
+  x402Settlement?: Prisma.X402SettlementOmit;
 };
 
 /* Types for Logging */

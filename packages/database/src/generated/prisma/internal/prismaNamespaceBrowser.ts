@@ -78,13 +78,19 @@ export const ModelName = {
   IntegrationConnection: "IntegrationConnection",
   MipJob: "MipJob",
   AgentActivityEvent: "AgentActivityEvent",
-  OrgApiKey: "OrgApiKey",
   KycSubmission: "KycSubmission",
   KybSubmission: "KybSubmission",
   WalletCache: "WalletCache",
   AgentReference: "AgentReference",
   InboxAgentReference: "InboxAgentReference",
   VeridianCredential: "VeridianCredential",
+  SupportedPaymentSource: "SupportedPaymentSource",
+  X402Network: "X402Network",
+  X402EvmWallet: "X402EvmWallet",
+  X402EvmWalletLowBalanceRule: "X402EvmWalletLowBalanceRule",
+  X402WalletBudget: "X402WalletBudget",
+  X402PaymentAttempt: "X402PaymentAttempt",
+  X402Settlement: "X402Settlement",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -487,24 +493,6 @@ export const AgentActivityEventScalarFieldEnum = {
 export type AgentActivityEventScalarFieldEnum =
   (typeof AgentActivityEventScalarFieldEnum)[keyof typeof AgentActivityEventScalarFieldEnum];
 
-export const OrgApiKeyScalarFieldEnum = {
-  id: "id",
-  name: "name",
-  keyHash: "keyHash",
-  keyPrefix: "keyPrefix",
-  organizationId: "organizationId",
-  createdById: "createdById",
-  scopes: "scopes",
-  enabled: "enabled",
-  lastUsedAt: "lastUsedAt",
-  expiresAt: "expiresAt",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type OrgApiKeyScalarFieldEnum =
-  (typeof OrgApiKeyScalarFieldEnum)[keyof typeof OrgApiKeyScalarFieldEnum];
-
 export const KycSubmissionScalarFieldEnum = {
   id: "id",
   userId: "userId",
@@ -618,6 +606,146 @@ export const VeridianCredentialScalarFieldEnum = {
 
 export type VeridianCredentialScalarFieldEnum =
   (typeof VeridianCredentialScalarFieldEnum)[keyof typeof VeridianCredentialScalarFieldEnum];
+
+export const SupportedPaymentSourceScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  agentId: "agentId",
+  chain: "chain",
+  network: "network",
+  paymentSourceType: "paymentSourceType",
+  address: "address",
+  scheme: "scheme",
+  asset: "asset",
+  amount: "amount",
+  decimals: "decimals",
+  payTo: "payTo",
+  resource: "resource",
+  extra: "extra",
+} as const;
+
+export type SupportedPaymentSourceScalarFieldEnum =
+  (typeof SupportedPaymentSourceScalarFieldEnum)[keyof typeof SupportedPaymentSourceScalarFieldEnum];
+
+export const X402NetworkScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  organizationId: "organizationId",
+  caip2Id: "caip2Id",
+  displayName: "displayName",
+  rpcUrl: "rpcUrl",
+  isTestnet: "isTestnet",
+  isEnabled: "isEnabled",
+  defaultAsset: "defaultAsset",
+  facilitatorWalletId: "facilitatorWalletId",
+  createdByUserId: "createdByUserId",
+} as const;
+
+export type X402NetworkScalarFieldEnum =
+  (typeof X402NetworkScalarFieldEnum)[keyof typeof X402NetworkScalarFieldEnum];
+
+export const X402EvmWalletScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  organizationId: "organizationId",
+  address: "address",
+  type: "type",
+  encryptedPrivateKey: "encryptedPrivateKey",
+  note: "note",
+  deletedAt: "deletedAt",
+  createdByUserId: "createdByUserId",
+} as const;
+
+export type X402EvmWalletScalarFieldEnum =
+  (typeof X402EvmWalletScalarFieldEnum)[keyof typeof X402EvmWalletScalarFieldEnum];
+
+export const X402EvmWalletLowBalanceRuleScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  evmWalletId: "evmWalletId",
+  caip2Network: "caip2Network",
+  asset: "asset",
+  thresholdAmount: "thresholdAmount",
+  enabled: "enabled",
+  status: "status",
+  lastKnownAmount: "lastKnownAmount",
+  lastCheckedAt: "lastCheckedAt",
+  lastAlertedAt: "lastAlertedAt",
+} as const;
+
+export type X402EvmWalletLowBalanceRuleScalarFieldEnum =
+  (typeof X402EvmWalletLowBalanceRuleScalarFieldEnum)[keyof typeof X402EvmWalletLowBalanceRuleScalarFieldEnum];
+
+export const X402WalletBudgetScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+  apiKeyId: "apiKeyId",
+  evmWalletId: "evmWalletId",
+  caip2Network: "caip2Network",
+  asset: "asset",
+  remainingAmount: "remainingAmount",
+  spentAmount: "spentAmount",
+  enabled: "enabled",
+  createdByUserId: "createdByUserId",
+  x402NetworkId: "x402NetworkId",
+} as const;
+
+export type X402WalletBudgetScalarFieldEnum =
+  (typeof X402WalletBudgetScalarFieldEnum)[keyof typeof X402WalletBudgetScalarFieldEnum];
+
+export const X402PaymentAttemptScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  direction: "direction",
+  status: "status",
+  userId: "userId",
+  apiKeyId: "apiKeyId",
+  evmWalletId: "evmWalletId",
+  agentId: "agentId",
+  supportedPaymentSourceId: "supportedPaymentSourceId",
+  caip2Network: "caip2Network",
+  scheme: "scheme",
+  asset: "asset",
+  amount: "amount",
+  payTo: "payTo",
+  payer: "payer",
+  resource: "resource",
+  paymentPayloadHash: "paymentPayloadHash",
+  paymentPayload: "paymentPayload",
+  paymentIdentifier: "paymentIdentifier",
+  errorReason: "errorReason",
+  errorMessage: "errorMessage",
+  x402NetworkId: "x402NetworkId",
+} as const;
+
+export type X402PaymentAttemptScalarFieldEnum =
+  (typeof X402PaymentAttemptScalarFieldEnum)[keyof typeof X402PaymentAttemptScalarFieldEnum];
+
+export const X402SettlementScalarFieldEnum = {
+  id: "id",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  paymentAttemptId: "paymentAttemptId",
+  paymentPayloadHash: "paymentPayloadHash",
+  success: "success",
+  txHash: "txHash",
+  caip2Network: "caip2Network",
+  amount: "amount",
+  payer: "payer",
+  rawResponse: "rawResponse",
+} as const;
+
+export type X402SettlementScalarFieldEnum =
+  (typeof X402SettlementScalarFieldEnum)[keyof typeof X402SettlementScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",

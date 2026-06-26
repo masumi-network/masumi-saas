@@ -1,10 +1,11 @@
 import "server-only";
 
+import { loadSupportedPaymentSourcesForAgent } from "@masumi/payment-source-x402/supported-payment-sources";
 import { cache } from "react";
 
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import type { Agent } from "@/lib/api/agent.types";
-import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import type { AgentPricing } from "@/lib/utils";
 
@@ -38,7 +39,10 @@ export const getAgent = cache(
         return { success: false, error: "Agent not found" };
       }
 
-      const shapedAgent = shapeAgentWithMergedMetadata(agent);
+      const shapedAgent = shapeAgentForApi(
+        agent,
+        await loadSupportedPaymentSourcesForAgent(agentId),
+      );
       const pricing = shapedAgent.pricing as AgentPricing | null | undefined;
       const allowedStatuses = [
         "PENDING",

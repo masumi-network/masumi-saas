@@ -1,3 +1,4 @@
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
 import { zfd } from "zod-form-data";
 
 import { z } from "@/lib/zod-openapi";
@@ -118,6 +119,7 @@ export const registerAgentBodySchema = z.object({
   capabilityName: z.string().max(250).optional().or(z.literal("")),
   capabilityVersion: z.string().max(250).optional().or(z.literal("")),
   exampleOutputs: z.array(exampleOutputSchema).optional(),
+  supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
 });
 
 /** Same validation as `POST /api/agents`; `.openapi()` only adds documentation metadata. */

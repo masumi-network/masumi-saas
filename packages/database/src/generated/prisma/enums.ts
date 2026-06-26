@@ -107,3 +107,47 @@ export const AgentReferenceStatus = {
 
 export type AgentReferenceStatus =
   (typeof AgentReferenceStatus)[keyof typeof AgentReferenceStatus];
+
+export const X402EvmWalletType = {
+  Purchasing: "Purchasing",
+  Selling: "Selling",
+} as const;
+
+export type X402EvmWalletType =
+  (typeof X402EvmWalletType)[keyof typeof X402EvmWalletType];
+
+export const X402PaymentScheme = {
+  Exact: "Exact",
+} as const;
+
+export type X402PaymentScheme =
+  (typeof X402PaymentScheme)[keyof typeof X402PaymentScheme];
+
+export const X402PaymentDirection = {
+  InboundVerify: "InboundVerify",
+  InboundSettle: "InboundSettle",
+  OutboundPayment: "OutboundPayment",
+} as const;
+
+export type X402PaymentDirection =
+  (typeof X402PaymentDirection)[keyof typeof X402PaymentDirection];
+
+export const X402PaymentStatus = {
+  PaymentRequired: "PaymentRequired",
+  Verified: "Verified",
+  Settled: "Settled",
+  Failed: "Failed",
+  Replayed: "Replayed",
+} as const;
+
+export type X402PaymentStatus =
+  (typeof X402PaymentStatus)[keyof typeof X402PaymentStatus];
+
+export const LowBalanceStatus = {
+  Unknown: "Unknown",
+  Healthy: "Healthy",
+  Low: "Low",
+} as const;
+
+export type LowBalanceStatus =
+  (typeof LowBalanceStatus)[keyof typeof LowBalanceStatus];

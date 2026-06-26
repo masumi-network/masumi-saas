@@ -355,6 +355,8 @@ export type AgentWhereInput = {
   > | null;
   activityEvents?: Prisma.AgentActivityEventListRelationFilter;
   mipJobs?: Prisma.MipJobListRelationFilter;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceListRelationFilter;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter;
 };
 
 export type AgentOrderByWithRelationInput = {
@@ -389,6 +391,8 @@ export type AgentOrderByWithRelationInput = {
   agentReference?: Prisma.AgentReferenceOrderByWithRelationInput;
   activityEvents?: Prisma.AgentActivityEventOrderByRelationAggregateInput;
   mipJobs?: Prisma.MipJobOrderByRelationAggregateInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceOrderByRelationAggregateInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptOrderByRelationAggregateInput;
 };
 
 export type AgentWhereUniqueInput = Prisma.AtLeast<
@@ -453,6 +457,8 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     > | null;
     activityEvents?: Prisma.AgentActivityEventListRelationFilter;
     mipJobs?: Prisma.MipJobListRelationFilter;
+    supportedPaymentSources?: Prisma.SupportedPaymentSourceListRelationFilter;
+    x402PaymentAttempts?: Prisma.X402PaymentAttemptListRelationFilter;
   },
   "id"
 >;
@@ -588,6 +594,8 @@ export type AgentCreateInput = {
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateInput = {
@@ -619,6 +627,8 @@ export type AgentUncheckedCreateInput = {
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUpdateInput = {
@@ -679,6 +689,8 @@ export type AgentUpdateInput = {
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateInput = {
@@ -745,6 +757,8 @@ export type AgentUncheckedUpdateInput = {
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateManyInput = {
@@ -1371,6 +1385,60 @@ export type AgentUpdateOneWithoutVeridianCredentialsNestedInput = {
   >;
 };
 
+export type AgentCreateNestedOneWithoutSupportedPaymentSourcesInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedCreateWithoutSupportedPaymentSourcesInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutSupportedPaymentSourcesInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+};
+
+export type AgentUpdateOneRequiredWithoutSupportedPaymentSourcesNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedCreateWithoutSupportedPaymentSourcesInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutSupportedPaymentSourcesInput;
+  upsert?: Prisma.AgentUpsertWithoutSupportedPaymentSourcesInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.AgentUpdateToOneWithWhereWithoutSupportedPaymentSourcesInput,
+      Prisma.AgentUpdateWithoutSupportedPaymentSourcesInput
+    >,
+    Prisma.AgentUncheckedUpdateWithoutSupportedPaymentSourcesInput
+  >;
+};
+
+export type AgentCreateNestedOneWithoutX402PaymentAttemptsInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutX402PaymentAttemptsInput;
+  connect?: Prisma.AgentWhereUniqueInput;
+};
+
+export type AgentUpdateOneWithoutX402PaymentAttemptsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.AgentCreateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  connectOrCreate?: Prisma.AgentCreateOrConnectWithoutX402PaymentAttemptsInput;
+  upsert?: Prisma.AgentUpsertWithoutX402PaymentAttemptsInput;
+  disconnect?: Prisma.AgentWhereInput | boolean;
+  delete?: Prisma.AgentWhereInput | boolean;
+  connect?: Prisma.AgentWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.AgentUpdateToOneWithWhereWithoutX402PaymentAttemptsInput,
+      Prisma.AgentUpdateWithoutX402PaymentAttemptsInput
+    >,
+    Prisma.AgentUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+};
+
 export type AgentCreateWithoutUserInput = {
   id?: string;
   name: string;
@@ -1399,6 +1467,8 @@ export type AgentCreateWithoutUserInput = {
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutUserInput = {
@@ -1429,6 +1499,8 @@ export type AgentUncheckedCreateWithoutUserInput = {
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutUserInput = {
@@ -1544,6 +1616,8 @@ export type AgentCreateWithoutOrganizationInput = {
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutOrganizationInput = {
@@ -1574,6 +1648,8 @@ export type AgentUncheckedCreateWithoutOrganizationInput = {
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutOrganizationInput = {
@@ -1647,6 +1723,8 @@ export type AgentCreateWithoutIntegrationConnectionInput = {
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutIntegrationConnectionInput = {
@@ -1677,6 +1755,8 @@ export type AgentUncheckedCreateWithoutIntegrationConnectionInput = {
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutIntegrationConnectionInput = {
@@ -1750,6 +1830,8 @@ export type AgentCreateWithoutMipJobsInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutMipJobsInput = {
@@ -1780,6 +1862,8 @@ export type AgentUncheckedCreateWithoutMipJobsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutMipJobsInput = {
@@ -1867,6 +1951,8 @@ export type AgentUpdateWithoutMipJobsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutMipJobsInput = {
@@ -1932,6 +2018,8 @@ export type AgentUncheckedUpdateWithoutMipJobsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateWithoutActivityEventsInput = {
@@ -1962,6 +2050,8 @@ export type AgentCreateWithoutActivityEventsInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutActivityEventsInput = {
@@ -1992,6 +2082,8 @@ export type AgentUncheckedCreateWithoutActivityEventsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutActivityEventsInput = {
@@ -2079,6 +2171,8 @@ export type AgentUpdateWithoutActivityEventsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutActivityEventsInput = {
@@ -2144,6 +2238,8 @@ export type AgentUncheckedUpdateWithoutActivityEventsInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateWithoutAgentReferenceInput = {
@@ -2174,6 +2270,8 @@ export type AgentCreateWithoutAgentReferenceInput = {
   veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutAgentReferenceInput = {
@@ -2204,6 +2302,8 @@ export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutAgentReferenceInput = {
@@ -2291,6 +2391,8 @@ export type AgentUpdateWithoutAgentReferenceInput = {
   veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
@@ -2356,6 +2458,8 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateWithoutVeridianCredentialsInput = {
@@ -2386,6 +2490,8 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
@@ -2416,6 +2522,8 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
   mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
 };
 
 export type AgentCreateOrConnectWithoutVeridianCredentialsInput = {
@@ -2503,6 +2611,8 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
@@ -2568,6 +2678,448 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentCreateWithoutSupportedPaymentSourcesInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentUncheckedCreateWithoutSupportedPaymentSourcesInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  userId: string;
+  organizationId?: string | null;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentCreateOrConnectWithoutSupportedPaymentSourcesInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedCreateWithoutSupportedPaymentSourcesInput
+  >;
+};
+
+export type AgentUpsertWithoutSupportedPaymentSourcesInput = {
+  update: Prisma.XOR<
+    Prisma.AgentUpdateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedUpdateWithoutSupportedPaymentSourcesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedCreateWithoutSupportedPaymentSourcesInput
+  >;
+  where?: Prisma.AgentWhereInput;
+};
+
+export type AgentUpdateToOneWithWhereWithoutSupportedPaymentSourcesInput = {
+  where?: Prisma.AgentWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateWithoutSupportedPaymentSourcesInput,
+    Prisma.AgentUncheckedUpdateWithoutSupportedPaymentSourcesInput
+  >;
+};
+
+export type AgentUpdateWithoutSupportedPaymentSourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateWithoutSupportedPaymentSourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentCreateWithoutX402PaymentAttemptsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  user: Prisma.UserCreateNestedOneWithoutAgentsInput;
+  organization?: Prisma.OrganizationCreateNestedOneWithoutAgentsInput;
+  integrationConnection?: Prisma.IntegrationConnectionCreateNestedOneWithoutAgentsInput;
+  veridianCredentials?: Prisma.VeridianCredentialCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentUncheckedCreateWithoutX402PaymentAttemptsInput = {
+  id?: string;
+  name: string;
+  description?: string | null;
+  extendedDescription?: string | null;
+  apiUrl: string;
+  userId: string;
+  organizationId?: string | null;
+  registrationState?: $Enums.RegistrationState;
+  runtimeProvider?: $Enums.AgentRuntimeProvider;
+  integrationConnectionId?: string | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?: $Enums.VerificationStatus | null;
+  veridianCredentialId?: string | null;
+  verificationChallenge?: string | null;
+  verificationChallengeGeneratedAt?: Date | string | null;
+  verificationSecret?: string | null;
+  tags?: Prisma.AgentCreatetagsInput | string[];
+  metadata?: string | null;
+  icon?: string | null;
+  agentIdentifier?: string | null;
+  networkIdentifier?: string | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedCreateNestedManyWithoutAgentInput;
+  agentReference?: Prisma.AgentReferenceUncheckedCreateNestedOneWithoutAgentInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedCreateNestedManyWithoutAgentInput;
+  mipJobs?: Prisma.MipJobUncheckedCreateNestedManyWithoutAgentInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedCreateNestedManyWithoutAgentInput;
+};
+
+export type AgentCreateOrConnectWithoutX402PaymentAttemptsInput = {
+  where: Prisma.AgentWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+};
+
+export type AgentUpsertWithoutX402PaymentAttemptsInput = {
+  update: Prisma.XOR<
+    Prisma.AgentUpdateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.AgentCreateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedCreateWithoutX402PaymentAttemptsInput
+  >;
+  where?: Prisma.AgentWhereInput;
+};
+
+export type AgentUpdateToOneWithWhereWithoutX402PaymentAttemptsInput = {
+  where?: Prisma.AgentWhereInput;
+  data: Prisma.XOR<
+    Prisma.AgentUpdateWithoutX402PaymentAttemptsInput,
+    Prisma.AgentUncheckedUpdateWithoutX402PaymentAttemptsInput
+  >;
+};
+
+export type AgentUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  user?: Prisma.UserUpdateOneRequiredWithoutAgentsNestedInput;
+  organization?: Prisma.OrganizationUpdateOneWithoutAgentsNestedInput;
+  integrationConnection?: Prisma.IntegrationConnectionUpdateOneWithoutAgentsNestedInput;
+  veridianCredentials?: Prisma.VeridianCredentialUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+};
+
+export type AgentUncheckedUpdateWithoutX402PaymentAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string;
+  name?: Prisma.StringFieldUpdateOperationsInput | string;
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  extendedDescription?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  apiUrl?: Prisma.StringFieldUpdateOperationsInput | string;
+  userId?: Prisma.StringFieldUpdateOperationsInput | string;
+  organizationId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  registrationState?:
+    | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
+    | $Enums.RegistrationState;
+  runtimeProvider?:
+    | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
+    | $Enums.AgentRuntimeProvider;
+  integrationConnectionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  verificationStatus?:
+    | Prisma.NullableEnumVerificationStatusFieldUpdateOperationsInput
+    | $Enums.VerificationStatus
+    | null;
+  veridianCredentialId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallenge?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  verificationChallengeGeneratedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
+  verificationSecret?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  tags?: Prisma.AgentUpdatetagsInput | string[];
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  agentIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  networkIdentifier?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  pricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  veridianCredentials?: Prisma.VeridianCredentialUncheckedUpdateManyWithoutAgentNestedInput;
+  agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
+  activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
+  mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentCreateManyUserInput = {
@@ -2653,6 +3205,8 @@ export type AgentUpdateWithoutUserInput = {
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutUserInput = {
@@ -2718,6 +3272,8 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateManyWithoutUserInput = {
@@ -2864,6 +3420,8 @@ export type AgentUpdateWithoutOrganizationInput = {
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutOrganizationInput = {
@@ -2926,6 +3484,8 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
@@ -3069,6 +3629,8 @@ export type AgentUpdateWithoutIntegrationConnectionInput = {
   agentReference?: Prisma.AgentReferenceUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateWithoutIntegrationConnectionInput = {
@@ -3131,6 +3693,8 @@ export type AgentUncheckedUpdateWithoutIntegrationConnectionInput = {
   agentReference?: Prisma.AgentReferenceUncheckedUpdateOneWithoutAgentNestedInput;
   activityEvents?: Prisma.AgentActivityEventUncheckedUpdateManyWithoutAgentNestedInput;
   mipJobs?: Prisma.MipJobUncheckedUpdateManyWithoutAgentNestedInput;
+  supportedPaymentSources?: Prisma.SupportedPaymentSourceUncheckedUpdateManyWithoutAgentNestedInput;
+  x402PaymentAttempts?: Prisma.X402PaymentAttemptUncheckedUpdateManyWithoutAgentNestedInput;
 };
 
 export type AgentUncheckedUpdateManyWithoutIntegrationConnectionInput = {
@@ -3199,6 +3763,8 @@ export type AgentCountOutputType = {
   veridianCredentials: number;
   activityEvents: number;
   mipJobs: number;
+  supportedPaymentSources: number;
+  x402PaymentAttempts: number;
 };
 
 export type AgentCountOutputTypeSelect<
@@ -3210,6 +3776,12 @@ export type AgentCountOutputTypeSelect<
     | AgentCountOutputTypeCountVeridianCredentialsArgs;
   activityEvents?: boolean | AgentCountOutputTypeCountActivityEventsArgs;
   mipJobs?: boolean | AgentCountOutputTypeCountMipJobsArgs;
+  supportedPaymentSources?:
+    | boolean
+    | AgentCountOutputTypeCountSupportedPaymentSourcesArgs;
+  x402PaymentAttempts?:
+    | boolean
+    | AgentCountOutputTypeCountX402PaymentAttemptsArgs;
 };
 
 /**
@@ -3255,6 +3827,26 @@ export type AgentCountOutputTypeCountMipJobsArgs<
   where?: Prisma.MipJobWhereInput;
 };
 
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeCountSupportedPaymentSourcesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.SupportedPaymentSourceWhereInput;
+};
+
+/**
+ * AgentCountOutputType without action
+ */
+export type AgentCountOutputTypeCountX402PaymentAttemptsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.X402PaymentAttemptWhereInput;
+};
+
 export type AgentSelect<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
@@ -3295,6 +3887,12 @@ export type AgentSelect<
     agentReference?: boolean | Prisma.Agent$agentReferenceArgs<ExtArgs>;
     activityEvents?: boolean | Prisma.Agent$activityEventsArgs<ExtArgs>;
     mipJobs?: boolean | Prisma.Agent$mipJobsArgs<ExtArgs>;
+    supportedPaymentSources?:
+      | boolean
+      | Prisma.Agent$supportedPaymentSourcesArgs<ExtArgs>;
+    x402PaymentAttempts?:
+      | boolean
+      | Prisma.Agent$x402PaymentAttemptsArgs<ExtArgs>;
     _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["agent"]
@@ -3446,6 +4044,10 @@ export type AgentInclude<
   agentReference?: boolean | Prisma.Agent$agentReferenceArgs<ExtArgs>;
   activityEvents?: boolean | Prisma.Agent$activityEventsArgs<ExtArgs>;
   mipJobs?: boolean | Prisma.Agent$mipJobsArgs<ExtArgs>;
+  supportedPaymentSources?:
+    | boolean
+    | Prisma.Agent$supportedPaymentSourcesArgs<ExtArgs>;
+  x402PaymentAttempts?: boolean | Prisma.Agent$x402PaymentAttemptsArgs<ExtArgs>;
   _count?: boolean | Prisma.AgentCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type AgentIncludeCreateManyAndReturn<
@@ -3482,6 +4084,8 @@ export type $AgentPayload<
     agentReference: Prisma.$AgentReferencePayload<ExtArgs> | null;
     activityEvents: Prisma.$AgentActivityEventPayload<ExtArgs>[];
     mipJobs: Prisma.$MipJobPayload<ExtArgs>[];
+    supportedPaymentSources: Prisma.$SupportedPaymentSourcePayload<ExtArgs>[];
+    x402PaymentAttempts: Prisma.$X402PaymentAttemptPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -4143,6 +4747,32 @@ export interface Prisma__AgentClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$MipJobPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  supportedPaymentSources<
+    T extends Prisma.Agent$supportedPaymentSourcesArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Agent$supportedPaymentSourcesArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$SupportedPaymentSourcePayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  x402PaymentAttempts<
+    T extends Prisma.Agent$x402PaymentAttemptsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Agent$x402PaymentAttemptsArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$X402PaymentAttemptPayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -4821,6 +5451,68 @@ export type Agent$mipJobsArgs<
   take?: number;
   skip?: number;
   distinct?: Prisma.MipJobScalarFieldEnum | Prisma.MipJobScalarFieldEnum[];
+};
+
+/**
+ * Agent.supportedPaymentSources
+ */
+export type Agent$supportedPaymentSourcesArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the SupportedPaymentSource
+   */
+  select?: Prisma.SupportedPaymentSourceSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the SupportedPaymentSource
+   */
+  omit?: Prisma.SupportedPaymentSourceOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SupportedPaymentSourceInclude<ExtArgs> | null;
+  where?: Prisma.SupportedPaymentSourceWhereInput;
+  orderBy?:
+    | Prisma.SupportedPaymentSourceOrderByWithRelationInput
+    | Prisma.SupportedPaymentSourceOrderByWithRelationInput[];
+  cursor?: Prisma.SupportedPaymentSourceWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.SupportedPaymentSourceScalarFieldEnum
+    | Prisma.SupportedPaymentSourceScalarFieldEnum[];
+};
+
+/**
+ * Agent.x402PaymentAttempts
+ */
+export type Agent$x402PaymentAttemptsArgs<
+  ExtArgs extends runtime.Types.Extensions.InternalArgs =
+    runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the X402PaymentAttempt
+   */
+  select?: Prisma.X402PaymentAttemptSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the X402PaymentAttempt
+   */
+  omit?: Prisma.X402PaymentAttemptOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.X402PaymentAttemptInclude<ExtArgs> | null;
+  where?: Prisma.X402PaymentAttemptWhereInput;
+  orderBy?:
+    | Prisma.X402PaymentAttemptOrderByWithRelationInput
+    | Prisma.X402PaymentAttemptOrderByWithRelationInput[];
+  cursor?: Prisma.X402PaymentAttemptWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.X402PaymentAttemptScalarFieldEnum
+    | Prisma.X402PaymentAttemptScalarFieldEnum[];
 };
 
 /**

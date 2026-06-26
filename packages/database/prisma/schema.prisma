@@ -49,9 +49,12 @@ model User {
   kycVerification   KycVerification? @relation(fields: [kycVerificationId], references: [id], onDelete: SetNull)
 
   // New domain relations
-  createdOrgApiKeys OrgApiKey[]
-  kycSubmissions    KycSubmission[]
-  walletCaches      WalletCache[]
+  kycSubmissions          KycSubmission[]
+  walletCaches            WalletCache[]
+  x402EvmWallets          X402EvmWallet[]
+  x402Networks            X402Network[]
+  x402BudgetsCreated      X402WalletBudget[]  @relation("X402WalletBudgetCreatedBy")
+  x402PaymentAttempts     X402PaymentAttempt[]
 
   // Payment node: API key for this user (encrypted, server-side only; created on signup)
   paymentNodeApiKeyEncrypted String?
@@ -154,9 +157,10 @@ model Organization {
 
   // Domain relations
   agents                 Agent[]
-  orgApiKeys             OrgApiKey[]
   kybSubmissions         KybSubmission[]
   integrationConnections IntegrationConnection[]
+  x402EvmWallets         X402EvmWallet[]
+  x402Networks           X402Network[]
 
   @@unique([slug])
   @@unique([stripeCustomerId])
@@ -229,6 +233,8 @@ model Apikey {
   metadata            String? // Better Auth apiKey plugin (enableMetadata: true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  x402WalletBudgets   X402WalletBudget[]
+  x402PaymentAttempts X402PaymentAttempt[]
 
   @@map("apikey")
 }
@@ -466,9 +472,11 @@ model Agent {
   updatedAt DateTime @updatedAt
 
   // Domain relations
-  agentReference AgentReference?
-  activityEvents AgentActivityEvent[]
-  mipJobs        MipJob[]
+  agentReference          AgentReference?
+  activityEvents          AgentActivityEvent[]
+  mipJobs                 MipJob[]
+  supportedPaymentSources SupportedPaymentSource[]
+  x402PaymentAttempts     X402PaymentAttempt[]
 
   @@index([userId])
   @@index([organizationId])
@@ -562,36 +570,6 @@ enum AgentActivityEventType {
 }
 
 // ─── New Domain Entity Models ─────────────────────────────────────────────────
-
-/// Organization-scoped API keys for programmatic access to the platform.
-///
-/// NOTE: This is intentionally named OrgApiKey (not ApiKey) to avoid a Prisma 7
-/// codegen collision with Better Auth's built-in `Apikey` model (table: apikey).
-/// These are completely different — Better Auth's Apikey is user-scoped and
-/// manages authentication tokens. OrgApiKey is org-scoped, supports custom
-/// scopes, and is meant for machine-to-machine / programmatic access.
-/// DB table: api_key
-model OrgApiKey {
-  id             String       @id @default(cuid())
-  name           String
-  keyHash        String       @unique // Hashed full key — never store plaintext
-  keyPrefix      String // First 8 chars shown in UI for identification
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById    String?
-  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  scopes         String[]     @default([]) // Valid: "agents:read", "agents:write", "billing:read", "billing:write", "members:read", "members:write"
-  enabled        Boolean      @default(true)
-  lastUsedAt     DateTime?
-  expiresAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([organizationId])
-  @@index([createdById])
-  @@index([organizationId, enabled, lastUsedAt]) // Compound: API key usage tracking
-  @@map("api_key")
-}
 
 /// Tracks each individual KYC (Know Your Customer) document submission attempt
 /// for a user via Sumsub. Provides an audit trail of all attempts.
@@ -770,6 +748,204 @@ model VeridianCredential {
   @@map("veridian_credential")
 }
 
+// ─── x402 EVM payment rail (ported from masumi-payment-service; user/org scoped) ─
+
+/// Advertised payment option on an agent (Cardano escrow and/or EVM x402 Exact).
+model SupportedPaymentSource {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  chain   String
+  network String
+  /// Cardano escrow rows set paymentSourceType + address; EVM x402 rows leave null.
+  paymentSourceType String?
+  address           String
+  scheme            X402PaymentScheme?
+  asset             String?
+  amount            BigInt?
+  decimals          Int?
+  payTo             String?
+  resource          String?
+  extra             Json?
+
+  x402PaymentAttempts X402PaymentAttempt[]
+
+  @@index([address])
+  @@index([paymentSourceType])
+  @@index([chain, network])
+  @@index([agentId])
+  @@map("supported_payment_source")
+}
+
+model X402Network {
+  id                  String         @id @default(cuid())
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId      String?
+  organization        Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  caip2Id             String
+  displayName         String
+  rpcUrl              String
+  isTestnet           Boolean        @default(false)
+  isEnabled           Boolean        @default(true)
+  defaultAsset        String?
+  facilitatorWalletId String?
+  createdByUserId     String?
+  FacilitatorWallet   X402EvmWallet? @relation("X402NetworkFacilitatorWallet", fields: [facilitatorWalletId], references: [id], onDelete: SetNull)
+  WalletBudgets       X402WalletBudget[]
+  PaymentAttempts     X402PaymentAttempt[]
+
+  @@index([isEnabled])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([userId, caip2Id])
+  @@map("x402_network")
+}
+
+model X402EvmWallet {
+  id                  String                        @id @default(cuid())
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  userId              String
+  user                User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId      String?
+  organization        Organization?                 @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  address             String
+  type                X402EvmWalletType
+  encryptedPrivateKey String                        @db.Text
+  note                String?
+  deletedAt           DateTime?
+  createdByUserId     String?
+  FacilitatesNetworks X402Network[]                 @relation("X402NetworkFacilitatorWallet")
+  Budgets             X402WalletBudget[]
+  PaymentAttempts     X402PaymentAttempt[]
+  LowBalanceRules     X402EvmWalletLowBalanceRule[]
+
+  @@unique([address])
+  @@index([deletedAt])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([type])
+  @@map("x402_evm_wallet")
+}
+
+model X402EvmWalletLowBalanceRule {
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  evmWalletId     String
+  caip2Network    String
+  asset           String
+  thresholdAmount BigInt
+  enabled         Boolean          @default(true)
+  status          LowBalanceStatus @default(Unknown)
+  lastKnownAmount BigInt?
+  lastCheckedAt   DateTime?
+  lastAlertedAt   DateTime?
+  EvmWallet       X402EvmWallet    @relation(fields: [evmWalletId], references: [id], onDelete: Cascade)
+
+  @@unique([evmWalletId, caip2Network, asset])
+  @@index([evmWalletId, enabled])
+  @@index([enabled, status])
+  @@map("x402_evm_wallet_low_balance_rule")
+}
+
+model X402WalletBudget {
+  id              String        @id @default(cuid())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  apiKeyId        String
+  ApiKey          Apikey        @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  evmWalletId     String
+  caip2Network    String
+  asset           String
+  remainingAmount BigInt
+  spentAmount     BigInt        @default(0)
+  enabled         Boolean       @default(true)
+  createdByUserId String?
+  CreatedByUser   User?         @relation("X402WalletBudgetCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  EvmWallet       X402EvmWallet @relation(fields: [evmWalletId], references: [id], onDelete: Cascade)
+  x402NetworkId   String
+  Network         X402Network   @relation(fields: [x402NetworkId], references: [id], onDelete: Restrict)
+
+  @@unique([apiKeyId, evmWalletId, caip2Network, asset])
+  @@index([apiKeyId, enabled])
+  @@index([evmWalletId, enabled])
+  @@index([caip2Network, asset])
+  @@index([createdByUserId])
+  @@index([userId])
+  @@index([x402NetworkId])
+  @@map("x402_wallet_budget")
+}
+
+model X402PaymentAttempt {
+  id                       String                  @id @default(cuid())
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  direction                X402PaymentDirection
+  status                   X402PaymentStatus
+  userId                   String
+  user                     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId                 String?
+  ApiKey                   Apikey?                 @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  evmWalletId              String?
+  agentId                  String?
+  supportedPaymentSourceId String?
+  caip2Network             String
+  scheme                   X402PaymentScheme       @default(Exact)
+  asset                    String
+  amount                   BigInt
+  payTo                    String
+  payer                    String?
+  resource                 String?
+  paymentPayloadHash       String?
+  paymentPayload           Json?
+  paymentIdentifier        String?
+  errorReason              String?
+  errorMessage             String?
+  EvmWallet                X402EvmWallet?          @relation(fields: [evmWalletId], references: [id], onDelete: SetNull)
+  Agent                    Agent?                  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  SupportedPaymentSource   SupportedPaymentSource? @relation(fields: [supportedPaymentSourceId], references: [id], onDelete: SetNull)
+  x402NetworkId            String
+  Network                  X402Network             @relation(fields: [x402NetworkId], references: [id], onDelete: Restrict)
+  Settlement               X402Settlement?
+
+  @@index([userId, createdAt])
+  @@index([apiKeyId, createdAt])
+  @@index([agentId, createdAt])
+  @@index([supportedPaymentSourceId])
+  @@index([paymentIdentifier])
+  @@index([caip2Network, asset])
+  @@index([status, createdAt])
+  @@index([x402NetworkId])
+  @@map("x402_payment_attempt")
+}
+
+model X402Settlement {
+  id                 String             @id @default(cuid())
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  paymentAttemptId   String             @unique
+  paymentPayloadHash String             @unique
+  success            Boolean
+  txHash             String?
+  caip2Network       String
+  amount             BigInt?
+  payer              String?
+  rawResponse        Json?
+  PaymentAttempt     X402PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+
+  @@index([txHash])
+  @@index([caip2Network])
+  @@map("x402_settlement")
+}
+
 enum CredentialStatus {
   PENDING
   ISSUED
@@ -796,4 +972,33 @@ enum AgentReferenceStatus {
   ACTIVE // Live and discoverable in the registry
   INACTIVE // Temporarily disabled in the registry
   DEREGISTERED // Permanently removed from the registry
+}
+
+enum X402EvmWalletType {
+  Purchasing
+  Selling
+}
+
+enum X402PaymentScheme {
+  Exact
+}
+
+enum X402PaymentDirection {
+  InboundVerify
+  InboundSettle
+  OutboundPayment
+}
+
+enum X402PaymentStatus {
+  PaymentRequired
+  Verified
+  Settled
+  Failed
+  Replayed
+}
+
+enum LowBalanceStatus {
+  Unknown
+  Healthy
+  Low
 }

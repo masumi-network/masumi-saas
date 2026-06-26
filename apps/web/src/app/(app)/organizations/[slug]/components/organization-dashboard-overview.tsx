@@ -252,6 +252,14 @@ export function OrganizationDashboardOverview({
               {tDetail("switchTo")}
             </Button>
           )}
+          {!isLoading && isActive && (
+            <Button
+              variant="outline"
+              onClick={() => setActiveOrganization(null)}
+            >
+              {tDetail("switchToPersonal")}
+            </Button>
+          )}
           {isOwnerOrAdmin && (
             <InviteMemberDialog
               organizationId={organization.id}

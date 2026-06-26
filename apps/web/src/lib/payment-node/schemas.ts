@@ -3,6 +3,7 @@
  * Parse all responses through these so the app stays in sync with the API.
  */
 
+import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
 import { z } from "zod";
 
 // ─── Primitives & enums ─────────────────────────────────────────────────────
@@ -199,6 +200,7 @@ export const registerAgentInputSchema = z.object({
       Pricing: z.array(unitAmountSchema),
     }),
   ]),
+  supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
 });
 export type RegisterAgentInput = z.infer<typeof registerAgentInputSchema>;
 
@@ -624,6 +626,46 @@ export const getUtxosOutputSchema = z.object({
 export type GetUtxosOutput = z.infer<typeof getUtxosOutputSchema>;
 export type Utxo = z.infer<typeof utxoSchema>;
 export type UtxoAmount = z.infer<typeof utxoAmountSchema>;
+
+// ─── Webhooks ───────────────────────────────────────────────────────────────
+
+export const webhookEventTypeSchema = z.enum([
+  "PURCHASE_ON_CHAIN_STATUS_CHANGED",
+  "PAYMENT_ON_CHAIN_STATUS_CHANGED",
+  "PURCHASE_ON_ERROR",
+  "PAYMENT_ON_ERROR",
+  "WALLET_LOW_BALANCE",
+  "X402_PAYMENT_SETTLED",
+  "X402_PAYMENT_FAILED",
+  "X402_WALLET_LOW_BALANCE",
+]);
+
+export const webhookEndpointSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  Events: z.array(webhookEventTypeSchema),
+  name: z.string().nullable(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  paymentSourceId: z.string().nullable(),
+  failureCount: z.number(),
+  lastSuccessAt: z.string().nullable(),
+  disabledAt: z.string().nullable(),
+  CreatedBy: z
+    .object({
+      apiKeyId: z.string(),
+      apiKeyToken: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+export const listWebhooksOutputSchema = z.object({
+  Webhooks: z.array(webhookEndpointSchema),
+});
+export type ListWebhooksOutput = z.infer<typeof listWebhooksOutputSchema>;
+export type WebhookEndpoint = z.infer<typeof webhookEndpointSchema>;
+export type WebhookEventType = z.infer<typeof webhookEventTypeSchema>;
 
 // ─── Response envelope ──────────────────────────────────────────────────────
 

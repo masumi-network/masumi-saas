@@ -45,9 +45,15 @@ import {
 } from "@/components/ui/tooltip";
 import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { useX402Networks } from "@/lib/hooks/use-x402-networks";
 import { cn } from "@/lib/utils";
 
 import { AgentIconPicker } from "./agent-icon-picker";
+import {
+  validateX402Options,
+  type X402OptionDraft,
+  X402OptionsSection,
+} from "./x402-options-section";
 
 const CURRENCY_SYMBOL = "$";
 const NEW_LANGDOCK_CONNECTION = "__new__";
@@ -301,6 +307,10 @@ export function RegisterAgentDialog({
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
+  const { networks: x402Networks, isLoading: x402NetworksLoading } =
+    useX402Networks({ silentErrors: true });
+  const [x402Options, setX402Options] = useState<X402OptionDraft[]>([]);
+  const [x402Error, setX402Error] = useState<string | null>(null);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -453,6 +463,12 @@ export function RegisterAgentDialog({
     defaultValue: "Fixed",
   }) as PricingMode;
 
+  useEffect(() => {
+    if (pricingType !== "Free") return;
+    setX402Options([]);
+    setX402Error(null);
+  }, [pricingType]);
+
   const runtimeProvider = useWatch({
     control: form.control,
     name: "runtimeProvider",
@@ -505,6 +521,8 @@ export function RegisterAgentDialog({
     });
     setTags([]);
     setTagInput("");
+    setX402Options([]);
+    setX402Error(null);
   };
 
   const finalizeSuccessfulSubmit = () => {
@@ -565,6 +583,17 @@ export function RegisterAgentDialog({
     setIsLoading(true);
     const submitId = ++submitIdRef.current;
     try {
+      if (data.pricingType !== "Free" && x402Options.length > 0) {
+        const x402ValidationError = validateX402Options(x402Options);
+        if (x402ValidationError) {
+          setX402Error(x402ValidationError);
+          toast.error(x402ValidationError);
+          setIsLoading(false);
+          return;
+        }
+      }
+      setX402Error(null);
+
       const exampleOutputs = (data.exampleOutputs ?? []).filter(
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
@@ -583,6 +612,22 @@ export function RegisterAgentDialog({
                     currency: "USD",
                   })),
               };
+
+      const evmSupportedSources =
+        data.pricingType === "Free"
+          ? []
+          : x402Options.map((option) => ({
+              chain: "EVM" as const,
+              network: option.caip2Network,
+              scheme: "Exact" as const,
+              asset: option.asset,
+              amount: option.amount,
+              decimals: Number(option.decimals),
+              payTo: option.payTo,
+              ...(option.resource.trim()
+                ? { resource: option.resource.trim() }
+                : {}),
+            }));
 
       const body = {
         runtimeProvider: data.runtimeProvider,
@@ -617,6 +662,9 @@ export function RegisterAgentDialog({
         capabilityName: data.capabilityName?.trim() ?? "",
         capabilityVersion: data.capabilityVersion?.trim() ?? "",
         exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
+        ...(evmSupportedSources.length > 0
+          ? { supportedPaymentSources: evmSupportedSources }
+          : {}),
       };
 
       const res = await fetch("/api/agents", {
@@ -1081,6 +1129,17 @@ export function RegisterAgentDialog({
                     t={t}
                     pricingMode={pricingType}
                   />
+
+                  {pricingType !== "Free" ? (
+                    <X402OptionsSection
+                      options={x402Options}
+                      networks={x402Networks}
+                      networksLoading={x402NetworksLoading}
+                      onChange={setX402Options}
+                      error={x402Error}
+                      t={t}
+                    />
+                  ) : null}
                 </div>
 
                 <Separator />

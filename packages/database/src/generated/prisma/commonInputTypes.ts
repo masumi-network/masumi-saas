@@ -863,6 +863,242 @@ export type EnumCredentialStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumCredentialStatusFilter<$PrismaModel>;
 };
 
+export type EnumX402PaymentSchemeNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme
+    | null;
+};
+
+export type EnumX402PaymentSchemeNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>;
+};
+
+export type EnumX402EvmWalletTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402EvmWalletType
+    | Prisma.EnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>
+    | $Enums.X402EvmWalletType;
+};
+
+export type EnumX402EvmWalletTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402EvmWalletType
+    | Prisma.EnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402EvmWalletTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402EvmWalletType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>;
+};
+
+export type BigIntFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBigIntFilter<$PrismaModel> | bigint | number;
+};
+
+export type EnumLowBalanceStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.LowBalanceStatus
+    | Prisma.EnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>
+    | $Enums.LowBalanceStatus;
+};
+
+export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _avg?: Prisma.NestedFloatFilter<$PrismaModel>;
+  _sum?: Prisma.NestedBigIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedBigIntFilter<$PrismaModel>;
+  _max?: Prisma.NestedBigIntFilter<$PrismaModel>;
+};
+
+export type EnumLowBalanceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.LowBalanceStatus
+    | Prisma.EnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumLowBalanceStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.LowBalanceStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>;
+};
+
+export type EnumX402PaymentDirectionFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentDirection
+    | Prisma.EnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>
+    | $Enums.X402PaymentDirection;
+};
+
+export type EnumX402PaymentStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentStatus
+    | Prisma.EnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>
+    | $Enums.X402PaymentStatus;
+};
+
+export type EnumX402PaymentSchemeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme;
+};
+
+export type EnumX402PaymentDirectionWithAggregatesFilter<$PrismaModel = never> =
+  {
+    equals?:
+      | $Enums.X402PaymentDirection
+      | Prisma.EnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.X402PaymentDirection[]
+      | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.X402PaymentDirection[]
+      | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+    not?:
+      | Prisma.NestedEnumX402PaymentDirectionWithAggregatesFilter<$PrismaModel>
+      | $Enums.X402PaymentDirection;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>;
+  };
+
+export type EnumX402PaymentStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentStatus
+    | Prisma.EnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>;
+};
+
+export type EnumX402PaymentSchemeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>;
+};
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>;
@@ -1641,4 +1877,249 @@ export type NestedEnumCredentialStatusWithAggregatesFilter<
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
   _min?: Prisma.NestedEnumCredentialStatusFilter<$PrismaModel>;
   _max?: Prisma.NestedEnumCredentialStatusFilter<$PrismaModel>;
+};
+
+export type NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme
+    | null;
+};
+
+export type NestedEnumX402PaymentSchemeNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>
+    | null;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentSchemeNullableFilter<$PrismaModel>;
+};
+
+export type NestedEnumX402EvmWalletTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402EvmWalletType
+    | Prisma.EnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>
+    | $Enums.X402EvmWalletType;
+};
+
+export type NestedEnumX402EvmWalletTypeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402EvmWalletType
+    | Prisma.EnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402EvmWalletType[]
+    | Prisma.ListEnumX402EvmWalletTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402EvmWalletTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402EvmWalletType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402EvmWalletTypeFilter<$PrismaModel>;
+};
+
+export type NestedBigIntFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBigIntFilter<$PrismaModel> | bigint | number;
+};
+
+export type NestedEnumLowBalanceStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.LowBalanceStatus
+    | Prisma.EnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>
+    | $Enums.LowBalanceStatus;
+};
+
+export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel>;
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _avg?: Prisma.NestedFloatFilter<$PrismaModel>;
+  _sum?: Prisma.NestedBigIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedBigIntFilter<$PrismaModel>;
+  _max?: Prisma.NestedBigIntFilter<$PrismaModel>;
+};
+
+export type NestedEnumLowBalanceStatusWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.LowBalanceStatus
+    | Prisma.EnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.LowBalanceStatus[]
+    | Prisma.ListEnumLowBalanceStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumLowBalanceStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.LowBalanceStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumLowBalanceStatusFilter<$PrismaModel>;
+};
+
+export type NestedEnumX402PaymentDirectionFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentDirection
+    | Prisma.EnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>
+    | $Enums.X402PaymentDirection;
+};
+
+export type NestedEnumX402PaymentStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentStatus
+    | Prisma.EnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>
+    | $Enums.X402PaymentStatus;
+};
+
+export type NestedEnumX402PaymentSchemeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme;
+};
+
+export type NestedEnumX402PaymentDirectionWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402PaymentDirection
+    | Prisma.EnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentDirection[]
+    | Prisma.ListEnumX402PaymentDirectionFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentDirectionWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentDirection;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentDirectionFilter<$PrismaModel>;
+};
+
+export type NestedEnumX402PaymentStatusWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402PaymentStatus
+    | Prisma.EnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentStatus[]
+    | Prisma.ListEnumX402PaymentStatusFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentStatusFilter<$PrismaModel>;
+};
+
+export type NestedEnumX402PaymentSchemeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.X402PaymentScheme
+    | Prisma.EnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.X402PaymentScheme[]
+    | Prisma.ListEnumX402PaymentSchemeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumX402PaymentSchemeWithAggregatesFilter<$PrismaModel>
+    | $Enums.X402PaymentScheme;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumX402PaymentSchemeFilter<$PrismaModel>;
 };
