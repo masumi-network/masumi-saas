@@ -58,8 +58,6 @@ export function useOrgApiKeys(options?: { enabled?: boolean }) {
   };
 }
 
-const PAGE_SIZE = 20;
-
 function useX402NetworksQuery(options: {
   silentErrors?: boolean;
   isTestnet?: boolean;
