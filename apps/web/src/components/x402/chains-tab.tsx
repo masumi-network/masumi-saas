@@ -27,9 +27,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { useX402Rail } from "@/lib/context/x402-rail-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
-import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { cn, shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
 import {
@@ -39,7 +38,6 @@ import {
   getEvmChainPresets,
 } from "@/lib/x402/evm-config";
 import type { X402Network } from "@/lib/x402/types";
-import { isTestnetEnv } from "@/lib/x402-rail";
 
 import { X402FormDialog } from "./x402-form-dialog";
 
@@ -261,15 +259,13 @@ export function ChainDialog({
   onSaved: () => void;
 }) {
   const t = useTranslations("App.X402.Chains");
-  const { network: paymentNetwork, setNetwork } = usePaymentNetwork();
-  const resolvedEnvironment = paymentNetwork;
-  const alternateNetwork: PaymentNodeNetwork =
-    paymentNetwork === "Mainnet" ? "Preprod" : "Mainnet";
+  const { x402IsTestnet, setX402IsTestnet } = useX402Rail();
   const { wallets } = useX402Wallets(open, "Selling");
   const [isSaving, setIsSaving] = useState(false);
   const [isSwitchAnimating, setIsSwitchAnimating] = useState(false);
-  const lockedTestnet = isTestnetEnv(resolvedEnvironment);
+  const lockedTestnet = x402IsTestnet;
   const evmEnvironmentLabel = lockedTestnet ? t("testnet") : t("mainnet");
+  const alternateEvmEnvironment = lockedTestnet ? t("mainnet") : t("testnet");
 
   const {
     register,
@@ -306,9 +302,9 @@ export function ChainDialog({
     setValue("isTestnet", lockedTestnet);
   }, [editing, lockedTestnet, open, setValue]);
 
-  const handleSwitchNetwork = () => {
+  const handleSwitchEnvironment = () => {
     setIsSwitchAnimating(true);
-    setNetwork(alternateNetwork);
+    setX402IsTestnet(!x402IsTestnet);
   };
 
   const applyChainPreset = (chain: EvmChainConfig) => {
@@ -526,7 +522,6 @@ export function ChainDialog({
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="outline" className="whitespace-nowrap">
               {t("environmentBadge", {
-                network: resolvedEnvironment,
                 evmEnvironment: evmEnvironmentLabel,
               })}
             </Badge>
@@ -537,8 +532,10 @@ export function ChainDialog({
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 shrink-0"
-                  aria-label={t("switchNetwork", { network: alternateNetwork })}
-                  onClick={handleSwitchNetwork}
+                  aria-label={t("switchEnvironment", {
+                    evmEnvironment: alternateEvmEnvironment,
+                  })}
+                  onClick={handleSwitchEnvironment}
                 >
                   <ArrowLeftRight
                     className={cn(
@@ -550,7 +547,9 @@ export function ChainDialog({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
-                {t("switchNetwork", { network: alternateNetwork })}
+                {t("switchEnvironment", {
+                  evmEnvironment: alternateEvmEnvironment,
+                })}
               </TooltipContent>
             </Tooltip>
           </div>

@@ -21,7 +21,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Steps } from "@/components/ui/steps";
 import { canAccessX402Workspace } from "@/lib/auth/org-roles";
 import { useOrganizationContext } from "@/lib/context/organization-context";
-import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
 import {
   useX402Budgets,
@@ -30,7 +29,7 @@ import {
 } from "@/lib/hooks/use-x402";
 import { cn, shortenAddress } from "@/lib/utils";
 import type { X402Network, X402Wallet } from "@/lib/x402/types";
-import { chainsForEnv, isTestnetEnv } from "@/lib/x402-rail";
+import { chainsForIsTestnet } from "@/lib/x402-rail";
 
 import { BudgetDialog } from "../budgets-tab";
 import { ChainDialog } from "../chains-tab";
@@ -48,16 +47,22 @@ export function X402SetupWelcome({
   const t = useTranslations("App.X402.Setup");
   const tChains = useTranslations("App.X402.Chains");
   const queryClient = useQueryClient();
-  const { network } = usePaymentNetwork();
-  const { setActiveRail, setSelectedX402ChainId, setIsSetupMode } =
-    useX402Rail();
+  const {
+    x402IsTestnet,
+    setActiveRail,
+    setSelectedX402ChainId,
+    setIsSetupMode,
+  } = useX402Rail();
+  const environment = x402IsTestnet ? tChains("testnet") : tChains("mainnet");
   const { activeOrganization, activeOrganizationId } = useOrganizationContext();
   const showBudgetFeatures = canAccessX402Workspace(
     activeOrganizationId,
     activeOrganization?.role,
   );
   const { wallets, isLoading: walletsLoading } = useX402Wallets();
-  const { networks, isLoading: networksLoading } = useX402Networks({ network });
+  const { networks, isLoading: networksLoading } = useX402Networks({
+    allEnvironments: true,
+  });
   const { budgets, isLoading: budgetsLoading } = useX402Budgets({
     enabled: showBudgetFeatures,
   });
@@ -69,8 +74,8 @@ export function X402SetupWelcome({
   const loading =
     walletsLoading || networksLoading || (showBudgetFeatures && budgetsLoading);
   const envChains = useMemo(
-    () => chainsForEnv(networks, network),
-    [networks, network],
+    () => chainsForIsTestnet(networks, x402IsTestnet),
+    [networks, x402IsTestnet],
   );
   const hasSellingWallet = wallets.some((wallet) => wallet.type === "Selling");
   const hasPurchasingWallet = wallets.some(
@@ -81,33 +86,32 @@ export function X402SetupWelcome({
     envChains.find((chain) => !!chain.facilitatorWalletId) ?? null;
   const wrongEnvChain = useMemo(() => {
     if (hasFacilitator) return null;
-    const wantTestnet = isTestnetEnv(network);
     return (
       networks.find(
         (chain) =>
           chain.isEnabled &&
           !!chain.facilitatorWalletId &&
-          chain.isTestnet !== wantTestnet,
+          chain.isTestnet !== x402IsTestnet,
       ) ?? null
     );
-  }, [hasFacilitator, network, networks]);
+  }, [hasFacilitator, x402IsTestnet, networks]);
   const envCaip2 = useMemo(() => {
-    const wantTestnet = isTestnetEnv(network);
     return new Set(
-      networks.filter((n) => n.isTestnet === wantTestnet).map((n) => n.caip2Id),
+      networks
+        .filter((n) => n.isTestnet === x402IsTestnet)
+        .map((n) => n.caip2Id),
     );
-  }, [networks, network]);
+  }, [networks, x402IsTestnet]);
   const hasBudget = budgets.some((budget) => envCaip2.has(budget.caip2Network));
 
   const chainToConfigure: X402Network | null = useMemo(() => {
-    const wantTestnet = isTestnetEnv(network);
-    const envScoped = networks.filter((n) => n.isTestnet === wantTestnet);
+    const envScoped = networks.filter((n) => n.isTestnet === x402IsTestnet);
     return (
       envScoped.find((n) => n.isEnabled && !n.facilitatorWalletId) ??
       envScoped[0] ??
       null
     );
-  }, [networks, network]);
+  }, [networks, x402IsTestnet]);
 
   const wizardSteps = useMemo(
     () =>
@@ -119,7 +123,7 @@ export function X402SetupWelcome({
             },
             {
               title: t("facilitatorStepTitle"),
-              description: t("facilitatorStepDescription", { network }),
+              description: t("facilitatorStepDescription", { environment }),
             },
             {
               title: t("payingTitle"),
@@ -128,7 +132,7 @@ export function X402SetupWelcome({
             },
             {
               title: t("readyTitle"),
-              description: t("readyDescription", { network }),
+              description: t("readyDescription", { environment }),
             },
           ]
         : [
@@ -138,14 +142,14 @@ export function X402SetupWelcome({
             },
             {
               title: t("facilitatorStepTitle"),
-              description: t("facilitatorStepDescription", { network }),
+              description: t("facilitatorStepDescription", { environment }),
             },
             {
               title: t("readyTitle"),
-              description: t("readyDescription", { network }),
+              description: t("readyDescription", { environment }),
             },
           ],
-    [network, showBudgetFeatures, t],
+    [environment, showBudgetFeatures, t],
   );
 
   const invalidate = () => {
@@ -197,7 +201,7 @@ export function X402SetupWelcome({
   const welcomeContent = (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        {t("welcomeDescription", { network })}
+        {t("welcomeDescription", { environment })}
       </p>
       <ul className="space-y-3">
         {featureItems.map((feature) => (
@@ -271,7 +275,7 @@ export function X402SetupWelcome({
             chainEnv: wrongEnvChain.isTestnet
               ? tChains("testnet")
               : tChains("mainnet"),
-            network,
+            environment,
           })}
         </p>
       ) : hasSellingWallet ? (
@@ -537,7 +541,7 @@ export function X402SetupWelcome({
                   <h3 className="text-sm font-medium">
                     {activeWizardStep.title}
                   </h3>
-                  <Badge variant="outline">{network}</Badge>
+                  <Badge variant="outline">{environment}</Badge>
                   {"optional" in activeWizardStep &&
                   activeWizardStep.optional ? (
                     <Badge variant="secondary">{t("optional")}</Badge>
@@ -589,7 +593,7 @@ export function X402SetupWelcome({
         <ChainDialog
           key={
             openDialog === "chain"
-              ? `chain-${chainToConfigure?.id ?? "new"}-${network}`
+              ? `chain-${chainToConfigure?.id ?? "new"}-${x402IsTestnet ? "testnet" : "mainnet"}`
               : "chain-closed"
           }
           open={openDialog === "chain"}
