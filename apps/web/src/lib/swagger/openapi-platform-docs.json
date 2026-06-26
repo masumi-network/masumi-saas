@@ -145,7 +145,7 @@
           "id": {
             "type": "string"
           },
-          "orgApiKeyId": {
+          "apiKeyId": {
             "type": "string"
           },
           "evmWalletId": {
@@ -183,7 +183,7 @@
         },
         "required": [
           "id",
-          "orgApiKeyId",
+          "apiKeyId",
           "evmWalletId",
           "evmWalletAddress",
           "caip2Network",
@@ -230,7 +230,7 @@
           "userId": {
             "type": "string"
           },
-          "orgApiKeyId": {
+          "apiKeyId": {
             "type": "string",
             "nullable": true
           },
@@ -322,7 +322,7 @@
           "direction",
           "status",
           "userId",
-          "orgApiKeyId",
+          "apiKeyId",
           "evmWalletId",
           "agentId",
           "supportedPaymentSourceId",
@@ -16168,7 +16168,7 @@
                       "payload"
                     ]
                   },
-                  "orgApiKeyId": {
+                  "apiKeyId": {
                     "type": "string"
                   }
                 },
@@ -16466,7 +16466,7 @@
                       "payload"
                     ]
                   },
-                  "orgApiKeyId": {
+                  "apiKeyId": {
                     "type": "string"
                   }
                 },
@@ -16701,9 +16701,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "orgApiKeyId": {
+                  "apiKeyId": {
                     "type": "string",
-                    "description": "Org API key that owns the outbound x402 wallet budget"
+                    "description": "Better Auth API key (mas_*) that owns the outbound wallet budget. Required for session auth; inferred from API key auth."
                   },
                   "evmWalletId": {
                     "type": "string"
@@ -16798,7 +16798,6 @@
                   }
                 },
                 "required": [
-                  "orgApiKeyId",
                   "evmWalletId",
                   "paymentRequired"
                 ]
@@ -18102,7 +18101,7 @@
               "type": "string"
             },
             "required": false,
-            "name": "orgApiKeyId",
+            "name": "apiKeyId",
             "in": "query"
           }
         ],
@@ -18271,7 +18270,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "orgApiKeyId": {
+                  "apiKeyId": {
                     "type": "string"
                   },
                   "evmWalletId": {
@@ -18291,7 +18290,6 @@
                   }
                 },
                 "required": [
-                  "orgApiKeyId",
                   "evmWalletId",
                   "caip2Network",
                   "asset",
