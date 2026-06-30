@@ -475,7 +475,7 @@
           "Agents"
         ],
         "summary": "Verify agent identifier",
-        "description": "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
+        "description": "Looks up a public agent by `agentIdentifier` and reports whether it has an active verification credential. Prefers on-chain registry `Metadata.verifications` anchors when configured, with optional SaaS database fallback during backfill.",
         "parameters": [
           {
             "schema": {
@@ -567,7 +567,7 @@
                       ]
                     }
                   ],
-                  "description": "Returns `verified: false` when the agent identifier is unknown, not VERIFIED, has no issued credential, or only has an expired credential. Expired credentials still include their metadata in the response.",
+                  "description": "Returns `verified: false` when the agent identifier is unknown, has no valid on-chain or database verification, or only has an expired credential. Expired credentials still include their metadata in the response.",
                   "example": {
                     "success": true,
                     "data": {
