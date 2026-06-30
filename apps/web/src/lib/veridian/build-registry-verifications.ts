@@ -97,6 +97,15 @@ export function buildRegistryVerificationAnchorsFromCredential(params: {
 }): Verification[] {
   const { sad } = params.credential;
   const holderAid = sad.a?.i;
+  if (!sad.i) {
+    throw new Error("Credential is missing issuer AID (sad.i)");
+  }
+  if (!sad.s) {
+    throw new Error("Credential is missing schema SAID (sad.s)");
+  }
+  if (!sad.d) {
+    throw new Error("Credential is missing credential SAID (sad.d)");
+  }
   if (!holderAid) {
     throw new Error("Credential is missing holder AID (sad.a.i)");
   }
