@@ -66,7 +66,7 @@ export const verifyAgentResultSchema = z
   ])
   .openapi({
     description:
-      "Returns `verified: false` when the agent identifier is unknown, not VERIFIED, has no issued credential, or only has an expired credential. Expired credentials still include their metadata in the response.",
+      "Returns `verified: false` when the agent identifier is unknown, has no valid on-chain or database verification, or only has an expired credential. Expired credentials still include their metadata in the response.",
     example: {
       success: true,
       data: {
