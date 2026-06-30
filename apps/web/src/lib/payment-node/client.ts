@@ -28,6 +28,7 @@ import type {
   PaymentNodeNetwork,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -35,6 +36,7 @@ import type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
@@ -53,6 +55,7 @@ import {
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
   paymentNodeApiKeySchema,
+  registryAgentIdentifierMetadataSchema,
   registryEntrySchema,
   registryInboxCountResponseSchema,
   registryInboxEntrySchema,
@@ -92,6 +95,7 @@ export type {
   PaymentSourceWallet,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -100,6 +104,7 @@ export type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
@@ -175,6 +180,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         base,
         apiKey,
         `/registry`,
+        {
+          method: "POST",
+          body,
+        },
+        registryEntrySchema,
+      );
+    },
+
+    /** Update registry metadata (pay-authenticated). Use admin API key after SaaS ownership checks. */
+    async updateAgent(body: UpdateAgentInput): Promise<RegistryEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry/update`,
         {
           method: "POST",
           body,
@@ -363,7 +382,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryByAgentIdentifier(params: {
       agentIdentifier: string;
       network: PaymentNodeNetwork;
-    }): Promise<RegistryEntry | null> {
+    }): Promise<RegistryAgentIdentifierMetadata | null> {
       const res = await fetch(
         `${base}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
@@ -377,7 +396,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       }
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {
-        return registryEntrySchema.parse(json.data);
+        return registryAgentIdentifierMetadataSchema.parse(json.data);
       }
       return null;
     },
