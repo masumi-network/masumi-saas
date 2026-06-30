@@ -9,6 +9,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { withStoredHolderOobi } from "@/lib/registry/stored-credential-attributes";
 import {
   credentialIssueBodySchema,
   credentialIssueSuccessSchema,
@@ -21,6 +22,7 @@ import {
   issueCredential,
   resolveOobi,
 } from "@/lib/veridian";
+import { buildCredentialAttributesForAgent } from "@/lib/veridian/build-registry-verifications";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -181,15 +183,14 @@ app.openapi(
         )
       : {};
 
-    // Build credential attributes with internal fields taking precedence
-    const credentialAttributes = {
-      ...filteredAttributes,
-      kycVerificationId: userWithKyc.kycVerification.id,
-      agentId: agent.agentIdentifier,
+    const credentialAttributes = buildCredentialAttributesForAgent({
+      versionedAgentIdentifier: foundAgent.agentIdentifier,
       agentName: agent.name,
       agentApiUrl: agent.apiUrl,
+      kycVerificationId: userWithKyc.kycVerification.id,
       signature: agentVerification.signature,
-    };
+      extraAttributes: filteredAttributes,
+    });
 
     if (organizationId) {
       const member = await prisma.member.findFirst({
@@ -242,8 +243,12 @@ app.openapi(
           schemaSaid,
           aid,
           status: "PENDING",
-          credentialData: JSON.stringify(credentialAttributes),
-          attributes: JSON.stringify(credentialAttributes),
+          credentialData: JSON.stringify(
+            withStoredHolderOobi(credentialAttributes, oobi),
+          ),
+          attributes: JSON.stringify(
+            withStoredHolderOobi(credentialAttributes, oobi),
+          ),
           userId: user.id,
           agentId,
           organizationId: organizationId || null,

@@ -8,6 +8,11 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import {
+  credentialMatchesAgentRegistryId,
+  parseStoredCredentialAttributes,
+} from "@/lib/registry/stored-credential-attributes";
+import { writeOnChainVerifications } from "@/lib/registry/write-on-chain-verifications";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   credentialReconcileSuccessSchema,
@@ -100,7 +105,10 @@ app.openapi(
 
             if (cred.sad?.a && agent.agentIdentifier) {
               const credAgentId = cred.sad.a.agentId as string | undefined;
-              return credAgentId === agent.agentIdentifier;
+              return credentialMatchesAgentRegistryId(
+                credAgentId,
+                agent.agentIdentifier,
+              );
             }
 
             return true;
@@ -132,6 +140,33 @@ app.openapi(
           });
 
           await recordAgentActivityEvent(agentId, "AgentVerified");
+
+          const { holderOobi } = parseStoredCredentialAttributes(
+            pending.attributes ?? pending.credentialData,
+          );
+          if (holderOobi) {
+            const onChainResult = await writeOnChainVerifications({
+              agentId,
+              userId: user.id,
+              holderOobi,
+              credential: issuedCredential,
+            });
+            if (!onChainResult.success) {
+              console.error(
+                "[Veridian] On-chain verification write failed after reconcile:",
+                {
+                  agentId,
+                  userId: user.id,
+                  error: onChainResult.error,
+                },
+              );
+            }
+          } else {
+            console.error(
+              "[Veridian] Skipping on-chain verification write: holder OOBI missing",
+              { agentId, pendingCredentialId: pending.id },
+            );
+          }
 
           resolved = true;
           // One resolved is enough to flip the agent to VERIFIED

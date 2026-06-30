@@ -32,6 +32,10 @@ export const registryRequestStateSchema = z.enum([
   "DeregistrationInitiated",
   "DeregistrationConfirmed",
   "DeregistrationFailed",
+  "UpdateRequested",
+  "UpdateInitiated",
+  "UpdateConfirmed",
+  "UpdateFailed",
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
 

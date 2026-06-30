@@ -9,6 +9,8 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { parseStoredCredentialAttributes } from "@/lib/registry/stored-credential-attributes";
+import { writeOnChainVerifications } from "@/lib/registry/write-on-chain-verifications";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   errBodyWithOptionalDetails,
@@ -141,6 +143,9 @@ app.openapi(
       }
 
       let credentialId: string | null = null;
+      let validatedCredential: Awaited<
+        ReturnType<typeof findCredentialBySchema>
+      >;
       try {
         const credentials = await fetchContactCredentials(aid);
 
@@ -165,6 +170,8 @@ app.openapi(
             `Required credential with schema SAID '${expectedSchemaSaid}' not found. Please ensure you have the correct credential issued to this identifier.`,
           );
         }
+
+        validatedCredential = selectedCredential;
 
         const validationResult = validateCredential(selectedCredential);
 
@@ -197,6 +204,28 @@ app.openapi(
       });
 
       await recordAgentActivityEvent(agentId, "AgentVerified");
+
+      const { holderOobi } = parseStoredCredentialAttributes(
+        existingCredential.attributes ?? existingCredential.credentialData,
+      );
+      if (holderOobi && validatedCredential) {
+        const onChainResult = await writeOnChainVerifications({
+          agentId,
+          userId: authContext.user.id,
+          holderOobi,
+          credential: validatedCredential,
+        });
+        if (!onChainResult.success) {
+          console.error(
+            "[Veridian] On-chain verification write failed after verify:",
+            {
+              agentId,
+              userId: authContext.user.id,
+              error: onChainResult.error,
+            },
+          );
+        }
+      }
 
       // Prisma `verificationStatus`/dates are looser than the OpenAPI response
       // schema. Cast so Hono accepts the response body shape.

@@ -81,7 +81,7 @@ describe("buildRegistryVerificationAnchorsFromCredential", () => {
           i: "EISSUER",
           ri: "EREG",
           s: "ESCHEMA",
-          a: { i: "EHOLDER" },
+          a: { i: "EHOLDER", dt: "2026-01-01T00:00:00.000Z" },
         },
       },
       issuerOobi: "https://issuer.example/oobi/EISSUER",
