@@ -23,6 +23,7 @@ import {
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
+  validateCredential,
 } from "@/lib/veridian";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
@@ -123,6 +124,20 @@ app.openapi(
           })[0];
 
           if (!issuedCredential?.sad?.d) continue;
+
+          const validationResult = validateCredential(issuedCredential);
+          if (!validationResult.isValid) {
+            console.error(
+              "[Veridian] Skipping reconcile for invalid credential:",
+              {
+                agentId,
+                pendingCredentialId: pending.id,
+                status: validationResult.status,
+                message: validationResult.message,
+              },
+            );
+            continue;
+          }
 
           const credentialId = issuedCredential.sad.d;
 

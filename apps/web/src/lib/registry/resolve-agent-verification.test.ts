@@ -4,6 +4,7 @@ import { VerificationMethod } from "@/lib/payment-node/verification-schemas";
 
 const {
   agentFindFirstMock,
+  agentFindManyMock,
   veridianCredentialFindFirstMock,
   getRegistryByAgentIdentifierMock,
   tryCreateAdminPaymentNodeClientMock,
@@ -14,6 +15,7 @@ const {
   getAgentVerificationSchemaSaidMock,
 } = vi.hoisted(() => ({
   agentFindFirstMock: vi.fn(),
+  agentFindManyMock: vi.fn(),
   veridianCredentialFindFirstMock: vi.fn(),
   getRegistryByAgentIdentifierMock: vi.fn(),
   tryCreateAdminPaymentNodeClientMock: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock("@masumi/database/client", () => ({
   default: {
     agent: {
       findFirst: agentFindFirstMock,
+      findMany: agentFindManyMock,
     },
     veridianCredential: {
       findFirst: veridianCredentialFindFirstMock,
@@ -57,8 +60,18 @@ import { resolveAgentVerification } from "./resolve-agent-verification";
 const POLICY_ID = "a".repeat(56);
 const ROOT = "b".repeat(56);
 const VERSIONED = POLICY_ID + "10" + ROOT + "000001";
+const BUMPED = POLICY_ID + "11" + ROOT + "000002";
 const STABLE = POLICY_ID + ROOT;
 const SCHEMA_SAID = "ESCHEMA";
+
+const agentRow = {
+  id: "agent-1",
+  name: "DB Agent",
+  apiUrl: "https://db.example",
+  agentIdentifier: VERSIONED,
+  networkIdentifier: "Preprod",
+  verificationStatus: "VERIFIED",
+};
 
 const onChainMetadata = {
   policyId: POLICY_ID,
@@ -100,6 +113,11 @@ const credential = {
   },
 };
 
+function mockExactAgentLookup(agent: typeof agentRow | null) {
+  agentFindFirstMock.mockResolvedValue(agent);
+  agentFindManyMock.mockResolvedValue([]);
+}
+
 describe("resolveAgentVerification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -107,8 +125,9 @@ describe("resolveAgentVerification", () => {
     tryCreateAdminPaymentNodeClientMock.mockReturnValue({
       getRegistryByAgentIdentifier: getRegistryByAgentIdentifierMock,
     });
-    agentFindFirstMock.mockResolvedValue({
-      networkIdentifier: "Preprod",
+    mockExactAgentLookup({
+      ...agentRow,
+      verificationStatus: null,
     });
   });
 
@@ -146,14 +165,7 @@ describe("resolveAgentVerification", () => {
       ...onChainMetadata,
       Metadata: { ...onChainMetadata.Metadata, verifications: [] },
     });
-    agentFindFirstMock
-      .mockResolvedValueOnce({ networkIdentifier: "Preprod" })
-      .mockResolvedValueOnce({
-        id: "agent-1",
-        name: "DB Agent",
-        apiUrl: "https://db.example",
-        verificationStatus: "VERIFIED",
-      });
+    mockExactAgentLookup(agentRow);
     veridianCredentialFindFirstMock.mockResolvedValue({
       credentialId: "EDBCRED",
       expiresAt: new Date("2027-01-01T00:00:00.000Z"),
@@ -173,11 +185,61 @@ describe("resolveAgentVerification", () => {
     });
   });
 
+  it("falls back to database verification when on-chain credential fetch fails", async () => {
+    getRegistryByAgentIdentifierMock.mockResolvedValue(onChainMetadata);
+    fetchContactCredentialsMock.mockRejectedValue(
+      new Error("cred server down"),
+    );
+    mockExactAgentLookup(agentRow);
+    veridianCredentialFindFirstMock.mockResolvedValue({
+      credentialId: "EDBCRED",
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+    });
+
+    const result = await resolveAgentVerification({
+      agentIdentifier: VERSIONED,
+    });
+
+    expect(result.source).toBe("database");
+    expect(result).toMatchObject({
+      verified: true,
+      credentialId: "EDBCRED",
+    });
+  });
+
+  it("queries chain with bumped identifier when caller passes stale version", async () => {
+    agentFindFirstMock.mockResolvedValue(null);
+    agentFindManyMock.mockResolvedValue([
+      { ...agentRow, agentIdentifier: BUMPED },
+    ]);
+    getRegistryByAgentIdentifierMock.mockResolvedValue({
+      ...onChainMetadata,
+      agentIdentifier: BUMPED,
+    });
+    fetchContactCredentialsMock.mockResolvedValue([credential]);
+    findCredentialBySchemaMock.mockReturnValue(credential);
+    validateCredentialMock.mockReturnValue({
+      isValid: true,
+      status: "issued",
+      details: { expiresAt: "2027-01-01T00:00:00.000Z" },
+    });
+    extractCredentialAttributesMock.mockReturnValue({
+      agentId: STABLE,
+      agentName: "Cred Agent",
+      agentApiUrl: "https://cred-agent.example",
+    });
+
+    await resolveAgentVerification({ agentIdentifier: VERSIONED });
+
+    expect(getRegistryByAgentIdentifierMock).toHaveBeenCalledWith({
+      agentIdentifier: BUMPED,
+      network: "Preprod",
+    });
+  });
+
   it("returns not verified when neither chain nor database confirms", async () => {
     getRegistryByAgentIdentifierMock.mockResolvedValue(null);
-    agentFindFirstMock
-      .mockResolvedValueOnce({ networkIdentifier: "Preprod" })
-      .mockResolvedValueOnce(null);
+    mockExactAgentLookup(null);
 
     const result = await resolveAgentVerification({
       agentIdentifier: VERSIONED,

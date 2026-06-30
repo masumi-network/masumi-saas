@@ -6,6 +6,7 @@ import {
 } from "@/lib/config/verification.config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
+import { findAgentByRegistryIdentifier } from "@/lib/registry/find-agent-by-registry-identifier";
 import {
   findOnChainKeriVerification,
   getOnChainVerifications,
@@ -32,24 +33,6 @@ export type ResolvedAgentVerification =
 
 const PAYMENT_NETWORKS: PaymentNodeNetwork[] = ["Preprod", "Mainnet"];
 
-async function resolvePaymentNetworks(
-  agentIdentifier: string,
-): Promise<PaymentNodeNetwork[]> {
-  const agent = await prisma.agent.findFirst({
-    where: { agentIdentifier },
-    select: { networkIdentifier: true },
-  });
-
-  if (agent?.networkIdentifier === "Mainnet") {
-    return ["Mainnet"];
-  }
-  if (agent?.networkIdentifier === "Preprod") {
-    return ["Preprod"];
-  }
-
-  return PAYMENT_NETWORKS;
-}
-
 function credentialExpiresAt(
   validation: ReturnType<typeof validateCredential>,
 ): string | null {
@@ -62,9 +45,22 @@ function isCredentialExpired(expiresAt: string | null): boolean {
   return new Date(expiresAt) < new Date();
 }
 
+function paymentNetworksForAgent(
+  networkIdentifier: string | null | undefined,
+): PaymentNodeNetwork[] {
+  if (networkIdentifier === "Mainnet") {
+    return ["Mainnet"];
+  }
+  if (networkIdentifier === "Preprod") {
+    return ["Preprod"];
+  }
+  return PAYMENT_NETWORKS;
+}
+
 async function resolveOnChainAgentVerification(params: {
   agentIdentifier: string;
   network?: PaymentNodeNetwork;
+  networkIdentifier?: string | null;
 }): Promise<ResolvedAgentVerification | null> {
   const adminClient = tryCreateAdminPaymentNodeClient();
   if (!adminClient) {
@@ -84,7 +80,7 @@ async function resolveOnChainAgentVerification(params: {
 
   const networks = params.network
     ? [params.network]
-    : await resolvePaymentNetworks(params.agentIdentifier);
+    : paymentNetworksForAgent(params.networkIdentifier);
 
   for (const network of networks) {
     let onChainMetadata;
@@ -119,12 +115,12 @@ async function resolveOnChainAgentVerification(params: {
         holderAid: anchor.holder.aid,
         error,
       });
-      return { verified: false };
+      return null;
     }
 
     const credential = findCredentialBySchema(credentials, schemaSaid);
     if (!credential?.sad?.d || credential.sad.d !== anchor.credential.said) {
-      return { verified: false };
+      return null;
     }
 
     const validation = validateCredential(credential);
@@ -150,7 +146,7 @@ async function resolveOnChainAgentVerification(params: {
         };
       }
 
-      return { verified: false };
+      return null;
     }
 
     const attrs = extractCredentialAttributes(credential);
@@ -178,7 +174,7 @@ async function resolveOnChainAgentVerification(params: {
         : onChainMetadata?.Metadata.apiBaseUrl;
 
     if (!agentName || !apiUrl || !credential.sad.d) {
-      return { verified: false };
+      return null;
     }
 
     return {
@@ -197,15 +193,8 @@ async function resolveOnChainAgentVerification(params: {
 async function resolveDbAgentVerification(
   agentIdentifier: string,
 ): Promise<ResolvedAgentVerification | null> {
-  const agent = await prisma.agent.findFirst({
-    where: { agentIdentifier },
-    select: {
-      id: true,
-      name: true,
-      apiUrl: true,
-      verificationStatus: true,
-    },
-  });
+  const lookup = await findAgentByRegistryIdentifier(agentIdentifier);
+  const agent = lookup?.agent;
 
   if (!agent || agent.verificationStatus !== "VERIFIED") {
     return null;
@@ -243,9 +232,17 @@ export async function resolveAgentVerification(params: {
   agentIdentifier: string;
   network?: PaymentNodeNetwork;
 }): Promise<ResolvedAgentVerification> {
+  const lookup = await findAgentByRegistryIdentifier(params.agentIdentifier);
+  const chainAgentIdentifier =
+    lookup?.canonicalAgentIdentifier ?? params.agentIdentifier;
+
   if (shouldReadOnChainAgentVerification()) {
-    const onChain = await resolveOnChainAgentVerification(params);
-    if (onChain) {
+    const onChain = await resolveOnChainAgentVerification({
+      agentIdentifier: chainAgentIdentifier,
+      network: params.network,
+      networkIdentifier: lookup?.agent.networkIdentifier,
+    });
+    if (onChain !== null) {
       return onChain;
     }
   }
