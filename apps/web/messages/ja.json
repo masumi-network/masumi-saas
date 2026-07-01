@@ -1285,6 +1285,28 @@
             "notProvided": "VC に含まれません",
             "notRegisteredYet": "未設定"
           },
+          "onChainSummary": {
+            "sectionTitle": "オンチェーン検証",
+            "loadError": "オンチェーン状態を読み込めませんでした。ページを更新してください。",
+            "notRegistered": "このエージェントはまだオンチェーン登録されていません。アンカーは登録確認後にクレデンシャル発行時に書き込まれます。",
+            "unavailable": "このサーバーではオンチェーン検証の読み取りが設定されていません。",
+            "statusLabel": "レジストリ状態",
+            "statusVerified": "オンチェーンで検証済み",
+            "statusAnchorsInvalid": "レジストリにアンカーあり — クレデンシャルは現在有効ではありません",
+            "statusAnchorsPending": "レジストリ NFT に検証アンカーはまだありません",
+            "statusDbOnly": "アプリのみで検証済み（オンチェーンバックフィル待ち）",
+            "resolutionSource": "解決ソース",
+            "sourceOnChain": "レジストリ NFT メタデータ",
+            "sourceDatabase": "アプリケーションデータベース（フォールバック）",
+            "credentialSaid": "クレデンシャル SAID（アンカー）",
+            "schemaSaid": "スキーマ SAID",
+            "holderAid": "ホルダー AID",
+            "issuerAid": "発行者 AID",
+            "registryAgentId": "照会したレジストリエージェント ID",
+            "expiresAt": "クレデンシャル有効期限",
+            "expiresNever": "有効期限なし",
+            "dbOnChainMismatch": "アプリは検証済みと表示していますが、レジストリ NFT にはまだ検証アンカーがありません。"
+          },
           "rejected": {
             "title": "検証が拒否されました",
             "description": "検証が拒否されました。もう一度確認リクエストを試みることができます。"

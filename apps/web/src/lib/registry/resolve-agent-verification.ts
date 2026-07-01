@@ -5,7 +5,10 @@ import {
   shouldUseDbVerificationFallback,
 } from "@/lib/config/verification.config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
-import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
+import type {
+  PaymentNodeNetwork,
+  RegistryAgentIdentifierMetadata,
+} from "@/lib/payment-node/schemas";
 import { findAgentByRegistryIdentifier } from "@/lib/registry/find-agent-by-registry-identifier";
 import {
   findOnChainKeriVerification,
@@ -61,6 +64,8 @@ async function resolveOnChainAgentVerification(params: {
   agentIdentifier: string;
   network?: PaymentNodeNetwork;
   networkIdentifier?: string | null;
+  prefetchedRegistryMetadata?: RegistryAgentIdentifierMetadata | null;
+  prefetchedNetwork?: PaymentNodeNetwork;
 }): Promise<ResolvedAgentVerification | null> {
   const adminClient = tryCreateAdminPaymentNodeClient();
   if (!adminClient) {
@@ -83,19 +88,26 @@ async function resolveOnChainAgentVerification(params: {
     : paymentNetworksForAgent(params.networkIdentifier);
 
   for (const network of networks) {
-    let onChainMetadata;
-    try {
-      onChainMetadata = await adminClient.getRegistryByAgentIdentifier({
-        agentIdentifier: params.agentIdentifier,
-        network,
-      });
-    } catch (error) {
-      console.error("[Veridian] Failed to load on-chain registry metadata:", {
-        agentIdentifier: params.agentIdentifier,
-        network,
-        error,
-      });
-      continue;
+    let onChainMetadata: RegistryAgentIdentifierMetadata | null;
+    if (
+      params.prefetchedNetwork === network &&
+      params.prefetchedRegistryMetadata !== undefined
+    ) {
+      onChainMetadata = params.prefetchedRegistryMetadata;
+    } else {
+      try {
+        onChainMetadata = await adminClient.getRegistryByAgentIdentifier({
+          agentIdentifier: params.agentIdentifier,
+          network,
+        });
+      } catch (error) {
+        console.error("[Veridian] Failed to load on-chain registry metadata:", {
+          agentIdentifier: params.agentIdentifier,
+          network,
+          error,
+        });
+        continue;
+      }
     }
 
     const verifications = getOnChainVerifications(onChainMetadata);
@@ -231,6 +243,8 @@ async function resolveDbAgentVerification(
 export async function resolveAgentVerification(params: {
   agentIdentifier: string;
   network?: PaymentNodeNetwork;
+  prefetchedRegistryMetadata?: RegistryAgentIdentifierMetadata | null;
+  prefetchedNetwork?: PaymentNodeNetwork;
 }): Promise<ResolvedAgentVerification> {
   const lookup = await findAgentByRegistryIdentifier(params.agentIdentifier);
   const chainAgentIdentifier =
@@ -241,6 +255,8 @@ export async function resolveAgentVerification(params: {
       agentIdentifier: chainAgentIdentifier,
       network: params.network,
       networkIdentifier: lookup?.agent.networkIdentifier,
+      prefetchedRegistryMetadata: params.prefetchedRegistryMetadata,
+      prefetchedNetwork: params.prefetchedNetwork ?? params.network,
     });
     if (onChain !== null) {
       return onChain;

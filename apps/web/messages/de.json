@@ -1285,6 +1285,28 @@
             "notProvided": "nicht im VC",
             "notRegisteredYet": "noch nicht gesetzt"
           },
+          "onChainSummary": {
+            "sectionTitle": "On-Chain-Verifizierung",
+            "loadError": "On-Chain-Status konnte nicht geladen werden. Seite bitte aktualisieren.",
+            "notRegistered": "Dieser Agent ist noch nicht on-chain registriert. Verankerungen werden nach bestätigter Registrierung und Ausstellung einer Credential geschrieben.",
+            "unavailable": "On-Chain-Verifizierung ist auf diesem Server nicht konfiguriert.",
+            "statusLabel": "Registry-Status",
+            "statusVerified": "On-chain verifiziert",
+            "statusAnchorsInvalid": "Anker in Registry — Credential derzeit ungültig",
+            "statusAnchorsPending": "Noch keine Verifizierungsanker im Registry-NFT",
+            "statusDbOnly": "Nur in der App verifiziert (On-Chain-Backfill ausstehend)",
+            "resolutionSource": "Auflösungsquelle",
+            "sourceOnChain": "Registry-NFT-Metadaten",
+            "sourceDatabase": "Anwendungsdatenbank (Fallback)",
+            "credentialSaid": "Credential SAID (Anker)",
+            "schemaSaid": "Schema SAID",
+            "holderAid": "Holder-AID",
+            "issuerAid": "Issuer-AID",
+            "registryAgentId": "Abgefragte Registry-Agent-ID",
+            "expiresAt": "Credential läuft ab",
+            "expiresNever": "Kein berechnetes Ablaufdatum",
+            "dbOnChainMismatch": "Die App zeigt verifiziert an, aber das Registry-NFT hat noch keine Verifizierungsanker."
+          },
           "rejected": {
             "title": "Überprüfung abgelehnt",
             "description": "Die Verifizierung wurde abgelehnt. Sie können erneut versuchen, eine Bestätigung anzufordern."

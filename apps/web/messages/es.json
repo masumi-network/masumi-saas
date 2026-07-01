@@ -1285,6 +1285,28 @@
             "notProvided": "no figura en el VC",
             "notRegisteredYet": "aún no asignado"
           },
+          "onChainSummary": {
+            "sectionTitle": "Verificación on-chain",
+            "loadError": "No se pudo cargar el estado on-chain. Actualiza la página.",
+            "notRegistered": "Este agente aún no está registrado on-chain. Los anclajes se escriben tras confirmar el registro y emitir una credencial.",
+            "unavailable": "La lectura on-chain no está configurada en este servidor.",
+            "statusLabel": "Estado del registro",
+            "statusVerified": "Verificado on-chain",
+            "statusAnchorsInvalid": "Anclajes en el registro — credencial no válida actualmente",
+            "statusAnchorsPending": "Aún no hay anclajes de verificación en el NFT del registro",
+            "statusDbOnly": "Verificado solo en la app (backfill on-chain pendiente)",
+            "resolutionSource": "Fuente de resolución",
+            "sourceOnChain": "Metadatos del NFT del registro",
+            "sourceDatabase": "Base de datos de la aplicación (respaldo)",
+            "credentialSaid": "SAID de credencial (anclaje)",
+            "schemaSaid": "SAID de esquema",
+            "holderAid": "AID del titular",
+            "issuerAid": "AID del emisor",
+            "registryAgentId": "Identificador de agente del registro consultado",
+            "expiresAt": "La credencial expira",
+            "expiresNever": "Sin vencimiento calculado",
+            "dbOnChainMismatch": "La app muestra verificado, pero el NFT del registro aún no tiene anclajes de verificación."
+          },
           "rejected": {
             "title": "Verificación rechazada",
             "description": "La verificación fue rechazada. Puedes intentar solicitar la verificación nuevamente."

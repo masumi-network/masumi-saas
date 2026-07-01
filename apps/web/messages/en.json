@@ -1444,6 +1444,28 @@
             "notProvided": "not in VC",
             "notRegisteredYet": "not assigned yet"
           },
+          "onChainSummary": {
+            "sectionTitle": "On-chain verification",
+            "loadError": "Could not load on-chain status. Try refreshing the page.",
+            "notRegistered": "This agent is not registered on-chain yet. Verification anchors are written after registration is confirmed and a credential is issued.",
+            "unavailable": "On-chain verification read is not configured on this server.",
+            "statusLabel": "Registry status",
+            "statusVerified": "Verified on-chain",
+            "statusAnchorsInvalid": "Anchors on registry — credential not currently valid",
+            "statusAnchorsPending": "No verification anchors on registry NFT yet",
+            "statusDbOnly": "Verified in app only (on-chain backfill pending)",
+            "resolutionSource": "Resolution source",
+            "sourceOnChain": "Registry NFT metadata",
+            "sourceDatabase": "Application database (fallback)",
+            "credentialSaid": "Credential SAID (anchor)",
+            "schemaSaid": "Schema SAID",
+            "holderAid": "Holder AID",
+            "issuerAid": "Issuer AID",
+            "registryAgentId": "Registry agent identifier queried",
+            "expiresAt": "Credential expires",
+            "expiresNever": "No expiry computed",
+            "dbOnChainMismatch": "Application shows verified, but the registry NFT has no verification anchors yet."
+          },
           "rejected": {
             "title": "Verification Rejected",
             "description": "Verification was rejected. You can try requesting verification again."

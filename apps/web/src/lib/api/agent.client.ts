@@ -4,6 +4,7 @@ import type { AgentPricing } from "@/lib/utils";
 
 import type {
   Agent,
+  AgentOnChainVerificationStatus,
   AgentVerificationCredentialSummary,
   ApiResponse,
   GetAgentsResult,
@@ -11,6 +12,7 @@ import type {
 
 export type {
   Agent,
+  AgentOnChainVerificationStatus,
   AgentVerificationCredentialSummary,
   ApiResponse,
   GetAgentsResult,
@@ -150,6 +152,14 @@ class AgentApiClient {
   ): Promise<ApiResponse<AgentVerificationCredentialSummary | null>> {
     return this.request<AgentVerificationCredentialSummary | null>(
       `/${agentId}/verification-credential`,
+    );
+  }
+
+  async getOnChainVerificationStatus(
+    agentId: string,
+  ): Promise<ApiResponse<AgentOnChainVerificationStatus>> {
+    return this.request<AgentOnChainVerificationStatus>(
+      `/${agentId}/on-chain-verification`,
     );
   }
 

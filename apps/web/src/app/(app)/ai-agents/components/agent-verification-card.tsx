@@ -35,6 +35,7 @@ import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import {
   type Agent,
   agentApiClient,
+  type AgentOnChainVerificationStatus,
   type AgentVerificationCredentialSummary,
 } from "@/lib/api/agent.client";
 import {
@@ -93,6 +94,233 @@ function plainRow({ label, children }: { label: string; children: ReactNode }) {
       </dt>
       <dd className="min-w-0 flex-1 text-right text-xs">{children}</dd>
     </div>
+  );
+}
+
+function onChainStatusBadgeVariant(
+  status: AgentOnChainVerificationStatus,
+): "default" | "secondary" | "destructive" {
+  if (status.verified && status.resolutionSource === "on-chain") {
+    return "default";
+  }
+  if (status.verified && status.resolutionSource === "database") {
+    return "secondary";
+  }
+  if (status.hasAnchors) {
+    return "destructive";
+  }
+  return "secondary";
+}
+
+function onChainStatusLabel(
+  status: AgentOnChainVerificationStatus,
+  t: ReturnType<
+    typeof useTranslations<"App.Agents.Details.Verification.onChainSummary">
+  >,
+): string {
+  if (status.verified && status.resolutionSource === "on-chain") {
+    return t("statusVerified");
+  }
+  if (status.verified && status.resolutionSource === "database") {
+    return t("statusDbOnly");
+  }
+  if (status.hasAnchors) {
+    return t("statusAnchorsInvalid");
+  }
+  return t("statusAnchorsPending");
+}
+
+function OnChainVerificationPanel({
+  agentId,
+  registered,
+  dbVerificationStatus,
+  refreshKey,
+}: {
+  agentId: string;
+  registered: boolean;
+  dbVerificationStatus: string;
+  refreshKey: number;
+}) {
+  const tOnChain = useTranslations(
+    "App.Agents.Details.Verification.onChainSummary",
+  );
+  const { formatDate: formatDt, formatRelativeDate: formatRel } =
+    useFormatDate();
+
+  const [onChainStatus, setOnChainStatus] =
+    useState<AgentOnChainVerificationStatus | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ok" | "error">(
+    registered ? "loading" : "ok",
+  );
+
+  useEffect(() => {
+    if (!registered) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchStatus() {
+      setLoadState("loading");
+      const res = await agentApiClient.getOnChainVerificationStatus(agentId);
+      if (cancelled) return;
+      if (res.success) {
+        setOnChainStatus(res.data);
+        setLoadState("ok");
+      } else {
+        setOnChainStatus(null);
+        setLoadState("error");
+      }
+    }
+
+    fetchStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [agentId, registered, refreshKey]);
+
+  if (!registered) {
+    return (
+      <CardContent className="border-t border-border/40 pt-6">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-tight text-muted-foreground">
+          {tOnChain("sectionTitle")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {tOnChain("notRegistered")}
+        </p>
+      </CardContent>
+    );
+  }
+
+  const showDbMismatch =
+    dbVerificationStatus === "VERIFIED" &&
+    onChainStatus?.registered &&
+    !onChainStatus.hasAnchors &&
+    onChainStatus.resolutionSource !== "on-chain";
+
+  return (
+    <CardContent className="border-t border-border/40 pt-6">
+      <p className="mb-4 text-xs font-semibold uppercase tracking-tight text-muted-foreground">
+        {tOnChain("sectionTitle")}
+      </p>
+      {loadState === "loading" ? (
+        <div className="flex justify-center py-10">
+          <Spinner className="text-muted-foreground" />
+        </div>
+      ) : loadState === "error" ? (
+        <p className="text-sm text-destructive">{tOnChain("loadError")}</p>
+      ) : !onChainStatus ? null : (
+        <>
+          {!onChainStatus.configured ? (
+            <p className="mb-3 text-sm text-muted-foreground">
+              {tOnChain("unavailable")}
+            </p>
+          ) : null}
+          <dl className="space-y-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <dt className="text-xs font-medium text-muted-foreground">
+                {tOnChain("statusLabel")}
+              </dt>
+              <dd className="flex justify-end">
+                <Badge variant={onChainStatusBadgeVariant(onChainStatus)}>
+                  {onChainStatusLabel(onChainStatus, tOnChain)}
+                </Badge>
+              </dd>
+            </div>
+
+            {showDbMismatch ? (
+              <p className="text-xs text-amber-600 dark:text-amber-500">
+                {tOnChain("dbOnChainMismatch")}
+              </p>
+            ) : null}
+
+            {onChainStatus.resolutionSource
+              ? plainRow({
+                  label: tOnChain("resolutionSource"),
+                  children: (
+                    <Badge variant="outline">
+                      {onChainStatus.resolutionSource === "on-chain"
+                        ? tOnChain("sourceOnChain")
+                        : tOnChain("sourceDatabase")}
+                    </Badge>
+                  ),
+                })
+              : null}
+
+            {onChainStatus.credentialSaid
+              ? monospaceRow({
+                  label: tOnChain("credentialSaid"),
+                  value: onChainStatus.credentialSaid,
+                  condensed: true,
+                })
+              : onChainStatus.credentialId
+                ? monospaceRow({
+                    label: tOnChain("credentialSaid"),
+                    value: onChainStatus.credentialId,
+                    condensed: true,
+                  })
+                : null}
+
+            {onChainStatus.schemaSaid
+              ? monospaceRow({
+                  label: tOnChain("schemaSaid"),
+                  value: onChainStatus.schemaSaid,
+                  condensed: true,
+                })
+              : null}
+
+            {onChainStatus.holderAid
+              ? monospaceRow({
+                  label: tOnChain("holderAid"),
+                  value: onChainStatus.holderAid,
+                  condensed: true,
+                })
+              : null}
+
+            {onChainStatus.issuerAid
+              ? monospaceRow({
+                  label: tOnChain("issuerAid"),
+                  value: onChainStatus.issuerAid,
+                  condensed: true,
+                })
+              : null}
+
+            {onChainStatus.queriedAgentIdentifier
+              ? monospaceRow({
+                  label: tOnChain("registryAgentId"),
+                  value: onChainStatus.queriedAgentIdentifier,
+                  condensed: true,
+                })
+              : null}
+
+            {onChainStatus.verified || onChainStatus.expiresAt
+              ? plainRow({
+                  label: tOnChain("expiresAt"),
+                  children: onChainStatus.expiresAt ? (
+                    <span className="text-sm tabular-nums">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-default">
+                            {formatRel(onChainStatus.expiresAt)}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {formatDt(onChainStatus.expiresAt)}
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {tOnChain("expiresNever")}
+                    </span>
+                  ),
+                })
+              : null}
+          </dl>
+        </>
+      )}
+    </CardContent>
   );
 }
 
@@ -397,6 +625,7 @@ export function AgentVerificationCard({
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [onChainRefreshKey, setOnChainRefreshKey] = useState(0);
   const { kycStatus, isLoadingKyc } = useKycStatusWithPolling(
     agentVerificationEnabled,
   );
@@ -404,9 +633,15 @@ export function AgentVerificationCard({
   const status = agent.verificationStatus || "PENDING";
   const isRegistrationConfirmed =
     agent.registrationState === "RegistrationConfirmed";
+  const hasRegistryIdentifier = Boolean(agent.agentIdentifier?.trim());
 
   const showCredPanel =
     status === "VERIFIED" || status === "REVOKED" || status === "EXPIRED";
+
+  const handleVerificationSuccess = () => {
+    setOnChainRefreshKey((key) => key + 1);
+    onVerificationSuccess();
+  };
 
   if (!agentVerificationEnabled) {
     return null;
@@ -456,6 +691,13 @@ export function AgentVerificationCard({
         </div>
         <CardDescription className="mt-2">{config.description}</CardDescription>
       </CardHeader>
+
+      <OnChainVerificationPanel
+        agentId={agent.id}
+        registered={isRegistrationConfirmed && hasRegistryIdentifier}
+        dbVerificationStatus={status}
+        refreshKey={onChainRefreshKey}
+      />
 
       {showCredPanel ? (
         <VeridianCredentialSummaryPanel
@@ -510,7 +752,7 @@ export function AgentVerificationCard({
         onOpenChange={setDialogOpen}
         agent={agent}
         kycStatus={kycStatus}
-        onSuccess={onVerificationSuccess}
+        onSuccess={handleVerificationSuccess}
       />
     </Card>
   );

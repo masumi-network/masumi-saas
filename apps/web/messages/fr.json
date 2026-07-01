@@ -1285,6 +1285,28 @@
             "notProvided": "absent du VC",
             "notRegisteredYet": "pas encore défini"
           },
+          "onChainSummary": {
+            "sectionTitle": "Vérification on-chain",
+            "loadError": "Impossible de charger le statut on-chain. Actualisez la page.",
+            "notRegistered": "Cet agent n'est pas encore enregistré on-chain. Les ancres sont écrites après confirmation de l'enregistrement et émission d'une credential.",
+            "unavailable": "La lecture on-chain n'est pas configurée sur ce serveur.",
+            "statusLabel": "Statut du registre",
+            "statusVerified": "Vérifié on-chain",
+            "statusAnchorsInvalid": "Ancres sur le registre — credential actuellement invalide",
+            "statusAnchorsPending": "Pas encore d'ancres de vérification sur le NFT du registre",
+            "statusDbOnly": "Vérifié dans l'app uniquement (backfill on-chain en attente)",
+            "resolutionSource": "Source de résolution",
+            "sourceOnChain": "Métadonnées du NFT du registre",
+            "sourceDatabase": "Base de données applicative (secours)",
+            "credentialSaid": "SAID de credential (ancre)",
+            "schemaSaid": "SAID de schéma",
+            "holderAid": "AID du détenteur",
+            "issuerAid": "AID de l'émetteur",
+            "registryAgentId": "Identifiant d'agent du registre interrogé",
+            "expiresAt": "Expiration de la credential",
+            "expiresNever": "Aucune expiration calculée",
+            "dbOnChainMismatch": "L'application indique vérifié, mais le NFT du registre n'a pas encore d'ancres de vérification."
+          },
           "rejected": {
             "title": "Vérification rejetée",
             "description": "La vérification a été rejetée. Vous pouvez réessayer de demander une vérification."
