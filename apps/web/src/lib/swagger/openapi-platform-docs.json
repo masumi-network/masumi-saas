@@ -5993,6 +5993,282 @@
         }
       }
     },
+    "/api/agents/{agentId}/on-chain-verification": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Get on-chain verification status",
+        "description": "Returns registry NFT verification anchor status for this agent (KERI/ACDC metadata on-chain).",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "Agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "On-chain verification status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "configured": {
+                          "type": "boolean"
+                        },
+                        "registered": {
+                          "type": "boolean"
+                        },
+                        "hasAnchors": {
+                          "type": "boolean"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "credentialId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "schemaSaid": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "holderAid": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "credentialSaid": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "issuerAid": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "resolutionSource": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "on-chain",
+                            "database",
+                            null
+                          ]
+                        },
+                        "registryAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "queriedAgentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "configured",
+                        "registered",
+                        "hasAnchors",
+                        "verified",
+                        "credentialId",
+                        "expiresAt",
+                        "schemaSaid",
+                        "holderAid",
+                        "credentialSaid",
+                        "issuerAid",
+                        "resolutionSource",
+                        "registryAgentIdentifier",
+                        "queriedAgentIdentifier"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/agents/{agentId}": {
       "get": {
         "tags": [
