@@ -6089,6 +6089,25 @@
                         "queriedAgentIdentifier": {
                           "type": "string",
                           "nullable": true
+                        },
+                        "registryState": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "RegistrationRequested",
+                            "RegistrationInitiated",
+                            "RegistrationConfirmed",
+                            "RegistrationFailed",
+                            "DeregistrationRequested",
+                            "DeregistrationInitiated",
+                            "DeregistrationConfirmed",
+                            "DeregistrationFailed",
+                            "UpdateRequested",
+                            "UpdateInitiated",
+                            "UpdateConfirmed",
+                            "UpdateFailed",
+                            null
+                          ]
                         }
                       },
                       "required": [
@@ -6104,7 +6123,8 @@
                         "issuerAid",
                         "resolutionSource",
                         "registryAgentIdentifier",
-                        "queriedAgentIdentifier"
+                        "queriedAgentIdentifier",
+                        "registryState"
                       ]
                     }
                   },
