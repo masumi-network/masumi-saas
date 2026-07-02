@@ -1013,6 +1013,10 @@
         "verified": "Vérifié",
         "verifiedShieldAriaSummary": "Cet agent a été vérifié sur le réseau Masumi.",
         "verifiedShieldTooltip": "Cet agent a été vérifié sur le réseau Masumi et dispose d’un identifiant vérifiable. <docsLink>Identifiants vérifiables (doc SDK)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Mise à jour de vérification en cours sur le réseau Masumi.",
+        "updateInProgressShieldTooltip": "Une mise à jour du registre est en cours. Les ancres de vérification sont écrites sur le NFT du registre.",
+        "onChainPendingShieldAriaSummary": "Identifiant émis ; vérification on-chain en attente.",
+        "onChainPendingShieldTooltip": "Un identifiant a été émis, mais la vérification n'est pas encore confirmée sur le registre du réseau Masumi.",
         "rejected": "Rejeté",
         "underReview": "En cours de révision",
         "pending": "En attente",
@@ -1245,6 +1249,14 @@
             "title": "Agent vérifié",
             "description": "L'identité de cet agent a été vérifiée sur le réseau Masumi."
           },
+          "updateInProgress": {
+            "title": "Mise à jour de vérification en cours",
+            "description": "Votre identifiant a été accepté et les ancres de vérification sont écrites sur le NFT du registre. Cela prend généralement quelques minutes."
+          },
+          "onChainPending": {
+            "title": "Identifiant émis — on-chain en attente",
+            "description": "Votre identifiant vérifiable a été émis, mais la vérification n'est pas encore confirmée sur le registre du réseau Masumi."
+          },
           "revoked": {
             "title": "Vérification révoquée",
             "description": "La vérification de cet agent a été révoquée. Vous pouvez demander une nouvelle vérification."
@@ -1292,6 +1304,7 @@
             "unavailable": "La lecture on-chain n'est pas configurée sur ce serveur.",
             "statusLabel": "Statut du registre",
             "statusVerified": "Vérifié on-chain",
+            "statusUpdateInProgress": "Mise à jour du registre en cours",
             "statusAnchorsInvalid": "Ancres sur le registre — credential actuellement invalide",
             "statusAnchorsPending": "Pas encore d'ancres de vérification sur le NFT du registre",
             "statusDbOnly": "Vérifié dans l'app uniquement (backfill on-chain en attente)",
@@ -1305,7 +1318,8 @@
             "registryAgentId": "Identifiant d'agent du registre interrogé",
             "expiresAt": "Expiration de la credential",
             "expiresNever": "Aucune expiration calculée",
-            "dbOnChainMismatch": "L'application indique vérifié, mais le NFT du registre n'a pas encore d'ancres de vérification."
+            "dbOnChainMismatch": "L'application indique vérifié, mais le NFT du registre n'a pas encore d'ancres de vérification.",
+            "updateInProgressHint": "Une mise à jour du registre est en cours. Les ancres de vérification apparaîtront sur le NFT du registre une fois la transaction confirmée."
           },
           "rejected": {
             "title": "Vérification rejetée",

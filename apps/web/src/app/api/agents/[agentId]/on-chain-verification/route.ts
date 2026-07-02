@@ -1,5 +1,6 @@
 import { createRoute } from "@hono/zod-openapi";
 
+import { getAgentSmartContractAddress } from "@/lib/agents/agent-reference-metadata";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
@@ -7,6 +8,8 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { paymentNodeConfig } from "@/lib/payment-node/config";
+import { registryRequestStateSchema } from "@/lib/payment-node/schemas";
 import { getAgentOnChainVerificationStatus } from "@/lib/registry/agent-on-chain-verification-status";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
@@ -43,6 +46,7 @@ const agentOnChainVerificationStatusSchema = z.object({
   resolutionSource: z.enum(["on-chain", "database"]).nullable(),
   registryAgentIdentifier: z.string().nullable(),
   queriedAgentIdentifier: z.string().nullable(),
+  registryState: registryRequestStateSchema.nullable(),
 });
 
 const onChainVerificationSuccessSchema = z.object({
@@ -100,9 +104,17 @@ app.openapi(
         network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
 
+      const network =
+        agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod";
+      const smartContractAddress =
+        getAgentSmartContractAddress(agent) ??
+        paymentNodeConfig.tryGetSmartContractAddress(network);
+
       const data = await getAgentOnChainVerificationStatus({
         agentIdentifier: agent.agentIdentifier,
         networkIdentifier: agent.networkIdentifier,
+        registryExternalId: agent.agentReference?.externalId,
+        smartContractAddress,
       });
 
       return c.json({ success: true as const, data }, 200);

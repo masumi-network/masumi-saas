@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -180,7 +180,15 @@ export function AgentsTable({
                             }
                           }}
                         >
-                          <AgentVerifiedShield className="-mt-px" />
+                          <AgentVerificationShieldIndicator
+                            agentId={agent.id}
+                            dbVerificationStatus={agent.verificationStatus}
+                            registered={
+                              agent.registrationState ===
+                              "RegistrationConfirmed"
+                            }
+                            className="-mt-px"
+                          />
                         </span>
                       ) : null}
                     </div>

@@ -8,6 +8,8 @@ import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-cl
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
+import { getAgentSmartContractAddress } from "./agent-reference-metadata";
+
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const PAYMENT_NODE_REGISTRY_MAX_PAGES = 25;
 const PAYMENT_NODE_REGISTRY_PAGE_LIMIT = 100;
@@ -17,17 +19,6 @@ const PAYMENT_NODE_REGISTRY_PAGE_LIMIT = 100;
  * a user's wallet-scoped payment-node key cannot enumerate the row. Reads keyed
  * to the registration's payment source (via the admin key) still resolve it.
  */
-function getAgentSmartContractAddress(agent: {
-  agentReference?: { metadata?: unknown } | null;
-}): string | undefined {
-  const meta = agent.agentReference?.metadata;
-  if (meta && typeof meta === "object" && "smartContractAddress" in meta) {
-    const value = (meta as Record<string, unknown>).smartContractAddress;
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return undefined;
-}
-
 const LOCAL_WALLET_OWNED_FALLBACK_STATES = new Set([
   "RegistrationRequested",
   "RegistrationInitiated",

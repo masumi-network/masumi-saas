@@ -1172,6 +1172,10 @@
         "verified": "Verified",
         "verifiedShieldAriaSummary": "This agent has been verified on the Masumi network.",
         "verifiedShieldTooltip": "This agent has been verified on the Masumi network and holds a verifiable credential. <docsLink>Verifiable credentials (SDK docs)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Verification update in progress on the Masumi network.",
+        "updateInProgressShieldTooltip": "A registry update is in progress. Verification anchors are being written to the registry NFT.",
+        "onChainPendingShieldAriaSummary": "Credential issued; on-chain verification pending.",
+        "onChainPendingShieldTooltip": "A credential has been issued, but verification is not yet confirmed on the Masumi network registry.",
         "rejected": "Rejected",
         "underReview": "Under Review",
         "pending": "Pending",
@@ -1404,6 +1408,14 @@
             "title": "Agent Verified",
             "description": "This agent's identity has been verified on the Masumi network."
           },
+          "updateInProgress": {
+            "title": "Verification Update In Progress",
+            "description": "Your credential was accepted and verification anchors are being written to the registry NFT. This usually completes within a few minutes."
+          },
+          "onChainPending": {
+            "title": "Credential Issued — On-Chain Pending",
+            "description": "Your verifiable credential has been issued, but verification is not yet confirmed on the Masumi network registry."
+          },
           "revoked": {
             "title": "Verification Revoked",
             "description": "The verification for this agent has been revoked. You can request new verification."
@@ -1451,6 +1463,7 @@
             "unavailable": "On-chain verification read is not configured on this server.",
             "statusLabel": "Registry status",
             "statusVerified": "Verified on-chain",
+            "statusUpdateInProgress": "Registry update in progress",
             "statusAnchorsInvalid": "Anchors on registry — credential not currently valid",
             "statusAnchorsPending": "No verification anchors on registry NFT yet",
             "statusDbOnly": "Verified in app only (on-chain backfill pending)",
@@ -1464,7 +1477,8 @@
             "registryAgentId": "Registry agent identifier queried",
             "expiresAt": "Credential expires",
             "expiresNever": "No expiry computed",
-            "dbOnChainMismatch": "Application shows verified, but the registry NFT has no verification anchors yet."
+            "dbOnChainMismatch": "Application shows verified, but the registry NFT has no verification anchors yet.",
+            "updateInProgressHint": "A registry update is in progress. Verification anchors will appear on the registry NFT once the transaction confirms."
           },
           "rejected": {
             "title": "Verification Rejected",

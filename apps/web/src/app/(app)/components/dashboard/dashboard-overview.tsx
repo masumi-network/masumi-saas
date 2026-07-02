@@ -2,7 +2,7 @@ import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -154,7 +154,15 @@ export default async function DashboardOverview({
                             {agent.name}
                           </p>
                           {agent.verificationStatus === "VERIFIED" ? (
-                            <AgentVerifiedShield className="-mt-px" />
+                            <AgentVerificationShieldIndicator
+                              agentId={agent.id}
+                              dbVerificationStatus={agent.verificationStatus}
+                              registered={
+                                agent.registrationState ===
+                                "RegistrationConfirmed"
+                              }
+                              className="-mt-px"
+                            />
                           ) : null}
                         </div>
                       </div>

@@ -1013,6 +1013,10 @@
         "verified": "Verificado",
         "verifiedShieldAriaSummary": "Este agente fue verificado en la red Masumi.",
         "verifiedShieldTooltip": "Este agente fue verificado en la red Masumi y tiene una credencial verificable. <docsLink>Credenciales verificables (doc SDK)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Actualización de verificación en curso en la red Masumi.",
+        "updateInProgressShieldTooltip": "Hay una actualización del registro en curso. Los anclajes de verificación se están escribiendo en el NFT del registro.",
+        "onChainPendingShieldAriaSummary": "Credencial emitida; verificación on-chain pendiente.",
+        "onChainPendingShieldTooltip": "Se ha emitido una credencial, pero la verificación aún no está confirmada en el registro de la red Masumi.",
         "rejected": "Rechazado",
         "underReview": "En revisión",
         "pending": "Pendiente",
@@ -1245,6 +1249,14 @@
             "title": "Agente verificado",
             "description": "La identidad de este agente ha sido verificada en la red Masumi."
           },
+          "updateInProgress": {
+            "title": "Actualización de verificación en curso",
+            "description": "Su credencial fue aceptada y los anclajes de verificación se están escribiendo en el NFT del registro. Suele completarse en unos minutos."
+          },
+          "onChainPending": {
+            "title": "Credencial emitida — on-chain pendiente",
+            "description": "Su credencial verificable ha sido emitida, pero la verificación aún no está confirmada en el registro de la red Masumi."
+          },
           "revoked": {
             "title": "Verificación revocada",
             "description": "La verificación de este agente ha sido revocada. Puede solicitar una nueva verificación."
@@ -1292,6 +1304,7 @@
             "unavailable": "La lectura on-chain no está configurada en este servidor.",
             "statusLabel": "Estado del registro",
             "statusVerified": "Verificado on-chain",
+            "statusUpdateInProgress": "Actualización del registro en curso",
             "statusAnchorsInvalid": "Anclajes en el registro — credencial no válida actualmente",
             "statusAnchorsPending": "Aún no hay anclajes de verificación en el NFT del registro",
             "statusDbOnly": "Verificado solo en la app (backfill on-chain pendiente)",
@@ -1305,7 +1318,8 @@
             "registryAgentId": "Identificador de agente del registro consultado",
             "expiresAt": "La credencial expira",
             "expiresNever": "Sin vencimiento calculado",
-            "dbOnChainMismatch": "La app muestra verificado, pero el NFT del registro aún no tiene anclajes de verificación."
+            "dbOnChainMismatch": "La app muestra verificado, pero el NFT del registro aún no tiene anclajes de verificación.",
+            "updateInProgressHint": "Hay una actualización del registro en curso. Los anclajes de verificación aparecerán en el NFT del registro cuando se confirme la transacción."
           },
           "rejected": {
             "title": "Verificación rechazada",

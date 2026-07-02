@@ -1013,6 +1013,10 @@
         "verified": "確認済み",
         "verifiedShieldAriaSummary": "このエージェントはMasumiネットワーク上で確認済みです。",
         "verifiedShieldTooltip": "このエージェントはMasumiネットワーク上で確認済みで、検証可能なクレデンシャルを保持しています。<docsLink>検証可能なクレデンシャル（SDKドキュメント）</docsLink>",
+        "updateInProgressShieldAriaSummary": "Masumiネットワークで検証更新が進行中です。",
+        "updateInProgressShieldTooltip": "レジストリの更新が進行中です。検証アンカーがレジストリNFTに書き込まれています。",
+        "onChainPendingShieldAriaSummary": "クレデンシャル発行済み。オンチェーン検証は保留中。",
+        "onChainPendingShieldTooltip": "クレデンシャルは発行されましたが、Masumiネットワークのレジストリではまだ検証が確認されていません。",
         "rejected": "拒否されました",
         "underReview": "検討中",
         "pending": "保留中",
@@ -1245,6 +1249,14 @@
             "title": "エージェントの確認済み",
             "description": "このエージェントの本人確認は Masumi ネットワークで検証されました。"
           },
+          "updateInProgress": {
+            "title": "検証更新が進行中",
+            "description": "クレデンシャルが受理され、検証アンカーがレジストリNFTに書き込まれています。通常、数分で完了します。"
+          },
+          "onChainPending": {
+            "title": "クレデンシャル発行済み — オンチェーン保留中",
+            "description": "検証可能なクレデンシャルは発行されましたが、Masumiネットワークのレジストリではまだ検証が確認されていません。"
+          },
           "revoked": {
             "title": "検証が取り消されました",
             "description": "このエージェントの検証は取り消されました。新しい検証をリクエストできます。"
@@ -1292,6 +1304,7 @@
             "unavailable": "このサーバーではオンチェーン検証の読み取りが設定されていません。",
             "statusLabel": "レジストリ状態",
             "statusVerified": "オンチェーンで検証済み",
+            "statusUpdateInProgress": "レジストリ更新が進行中",
             "statusAnchorsInvalid": "レジストリにアンカーあり — クレデンシャルは現在有効ではありません",
             "statusAnchorsPending": "レジストリ NFT に検証アンカーはまだありません",
             "statusDbOnly": "アプリのみで検証済み（オンチェーンバックフィル待ち）",
@@ -1305,7 +1318,8 @@
             "registryAgentId": "照会したレジストリエージェント ID",
             "expiresAt": "クレデンシャル有効期限",
             "expiresNever": "有効期限なし",
-            "dbOnChainMismatch": "アプリは検証済みと表示していますが、レジストリ NFT にはまだ検証アンカーがありません。"
+            "dbOnChainMismatch": "アプリは検証済みと表示していますが、レジストリ NFT にはまだ検証アンカーがありません。",
+            "updateInProgressHint": "レジストリの更新が進行中です。トランザクションが確認されると、検証アンカーがレジストリ NFT に表示されます。"
           },
           "rejected": {
             "title": "検証が拒否されました",

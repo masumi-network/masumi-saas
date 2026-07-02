@@ -1,7 +1,10 @@
 import { shouldReadOnChainAgentVerification } from "@/lib/config/verification.config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
-import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
-import type { RegistryAgentIdentifierMetadata } from "@/lib/payment-node/schemas";
+import type {
+  PaymentNodeNetwork,
+  RegistryAgentIdentifierMetadata,
+  RegistryRequestState,
+} from "@/lib/payment-node/schemas";
 import { findAgentByRegistryIdentifier } from "@/lib/registry/find-agent-by-registry-identifier";
 import {
   findOnChainKeriVerification,
@@ -28,6 +31,8 @@ export type AgentOnChainVerificationStatus = {
   resolutionSource: "on-chain" | "database" | null;
   registryAgentIdentifier: string | null;
   queriedAgentIdentifier: string | null;
+  /** Payment-service registry row state (e.g always null when not loaded). */
+  registryState: RegistryRequestState | null;
 };
 
 function paymentNetwork(
@@ -101,9 +106,39 @@ function anchorFieldsFromMetadata(
 /**
  * Owner-facing on-chain verification status for the agent verification UI.
  */
+async function fetchRegistryState(params: {
+  registryExternalId?: string | null;
+  network: PaymentNodeNetwork;
+  smartContractAddress?: string | null;
+}): Promise<RegistryRequestState | null> {
+  const externalId = params.registryExternalId?.trim();
+  if (!externalId) return null;
+
+  const adminClient = tryCreateAdminPaymentNodeClient();
+  if (!adminClient) return null;
+
+  try {
+    const entry = await adminClient.getRegistryById({
+      id: externalId,
+      network: params.network,
+      filterSmartContractAddress: params.smartContractAddress,
+    });
+    return entry?.state ?? null;
+  } catch (error) {
+    console.error("[Veridian] Failed to load registry state:", {
+      registryExternalId: externalId,
+      network: params.network,
+      error,
+    });
+    return null;
+  }
+}
+
 export async function getAgentOnChainVerificationStatus(params: {
   agentIdentifier: string | null;
   networkIdentifier: string | null;
+  registryExternalId?: string | null;
+  smartContractAddress?: string | null;
 }): Promise<AgentOnChainVerificationStatus> {
   const empty: AgentOnChainVerificationStatus = {
     configured: false,
@@ -119,6 +154,7 @@ export async function getAgentOnChainVerificationStatus(params: {
     resolutionSource: null,
     registryAgentIdentifier: null,
     queriedAgentIdentifier: null,
+    registryState: null,
   };
 
   if (!params.agentIdentifier?.trim()) {
@@ -131,6 +167,12 @@ export async function getAgentOnChainVerificationStatus(params: {
   const network = paymentNetwork(
     lookup?.agent.networkIdentifier ?? params.networkIdentifier,
   );
+
+  const registryStatePromise = fetchRegistryState({
+    registryExternalId: params.registryExternalId,
+    network,
+    smartContractAddress: params.smartContractAddress,
+  });
 
   const adminClient = tryCreateAdminPaymentNodeClient();
   const configured =
@@ -187,6 +229,8 @@ export async function getAgentOnChainVerificationStatus(params: {
     credentialSaid ??= credentialId;
   }
 
+  const registryState = await registryStatePromise;
+
   return {
     configured,
     registered: true,
@@ -201,5 +245,6 @@ export async function getAgentOnChainVerificationStatus(params: {
     resolutionSource,
     registryAgentIdentifier,
     queriedAgentIdentifier: chainAgentIdentifier,
+    registryState,
   };
 }

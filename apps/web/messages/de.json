@@ -1013,6 +1013,10 @@
         "verified": "Verifiziert",
         "verifiedShieldAriaSummary": "Dieser Agent wurde im Masumi-Netzwerk verifiziert.",
         "verifiedShieldTooltip": "Dieser Agent wurde im Masumi-Netzwerk verifiziert und hat ein Verifiable Credential. <docsLink>Verifiable Credentials (SDK-Doku)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Verifizierungs-Update im Masumi-Netzwerk läuft.",
+        "updateInProgressShieldTooltip": "Ein Registry-Update läuft. Verifizierungsanker werden in das Registry-NFT geschrieben.",
+        "onChainPendingShieldAriaSummary": "Credential ausgestellt; On-Chain-Verifizierung ausstehend.",
+        "onChainPendingShieldTooltip": "Eine Credential wurde ausgestellt, die Verifizierung ist im Masumi-Netzwerk-Registry noch nicht bestätigt.",
         "rejected": "Abgelehnt",
         "underReview": "Wird überprüft",
         "pending": "Ausstehend",
@@ -1245,6 +1249,14 @@
             "title": "Agent verifiziert",
             "description": "Die Identität dieses Agenten wurde im Masumi-Netzwerk verifiziert."
           },
+          "updateInProgress": {
+            "title": "Verifizierungs-Update läuft",
+            "description": "Ihre Credential wurde akzeptiert und Verifizierungsanker werden in das Registry-NFT geschrieben. Dies dauert in der Regel wenige Minuten."
+          },
+          "onChainPending": {
+            "title": "Credential ausgestellt — On-Chain ausstehend",
+            "description": "Ihre verifizierbare Credential wurde ausgestellt, die Verifizierung ist im Masumi-Netzwerk-Registry jedoch noch nicht bestätigt."
+          },
           "revoked": {
             "title": "Verifizierung widerrufen",
             "description": "Die Verifizierung für diesen Agenten wurde widerrufen. Sie können eine neue Verifizierung anfordern."
@@ -1292,6 +1304,7 @@
             "unavailable": "On-Chain-Verifizierung ist auf diesem Server nicht konfiguriert.",
             "statusLabel": "Registry-Status",
             "statusVerified": "On-chain verifiziert",
+            "statusUpdateInProgress": "Registry-Update läuft",
             "statusAnchorsInvalid": "Anker in Registry — Credential derzeit ungültig",
             "statusAnchorsPending": "Noch keine Verifizierungsanker im Registry-NFT",
             "statusDbOnly": "Nur in der App verifiziert (On-Chain-Backfill ausstehend)",
@@ -1305,7 +1318,8 @@
             "registryAgentId": "Abgefragte Registry-Agent-ID",
             "expiresAt": "Credential läuft ab",
             "expiresNever": "Kein berechnetes Ablaufdatum",
-            "dbOnChainMismatch": "Die App zeigt verifiziert an, aber das Registry-NFT hat noch keine Verifizierungsanker."
+            "dbOnChainMismatch": "Die App zeigt verifiziert an, aber das Registry-NFT hat noch keine Verifizierungsanker.",
+            "updateInProgressHint": "Ein Registry-Update läuft. Verifizierungsanker erscheinen im Registry-NFT, sobald die Transaktion bestätigt ist."
           },
           "rejected": {
             "title": "Überprüfung abgelehnt",

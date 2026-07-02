@@ -70,4 +70,18 @@ export type AgentOnChainVerificationStatus = {
   resolutionSource: "on-chain" | "database" | null;
   registryAgentIdentifier: string | null;
   queriedAgentIdentifier: string | null;
+  registryState:
+    | "RegistrationRequested"
+    | "RegistrationInitiated"
+    | "RegistrationConfirmed"
+    | "RegistrationFailed"
+    | "DeregistrationRequested"
+    | "DeregistrationInitiated"
+    | "DeregistrationConfirmed"
+    | "DeregistrationFailed"
+    | "UpdateRequested"
+    | "UpdateInitiated"
+    | "UpdateConfirmed"
+    | "UpdateFailed"
+    | null;
 };
