@@ -9,8 +9,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { parseStoredCredentialAttributes } from "@/lib/registry/stored-credential-attributes";
-import { writeOnChainVerifications } from "@/lib/registry/write-on-chain-verifications";
+import { writeOnChainVerificationsFromStoredCredential } from "@/lib/registry/write-on-chain-verifications";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   errBodyWithOptionalDetails,
@@ -205,17 +204,18 @@ app.openapi(
 
       await recordAgentActivityEvent(agentId, "AgentVerified");
 
-      const { holderOobi } = parseStoredCredentialAttributes(
-        existingCredential.attributes ?? existingCredential.credentialData,
-      );
-      if (holderOobi && validatedCredential) {
-        const onChainResult = await writeOnChainVerifications({
-          agentId,
-          userId: authContext.user.id,
-          holderOobi,
-          credential: validatedCredential,
-        });
-        if (!onChainResult.success) {
+      if (validatedCredential) {
+        const onChainResult =
+          await writeOnChainVerificationsFromStoredCredential({
+            agentId,
+            userId: authContext.user.id,
+            credential: validatedCredential,
+            storedAttributesRaw:
+              existingCredential.attributes ??
+              existingCredential.credentialData,
+            veridianCredentialId: existingCredential.id,
+          });
+        if (onChainResult && !onChainResult.success) {
           console.error(
             "[Veridian] On-chain verification write failed after verify:",
             {

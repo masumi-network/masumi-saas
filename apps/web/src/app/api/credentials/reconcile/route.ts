@@ -8,11 +8,11 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import {
-  credentialMatchesAgentRegistryId,
-  parseStoredCredentialAttributes,
-} from "@/lib/registry/stored-credential-attributes";
-import { writeOnChainVerifications } from "@/lib/registry/write-on-chain-verifications";
+  backfillOnChainVerificationsForAgent,
+  writeOnChainVerificationsFromStoredCredential,
+} from "@/lib/registry/write-on-chain-verifications";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   credentialReconcileSuccessSchema,
@@ -88,6 +88,10 @@ app.openapi(
       });
 
       if (pendingCredentials.length === 0) {
+        await backfillOnChainVerificationsForAgent({
+          agentId,
+          userId: user.id,
+        });
         return c.json(
           { success: true as const, data: { resolved: false } },
           200,
@@ -156,30 +160,22 @@ app.openapi(
 
           await recordAgentActivityEvent(agentId, "AgentVerified");
 
-          const { holderOobi } = parseStoredCredentialAttributes(
-            pending.attributes ?? pending.credentialData,
-          );
-          if (holderOobi) {
-            const onChainResult = await writeOnChainVerifications({
+          const onChainResult =
+            await writeOnChainVerificationsFromStoredCredential({
               agentId,
               userId: user.id,
-              holderOobi,
               credential: issuedCredential,
+              storedAttributesRaw: pending.attributes ?? pending.credentialData,
+              veridianCredentialId: pending.id,
             });
-            if (!onChainResult.success) {
-              console.error(
-                "[Veridian] On-chain verification write failed after reconcile:",
-                {
-                  agentId,
-                  userId: user.id,
-                  error: onChainResult.error,
-                },
-              );
-            }
-          } else {
+          if (onChainResult && !onChainResult.success) {
             console.error(
-              "[Veridian] Skipping on-chain verification write: holder OOBI missing",
-              { agentId, pendingCredentialId: pending.id },
+              "[Veridian] On-chain verification write failed after reconcile:",
+              {
+                agentId,
+                userId: user.id,
+                error: onChainResult.error,
+              },
             );
           }
 

@@ -23,6 +23,7 @@ import {
   resolveOobi,
 } from "@/lib/veridian";
 import { buildCredentialAttributesForAgent } from "@/lib/veridian/build-registry-verifications";
+import { resolveHolderOobi } from "@/lib/veridian/resolve-holder-oobi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -237,18 +238,22 @@ app.openapi(
       }
 
       const placeholderCredentialId = `pending-${randomUUID()}`;
+      const holderOobiForStorage = await resolveHolderOobi({
+        storedHolderOobi: oobi,
+        holderAid: aid,
+      });
+      const attributesWithHolderOobi = withStoredHolderOobi(
+        credentialAttributes,
+        holderOobiForStorage ?? oobi,
+      );
       const pendingCredential = await prisma.veridianCredential.create({
         data: {
           credentialId: placeholderCredentialId,
           schemaSaid,
           aid,
           status: "PENDING",
-          credentialData: JSON.stringify(
-            withStoredHolderOobi(credentialAttributes, oobi),
-          ),
-          attributes: JSON.stringify(
-            withStoredHolderOobi(credentialAttributes, oobi),
-          ),
+          credentialData: JSON.stringify(attributesWithHolderOobi),
+          attributes: JSON.stringify(attributesWithHolderOobi),
           userId: user.id,
           agentId,
           organizationId: organizationId || null,

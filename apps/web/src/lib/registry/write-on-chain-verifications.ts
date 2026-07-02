@@ -10,12 +10,21 @@ import type {
 import { buildUpdateAgentInput } from "@/lib/registry/build-update-agent-input";
 import { hasOnChainVerification } from "@/lib/registry/on-chain-verifications";
 import {
+  parseStoredCredentialAttributes,
+  withStoredHolderOobi,
+} from "@/lib/registry/stored-credential-attributes";
+import {
   extractAssetName,
   isV2RegistryAssetName,
 } from "@/lib/registry/version-independent-agent-id";
 import type { Credential } from "@/lib/veridian";
-import { getAgentVerificationSchemaSaid, getIssuerOobi } from "@/lib/veridian";
+import {
+  fetchContactCredentials,
+  getAgentVerificationSchemaSaid,
+  getIssuerOobi,
+} from "@/lib/veridian";
 import { buildRegistryVerificationAnchorsFromCredential } from "@/lib/veridian/build-registry-verifications";
+import { resolveHolderOobi } from "@/lib/veridian/resolve-holder-oobi";
 import { buildVerificationOobis } from "@/lib/veridian/verification-oobis";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
@@ -309,4 +318,162 @@ export async function writeOnChainVerifications(params: {
   ]);
 
   return { success: true, agentIdentifier: pollResult.agentIdentifier };
+}
+
+function patchStoredAttributesWithHolderOobi(
+  raw: string | null,
+  holderOobi: string,
+): string {
+  const { attributes } = parseStoredCredentialAttributes(raw);
+  return JSON.stringify(withStoredHolderOobi(attributes, holderOobi));
+}
+
+/**
+ * Resolve holder OOBI (stored or credential-server contact) and write anchors.
+ * Returns null when holder OOBI cannot be resolved.
+ */
+export async function writeOnChainVerificationsFromStoredCredential(params: {
+  agentId: string;
+  userId: string;
+  credential: Pick<Credential, "sad">;
+  storedAttributesRaw?: string | null;
+  veridianCredentialId?: string;
+}): Promise<WriteOnChainVerificationsResult | null> {
+  const { holderOobi: storedHolderOobi } = parseStoredCredentialAttributes(
+    params.storedAttributesRaw,
+  );
+  const holderAid = params.credential.sad?.a?.i;
+  const holderOobi = await resolveHolderOobi({
+    storedHolderOobi,
+    holderAid,
+  });
+
+  if (!holderOobi) {
+    console.error(
+      "[Veridian] Skipping on-chain verification write: holder OOBI not stored and not found on credential server",
+      {
+        agentId: params.agentId,
+        holderAid,
+        veridianCredentialId: params.veridianCredentialId,
+      },
+    );
+    return null;
+  }
+
+  if (!storedHolderOobi && params.veridianCredentialId) {
+    const existing = await prisma.veridianCredential.findUnique({
+      where: { id: params.veridianCredentialId },
+      select: { attributes: true, credentialData: true },
+    });
+    if (existing) {
+      await prisma.veridianCredential.update({
+        where: { id: params.veridianCredentialId },
+        data: {
+          attributes: patchStoredAttributesWithHolderOobi(
+            existing.attributes,
+            holderOobi,
+          ),
+          credentialData: patchStoredAttributesWithHolderOobi(
+            existing.credentialData,
+            holderOobi,
+          ),
+        },
+      });
+    }
+  }
+
+  return writeOnChainVerifications({
+    agentId: params.agentId,
+    userId: params.userId,
+    holderOobi,
+    credential: params.credential,
+  });
+}
+
+/**
+ * For agents already VERIFIED in SaaS but missing registry verification anchors.
+ */
+export async function backfillOnChainVerificationsForAgent(params: {
+  agentId: string;
+  userId: string;
+}): Promise<boolean> {
+  const agent = await prisma.agent.findFirst({
+    where: { id: params.agentId, userId: params.userId },
+    include: { agentReference: true },
+  });
+
+  if (
+    !agent ||
+    agent.verificationStatus !== "VERIFIED" ||
+    !agent.veridianCredentialId ||
+    !agent.agentIdentifier
+  ) {
+    return false;
+  }
+
+  let adminClient: ReturnType<typeof createAdminPaymentNodeClient>;
+  try {
+    adminClient = createAdminPaymentNodeClient();
+  } catch (error) {
+    console.error(
+      "[Veridian] On-chain backfill skipped: admin client unavailable",
+      { agentId: params.agentId, error },
+    );
+    return false;
+  }
+
+  const network = (agent.agentReference?.networkIdentifier ??
+    agent.networkIdentifier ??
+    DEFAULT_NETWORK) as PaymentNodeNetwork;
+
+  const onChainBefore = await adminClient.getRegistryByAgentIdentifier({
+    agentIdentifier: agent.agentIdentifier,
+    network,
+  });
+
+  const credentialSaid = agent.veridianCredentialId;
+  if (hasOnChainVerification(onChainBefore)) {
+    const existing = onChainBefore?.Metadata?.verifications ?? [];
+    if (existing.some((entry) => entry.credential.said === credentialSaid)) {
+      return false;
+    }
+  }
+
+  const veridianCredential = await prisma.veridianCredential.findFirst({
+    where: {
+      agentId: params.agentId,
+      userId: params.userId,
+      status: "ISSUED",
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (!veridianCredential) {
+    return false;
+  }
+
+  const credentials = await fetchContactCredentials(veridianCredential.aid);
+  const issuedCredential = credentials.find(
+    (cred) => cred.sad?.d === credentialSaid,
+  );
+
+  if (!issuedCredential) {
+    console.error("[Veridian] On-chain backfill: issued credential not found", {
+      agentId: params.agentId,
+      credentialSaid,
+      holderAid: veridianCredential.aid,
+    });
+    return false;
+  }
+
+  const result = await writeOnChainVerificationsFromStoredCredential({
+    agentId: params.agentId,
+    userId: params.userId,
+    credential: issuedCredential,
+    storedAttributesRaw:
+      veridianCredential.attributes ?? veridianCredential.credentialData,
+    veridianCredentialId: veridianCredential.id,
+  });
+
+  return result?.success === true;
 }
