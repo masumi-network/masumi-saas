@@ -19,10 +19,10 @@ import { DeleteAgentDialog } from "./delete-agent-dialog";
 import { DeregisterAgentDialog } from "./deregister-agent-dialog";
 import { NetworkMismatchDialog } from "./network-mismatch-dialog";
 import {
-  AgentCredentials,
   AgentDetails,
   AgentEarnings,
   AgentTransactions,
+  AgentVerificationTab,
 } from "./tabs";
 
 interface AgentPageContentProps {
@@ -30,6 +30,8 @@ interface AgentPageContentProps {
 }
 
 const DEFAULT_TAB = "details";
+const VERIFICATION_TAB = "verification";
+const LEGACY_CREDENTIALS_TAB = "credentials";
 
 function isValidNetwork(
   value: string | null | undefined,
@@ -165,7 +167,9 @@ export function AgentPageContent({
     });
   }, [agent.id]);
 
-  const tabParam = searchParams.get("tab");
+  const tabParamRaw = searchParams.get("tab");
+  const tabParam =
+    tabParamRaw === LEGACY_CREDENTIALS_TAB ? VERIFICATION_TAB : tabParamRaw;
   const fromParam = searchParams.get("from");
   const isFromDashboard = fromParam === "dashboard";
   const backHref = isFromDashboard ? "/" : "/ai-agents";
@@ -176,7 +180,10 @@ export function AgentPageContent({
     { name: tTabs("detailTabs.transactions"), key: "transactions" },
   ];
   if (agentVerificationUiEnabled) {
-    tabs.push({ name: tTabs("detailTabs.credentials"), key: "credentials" });
+    tabs.push({
+      name: tTabs("detailTabs.verification"),
+      key: VERIFICATION_TAB,
+    });
   }
   const activeTab =
     tabParam && tabs.some((tab) => tab.key === tabParam)
@@ -260,8 +267,8 @@ export function AgentPageContent({
         />
       )}
 
-      {agentVerificationUiEnabled && activeTab === "credentials" && (
-        <AgentCredentials
+      {agentVerificationUiEnabled && activeTab === VERIFICATION_TAB && (
+        <AgentVerificationTab
           agent={agent}
           onVerificationSuccess={handleVerificationSuccess}
         />

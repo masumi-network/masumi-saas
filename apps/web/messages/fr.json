@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "Détails",
         "earnings": "Gains",
-        "credentials": "Informations d'identification",
+        "verification": "Vérification",
         "transactions": "Transactions"
       },
       "registrationStatus": {
@@ -1164,9 +1164,9 @@
         "price": "Prix",
         "verification": "Vérification",
         "verificationPromptTitle": "Vérifiez votre agent",
-        "verificationPromptDescription": "Cet agent n'est pas encore vérifié. Demandez un identifiant pour lier votre statut KYC vérifié et établir la confiance.",
+        "verificationPromptDescription": "Cet agent n'est pas encore vérifié. Demandez une vérification pour lier votre identité vérifiée et établir la confiance.",
         "hireInSokosumi": "Location à Sokosumi",
-        "viewInCredentialsTab": "Afficher dans les informations d'identification",
+        "viewInVerificationTab": "Voir la vérification",
         "refresh": "Rafraîchir",
         "endpoint": "Point de terminaison",
         "tags": "Balises",
@@ -1237,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "Aucun justificatif délivré",
+            "title": "Non vérifié",
             "description": "Cet agent n'a pas encore été vérifié. Demandez une vérification pour lier votre identité vérifiée à cet agent."
           },
           "review": {
@@ -1257,7 +1257,7 @@
             "description": "Votre identifiant a été accepté et les ancres de vérification sont écrites sur le NFT du registre. Cela prend généralement quelques minutes."
           },
           "onChainPending": {
-            "title": "Identifiant émis — on-chain en attente",
+            "title": "Vérification en attente — on-chain",
             "description": "Émise dans votre portefeuille. Confirmation registre en attente."
           },
           "revoked": {
@@ -1330,7 +1330,7 @@
           },
           "loading": "Chargement...",
           "refreshStatus": "Actualiser le statut de vérification",
-          "requestVerification": "Demander un identifiant",
+          "requestVerification": "Demander la vérification",
           "tooltipRequestCredentialRequiresRegistration": "Finalisez d'abord l'enregistrement on-chain de cet agent. Vous ne pouvez demander un identifiant qu'une fois l'enregistrement confirmé.",
           "requestDescription": "Examinez les informations ci-dessous et confirmez l'émission d'informations d'identification vérifiables pour cet agent.",
           "agentInformation": "Informations sur les agents",

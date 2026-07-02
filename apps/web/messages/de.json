@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "Einzelheiten",
         "earnings": "Ergebnis",
-        "credentials": "Anmeldeinformationen",
+        "verification": "Verifizierung",
         "transactions": "Transaktionen"
       },
       "registrationStatus": {
@@ -1164,9 +1164,9 @@
         "price": "Preis",
         "verification": "Überprüfung",
         "verificationPromptTitle": "Überprüfen Sie Ihren Agenten",
-        "verificationPromptDescription": "Dieser Agent ist noch nicht verifiziert. Fordern Sie einen Ausweis an, um Ihren verifizierten KYC-Status zu verknüpfen und Vertrauen aufzubauen.",
+        "verificationPromptDescription": "Dieser Agent ist noch nicht verifiziert. Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität zu verknüpfen und Vertrauen aufzubauen.",
         "hireInSokosumi": "Mieten Sie in Sokosumi",
-        "viewInCredentialsTab": "In Anmeldeinformationen anzeigen",
+        "viewInVerificationTab": "Zur Verifizierung",
         "refresh": "Aktualisieren",
         "endpoint": "Endpunkt",
         "tags": "Schlagworte",
@@ -1237,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "Kein Ausweis ausgestellt",
+            "title": "Nicht verifiziert",
             "description": "Dieser Agent wurde noch nicht verifiziert. Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität mit diesem Agenten zu verknüpfen."
           },
           "review": {
@@ -1257,7 +1257,7 @@
             "description": "Ihre Credential wurde akzeptiert und Verifizierungsanker werden in das Registry-NFT geschrieben. Dies dauert in der Regel wenige Minuten."
           },
           "onChainPending": {
-            "title": "Credential ausgestellt — On-Chain ausstehend",
+            "title": "Verifizierung ausstehend — On-Chain",
             "description": "In Ihrer Wallet ausgestellt. Registry-Bestätigung noch ausstehend."
           },
           "revoked": {
@@ -1330,8 +1330,8 @@
           },
           "loading": "Laden...",
           "refreshStatus": "Verifizierungsstatus aktualisieren",
-          "requestVerification": "Ausweis anfordern",
-          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Ein Ausweis kann erst nach bestätigter Registrierung angefordert werden.",
+          "requestVerification": "Verifizierung anfordern",
+          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Eine Verifizierung ist erst nach bestätigter Registrierung möglich.",
           "requestDescription": "Überprüfen Sie die folgenden Informationen und bestätigen Sie, dass Sie für diesen Agenten einen überprüfbaren Ausweis ausstellen möchten.",
           "agentInformation": "Agenteninformationen",
           "agentName": "Agentenname",

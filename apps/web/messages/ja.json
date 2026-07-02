@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "詳細",
         "earnings": "収益",
-        "credentials": "資格",
+        "verification": "検証",
         "transactions": "取引"
       },
       "registrationStatus": {
@@ -1164,9 +1164,9 @@
         "price": "価格",
         "verification": "検証",
         "verificationPromptTitle": "エージェントを確認する",
-        "verificationPromptDescription": "このエージェントはまだ検証されていません。認証情報を要求して、検証済みの KYC ステータスをリンクし、信頼を確立します。",
+        "verificationPromptDescription": "このエージェントはまだ検証されていません。検証をリクエストして、認証済みの本人情報をリンクし、信頼を確立してください。",
         "hireInSokosumi": "ソコスミでレンタル",
-        "viewInCredentialsTab": "認証情報で表示",
+        "viewInVerificationTab": "検証を表示",
         "refresh": "リフレッシュ",
         "endpoint": "終点",
         "tags": "タグ",
@@ -1237,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "認証情報が発行されていません",
+            "title": "未検証",
             "description": "このエージェントはまだ検証されていません。検証をリクエストして、認証済みの本人確認をこのエージェントにリンクしてください。"
           },
           "review": {
@@ -1257,7 +1257,7 @@
             "description": "クレデンシャルが受理され、検証アンカーがレジストリNFTに書き込まれています。通常、数分で完了します。"
           },
           "onChainPending": {
-            "title": "クレデンシャル発行済み — オンチェーン保留中",
+            "title": "検証保留中 — オンチェーン",
             "description": "ウォレットに発行済み。レジストリ確認は保留中。"
           },
           "revoked": {
@@ -1330,7 +1330,7 @@
           },
           "loading": "読み込み中...",
           "refreshStatus": "認証ステータスを更新",
-          "requestVerification": "認証情報の要求",
+          "requestVerification": "検証をリクエスト",
           "tooltipRequestCredentialRequiresRegistration": "まずこのエージェントのオンチェーン登録を完了してください。登録が確認されてからでないと認証情報をリクエストできません。",
           "requestDescription": "以下の情報を確認し、このエージェントの検証可能な資格情報を発行することを確認します。",
           "agentInformation": "エージェント情報",

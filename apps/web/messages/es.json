@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "Detalles",
         "earnings": "Ganancias",
-        "credentials": "Cartas credenciales",
+        "verification": "Verificación",
         "transactions": "Actas"
       },
       "registrationStatus": {
@@ -1164,9 +1164,9 @@
         "price": "Precio",
         "verification": "Verificación",
         "verificationPromptTitle": "Verifica a tu agente",
-        "verificationPromptDescription": "Este agente aún no está verificado. Solicite una credencial para vincular su estado KYC verificado y establecer confianza.",
+        "verificationPromptDescription": "Este agente aún no está verificado. Solicite una verificación para vincular su identidad verificada y establecer confianza.",
         "hireInSokosumi": "Alquiler en Sokosumi",
-        "viewInCredentialsTab": "Ver en Credenciales",
+        "viewInVerificationTab": "Ver verificación",
         "refresh": "Refrescar",
         "endpoint": "Punto final",
         "tags": "Etiquetas",
@@ -1237,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "Ninguna credencial emitida",
+            "title": "No verificado",
             "description": "Este agente aún no ha sido verificado. Solicite una verificación para vincular su identidad verificada a este agente."
           },
           "review": {
@@ -1257,7 +1257,7 @@
             "description": "Su credencial fue aceptada y los anclajes de verificación se están escribiendo en el NFT del registro. Suele completarse en unos minutos."
           },
           "onChainPending": {
-            "title": "Credencial emitida — on-chain pendiente",
+            "title": "Verificación pendiente — on-chain",
             "description": "Emitida en su wallet. Confirmación en el registro pendiente."
           },
           "revoked": {
@@ -1330,7 +1330,7 @@
           },
           "loading": "Cargando...",
           "refreshStatus": "Actualizar estado de verificación",
-          "requestVerification": "Solicitar Credencial",
+          "requestVerification": "Solicitar verificación",
           "tooltipRequestCredentialRequiresRegistration": "Primero termina el registro on-chain de este agente. Solo puedes solicitar una credencial cuando el registro esté confirmado.",
           "requestDescription": "Revise la información a continuación y confirme para emitir una credencial verificable para este agente.",
           "agentInformation": "Información del agente",

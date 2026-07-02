@@ -1156,7 +1156,7 @@
       "detailTabs": {
         "details": "Details",
         "earnings": "Earnings",
-        "credentials": "Credentials",
+        "verification": "Verification",
         "transactions": "Transactions"
       },
       "registrationStatus": {
@@ -1323,9 +1323,9 @@
         "price": "Price",
         "verification": "Verification",
         "verificationPromptTitle": "Verify your agent",
-        "verificationPromptDescription": "This agent is not verified yet. Request a credential to link your verified KYC status and establish trust.",
+        "verificationPromptDescription": "This agent is not verified yet. Request verification to link your verified identity and establish trust.",
         "hireInSokosumi": "Hire in Sokosumi",
-        "viewInCredentialsTab": "View in Credentials",
+        "viewInVerificationTab": "View verification",
         "refresh": "Refresh",
         "endpoint": "Endpoint",
         "tags": "Tags",
@@ -1396,7 +1396,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "No Credential Issued",
+            "title": "Not Verified",
             "description": "This agent has not been verified yet. Request verification to link your verified identity to this agent."
           },
           "review": {
@@ -1416,7 +1416,7 @@
             "description": "Your credential was accepted and verification anchors are being written to the registry NFT. This usually completes within a few minutes."
           },
           "onChainPending": {
-            "title": "Credential Issued — On-Chain Pending",
+            "title": "Verification Pending — On-Chain",
             "description": "Issued in your wallet. Registry confirmation still pending."
           },
           "revoked": {
@@ -1489,8 +1489,8 @@
           },
           "loading": "Loading...",
           "refreshStatus": "Refresh verification status",
-          "requestVerification": "Request Credential",
-          "tooltipRequestCredentialRequiresRegistration": "Finish on-chain registration for this agent first. You can request a credential only after registration is confirmed.",
+          "requestVerification": "Request Verification",
+          "tooltipRequestCredentialRequiresRegistration": "Finish on-chain registration for this agent first. You can request verification only after registration is confirmed.",
           "requestDescription": "Review the information below and confirm to issue a Verifiable Credential for this agent.",
           "agentInformation": "Agent Information",
           "agentName": "Agent Name",
