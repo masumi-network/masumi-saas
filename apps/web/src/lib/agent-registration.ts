@@ -19,11 +19,17 @@ import type {
   PaymentSourceWallet,
 } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import {
+  createAdminPaymentNodeClient,
+  tryCreateAdminPaymentNodeClient,
+} from "@/lib/payment-node/get-admin-client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import {
   findSellingWalletIdByVkey,
   hydratePaymentSource,
 } from "@/lib/payment-node/payment-source-wallets";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
+import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
@@ -128,6 +134,119 @@ function shouldTreatWalletRegistryLookupAsPending(message: string): boolean {
     normalized.startsWith("404: stake address not found") ||
     normalized.includes("requested component has not been found")
   );
+}
+
+async function completeRegistrationFromRegistryEntry(params: {
+  agentId: string;
+  userId: string;
+  agentName: string;
+  entry: RegistryEntry;
+}): Promise<CompleteRegistrationResult> {
+  const state = params.entry.state as RegistrationState;
+  await prisma.agent.update({
+    where: { id: params.agentId },
+    data: {
+      registrationState: state,
+      ...(params.entry.agentIdentifier && {
+        agentIdentifier: params.entry.agentIdentifier,
+      }),
+    },
+  });
+  if (state === "RegistrationConfirmed") {
+    await recordAgentActivityEvent(params.agentId, "RegistrationConfirmed");
+    const fresh = await prisma.agent.findUniqueOrThrow({
+      where: { id: params.agentId },
+    });
+    await sendAgentRegistrationCompleteEmail(
+      params.userId,
+      params.agentId,
+      fresh.name,
+    );
+    return { status: "registered", data: fresh };
+  }
+  if (state === "RegistrationFailed") {
+    await recordAgentActivityEvent(params.agentId, "RegistrationFailed");
+    const errorMsg = "Registration was rejected or failed on the network.";
+    await sendAgentRegistrationFailedEmail(
+      params.userId,
+      params.agentId,
+      params.agentName,
+      errorMsg,
+    );
+    return { status: "error", error: errorMsg };
+  }
+  return { status: "pending" };
+}
+
+async function trySyncFromRecipientWalletAssets(params: {
+  userId: string;
+  agentId: string;
+  agentName: string;
+  agentApiUrl: string;
+  recipientWalletVkey: string;
+  network: PaymentNodeNetwork;
+  existingMetadata: Record<string, unknown> | null;
+}): Promise<CompleteRegistrationResult | null> {
+  const clients = [
+    await getPaymentNodeClientForUser(params.userId),
+    tryCreateAdminPaymentNodeClient(),
+  ].filter((client): client is ReturnType<typeof createPaymentNodeClient> =>
+    Boolean(client),
+  );
+
+  for (const client of clients) {
+    try {
+      const response = await client.getRegisteredAgentsByWallet({
+        walletVkey: params.recipientWalletVkey,
+        network: params.network,
+      });
+      const walletMatch =
+        response.Assets.find(
+          (asset) => asset.Metadata.apiBaseUrl === params.agentApiUrl,
+        ) ??
+        response.Assets.find(
+          (asset) => asset.Metadata.name === params.agentName,
+        ) ??
+        null;
+      if (!walletMatch?.agentIdentifier) continue;
+
+      await prisma.agentReference.update({
+        where: { agentId: params.agentId },
+        data: {
+          status: "ACTIVE",
+          registeredAt: new Date(),
+          metadata: {
+            ...(params.existingMetadata ?? {}),
+            agentIdentifier: walletMatch.agentIdentifier,
+          },
+        },
+      });
+      await prisma.agent.update({
+        where: { id: params.agentId },
+        data: {
+          registrationState: "RegistrationConfirmed",
+          agentIdentifier: walletMatch.agentIdentifier,
+        },
+      });
+      await recordAgentActivityEvent(params.agentId, "RegistrationConfirmed");
+      const fresh = await prisma.agent.findUniqueOrThrow({
+        where: { id: params.agentId },
+      });
+      await sendAgentRegistrationCompleteEmail(
+        params.userId,
+        params.agentId,
+        fresh.name,
+      );
+      return { status: "registered", data: fresh };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!shouldTreatWalletRegistryLookupAsPending(message)) {
+        continue;
+      }
+    }
+  }
+
+  return null;
 }
 
 async function getConfiguredPaymentSource(
@@ -502,53 +621,34 @@ export async function completeOnChainRegistration(
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const userClient = await getPaymentNodeClientForUser(userId);
-    if (userClient) {
-      try {
-        const entry = await userClient.getRegistryById({
-          id: ref.externalId,
-          network,
-        });
-        if (entry) {
-          const state = entry.state as RegistrationState;
-          await prisma.agent.update({
-            where: { id: agentId },
-            data: {
-              registrationState: state,
-              ...(entry.agentIdentifier && {
-                agentIdentifier: entry.agentIdentifier,
-              }),
-            },
-          });
-          if (state === "RegistrationConfirmed") {
-            await recordAgentActivityEvent(agentId, "RegistrationConfirmed");
-            const fresh = await prisma.agent.findUniqueOrThrow({
-              where: { id: agentId },
-            });
-            await sendAgentRegistrationCompleteEmail(
-              userId,
-              agentId,
-              fresh.name,
-            );
-            return { status: "registered", data: fresh };
-          }
-          if (state === "RegistrationFailed") {
-            await recordAgentActivityEvent(agentId, "RegistrationFailed");
-            const errorMsg =
-              "Registration was rejected or failed on the network.";
-            await sendAgentRegistrationFailedEmail(
-              userId,
-              agentId,
-              agent.name,
-              errorMsg,
-            );
-            return { status: "error", error: errorMsg };
-          }
-        }
-      } catch {
-        // Non-fatal: fall through to return pending
-      }
+    const entry = await getRegistryEntryForSync({
+      userId,
+      externalId: ref.externalId,
+      network,
+    });
+    if (entry) {
+      return completeRegistrationFromRegistryEntry({
+        agentId,
+        userId,
+        agentName: agent.name,
+        entry,
+      });
     }
+
+    if (ref.sellingWalletVkey) {
+      const walletSync = await trySyncFromRecipientWalletAssets({
+        userId,
+        agentId,
+        agentName: agent.name,
+        agentApiUrl: agent.apiUrl,
+        recipientWalletVkey: ref.sellingWalletVkey,
+        network,
+        existingMetadata:
+          (ref.metadata as Record<string, unknown> | null) ?? null,
+      });
+      if (walletSync) return walletSync;
+    }
+
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
@@ -574,10 +674,7 @@ export async function completeOnChainRegistration(
       : "";
   let paymentSourceId: string | null = null;
   try {
-    adminClient = createPaymentNodeClient(
-      paymentNodeConfig.getBaseUrl(),
-      paymentNodeConfig.getAdminApiKey(),
-    );
+    adminClient = createAdminPaymentNodeClient();
     if (!fundingWalletVkey) {
       paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
     }

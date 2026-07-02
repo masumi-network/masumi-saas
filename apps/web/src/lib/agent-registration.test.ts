@@ -73,6 +73,18 @@ vi.mock("@/lib/payment-node/get-user-client", () => ({
   getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
 }));
 
+const getRegistryEntryForSyncMock = vi.fn();
+const tryCreateAdminPaymentNodeClientMock = vi.fn();
+
+vi.mock("@/lib/payment-node/resolve-registry-entry-for-sync", () => ({
+  getRegistryEntryForSync: getRegistryEntryForSyncMock,
+}));
+
+vi.mock("@/lib/payment-node/get-admin-client", () => ({
+  createAdminPaymentNodeClient: vi.fn(() => createPaymentNodeClientMock()),
+  tryCreateAdminPaymentNodeClient: tryCreateAdminPaymentNodeClientMock,
+}));
+
 vi.mock("@/lib/payment-node/wallet-scopes", () => ({
   ensureUserPaymentNodeKeyScopedToWallets:
     ensureUserPaymentNodeKeyScopedToWalletsMock,
@@ -563,10 +575,6 @@ describe("completeOnChainRegistration", () => {
     const result = await completeOnChainRegistration("agent-1", "user-1");
 
     expect(result).toStrictEqual({ status: "pending" });
-    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
-      "https://payment.example.com/api/v1",
-      "admin-key",
-    );
     expect(userRegisteredAgentsByWalletMock).not.toHaveBeenCalled();
     expect(adminRegisterAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
@@ -696,5 +704,59 @@ describe("completeOnChainRegistration", () => {
         }),
       }),
     });
+  });
+
+  it("syncs confirmed registration via admin registry lookup when user key cannot see the row", async () => {
+    const confirmedAgent = {
+      id: "agent-1",
+      userId: "user-1",
+      name: "Demo agent",
+      apiUrl: "https://agent.example.com",
+      registrationState: "RegistrationConfirmed",
+      agentIdentifier: "policy+name",
+    };
+    const agent = {
+      ...confirmedAgent,
+      registrationState: "RegistrationRequested",
+      agentIdentifier: null,
+      agentReference: {
+        externalId: "registry-entry-1",
+        networkIdentifier: "Preprod",
+        sellingWalletVkey: "selling-vkey",
+        metadata: {},
+      },
+    };
+
+    agentFindFirstMock.mockResolvedValue(agent);
+    agentFindUniqueMock.mockResolvedValue(agent);
+    agentFindUniqueOrThrowMock.mockResolvedValue(confirmedAgent);
+    getRegistryEntryForSyncMock.mockResolvedValue({
+      id: "registry-entry-1",
+      state: "RegistrationConfirmed",
+      agentIdentifier: "policy+name",
+    });
+
+    const result = await completeOnChainRegistration("agent-1", "user-1");
+
+    expect(result).toStrictEqual({
+      status: "registered",
+      data: confirmedAgent,
+    });
+    expect(getRegistryEntryForSyncMock).toHaveBeenCalledWith({
+      userId: "user-1",
+      externalId: "registry-entry-1",
+      network: "Preprod",
+    });
+    expect(agentUpdateMock).toHaveBeenCalledWith({
+      where: { id: "agent-1" },
+      data: {
+        registrationState: "RegistrationConfirmed",
+        agentIdentifier: "policy+name",
+      },
+    });
+    expect(recordAgentActivityEventMock).toHaveBeenCalledWith(
+      "agent-1",
+      "RegistrationConfirmed",
+    );
   });
 });

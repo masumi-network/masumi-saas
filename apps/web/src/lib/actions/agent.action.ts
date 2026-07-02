@@ -19,7 +19,7 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -149,13 +149,11 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     if (!agent || !agent.agentReference?.externalId)
       return { success: true as const };
 
-    const userClient = await getPaymentNodeClientForUser(user.id);
-    if (!userClient) return { success: true as const };
-
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const entry = await userClient.getRegistryById({
-      id: agent.agentReference.externalId,
+    const entry = await getRegistryEntryForSync({
+      userId: user.id,
+      externalId: agent.agentReference.externalId,
       network,
     });
     if (!entry) return { success: true as const };
