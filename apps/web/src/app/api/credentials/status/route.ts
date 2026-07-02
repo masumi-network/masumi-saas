@@ -8,7 +8,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
+import { triggerOnChainVerificationWrite } from "@/lib/registry/write-on-chain-verifications";
 import { credentialStatusQuerySchema } from "@/lib/schemas";
 import {
   credentialStatusSuccessSchema,
@@ -20,6 +20,7 @@ import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
 } from "@/lib/veridian";
+import { resolvePendingWalletCredential } from "@/lib/veridian/resolve-pending-wallet-credential";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -105,25 +106,14 @@ app.openapi(
 
       // Check Veridian for the accepted credential
       const credentials = await fetchContactCredentials(aid);
-      const matchingCredentials = credentials.filter((cred) => {
-        const credSchemaSaid = cred.sad?.s || cred.schema?.$id;
-        if (credSchemaSaid !== schemaSaid) return false;
-
-        if (cred.sad?.a && agent?.agentIdentifier) {
-          // The credential's agentId is the version-independent root, while
-          // agent.agentIdentifier is the full versioned id — match by root so a
-          // credential still resolves across registry version bumps.
-          const credAgentId = cred.sad.a.agentId as string | undefined;
-          return credentialMatchesAgentRegistryId(
-            credAgentId,
-            agent.agentIdentifier,
-          );
-        }
-
-        return true;
+      const issuedCredential = resolvePendingWalletCredential({
+        pending: pendingCredential,
+        credentials,
+        schemaSaid,
+        versionedAgentIdentifier: agent?.agentIdentifier ?? null,
       });
 
-      if (matchingCredentials.length === 0) {
+      if (!issuedCredential) {
         return c.json(
           {
             success: true as const,
@@ -133,23 +123,7 @@ app.openapi(
         );
       }
 
-      const issuedCredential = matchingCredentials.sort((a, b) => {
-        const dateA = new Date((a.sad?.a?.dt as string) || 0).getTime();
-        const dateB = new Date((b.sad?.a?.dt as string) || 0).getTime();
-        return dateB - dateA;
-      })[0];
-
-      if (!issuedCredential?.sad?.d) {
-        return c.json(
-          {
-            success: true as const,
-            data: { id: pendingCredential.id, status: "PENDING" as const },
-          },
-          200,
-        );
-      }
-
-      const credentialId = issuedCredential.sad.d;
+      const credentialId = issuedCredential.sad!.d!;
 
       const updated = await prisma.veridianCredential.update({
         where: { id: pendingCredential.id },
@@ -171,6 +145,15 @@ app.openapi(
         if (prior?.verificationStatus !== "VERIFIED") {
           await recordAgentActivityEvent(agentId, "AgentVerified");
         }
+
+        await triggerOnChainVerificationWrite({
+          agentId,
+          userId: authContext.user.id,
+          issuedCredential,
+          veridianCredentialId: pendingCredential.id,
+          storedAttributesRaw:
+            pendingCredential.attributes ?? pendingCredential.credentialData,
+        });
       }
 
       return c.json(

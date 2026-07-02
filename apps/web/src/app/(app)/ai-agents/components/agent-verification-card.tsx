@@ -23,8 +23,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Separator } from "@/components/ui/separator";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +33,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
+import {
+  isAgentLiveOnRegistry,
+  isRegistrationConfirmedOnNetwork,
+} from "@/lib/agents/registration-state";
 import {
   type Agent,
   agentApiClient,
@@ -42,11 +47,12 @@ import {
   isAgentVerificationFlowEnabled,
   verifiableCredentialsSdkDocUrl,
 } from "@/lib/config/verification.config";
+import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import {
   deriveVerificationPresentation,
   REGISTRY_UPDATE_PENDING_STATES,
 } from "@/lib/registry/verification-display";
-import { cn, shortenAddress } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { RequestVerificationDialog } from "./request-verification-dialog";
 
@@ -57,27 +63,23 @@ interface AgentVerificationCardProps {
   onVerificationSuccess: () => void;
 }
 
-function monospaceRow({
-  label,
-  value,
-  condensed,
-}: {
-  label: string;
-  value: string;
-  condensed?: boolean;
-}) {
-  const display =
-    condensed && value.length > 28 ? shortenAddress(value, 10) : value;
+function detailRowLabel(label: string) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-      <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right font-mono text-xs text-foreground sm:max-w-[min(100%,24rem)]">
+    <dt className="min-w-0 max-w-[45%] shrink text-xs font-medium text-muted-foreground">
+      {label}
+    </dt>
+  );
+}
+
+function monospaceRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      {detailRowLabel(label)}
+      <dd className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="min-w-0 cursor-default truncate" title={value}>
-              {display}
+            <span className="block min-w-0 cursor-default truncate font-mono text-xs text-foreground">
+              {value}
             </span>
           </TooltipTrigger>
           <TooltipContent className="max-w-md break-all">
@@ -92,12 +94,45 @@ function monospaceRow({
 
 function plainRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-      <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="min-w-0 flex-1 text-right text-xs">{children}</dd>
+    <div className="flex items-center justify-between gap-4">
+      {detailRowLabel(label)}
+      <dd className="flex min-w-0 flex-1 items-center justify-end overflow-hidden text-xs">
+        {children}
+      </dd>
     </div>
+  );
+}
+
+function VerificationSectionSkeleton({
+  rowCount,
+  badgeFirstRow = false,
+}: {
+  rowCount: number;
+  badgeFirstRow?: boolean;
+}) {
+  const labelWidths = ["w-24", "w-28", "w-32", "w-20", "w-36", "w-24", "w-28"];
+  const valueWidths = ["w-36", "w-40", "w-32", "w-44", "w-28", "w-36", "w-40"];
+
+  return (
+    <dl className="space-y-3" aria-hidden>
+      {Array.from({ length: rowCount }).map((_, index) => (
+        <div key={index} className="flex items-center justify-between gap-4">
+          <Skeleton
+            className={cn("h-3", labelWidths[index % labelWidths.length])}
+          />
+          {badgeFirstRow && index === 0 ? (
+            <Skeleton className="h-5 w-32 rounded-full" />
+          ) : (
+            <Skeleton
+              className={cn(
+                "h-3 min-w-0 flex-1",
+                valueWidths[index % valueWidths.length],
+              )}
+            />
+          )}
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -148,12 +183,10 @@ function onChainStatusLabel(
 
 function OnChainVerificationPanel({
   registered,
-  dbVerificationStatus,
   onChainStatus,
   loadState,
 }: {
   registered: boolean;
-  dbVerificationStatus: string;
   onChainStatus: AgentOnChainVerificationStatus | null;
   loadState: "loading" | "ok" | "error";
 }) {
@@ -165,7 +198,7 @@ function OnChainVerificationPanel({
 
   if (!registered) {
     return (
-      <CardContent className="border-t border-border/40 pt-6">
+      <CardContent className="pt-6 pb-6">
         <p className="mb-4 text-xs font-semibold uppercase tracking-tight text-muted-foreground">
           {tOnChain("sectionTitle")}
         </p>
@@ -176,29 +209,17 @@ function OnChainVerificationPanel({
     );
   }
 
-  const showDbMismatch =
-    dbVerificationStatus === "VERIFIED" &&
-    onChainStatus?.registered &&
-    !onChainStatus.hasAnchors &&
-    onChainStatus.resolutionSource !== "on-chain" &&
-    !(
-      onChainStatus.registryState &&
-      REGISTRY_UPDATE_PENDING_STATES.has(onChainStatus.registryState)
-    );
-
   const showUpdateInProgressHint =
     onChainStatus?.registryState &&
     REGISTRY_UPDATE_PENDING_STATES.has(onChainStatus.registryState);
 
   return (
-    <CardContent className="border-t border-border/40 pt-6">
+    <CardContent className="pt-6 pb-6">
       <p className="mb-4 text-xs font-semibold uppercase tracking-tight text-muted-foreground">
         {tOnChain("sectionTitle")}
       </p>
       {loadState === "loading" ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="text-muted-foreground" />
-        </div>
+        <VerificationSectionSkeleton rowCount={6} badgeFirstRow />
       ) : loadState === "error" ? (
         <p className="text-sm text-destructive">{tOnChain("loadError")}</p>
       ) : !onChainStatus ? null : (
@@ -209,8 +230,8 @@ function OnChainVerificationPanel({
             </p>
           ) : null}
           <dl className="space-y-3">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="text-xs font-medium text-muted-foreground">
+            <div className="flex items-center justify-between gap-4">
+              <dt className="min-w-0 max-w-[45%] shrink text-xs font-medium text-muted-foreground">
                 {tOnChain("statusLabel")}
               </dt>
               <dd className="flex justify-end">
@@ -219,12 +240,6 @@ function OnChainVerificationPanel({
                 </Badge>
               </dd>
             </div>
-
-            {showDbMismatch ? (
-              <p className="text-xs text-amber-600 dark:text-amber-500">
-                {tOnChain("dbOnChainMismatch")}
-              </p>
-            ) : null}
 
             {showUpdateInProgressHint ? (
               <p className="text-xs text-amber-600 dark:text-amber-500">
@@ -249,13 +264,11 @@ function OnChainVerificationPanel({
               ? monospaceRow({
                   label: tOnChain("credentialSaid"),
                   value: onChainStatus.credentialSaid,
-                  condensed: true,
                 })
               : onChainStatus.credentialId
                 ? monospaceRow({
                     label: tOnChain("credentialSaid"),
                     value: onChainStatus.credentialId,
-                    condensed: true,
                   })
                 : null}
 
@@ -263,7 +276,6 @@ function OnChainVerificationPanel({
               ? monospaceRow({
                   label: tOnChain("schemaSaid"),
                   value: onChainStatus.schemaSaid,
-                  condensed: true,
                 })
               : null}
 
@@ -271,7 +283,6 @@ function OnChainVerificationPanel({
               ? monospaceRow({
                   label: tOnChain("holderAid"),
                   value: onChainStatus.holderAid,
-                  condensed: true,
                 })
               : null}
 
@@ -279,7 +290,6 @@ function OnChainVerificationPanel({
               ? monospaceRow({
                   label: tOnChain("issuerAid"),
                   value: onChainStatus.issuerAid,
-                  condensed: true,
                 })
               : null}
 
@@ -287,7 +297,6 @@ function OnChainVerificationPanel({
               ? monospaceRow({
                   label: tOnChain("registryAgentId"),
                   value: onChainStatus.queriedAgentIdentifier,
-                  condensed: true,
                 })
               : null}
 
@@ -325,10 +334,12 @@ function VeridianCredentialSummaryPanel({
   agentId,
   currentRegistryAgentId,
   verificationStatus,
+  refreshKey,
 }: {
   agentId: string;
   currentRegistryAgentId: string | null | undefined;
   verificationStatus: string;
+  refreshKey: number;
 }) {
   const tCred = useTranslations(
     "App.Agents.Details.Verification.credentialSummary",
@@ -367,14 +378,16 @@ function VeridianCredentialSummaryPanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, verificationStatus]);
+  }, [agentId, verificationStatus, refreshKey]);
 
   let registryConsistency: "match" | "mismatch" | "neutral" | null = null;
   if (credSummary?.claimedRegistryAgentIdentifier && currentRegistryAgentId) {
-    registryConsistency =
-      credSummary.claimedRegistryAgentIdentifier === currentRegistryAgentId
-        ? "match"
-        : "mismatch";
+    registryConsistency = credentialMatchesAgentRegistryId(
+      credSummary.claimedRegistryAgentIdentifier,
+      currentRegistryAgentId,
+    )
+      ? "match"
+      : "mismatch";
   }
 
   const credStatusTone = (
@@ -392,20 +405,18 @@ function VeridianCredentialSummaryPanel({
         {tCred("sectionTitle")}
       </p>
       {credLoadState === "loading" ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="text-muted-foreground" />
-        </div>
+        <VerificationSectionSkeleton rowCount={10} badgeFirstRow />
       ) : credLoadState === "error" ? (
         <p className="text-sm text-destructive">{tCred("loadError")}</p>
       ) : !credSummary ? (
         <p className="text-sm text-muted-foreground">{tCred("emptyHint")}</p>
       ) : (
         <dl className="space-y-3">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <dt className="text-xs font-medium text-muted-foreground">
+          <div className="flex items-center justify-between gap-4">
+            <dt className="min-w-0 max-w-[45%] shrink text-xs font-medium text-muted-foreground">
               {tCred("credentialDbStatus")}
             </dt>
-            <dd className="flex justify-end">
+            <dd className="flex min-w-0 flex-1 justify-end">
               <Badge variant={credStatusTone(credSummary.credentialStatus)}>
                 {tCredStatus(credSummary.credentialStatus)}
               </Badge>
@@ -425,12 +436,10 @@ function VeridianCredentialSummaryPanel({
           {monospaceRow({
             label: tCred("schemaSaid"),
             value: credSummary.schemaSaid,
-            condensed: true,
           })}
           {monospaceRow({
             label: tCred("recipientAid"),
             value: credSummary.aid,
-            condensed: true,
           })}
           {monospaceRow({
             label: tCred("localRecordId"),
@@ -440,9 +449,16 @@ function VeridianCredentialSummaryPanel({
           {plainRow({
             label: tCred("credentialAgentDisplayName"),
             children: credSummary.credentialAgentDisplayName?.trim() ? (
-              <span className="break-words text-sm text-foreground">
-                {credSummary.credentialAgentDisplayName}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="block min-w-0 truncate text-sm text-foreground">
+                    {credSummary.credentialAgentDisplayName}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {credSummary.credentialAgentDisplayName}
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <span className="text-muted-foreground">
                 {EM_DASH} <span className="italic">{tCred("notProvided")}</span>
@@ -453,20 +469,24 @@ function VeridianCredentialSummaryPanel({
           {plainRow({
             label: tCred("credentialAgentApiUrl"),
             children: credSummary.credentialAgentApiUrl?.trim() ? (
-              <Link
-                href={credSummary.credentialAgentApiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-start gap-1 text-sm text-primary underline-offset-4 hover:underline"
-              >
-                <span className="break-all text-left">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={credSummary.credentialAgentApiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-w-0 items-center justify-end gap-1 overflow-hidden text-sm text-primary underline-offset-4 hover:underline"
+                  >
+                    <span className="min-w-0 truncate">
+                      {credSummary.credentialAgentApiUrl}
+                    </span>
+                    <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-md break-all">
                   {credSummary.credentialAgentApiUrl}
-                </span>
-                <ExternalLink
-                  className="mt-0.5 size-3.5 shrink-0"
-                  aria-hidden
-                />
-              </Link>
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <span className="text-muted-foreground">
                 {EM_DASH} <span className="italic">{tCred("notProvided")}</span>
@@ -478,7 +498,6 @@ function VeridianCredentialSummaryPanel({
             ? monospaceRow({
                 label: tCred("claimedRegistryAgentId"),
                 value: credSummary.claimedRegistryAgentIdentifier,
-                condensed: true,
               })
             : plainRow({
                 label: tCred("claimedRegistryAgentId"),
@@ -494,7 +513,6 @@ function VeridianCredentialSummaryPanel({
             ? monospaceRow({
                 label: tCred("currentRegistryAgentId"),
                 value: currentRegistryAgentId,
-                condensed: true,
               })
             : plainRow({
                 label: tCred("currentRegistryAgentId"),
@@ -623,6 +641,8 @@ export function AgentVerificationCard({
   const t = useTranslations("App.Agents.Details.Verification");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [onChainRefreshKey, setOnChainRefreshKey] = useState(0);
+  const [credRefreshKey, setCredRefreshKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [onChainStatus, setOnChainStatus] =
     useState<AgentOnChainVerificationStatus | null>(null);
   const [onChainLoadState, setOnChainLoadState] = useState<
@@ -633,10 +653,9 @@ export function AgentVerificationCard({
   );
 
   const dbStatus = agent.verificationStatus || "PENDING";
-  const isRegistrationConfirmed =
-    agent.registrationState === "RegistrationConfirmed";
   const hasRegistryIdentifier = Boolean(agent.agentIdentifier?.trim());
-  const registered = isRegistrationConfirmed && hasRegistryIdentifier;
+  const registered =
+    hasRegistryIdentifier && isAgentLiveOnRegistry(agent.registrationState);
 
   useEffect(() => {
     if (!registered) return;
@@ -673,6 +692,28 @@ export function AgentVerificationCard({
 
   const showCredPanel =
     dbStatus === "VERIFIED" || dbStatus === "REVOKED" || dbStatus === "EXPIRED";
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    onVerificationSuccess();
+    setCredRefreshKey((key) => key + 1);
+
+    try {
+      if (registered) {
+        setOnChainLoadState("loading");
+        const res = await agentApiClient.getOnChainVerificationStatus(agent.id);
+        if (res.success) {
+          setOnChainStatus(res.data);
+          setOnChainLoadState("ok");
+        } else {
+          setOnChainStatus(null);
+          setOnChainLoadState("error");
+        }
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleVerificationSuccess = () => {
     setOnChainRefreshKey((key) => key + 1);
@@ -747,18 +788,32 @@ export function AgentVerificationCard({
   const Icon = config.icon;
 
   return (
-    <Card className="overflow-hidden pt-0">
-      <CardHeader className="bg-masumi-gradient rounded-t-xl pt-6">
-        <div className="flex items-center gap-2">
-          <Icon className={cn("h-5 w-5", config.iconColor)} />
-          <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
+    <Card className="overflow-hidden gap-0 py-0 pb-6">
+      <CardHeader className="border-b border-border/50 bg-masumi-gradient rounded-t-xl p-6">
+        <div className="flex w-full flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <Icon className={cn("h-5 w-5 shrink-0", config.iconColor)} />
+              <CardTitle className="text-sm font-medium">
+                {config.title}
+              </CardTitle>
+            </div>
+            <RefreshButton
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+              className="shrink-0 border-border/40 bg-background/10 hover:bg-background/20"
+              aria-label={t("refreshStatus")}
+            />
+          </div>
+          {presentationConfigKey !== "updateInProgress" &&
+          presentationConfigKey !== "onChainPending" ? (
+            <CardDescription>{config.description}</CardDescription>
+          ) : null}
         </div>
-        <CardDescription className="mt-2">{config.description}</CardDescription>
       </CardHeader>
 
       <OnChainVerificationPanel
         registered={registered}
-        dbVerificationStatus={dbStatus}
         onChainStatus={effectiveOnChainStatus}
         loadState={effectiveOnChainLoadState}
       />
@@ -768,6 +823,7 @@ export function AgentVerificationCard({
           agentId={agent.id}
           currentRegistryAgentId={agent.agentIdentifier}
           verificationStatus={dbStatus}
+          refreshKey={credRefreshKey}
         />
       ) : null}
 
@@ -777,7 +833,8 @@ export function AgentVerificationCard({
             <Button variant="primary" className="w-full" disabled>
               {t("loading")}
             </Button>
-          ) : kycStatus === "APPROVED" && !isRegistrationConfirmed ? (
+          ) : kycStatus === "APPROVED" &&
+            !isRegistrationConfirmedOnNetwork(agent.registrationState) ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="block w-full cursor-not-allowed">

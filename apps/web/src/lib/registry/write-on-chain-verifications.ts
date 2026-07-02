@@ -291,6 +291,11 @@ export async function writeOnChainVerifications(params: {
     };
   }
 
+  await prisma.agent.update({
+    where: { id: agent.id },
+    data: { registrationState: "UpdateRequested" },
+  });
+
   const pollResult = await pollRegistryUpdate(
     adminClient,
     registryId,
@@ -305,13 +310,27 @@ export async function writeOnChainVerifications(params: {
       userId: params.userId,
       error: pollResult.error,
     });
+    const failedEntry = await adminClient.getRegistryById({
+      id: registryId,
+      network,
+      filterSmartContractAddress: smartContractAddress,
+    });
+    if (failedEntry?.state === "UpdateFailed") {
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { registrationState: "UpdateFailed" },
+      });
+    }
     return { success: false, error: pollResult.error };
   }
 
   await prisma.$transaction([
     prisma.agent.update({
       where: { id: agent.id },
-      data: { agentIdentifier: pollResult.agentIdentifier },
+      data: {
+        agentIdentifier: pollResult.agentIdentifier,
+        registrationState: "RegistrationConfirmed",
+      },
     }),
     prisma.agentReference.update({
       where: { agentId: agent.id },
@@ -483,4 +502,43 @@ export async function backfillOnChainVerificationsForAgent(params: {
   });
 
   return result?.success === true;
+}
+
+/** Write registry verification anchors after a wallet credential is accepted. */
+export async function triggerOnChainVerificationWrite(params: {
+  agentId: string;
+  userId: string;
+  issuedCredential: Pick<Credential, "sad">;
+  veridianCredentialId: string;
+  storedAttributesRaw?: string | null;
+}): Promise<boolean> {
+  const onChainResult = await writeOnChainVerificationsFromStoredCredential({
+    agentId: params.agentId,
+    userId: params.userId,
+    credential: params.issuedCredential,
+    storedAttributesRaw: params.storedAttributesRaw,
+    veridianCredentialId: params.veridianCredentialId,
+  });
+
+  if (onChainResult === null) {
+    console.error(
+      "[Veridian] On-chain verification write skipped (holder OOBI unresolved):",
+      {
+        agentId: params.agentId,
+        veridianCredentialId: params.veridianCredentialId,
+      },
+    );
+    return false;
+  }
+
+  if (!onChainResult.success) {
+    console.error("[Veridian] On-chain verification write failed:", {
+      agentId: params.agentId,
+      userId: params.userId,
+      error: onChainResult.error,
+    });
+    return false;
+  }
+
+  return true;
 }

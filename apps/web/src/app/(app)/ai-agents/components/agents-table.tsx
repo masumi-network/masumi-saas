@@ -25,6 +25,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
+import {
+  isRegistrationConfirmedOnNetwork,
+  isRegistrationUiPending,
+} from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
 
@@ -143,19 +147,18 @@ export function AgentsTable({
           </TableHeader>
           <TableBody>
             {agents.map((agent, index) => {
-              const isConfirmed =
-                agent.registrationState === "RegistrationConfirmed";
+              const isConfirmed = isRegistrationConfirmedOnNetwork(
+                agent.registrationState,
+              );
               const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
                 agent.registrationState === "RegistrationFailed" ||
                 agent.registrationState === "DeregistrationFailed" ||
                 isLegacyConfirmed;
-              const isPending =
-                agent.registrationState === "RegistrationRequested" ||
-                agent.registrationState === "RegistrationInitiated" ||
-                agent.registrationState === "DeregistrationRequested" ||
-                agent.registrationState === "DeregistrationInitiated";
+              const isPending = isRegistrationUiPending(
+                agent.registrationState,
+              );
               return (
                 <TableRow
                   key={agent.id}
@@ -183,10 +186,7 @@ export function AgentsTable({
                           <AgentVerificationShieldIndicator
                             agentId={agent.id}
                             dbVerificationStatus={agent.verificationStatus}
-                            registered={
-                              agent.registrationState ===
-                              "RegistrationConfirmed"
-                            }
+                            registered={isConfirmed}
                             className="-mt-px"
                           />
                         </span>

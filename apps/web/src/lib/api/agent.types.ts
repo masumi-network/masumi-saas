@@ -24,7 +24,11 @@ export type Agent = {
     | "DeregistrationRequested"
     | "DeregistrationInitiated"
     | "DeregistrationConfirmed"
-    | "DeregistrationFailed";
+    | "DeregistrationFailed"
+    | "UpdateRequested"
+    | "UpdateInitiated"
+    | "UpdateConfirmed"
+    | "UpdateFailed";
   verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   createdAt: Date;
   updatedAt: Date;

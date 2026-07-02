@@ -1007,7 +1007,10 @@
         "registrationFailed": "Fehlgeschlagen",
         "deregistering": "Abmelden",
         "deregistered": "Abgemeldet",
-        "deregistrationFailed": "Fehlgeschlagen"
+        "deregistrationFailed": "Fehlgeschlagen",
+        "updateRequested": "Update angefordert",
+        "updateInitiated": "Wird aktualisiert",
+        "updateFailed": "Update fehlgeschlagen"
       },
       "status": {
         "verified": "Verifiziert",
@@ -1255,7 +1258,7 @@
           },
           "onChainPending": {
             "title": "Credential ausgestellt — On-Chain ausstehend",
-            "description": "Ihre verifizierbare Credential wurde ausgestellt, die Verifizierung ist im Masumi-Netzwerk-Registry jedoch noch nicht bestätigt."
+            "description": "In Ihrer Wallet ausgestellt. Registry-Bestätigung noch ausstehend."
           },
           "revoked": {
             "title": "Verifizierung widerrufen",
@@ -1326,6 +1329,7 @@
             "description": "Die Verifizierung wurde abgelehnt. Sie können erneut versuchen, eine Bestätigung anzufordern."
           },
           "loading": "Laden...",
+          "refreshStatus": "Verifizierungsstatus aktualisieren",
           "requestVerification": "Ausweis anfordern",
           "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Ein Ausweis kann erst nach bestätigter Registrierung angefordert werden.",
           "requestDescription": "Überprüfen Sie die folgenden Informationen und bestätigen Sie, dass Sie für diesen Agenten einen überprüfbaren Ausweis ausstellen möchten.",
@@ -1349,7 +1353,20 @@
           "waitingForWalletDescription": "Bitte öffnen Sie Ihr Veridian-Wallet und akzeptieren Sie das eingehende Zugangsangebot.",
           "completeKyc": "Schließen Sie die KYC-Verifizierung ab",
           "connectCredentialServer": "Verbindung zum Anmeldeinformationsserver",
-          "credentialServerInstructions": "Scannen Sie den Aussteller-QR-Code in Veridian (Menü → Cardano Connect → Verbinden). Fügen Sie dann die OOBI aus Ihrem Wallet unten ein. Wenn bereits verknüpft, aktivieren Sie die direkte AID-Eingabe.",
+          "credentialServerInstructions": "Öffnen Sie in Veridian die Startseite und tippen Sie auf Verbindung hinzufügen. Wechseln Sie zum Tab Scannen und scannen Sie diesen QR-Code. Bestätigen Sie die Verbindungsanfrage in der Wallet.",
+          "pasteIdentifier": "Ihr Identifier",
+          "identifierInstructions": "Tippen Sie in Veridian auf Ihr Profil (oben rechts auf der Startseite) → Profil verwalten → kopieren Sie die Identifier-ID des Profils, das die Credential erhalten soll. Fügen Sie sie unten ein — wir prüfen die Verbindung zum Credential-Server vor der Ausstellung.",
+          "pasteAid": "Identifier-ID (AID)",
+          "connectionNotEstablishedReturnToScan": "Dieser Identifier ist noch nicht mit dem Credential-Server verbunden. Gehen Sie zum vorherigen Schritt, scannen Sie den QR-Code in Veridian und bestätigen Sie die Verbindungsanfrage.",
+          "connectionNotEstablishedBeforeIssue": "Dieser Identifier ist nicht mit dem Credential-Server verbunden. Schließen Sie zuerst den Verbindungsschritt ab.",
+          "goToCreateConnection": "Zum Verbindungsschritt",
+          "scanCredentialServerQRCode": "Mit Veridian scannen: Startseite → Verbindung hinzufügen → Scannen",
+          "stepCreateConnection": "Verbindung erstellen",
+          "stepCreateConnectionDescription": "Scannen Sie den Credential-Server-QR in Veridian und bestätigen Sie die Verbindungsanfrage.",
+          "stepIdentifier": "Identifier",
+          "stepIdentifierDescription": "Fügen Sie die Identifier-ID aus Ihrem Veridian-Profil ein. Wir prüfen die Verbindung vor der Ausstellung.",
+          "nextDisabledReasonPasteIdentifierAid": "Fügen Sie Ihre Veridian Identifier-ID aus Profil verwalten ein.",
+          "nextDisabledReasonEstablishConnection": "Dieser Identifier muss mit dem Credential-Server verbunden sein. Schließen Sie zuerst den Verbindungsschritt in Veridian ab.",
           "pasteOobi": "Wallet-OOBI einfügen",
           "oobiPlaceholder": "z. B. https://beispiel.com/oobi/EABC123…/witness/…",
           "alreadyConnected": "Bereits verknüpft? AID direkt eingeben",
@@ -1427,7 +1444,6 @@
           "stepSubmitDescription": "Prüfen Sie die Übersicht und senden Sie die Anfrage. Akzeptieren Sie die Ausstellung in Veridian bei der Aufforderung.",
           "next": "Nächste",
           "prev": "Vorherige",
-          "nextDisabledReasonPasteOobiOrAid": "Fügen Sie die OOBI oder AID ein (oder wechseln Sie zur direkten AID) und warten Sie auf „Verbunden“.",
           "nextDisabledReasonEstablishConnection": "Stellen Sie eine Verbindung mit dem Anmeldeinformationsserver her. Scannen Sie den QR-Code des Ausstellers mit Ihrer Brieftasche.",
           "nextDisabledReasonCheckingConnection": "Verbindung wird geprüft... Bitte warten.",
           "nextDisabledReasonTestingEndpoint": "Endpunkt wird überprüft... Bitte warten.",
@@ -1445,7 +1461,8 @@
             "endpointTestFailed": "Endpoint-Test fehlgeschlagen",
             "kycFirst": "Bitte schließen Sie zuerst Ihre KYC-Verifizierung ab",
             "connectionError": "Verbindungsfehler: {error}",
-            "needCredentialConnection": "Fügen Sie eine gültige OOBI oder AID ein und warten Sie, bis der Server verbunden zeigt.",
+            "needIdentifierAid": "Fügen Sie zuerst Ihre Veridian Identifier-ID ein.",
+            "needCredentialConnection": "Fügen Sie eine gültige Identifier-ID ein und warten Sie, bis der Server verbunden zeigt.",
             "challengeNotReady": "Verifizierungs-Challenge nicht bereit. Bitte warten Sie oder versuchen Sie es erneut."
           },
           "secretToggle": {

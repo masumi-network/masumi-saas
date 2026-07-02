@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
+import { REGISTRATION_SYNC_STATES } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { useOrganizationContext } from "@/lib/context/organization-context";
@@ -29,14 +30,6 @@ import { AgentsDiscovery } from "./agents-discovery";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
-
-/** States we sync on list load (in-flight only). Excludes failed states to avoid N syncs + refetch on "failed" tab. */
-const SYNC_ON_LOAD_STATES = [
-  "RegistrationRequested",
-  "RegistrationInitiated",
-  "DeregistrationRequested",
-  "DeregistrationInitiated",
-] as const;
 
 const ALL_TABS = [
   "all",
@@ -58,12 +51,20 @@ function getFiltersForTab(tab: string) {
       return {
         registrationStateIn: [
           "RegistrationRequested",
+          "RegistrationInitiated",
+          "UpdateRequested",
+          "UpdateInitiated",
           "DeregistrationRequested",
+          "DeregistrationInitiated",
         ],
       };
     case "failed":
       return {
-        registrationStateIn: ["RegistrationFailed", "DeregistrationFailed"],
+        registrationStateIn: [
+          "RegistrationFailed",
+          "DeregistrationFailed",
+          "UpdateFailed",
+        ],
       };
     default:
       return undefined;
@@ -150,7 +151,7 @@ export function AgentsContent() {
       cursorId?: string,
     ) => {
       const toSync = initial.data.filter((a) =>
-        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
+        (REGISTRATION_SYNC_STATES as readonly string[]).includes(
           a.registrationState,
         ),
       );

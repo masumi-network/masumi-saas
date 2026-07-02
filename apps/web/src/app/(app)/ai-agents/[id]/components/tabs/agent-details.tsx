@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
+import { isRegistrationConfirmedOnNetwork } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { formatPricingDisplay } from "@/lib/utils";
@@ -78,8 +79,9 @@ export function AgentDetails({
   );
 
   const isVerified = agent.verificationStatus === "VERIFIED";
-  const isRegistrationConfirmed =
-    agent.registrationState === "RegistrationConfirmed";
+  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
+    agent.registrationState,
+  );
   const registrationBadgeVariant = isRegistrationConfirmed
     ? ("success" as const)
     : getRegistrationStatusBadgeVariant(agent.registrationState);

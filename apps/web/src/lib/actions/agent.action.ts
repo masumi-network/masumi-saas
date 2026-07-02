@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import {
   getWalletOwnedAgentForUser,
   listWalletOwnedAgentsForUser,
@@ -165,8 +166,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     });
     if (!entry) return { success: true as const };
 
-    const registrationState =
-      entry.state as keyof typeof import("@masumi/database/client").RegistrationState;
+    const registrationState = registrationStateFromRegistryEntry(entry.state);
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"

@@ -4,9 +4,10 @@
  * No "use server" — receives user and params from callers.
  */
 
-import prisma, { type RegistrationState } from "@masumi/database/client";
+import prisma from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
@@ -142,7 +143,7 @@ async function completeRegistrationFromRegistryEntry(params: {
   agentName: string;
   entry: RegistryEntry;
 }): Promise<CompleteRegistrationResult> {
-  const state = params.entry.state as RegistrationState;
+  const state = registrationStateFromRegistryEntry(params.entry.state);
   await prisma.agent.update({
     where: { id: params.agentId },
     data: {
@@ -174,6 +175,12 @@ async function completeRegistrationFromRegistryEntry(params: {
       errorMsg,
     );
     return { status: "error", error: errorMsg };
+  }
+  if (state === "UpdateFailed") {
+    return {
+      status: "error",
+      error: "Registry update failed on the payment node.",
+    };
   }
   return { status: "pending" };
 }
@@ -875,7 +882,9 @@ export async function completeOnChainRegistration(
       await tx.agent.update({
         where: { id: agent.id },
         data: {
-          registrationState: registryEntry.state as RegistrationState,
+          registrationState: registrationStateFromRegistryEntry(
+            registryEntry.state,
+          ),
           ...(registryEntry.agentIdentifier && {
             agentIdentifier: registryEntry.agentIdentifier,
           }),

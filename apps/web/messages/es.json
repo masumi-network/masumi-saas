@@ -1007,7 +1007,10 @@
         "registrationFailed": "Fallido",
         "deregistering": "Darse de baja",
         "deregistered": "dado de baja",
-        "deregistrationFailed": "Fallido"
+        "deregistrationFailed": "Fallido",
+        "updateRequested": "Actualización solicitada",
+        "updateInitiated": "Actualizando",
+        "updateFailed": "Actualización fallida"
       },
       "status": {
         "verified": "Verificado",
@@ -1255,7 +1258,7 @@
           },
           "onChainPending": {
             "title": "Credencial emitida — on-chain pendiente",
-            "description": "Su credencial verificable ha sido emitida, pero la verificación aún no está confirmada en el registro de la red Masumi."
+            "description": "Emitida en su wallet. Confirmación en el registro pendiente."
           },
           "revoked": {
             "title": "Verificación revocada",
@@ -1326,6 +1329,7 @@
             "description": "La verificación fue rechazada. Puedes intentar solicitar la verificación nuevamente."
           },
           "loading": "Cargando...",
+          "refreshStatus": "Actualizar estado de verificación",
           "requestVerification": "Solicitar Credencial",
           "tooltipRequestCredentialRequiresRegistration": "Primero termina el registro on-chain de este agente. Solo puedes solicitar una credencial cuando el registro esté confirmado.",
           "requestDescription": "Revise la información a continuación y confirme para emitir una credencial verificable para este agente.",
@@ -1349,7 +1353,20 @@
           "waitingForWalletDescription": "Abra su billetera Veridian y acepte la oferta de credencial entrante.",
           "completeKyc": "Verificación KYC completa",
           "connectCredentialServer": "Conexión al servidor de credenciales",
-          "credentialServerInstructions": "Escanea el código QR del emisor en Veridian (Menú → Cardano Connect → Conectar). Luego pega la OOBI copiada de tu billetera abajo. Si ya vinculaste la billetera, usa solo la AID.",
+          "credentialServerInstructions": "En Veridian, abre Inicio y pulsa Añadir conexión. Cambia a la pestaña Escanear y escanea este código QR. Acepta la solicitud de conexión en tu wallet cuando aparezca.",
+          "pasteIdentifier": "Tu identificador",
+          "identifierInstructions": "En Veridian, pulsa tu perfil (arriba a la derecha en Inicio) → Administrar perfil → copia el ID de identificador del perfil que recibirá la credencial. Pégalo abajo; comprobaremos la conexión con el servidor de credenciales antes de emitir.",
+          "pasteAid": "ID de identificador (AID)",
+          "connectionNotEstablishedReturnToScan": "Este identificador aún no está conectado al servidor de credenciales. Vuelve al paso anterior, escanea el QR en Veridian y acepta la solicitud de conexión.",
+          "connectionNotEstablishedBeforeIssue": "Este identificador no está conectado al servidor de credenciales. Completa primero el paso de conexión.",
+          "goToCreateConnection": "Ir al paso de conexión",
+          "scanCredentialServerQRCode": "Escanear con Veridian: Inicio → Añadir conexión → Escanear",
+          "stepCreateConnection": "Crear conexión",
+          "stepCreateConnectionDescription": "Escanea el QR del servidor de credenciales en Veridian y acepta la solicitud de conexión.",
+          "stepIdentifier": "Identificador",
+          "stepIdentifierDescription": "Pega el ID de identificador de tu perfil Veridian. Comprobamos la conexión antes de emitir.",
+          "nextDisabledReasonPasteIdentifierAid": "Pega tu ID de identificador de Veridian desde Administrar perfil.",
+          "nextDisabledReasonEstablishConnection": "Este identificador debe estar conectado al servidor de credenciales. Completa primero el paso de conexión en Veridian.",
           "pasteOobi": "Pega la OOBI de tu billetera",
           "oobiPlaceholder": "p. ej. https://ejemplo.com/oobi/EABC123…/witness/…",
           "alreadyConnected": "¿Ya vinculado? Introduce solo la AID",
@@ -1427,7 +1444,6 @@
           "stepSubmitDescription": "Revisa la información y envía la solicitud. Acepta la credencial en Veridian cuando se ofrezca.",
           "next": "Próximo",
           "prev": "Anterior",
-          "nextDisabledReasonPasteOobiOrAid": "Pega la OOBI o AID (o cambia a entrada directa de AID) y espera a que figure conectado.",
           "nextDisabledReasonEstablishConnection": "Establezca conexión con el servidor de credenciales. Escanea el código QR del emisor con tu billetera.",
           "nextDisabledReasonCheckingConnection": "Comprobando conexión... Espere por favor.",
           "nextDisabledReasonTestingEndpoint": "Verificando punto final... Espere.",
@@ -1445,7 +1461,8 @@
             "endpointTestFailed": "La prueba del endpoint falló",
             "kycFirst": "Completa primero la verificación KYC",
             "connectionError": "Error de conexión: {error}",
-            "needCredentialConnection": "Pega una OOBI o AID válida y espera a que el servidor indique que está conectado.",
+            "needIdentifierAid": "Pega primero tu ID de identificador de Veridian.",
+            "needCredentialConnection": "Pega un ID de identificador válido y espera a que el servidor indique que está conectado.",
             "challengeNotReady": "El desafío de verificación no está listo. Espera o inténtalo de nuevo."
           },
           "secretToggle": {

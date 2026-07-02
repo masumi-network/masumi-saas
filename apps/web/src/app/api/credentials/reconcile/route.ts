@@ -8,10 +8,9 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import {
   backfillOnChainVerificationsForAgent,
-  writeOnChainVerificationsFromStoredCredential,
+  triggerOnChainVerificationWrite,
 } from "@/lib/registry/write-on-chain-verifications";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
@@ -23,8 +22,8 @@ import {
 import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
-  validateCredential,
 } from "@/lib/veridian";
+import { resolvePendingWalletCredential } from "@/lib/veridian/resolve-pending-wallet-credential";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -104,44 +103,14 @@ app.openapi(
       for (const pending of pendingCredentials) {
         try {
           const credentials = await fetchContactCredentials(pending.aid);
-          const matchingCredentials = credentials.filter((cred) => {
-            const credSchemaSaid = cred.sad?.s || cred.schema?.$id;
-            if (credSchemaSaid !== schemaSaid) return false;
-
-            if (cred.sad?.a && agent.agentIdentifier) {
-              const credAgentId = cred.sad.a.agentId as string | undefined;
-              return credentialMatchesAgentRegistryId(
-                credAgentId,
-                agent.agentIdentifier,
-              );
-            }
-
-            return true;
+          const issuedCredential = resolvePendingWalletCredential({
+            pending,
+            credentials,
+            schemaSaid,
+            versionedAgentIdentifier: agent.agentIdentifier,
           });
 
-          if (matchingCredentials.length === 0) continue;
-
-          const issuedCredential = matchingCredentials.sort((a, b) => {
-            const dateA = new Date((a.sad?.a?.dt as string) || 0).getTime();
-            const dateB = new Date((b.sad?.a?.dt as string) || 0).getTime();
-            return dateB - dateA;
-          })[0];
-
           if (!issuedCredential?.sad?.d) continue;
-
-          const validationResult = validateCredential(issuedCredential);
-          if (!validationResult.isValid) {
-            console.error(
-              "[Veridian] Skipping reconcile for invalid credential:",
-              {
-                agentId,
-                pendingCredentialId: pending.id,
-                status: validationResult.status,
-                message: validationResult.message,
-              },
-            );
-            continue;
-          }
 
           const credentialId = issuedCredential.sad.d;
 
@@ -160,24 +129,13 @@ app.openapi(
 
           await recordAgentActivityEvent(agentId, "AgentVerified");
 
-          const onChainResult =
-            await writeOnChainVerificationsFromStoredCredential({
-              agentId,
-              userId: user.id,
-              credential: issuedCredential,
-              storedAttributesRaw: pending.attributes ?? pending.credentialData,
-              veridianCredentialId: pending.id,
-            });
-          if (onChainResult && !onChainResult.success) {
-            console.error(
-              "[Veridian] On-chain verification write failed after reconcile:",
-              {
-                agentId,
-                userId: user.id,
-                error: onChainResult.error,
-              },
-            );
-          }
+          await triggerOnChainVerificationWrite({
+            agentId,
+            userId: user.id,
+            issuedCredential,
+            veridianCredentialId: pending.id,
+            storedAttributesRaw: pending.attributes ?? pending.credentialData,
+          });
 
           resolved = true;
           // One resolved is enough to flip the agent to VERIFIED
