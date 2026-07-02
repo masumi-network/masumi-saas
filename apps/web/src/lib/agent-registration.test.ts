@@ -54,6 +54,7 @@ vi.mock("@/lib/payment-node", () => ({
     getAdminApiKey: getAdminApiKeyMock,
     getPaymentSourceId: getPaymentSourceIdMock,
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
+    tryGetSmartContractAddress: () => undefined,
   },
 }));
 
@@ -64,6 +65,7 @@ vi.mock("./payment-node/config", () => ({
     getPaymentSourceId: getPaymentSourceIdMock,
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
+    tryGetSmartContractAddress: () => undefined,
   },
   isPaymentNodeConfigError: (error: unknown) =>
     error instanceof Error && error.name === "PaymentNodeConfigError",
@@ -742,11 +744,13 @@ describe("completeOnChainRegistration", () => {
       status: "registered",
       data: confirmedAgent,
     });
-    expect(getRegistryEntryForSyncMock).toHaveBeenCalledWith({
-      userId: "user-1",
-      externalId: "registry-entry-1",
-      network: "Preprod",
-    });
+    expect(getRegistryEntryForSyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        externalId: "registry-entry-1",
+        network: "Preprod",
+      }),
+    );
     expect(agentUpdateMock).toHaveBeenCalledWith({
       where: { id: "agent-1" },
       data: {

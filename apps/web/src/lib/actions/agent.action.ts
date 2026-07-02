@@ -151,10 +151,17 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
 
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const refMeta =
+      (agent.agentReference.metadata as Record<string, unknown> | null) ?? {};
+    const smartContractAddress =
+      (typeof refMeta.smartContractAddress === "string"
+        ? refMeta.smartContractAddress
+        : undefined) ?? paymentNodeConfig.tryGetSmartContractAddress(network);
     const entry = await getRegistryEntryForSync({
       userId: user.id,
       externalId: agent.agentReference.externalId,
       network,
+      smartContractAddress,
     });
     if (!entry) return { success: true as const };
 

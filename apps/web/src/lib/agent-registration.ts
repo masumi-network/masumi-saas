@@ -573,6 +573,7 @@ async function registerAgentOnChainUntilSetup(
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
+        paymentSourceId,
         ...((paymentSource.smartContractAddress ||
           configuredPaymentSource.smartContractAddress) && {
           smartContractAddress:
@@ -621,10 +622,15 @@ export async function completeOnChainRegistration(
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
+    const refMetaForSync = (ref.metadata ?? {}) as RegistrationPayloadStored;
+    const smartContractAddress =
+      refMetaForSync.smartContractAddress ??
+      paymentNodeConfig.tryGetSmartContractAddress(network);
     const entry = await getRegistryEntryForSync({
       userId,
       externalId: ref.externalId,
       network,
+      smartContractAddress,
     });
     if (entry) {
       return completeRegistrationFromRegistryEntry({

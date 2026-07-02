@@ -13,6 +13,12 @@ export async function getRegistryEntryForSync(params: {
   userId: string;
   externalId: string;
   network: PaymentNodeNetwork;
+  /**
+   * Payment source the registration was submitted to. Scopes the admin/user
+   * paginated lookup so a freshly confirmed row is reachable even on a shared
+   * payment node with many entries across other sources.
+   */
+  smartContractAddress?: string | null;
   userClient?: PaymentNodeClient | null;
   adminClient?: PaymentNodeClient | null;
 }): Promise<RegistryEntry | null> {
@@ -23,6 +29,7 @@ export async function getRegistryEntryForSync(params: {
       const entry = await userClient.getRegistryById({
         id: params.externalId,
         network: params.network,
+        filterSmartContractAddress: params.smartContractAddress,
       });
       if (entry) return entry;
     } catch {
@@ -37,6 +44,7 @@ export async function getRegistryEntryForSync(params: {
     return await adminClient.getRegistryById({
       id: params.externalId,
       network: params.network,
+      filterSmartContractAddress: params.smartContractAddress,
     });
   } catch {
     return null;

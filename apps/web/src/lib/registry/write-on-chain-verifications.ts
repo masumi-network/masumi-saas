@@ -92,6 +92,7 @@ async function pollRegistryUpdate(
   registryId: string,
   network: PaymentNodeNetwork,
   previousAgentIdentifier: string,
+  smartContractAddress: string | undefined,
 ): Promise<{ agentIdentifier: string } | { error: string }> {
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
 
@@ -99,6 +100,7 @@ async function pollRegistryUpdate(
     const entry = await adminClient.getRegistryById({
       id: registryId,
       network,
+      filterSmartContractAddress: smartContractAddress,
     });
     if (!entry) {
       return { error: "Registry entry not found while polling update" };
@@ -184,6 +186,16 @@ export async function writeOnChainVerifications(params: {
   const refMeta = (agent.agentReference.metadata ??
     {}) as RegistrationRefMetadata;
 
+  // Scope registry-row lookups to this agent's payment source. On shared
+  // payment nodes the unfiltered list does not surface a given source's rows
+  // within the page budget, so getRegistryById would otherwise return null.
+  const smartContractAddress = await resolveSmartContractAddress({
+    adminClient,
+    userId: params.userId,
+    network,
+    refMeta,
+  });
+
   const onChainBefore = await adminClient.getRegistryByAgentIdentifier({
     agentIdentifier: agent.agentIdentifier,
     network,
@@ -207,6 +219,7 @@ export async function writeOnChainVerifications(params: {
   const registryEntry = await adminClient.getRegistryById({
     id: registryId,
     network,
+    filterSmartContractAddress: smartContractAddress,
   });
   if (!registryEntry) {
     return { success: false, error: "Registry entry not found" };
@@ -249,13 +262,6 @@ export async function writeOnChainVerifications(params: {
     schemaVersion: "1",
   });
 
-  const smartContractAddress = await resolveSmartContractAddress({
-    adminClient,
-    userId: params.userId,
-    network,
-    refMeta,
-  });
-
   const updateBody = buildUpdateAgentInput({
     network,
     agentIdentifier: agent.agentIdentifier,
@@ -290,6 +296,7 @@ export async function writeOnChainVerifications(params: {
     registryId,
     network,
     previousAgentIdentifier,
+    smartContractAddress,
   );
 
   if ("error" in pollResult) {

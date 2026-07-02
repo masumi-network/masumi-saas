@@ -3,10 +3,30 @@ import "server-only";
 import prisma from "@masumi/database/client";
 
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import { paymentNodeConfig } from "@/lib/payment-node/config";
+import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const PAYMENT_NODE_REGISTRY_MAX_PAGES = 25;
+const PAYMENT_NODE_REGISTRY_PAGE_LIMIT = 100;
+
+/**
+ * Registrations are minted with the funding wallet as SmartContractWallet, so
+ * a user's wallet-scoped payment-node key cannot enumerate the row. Reads keyed
+ * to the registration's payment source (via the admin key) still resolve it.
+ */
+function getAgentSmartContractAddress(agent: {
+  agentReference?: { metadata?: unknown } | null;
+}): string | undefined {
+  const meta = agent.agentReference?.metadata;
+  if (meta && typeof meta === "object" && "smartContractAddress" in meta) {
+    const value = (meta as Record<string, unknown>).smartContractAddress;
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  return undefined;
+}
 
 const LOCAL_WALLET_OWNED_FALLBACK_STATES = new Set([
   "RegistrationRequested",
@@ -83,6 +103,54 @@ async function getVisibleRegistryKeysForUser(
   return { externalIds, agentIdentifiers };
 }
 
+/**
+ * Registry keys visible to the admin key, scoped to the payment sources the
+ * user's own agents reference. DB agents are already `userId`-scoped, so
+ * intersecting with admin-visible keys recognizes admin-minted registrations
+ * (funding-wallet SmartContractWallet) without leaking other tenants' agents.
+ */
+async function getAdminVisibleRegistryKeys(
+  network: PaymentNodeNetwork,
+  smartContractAddresses: Set<string>,
+): Promise<{
+  externalIds: Set<string>;
+  agentIdentifiers: Set<string>;
+} | null> {
+  if (smartContractAddresses.size === 0) return null;
+
+  const adminClient = tryCreateAdminPaymentNodeClient();
+  if (!adminClient) return null;
+
+  const externalIds = new Set<string>();
+  const agentIdentifiers = new Set<string>();
+
+  for (const smartContractAddress of smartContractAddresses) {
+    let cursorId: string | undefined;
+    for (let page = 0; page < PAYMENT_NODE_REGISTRY_MAX_PAGES; page += 1) {
+      const { Assets } = await adminClient.getRegistry({
+        network,
+        cursorId,
+        limit: PAYMENT_NODE_REGISTRY_PAGE_LIMIT,
+        filterSmartContractAddress: smartContractAddress,
+      });
+
+      for (const asset of Assets) {
+        externalIds.add(asset.id);
+        if (asset.agentIdentifier) {
+          agentIdentifiers.add(asset.agentIdentifier);
+        }
+      }
+
+      if (Assets.length === 0) break;
+      const nextCursor = Assets[Assets.length - 1]?.id;
+      if (!nextCursor || nextCursor === cursorId) break;
+      cursorId = nextCursor;
+    }
+  }
+
+  return { externalIds, agentIdentifiers };
+}
+
 function isVisibleViaPaymentNode(
   agent: AgentWithReference,
   visibleKeys: {
@@ -130,10 +198,23 @@ export async function listWalletOwnedAgentsForUser(params: {
     params.network,
   );
 
+  const smartContractAddresses = new Set<string>();
+  for (const agent of agents) {
+    const smartContractAddress =
+      getAgentSmartContractAddress(agent) ??
+      paymentNodeConfig.tryGetSmartContractAddress(params.network);
+    if (smartContractAddress) smartContractAddresses.add(smartContractAddress);
+  }
+  const adminVisibleKeys = await getAdminVisibleRegistryKeys(
+    params.network,
+    smartContractAddresses,
+  );
+
   return agents.filter(
     (agent) =>
       isLocallyVisibleWalletOwnedAgent(agent) ||
-      isVisibleViaPaymentNode(agent, visibleKeys),
+      isVisibleViaPaymentNode(agent, visibleKeys) ||
+      isVisibleViaPaymentNode(agent, adminVisibleKeys),
   );
 }
 
@@ -154,25 +235,36 @@ export async function getWalletOwnedAgentForUser(params: {
   if (!agent) return null;
   if (isLocallyVisibleWalletOwnedAgent(agent)) return agent;
 
-  const client = await getPaymentNodeClientForUser(params.userId);
-  if (!client) return null;
-
   const network = getAgentNetwork(agent);
+  const smartContractAddress =
+    getAgentSmartContractAddress(agent) ??
+    paymentNodeConfig.tryGetSmartContractAddress(network);
 
+  // Prefer the SC-scoped user→admin lookup: admin-minted registrations
+  // (funding-wallet SmartContractWallet) are outside the user key's scope.
   if (agent.agentReference?.externalId) {
-    const entry = await client.getRegistryById({
-      id: agent.agentReference.externalId,
+    const entry = await getRegistryEntryForSync({
+      userId: params.userId,
+      externalId: agent.agentReference.externalId,
       network,
+      smartContractAddress,
     });
     if (entry) return agent;
   }
 
   if (agent.agentIdentifier) {
-    const entry = await client.getRegistryByAgentIdentifier({
-      agentIdentifier: agent.agentIdentifier,
-      network,
-    });
-    if (entry) return agent;
+    // The agent-identifier endpoint 404s for wallet-scoped user keys not in
+    // scope, so resolve via the admin key when available.
+    const client =
+      tryCreateAdminPaymentNodeClient() ??
+      (await getPaymentNodeClientForUser(params.userId));
+    if (client) {
+      const entry = await client.getRegistryByAgentIdentifier({
+        agentIdentifier: agent.agentIdentifier,
+        network,
+      });
+      if (entry) return agent;
+    }
   }
 
   return null;

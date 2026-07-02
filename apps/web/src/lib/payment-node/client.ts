@@ -281,6 +281,8 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistry(params: {
       network: PaymentNodeNetwork;
       cursorId?: string;
+      limit?: number;
+      filterSmartContractAddress?: string | null;
     }): Promise<{ Assets: RegistryEntry[] }> {
       return requestParse(
         base,
@@ -290,7 +292,12 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           method: "GET",
           query: {
             network: params.network,
+            ...(params.limit != null && { limit: String(params.limit) }),
             ...(params.cursorId && { cursorId: params.cursorId }),
+            ...(params.filterSmartContractAddress != null &&
+              params.filterSmartContractAddress !== "" && {
+                filterSmartContractAddress: params.filterSmartContractAddress,
+              }),
           },
         },
         registryListResponseSchema,
@@ -332,25 +339,51 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryById(params: {
       id: string;
       network: PaymentNodeNetwork;
+      /**
+       * Scope the paginated scan to a single payment source. Registry rows are
+       * ordered newest-first per source, and on shared payment nodes the
+       * unfiltered list may not surface a given source's rows within the page
+       * budget. Pass the registration's smart-contract address so a freshly
+       * confirmed row is reachable on the first page.
+       */
+      filterSmartContractAddress?: string | null;
     }): Promise<RegistryEntry | null> {
       // Fetch without a cursorId so the target entry is included in results.
       // Using cursorId for the target's own id would exclude it under standard
       // cursor-based pagination ("entries after this cursor").
-      // Each user key only sees their own agents so the result set is small.
+      const PAGE_LIMIT = 100;
       const MAX_PAGES = 20;
-      let cursorId: string | undefined;
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const { Assets } = await this.getRegistry({
-          network: params.network,
-          cursorId,
-        });
-        const match = Assets.find((a) => a.id === params.id);
-        if (match) return match;
-        if (Assets.length === 0) return null;
-        const nextCursor = Assets[Assets.length - 1]!.id;
-        // Stale cursor — API didn't advance, bail to avoid an infinite loop.
-        if (nextCursor === cursorId) return null;
-        cursorId = nextCursor;
+
+      const scan = async (
+        filterSmartContractAddress?: string | null,
+      ): Promise<RegistryEntry | null> => {
+        let cursorId: string | undefined;
+        for (let page = 0; page < MAX_PAGES; page++) {
+          const { Assets } = await this.getRegistry({
+            network: params.network,
+            cursorId,
+            limit: PAGE_LIMIT,
+            filterSmartContractAddress,
+          });
+          const match = Assets.find((a) => a.id === params.id);
+          if (match) return match;
+          if (Assets.length === 0) return null;
+          const nextCursor = Assets[Assets.length - 1]!.id;
+          // Stale cursor — API didn't advance, bail to avoid an infinite loop.
+          if (nextCursor === cursorId) return null;
+          cursorId = nextCursor;
+        }
+        return null;
+      };
+
+      const scoped = await scan(params.filterSmartContractAddress);
+      if (scoped) return scoped;
+
+      // The smart-contract filter may be wrong or missing (e.g. legacy rows
+      // without stored metadata on a non-default payment source). Fall back to
+      // an unfiltered scan so the lookup is never worse than unscoped.
+      if (params.filterSmartContractAddress) {
+        return scan(undefined);
       }
       return null;
     },

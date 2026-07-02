@@ -8,6 +8,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import { credentialStatusQuerySchema } from "@/lib/schemas";
 import {
   credentialStatusSuccessSchema,
@@ -109,8 +110,14 @@ app.openapi(
         if (credSchemaSaid !== schemaSaid) return false;
 
         if (cred.sad?.a && agent?.agentIdentifier) {
+          // The credential's agentId is the version-independent root, while
+          // agent.agentIdentifier is the full versioned id — match by root so a
+          // credential still resolves across registry version bumps.
           const credAgentId = cred.sad.a.agentId as string | undefined;
-          return credAgentId === agent.agentIdentifier;
+          return credentialMatchesAgentRegistryId(
+            credAgentId,
+            agent.agentIdentifier,
+          );
         }
 
         return true;
