@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "Einzelheiten",
         "earnings": "Ergebnis",
-        "credentials": "Anmeldeinformationen",
+        "verification": "Verifizierung",
         "transactions": "Transaktionen"
       },
       "registrationStatus": {
@@ -1007,12 +1007,19 @@
         "registrationFailed": "Fehlgeschlagen",
         "deregistering": "Abmelden",
         "deregistered": "Abgemeldet",
-        "deregistrationFailed": "Fehlgeschlagen"
+        "deregistrationFailed": "Fehlgeschlagen",
+        "updateRequested": "Update angefordert",
+        "updateInitiated": "Wird aktualisiert",
+        "updateFailed": "Update fehlgeschlagen"
       },
       "status": {
         "verified": "Verifiziert",
         "verifiedShieldAriaSummary": "Dieser Agent wurde im Masumi-Netzwerk verifiziert.",
         "verifiedShieldTooltip": "Dieser Agent wurde im Masumi-Netzwerk verifiziert und hat ein Verifiable Credential. <docsLink>Verifiable Credentials (SDK-Doku)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Verifizierungs-Update im Masumi-Netzwerk läuft.",
+        "updateInProgressShieldTooltip": "Ein Registry-Update läuft. Verifizierungsanker werden in das Registry-NFT geschrieben.",
+        "onChainPendingShieldAriaSummary": "Credential ausgestellt; On-Chain-Verifizierung ausstehend.",
+        "onChainPendingShieldTooltip": "Eine Credential wurde ausgestellt, die Verifizierung ist im Masumi-Netzwerk-Registry noch nicht bestätigt.",
         "rejected": "Abgelehnt",
         "underReview": "Wird überprüft",
         "pending": "Ausstehend",
@@ -1157,9 +1164,9 @@
         "price": "Preis",
         "verification": "Überprüfung",
         "verificationPromptTitle": "Überprüfen Sie Ihren Agenten",
-        "verificationPromptDescription": "Dieser Agent ist noch nicht verifiziert. Fordern Sie einen Ausweis an, um Ihren verifizierten KYC-Status zu verknüpfen und Vertrauen aufzubauen.",
+        "verificationPromptDescription": "Dieser Agent ist noch nicht verifiziert. Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität zu verknüpfen und Vertrauen aufzubauen.",
         "hireInSokosumi": "Mieten Sie in Sokosumi",
-        "viewInCredentialsTab": "In Anmeldeinformationen anzeigen",
+        "viewInVerificationTab": "Zur Verifizierung",
         "refresh": "Aktualisieren",
         "endpoint": "Endpunkt",
         "tags": "Schlagworte",
@@ -1230,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "Kein Ausweis ausgestellt",
+            "title": "Nicht verifiziert",
             "description": "Dieser Agent wurde noch nicht verifiziert. Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität mit diesem Agenten zu verknüpfen."
           },
           "review": {
@@ -1244,6 +1251,14 @@
           "verified": {
             "title": "Agent verifiziert",
             "description": "Die Identität dieses Agenten wurde im Masumi-Netzwerk verifiziert."
+          },
+          "updateInProgress": {
+            "title": "Verifizierungs-Update läuft",
+            "description": "Ihre Credential wurde akzeptiert und Verifizierungsanker werden in das Registry-NFT geschrieben. Dies dauert in der Regel wenige Minuten."
+          },
+          "onChainPending": {
+            "title": "Verifizierung ausstehend — On-Chain",
+            "description": "In Ihrer Wallet ausgestellt. Registry-Bestätigung noch ausstehend."
           },
           "revoked": {
             "title": "Verifizierung widerrufen",
@@ -1285,13 +1300,38 @@
             "notProvided": "nicht im VC",
             "notRegisteredYet": "noch nicht gesetzt"
           },
+          "onChainSummary": {
+            "sectionTitle": "On-Chain-Verifizierung",
+            "loadError": "On-Chain-Status konnte nicht geladen werden. Seite bitte aktualisieren.",
+            "notRegistered": "Dieser Agent ist noch nicht on-chain registriert. Verankerungen werden nach bestätigter Registrierung und Ausstellung einer Credential geschrieben.",
+            "unavailable": "On-Chain-Verifizierung ist auf diesem Server nicht konfiguriert.",
+            "statusLabel": "Registry-Status",
+            "statusVerified": "On-chain verifiziert",
+            "statusUpdateInProgress": "Registry-Update läuft",
+            "statusAnchorsInvalid": "Anker in Registry — Credential derzeit ungültig",
+            "statusAnchorsPending": "Noch keine Verifizierungsanker im Registry-NFT",
+            "statusDbOnly": "Nur in der App verifiziert (On-Chain-Backfill ausstehend)",
+            "resolutionSource": "Auflösungsquelle",
+            "sourceOnChain": "Registry-NFT-Metadaten",
+            "sourceDatabase": "Anwendungsdatenbank (Fallback)",
+            "credentialSaid": "Credential SAID (Anker)",
+            "schemaSaid": "Schema SAID",
+            "holderAid": "Holder-AID",
+            "issuerAid": "Issuer-AID",
+            "registryAgentId": "Abgefragte Registry-Agent-ID",
+            "expiresAt": "Credential läuft ab",
+            "expiresNever": "Kein berechnetes Ablaufdatum",
+            "dbOnChainMismatch": "Die App zeigt verifiziert an, aber das Registry-NFT hat noch keine Verifizierungsanker.",
+            "updateInProgressHint": "Ein Registry-Update läuft. Verifizierungsanker erscheinen im Registry-NFT, sobald die Transaktion bestätigt ist."
+          },
           "rejected": {
             "title": "Überprüfung abgelehnt",
             "description": "Die Verifizierung wurde abgelehnt. Sie können erneut versuchen, eine Bestätigung anzufordern."
           },
           "loading": "Laden...",
-          "requestVerification": "Ausweis anfordern",
-          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Ein Ausweis kann erst nach bestätigter Registrierung angefordert werden.",
+          "refreshStatus": "Verifizierungsstatus aktualisieren",
+          "requestVerification": "Verifizierung anfordern",
+          "tooltipRequestCredentialRequiresRegistration": "Schließen Sie zuerst die On-Chain-Registrierung dieses Agents ab. Eine Verifizierung ist erst nach bestätigter Registrierung möglich.",
           "requestDescription": "Überprüfen Sie die folgenden Informationen und bestätigen Sie, dass Sie für diesen Agenten einen überprüfbaren Ausweis ausstellen möchten.",
           "agentInformation": "Agenteninformationen",
           "agentName": "Agentenname",
@@ -1313,7 +1353,20 @@
           "waitingForWalletDescription": "Bitte öffnen Sie Ihr Veridian-Wallet und akzeptieren Sie das eingehende Zugangsangebot.",
           "completeKyc": "Schließen Sie die KYC-Verifizierung ab",
           "connectCredentialServer": "Verbindung zum Anmeldeinformationsserver",
-          "credentialServerInstructions": "Scannen Sie den Aussteller-QR-Code in Veridian (Menü → Cardano Connect → Verbinden). Fügen Sie dann die OOBI aus Ihrem Wallet unten ein. Wenn bereits verknüpft, aktivieren Sie die direkte AID-Eingabe.",
+          "credentialServerInstructions": "Öffnen Sie in Veridian die Startseite und tippen Sie auf Verbindung hinzufügen. Wechseln Sie zum Tab Scannen und scannen Sie diesen QR-Code. Bestätigen Sie die Verbindungsanfrage in der Wallet.",
+          "pasteIdentifier": "Ihr Identifier",
+          "identifierInstructions": "Tippen Sie in Veridian auf Ihr Profil (oben rechts auf der Startseite) → Profil verwalten → kopieren Sie die Identifier-ID des Profils, das die Credential erhalten soll. Fügen Sie sie unten ein — wir prüfen die Verbindung zum Credential-Server vor der Ausstellung.",
+          "pasteAid": "Identifier-ID (AID)",
+          "connectionNotEstablishedReturnToScan": "Dieser Identifier ist noch nicht mit dem Credential-Server verbunden. Gehen Sie zum vorherigen Schritt, scannen Sie den QR-Code in Veridian und bestätigen Sie die Verbindungsanfrage.",
+          "connectionNotEstablishedBeforeIssue": "Dieser Identifier ist nicht mit dem Credential-Server verbunden. Schließen Sie zuerst den Verbindungsschritt ab.",
+          "goToCreateConnection": "Zum Verbindungsschritt",
+          "scanCredentialServerQRCode": "Mit Veridian scannen: Startseite → Verbindung hinzufügen → Scannen",
+          "stepCreateConnection": "Verbindung erstellen",
+          "stepCreateConnectionDescription": "Scannen Sie den Credential-Server-QR in Veridian und bestätigen Sie die Verbindungsanfrage.",
+          "stepIdentifier": "Identifier",
+          "stepIdentifierDescription": "Fügen Sie die Identifier-ID aus Ihrem Veridian-Profil ein. Wir prüfen die Verbindung vor der Ausstellung.",
+          "nextDisabledReasonPasteIdentifierAid": "Fügen Sie Ihre Veridian Identifier-ID aus Profil verwalten ein.",
+          "nextDisabledReasonEstablishConnection": "Dieser Identifier muss mit dem Credential-Server verbunden sein. Schließen Sie zuerst den Verbindungsschritt in Veridian ab.",
           "pasteOobi": "Wallet-OOBI einfügen",
           "oobiPlaceholder": "z. B. https://beispiel.com/oobi/EABC123…/witness/…",
           "alreadyConnected": "Bereits verknüpft? AID direkt eingeben",
@@ -1391,7 +1444,6 @@
           "stepSubmitDescription": "Prüfen Sie die Übersicht und senden Sie die Anfrage. Akzeptieren Sie die Ausstellung in Veridian bei der Aufforderung.",
           "next": "Nächste",
           "prev": "Vorherige",
-          "nextDisabledReasonPasteOobiOrAid": "Fügen Sie die OOBI oder AID ein (oder wechseln Sie zur direkten AID) und warten Sie auf „Verbunden“.",
           "nextDisabledReasonEstablishConnection": "Stellen Sie eine Verbindung mit dem Anmeldeinformationsserver her. Scannen Sie den QR-Code des Ausstellers mit Ihrer Brieftasche.",
           "nextDisabledReasonCheckingConnection": "Verbindung wird geprüft... Bitte warten.",
           "nextDisabledReasonTestingEndpoint": "Endpunkt wird überprüft... Bitte warten.",
@@ -1409,7 +1461,8 @@
             "endpointTestFailed": "Endpoint-Test fehlgeschlagen",
             "kycFirst": "Bitte schließen Sie zuerst Ihre KYC-Verifizierung ab",
             "connectionError": "Verbindungsfehler: {error}",
-            "needCredentialConnection": "Fügen Sie eine gültige OOBI oder AID ein und warten Sie, bis der Server verbunden zeigt.",
+            "needIdentifierAid": "Fügen Sie zuerst Ihre Veridian Identifier-ID ein.",
+            "needCredentialConnection": "Fügen Sie eine gültige Identifier-ID ein und warten Sie, bis der Server verbunden zeigt.",
             "challengeNotReady": "Verifizierungs-Challenge nicht bereit. Bitte warten Sie oder versuchen Sie es erneut."
           },
           "secretToggle": {

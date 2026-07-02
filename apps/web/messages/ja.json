@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "詳細",
         "earnings": "収益",
-        "credentials": "資格",
+        "verification": "検証",
         "transactions": "取引"
       },
       "registrationStatus": {
@@ -1007,12 +1007,19 @@
         "registrationFailed": "失敗した",
         "deregistering": "登録を解除する",
         "deregistered": "登録抹消済み",
-        "deregistrationFailed": "失敗した"
+        "deregistrationFailed": "失敗した",
+        "updateRequested": "更新リクエスト済み",
+        "updateInitiated": "更新中",
+        "updateFailed": "更新失敗"
       },
       "status": {
         "verified": "確認済み",
         "verifiedShieldAriaSummary": "このエージェントはMasumiネットワーク上で確認済みです。",
         "verifiedShieldTooltip": "このエージェントはMasumiネットワーク上で確認済みで、検証可能なクレデンシャルを保持しています。<docsLink>検証可能なクレデンシャル（SDKドキュメント）</docsLink>",
+        "updateInProgressShieldAriaSummary": "Masumiネットワークで検証更新が進行中です。",
+        "updateInProgressShieldTooltip": "レジストリの更新が進行中です。検証アンカーがレジストリNFTに書き込まれています。",
+        "onChainPendingShieldAriaSummary": "クレデンシャル発行済み。オンチェーン検証は保留中。",
+        "onChainPendingShieldTooltip": "クレデンシャルは発行されましたが、Masumiネットワークのレジストリではまだ検証が確認されていません。",
         "rejected": "拒否されました",
         "underReview": "検討中",
         "pending": "保留中",
@@ -1157,9 +1164,9 @@
         "price": "価格",
         "verification": "検証",
         "verificationPromptTitle": "エージェントを確認する",
-        "verificationPromptDescription": "このエージェントはまだ検証されていません。認証情報を要求して、検証済みの KYC ステータスをリンクし、信頼を確立します。",
+        "verificationPromptDescription": "このエージェントはまだ検証されていません。検証をリクエストして、認証済みの本人情報をリンクし、信頼を確立してください。",
         "hireInSokosumi": "ソコスミでレンタル",
-        "viewInCredentialsTab": "認証情報で表示",
+        "viewInVerificationTab": "検証を表示",
         "refresh": "リフレッシュ",
         "endpoint": "終点",
         "tags": "タグ",
@@ -1230,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "認証情報が発行されていません",
+            "title": "未検証",
             "description": "このエージェントはまだ検証されていません。検証をリクエストして、認証済みの本人確認をこのエージェントにリンクしてください。"
           },
           "review": {
@@ -1244,6 +1251,14 @@
           "verified": {
             "title": "エージェントの確認済み",
             "description": "このエージェントの本人確認は Masumi ネットワークで検証されました。"
+          },
+          "updateInProgress": {
+            "title": "検証更新が進行中",
+            "description": "クレデンシャルが受理され、検証アンカーがレジストリNFTに書き込まれています。通常、数分で完了します。"
+          },
+          "onChainPending": {
+            "title": "検証保留中 — オンチェーン",
+            "description": "ウォレットに発行済み。レジストリ確認は保留中。"
           },
           "revoked": {
             "title": "検証が取り消されました",
@@ -1285,12 +1300,37 @@
             "notProvided": "VC に含まれません",
             "notRegisteredYet": "未設定"
           },
+          "onChainSummary": {
+            "sectionTitle": "オンチェーン検証",
+            "loadError": "オンチェーン状態を読み込めませんでした。ページを更新してください。",
+            "notRegistered": "このエージェントはまだオンチェーン登録されていません。アンカーは登録確認後にクレデンシャル発行時に書き込まれます。",
+            "unavailable": "このサーバーではオンチェーン検証の読み取りが設定されていません。",
+            "statusLabel": "レジストリ状態",
+            "statusVerified": "オンチェーンで検証済み",
+            "statusUpdateInProgress": "レジストリ更新が進行中",
+            "statusAnchorsInvalid": "レジストリにアンカーあり — クレデンシャルは現在有効ではありません",
+            "statusAnchorsPending": "レジストリ NFT に検証アンカーはまだありません",
+            "statusDbOnly": "アプリのみで検証済み（オンチェーンバックフィル待ち）",
+            "resolutionSource": "解決ソース",
+            "sourceOnChain": "レジストリ NFT メタデータ",
+            "sourceDatabase": "アプリケーションデータベース（フォールバック）",
+            "credentialSaid": "クレデンシャル SAID（アンカー）",
+            "schemaSaid": "スキーマ SAID",
+            "holderAid": "ホルダー AID",
+            "issuerAid": "発行者 AID",
+            "registryAgentId": "照会したレジストリエージェント ID",
+            "expiresAt": "クレデンシャル有効期限",
+            "expiresNever": "有効期限なし",
+            "dbOnChainMismatch": "アプリは検証済みと表示していますが、レジストリ NFT にはまだ検証アンカーがありません。",
+            "updateInProgressHint": "レジストリの更新が進行中です。トランザクションが確認されると、検証アンカーがレジストリ NFT に表示されます。"
+          },
           "rejected": {
             "title": "検証が拒否されました",
             "description": "検証が拒否されました。もう一度確認リクエストを試みることができます。"
           },
           "loading": "読み込み中...",
-          "requestVerification": "認証情報の要求",
+          "refreshStatus": "認証ステータスを更新",
+          "requestVerification": "検証をリクエスト",
           "tooltipRequestCredentialRequiresRegistration": "まずこのエージェントのオンチェーン登録を完了してください。登録が確認されてからでないと認証情報をリクエストできません。",
           "requestDescription": "以下の情報を確認し、このエージェントの検証可能な資格情報を発行することを確認します。",
           "agentInformation": "エージェント情報",
@@ -1313,7 +1353,20 @@
           "waitingForWalletDescription": "Veridian ウォレットを開いて、受信した認証情報のオファーを受け入れてください。",
           "completeKyc": "KYC検証を完了する",
           "connectCredentialServer": "クレデンシャルサーバーへの接続",
-          "credentialServerInstructions": "Veridian で発行者 QR をスキャン（メニュー → Cardano Connect → 接続）し、ウォレットからコピーした OOBI を下に貼り付けます。既にリンク済みの場合は AID のみ入力してください。",
+          "credentialServerInstructions": "Veridian でホームを開き、「接続を追加」をタップします。スキャンタブに切り替え、この QR コードをスキャンします。ウォレットで接続リクエストを承認してください。",
+          "pasteIdentifier": "識別子",
+          "identifierInstructions": "Veridian でホーム右上のプロフィール → プロフィール管理 → この credential を受け取るプロフィールの Identifier ID をコピーし、下に貼り付けます。発行前に credential サーバーへの接続を確認します。",
+          "pasteAid": "Identifier ID (AID)",
+          "connectionNotEstablishedReturnToScan": "この識別子はまだ credential サーバーに接続されていません。前のステップに戻り、Veridian で QR をスキャンして接続リクエストを承認してください。",
+          "connectionNotEstablishedBeforeIssue": "この識別子は credential サーバーに接続されていません。先に接続ステップを完了してください。",
+          "goToCreateConnection": "接続ステップへ",
+          "scanCredentialServerQRCode": "Veridian でスキャン: ホーム → 接続を追加 → スキャン",
+          "stepCreateConnection": "接続を作成",
+          "stepCreateConnectionDescription": "Veridian で credential サーバーの QR をスキャンし、接続リクエストを承認します。",
+          "stepIdentifier": "識別子",
+          "stepIdentifierDescription": "Veridian プロフィールの Identifier ID を貼り付けます。発行前に接続を確認します。",
+          "nextDisabledReasonPasteIdentifierAid": "プロフィール管理から Veridian の Identifier ID を貼り付けてください。",
+          "nextDisabledReasonEstablishConnection": "この識別子は credential サーバーに接続されている必要があります。先に Veridian で接続ステップを完了してください。",
           "pasteOobi": "ウォレットの OOBI を貼り付ける",
           "oobiPlaceholder": "例：https://example.com/oobi/EABC123…/witness/…",
           "alreadyConnected": "既にリンク済みですか？AID のみ入力",
@@ -1391,7 +1444,6 @@
           "stepSubmitDescription": "内容を確認して送信してください。資格情報の発行提案が表示されたら Veridian で受け入れてください。",
           "next": "次",
           "prev": "前の",
-          "nextDisabledReasonPasteOobiOrAid": "OOBI または AID を貼り付け（AID 直接入力に切り替え可）、接続済みになるまでお待ちください。",
           "nextDisabledReasonEstablishConnection": "資格情報サーバーとの接続を確立します。ウォレットで発行者の QR コードをスキャンします。",
           "nextDisabledReasonCheckingConnection": "接続を確認しています...しばらくお待ちください。",
           "nextDisabledReasonTestingEndpoint": "エンドポイントを確認しています...お待ちください。",
@@ -1409,6 +1461,7 @@
             "endpointTestFailed": "エンドポイントテストに失敗しました",
             "kycFirst": "最初にKYC検証を完了してください",
             "connectionError": "接続エラー: {error}",
+            "needIdentifierAid": "先に Veridian の Identifier ID を貼り付けてください。",
             "needCredentialConnection": "有効な OOBI または AID を貼り付け、サーバーが接続済みと報告するまでお待ちください。",
             "challengeNotReady": "検証チャレンジの準備ができていません。お待ちいただくか、もう一度お試しください。"
           },

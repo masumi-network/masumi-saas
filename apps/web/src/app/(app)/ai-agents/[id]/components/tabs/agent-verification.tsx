@@ -4,15 +4,15 @@ import { AgentVerificationCard } from "@/app/ai-agents/components/agent-verifica
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 
-interface AgentCredentialsProps {
+interface AgentVerificationTabProps {
   agent: Agent;
   onVerificationSuccess: () => void;
 }
 
-export function AgentCredentials({
+export function AgentVerificationTab({
   agent,
   onVerificationSuccess,
-}: AgentCredentialsProps) {
+}: AgentVerificationTabProps) {
   if (!isAgentVerificationFlowEnabled()) {
     return null;
   }

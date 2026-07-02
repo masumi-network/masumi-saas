@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -318,7 +318,15 @@ export function OrganizationDashboardOverview({
                               }
                             }}
                           >
-                            <AgentVerifiedShield className="-mt-px" />
+                            <AgentVerificationShieldIndicator
+                              agentId={agent.id}
+                              dbVerificationStatus={agent.verificationStatus}
+                              registered={
+                                agent.registrationState ===
+                                "RegistrationConfirmed"
+                              }
+                              className="-mt-px"
+                            />
                           </span>
                         ) : null}
                       </div>

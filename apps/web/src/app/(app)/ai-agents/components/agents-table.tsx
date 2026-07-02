@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -25,6 +25,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
+import {
+  isRegistrationConfirmedOnNetwork,
+  isRegistrationUiPending,
+} from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
 
@@ -143,19 +147,18 @@ export function AgentsTable({
           </TableHeader>
           <TableBody>
             {agents.map((agent, index) => {
-              const isConfirmed =
-                agent.registrationState === "RegistrationConfirmed";
+              const isConfirmed = isRegistrationConfirmedOnNetwork(
+                agent.registrationState,
+              );
               const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
                 agent.registrationState === "RegistrationFailed" ||
                 agent.registrationState === "DeregistrationFailed" ||
                 isLegacyConfirmed;
-              const isPending =
-                agent.registrationState === "RegistrationRequested" ||
-                agent.registrationState === "RegistrationInitiated" ||
-                agent.registrationState === "DeregistrationRequested" ||
-                agent.registrationState === "DeregistrationInitiated";
+              const isPending = isRegistrationUiPending(
+                agent.registrationState,
+              );
               return (
                 <TableRow
                   key={agent.id}
@@ -180,7 +183,12 @@ export function AgentsTable({
                             }
                           }}
                         >
-                          <AgentVerifiedShield className="-mt-px" />
+                          <AgentVerificationShieldIndicator
+                            agentId={agent.id}
+                            dbVerificationStatus={agent.verificationStatus}
+                            registered={isConfirmed}
+                            className="-mt-px"
+                          />
                         </span>
                       ) : null}
                     </div>

@@ -5,6 +5,19 @@
 
 import { z } from "zod";
 
+import {
+  type Verification,
+  type Verifications,
+  verificationsSchema,
+} from "./verification-schemas";
+
+export type { Verification, Verifications };
+export {
+  VerificationMethod,
+  verificationSchema,
+  verificationsSchema,
+} from "./verification-schemas";
+
 // ─── Primitives & enums ─────────────────────────────────────────────────────
 
 export const paymentNodeNetworkSchema = z.enum(["Preprod", "Mainnet"]);
@@ -19,6 +32,10 @@ export const registryRequestStateSchema = z.enum([
   "DeregistrationInitiated",
   "DeregistrationConfirmed",
   "DeregistrationFailed",
+  "UpdateRequested",
+  "UpdateInitiated",
+  "UpdateConfirmed",
+  "UpdateFailed",
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
 
@@ -102,6 +119,7 @@ export const registryEntrySchema = z.object({
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .nullable()
     .optional(),
+  verifications: verificationsSchema.nullable().optional(),
 });
 export type RegistryEntry = z.infer<typeof registryEntrySchema>;
 
@@ -199,8 +217,93 @@ export const registerAgentInputSchema = z.object({
       Pricing: z.array(unitAmountSchema),
     }),
   ]),
+  verifications: verificationsSchema.optional(),
 });
 export type RegisterAgentInput = z.infer<typeof registerAgentInputSchema>;
+
+export const updateAgentInputSchema = registerAgentInputSchema
+  .omit({ sellingWalletVkey: true })
+  .extend({
+    agentIdentifier: z.string().min(57).max(250),
+    smartContractAddress: z.string().optional(),
+    supportedPaymentSources: z
+      .array(
+        z.object({
+          chain: z.string(),
+          network: paymentNodeNetworkSchema,
+          paymentSourceType: z.string(),
+          address: z.string(),
+        }),
+      )
+      .max(25)
+      .optional(),
+  });
+export type UpdateAgentInput = z.infer<typeof updateAgentInputSchema>;
+
+export const registryAgentOnChainMetadataSchema = z
+  .object({
+    name: z.string(),
+    apiBaseUrl: z.string(),
+    description: z.string().nullable().optional(),
+    image: z.string().optional(),
+    metadataVersion: z.coerce.number().int().min(1).max(2),
+    Tags: z.array(z.string()).optional(),
+    ExampleOutputs: z
+      .array(
+        z.object({
+          name: z.string(),
+          url: z.string(),
+          mimeType: z.string(),
+        }),
+      )
+      .optional(),
+    Capability: z
+      .object({
+        name: z.string(),
+        version: z.string(),
+      })
+      .optional(),
+    Author: z
+      .object({
+        name: z.string(),
+        contactEmail: z.string().nullable().optional(),
+        contactOther: z.string().nullable().optional(),
+        organization: z.string().nullable().optional(),
+      })
+      .optional(),
+    Legal: z
+      .object({
+        privacyPolicy: z.string().nullable().optional(),
+        terms: z.string().nullable().optional(),
+        other: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    AgentPricing: agentPricingSchema.optional(),
+    supportedPaymentSources: z
+      .array(
+        z.object({
+          chain: z.string(),
+          network: paymentNodeNetworkSchema,
+          paymentSourceType: z.string(),
+          address: z.string(),
+        }),
+      )
+      .nullable()
+      .optional(),
+    verifications: verificationsSchema.nullable().optional(),
+  })
+  .passthrough();
+
+export const registryAgentIdentifierMetadataSchema = z.object({
+  policyId: z.string(),
+  assetName: z.string(),
+  agentIdentifier: z.string(),
+  Metadata: registryAgentOnChainMetadataSchema,
+});
+export type RegistryAgentIdentifierMetadata = z.infer<
+  typeof registryAgentIdentifierMetadataSchema
+>;
 
 export const deregisterAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,

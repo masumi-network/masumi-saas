@@ -8,6 +8,10 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import {
+  backfillOnChainVerificationsForAgent,
+  triggerOnChainVerificationWrite,
+} from "@/lib/registry/write-on-chain-verifications";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   credentialReconcileSuccessSchema,
@@ -19,6 +23,7 @@ import {
   fetchContactCredentials,
   getAgentVerificationSchemaSaid,
 } from "@/lib/veridian";
+import { resolvePendingWalletCredential } from "@/lib/veridian/resolve-pending-wallet-credential";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -82,6 +87,10 @@ app.openapi(
       });
 
       if (pendingCredentials.length === 0) {
+        await backfillOnChainVerificationsForAgent({
+          agentId,
+          userId: user.id,
+        });
         return c.json(
           { success: true as const, data: { resolved: false } },
           200,
@@ -94,25 +103,12 @@ app.openapi(
       for (const pending of pendingCredentials) {
         try {
           const credentials = await fetchContactCredentials(pending.aid);
-          const matchingCredentials = credentials.filter((cred) => {
-            const credSchemaSaid = cred.sad?.s || cred.schema?.$id;
-            if (credSchemaSaid !== schemaSaid) return false;
-
-            if (cred.sad?.a && agent.agentIdentifier) {
-              const credAgentId = cred.sad.a.agentId as string | undefined;
-              return credAgentId === agent.agentIdentifier;
-            }
-
-            return true;
+          const issuedCredential = resolvePendingWalletCredential({
+            pending,
+            credentials,
+            schemaSaid,
+            versionedAgentIdentifier: agent.agentIdentifier,
           });
-
-          if (matchingCredentials.length === 0) continue;
-
-          const issuedCredential = matchingCredentials.sort((a, b) => {
-            const dateA = new Date((a.sad?.a?.dt as string) || 0).getTime();
-            const dateB = new Date((b.sad?.a?.dt as string) || 0).getTime();
-            return dateB - dateA;
-          })[0];
 
           if (!issuedCredential?.sad?.d) continue;
 
@@ -132,6 +128,14 @@ app.openapi(
           });
 
           await recordAgentActivityEvent(agentId, "AgentVerified");
+
+          await triggerOnChainVerificationWrite({
+            agentId,
+            userId: user.id,
+            issuedCredential,
+            veridianCredentialId: pending.id,
+            storedAttributesRaw: pending.attributes ?? pending.credentialData,
+          });
 
           resolved = true;
           // One resolved is enough to flip the agent to VERIFIED

@@ -997,7 +997,7 @@
       "detailTabs": {
         "details": "Détails",
         "earnings": "Gains",
-        "credentials": "Informations d'identification",
+        "verification": "Vérification",
         "transactions": "Transactions"
       },
       "registrationStatus": {
@@ -1007,12 +1007,19 @@
         "registrationFailed": "Échoué",
         "deregistering": "Désinscription",
         "deregistered": "Désenregistré",
-        "deregistrationFailed": "Échoué"
+        "deregistrationFailed": "Échoué",
+        "updateRequested": "Mise à jour demandée",
+        "updateInitiated": "Mise à jour en cours",
+        "updateFailed": "Échec de la mise à jour"
       },
       "status": {
         "verified": "Vérifié",
         "verifiedShieldAriaSummary": "Cet agent a été vérifié sur le réseau Masumi.",
         "verifiedShieldTooltip": "Cet agent a été vérifié sur le réseau Masumi et dispose d’un identifiant vérifiable. <docsLink>Identifiants vérifiables (doc SDK)</docsLink>",
+        "updateInProgressShieldAriaSummary": "Mise à jour de vérification en cours sur le réseau Masumi.",
+        "updateInProgressShieldTooltip": "Une mise à jour du registre est en cours. Les ancres de vérification sont écrites sur le NFT du registre.",
+        "onChainPendingShieldAriaSummary": "Identifiant émis ; vérification on-chain en attente.",
+        "onChainPendingShieldTooltip": "Un identifiant a été émis, mais la vérification n'est pas encore confirmée sur le registre du réseau Masumi.",
         "rejected": "Rejeté",
         "underReview": "En cours de révision",
         "pending": "En attente",
@@ -1157,9 +1164,9 @@
         "price": "Prix",
         "verification": "Vérification",
         "verificationPromptTitle": "Vérifiez votre agent",
-        "verificationPromptDescription": "Cet agent n'est pas encore vérifié. Demandez un identifiant pour lier votre statut KYC vérifié et établir la confiance.",
+        "verificationPromptDescription": "Cet agent n'est pas encore vérifié. Demandez une vérification pour lier votre identité vérifiée et établir la confiance.",
         "hireInSokosumi": "Location à Sokosumi",
-        "viewInCredentialsTab": "Afficher dans les informations d'identification",
+        "viewInVerificationTab": "Voir la vérification",
         "refresh": "Rafraîchir",
         "endpoint": "Point de terminaison",
         "tags": "Balises",
@@ -1230,7 +1237,7 @@
         },
         "Verification": {
           "pending": {
-            "title": "Aucun justificatif délivré",
+            "title": "Non vérifié",
             "description": "Cet agent n'a pas encore été vérifié. Demandez une vérification pour lier votre identité vérifiée à cet agent."
           },
           "review": {
@@ -1244,6 +1251,14 @@
           "verified": {
             "title": "Agent vérifié",
             "description": "L'identité de cet agent a été vérifiée sur le réseau Masumi."
+          },
+          "updateInProgress": {
+            "title": "Mise à jour de vérification en cours",
+            "description": "Votre identifiant a été accepté et les ancres de vérification sont écrites sur le NFT du registre. Cela prend généralement quelques minutes."
+          },
+          "onChainPending": {
+            "title": "Vérification en attente — on-chain",
+            "description": "Émise dans votre portefeuille. Confirmation registre en attente."
           },
           "revoked": {
             "title": "Vérification révoquée",
@@ -1285,12 +1300,37 @@
             "notProvided": "absent du VC",
             "notRegisteredYet": "pas encore défini"
           },
+          "onChainSummary": {
+            "sectionTitle": "Vérification on-chain",
+            "loadError": "Impossible de charger le statut on-chain. Actualisez la page.",
+            "notRegistered": "Cet agent n'est pas encore enregistré on-chain. Les ancres sont écrites après confirmation de l'enregistrement et émission d'une credential.",
+            "unavailable": "La lecture on-chain n'est pas configurée sur ce serveur.",
+            "statusLabel": "Statut du registre",
+            "statusVerified": "Vérifié on-chain",
+            "statusUpdateInProgress": "Mise à jour du registre en cours",
+            "statusAnchorsInvalid": "Ancres sur le registre — credential actuellement invalide",
+            "statusAnchorsPending": "Pas encore d'ancres de vérification sur le NFT du registre",
+            "statusDbOnly": "Vérifié dans l'app uniquement (backfill on-chain en attente)",
+            "resolutionSource": "Source de résolution",
+            "sourceOnChain": "Métadonnées du NFT du registre",
+            "sourceDatabase": "Base de données applicative (secours)",
+            "credentialSaid": "SAID de credential (ancre)",
+            "schemaSaid": "SAID de schéma",
+            "holderAid": "AID du détenteur",
+            "issuerAid": "AID de l'émetteur",
+            "registryAgentId": "Identifiant d'agent du registre interrogé",
+            "expiresAt": "Expiration de la credential",
+            "expiresNever": "Aucune expiration calculée",
+            "dbOnChainMismatch": "L'application indique vérifié, mais le NFT du registre n'a pas encore d'ancres de vérification.",
+            "updateInProgressHint": "Une mise à jour du registre est en cours. Les ancres de vérification apparaîtront sur le NFT du registre une fois la transaction confirmée."
+          },
           "rejected": {
             "title": "Vérification rejetée",
             "description": "La vérification a été rejetée. Vous pouvez réessayer de demander une vérification."
           },
           "loading": "Chargement...",
-          "requestVerification": "Demander un identifiant",
+          "refreshStatus": "Actualiser le statut de vérification",
+          "requestVerification": "Demander la vérification",
           "tooltipRequestCredentialRequiresRegistration": "Finalisez d'abord l'enregistrement on-chain de cet agent. Vous ne pouvez demander un identifiant qu'une fois l'enregistrement confirmé.",
           "requestDescription": "Examinez les informations ci-dessous et confirmez l'émission d'informations d'identification vérifiables pour cet agent.",
           "agentInformation": "Informations sur les agents",
@@ -1313,7 +1353,20 @@
           "waitingForWalletDescription": "Veuillez ouvrir votre portefeuille Veridian et accepter l'offre d'identification entrante.",
           "completeKyc": "Vérification KYC complète",
           "connectCredentialServer": "Connexion au serveur d'informations d'identification",
-          "credentialServerInstructions": "Scannez le code QR de l'émetteur dans Veridian (Menu → Cardano Connect → Connect). Collez ensuite l'OOBI copiée depuis votre portefeuille ci-dessous. Si le portefeuille est déjà lié, saisissez uniquement votre AID.",
+          "credentialServerInstructions": "Dans Veridian, ouvrez Accueil et appuyez sur Ajouter une connexion. Passez à l’onglet Scanner et scannez ce code QR. Acceptez la demande de connexion dans votre portefeuille.",
+          "pasteIdentifier": "Votre identifiant",
+          "identifierInstructions": "Dans Veridian, appuyez sur votre profil (en haut à droite sur Accueil) → Gérer le profil → copiez l’ID d’identifiant du profil qui recevra la credential. Collez-le ci-dessous — nous vérifions la connexion au serveur de credentials avant l’émission.",
+          "pasteAid": "ID d’identifiant (AID)",
+          "connectionNotEstablishedReturnToScan": "Cet identifiant n’est pas encore connecté au serveur de credentials. Revenez à l’étape précédente, scannez le QR dans Veridian et acceptez la demande de connexion.",
+          "connectionNotEstablishedBeforeIssue": "Cet identifiant n’est pas connecté au serveur de credentials. Terminez d’abord l’étape de connexion.",
+          "goToCreateConnection": "Aller à l’étape de connexion",
+          "scanCredentialServerQRCode": "Scanner avec Veridian : Accueil → Ajouter une connexion → Scanner",
+          "stepCreateConnection": "Créer la connexion",
+          "stepCreateConnectionDescription": "Scannez le QR du serveur de credentials dans Veridian et acceptez la demande de connexion.",
+          "stepIdentifier": "Identifiant",
+          "stepIdentifierDescription": "Collez l’ID d’identifiant de votre profil Veridian. Nous vérifions la connexion avant l’émission.",
+          "nextDisabledReasonPasteIdentifierAid": "Collez votre ID d’identifiant Veridian depuis Gérer le profil.",
+          "nextDisabledReasonEstablishConnection": "Cet identifiant doit être connecté au serveur de credentials. Terminez d’abord l’étape de connexion dans Veridian.",
           "pasteOobi": "Collez l'OOBI de votre portefeuille",
           "oobiPlaceholder": "ex. https://exemple.com/oobi/EABC123…/witness/…",
           "alreadyConnected": "Déjà lié ? Entrez uniquement votre AID",
@@ -1391,7 +1444,6 @@
           "stepSubmitDescription": "Vérifiez puis envoyez la demande. Acceptez l'émission dans Veridian lorsqu'elle est proposée.",
           "next": "Suivant",
           "prev": "Précédent",
-          "nextDisabledReasonPasteOobiOrAid": "Collez l’OOBI ou l’AID (ou passez à la saisie directe de l’AID) puis attendez l’état connecté.",
           "nextDisabledReasonEstablishConnection": "Établissez la connexion avec le serveur d'informations d'identification. Scannez le code QR de l'émetteur avec votre portefeuille.",
           "nextDisabledReasonCheckingConnection": "Vérification de la connexion... Veuillez patienter.",
           "nextDisabledReasonTestingEndpoint": "Vérification du point de terminaison... Veuillez patienter.",
@@ -1409,6 +1461,7 @@
             "endpointTestFailed": "Le test du point d'accès a échoué",
             "kycFirst": "Veuillez d'abord compléter votre vérification KYC",
             "connectionError": "Erreur de connexion : {error}",
+            "needIdentifierAid": "Collez d’abord votre ID d’identifiant Veridian.",
             "needCredentialConnection": "Collez une OOBI ou une AID valide et attendez que le serveur indique « connecté ».",
             "challengeNotReady": "Le défi de vérification n'est pas prêt. Veuillez patienter ou réessayer."
           },

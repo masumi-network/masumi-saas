@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
+import { isRegistrationUiPending } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -18,10 +19,10 @@ import { DeleteAgentDialog } from "./delete-agent-dialog";
 import { DeregisterAgentDialog } from "./deregister-agent-dialog";
 import { NetworkMismatchDialog } from "./network-mismatch-dialog";
 import {
-  AgentCredentials,
   AgentDetails,
   AgentEarnings,
   AgentTransactions,
+  AgentVerificationTab,
 } from "./tabs";
 
 interface AgentPageContentProps {
@@ -29,6 +30,8 @@ interface AgentPageContentProps {
 }
 
 const DEFAULT_TAB = "details";
+const VERIFICATION_TAB = "verification";
+const LEGACY_CREDENTIALS_TAB = "credentials";
 
 function isValidNetwork(
   value: string | null | undefined,
@@ -74,11 +77,7 @@ export function AgentPageContent({
     router.back();
   };
 
-  const pendingRegistration =
-    agent.registrationState === "RegistrationRequested" ||
-    agent.registrationState === "RegistrationInitiated" ||
-    agent.registrationState === "DeregistrationRequested" ||
-    agent.registrationState === "DeregistrationInitiated";
+  const pendingRegistration = isRegistrationUiPending(agent.registrationState);
 
   // RegistrationFailed may eventually have an agentIdentifier populated on the
   // payment node (the tx can land on-chain after the initial failure response).
@@ -100,7 +99,16 @@ export function AgentPageContent({
 
   const pollTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Poll while pending: one run then chain next every 12s. Use ref so effect doesn't re-run when syncAndRefetch identity changes.
+  // Always reconcile once on mount — payment-node may be UpdateRequested while
+  // SaaS DB is still RegistrationConfirmed until we sync.
+  const mountSyncAgentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (mountSyncAgentIdRef.current === agent.id) return;
+    mountSyncAgentIdRef.current = agent.id;
+    void syncAndRefetchRef.current();
+  }, [agent.id]);
+
+  // Poll while pending: one run then chain next every 12s.
   useEffect(() => {
     if (!pendingRegistration) return;
     let cancelled = false;
@@ -140,30 +148,28 @@ export function AgentPageContent({
     })();
   }, [agent.id, agent.registrationState]);
 
-  // Silently reconcile any PENDING credentials on mount.
-  // Handles the case where the user accepted the credential in Veridian
-  // after the dialog was closed or the page was reloaded.
+  // Reconcile pending credentials or backfill on-chain anchors when missing.
   useEffect(() => {
-    if (
-      !isAgentVerificationFlowEnabled() ||
-      agent.verificationStatus === "VERIFIED"
-    ) {
+    if (!isAgentVerificationFlowEnabled()) {
       return;
     }
     (async () => {
       const result = await credentialApiClient.reconcilePendingCredentials(
         agent.id,
       );
-      if (result.success && result.data.resolved) {
+      if (result.success) {
+        await syncAgentRegistrationStatusAction(agent.id);
         const next = await agentApiClient.getAgent(agent.id);
         if (next.success && next.data) setAgent(next.data);
       }
     })().catch(() => {
       // Reconcile or refetch failed; ignore.
     });
-  }, [agent.id, agent.verificationStatus]);
+  }, [agent.id]);
 
-  const tabParam = searchParams.get("tab");
+  const tabParamRaw = searchParams.get("tab");
+  const tabParam =
+    tabParamRaw === LEGACY_CREDENTIALS_TAB ? VERIFICATION_TAB : tabParamRaw;
   const fromParam = searchParams.get("from");
   const isFromDashboard = fromParam === "dashboard";
   const backHref = isFromDashboard ? "/" : "/ai-agents";
@@ -174,7 +180,10 @@ export function AgentPageContent({
     { name: tTabs("detailTabs.transactions"), key: "transactions" },
   ];
   if (agentVerificationUiEnabled) {
-    tabs.push({ name: tTabs("detailTabs.credentials"), key: "credentials" });
+    tabs.push({
+      name: tTabs("detailTabs.verification"),
+      key: VERIFICATION_TAB,
+    });
   }
   const activeTab =
     tabParam && tabs.some((tab) => tab.key === tabParam)
@@ -229,6 +238,8 @@ export function AgentPageContent({
 
   const handleVerificationSuccess = () => {
     (async () => {
+      await credentialApiClient.reconcilePendingCredentials(agent.id);
+      await syncAgentRegistrationStatusAction(agent.id);
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
     })().catch(() => {
@@ -256,8 +267,8 @@ export function AgentPageContent({
         />
       )}
 
-      {agentVerificationUiEnabled && activeTab === "credentials" && (
-        <AgentCredentials
+      {agentVerificationUiEnabled && activeTab === VERIFICATION_TAB && (
+        <AgentVerificationTab
           agent={agent}
           onVerificationSuccess={handleVerificationSuccess}
         />

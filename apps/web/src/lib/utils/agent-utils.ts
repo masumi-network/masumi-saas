@@ -52,7 +52,10 @@ type RegistrationStatusKey =
   | "registrationFailed"
   | "deregistering"
   | "deregistered"
-  | "deregistrationFailed";
+  | "deregistrationFailed"
+  | "updateRequested"
+  | "updateInitiated"
+  | "updateFailed";
 
 /** Returns the translation key for registration status (payment service). */
 export function getRegistrationStatusKey(
@@ -74,14 +77,26 @@ const REGISTRATION_STATUS_KEYS: Record<
   DeregistrationInitiated: "deregistering",
   DeregistrationConfirmed: "deregistered",
   DeregistrationFailed: "deregistrationFailed",
+  UpdateRequested: "updateRequested",
+  UpdateInitiated: "updateInitiated",
+  UpdateConfirmed: "registered",
+  UpdateFailed: "updateFailed",
 };
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
 ): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
-  if (status === "RegistrationConfirmed") return "default";
+  if (status === "RegistrationConfirmed" || status === "UpdateConfirmed") {
+    return "default";
+  }
   if (status.includes("Failed")) return "destructive";
-  if (status.includes("Initiated")) return "secondary";
+  if (
+    status === "UpdateRequested" ||
+    status === "UpdateInitiated" ||
+    status.includes("Initiated")
+  ) {
+    return "secondary";
+  }
   if (status.includes("Requested")) return "secondary";
   if (status === "DeregistrationConfirmed") return "secondary";
   return "secondary";

@@ -12,6 +12,7 @@ interface RefreshButtonProps {
   variant?: "icon-only" | "with-text";
   size?: "sm" | "md" | "lg";
   className?: string;
+  "aria-label"?: string;
 }
 
 export function RefreshButton({
@@ -21,8 +22,10 @@ export function RefreshButton({
   variant = "icon-only",
   size = "sm",
   className,
+  "aria-label": ariaLabel,
 }: RefreshButtonProps) {
   const isDisabled = disabled || isRefreshing;
+  const label = ariaLabel ?? (isRefreshing ? "Refreshing..." : "Refresh");
 
   const sizeClasses = {
     sm: "h-8 w-8",
@@ -54,7 +57,8 @@ export function RefreshButton({
           isRefreshing && "cursor-not-allowed",
           className,
         )}
-        title={isRefreshing ? "Refreshing..." : "Refresh"}
+        title={label}
+        aria-label={label}
       >
         <RefreshCw
           className={cn(iconSizes[size], isRefreshing && "animate-spin")}
@@ -74,7 +78,8 @@ export function RefreshButton({
         isRefreshing && "cursor-not-allowed",
         className,
       )}
-      title={isRefreshing ? "Refreshing..." : "Refresh"}
+      title={label}
+      aria-label={label}
     >
       <RefreshCw
         className={cn(iconSizes[size], isRefreshing && "animate-spin")}
