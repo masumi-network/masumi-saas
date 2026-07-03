@@ -101,3 +101,11 @@ export function getRegistrationStatusBadgeVariant(
   if (status === "DeregistrationConfirmed") return "secondary";
   return "secondary";
 }
+
+/** Extra badge classes for in-progress registration states that need attention. */
+export function getRegistrationStatusBadgeClassName(
+  status: Agent["registrationState"],
+): string {
+  if (status === "UpdateRequested") return "animate-badge-blink";
+  return "";
+}

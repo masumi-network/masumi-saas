@@ -30,11 +30,12 @@ import {
   isRegistrationUiPending,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { formatPricingDisplay, shortenAddress, stripHtml } from "@/lib/utils";
+import { formatPricingDisplay, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
 } from "./agent-utils";
@@ -209,8 +210,11 @@ export function AgentsTable({
                     >
                       {agent.agentIdentifier ? (
                         <>
-                          <span className="truncate">
-                            {shortenAddress(agent.agentIdentifier, 6)}
+                          <span
+                            className="truncate"
+                            title={agent.agentIdentifier}
+                          >
+                            {agent.agentIdentifier}
                           </span>
                           <CopyButton
                             value={agent.agentIdentifier}
@@ -265,6 +269,9 @@ export function AgentsTable({
                               agent.registrationState,
                             )
                       }
+                      className={getRegistrationStatusBadgeClassName(
+                        agent.registrationState,
+                      )}
                     >
                       {tRegistrationStatus(
                         getRegistrationStatusKey(agent.registrationState),

@@ -33,9 +33,10 @@ import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import { isRegistrationConfirmedOnNetwork } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { formatPricingDisplay } from "@/lib/utils";
+import { cn, formatPricingDisplay } from "@/lib/utils";
 
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
 } from "../../../components/agent-utils";
@@ -153,7 +154,13 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            <Badge variant={registrationBadgeVariant} className="shrink-0">
+            <Badge
+              variant={registrationBadgeVariant}
+              className={cn(
+                "shrink-0",
+                getRegistrationStatusBadgeClassName(agent.registrationState),
+              )}
+            >
               {tRegistrationStatus(
                 getRegistrationStatusKey(agent.registrationState),
               )}

@@ -1,4 +1,5 @@
 export {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
   getVerificationStatusBadgeVariant,

@@ -618,9 +618,12 @@ export function RequestVerificationDialog({
           </DialogHeader>
         </div>
 
-        <DialogBody stagger={false} className="space-y-6">
-          <Steps currentStep={step + 1} steps={steps} className="mb-4" />
-          <p className="text-sm text-muted-foreground mb-6">
+        <div className="shrink-0 border-b px-6 py-4">
+          <Steps currentStep={step + 1} steps={steps} />
+        </div>
+
+        <DialogBody key={step} className="space-y-6">
+          <p className="text-sm text-muted-foreground">
             {steps[step]?.description}
           </p>
 
@@ -687,452 +690,444 @@ export function RequestVerificationDialog({
               </div>
             )}
 
-          <div className="space-y-6">
-            {step === 0 && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-medium">
-                    {t("walletSetup.title")}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t("walletSetup.description")}
-                  </p>
-                </div>
+          {step === 0 && (
+            <>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium">
+                  {t("walletSetup.title")}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t("walletSetup.description")}
+                </p>
+              </div>
 
+              <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                    {1}
+                  </span>
+                  <p className="text-sm font-medium">
+                    {t("walletSetup.installStep")}
+                  </p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                        <CircleHelp className="h-3.5 w-3.5" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs whitespace-pre-line">
+                      {t("walletSetup.osRequirements")}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="text-xs text-muted-foreground ml-7">
+                  {t("walletSetup.installDescription")}
+                </p>
+                <div className="ml-7 flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href="https://apps.apple.com/ng/app/veridian-wallet/id6590628073"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Image
+                        src="/assets/veridian/appstore.png"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="h-4 w-4"
+                      />
+                      {t("walletSetup.appStore")}
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href="https://play.google.com/store/apps/details?id=org.cardanofoundation.idw"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Image
+                        src="/assets/veridian/playstore.png"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="h-4 w-4"
+                      />
+                      {t("walletSetup.playStore")}
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              {VERIDIAN_CONNECT_URL && VERIDIAN_BOOT_URL && (
                 <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
                   <div className="flex items-center gap-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                      {1}
+                      {2}
                     </span>
                     <p className="text-sm font-medium">
-                      {t("walletSetup.installStep")}
+                      {t("walletSetup.configureStep")}
                     </p>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                          <CircleHelp className="h-3.5 w-3.5" />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs whitespace-pre-line">
-                        {t("walletSetup.osRequirements")}
-                      </TooltipContent>
-                    </Tooltip>
                   </div>
                   <p className="text-xs text-muted-foreground ml-7">
-                    {t("walletSetup.installDescription")}
+                    {t("walletSetup.configureDescription")}
                   </p>
-                  <div className="ml-7 flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href="https://apps.apple.com/ng/app/veridian-wallet/id6590628073"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Image
-                          src="/assets/veridian/appstore.png"
-                          alt=""
-                          width={16}
-                          height={16}
-                          className="h-4 w-4"
+                  <div className="ml-7 space-y-2">
+                    <div>
+                      <p className="text-xs font-medium mb-1">
+                        {t("walletSetup.connectUrl")}
+                      </p>
+                      <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
+                        <code className="min-w-0 flex-1 break-all select-all">
+                          {VERIDIAN_CONNECT_URL}
+                        </code>
+                        <CopyButton
+                          value={VERIDIAN_CONNECT_URL}
+                          className="h-7 w-7 shrink-0"
                         />
-                        {t("walletSetup.appStore")}
-                      </a>
-                    </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href="https://play.google.com/store/apps/details?id=org.cardanofoundation.idw"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Image
-                          src="/assets/veridian/playstore.png"
-                          alt=""
-                          width={16}
-                          height={16}
-                          className="h-4 w-4"
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium mb-1">
+                        {t("walletSetup.bootUrl")}
+                      </p>
+                      <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
+                        <code className="min-w-0 flex-1 break-all select-all">
+                          {VERIDIAN_BOOT_URL}
+                        </code>
+                        <CopyButton
+                          value={VERIDIAN_BOOT_URL}
+                          className="h-7 w-7 shrink-0"
                         />
-                        {t("walletSetup.playStore")}
-                      </a>
-                    </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              )}
+            </>
+          )}
 
-                {VERIDIAN_CONNECT_URL && VERIDIAN_BOOT_URL && (
-                  <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                        {2}
-                      </span>
-                      <p className="text-sm font-medium">
-                        {t("walletSetup.configureStep")}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground ml-7">
-                      {t("walletSetup.configureDescription")}
-                    </p>
-                    <div className="ml-7 space-y-2">
-                      <div>
-                        <p className="text-xs font-medium mb-1">
-                          {t("walletSetup.connectUrl")}
-                        </p>
-                        <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
-                          <code className="min-w-0 flex-1 break-all select-all">
-                            {VERIDIAN_CONNECT_URL}
-                          </code>
-                          <CopyButton
-                            value={VERIDIAN_CONNECT_URL}
-                            className="h-7 w-7 shrink-0"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium mb-1">
-                          {t("walletSetup.bootUrl")}
-                        </p>
-                        <div className="flex items-center gap-2 rounded bg-background p-2 font-mono text-xs">
-                          <code className="min-w-0 flex-1 break-all select-all">
-                            {VERIDIAN_BOOT_URL}
-                          </code>
-                          <CopyButton
-                            value={VERIDIAN_BOOT_URL}
-                            className="h-7 w-7 shrink-0"
-                          />
-                        </div>
-                      </div>
-                    </div>
+          {step === 1 && (
+            <>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium">{t("agentInformation")}</h3>
+                <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      {t("agentName")}
+                    </span>
+                    <p className="text-sm font-medium">{agent.name}</p>
                   </div>
-                )}
+                  <Separator />
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      {t("apiUrl")}
+                    </span>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {agent.apiUrl}
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
 
-            {step === 1 && (
-              <>
+              {kycStatus === "APPROVED" && (
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-medium">
-                    {t("agentInformation")}
+                    {t("agentVerification")}
                   </h3>
-                  <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        {t("agentName")}
-                      </span>
-                      <p className="text-sm font-medium">{agent.name}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        {t("apiUrl")}
-                      </span>
-                      <p className="font-mono text-xs text-muted-foreground">
-                        {agent.apiUrl}
+                  {isLoadingChallenge ? (
+                    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
+                      <Spinner size={20} />
+                      <p className="text-sm text-muted-foreground">
+                        {t("loadingChallenge")}
                       </p>
                     </div>
-                  </div>
-                </div>
-
-                {kycStatus === "APPROVED" && (
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-sm font-medium">
-                      {t("agentVerification")}
-                    </h3>
-                    {isLoadingChallenge ? (
-                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
-                        <Spinner size={20} />
-                        <p className="text-sm text-muted-foreground">
-                          {t("loadingChallenge")}
+                  ) : challenge && secret ? (
+                    <div className="space-y-4">
+                      <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground">
+                          {t("agentVerificationDescription")}
+                        </p>
+                        <p className="text-xs font-medium">
+                          {t("verificationSecret")}
+                        </p>
+                        <div className="flex items-center gap-2 overflow-hidden rounded bg-background p-2 font-mono text-xs">
+                          <code className="min-w-0 flex-1 break-all select-all overflow-hidden">
+                            {showSecret ? secret : "•".repeat(64)}
+                          </code>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <CopyButton value={secret} className="h-7 w-7" />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setShowSecret((v) => !v)}
+                              aria-label={t(
+                                showSecret
+                                  ? "secretToggle.hide"
+                                  : "secretToggle.show",
+                              )}
+                            >
+                              {showSecret ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("agentVerificationSecretHint")}
                         </p>
                       </div>
-                    ) : challenge && secret ? (
-                      <div className="space-y-4">
-                        <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
-                          <p className="text-xs text-muted-foreground">
-                            {t("agentVerificationDescription")}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium">
+                            {t("integrationCode")}
                           </p>
-                          <p className="text-xs font-medium">
-                            {t("verificationSecret")}
-                          </p>
-                          <div className="flex items-center gap-2 overflow-hidden rounded bg-background p-2 font-mono text-xs">
-                            <code className="min-w-0 flex-1 break-all select-all overflow-hidden">
-                              {showSecret ? secret : "•".repeat(64)}
-                            </code>
-                            <div className="flex shrink-0 items-center gap-1">
-                              <CopyButton value={secret} className="h-7 w-7" />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => setShowSecret((v) => !v)}
-                                aria-label={t(
-                                  showSecret
-                                    ? "secretToggle.hide"
-                                    : "secretToggle.show",
-                                )}
-                              >
-                                {showSecret ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("agentVerificationSecretHint")}
-                          </p>
+                          <Select
+                            value={snippetLang}
+                            onValueChange={(v) =>
+                              setSnippetLang(v as VerificationSnippetLang)
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VERIFICATION_SNIPPET_LANGUAGES.map(
+                                ({ value }) => (
+                                  <SelectItem key={value} value={value}>
+                                    {t(`integrationCodeLanguage.${value}`)}
+                                  </SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium">
-                              {t("integrationCode")}
-                            </p>
-                            <Select
-                              value={snippetLang}
-                              onValueChange={(v) =>
-                                setSnippetLang(v as VerificationSnippetLang)
-                              }
-                            >
-                              <SelectTrigger className="h-8 w-[180px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VERIFICATION_SNIPPET_LANGUAGES.map(
-                                  ({ value }) => (
-                                    <SelectItem key={value} value={value}>
-                                      {t(`integrationCodeLanguage.${value}`)}
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="relative overflow-hidden rounded-lg border">
-                            <CodeEditor
+                        <div className="relative overflow-hidden rounded-lg border">
+                          <CodeEditor
+                            value={getVerificationCodeSnippet(
+                              secret,
+                              snippetLang,
+                            )}
+                            language={
+                              VERIFICATION_SNIPPET_LANGUAGES.find(
+                                (l) => l.value === snippetLang,
+                              )?.monacoLang ?? "javascript"
+                            }
+                            height={280}
+                          />
+                          <div className="absolute right-2 top-2 z-[1000] rounded bg-background/80 backdrop-blur-sm">
+                            <CopyButton
                               value={getVerificationCodeSnippet(
                                 secret,
                                 snippetLang,
                               )}
-                              language={
-                                VERIFICATION_SNIPPET_LANGUAGES.find(
-                                  (l) => l.value === snippetLang,
-                                )?.monacoLang ?? "javascript"
-                              }
-                              height={280}
                             />
-                            <div className="absolute right-2 top-2 z-[1000] rounded bg-background/80 backdrop-blur-sm">
-                              <CopyButton
-                                value={getVerificationCodeSnippet(
-                                  secret,
-                                  snippetLang,
-                                )}
-                              />
-                            </div>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRegenerateChallenge}
-                            disabled={isRegeneratingChallenge}
-                          >
-                            {isRegeneratingChallenge && (
-                              <Spinner size={14} className="mr-2" />
-                            )}
-                            {t("generateNewSignature")}
-                          </Button>
-                        </div>
                       </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {issueError && (
-                  <div className="rounded-lg border border-destructive/60 bg-destructive/5 p-4 space-y-2">
-                    <p className="text-sm text-destructive">{issueError}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("agentErrorHint")}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIssueError(null)}
-                      >
-                        {t("retry")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRegenerateChallenge}
-                        disabled={isRegeneratingChallenge}
-                      >
-                        {t("generateNewSignature")}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {step === STEP_CREATE_CONNECTION && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-sm font-medium">
-                    {t("connectCredentialServer")}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t("credentialServerInstructions")}
-                  </p>
-                </div>
-
-                {isLoadingIssuerOobi ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Spinner size={24} />
-                  </div>
-                ) : issuerOobi ? (
-                  <div className="flex flex-col items-center gap-3 rounded-lg border bg-muted/20 p-4">
-                    <div className="p-4 rounded-lg flex items-center justify-center relative bg-background border">
-                      <QRCode
-                        value={issuerOobi}
-                        size={200}
-                        fgColor="black"
-                        bgColor="white"
-                        qrStyle="squares"
-                        logoImage="/assets/qr-logo.png"
-                        logoWidth={48}
-                        logoHeight={48}
-                        logoOpacity={1}
-                        quietZone={10}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center max-w-md">
-                      {t("scanCredentialServerQRCode")}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                      {t("failedToLoadIssuerOobi")}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {step === STEP_IDENTIFIER && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-sm font-medium">
-                    {t("pasteIdentifier")}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t("identifierInstructions")}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="holder-aid-paste">{t("pasteAid")}</Label>
-                  <Input
-                    id="holder-aid-paste"
-                    value={holderAidInput}
-                    onChange={(e) => setHolderAidInput(e.target.value)}
-                    placeholder={t("aidPlaceholder")}
-                    className="font-mono text-xs"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-
-                {holderAid ? (
-                  <div className="space-y-2">
-                    {isCheckingConnection ? (
-                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
-                        <Spinner size={16} />
-                        <p className="text-xs text-muted-foreground">
-                          {t("checkingConnection")}
-                        </p>
-                      </div>
-                    ) : connectionExists === true ? (
-                      <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                        <p className="text-xs text-green-600 dark:text-green-400">
-                          {t("connectionEstablished")}
-                        </p>
-                      </div>
-                    ) : connectionExists === false || connectionCheckFailed ? (
-                      <div className="space-y-2">
-                        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                            {connectionCheckFailed
-                              ? t("failedToCheckConnection")
-                              : t("connectionNotEstablishedReturnToScan")}
-                          </p>
-                        </div>
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setStep(STEP_CREATE_CONNECTION)}
-                          className="w-full"
+                          onClick={handleRegenerateChallenge}
+                          disabled={isRegeneratingChallenge}
                         >
-                          {t("goToCreateConnection")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            holderAid && void checkConnection(holderAid, true)
-                          }
-                          disabled={isCheckingConnection}
-                          className="w-full"
-                        >
-                          {t("checkConnectionAgain")}
+                          {isRegeneratingChallenge && (
+                            <Spinner size={14} className="mr-2" />
+                          )}
+                          {t("generateNewSignature")}
                         </Button>
                       </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
 
-            {step === STEP_SUBMIT &&
-              (isWaitingForAcceptance ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <Spinner size={32} />
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium">
-                      {t("waitingForWalletAcceptance")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("waitingForWalletDescription")}
-                    </p>
+              {issueError && (
+                <div className="rounded-lg border border-destructive/60 bg-destructive/5 p-4 space-y-2">
+                  <p className="text-sm text-destructive">{issueError}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("agentErrorHint")}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIssueError(null)}
+                    >
+                      {t("retry")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRegenerateChallenge}
+                      disabled={isRegeneratingChallenge}
+                    >
+                      {t("generateNewSignature")}
+                    </Button>
                   </div>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto px-0 text-sm"
-                    onClick={() => void handleConfirmAcceptedCredential()}
-                    disabled={isCheckingAcceptance}
-                  >
-                    {isCheckingAcceptance && (
-                      <Spinner size={14} className="mr-2" />
-                    )}
-                    {isCheckingAcceptance
-                      ? t("checkingAcceptance")
-                      : t("confirmAcceptedCredential")}
-                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
+          {step === STEP_CREATE_CONNECTION && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-sm font-medium">
+                  {t("connectCredentialServer")}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t("credentialServerInstructions")}
+                </p>
+              </div>
+
+              {isLoadingIssuerOobi ? (
+                <div className="flex items-center justify-center p-8">
+                  <Spinner size={24} />
+                </div>
+              ) : issuerOobi ? (
+                <div className="flex flex-col items-center gap-3 rounded-lg border bg-muted/20 p-4">
+                  <div className="p-4 rounded-lg flex items-center justify-center relative bg-background border">
+                    <QRCode
+                      value={issuerOobi}
+                      size={200}
+                      fgColor="black"
+                      bgColor="white"
+                      qrStyle="squares"
+                      logoImage="/assets/qr-logo.png"
+                      logoWidth={48}
+                      logoHeight={48}
+                      logoOpacity={1}
+                      quietZone={10}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center max-w-md">
+                    {t("scanCredentialServerQRCode")}
+                  </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-medium">
-                    {t("whatWillBeIssued")}
-                  </h3>
-                  <div className="rounded-lg border bg-muted/40 p-4">
-                    <p className="text-sm text-muted-foreground">
-                      {t("credentialDescription")}
-                    </p>
-                  </div>
+                <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                    {t("failedToLoadIssuerOobi")}
+                  </p>
                 </div>
-              ))}
-          </div>
+              )}
+            </div>
+          )}
+
+          {step === STEP_IDENTIFIER && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-sm font-medium">{t("pasteIdentifier")}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t("identifierInstructions")}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="holder-aid-paste">{t("pasteAid")}</Label>
+                <Input
+                  id="holder-aid-paste"
+                  value={holderAidInput}
+                  onChange={(e) => setHolderAidInput(e.target.value)}
+                  placeholder={t("aidPlaceholder")}
+                  className="font-mono text-xs"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+
+              {holderAid ? (
+                <div className="space-y-2">
+                  {isCheckingConnection ? (
+                    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                      <Spinner size={16} />
+                      <p className="text-xs text-muted-foreground">
+                        {t("checkingConnection")}
+                      </p>
+                    </div>
+                  ) : connectionExists === true ? (
+                    <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        {t("connectionEstablished")}
+                      </p>
+                    </div>
+                  ) : connectionExists === false || connectionCheckFailed ? (
+                    <div className="space-y-2">
+                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          {connectionCheckFailed
+                            ? t("failedToCheckConnection")
+                            : t("connectionNotEstablishedReturnToScan")}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStep(STEP_CREATE_CONNECTION)}
+                        className="w-full"
+                      >
+                        {t("goToCreateConnection")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          holderAid && void checkConnection(holderAid, true)
+                        }
+                        disabled={isCheckingConnection}
+                        className="w-full"
+                      >
+                        {t("checkConnectionAgain")}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {step === STEP_SUBMIT &&
+            (isWaitingForAcceptance ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <Spinner size={32} />
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-medium">
+                    {t("waitingForWalletAcceptance")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("waitingForWalletDescription")}
+                  </p>
+                </div>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0 text-sm"
+                  onClick={() => void handleConfirmAcceptedCredential()}
+                  disabled={isCheckingAcceptance}
+                >
+                  {isCheckingAcceptance && (
+                    <Spinner size={14} className="mr-2" />
+                  )}
+                  {isCheckingAcceptance
+                    ? t("checkingAcceptance")
+                    : t("confirmAcceptedCredential")}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-medium">{t("whatWillBeIssued")}</h3>
+                <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {t("credentialDescription")}
+                  </p>
+                </div>
+              </div>
+            ))}
         </DialogBody>
 
         <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
