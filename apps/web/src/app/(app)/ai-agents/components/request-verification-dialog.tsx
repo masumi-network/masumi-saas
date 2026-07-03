@@ -112,6 +112,7 @@ export function RequestVerificationDialog({
     null,
   );
   const [isWaitingForAcceptance, setIsWaitingForAcceptance] = useState(false);
+  const [isCheckingAcceptance, setIsCheckingAcceptance] = useState(false);
   const lastCheckedAidRef = useRef<string | null>(null);
   const prevDerivedAidRef = useRef<string | null>(null);
   const connPollAttemptsRef = useRef(0);
@@ -150,8 +151,64 @@ export function RequestVerificationDialog({
       setIssueError(null);
       setPendingCredentialId(null);
       setIsWaitingForAcceptance(false);
+      setIsCheckingAcceptance(false);
     }
   }, [agentVerificationEnabled, open]);
+
+  const finishCredentialIssuance = useCallback(() => {
+    setIsWaitingForAcceptance(false);
+    setPendingCredentialId(null);
+    toast.success(t("requestSuccess"));
+    onSuccessRef.current();
+    onOpenChangeRef.current(false);
+  }, [t]);
+
+  const resolveCredentialAcceptance = useCallback(
+    async (
+      credentialId: string,
+    ): Promise<
+      | { outcome: "issued" }
+      | { outcome: "pending" }
+      | { outcome: "error"; error: string }
+    > => {
+      const result =
+        await credentialApiClient.checkCredentialStatus(credentialId);
+      if (!result.success) {
+        return { outcome: "error", error: result.error };
+      }
+      if (result.data.status === "ISSUED") {
+        return { outcome: "issued" };
+      }
+      return { outcome: "pending" };
+    },
+    [],
+  );
+
+  const handleConfirmAcceptedCredential = useCallback(async () => {
+    if (!pendingCredentialId) return;
+
+    setIsCheckingAcceptance(true);
+    try {
+      const resolution = await resolveCredentialAcceptance(pendingCredentialId);
+      if (resolution.outcome === "issued") {
+        finishCredentialIssuance();
+        return;
+      }
+      if (resolution.outcome === "error") {
+        setIssueError(resolution.error);
+        toast.error(resolution.error);
+        return;
+      }
+      toast.message(t("acceptanceStillPending"));
+    } finally {
+      setIsCheckingAcceptance(false);
+    }
+  }, [
+    finishCredentialIssuance,
+    pendingCredentialId,
+    resolveCredentialAcceptance,
+    t,
+  ]);
 
   useEffect(() => {
     if (!agentVerificationEnabled) return;
@@ -239,23 +296,18 @@ export function RequestVerificationDialog({
         return;
       }
 
-      const result =
-        await credentialApiClient.checkCredentialStatus(pendingCredentialId);
-      if (!result.success) {
+      const resolution = await resolveCredentialAcceptance(pendingCredentialId);
+      if (resolution.outcome === "error") {
         stopPolling();
         setIsWaitingForAcceptance(false);
         setPendingCredentialId(null);
-        setIssueError(result.error);
-        toast.error(result.error);
+        setIssueError(resolution.error);
+        toast.error(resolution.error);
         return;
       }
-      if (result.data.status === "ISSUED") {
+      if (resolution.outcome === "issued") {
         stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        toast.success(t("requestSuccess"));
-        onSuccessRef.current();
-        onOpenChangeRef.current(false);
+        finishCredentialIssuance();
         return;
       }
       pollIntervalIdRef.current = setTimeout(runPoll, CREDENTIAL_POLL_MS);
@@ -267,8 +319,10 @@ export function RequestVerificationDialog({
     };
   }, [
     agentVerificationEnabled,
-    pendingCredentialId,
+    finishCredentialIssuance,
     isWaitingForAcceptance,
+    pendingCredentialId,
+    resolveCredentialAcceptance,
     t,
   ]);
 
@@ -1051,6 +1105,20 @@ export function RequestVerificationDialog({
                       {t("waitingForWalletDescription")}
                     </p>
                   </div>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0 text-sm"
+                    onClick={() => void handleConfirmAcceptedCredential()}
+                    disabled={isCheckingAcceptance}
+                  >
+                    {isCheckingAcceptance && (
+                      <Spinner size={14} className="mr-2" />
+                    )}
+                    {isCheckingAcceptance
+                      ? t("checkingAcceptance")
+                      : t("confirmAcceptedCredential")}
+                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">

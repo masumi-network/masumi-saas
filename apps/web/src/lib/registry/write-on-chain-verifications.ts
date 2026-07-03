@@ -1,5 +1,6 @@
 import prisma from "@masumi/database/client";
 
+import { sendOnChainVerificationCompleteEmail } from "@/lib/email/send-on-chain-verification-complete";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
@@ -538,6 +539,20 @@ export async function triggerOnChainVerificationWrite(params: {
       error: onChainResult.error,
     });
     return false;
+  }
+
+  if (!onChainResult.skipped) {
+    const agent = await prisma.agent.findUnique({
+      where: { id: params.agentId },
+      select: { name: true },
+    });
+    if (agent) {
+      await sendOnChainVerificationCompleteEmail(
+        params.userId,
+        params.agentId,
+        agent.name,
+      );
+    }
   }
 
   return true;
