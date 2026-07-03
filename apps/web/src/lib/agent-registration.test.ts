@@ -582,6 +582,7 @@ describe("completeOnChainRegistration", () => {
       network: "Preprod",
       sellingWalletVkey: "funding-vkey",
       recipientWalletAddress: "addr_test1selling",
+      sendFundingLovelace: "10000000",
       name: "Demo agent",
       apiBaseUrl: "https://agent.example.com",
       description: "Demo description",

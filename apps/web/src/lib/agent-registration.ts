@@ -42,6 +42,8 @@ import {
 type Agent = Awaited<ReturnType<typeof prisma.agent.findUniqueOrThrow>>;
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
+/** 10 ADA — above payment-node collateral-prep minimum (7 ADA) for metadata updates/deregister. */
+const REGISTRY_HOLDING_WALLET_FUNDING_LOVELACE = "10000000";
 const REGISTER_AGENT_HTTP_TIMEOUT_MS = 60_000;
 const REGISTER_AGENT_RETRY_COOLDOWN_MS = 2 * 60_000;
 const PAYMENT_SOURCE_PAGE_SIZE = 100;
@@ -826,6 +828,7 @@ export async function completeOnChainRegistration(
       network,
       sellingWalletVkey: fundingWalletVkey,
       recipientWalletAddress: address,
+      sendFundingLovelace: REGISTRY_HOLDING_WALLET_FUNDING_LOVELACE,
       name: agent.name,
       apiBaseUrl: agent.apiUrl,
       description: agent.description?.trim() ?? "",

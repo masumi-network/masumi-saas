@@ -188,6 +188,7 @@ export const registerAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
   sellingWalletVkey: z.string(),
   recipientWalletAddress: z.string().optional(),
+  sendFundingLovelace: z.string().optional(),
   name: z.string(),
   apiBaseUrl: z.string(),
   description: z.string(),
