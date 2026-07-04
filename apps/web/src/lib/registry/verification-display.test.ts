@@ -34,6 +34,20 @@ describe("deriveVerificationPresentation", () => {
     ).toBe("updateInProgress");
   });
 
+  it("returns updateInProgress even when on-chain read still looks verified", () => {
+    expect(
+      deriveVerificationPresentation({
+        dbStatus: "VERIFIED",
+        onChain: {
+          verified: true,
+          resolutionSource: "on-chain",
+          registryState: "UpdateInitiated",
+          hasAnchors: true,
+        },
+      }),
+    ).toBe("updateInProgress");
+  });
+
   it("returns updateInProgress when SaaS registration state is update pending", () => {
     expect(
       deriveVerificationPresentation({

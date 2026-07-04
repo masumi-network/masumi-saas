@@ -23,8 +23,9 @@ type OnChainPresentationInput = Pick<
 
 /**
  * User-facing verification presentation. Prefers on-chain truth over SaaS DB
- * `verificationStatus` so we never claim "verified on Masumi network" when
- * anchors are still pending or a registry update is in flight.
+ * `verificationStatus`, but registry update in flight
+ * (`UpdateRequested` / `UpdateInitiated`) always wins over a stale
+ * `verified: true` read so the card header matches the on-chain panel.
  */
 export function deriveVerificationPresentation(params: {
   dbStatus: string;
@@ -34,16 +35,16 @@ export function deriveVerificationPresentation(params: {
 }): VerificationPresentation {
   const { dbStatus, onChain, registrationState } = params;
 
-  if (onChain?.verified && onChain.resolutionSource === "on-chain") {
-    return "verifiedOnChain";
-  }
-
   const registryState = onChain?.registryState ?? registrationState ?? null;
   if (
     registryState &&
     REGISTRY_UPDATE_PENDING_STATES.has(registryState as RegistryRequestState)
   ) {
     return "updateInProgress";
+  }
+
+  if (onChain?.verified && onChain.resolutionSource === "on-chain") {
+    return "verifiedOnChain";
   }
 
   if (dbStatus === "REVOKED") return "revoked";
