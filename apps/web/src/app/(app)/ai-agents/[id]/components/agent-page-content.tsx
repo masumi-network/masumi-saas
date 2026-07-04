@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { PendingWalletAcceptanceBanner } from "@/app/(app)/ai-agents/components/pending-wallet-acceptance-banner";
+import { PendingWalletAcceptanceBanner } from "@/app/ai-agents/components/pending-wallet-acceptance-banner";
 import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import {

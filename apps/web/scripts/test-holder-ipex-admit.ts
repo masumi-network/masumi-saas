@@ -81,12 +81,19 @@ async function fetchCredentialServerCredentials(
 
   const body = (await res.json()) as { data?: unknown };
   if (!Array.isArray(body.data)) return [];
-  return body.data as Array<{
-    d?: string;
-    s?: string;
-    dt?: string;
-    sad?: { d?: string; s?: string };
-  }>;
+  return body.data.map((item) => {
+    const cred = item as {
+      d?: string;
+      s?: string;
+      dt?: string;
+      sad?: { d?: string; s?: string; dt?: string };
+    };
+    return {
+      d: cred.d ?? cred.sad?.d,
+      s: cred.s ?? cred.sad?.s,
+      dt: cred.dt ?? cred.sad?.dt,
+    };
+  });
 }
 
 async function main(): Promise<void> {
@@ -112,11 +119,10 @@ async function main(): Promise<void> {
   const creds = await fetchCredentialServerCredentials(holderAid);
   console.log(`Credential server: ${creds.length} credential(s) for holder`);
   for (const cred of creds.slice(0, 10)) {
-    const d = cred.d ?? cred.sad?.d;
-    const s = cred.s ?? cred.sad?.s;
-    const marker = credentialSaid && d === credentialSaid ? " ← target" : "";
+    const marker =
+      credentialSaid && cred.d === credentialSaid ? " ← target" : "";
     console.log(
-      `  - d=${d ?? "?"} s=${s ?? "?"} dt=${cred.dt ?? "?"}${marker}`,
+      `  - d=${cred.d ?? "?"} s=${cred.s ?? "?"} dt=${cred.dt ?? "?"}${marker}`,
     );
   }
   console.log();
@@ -172,9 +178,7 @@ async function main(): Promise<void> {
   }
 
   if (credentialSaid) {
-    const credOnServer = creds.some(
-      (c) => (c.d ?? c.sad?.d) === credentialSaid,
-    );
+    const credOnServer = creds.some((c) => c.d === credentialSaid);
     console.log("Summary");
     console.log(`  Credential on server: ${credOnServer ? "yes" : "no"}`);
     console.log(`  Wallet IPEX admit:    ${matchedAdmit ? "yes" : "no"}`);
