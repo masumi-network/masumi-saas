@@ -79,9 +79,9 @@ describe("paymentNodeConfig", () => {
     );
   });
 
-  it("defaults holder wallet funding to 30 ADA in lovelace", () => {
+  it("defaults holder wallet funding to 10 ADA in lovelace", () => {
     expect(paymentNodeConfig.getRegistryHoldingWalletFundingLovelace()).toBe(
-      "30000000",
+      "10000000",
     );
   });
 

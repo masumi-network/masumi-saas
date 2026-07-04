@@ -96,7 +96,7 @@ function getRegistrationFundingWallets(network: PaymentNodeNetwork): string[] {
   );
 }
 
-const DEFAULT_REGISTRY_HOLDING_WALLET_FUNDING_ADA = 30;
+const DEFAULT_REGISTRY_HOLDING_WALLET_FUNDING_ADA = 10;
 const LOVELACE_PER_ADA = BigInt(1_000_000);
 
 export const REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV =
@@ -104,7 +104,7 @@ export const REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV =
 
 /**
  * Lovelace sent to the holder wallet during agent registration (`sendFundingLovelace`).
- * Optional env: ADA amount; defaults to 30 ADA.
+ * Optional env: ADA amount; defaults to 10 ADA.
  */
 function getRegistryHoldingWalletFundingLovelace(): string {
   const raw = process.env[REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV]?.trim();
