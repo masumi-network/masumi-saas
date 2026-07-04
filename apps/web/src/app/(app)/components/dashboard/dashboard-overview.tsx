@@ -131,65 +131,70 @@ export default async function DashboardOverview({
               </div>
             ) : (
               <ul className="min-w-0 space-y-3">
-                {agents.map((agent, index) => (
-                  <li
-                    key={agent.id}
-                    className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
-                    style={{
-                      animationDelay: `${Math.min(index, 9) * 40}ms`,
-                    }}
-                  >
-                    <Link
-                      href={`/ai-agents/${agent.id}?from=dashboard`}
-                      aria-label={t("agentLinkAria", { name: agent.name })}
-                      className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
+                {agents.map((agent, index) => {
+                  const statusLabel = tRegistrationStatus(
+                    getRegistrationStatusDisplayKey(agent.registrationState),
+                  );
+
+                  return (
+                    <li
+                      key={agent.id}
+                      className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
+                      style={{
+                        animationDelay: `${Math.min(index, 9) * 40}ms`,
+                      }}
                     >
-                      <div className="flex min-w-0 items-center gap-3 overflow-hidden">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                          <Bot className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-                          <p
-                            className="min-w-0 flex-1 truncate text-sm font-medium"
-                            title={agent.name}
-                          >
-                            {agent.name}
-                          </p>
-                          {agent.verificationStatus === "VERIFIED" ? (
-                            <AgentVerificationShieldIndicator
-                              agentId={agent.id}
-                              dbVerificationStatus={agent.verificationStatus}
-                              registered={isAgentLiveOnRegistry(
-                                agent.registrationState,
-                              )}
-                              className="-mt-px shrink-0"
-                            />
-                          ) : null}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={getRegistrationStatusBadgeVariant(
-                          agent.registrationState,
-                        )}
-                        className={cn(
-                          "shrink-0 justify-self-center",
-                          getRegistrationStatusBadgeClassName(
-                            agent.registrationState,
-                          ),
-                        )}
+                      <Link
+                        href={`/ai-agents/${agent.id}?from=dashboard`}
+                        aria-label={t("agentLinkAria", { name: agent.name })}
+                        className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
                       >
-                        {tRegistrationStatus(
-                          getRegistrationStatusDisplayKey(
-                            agent.registrationState,
-                          ),
-                        )}
-                      </Badge>
-                      <span className="justify-self-end truncate text-sm text-muted-foreground">
-                        {formatPricingDisplay(agent.pricing)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                            <Bot className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                            <p
+                              className="min-w-0 flex-1 truncate text-sm font-medium"
+                              title={agent.name}
+                            >
+                              {agent.name}
+                            </p>
+                            {agent.verificationStatus === "VERIFIED" ? (
+                              <AgentVerificationShieldIndicator
+                                agentId={agent.id}
+                                dbVerificationStatus={agent.verificationStatus}
+                                registered={isAgentLiveOnRegistry(
+                                  agent.registrationState,
+                                )}
+                                className="-mt-px shrink-0"
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex min-w-0 items-center justify-end gap-8 md:gap-12">
+                          <Badge
+                            variant={getRegistrationStatusBadgeVariant(
+                              agent.registrationState,
+                            )}
+                            title={statusLabel}
+                            className={cn(
+                              "max-w-[7.5rem] min-w-0 shrink truncate",
+                              getRegistrationStatusBadgeClassName(
+                                agent.registrationState,
+                              ),
+                            )}
+                          >
+                            {statusLabel}
+                          </Badge>
+                          <span className="shrink-0 text-sm text-muted-foreground whitespace-nowrap">
+                            {formatPricingDisplay(agent.pricing)}
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <DashboardRegisterAgentButton agentCount={agentCount} />
