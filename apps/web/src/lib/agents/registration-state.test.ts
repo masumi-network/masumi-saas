@@ -7,6 +7,7 @@ import {
   isRegistrationUiPending,
   registrationStateFromRegistryEntry,
   resolveRegistrationStateAfterSync,
+  shouldDisplayRegistrationAsRegistered,
 } from "./registration-state";
 
 describe("registrationStateFromRegistryEntry", () => {
@@ -80,6 +81,26 @@ describe("canRequestAgentVerification", () => {
     expect(canRequestAgentVerification("RegistrationRequested")).toBe(false);
     expect(canRequestAgentVerification("UpdateRequested")).toBe(false);
     expect(canRequestAgentVerification("UpdateInitiated")).toBe(false);
+  });
+});
+
+describe("shouldDisplayRegistrationAsRegistered", () => {
+  it("shows registered while verification anchors are writing", () => {
+    expect(
+      shouldDisplayRegistrationAsRegistered({
+        registrationState: "UpdateRequested",
+        verificationStatus: "VERIFIED",
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps update requested visible before credential issuance", () => {
+    expect(
+      shouldDisplayRegistrationAsRegistered({
+        registrationState: "UpdateRequested",
+        verificationStatus: "PENDING",
+      }),
+    ).toBe(false);
   });
 });
 

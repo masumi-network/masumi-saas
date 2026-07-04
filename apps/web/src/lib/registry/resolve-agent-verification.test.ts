@@ -237,6 +237,44 @@ describe("resolveAgentVerification", () => {
     });
   });
 
+  it("resolves the anchored credential SAID when holder has multiple schema matches", async () => {
+    const otherCredential = {
+      sad: {
+        d: "EOTHER",
+        s: SCHEMA_SAID,
+        a: { i: "EHOLDER", dt: "2026-01-01T00:00:00.000Z" },
+      },
+    };
+
+    getRegistryByAgentIdentifierMock.mockResolvedValue(onChainMetadata);
+    fetchContactCredentialsMock.mockResolvedValue([
+      otherCredential,
+      credential,
+    ]);
+    findCredentialBySchemaMock.mockReturnValue(otherCredential);
+    validateCredentialMock.mockReturnValue({
+      isValid: true,
+      status: "issued",
+      details: { expiresAt: "2027-01-01T00:00:00.000Z" },
+    });
+    extractCredentialAttributesMock.mockReturnValue({
+      agentId: STABLE,
+      agentName: "Cred Agent",
+      agentApiUrl: "https://cred-agent.example",
+    });
+
+    const result = await resolveAgentVerification({
+      agentIdentifier: VERSIONED,
+    });
+
+    expect(result).toMatchObject({
+      verified: true,
+      credentialId: "ECRED",
+      source: "on-chain",
+    });
+    expect(findCredentialBySchemaMock).not.toHaveBeenCalled();
+  });
+
   it("returns not verified when neither chain nor database confirms", async () => {
     getRegistryByAgentIdentifierMock.mockResolvedValue(null);
     mockExactAgentLookup(null);

@@ -13,12 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isAgentLiveOnRegistry } from "@/lib/agents/registration-state";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 import { cn, formatPricingDisplay, getGreeting } from "@/lib/utils";
 import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "@/lib/utils/agent-utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
@@ -158,10 +159,9 @@ export default async function DashboardOverview({
                             <AgentVerificationShieldIndicator
                               agentId={agent.id}
                               dbVerificationStatus={agent.verificationStatus}
-                              registered={
-                                agent.registrationState ===
-                                "RegistrationConfirmed"
-                              }
+                              registered={isAgentLiveOnRegistry(
+                                agent.registrationState,
+                              )}
                               className="-mt-px"
                             />
                           ) : null}
@@ -170,16 +170,21 @@ export default async function DashboardOverview({
                       <Badge
                         variant={getRegistrationStatusBadgeVariant(
                           agent.registrationState,
+                          agent.verificationStatus,
                         )}
                         className={cn(
                           "shrink-0",
                           getRegistrationStatusBadgeClassName(
                             agent.registrationState,
+                            agent.verificationStatus,
                           ),
                         )}
                       >
                         {tRegistrationStatus(
-                          getRegistrationStatusKey(agent.registrationState),
+                          getRegistrationStatusDisplayKey(
+                            agent.registrationState,
+                            agent.verificationStatus,
+                          ),
                         )}
                       </Badge>
                       <span className="min-w-fit shrink-0 text-sm text-muted-foreground">

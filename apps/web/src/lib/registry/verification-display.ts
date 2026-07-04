@@ -29,16 +29,19 @@ type OnChainPresentationInput = Pick<
 export function deriveVerificationPresentation(params: {
   dbStatus: string;
   onChain: OnChainPresentationInput | null;
+  /** SaaS registration state fallback when payment-node registry state is unavailable. */
+  registrationState?: string | null;
 }): VerificationPresentation {
-  const { dbStatus, onChain } = params;
+  const { dbStatus, onChain, registrationState } = params;
 
   if (onChain?.verified && onChain.resolutionSource === "on-chain") {
     return "verifiedOnChain";
   }
 
+  const registryState = onChain?.registryState ?? registrationState ?? null;
   if (
-    onChain?.registryState &&
-    REGISTRY_UPDATE_PENDING_STATES.has(onChain.registryState)
+    registryState &&
+    REGISTRY_UPDATE_PENDING_STATES.has(registryState as RegistryRequestState)
   ) {
     return "updateInProgress";
   }

@@ -18,7 +18,6 @@ import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credenti
 import {
   extractCredentialAttributes,
   fetchContactCredentials,
-  findCredentialBySchema,
   getAgentVerificationSchemaSaid,
   validateCredential,
 } from "@/lib/veridian";
@@ -130,8 +129,10 @@ async function resolveOnChainAgentVerification(params: {
       return null;
     }
 
-    const credential = findCredentialBySchema(credentials, schemaSaid);
-    if (!credential?.sad?.d || credential.sad.d !== anchor.credential.said) {
+    const credential = credentials.find(
+      (entry) => entry.sad?.d === anchor.credential.said,
+    );
+    if (!credential?.sad?.d || credential.sad.s !== schemaSaid) {
       return null;
     }
 

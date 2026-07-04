@@ -1256,6 +1256,9 @@
             "title": "検証更新が進行中",
             "description": "クレデンシャルが受理され、検証アンカーがレジストリNFTに書き込まれています。通常、数分で完了します。"
           },
+          "checkingRegistry": {
+            "title": "レジストリを確認中…"
+          },
           "onChainPending": {
             "title": "検証保留中 — オンチェーン",
             "description": "ウォレットに発行済み。レジストリ確認は保留中。"
@@ -1351,9 +1354,10 @@
           "waitingForIssuanceSubmit": "待機中…",
           "waitingForWalletAcceptance": "ウォレットの受け入れを待っています",
           "waitingForWalletDescription": "Veridian ウォレットを開いて、受信した認証情報のオファーを受け入れてください。",
-          "confirmAcceptedCredential": "クレデンシャルを承認しました",
-          "checkingAcceptance": "確認中…",
-          "acceptanceStillPending": "クレデンシャルがまだ検出されていません。Veridianで承認したことを確認して、もう一度お試しください。",
+          "waitingForWalletCloseHint": "このダイアログを閉じても問題ありません。バックグラウンドで確認を続け、受け入れが完了するとエージェントを更新します。",
+          "closeWhileWaitingTitle": "検証を処理中",
+          "closeWhileWaitingDescription": "ウォレットでの受け入れとレジストリへの検証の書き込みをバックグラウンドで続けます。",
+          "closeWhileWaitingConfirm": "閉じる",
           "completeKyc": "KYC検証を完了する",
           "connectCredentialServer": "クレデンシャルサーバーへの接続",
           "credentialServerInstructions": "Veridian でホームを開き、「接続を追加」をタップします。スキャンタブに切り替え、この QR コードをスキャンします。ウォレットで接続リクエストを承認してください。",

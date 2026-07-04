@@ -1,3 +1,4 @@
+import { shouldDisplayRegistrationAsRegistered } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 
 /**
@@ -65,6 +66,22 @@ export function getRegistrationStatusKey(
   return key ?? "pending";
 }
 
+/** User-facing registration badge while verification anchors are writing on-chain. */
+export function getRegistrationStatusDisplayKey(
+  registrationState: Agent["registrationState"],
+  verificationStatus?: Agent["verificationStatus"] | null,
+): RegistrationStatusKey {
+  if (
+    shouldDisplayRegistrationAsRegistered({
+      registrationState,
+      verificationStatus,
+    })
+  ) {
+    return "registered";
+  }
+  return getRegistrationStatusKey(registrationState);
+}
+
 const REGISTRATION_STATUS_KEYS: Record<
   Agent["registrationState"],
   RegistrationStatusKey
@@ -85,7 +102,16 @@ const REGISTRATION_STATUS_KEYS: Record<
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
+  verificationStatus?: Agent["verificationStatus"] | null,
 ): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
+  if (
+    shouldDisplayRegistrationAsRegistered({
+      registrationState: status,
+      verificationStatus,
+    })
+  ) {
+    return "default";
+  }
   if (status === "RegistrationConfirmed" || status === "UpdateConfirmed") {
     return "default";
   }
@@ -105,8 +131,9 @@ export function getRegistrationStatusBadgeVariant(
 /** Extra badge classes for in-progress registration states that need attention. */
 export function getRegistrationStatusBadgeClassName(
   status: Agent["registrationState"],
+  verificationStatus?: Agent["verificationStatus"] | null,
 ): string {
-  const key = getRegistrationStatusKey(status);
+  const key = getRegistrationStatusDisplayKey(status, verificationStatus);
   if (key === "pending" || key === "updateRequested") {
     return "animate-badge-blink";
   }

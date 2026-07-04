@@ -34,6 +34,16 @@ describe("deriveVerificationPresentation", () => {
     ).toBe("updateInProgress");
   });
 
+  it("returns updateInProgress when SaaS registration state is update pending", () => {
+    expect(
+      deriveVerificationPresentation({
+        dbStatus: "VERIFIED",
+        onChain: null,
+        registrationState: "UpdateRequested",
+      }),
+    ).toBe("updateInProgress");
+  });
+
   it("returns onChainPending when DB is verified but chain is not", () => {
     expect(
       deriveVerificationPresentation({

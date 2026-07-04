@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
-import { isRegistrationConfirmedOnNetwork } from "@/lib/agents/registration-state";
+import { shouldDisplayRegistrationAsRegistered } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { cn, formatPricingDisplay } from "@/lib/utils";
@@ -38,7 +38,7 @@ import { cn, formatPricingDisplay } from "@/lib/utils";
 import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "../../../components/agent-utils";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
@@ -80,12 +80,16 @@ export function AgentDetails({
   );
 
   const isVerified = agent.verificationStatus === "VERIFIED";
-  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
-    agent.registrationState,
-  );
+  const isRegistrationConfirmed = shouldDisplayRegistrationAsRegistered({
+    registrationState: agent.registrationState,
+    verificationStatus: agent.verificationStatus,
+  });
   const registrationBadgeVariant = isRegistrationConfirmed
     ? ("success" as const)
-    : getRegistrationStatusBadgeVariant(agent.registrationState);
+    : getRegistrationStatusBadgeVariant(
+        agent.registrationState,
+        agent.verificationStatus,
+      );
   const showVerificationCta =
     agentVerificationEnabled && !isVerified && isRegistrationConfirmed;
 
@@ -158,11 +162,17 @@ export function AgentDetails({
               variant={registrationBadgeVariant}
               className={cn(
                 "shrink-0",
-                getRegistrationStatusBadgeClassName(agent.registrationState),
+                getRegistrationStatusBadgeClassName(
+                  agent.registrationState,
+                  agent.verificationStatus,
+                ),
               )}
             >
               {tRegistrationStatus(
-                getRegistrationStatusKey(agent.registrationState),
+                getRegistrationStatusDisplayKey(
+                  agent.registrationState,
+                  agent.verificationStatus,
+                ),
               )}
             </Badge>
           </CardHeader>

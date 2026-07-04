@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import {
-  isRegistrationConfirmedOnNetwork,
+  isAgentLiveOnRegistry,
   isRegistrationUiPending,
+  shouldDisplayRegistrationAsRegistered,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { formatPricingDisplay, stripHtml } from "@/lib/utils";
@@ -37,7 +38,7 @@ import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialo
 import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "./agent-utils";
 
 interface AgentsTableProps {
@@ -148,9 +149,10 @@ export function AgentsTable({
           </TableHeader>
           <TableBody>
             {agents.map((agent, index) => {
-              const isConfirmed = isRegistrationConfirmedOnNetwork(
-                agent.registrationState,
-              );
+              const isConfirmed = shouldDisplayRegistrationAsRegistered({
+                registrationState: agent.registrationState,
+                verificationStatus: agent.verificationStatus,
+              });
               const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
@@ -191,7 +193,9 @@ export function AgentsTable({
                           <AgentVerificationShieldIndicator
                             agentId={agent.id}
                             dbVerificationStatus={agent.verificationStatus}
-                            registered={isConfirmed}
+                            registered={isAgentLiveOnRegistry(
+                              agent.registrationState,
+                            )}
                             className="-mt-px"
                           />
                         </span>
@@ -271,14 +275,19 @@ export function AgentsTable({
                           ? "success"
                           : getRegistrationStatusBadgeVariant(
                               agent.registrationState,
+                              agent.verificationStatus,
                             )
                       }
                       className={getRegistrationStatusBadgeClassName(
                         agent.registrationState,
+                        agent.verificationStatus,
                       )}
                     >
                       {tRegistrationStatus(
-                        getRegistrationStatusKey(agent.registrationState),
+                        getRegistrationStatusDisplayKey(
+                          agent.registrationState,
+                          agent.verificationStatus,
+                        ),
                       )}
                     </Badge>
                   </TableCell>

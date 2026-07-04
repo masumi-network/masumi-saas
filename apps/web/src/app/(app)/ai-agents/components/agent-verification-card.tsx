@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Clock,
@@ -26,6 +27,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -47,6 +49,10 @@ import {
   isAgentVerificationFlowEnabled,
   verifiableCredentialsSdkDocUrl,
 } from "@/lib/config/verification.config";
+import {
+  agentOnChainVerificationQueryKey,
+  useAgentOnChainVerificationStatus,
+} from "@/lib/hooks/use-agent-on-chain-verification";
 import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import {
   deriveVerificationPresentation,
@@ -639,15 +645,10 @@ export function AgentVerificationCard({
 }: AgentVerificationCardProps) {
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [onChainRefreshKey, setOnChainRefreshKey] = useState(0);
   const [credRefreshKey, setCredRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [onChainStatus, setOnChainStatus] =
-    useState<AgentOnChainVerificationStatus | null>(null);
-  const [onChainLoadState, setOnChainLoadState] = useState<
-    "loading" | "ok" | "error"
-  >("ok");
   const { kycStatus, isLoadingKyc } = useKycStatusWithPolling(
     agentVerificationEnabled,
   );
@@ -657,37 +658,30 @@ export function AgentVerificationCard({
   const registered =
     hasRegistryIdentifier && isAgentLiveOnRegistry(agent.registrationState);
 
-  useEffect(() => {
-    if (!registered) return;
+  const {
+    data: onChainStatus,
+    isPending: isOnChainPending,
+    isError: isOnChainError,
+    refetch: refetchOnChainStatus,
+  } = useAgentOnChainVerificationStatus(agent.id, {
+    enabled: registered,
+    dbStatus,
+    registrationState: agent.registrationState,
+  });
 
-    let cancelled = false;
-
-    async function fetchStatus() {
-      setOnChainLoadState("loading");
-      const res = await agentApiClient.getOnChainVerificationStatus(agent.id);
-      if (cancelled) return;
-      if (res.success) {
-        setOnChainStatus(res.data);
-        setOnChainLoadState("ok");
-      } else {
-        setOnChainStatus(null);
-        setOnChainLoadState("error");
-      }
-    }
-
-    void fetchStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [agent.id, registered, onChainRefreshKey]);
-
-  const effectiveOnChainStatus = registered ? onChainStatus : null;
-  const effectiveOnChainLoadState = registered ? onChainLoadState : "ok";
+  const effectiveOnChainStatus = registered ? (onChainStatus ?? null) : null;
+  const effectiveOnChainLoadState = !registered
+    ? "ok"
+    : isOnChainPending && !onChainStatus
+      ? "loading"
+      : isOnChainError
+        ? "error"
+        : "ok";
 
   const presentation = deriveVerificationPresentation({
     dbStatus,
     onChain: effectiveOnChainStatus,
+    registrationState: agent.registrationState,
   });
 
   const showCredPanel =
@@ -700,15 +694,7 @@ export function AgentVerificationCard({
     try {
       await Promise.resolve(onVerificationSuccess());
       if (registered) {
-        setOnChainLoadState("loading");
-        const res = await agentApiClient.getOnChainVerificationStatus(agent.id);
-        if (res.success) {
-          setOnChainStatus(res.data);
-          setOnChainLoadState("ok");
-        } else {
-          setOnChainStatus(null);
-          setOnChainLoadState("error");
-        }
+        await refetchOnChainStatus();
       }
     } finally {
       setIsRefreshing(false);
@@ -716,7 +702,9 @@ export function AgentVerificationCard({
   };
 
   const handleVerificationSuccess = async () => {
-    setOnChainRefreshKey((key) => key + 1);
+    await queryClient.invalidateQueries({
+      queryKey: agentOnChainVerificationQueryKey(agent.id),
+    });
     await Promise.resolve(onVerificationSuccess());
   };
 
@@ -786,6 +774,8 @@ export function AgentVerificationCard({
     statusConfig[presentationConfigKey as keyof typeof statusConfig] ||
     statusConfig.PENDING;
   const Icon = config.icon;
+  const isCheckingRegistry =
+    registered && effectiveOnChainLoadState === "loading";
 
   return (
     <Card className="overflow-hidden gap-0 py-0 pb-6">
@@ -793,9 +783,15 @@ export function AgentVerificationCard({
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <Icon className={cn("h-5 w-5 shrink-0", config.iconColor)} />
+              {isCheckingRegistry ? (
+                <Spinner size={20} className="shrink-0 text-muted-foreground" />
+              ) : (
+                <Icon className={cn("h-5 w-5 shrink-0", config.iconColor)} />
+              )}
               <CardTitle className="text-sm font-medium">
-                {config.title}
+                {isCheckingRegistry
+                  ? t("checkingRegistry.title")
+                  : config.title}
               </CardTitle>
             </div>
             <RefreshButton
@@ -806,7 +802,8 @@ export function AgentVerificationCard({
             />
           </div>
           {presentationConfigKey !== "updateInProgress" &&
-          presentationConfigKey !== "onChainPending" ? (
+          presentationConfigKey !== "onChainPending" &&
+          !isCheckingRegistry ? (
             <CardDescription>{config.description}</CardDescription>
           ) : null}
         </div>

@@ -1256,6 +1256,9 @@
             "title": "Verifizierungs-Update läuft",
             "description": "Ihre Credential wurde akzeptiert und Verifizierungsanker werden in das Registry-NFT geschrieben. Dies dauert in der Regel wenige Minuten."
           },
+          "checkingRegistry": {
+            "title": "Registry wird geprüft…"
+          },
           "onChainPending": {
             "title": "Verifizierung ausstehend — On-Chain",
             "description": "In Ihrer Wallet ausgestellt. Registry-Bestätigung noch ausstehend."
@@ -1351,9 +1354,10 @@
           "waitingForIssuanceSubmit": "Warten…",
           "waitingForWalletAcceptance": "Warten auf Wallet-Akzeptanz",
           "waitingForWalletDescription": "Bitte öffnen Sie Ihr Veridian-Wallet und akzeptieren Sie das eingehende Zugangsangebot.",
-          "confirmAcceptedCredential": "Ich habe den Ausweis akzeptiert",
-          "checkingAcceptance": "Wird geprüft…",
-          "acceptanceStillPending": "Ausweis noch nicht erkannt. Bestätigen Sie, dass Sie in Veridian auf Akzeptieren getippt haben, und versuchen Sie es erneut.",
+          "waitingForWalletCloseHint": "Sie können diesen Dialog schließen. Wir prüfen im Hintergrund weiter und aktualisieren Ihren Agenten, sobald die Credential angenommen wurde.",
+          "closeWhileWaitingTitle": "Verifizierung läuft",
+          "closeWhileWaitingDescription": "Wir prüfen die Wallet-Annahme und schreiben die Verifizierung im Hintergrund in die Registry.",
+          "closeWhileWaitingConfirm": "Trotzdem schließen",
           "completeKyc": "Schließen Sie die KYC-Verifizierung ab",
           "connectCredentialServer": "Verbindung zum Anmeldeinformationsserver",
           "credentialServerInstructions": "Öffnen Sie in Veridian die Startseite und tippen Sie auf Verbindung hinzufügen. Wechseln Sie zum Tab Scannen und scannen Sie diesen QR-Code. Bestätigen Sie die Verbindungsanfrage in der Wallet.",

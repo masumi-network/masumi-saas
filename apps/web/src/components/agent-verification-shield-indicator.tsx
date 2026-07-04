@@ -2,18 +2,14 @@
 
 import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  agentApiClient,
-  type AgentOnChainVerificationStatus,
-} from "@/lib/api/agent.client";
 import { verifiableCredentialsSdkDocUrl } from "@/lib/config/verification.config";
+import { useAgentOnChainVerificationStatus } from "@/lib/hooks/use-agent-on-chain-verification";
 import { deriveVerificationPresentation } from "@/lib/registry/verification-display";
 import { cn } from "@/lib/utils";
 
@@ -44,35 +40,18 @@ export function AgentVerificationShieldIndicator({
   const dbStatus = dbVerificationStatus || "PENDING";
   const shouldFetchOnChain = registered && dbStatus === "VERIFIED";
 
-  const [onChainStatus, setOnChainStatus] =
-    useState<AgentOnChainVerificationStatus | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { data: onChainStatus, isPending } = useAgentOnChainVerificationStatus(
+    agentId,
+    { enabled: shouldFetchOnChain },
+  );
 
-  useEffect(() => {
-    if (!shouldFetchOnChain) return;
-
-    let cancelled = false;
-
-    async function fetchStatus() {
-      setLoaded(false);
-      const res = await agentApiClient.getOnChainVerificationStatus(agentId);
-      if (cancelled) return;
-      setOnChainStatus(res.success ? res.data : null);
-      setLoaded(true);
-    }
-
-    void fetchStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [agentId, shouldFetchOnChain]);
-
-  if (!shouldFetchOnChain || !loaded) return null;
+  if (!shouldFetchOnChain) return null;
+  // First visit only — cached verified agents render the shield immediately.
+  if (isPending && !onChainStatus) return null;
 
   const presentation = deriveVerificationPresentation({
     dbStatus,
-    onChain: onChainStatus,
+    onChain: onChainStatus ?? null,
   });
 
   if (presentation !== "verifiedOnChain") return null;

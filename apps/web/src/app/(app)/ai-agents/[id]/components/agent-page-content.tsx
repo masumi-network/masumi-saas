@@ -7,7 +7,10 @@ import { toast } from "sonner";
 
 import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
-import { isRegistrationUiPending } from "@/lib/agents/registration-state";
+import {
+  isRegistrationUiPending,
+  isRegistryVerificationUpdatePending,
+} from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -166,6 +169,27 @@ export function AgentPageContent({
       // Reconcile or refetch failed; ignore.
     });
   }, [agent.id]);
+
+  // Poll while verification anchors are writing on-chain (credential issued, registry update pending).
+  useEffect(() => {
+    if (!isAgentVerificationFlowEnabled()) return;
+    if (agent.verificationStatus !== "VERIFIED") return;
+    if (!isRegistryVerificationUpdatePending(agent.registrationState)) return;
+
+    let cancelled = false;
+    const intervalId = setInterval(() => {
+      if (cancelled) return;
+      void (async () => {
+        await credentialApiClient.reconcilePendingCredentials(agent.id);
+        await syncAndRefetchRef.current();
+      })();
+    }, 12_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [agent.id, agent.registrationState, agent.verificationStatus]);
 
   const tabParamRaw = searchParams.get("tab");
   const tabParam =

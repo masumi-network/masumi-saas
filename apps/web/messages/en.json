@@ -1415,6 +1415,9 @@
             "title": "Verification Update In Progress",
             "description": "Your credential was accepted and verification anchors are being written to the registry NFT. This usually completes within a few minutes."
           },
+          "checkingRegistry": {
+            "title": "Checking registry…"
+          },
           "onChainPending": {
             "title": "Verification Pending — On-Chain",
             "description": "Issued in your wallet. Registry confirmation still pending."
@@ -1510,9 +1513,10 @@
           "waitingForIssuanceSubmit": "Waiting…",
           "waitingForWalletAcceptance": "Waiting for wallet acceptance",
           "waitingForWalletDescription": "Please open your Veridian wallet and accept the incoming credential offer.",
-          "confirmAcceptedCredential": "I've accepted the credential",
-          "checkingAcceptance": "Checking…",
-          "acceptanceStillPending": "Credential not detected yet. Confirm you tapped Accept in Veridian, then try again.",
+          "waitingForWalletCloseHint": "You can close this dialog. We'll keep checking in the background and update your agent when the credential is accepted.",
+          "closeWhileWaitingTitle": "Verification in progress",
+          "closeWhileWaitingDescription": "We'll keep checking for wallet acceptance and writing verification to the registry in the background.",
+          "closeWhileWaitingConfirm": "Close anyway",
           "completeKyc": "Complete KYC Verification",
           "connectCredentialServer": "Credential server connection",
           "credentialServerInstructions": "In Veridian, open Home and tap Add connection. Switch to the Scan tab and scan this QR code. Accept the connection request in your wallet when prompted.",
