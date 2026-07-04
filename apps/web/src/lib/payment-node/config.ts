@@ -97,7 +97,7 @@ function getRegistrationFundingWallets(network: PaymentNodeNetwork): string[] {
 }
 
 const DEFAULT_REGISTRY_HOLDING_WALLET_FUNDING_ADA = 30;
-const LOVELACE_PER_ADA = 1_000_000n;
+const LOVELACE_PER_ADA = BigInt(1_000_000);
 
 export const REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV =
   "PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA" as const;
