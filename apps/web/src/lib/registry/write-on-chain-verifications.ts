@@ -98,11 +98,23 @@ async function pollRegistryUpdate(
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
-    const entry = await adminClient.getRegistryById({
-      id: registryId,
-      network,
-      filterSmartContractAddress: smartContractAddress,
-    });
+    let entry;
+    try {
+      entry = await adminClient.getRegistryById({
+        id: registryId,
+        network,
+        filterSmartContractAddress: smartContractAddress,
+      });
+    } catch (error) {
+      console.error("[Veridian] Registry poll fetch failed (will retry):", {
+        registryId,
+        network,
+        error,
+      });
+      await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
+      continue;
+    }
+
     if (!entry) {
       return { error: "Registry entry not found while polling update" };
     }
@@ -124,13 +136,20 @@ async function pollRegistryUpdate(
       entry.agentIdentifier &&
       entry.agentIdentifier === previousAgentIdentifier
     ) {
-      const onChain = await adminClient.getRegistryByAgentIdentifier({
-        agentIdentifier: entry.agentIdentifier,
-        network,
-      });
-      const verifications = onChain?.Metadata?.verifications;
-      if (verifications && verifications.length > 0) {
-        return { agentIdentifier: entry.agentIdentifier };
+      try {
+        const onChain = await adminClient.getRegistryByAgentIdentifier({
+          agentIdentifier: entry.agentIdentifier,
+          network,
+        });
+        const verifications = onChain?.Metadata?.verifications;
+        if (verifications && verifications.length > 0) {
+          return { agentIdentifier: entry.agentIdentifier };
+        }
+      } catch (error) {
+        console.error(
+          "[Veridian] Registry poll on-chain metadata fetch failed (will retry):",
+          { agentIdentifier: entry.agentIdentifier, network, error },
+        );
       }
     }
 
@@ -358,16 +377,27 @@ export async function writeOnChainVerifications(params: {
       userId: params.userId,
       error: pollResult.error,
     });
-    const failedEntry = await adminClient.getRegistryById({
-      id: registryId,
-      network,
-      filterSmartContractAddress: smartContractAddress,
-    });
-    if (failedEntry?.state === "UpdateFailed") {
-      await prisma.agent.update({
-        where: { id: agent.id },
-        data: { registrationState: "UpdateFailed" },
+    try {
+      const failedEntry = await adminClient.getRegistryById({
+        id: registryId,
+        network,
+        filterSmartContractAddress: smartContractAddress,
       });
+      if (failedEntry?.state === "UpdateFailed") {
+        await prisma.agent.update({
+          where: { id: agent.id },
+          data: { registrationState: "UpdateFailed" },
+        });
+      }
+    } catch (error) {
+      console.error(
+        "[Veridian] Failed to load registry row after poll error:",
+        {
+          agentId: params.agentId,
+          userId: params.userId,
+          error,
+        },
+      );
     }
     return { success: false, error: pollResult.error };
   }
@@ -564,47 +594,57 @@ export async function triggerOnChainVerificationWrite(params: {
   veridianCredentialId: string;
   storedAttributesRaw?: string | null;
 }): Promise<boolean> {
-  const onChainResult = await writeOnChainVerificationsFromStoredCredential({
-    agentId: params.agentId,
-    userId: params.userId,
-    credential: params.issuedCredential,
-    storedAttributesRaw: params.storedAttributesRaw,
-    veridianCredentialId: params.veridianCredentialId,
-  });
-
-  if (onChainResult === null) {
-    console.error(
-      "[Veridian] On-chain verification write skipped (holder OOBI unresolved):",
-      {
-        agentId: params.agentId,
-        veridianCredentialId: params.veridianCredentialId,
-      },
-    );
-    return false;
-  }
-
-  if (!onChainResult.success) {
-    console.error("[Veridian] On-chain verification write failed:", {
+  try {
+    const onChainResult = await writeOnChainVerificationsFromStoredCredential({
       agentId: params.agentId,
       userId: params.userId,
-      error: onChainResult.error,
+      credential: params.issuedCredential,
+      storedAttributesRaw: params.storedAttributesRaw,
+      veridianCredentialId: params.veridianCredentialId,
+    });
+
+    if (onChainResult === null) {
+      console.error(
+        "[Veridian] On-chain verification write skipped (holder OOBI unresolved):",
+        {
+          agentId: params.agentId,
+          veridianCredentialId: params.veridianCredentialId,
+        },
+      );
+      return false;
+    }
+
+    if (!onChainResult.success) {
+      console.error("[Veridian] On-chain verification write failed:", {
+        agentId: params.agentId,
+        userId: params.userId,
+        error: onChainResult.error,
+      });
+      return false;
+    }
+
+    if (!onChainResult.skipped) {
+      const agent = await prisma.agent.findUnique({
+        where: { id: params.agentId },
+        select: { name: true },
+      });
+      if (agent) {
+        await sendOnChainVerificationCompleteEmail(
+          params.userId,
+          params.agentId,
+          agent.name,
+        );
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Veridian] On-chain verification write threw:", {
+      agentId: params.agentId,
+      userId: params.userId,
+      veridianCredentialId: params.veridianCredentialId,
+      error,
     });
     return false;
   }
-
-  if (!onChainResult.skipped) {
-    const agent = await prisma.agent.findUnique({
-      where: { id: params.agentId },
-      select: { name: true },
-    });
-    if (agent) {
-      await sendOnChainVerificationCompleteEmail(
-        params.userId,
-        params.agentId,
-        agent.name,
-      );
-    }
-  }
-
-  return true;
 }

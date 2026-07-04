@@ -137,14 +137,21 @@ export async function finalizePendingVeridianCredential(params: {
       await recordAgentActivityEvent(agentId, "AgentVerified");
     }
 
-    await triggerOnChainVerificationWrite({
-      agentId,
-      userId: params.userId,
-      issuedCredential,
-      veridianCredentialId: pendingCredential.id,
-      storedAttributesRaw:
-        pendingCredential.attributes ?? pendingCredential.credentialData,
-    });
+    try {
+      await triggerOnChainVerificationWrite({
+        agentId,
+        userId: params.userId,
+        issuedCredential,
+        veridianCredentialId: pendingCredential.id,
+        storedAttributesRaw:
+          pendingCredential.attributes ?? pendingCredential.credentialData,
+      });
+    } catch (error) {
+      console.error(
+        "[Veridian] On-chain verification write failed after credential issued:",
+        { agentId, pendingCredentialId: pendingCredential.id, error },
+      );
+    }
   }
 
   return {
