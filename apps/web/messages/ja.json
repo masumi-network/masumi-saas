@@ -535,7 +535,8 @@
       "cancelTitle": "チェックアウトをキャンセルしました",
       "cancelDescription": "支払いは行われませんでした。いつでも再度お試しください。",
       "emailVerificationRequired": "クレジットを購入する前にメールアドレスを確認してください。",
-      "signInRequiredForPurchase": "クレジットを購入するにはサインインしてください。"
+      "signInRequiredForPurchase": "クレジットを購入するにはサインインしてください。",
+      "creditBalanceCapExceeded": "この購入額では残高が上限を超えます。クレジット数を減らすか、先に一部のクレジットを使用してください。"
     },
     "Withdraw": {
       "title": "撤回する",

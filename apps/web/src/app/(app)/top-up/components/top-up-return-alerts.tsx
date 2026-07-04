@@ -1,15 +1,17 @@
+"use client";
+
 import { XCircle } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
  * Lightweight notice when the user aborted Stripe Checkout. Success returns
- * use `session_id`; that path only strips query params server-side verification
- * still runs from the page loader.
+ * use `session_id`; that path verifies on the server and strips query params
+ * client-side.
  */
-export async function TopUpCanceledBanner() {
-  const t = await getTranslations("App.TopUp");
+export function TopUpCanceledBanner() {
+  const t = useTranslations("App.TopUp");
 
   return (
     <Alert className="flex gap-3 border-muted-foreground/25 bg-muted/20">

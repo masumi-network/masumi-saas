@@ -535,7 +535,8 @@
       "cancelTitle": "Paiement annulé",
       "cancelDescription": "Aucun paiement n'a été effectué. Vous pouvez réessayer quand vous le souhaitez.",
       "emailVerificationRequired": "Vérifiez votre adresse e-mail avant d'acheter des crédits.",
-      "signInRequiredForPurchase": "Connectez-vous pour acheter des crédits."
+      "signInRequiredForPurchase": "Connectez-vous pour acheter des crédits.",
+      "creditBalanceCapExceeded": "Votre solde est trop élevé pour ce montant d'achat. Choisissez moins de crédits ou utilisez d'abord quelques crédits."
     },
     "Withdraw": {
       "title": "Retirer",

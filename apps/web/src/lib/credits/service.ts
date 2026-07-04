@@ -44,7 +44,14 @@ export class CreditBalanceCapExceededError extends Error {
 }
 
 /** Stay below Postgres `Int` max (2_147_483_647) with headroom. */
-const MAX_USER_CREDITS_REMAINING = 2_000_000_000;
+export const MAX_USER_CREDITS_REMAINING = 2_000_000_000;
+
+export function wouldExceedCreditBalanceCap(
+  creditsRemaining: number,
+  creditsToAdd: number,
+): boolean {
+  return creditsRemaining > MAX_USER_CREDITS_REMAINING - creditsToAdd;
+}
 
 function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -198,7 +205,7 @@ export async function consumeCreditIfRequired(params: {
 
 /**
  * Idempotent credit grant for Stripe Checkout (`checkout.session.completed`).
- * Same `checkoutSessionId` only applies once (unique userId + reason + reference).
+ * Same `checkoutSessionId` only applies once via a unique ledger column.
  */
 export async function grantCreditTopUpFromCheckoutSession(params: {
   userId: string;
@@ -215,28 +222,20 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.creditLedgerEntry.findUnique({
       where: {
-        userId_reason_reference: {
-          userId: params.userId,
-          reason: "stripe_checkout",
-          reference: params.checkoutSessionId,
-        },
+        stripeCheckoutSessionId: params.checkoutSessionId,
       },
-      select: { id: true },
+      select: { balanceAfter: true },
     });
 
     if (existing) {
-      const u = await tx.user.findUniqueOrThrow({
-        where: { id: params.userId },
-        select: { creditsRemaining: true },
-      });
-      return { granted: false, balanceAfter: u.creditsRemaining };
+      return { granted: false, balanceAfter: existing.balanceAfter };
     }
 
     const before = await tx.user.findUniqueOrThrow({
       where: { id: params.userId },
       select: { creditsRemaining: true },
     });
-    if (before.creditsRemaining > MAX_USER_CREDITS_REMAINING - params.credits) {
+    if (wouldExceedCreditBalanceCap(before.creditsRemaining, params.credits)) {
       throw new CreditBalanceCapExceededError();
     }
 
@@ -257,6 +256,7 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
         balanceAfter: user.creditsRemaining,
         reason: "stripe_checkout",
         reference: params.checkoutSessionId,
+        stripeCheckoutSessionId: params.checkoutSessionId,
         ...(params.metadata
           ? { metadata: toJsonMetadata(params.metadata) }
           : {}),

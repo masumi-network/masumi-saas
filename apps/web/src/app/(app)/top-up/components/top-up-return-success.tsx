@@ -1,13 +1,15 @@
+"use client";
+
 import { CheckCircle2 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
 type Props = {
   credits: number;
 };
 
-/** Shown once when `?session_id=` verifies; URL is stripped client-side on next navigation. */
-export async function TopUpReturnSuccessBanner({ credits }: Props) {
-  const t = await getTranslations("App.TopUp");
+/** Shown once when `?session_id=` verifies; URL is stripped client-side. */
+export function TopUpReturnSuccessBanner({ credits }: Props) {
+  const t = useTranslations("App.TopUp");
 
   return (
     <div className="flex gap-3 rounded-lg border border-primary/25 bg-muted/40 px-3 py-3 text-sm md:px-4">

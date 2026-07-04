@@ -300,15 +300,16 @@ model OidcUserGrant {
 }
 
 model CreditLedgerEntry {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  delta        Int
-  balanceAfter Int
-  reason       String
-  reference    String
-  metadata     Json?
-  createdAt    DateTime @default(now())
+  id                      String   @id @default(cuid())
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta                   Int
+  balanceAfter            Int
+  reason                  String
+  reference               String
+  stripeCheckoutSessionId String?  @unique
+  metadata                Json?
+  createdAt               DateTime @default(now())
 
   @@unique([userId, reason, reference])
   @@index([userId, createdAt])

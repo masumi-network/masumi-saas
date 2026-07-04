@@ -438,7 +438,7 @@ export function TopUpPurchaseForm({
                       min={0}
                       step={1}
                       value={[sliderStepsFromCredits]}
-                      onValueChange={(v) => {
+                      onValueChange={(v: number[]) => {
                         const next = v[0] ?? sliderStepsFromCredits;
                         setCreditsFromSlider(next);
                       }}

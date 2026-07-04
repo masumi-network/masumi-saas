@@ -11,6 +11,7 @@ import {
   getAuthenticatedOrThrow,
   UnauthorizedError,
 } from "@/lib/auth/utils";
+import { wouldExceedCreditBalanceCap } from "@/lib/credits/service";
 import { serverLog } from "@/lib/server/logger";
 import { isStripeTopUpEnabled } from "@/lib/stripe/config";
 import {
@@ -101,10 +102,21 @@ export async function startCreditTopUp(
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { banned: true },
+    select: { banned: true, creditsRemaining: true },
   });
-  if (dbUser?.banned) {
+  if (!dbUser) {
+    return {
+      ok: false,
+      error: tTopUp("signInRequiredForPurchase"),
+    };
+  }
+  if (dbUser.banned) {
     return { ok: false, error: "Your account cannot purchase credits" };
+  }
+  if (
+    wouldExceedCreditBalanceCap(dbUser.creditsRemaining, parsed.data.credits)
+  ) {
+    return { ok: false, error: tTopUp("creditBalanceCapExceeded") };
   }
 
   try {

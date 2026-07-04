@@ -8,9 +8,9 @@ import {
   getCreditProductIdOrThrow,
   getCreditUnitAmountCents,
   getStripeClient,
-  MASUMI_CHECKOUT_METADATA_PURPOSE,
   STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
+import { createTopUpCheckoutMetadata } from "@/lib/stripe/top-up-metadata";
 
 function expectedAmountTotalCents(credits: number): number {
   return credits * getCreditUnitAmountCents();
@@ -105,10 +105,10 @@ export async function createTopUpCheckoutSession(params: {
     success_url: `${base}/top-up?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/top-up?canceled=1`,
     client_reference_id: params.userId,
-    metadata: {
-      masumi_purpose: MASUMI_CHECKOUT_METADATA_PURPOSE,
+    metadata: createTopUpCheckoutMetadata({
       userId: params.userId,
-      credits: String(params.credits),
-    },
+      credits: params.credits,
+      amountTotalCents: totalCents,
+    }),
   });
 }

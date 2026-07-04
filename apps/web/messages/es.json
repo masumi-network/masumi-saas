@@ -535,7 +535,8 @@
       "cancelTitle": "Pago cancelado",
       "cancelDescription": "No se realizó ningún pago. Puedes volver a intentarlo cuando quieras.",
       "emailVerificationRequired": "Verifica tu correo electrónico antes de comprar créditos.",
-      "signInRequiredForPurchase": "Inicia sesión para comprar créditos."
+      "signInRequiredForPurchase": "Inicia sesión para comprar créditos.",
+      "creditBalanceCapExceeded": "Tu saldo es demasiado alto para ese importe de compra. Elige menos créditos o consume algunos primero."
     },
     "Withdraw": {
       "title": "Retirar",

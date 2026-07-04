@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("stripe", () => ({
+  default: vi.fn().mockImplementation(() => ({})),
+}));
 
 describe("isPaidTopUpAmountConsistentWithCredits", () => {
   afterEach(() => {
@@ -75,5 +78,46 @@ describe("isValidStripeCheckoutSessionId (via verify module)", () => {
     expect(isValidStripeCheckoutSessionId("not_cs")).toBe(false);
     expect(isValidStripeCheckoutSessionId("cs_pretend_1")).toBe(false);
     expect(isValidStripeCheckoutSessionId("")).toBe(false);
+  });
+});
+
+describe("top-up checkout metadata signatures", () => {
+  it("round-trips metadata minted by the server", async () => {
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret");
+    const { createTopUpCheckoutMetadata, parseVerifiedTopUpCheckoutMetadata } =
+      await import("./top-up-metadata");
+
+    const metadata = createTopUpCheckoutMetadata({
+      userId: "user-1",
+      credits: 500,
+      amountTotalCents: 2_500,
+    });
+
+    expect(parseVerifiedTopUpCheckoutMetadata(metadata)).toEqual({
+      purpose: "credit_topup",
+      userId: "user-1",
+      credits: 500,
+      amountTotalCents: 2_500,
+      currency: "usd",
+    });
+  });
+
+  it("rejects tampered metadata even when the purpose marker is present", async () => {
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test_secret");
+    const { createTopUpCheckoutMetadata, parseVerifiedTopUpCheckoutMetadata } =
+      await import("./top-up-metadata");
+
+    const metadata = createTopUpCheckoutMetadata({
+      userId: "user-1",
+      credits: 500,
+      amountTotalCents: 2_500,
+    });
+
+    expect(
+      parseVerifiedTopUpCheckoutMetadata({
+        ...metadata,
+        credits: "500000",
+      }),
+    ).toBeNull();
   });
 });

@@ -13,7 +13,9 @@ import {
   getWebhookSecretOrThrow,
   isStripeTopUpEnabled,
   MASUMI_CHECKOUT_METADATA_PURPOSE,
+  STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
+import { parseVerifiedTopUpCheckoutMetadata } from "@/lib/stripe/top-up-metadata";
 
 /** Stripe webhook bodies are small; reject large payloads before buffering. */
 const STRIPE_WEBHOOK_MAX_BYTES = 1024 * 1024;
@@ -94,15 +96,21 @@ export async function POST(request: NextRequest) {
       await processTopUpCheckoutSession(session);
     } catch (err) {
       if (err instanceof CreditBalanceCapExceededError) {
-        serverLog.warn("[stripe webhook] credit grant skipped (balance cap)", {
-          sessionId: session.id,
-          err,
-        });
+        serverLog.warn(
+          "[stripe webhook] credit grant blocked by balance cap; returning retryable error",
+          {
+            sessionId: session.id,
+            err,
+          },
+        );
         Sentry.captureException(err, {
           tags: { component: "stripe-webhook" },
           extra: { sessionId: session.id },
         });
-        return NextResponse.json({ received: true, skipped: true });
+        return NextResponse.json(
+          { error: "Credit balance cap exceeded" },
+          { status: 500 },
+        );
       }
       if (isPrismaRecordNotFound(err)) {
         serverLog.warn(
@@ -144,24 +152,35 @@ async function processTopUpCheckoutSession(
     return;
   }
 
-  const userId = session.metadata?.userId?.trim();
-  const creditsRaw = session.metadata?.credits;
-  const credits =
-    typeof creditsRaw === "string"
-      ? Number.parseInt(creditsRaw, 10)
-      : Number.NaN;
-
-  if (!userId || !Number.isFinite(credits) || credits <= 0) {
+  if (
+    session.mode !== "payment" ||
+    session.currency !== STRIPE_CHECKOUT_CURRENCY
+  ) {
     captureWebhookIntegrityFailure(
-      "[stripe webhook] Missing or invalid metadata",
+      "[stripe webhook] unexpected checkout session mode or currency",
       {
         sessionId: session.id,
-        userId,
-        creditsRaw,
+        mode: session.mode,
+        currency: session.currency,
       },
     );
     return;
   }
+
+  const topUpMetadata = parseVerifiedTopUpCheckoutMetadata(session.metadata);
+
+  if (!topUpMetadata) {
+    captureWebhookIntegrityFailure(
+      "[stripe webhook] Missing, invalid, or unsigned metadata",
+      {
+        sessionId: session.id,
+        metadataKeys: Object.keys(session.metadata ?? {}),
+      },
+    );
+    return;
+  }
+
+  const { userId, credits, amountTotalCents } = topUpMetadata;
 
   if (
     session.client_reference_id != null &&
@@ -173,6 +192,18 @@ async function processTopUpCheckoutSession(
         sessionId: session.id,
         clientReferenceId: session.client_reference_id,
         userId,
+      },
+    );
+    return;
+  }
+
+  if (session.amount_total !== amountTotalCents) {
+    captureWebhookIntegrityFailure(
+      "[stripe webhook] amount_total does not match signed expected amount",
+      {
+        sessionId: session.id,
+        amountTotal: session.amount_total,
+        amountTotalCents,
       },
     );
     return;

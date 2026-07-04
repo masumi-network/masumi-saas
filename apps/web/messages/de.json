@@ -535,7 +535,8 @@
       "cancelTitle": "Checkout abgebrochen",
       "cancelDescription": "Es wurde keine Zahlung durchgeführt. Sie können es jederzeit erneut versuchen.",
       "emailVerificationRequired": "Bestätigen Sie Ihre E-Mail-Adresse, bevor Sie Credits kaufen.",
-      "signInRequiredForPurchase": "Melden Sie sich an, um Credits zu kaufen."
+      "signInRequiredForPurchase": "Melden Sie sich an, um Credits zu kaufen.",
+      "creditBalanceCapExceeded": "Ihr Saldo ist für diesen Kaufbetrag zu hoch. Wählen Sie weniger Credits oder verbrauchen Sie zuerst einige Credits."
     },
     "Withdraw": {
       "title": "Zurückziehen",

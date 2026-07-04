@@ -27,8 +27,6 @@ import { TOP_UP_PRESET_CREDIT_AMOUNTS } from "@/lib/stripe/top-up-constants";
 import { verifyTopUpReturnSession } from "@/lib/stripe/verify-return-session";
 
 import { TopUpPurchaseForm } from "./components/top-up-purchase-form";
-import { TopUpCanceledBanner } from "./components/top-up-return-alerts";
-import { TopUpReturnSuccessBanner } from "./components/top-up-return-success";
 import { TopUpStripSessionQuery } from "./components/top-up-strip-session-query";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -118,14 +116,11 @@ export default async function TopUpPage({ searchParams }: PageProps) {
 
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <Suspense fallback={null}>
-          <TopUpStripSessionQuery />
+          <TopUpStripSessionQuery
+            canceled={canceled}
+            successCredits={stripeReturnCreditsVerified}
+          />
         </Suspense>
-
-        {canceled ? <TopUpCanceledBanner /> : null}
-
-        {stripeReturnCreditsVerified !== null ? (
-          <TopUpReturnSuccessBanner credits={stripeReturnCreditsVerified} />
-        ) : null}
 
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both delay-0">
           <Card className="gap-0 overflow-hidden pt-0">

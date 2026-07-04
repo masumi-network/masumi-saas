@@ -535,7 +535,8 @@
       "cancelTitle": "Checkout canceled",
       "cancelDescription": "No payment was made. You can try again whenever you’re ready.",
       "emailVerificationRequired": "Verify your email address before purchasing credits.",
-      "signInRequiredForPurchase": "Sign in to purchase credits."
+      "signInRequiredForPurchase": "Sign in to purchase credits.",
+      "creditBalanceCapExceeded": "Your balance is too high for that purchase amount. Choose fewer credits or spend some credits first."
     },
     "Withdraw": {
       "title": "Withdraw",
