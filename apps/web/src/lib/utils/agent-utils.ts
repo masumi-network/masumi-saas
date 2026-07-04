@@ -1,3 +1,5 @@
+import type { VerificationStatus } from "@masumi/database";
+
 import { shouldDisplayRegistrationAsRegistered } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 
@@ -69,7 +71,7 @@ export function getRegistrationStatusKey(
 /** User-facing registration badge while verification anchors are writing on-chain. */
 export function getRegistrationStatusDisplayKey(
   registrationState: Agent["registrationState"],
-  verificationStatus?: Agent["verificationStatus"] | null,
+  verificationStatus?: VerificationStatus | null,
 ): RegistrationStatusKey {
   if (
     shouldDisplayRegistrationAsRegistered({
@@ -102,7 +104,7 @@ const REGISTRATION_STATUS_KEYS: Record<
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
-  verificationStatus?: Agent["verificationStatus"] | null,
+  verificationStatus?: VerificationStatus | null,
 ): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
   if (
     shouldDisplayRegistrationAsRegistered({
@@ -131,7 +133,7 @@ export function getRegistrationStatusBadgeVariant(
 /** Extra badge classes for in-progress registration states that need attention. */
 export function getRegistrationStatusBadgeClassName(
   status: Agent["registrationState"],
-  verificationStatus?: Agent["verificationStatus"] | null,
+  verificationStatus?: VerificationStatus | null,
 ): string {
   const key = getRegistrationStatusDisplayKey(status, verificationStatus);
   if (key === "pending" || key === "updateRequested") {
