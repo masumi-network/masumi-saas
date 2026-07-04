@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { PendingWalletAcceptanceBanner } from "@/app/(app)/ai-agents/components/pending-wallet-acceptance-banner";
 import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import {
@@ -57,6 +58,10 @@ export function AgentPageContent({
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
+  const [resumePendingCredentialId, setResumePendingCredentialId] = useState<
+    string | null
+  >(null);
+  const [pendingBannerRefreshKey, setPendingBannerRefreshKey] = useState(0);
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
@@ -266,8 +271,19 @@ export function AgentPageContent({
       await syncAgentRegistrationStatusAction(agent.id);
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
+      setResumePendingCredentialId(null);
+      setPendingBannerRefreshKey((key) => key + 1);
     } catch {
       // Refetch failed; user can refresh the page.
+    }
+  };
+
+  const handleResumeWalletAcceptance = (pendingCredentialId: string) => {
+    setResumePendingCredentialId(pendingCredentialId);
+    if (activeTab !== VERIFICATION_TAB) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", VERIFICATION_TAB);
+      router.replace(`${pathname}?${params.toString()}`);
     }
   };
 
@@ -279,6 +295,13 @@ export function AgentPageContent({
           backHref={backHref}
           backLabel={backLabel}
         />
+        {agentVerificationUiEnabled ? (
+          <PendingWalletAcceptanceBanner
+            agentId={agent.id}
+            refreshKey={pendingBannerRefreshKey}
+            onResume={handleResumeWalletAcceptance}
+          />
+        ) : null}
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
@@ -288,6 +311,10 @@ export function AgentPageContent({
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
+          onRefreshStatus={syncAndRefetch}
+          onVerificationDialogClosed={() =>
+            setPendingBannerRefreshKey((key) => key + 1)
+          }
         />
       )}
 
@@ -295,6 +322,13 @@ export function AgentPageContent({
         <AgentVerificationTab
           agent={agent}
           onVerificationSuccess={handleVerificationSuccess}
+          resumePendingCredentialId={resumePendingCredentialId}
+          onResumePendingCredentialConsumed={() =>
+            setResumePendingCredentialId(null)
+          }
+          onVerificationDialogClosed={() =>
+            setPendingBannerRefreshKey((key) => key + 1)
+          }
         />
       )}
 

@@ -62,11 +62,11 @@ const STEP_CREATE_CONNECTION = 2;
 const STEP_IDENTIFIER = 3;
 const STEP_SUBMIT = 4;
 
+type WalletAcceptancePhase = "awaiting_wallet" | "complete";
+
 const VERIDIAN_CONNECT_URL =
   process.env.NEXT_PUBLIC_VERIDIAN_KERIA_CONNECT_URL ?? "";
 const VERIDIAN_BOOT_URL = process.env.NEXT_PUBLIC_VERIDIAN_KERIA_BOOT_URL ?? "";
-const CREDENTIAL_POLL_MS = 3000;
-const CREDENTIAL_POLL_MAX = 100;
 const CONNECTION_POLL_MS = 4000;
 const CONNECTION_POLL_MAX = 100;
 
@@ -76,6 +76,8 @@ interface RequestVerificationDialogProps {
   agent: Agent;
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
   onSuccess: () => void;
+  /** Resume wallet-acceptance step for an existing pending credential row. */
+  resumePendingCredentialId?: string | null;
 }
 
 export function RequestVerificationDialog({
@@ -84,6 +86,7 @@ export function RequestVerificationDialog({
   agent,
   kycStatus,
   onSuccess,
+  resumePendingCredentialId = null,
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
@@ -112,15 +115,15 @@ export function RequestVerificationDialog({
   const [pendingCredentialId, setPendingCredentialId] = useState<string | null>(
     null,
   );
-  const [isWaitingForAcceptance, setIsWaitingForAcceptance] = useState(false);
+  const [walletAcceptancePhase, setWalletAcceptancePhase] =
+    useState<WalletAcceptancePhase | null>(null);
+  const [isConfirmingAcceptance, setIsConfirmingAcceptance] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const lastCheckedAidRef = useRef<string | null>(null);
   const prevDerivedAidRef = useRef<string | null>(null);
   const connPollAttemptsRef = useRef(0);
   /** Only reset poll counter when this key changes — not when connection state flaps during polling */
   const connPollSessionKeyRef = useRef<string>("");
-  const issuanceFinishedRef = useRef(false);
-  const stopCredentialPollingRef = useRef<(() => void) | null>(null);
   const onSuccessRef = useRef(onSuccess);
   const onOpenChangeRef = useRef(onOpenChange);
   useEffect(() => {
@@ -148,30 +151,26 @@ export function RequestVerificationDialog({
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
       connPollSessionKeyRef.current = "";
-      issuanceFinishedRef.current = false;
-      stopCredentialPollingRef.current?.();
-      stopCredentialPollingRef.current = null;
       setChallenge(null);
       setSecret(null);
       setShowSecret(false);
       setIssueError(null);
       setPendingCredentialId(null);
-      setIsWaitingForAcceptance(false);
+      setWalletAcceptancePhase(null);
+      setIsConfirmingAcceptance(false);
       setShowCloseConfirm(false);
     }
   }, [agentVerificationEnabled, open]);
 
-  const finishCredentialIssuance = useCallback(() => {
-    if (issuanceFinishedRef.current) return;
-    issuanceFinishedRef.current = true;
-    stopCredentialPollingRef.current?.();
-    stopCredentialPollingRef.current = null;
-    setIsWaitingForAcceptance(false);
-    setPendingCredentialId(null);
-    toast.success(t("requestSuccess"));
-    onSuccessRef.current();
-    onOpenChangeRef.current(false);
-  }, [t]);
+  useEffect(() => {
+    if (!agentVerificationEnabled || !open || !resumePendingCredentialId) {
+      return;
+    }
+    setStep(STEP_SUBMIT);
+    setPendingCredentialId(resumePendingCredentialId);
+    setWalletAcceptancePhase("awaiting_wallet");
+    setIssueError(null);
+  }, [agentVerificationEnabled, open, resumePendingCredentialId]);
 
   const resolveCredentialAcceptance = useCallback(
     async (
@@ -194,17 +193,46 @@ export function RequestVerificationDialog({
     [],
   );
 
-  const performClose = useCallback(
-    (options?: { continueInBackground?: boolean }) => {
-      if (options?.continueInBackground) {
-        stopCredentialPollingRef.current?.();
-        stopCredentialPollingRef.current = null;
+  const handleConfirmWalletAcceptance = useCallback(async () => {
+    if (!pendingCredentialId || isConfirmingAcceptance) return;
+
+    setIsConfirmingAcceptance(true);
+    setIssueError(null);
+    try {
+      const resolution = await resolveCredentialAcceptance(pendingCredentialId);
+      if (resolution.outcome === "issued") {
+        setWalletAcceptancePhase("complete");
+        toast.success(t("walletAcceptanceConfirmed"));
         onSuccessRef.current();
+        return;
       }
-      onOpenChangeRef.current(false);
-    },
-    [],
-  );
+      if (resolution.outcome === "error") {
+        setIssueError(resolution.error);
+        toast.error(resolution.error);
+        return;
+      }
+      toast.error(t("acceptanceNotDetectedYet"));
+    } finally {
+      setIsConfirmingAcceptance(false);
+    }
+  }, [
+    isConfirmingAcceptance,
+    pendingCredentialId,
+    resolveCredentialAcceptance,
+    t,
+  ]);
+
+  const performClose = useCallback(() => {
+    onOpenChangeRef.current(false);
+  }, []);
+
+  const handleCompleteClose = useCallback(() => {
+    performClose();
+  }, [performClose]);
+
+  const isAwaitingWalletAcceptance =
+    walletAcceptancePhase === "awaiting_wallet";
+  const isWalletAcceptanceComplete = walletAcceptancePhase === "complete";
 
   useEffect(() => {
     if (!agentVerificationEnabled) return;
@@ -265,71 +293,6 @@ export function RequestVerificationDialog({
       cancelled = true;
     };
   }, [agentVerificationEnabled, open, agent.id, kycStatus, t]);
-
-  // Poll for credential acceptance after issue (timeout so user is not trapped)
-  const credentialPollAttemptsRef = useRef(0);
-  const pollIntervalIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!agentVerificationEnabled) return;
-    if (!pendingCredentialId || !isWaitingForAcceptance) return;
-    credentialPollAttemptsRef.current = 0;
-
-    const stopPolling = () => {
-      if (pollIntervalIdRef.current !== null) {
-        clearTimeout(pollIntervalIdRef.current);
-        pollIntervalIdRef.current = null;
-      }
-    };
-    stopCredentialPollingRef.current = stopPolling;
-
-    const runPoll = async () => {
-      if (issuanceFinishedRef.current) {
-        stopPolling();
-        return;
-      }
-
-      credentialPollAttemptsRef.current += 1;
-      if (credentialPollAttemptsRef.current > CREDENTIAL_POLL_MAX) {
-        stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        toast.error(t("acceptanceTimeout"));
-        return;
-      }
-
-      const resolution = await resolveCredentialAcceptance(pendingCredentialId);
-      if (resolution.outcome === "error") {
-        stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        setIssueError(resolution.error);
-        toast.error(resolution.error);
-        return;
-      }
-      if (resolution.outcome === "issued") {
-        stopPolling();
-        finishCredentialIssuance();
-        return;
-      }
-      pollIntervalIdRef.current = setTimeout(runPoll, CREDENTIAL_POLL_MS);
-    };
-
-    void runPoll();
-    return () => {
-      if (stopCredentialPollingRef.current === stopPolling) {
-        stopCredentialPollingRef.current = null;
-      }
-      stopPolling();
-    };
-  }, [
-    agentVerificationEnabled,
-    finishCredentialIssuance,
-    isWaitingForAcceptance,
-    pendingCredentialId,
-    resolveCredentialAcceptance,
-    t,
-  ]);
 
   const checkConnection = useCallback(
     async (aidToCheck: string, force = false): Promise<boolean> => {
@@ -517,7 +480,7 @@ export function RequestVerificationDialog({
       if (result.success) {
         if (result.data.status === "PENDING") {
           setPendingCredentialId(result.data.id);
-          setIsWaitingForAcceptance(true);
+          setWalletAcceptancePhase("awaiting_wallet");
         } else {
           toast.success(t("requestSuccess"));
           onSuccess();
@@ -543,8 +506,12 @@ export function RequestVerificationDialog({
       onOpenChange(true);
       return;
     }
-    if (isSubmitting) return;
-    if (isWaitingForAcceptance) {
+    if (isSubmitting || isConfirmingAcceptance) return;
+    if (isWalletAcceptanceComplete) {
+      onOpenChange(false);
+      return;
+    }
+    if (isAwaitingWalletAcceptance) {
       setShowCloseConfirm(true);
       return;
     }
@@ -1111,20 +1078,42 @@ export function RequestVerificationDialog({
             )}
 
             {step === STEP_SUBMIT &&
-              (isWaitingForAcceptance ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <Spinner size={32} />
-                  <div className="text-center space-y-2 max-w-sm">
-                    <p className="text-sm font-medium">
-                      {t("waitingForWalletAcceptance")}
+              (isWalletAcceptanceComplete ? (
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("verificationCompleteTitle")}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {t("waitingForWalletDescription")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("waitingForWalletCloseHint")}
+                      {t("verificationCompleteOnChainDescription")}
                     </p>
                   </div>
+                </div>
+              ) : isAwaitingWalletAcceptance ? (
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
+                    <p className="text-sm font-medium">
+                      {t("credentialIssuedTitle")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("credentialIssuedDescription")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => void handleConfirmWalletAcceptance()}
+                    disabled={isConfirmingAcceptance}
+                  >
+                    {isConfirmingAcceptance && (
+                      <Spinner size={16} className="mr-2" />
+                    )}
+                    {t("confirmWalletAcceptance")}
+                  </Button>
+                  {issueError ? (
+                    <p className="text-sm text-destructive">{issueError}</p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -1156,7 +1145,7 @@ export function RequestVerificationDialog({
                 <Button
                   variant="outline"
                   onClick={handlePrev}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isConfirmingAcceptance}
                 >
                   {t("prev")}
                 </Button>
@@ -1184,13 +1173,16 @@ export function RequestVerificationDialog({
                     {t("next")}
                   </Button>
                 )
-              ) : (
+              ) : isWalletAcceptanceComplete ? (
+                <Button variant="primary" onClick={handleCompleteClose}>
+                  {t("done")}
+                </Button>
+              ) : !isAwaitingWalletAcceptance ? (
                 <Button
                   variant="primary"
                   onClick={handleSubmit}
                   disabled={
                     isSubmitting ||
-                    isWaitingForAcceptance ||
                     !holderAid ||
                     !challenge ||
                     !secret ||
@@ -1198,14 +1190,10 @@ export function RequestVerificationDialog({
                     connectionExists !== true
                   }
                 >
-                  {(isSubmitting || isWaitingForAcceptance) && (
-                    <Spinner size={16} className="mr-2" />
-                  )}
-                  {isWaitingForAcceptance
-                    ? t("waitingForIssuanceSubmit")
-                    : t("submitRequest")}
+                  {isSubmitting && <Spinner size={16} className="mr-2" />}
+                  {t("submitRequest")}
                 </Button>
-              )}
+              ) : null}
             </div>
           </DialogFooter>
         </DialogContent>
@@ -1214,7 +1202,7 @@ export function RequestVerificationDialog({
         open={showCloseConfirm}
         onOpenChange={setShowCloseConfirm}
         onConfirm={() => {
-          performClose({ continueInBackground: true });
+          performClose();
           setShowCloseConfirm(false);
         }}
         title={t("closeWhileWaitingTitle")}

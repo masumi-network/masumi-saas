@@ -7,11 +7,17 @@ import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config
 interface AgentVerificationTabProps {
   agent: Agent;
   onVerificationSuccess: () => void | Promise<void>;
+  resumePendingCredentialId?: string | null;
+  onResumePendingCredentialConsumed?: () => void;
+  onVerificationDialogClosed?: () => void;
 }
 
 export function AgentVerificationTab({
   agent,
   onVerificationSuccess,
+  resumePendingCredentialId = null,
+  onResumePendingCredentialConsumed,
+  onVerificationDialogClosed,
 }: AgentVerificationTabProps) {
   if (!isAgentVerificationFlowEnabled()) {
     return null;
@@ -22,6 +28,9 @@ export function AgentVerificationTab({
       <AgentVerificationCard
         agent={agent}
         onVerificationSuccess={onVerificationSuccess}
+        resumePendingCredentialId={resumePendingCredentialId}
+        onResumePendingCredentialConsumed={onResumePendingCredentialConsumed}
+        onVerificationDialogClosed={onVerificationDialogClosed}
       />
     </div>
   );

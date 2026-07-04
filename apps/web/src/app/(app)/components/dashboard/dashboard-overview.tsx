@@ -170,20 +170,17 @@ export default async function DashboardOverview({
                       <Badge
                         variant={getRegistrationStatusBadgeVariant(
                           agent.registrationState,
-                          agent.verificationStatus,
                         )}
                         className={cn(
                           "shrink-0",
                           getRegistrationStatusBadgeClassName(
                             agent.registrationState,
-                            agent.verificationStatus,
                           ),
                         )}
                       >
                         {tRegistrationStatus(
                           getRegistrationStatusDisplayKey(
                             agent.registrationState,
-                            agent.verificationStatus,
                           ),
                         )}
                       </Badge>

@@ -55,6 +55,7 @@ vi.mock("@/lib/payment-node", () => ({
     getPaymentSourceId: getPaymentSourceIdMock,
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     tryGetSmartContractAddress: () => undefined,
+    getRegistryHoldingWalletFundingLovelace: () => "30000000",
   },
 }));
 
@@ -66,6 +67,7 @@ vi.mock("./payment-node/config", () => ({
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
     tryGetSmartContractAddress: () => undefined,
+    getRegistryHoldingWalletFundingLovelace: () => "30000000",
   },
   isPaymentNodeConfigError: (error: unknown) =>
     error instanceof Error && error.name === "PaymentNodeConfigError",
@@ -582,7 +584,7 @@ describe("completeOnChainRegistration", () => {
       network: "Preprod",
       sellingWalletVkey: "funding-vkey",
       recipientWalletAddress: "addr_test1selling",
-      sendFundingLovelace: "10000000",
+      sendFundingLovelace: "30000000",
       name: "Demo agent",
       apiBaseUrl: "https://agent.example.com",
       description: "Demo description",

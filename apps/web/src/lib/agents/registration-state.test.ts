@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canDeregisterAgent,
   canRequestAgentVerification,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
   registrationStateFromRegistryEntry,
   resolveRegistrationStateAfterSync,
-  shouldDisplayRegistrationAsRegistered,
 } from "./registration-state";
 
 describe("registrationStateFromRegistryEntry", () => {
@@ -84,30 +84,24 @@ describe("canRequestAgentVerification", () => {
   });
 });
 
-describe("shouldDisplayRegistrationAsRegistered", () => {
-  it("shows registered while verification anchors are writing", () => {
-    expect(
-      shouldDisplayRegistrationAsRegistered({
-        registrationState: "UpdateRequested",
-        verificationStatus: "VERIFIED",
-      }),
-    ).toBe(true);
-  });
-
-  it("keeps update requested visible before credential issuance", () => {
-    expect(
-      shouldDisplayRegistrationAsRegistered({
-        registrationState: "UpdateRequested",
-        verificationStatus: "PENDING",
-      }),
-    ).toBe(false);
-  });
-});
-
 describe("isAgentLiveOnRegistry", () => {
   it("includes update lifecycle states", () => {
     expect(isAgentLiveOnRegistry("RegistrationConfirmed")).toBe(true);
     expect(isAgentLiveOnRegistry("UpdateRequested")).toBe(true);
     expect(isAgentLiveOnRegistry("RegistrationRequested")).toBe(false);
+  });
+});
+
+describe("canDeregisterAgent", () => {
+  it("allows only settled registration states", () => {
+    expect(canDeregisterAgent("RegistrationConfirmed")).toBe(true);
+    expect(canDeregisterAgent("DeregistrationFailed")).toBe(true);
+  });
+
+  it("blocks in-flight registration and registry updates", () => {
+    expect(canDeregisterAgent("RegistrationRequested")).toBe(false);
+    expect(canDeregisterAgent("UpdateRequested")).toBe(false);
+    expect(canDeregisterAgent("UpdateInitiated")).toBe(false);
+    expect(canDeregisterAgent("DeregistrationRequested")).toBe(false);
   });
 });

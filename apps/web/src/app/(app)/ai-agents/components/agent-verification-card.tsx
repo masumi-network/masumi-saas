@@ -67,6 +67,9 @@ const EM_DASH = "\u2014";
 interface AgentVerificationCardProps {
   agent: Agent;
   onVerificationSuccess: () => void | Promise<void>;
+  resumePendingCredentialId?: string | null;
+  onResumePendingCredentialConsumed?: () => void;
+  onVerificationDialogClosed?: () => void;
 }
 
 function detailRowLabel(label: string) {
@@ -642,6 +645,9 @@ function VeridianCredentialSummaryPanel({
 export function AgentVerificationCard({
   agent,
   onVerificationSuccess,
+  resumePendingCredentialId = null,
+  onResumePendingCredentialConsumed,
+  onVerificationDialogClosed,
 }: AgentVerificationCardProps) {
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const t = useTranslations("App.Agents.Details.Verification");
@@ -652,6 +658,19 @@ export function AgentVerificationCard({
   const { kycStatus, isLoadingKyc } = useKycStatusWithPolling(
     agentVerificationEnabled,
   );
+
+  useEffect(() => {
+    if (!resumePendingCredentialId) return;
+    setDialogOpen(true);
+  }, [resumePendingCredentialId]);
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      onResumePendingCredentialConsumed?.();
+      onVerificationDialogClosed?.();
+    }
+  };
 
   const dbStatus = agent.verificationStatus || "PENDING";
   const hasRegistryIdentifier = Boolean(agent.agentIdentifier?.trim());
@@ -867,10 +886,13 @@ export function AgentVerificationCard({
 
       <RequestVerificationDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         agent={agent}
         kycStatus={kycStatus}
         onSuccess={handleVerificationSuccess}
+        resumePendingCredentialId={
+          dialogOpen ? resumePendingCredentialId : null
+        }
       />
     </Card>
   );

@@ -10,6 +10,7 @@ interface RefreshButtonProps {
   isRefreshing?: boolean;
   disabled?: boolean;
   variant?: "icon-only" | "with-text";
+  buttonVariant?: "outline" | "ghost";
   size?: "sm" | "md" | "lg";
   className?: string;
   "aria-label"?: string;
@@ -20,6 +21,7 @@ export function RefreshButton({
   isRefreshing = false,
   disabled = false,
   variant = "icon-only",
+  buttonVariant = "outline",
   size = "sm",
   className,
   "aria-label": ariaLabel,
@@ -48,7 +50,7 @@ export function RefreshButton({
   if (variant === "icon-only") {
     return (
       <Button
-        variant="outline"
+        variant={buttonVariant}
         size="icon"
         onClick={onRefresh}
         disabled={isDisabled}
@@ -70,7 +72,7 @@ export function RefreshButton({
 
   return (
     <Button
-      variant="outline"
+      variant={buttonVariant}
       onClick={onRefresh}
       disabled={isDisabled}
       className={cn(

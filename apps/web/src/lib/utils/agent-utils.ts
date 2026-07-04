@@ -1,6 +1,3 @@
-import type { VerificationStatus } from "@masumi/database";
-
-import { shouldDisplayRegistrationAsRegistered } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 
 /**
@@ -68,19 +65,10 @@ export function getRegistrationStatusKey(
   return key ?? "pending";
 }
 
-/** User-facing registration badge while verification anchors are writing on-chain. */
+/** User-facing registration badge label (may simplify in-flight registry updates). */
 export function getRegistrationStatusDisplayKey(
   registrationState: Agent["registrationState"],
-  verificationStatus?: VerificationStatus | null,
 ): RegistrationStatusKey {
-  if (
-    shouldDisplayRegistrationAsRegistered({
-      registrationState,
-      verificationStatus,
-    })
-  ) {
-    return "registered";
-  }
   return getRegistrationStatusKey(registrationState);
 }
 
@@ -96,24 +84,15 @@ const REGISTRATION_STATUS_KEYS: Record<
   DeregistrationInitiated: "deregistering",
   DeregistrationConfirmed: "deregistered",
   DeregistrationFailed: "deregistrationFailed",
-  UpdateRequested: "updateRequested",
-  UpdateInitiated: "updateInitiated",
+  UpdateRequested: "pending",
+  UpdateInitiated: "pending",
   UpdateConfirmed: "registered",
   UpdateFailed: "updateFailed",
 };
 
 export function getRegistrationStatusBadgeVariant(
   status: Agent["registrationState"],
-  verificationStatus?: VerificationStatus | null,
 ): "default" | "secondary" | "destructive" | "outline" | "outline-muted" {
-  if (
-    shouldDisplayRegistrationAsRegistered({
-      registrationState: status,
-      verificationStatus,
-    })
-  ) {
-    return "default";
-  }
   if (status === "RegistrationConfirmed" || status === "UpdateConfirmed") {
     return "default";
   }
@@ -133,10 +112,9 @@ export function getRegistrationStatusBadgeVariant(
 /** Extra badge classes for in-progress registration states that need attention. */
 export function getRegistrationStatusBadgeClassName(
   status: Agent["registrationState"],
-  verificationStatus?: VerificationStatus | null,
 ): string {
-  const key = getRegistrationStatusDisplayKey(status, verificationStatus);
-  if (key === "pending" || key === "updateRequested") {
+  const key = getRegistrationStatusDisplayKey(status);
+  if (key === "pending" || key === "registering") {
     return "animate-badge-blink";
   }
   return "";

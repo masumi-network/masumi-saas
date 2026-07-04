@@ -26,9 +26,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import {
+  canDeregisterAgent,
   isAgentLiveOnRegistry,
+  isRegistrationConfirmedOnNetwork,
   isRegistrationUiPending,
-  shouldDisplayRegistrationAsRegistered,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { formatPricingDisplay, stripHtml } from "@/lib/utils";
@@ -149,11 +150,11 @@ export function AgentsTable({
           </TableHeader>
           <TableBody>
             {agents.map((agent, index) => {
-              const isConfirmed = shouldDisplayRegistrationAsRegistered({
-                registrationState: agent.registrationState,
-                verificationStatus: agent.verificationStatus,
-              });
-              const isLegacyConfirmed = isConfirmed && !agent.agentIdentifier; // no payment-node registration
+              const isRegistrationSettled = isRegistrationConfirmedOnNetwork(
+                agent.registrationState,
+              );
+              const isLegacyConfirmed =
+                isRegistrationSettled && !agent.agentIdentifier; // no payment-node registration
               const isDeletable =
                 agent.registrationState === "DeregistrationConfirmed" ||
                 agent.registrationState === "RegistrationFailed" ||
@@ -162,10 +163,7 @@ export function AgentsTable({
               const isPending = isRegistrationUiPending(
                 agent.registrationState,
               );
-              const showActionsSpinner =
-                isPending &&
-                agent.registrationState !== "UpdateRequested" &&
-                agent.registrationState !== "UpdateInitiated";
+              const showActionsSpinner = isPending;
               return (
                 <TableRow
                   key={agent.id}
@@ -271,22 +269,19 @@ export function AgentsTable({
                   <TableCell>
                     <Badge
                       variant={
-                        isConfirmed
+                        isRegistrationSettled
                           ? "success"
                           : getRegistrationStatusBadgeVariant(
                               agent.registrationState,
-                              agent.verificationStatus,
                             )
                       }
                       className={getRegistrationStatusBadgeClassName(
                         agent.registrationState,
-                        agent.verificationStatus,
                       )}
                     >
                       {tRegistrationStatus(
                         getRegistrationStatusDisplayKey(
                           agent.registrationState,
-                          agent.verificationStatus,
                         ),
                       )}
                     </Badge>
@@ -297,24 +292,25 @@ export function AgentsTable({
                         <Spinner size={16} />
                       </span>
                     )}
-                    {isConfirmed && agent.agentIdentifier && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={tDetails("deregister")}
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={(e) => handleDeregisterClick(e, agent)}
-                          >
-                            <Unplug className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {tDetails("deregister")}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                    {canDeregisterAgent(agent.registrationState) &&
+                      agent.agentIdentifier && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={tDetails("deregister")}
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => handleDeregisterClick(e, agent)}
+                            >
+                              <Unplug className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {tDetails("deregister")}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     {isDeletable && (
                       <Tooltip>
                         <TooltipTrigger asChild>

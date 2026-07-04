@@ -83,23 +83,6 @@ export function isRegistryVerificationUpdatePending(state: string): boolean {
   return (REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(state);
 }
 
-/**
- * Registered agents writing verification anchors still have a live registry NFT.
- * Show the settled "Registered" badge while the verification tab tracks update progress.
- */
-export function shouldDisplayRegistrationAsRegistered(params: {
-  registrationState: string;
-  verificationStatus?: string | null;
-}): boolean {
-  if (isRegistrationConfirmedOnNetwork(params.registrationState)) {
-    return true;
-  }
-  return (
-    params.verificationStatus === "VERIFIED" &&
-    isRegistryVerificationUpdatePending(params.registrationState)
-  );
-}
-
 /** Agent is on-chain registered enough to start the verification credential flow. */
 export const AGENT_VERIFICATION_ELIGIBLE_STATES = [
   "RegistrationConfirmed",
@@ -122,4 +105,16 @@ export const AGENT_LIVE_ON_REGISTRY_STATES = [
 
 export function isAgentLiveOnRegistry(state: string): boolean {
   return (AGENT_LIVE_ON_REGISTRY_STATES as readonly string[]).includes(state);
+}
+
+/** States where deregister is allowed (settled registration only). */
+export const AGENT_DEREGISTER_ELIGIBLE_STATES = [
+  "RegistrationConfirmed",
+  "DeregistrationFailed",
+] as const satisfies readonly RegistrationState[];
+
+export function canDeregisterAgent(state: string): boolean {
+  return (AGENT_DEREGISTER_ELIGIBLE_STATES as readonly string[]).includes(
+    state,
+  );
 }
