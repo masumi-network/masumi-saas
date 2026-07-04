@@ -9,6 +9,7 @@ import {
 } from "@/lib/config/verification.config";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
+  credentialPendingSuccessSchema,
   security,
   stdResponses,
   verificationUnavailableResponse,
@@ -16,14 +17,6 @@ import {
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
-import { z } from "@/utils/zod-openapi";
-
-const credentialPendingSuccessSchema = z.object({
-  success: z.literal(true),
-  data: z.object({
-    pendingCredentialId: z.string().nullable(),
-  }),
-});
 
 const app = createApiApp("/api/credentials/pending");
 

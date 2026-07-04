@@ -10683,6 +10683,223 @@
         }
       }
     },
+    "/api/credentials/pending": {
+      "get": {
+        "tags": [
+          "Credentials"
+        ],
+        "summary": "Get pending wallet acceptance credential",
+        "description": "Returns the pending Veridian credential row for an owned agent, if any.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "agentId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending credential id or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pendingCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "pendingCredentialId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "pendingCredentialId": "cred_123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Agent verification flows are temporarily disabled in this environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/credentials/reconcile": {
       "get": {
         "tags": [
