@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canRequestAgentVerification,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
   registrationStateFromRegistryEntry,
+  resolveRegistrationStateAfterSync,
 } from "./registration-state";
 
 describe("registrationStateFromRegistryEntry", () => {
@@ -21,12 +23,63 @@ describe("registrationStateFromRegistryEntry", () => {
   });
 });
 
+describe("resolveRegistrationStateAfterSync", () => {
+  it("keeps optimistic UpdateRequested when node is still RegistrationConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "RegistrationConfirmed",
+      }),
+    ).toBe("UpdateRequested");
+  });
+
+  it("keeps optimistic UpdateInitiated when node is still RegistrationConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateInitiated",
+        registryState: "RegistrationConfirmed",
+      }),
+    ).toBe("UpdateInitiated");
+  });
+
+  it("advances to RegistrationConfirmed when node reports UpdateConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateConfirmed",
+      }),
+    ).toBe("RegistrationConfirmed");
+  });
+
+  it("syncs forward when SaaS is RegistrationConfirmed and node is UpdateRequested", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "RegistrationConfirmed",
+        registryState: "UpdateRequested",
+      }),
+    ).toBe("UpdateRequested");
+  });
+});
+
 describe("pending helpers", () => {
   it("treats update states as sync and UI pending", () => {
     expect(isRegistrationSyncPending("UpdateRequested")).toBe(true);
     expect(isRegistrationSyncPending("RegistrationConfirmed")).toBe(true);
     expect(isRegistrationUiPending("UpdateInitiated")).toBe(true);
     expect(isRegistrationUiPending("RegistrationConfirmed")).toBe(false);
+  });
+});
+
+describe("canRequestAgentVerification", () => {
+  it("allows registered and failed-update agents", () => {
+    expect(canRequestAgentVerification("RegistrationConfirmed")).toBe(true);
+    expect(canRequestAgentVerification("UpdateFailed")).toBe(true);
+  });
+
+  it("blocks pending registration and in-flight updates", () => {
+    expect(canRequestAgentVerification("RegistrationRequested")).toBe(false);
+    expect(canRequestAgentVerification("UpdateRequested")).toBe(false);
+    expect(canRequestAgentVerification("UpdateInitiated")).toBe(false);
   });
 });
 

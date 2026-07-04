@@ -6,7 +6,7 @@ import type { Credential } from "@/lib/veridian";
 import { validateCredential } from "@/lib/veridian";
 
 /** Allow small clock skew between SaaS and credential-server-side `dt`. */
-const PENDING_ISSUED_AT_SKEW_MS = 60_000;
+export const PENDING_ISSUED_AT_SKEW_MS = 60_000;
 
 export type PendingCredentialRow = {
   createdAt: Date;
@@ -17,8 +17,8 @@ export type PendingCredentialRow = {
 /**
  * Resolve a wallet credential that corresponds to a specific pending issuance.
  *
- * Ignores older credentials for the same agent/schema so polling does not
- * complete until the holder accepts the credential from this request.
+ * Ignores older credentials for the same agent/schema so a new issuance is not
+ * matched to a prior credential before the holder accepts this request.
  */
 export function resolvePendingWalletCredential(params: {
   pending: PendingCredentialRow;

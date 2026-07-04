@@ -46,7 +46,7 @@ interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
   onDeregisterClick: () => void;
-  onVerificationSuccess?: () => void;
+  onVerificationSuccess?: () => void | Promise<void>;
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;

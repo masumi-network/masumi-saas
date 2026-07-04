@@ -106,6 +106,9 @@ export function getRegistrationStatusBadgeVariant(
 export function getRegistrationStatusBadgeClassName(
   status: Agent["registrationState"],
 ): string {
-  if (status === "UpdateRequested") return "animate-badge-blink";
+  const key = getRegistrationStatusKey(status);
+  if (key === "pending" || key === "updateRequested") {
+    return "animate-badge-blink";
+  }
   return "";
 }

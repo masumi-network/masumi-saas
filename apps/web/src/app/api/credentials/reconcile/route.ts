@@ -1,17 +1,13 @@
 import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
 
-import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import {
-  backfillOnChainVerificationsForAgent,
-  triggerOnChainVerificationWrite,
-} from "@/lib/registry/write-on-chain-verifications";
+import { backfillOnChainVerificationsForAgent } from "@/lib/registry/write-on-chain-verifications";
 import { credentialReconcileQuerySchema } from "@/lib/schemas";
 import {
   credentialReconcileSuccessSchema,
@@ -19,11 +15,7 @@ import {
   stdResponses,
   verificationUnavailableResponse,
 } from "@/lib/swagger/saas-app-openapi";
-import {
-  fetchContactCredentials,
-  getAgentVerificationSchemaSaid,
-} from "@/lib/veridian";
-import { resolvePendingWalletCredential } from "@/lib/veridian/resolve-pending-wallet-credential";
+import { finalizePendingVeridianCredential } from "@/lib/veridian/finalize-pending-veridian-credential";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -97,51 +89,20 @@ app.openapi(
         );
       }
 
-      const schemaSaid = getAgentVerificationSchemaSaid();
       let resolved = false;
 
       for (const pending of pendingCredentials) {
         try {
-          const credentials = await fetchContactCredentials(pending.aid);
-          const issuedCredential = resolvePendingWalletCredential({
-            pending,
-            credentials,
-            schemaSaid,
-            versionedAgentIdentifier: agent.agentIdentifier,
-          });
-
-          if (!issuedCredential?.sad?.d) continue;
-
-          const credentialId = issuedCredential.sad.d;
-
-          await prisma.veridianCredential.update({
-            where: { id: pending.id },
-            data: { credentialId, status: "ISSUED" },
-          });
-
-          await prisma.agent.update({
-            where: { id: agentId },
-            data: {
-              verificationStatus: "VERIFIED",
-              veridianCredentialId: credentialId,
-            },
-          });
-
-          await recordAgentActivityEvent(agentId, "AgentVerified");
-
-          await triggerOnChainVerificationWrite({
-            agentId,
+          const result = await finalizePendingVeridianCredential({
+            pendingCredentialId: pending.id,
             userId: user.id,
-            issuedCredential,
-            veridianCredentialId: pending.id,
-            storedAttributesRaw: pending.attributes ?? pending.credentialData,
           });
 
-          resolved = true;
-          // One resolved is enough to flip the agent to VERIFIED
-          break;
+          if (result.outcome === "issued" && result.newlyIssued) {
+            resolved = true;
+            break;
+          }
         } catch (error) {
-          // Log but continue checking other pending records
           console.error(`Failed to reconcile credential ${pending.id}:`, error);
         }
       }

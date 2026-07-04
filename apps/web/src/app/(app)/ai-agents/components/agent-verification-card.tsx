@@ -34,8 +34,8 @@ import {
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import {
+  canRequestAgentVerification,
   isAgentLiveOnRegistry,
-  isRegistrationConfirmedOnNetwork,
 } from "@/lib/agents/registration-state";
 import {
   type Agent,
@@ -60,7 +60,7 @@ const EM_DASH = "\u2014";
 
 interface AgentVerificationCardProps {
   agent: Agent;
-  onVerificationSuccess: () => void;
+  onVerificationSuccess: () => void | Promise<void>;
 }
 
 function detailRowLabel(label: string) {
@@ -373,7 +373,7 @@ function VeridianCredentialSummaryPanel({
       }
     }
 
-    fetchSummary();
+    void fetchSummary();
 
     return () => {
       cancelled = true;
@@ -675,7 +675,7 @@ export function AgentVerificationCard({
       }
     }
 
-    fetchStatus();
+    void fetchStatus();
 
     return () => {
       cancelled = true;
@@ -695,10 +695,10 @@ export function AgentVerificationCard({
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    onVerificationSuccess();
     setCredRefreshKey((key) => key + 1);
 
     try {
+      await Promise.resolve(onVerificationSuccess());
       if (registered) {
         setOnChainLoadState("loading");
         const res = await agentApiClient.getOnChainVerificationStatus(agent.id);
@@ -715,9 +715,9 @@ export function AgentVerificationCard({
     }
   };
 
-  const handleVerificationSuccess = () => {
+  const handleVerificationSuccess = async () => {
     setOnChainRefreshKey((key) => key + 1);
-    onVerificationSuccess();
+    await Promise.resolve(onVerificationSuccess());
   };
 
   if (!agentVerificationEnabled) {
@@ -834,7 +834,7 @@ export function AgentVerificationCard({
               {t("loading")}
             </Button>
           ) : kycStatus === "APPROVED" &&
-            !isRegistrationConfirmedOnNetwork(agent.registrationState) ? (
+            !canRequestAgentVerification(agent.registrationState) ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="block w-full cursor-not-allowed">

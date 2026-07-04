@@ -160,6 +160,10 @@ export function AgentsTable({
               const isPending = isRegistrationUiPending(
                 agent.registrationState,
               );
+              const showActionsSpinner =
+                isPending &&
+                agent.registrationState !== "UpdateRequested" &&
+                agent.registrationState !== "UpdateInitiated";
               return (
                 <TableRow
                   key={agent.id}
@@ -279,7 +283,7 @@ export function AgentsTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
-                    {isPending && (
+                    {showActionsSpinner && (
                       <span className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground">
                         <Spinner size={16} />
                       </span>

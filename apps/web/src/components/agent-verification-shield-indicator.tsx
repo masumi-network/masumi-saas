@@ -61,7 +61,7 @@ export function AgentVerificationShieldIndicator({
       setLoaded(true);
     }
 
-    fetchStatus();
+    void fetchStatus();
 
     return () => {
       cancelled = true;

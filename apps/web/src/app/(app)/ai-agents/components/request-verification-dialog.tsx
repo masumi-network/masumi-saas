@@ -118,6 +118,8 @@ export function RequestVerificationDialog({
   const connPollAttemptsRef = useRef(0);
   /** Only reset poll counter when this key changes — not when connection state flaps during polling */
   const connPollSessionKeyRef = useRef<string>("");
+  const issuanceFinishedRef = useRef(false);
+  const stopCredentialPollingRef = useRef<(() => void) | null>(null);
   const onSuccessRef = useRef(onSuccess);
   const onOpenChangeRef = useRef(onOpenChange);
   useEffect(() => {
@@ -145,6 +147,9 @@ export function RequestVerificationDialog({
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
       connPollSessionKeyRef.current = "";
+      issuanceFinishedRef.current = false;
+      stopCredentialPollingRef.current?.();
+      stopCredentialPollingRef.current = null;
       setChallenge(null);
       setSecret(null);
       setShowSecret(false);
@@ -156,6 +161,10 @@ export function RequestVerificationDialog({
   }, [agentVerificationEnabled, open]);
 
   const finishCredentialIssuance = useCallback(() => {
+    if (issuanceFinishedRef.current) return;
+    issuanceFinishedRef.current = true;
+    stopCredentialPollingRef.current?.();
+    stopCredentialPollingRef.current = null;
     setIsWaitingForAcceptance(false);
     setPendingCredentialId(null);
     toast.success(t("requestSuccess"));
@@ -185,7 +194,7 @@ export function RequestVerificationDialog({
   );
 
   const handleConfirmAcceptedCredential = useCallback(async () => {
-    if (!pendingCredentialId) return;
+    if (!pendingCredentialId || issuanceFinishedRef.current) return;
 
     setIsCheckingAcceptance(true);
     try {
@@ -285,8 +294,14 @@ export function RequestVerificationDialog({
         pollIntervalIdRef.current = null;
       }
     };
+    stopCredentialPollingRef.current = stopPolling;
 
     const runPoll = async () => {
+      if (issuanceFinishedRef.current) {
+        stopPolling();
+        return;
+      }
+
       credentialPollAttemptsRef.current += 1;
       if (credentialPollAttemptsRef.current > CREDENTIAL_POLL_MAX) {
         stopPolling();
@@ -313,8 +328,11 @@ export function RequestVerificationDialog({
       pollIntervalIdRef.current = setTimeout(runPoll, CREDENTIAL_POLL_MS);
     };
 
-    runPoll();
+    void runPoll();
     return () => {
+      if (stopCredentialPollingRef.current === stopPolling) {
+        stopCredentialPollingRef.current = null;
+      }
       stopPolling();
     };
   }, [

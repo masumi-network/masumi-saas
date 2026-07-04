@@ -45,6 +45,28 @@ export function registrationStateFromRegistryEntry(
   return state as RegistrationState;
 }
 
+/**
+ * Map payment-node registry state onto SaaS without clobbering an optimistic
+ * update lifecycle while the node row still reports RegistrationConfirmed.
+ */
+export function resolveRegistrationStateAfterSync(params: {
+  previousState: RegistrationState;
+  registryState: RegistryRequestState;
+}): RegistrationState {
+  const mappedState = registrationStateFromRegistryEntry(params.registryState);
+
+  if (
+    (REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(
+      params.previousState,
+    ) &&
+    params.registryState === "RegistrationConfirmed"
+  ) {
+    return params.previousState;
+  }
+
+  return mappedState;
+}
+
 export function isRegistrationSyncPending(state: string): boolean {
   return (REGISTRATION_SYNC_STATES as readonly string[]).includes(state);
 }
@@ -55,6 +77,18 @@ export function isRegistrationUiPending(state: string): boolean {
 
 export function isRegistrationConfirmedOnNetwork(state: string): boolean {
   return state === "RegistrationConfirmed";
+}
+
+/** Agent is on-chain registered enough to start the verification credential flow. */
+export const AGENT_VERIFICATION_ELIGIBLE_STATES = [
+  "RegistrationConfirmed",
+  "UpdateFailed",
+] as const satisfies readonly RegistrationState[];
+
+export function canRequestAgentVerification(state: string): boolean {
+  return (AGENT_VERIFICATION_ELIGIBLE_STATES as readonly string[]).includes(
+    state,
+  );
 }
 
 /** Agent has a live registry entry (includes verification anchor updates). */

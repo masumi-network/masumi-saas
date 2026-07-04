@@ -236,15 +236,15 @@ export function AgentPageContent({
     });
   };
 
-  const handleVerificationSuccess = () => {
-    (async () => {
+  const handleVerificationSuccess = async () => {
+    try {
       await credentialApiClient.reconcilePendingCredentials(agent.id);
       await syncAgentRegistrationStatusAction(agent.id);
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
-    })().catch(() => {
+    } catch {
       // Refetch failed; user can refresh the page.
-    });
+    }
   };
 
   return (

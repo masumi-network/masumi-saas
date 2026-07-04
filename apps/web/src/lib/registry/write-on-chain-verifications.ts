@@ -217,6 +217,14 @@ export async function writeOnChainVerifications(params: {
     }
   }
 
+  if (agent.registrationState === "UpdateRequested") {
+    return {
+      success: true,
+      agentIdentifier: agent.agentIdentifier,
+      skipped: true,
+    };
+  }
+
   const registryEntry = await adminClient.getRegistryById({
     id: registryId,
     network,
@@ -275,9 +283,53 @@ export async function writeOnChainVerifications(params: {
 
   const previousAgentIdentifier = agent.agentIdentifier;
 
+  const lock = await prisma.agent.updateMany({
+    where: {
+      id: agent.id,
+      userId: params.userId,
+      registrationState: { in: ["RegistrationConfirmed", "UpdateFailed"] },
+    },
+    data: { registrationState: "UpdateRequested" },
+  });
+
+  if (lock.count === 0) {
+    const onChainRetry = await adminClient.getRegistryByAgentIdentifier({
+      agentIdentifier: agent.agentIdentifier,
+      network,
+    });
+    if (hasOnChainVerification(onChainRetry)) {
+      const credentialSaid = params.credential.sad?.d;
+      const existing = onChainRetry?.Metadata?.verifications ?? [];
+      if (
+        credentialSaid &&
+        existing.some((entry) => entry.credential.said === credentialSaid)
+      ) {
+        return {
+          success: true,
+          agentIdentifier: agent.agentIdentifier,
+          skipped: true,
+        };
+      }
+    }
+    return {
+      success: true,
+      agentIdentifier: agent.agentIdentifier,
+      skipped: true,
+    };
+  }
+
   try {
     await adminClient.updateAgent(updateBody);
   } catch (error) {
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: {
+        registrationState:
+          registryEntry.state === "UpdateFailed"
+            ? "UpdateFailed"
+            : "RegistrationConfirmed",
+      },
+    });
     console.error("[Veridian] Registry update request failed:", {
       agentId: params.agentId,
       userId: params.userId,
@@ -291,11 +343,6 @@ export async function writeOnChainVerifications(params: {
           : "Failed to request registry update",
     };
   }
-
-  await prisma.agent.update({
-    where: { id: agent.id },
-    data: { registrationState: "UpdateRequested" },
-  });
 
   const pollResult = await pollRegistryUpdate(
     adminClient,
@@ -435,6 +482,10 @@ export async function backfillOnChainVerificationsForAgent(params: {
     !agent.veridianCredentialId ||
     !agent.agentIdentifier
   ) {
+    return false;
+  }
+
+  if (agent.registrationState === "UpdateRequested") {
     return false;
   }
 

@@ -6,7 +6,7 @@ import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config
 
 interface AgentVerificationTabProps {
   agent: Agent;
-  onVerificationSuccess: () => void;
+  onVerificationSuccess: () => void | Promise<void>;
 }
 
 export function AgentVerificationTab({

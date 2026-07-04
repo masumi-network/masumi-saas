@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
-import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
+import { resolveRegistrationStateAfterSync } from "@/lib/agents/registration-state";
 import {
   getWalletOwnedAgentForUser,
   listWalletOwnedAgentsForUser,
@@ -166,7 +166,11 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     });
     if (!entry) return { success: true as const };
 
-    const registrationState = registrationStateFromRegistryEntry(entry.state);
+    const previousState = agent.registrationState;
+    const registrationState = resolveRegistrationStateAfterSync({
+      previousState,
+      registryState: entry.state,
+    });
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
@@ -180,7 +184,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
       ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
       : existingMeta;
 
-    const previousState = agent.registrationState;
     await prisma.$transaction([
       prisma.agent.update({
         where: { id: agentId },

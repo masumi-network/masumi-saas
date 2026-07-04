@@ -279,7 +279,7 @@ export function AgentsContent() {
   const handleLoadMore = () => {
     if (!nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
-    loadPage(nextCursor).then((page) => {
+    void loadPage(nextCursor).then((page) => {
       if (page) {
         setAgents((prev) => [...prev, ...page.data]);
         setNextCursor(page.nextCursor);

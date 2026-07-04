@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { formatPricingDisplay, getGreeting } from "@/lib/utils";
+import { cn, formatPricingDisplay, getGreeting } from "@/lib/utils";
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
 } from "@/lib/utils/agent-utils";
@@ -170,7 +171,12 @@ export default async function DashboardOverview({
                         variant={getRegistrationStatusBadgeVariant(
                           agent.registrationState,
                         )}
-                        className="shrink-0"
+                        className={cn(
+                          "shrink-0",
+                          getRegistrationStatusBadgeClassName(
+                            agent.registrationState,
+                          ),
+                        )}
                       >
                         {tRegistrationStatus(
                           getRegistrationStatusKey(agent.registrationState),
