@@ -75,9 +75,11 @@ interface RequestVerificationDialogProps {
   onOpenChange: (open: boolean) => void;
   agent: Agent;
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
   /** Resume wallet-acceptance step for an existing pending credential row. */
   resumePendingCredentialId?: string | null;
+  /** Clears resume state when the dialog closes or resume validation fails. */
+  onResumePendingCredentialConsumed?: () => void;
 }
 
 export function RequestVerificationDialog({
@@ -87,6 +89,7 @@ export function RequestVerificationDialog({
   kycStatus,
   onSuccess,
   resumePendingCredentialId = null,
+  onResumePendingCredentialConsumed,
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
@@ -166,11 +169,36 @@ export function RequestVerificationDialog({
     if (!agentVerificationEnabled || !open || !resumePendingCredentialId) {
       return;
     }
-    setStep(STEP_SUBMIT);
-    setPendingCredentialId(resumePendingCredentialId);
-    setWalletAcceptancePhase("awaiting_wallet");
-    setIssueError(null);
-  }, [agentVerificationEnabled, open, resumePendingCredentialId]);
+
+    let cancelled = false;
+    void (async () => {
+      const pending = await credentialApiClient.getPendingCredential(agent.id);
+      if (cancelled) return;
+
+      const belongsToAgent =
+        pending.success &&
+        pending.data.pendingCredentialId === resumePendingCredentialId;
+      if (!belongsToAgent) {
+        onResumePendingCredentialConsumed?.();
+        return;
+      }
+
+      setStep(STEP_SUBMIT);
+      setPendingCredentialId(resumePendingCredentialId);
+      setWalletAcceptancePhase("awaiting_wallet");
+      setIssueError(null);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    agentVerificationEnabled,
+    open,
+    resumePendingCredentialId,
+    agent.id,
+    onResumePendingCredentialConsumed,
+  ]);
 
   const resolveCredentialAcceptance = useCallback(
     async (
@@ -203,7 +231,7 @@ export function RequestVerificationDialog({
       if (resolution.outcome === "issued") {
         setWalletAcceptancePhase("complete");
         toast.success(t("walletAcceptanceConfirmed"));
-        onSuccessRef.current();
+        await Promise.resolve(onSuccessRef.current());
         return;
       }
       if (resolution.outcome === "error") {
@@ -483,7 +511,7 @@ export function RequestVerificationDialog({
           setWalletAcceptancePhase("awaiting_wallet");
         } else {
           toast.success(t("requestSuccess"));
-          onSuccess();
+          await Promise.resolve(onSuccess());
           onOpenChange(false);
         }
       } else {

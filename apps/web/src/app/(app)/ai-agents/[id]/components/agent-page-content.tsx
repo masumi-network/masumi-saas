@@ -62,6 +62,14 @@ export function AgentPageContent({
     string | null
   >(null);
   const [pendingBannerRefreshKey, setPendingBannerRefreshKey] = useState(0);
+  const initialAgentRef = useRef(initialAgent);
+  initialAgentRef.current = initialAgent;
+
+  // Client-side navigation reuses this component — reset agent-scoped UI state.
+  useEffect(() => {
+    setAgent(initialAgentRef.current);
+    setResumePendingCredentialId(null);
+  }, [initialAgent.id]);
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
@@ -266,15 +274,15 @@ export function AgentPageContent({
   };
 
   const handleVerificationSuccess = async () => {
+    setResumePendingCredentialId(null);
+    setPendingBannerRefreshKey((key) => key + 1);
     try {
       await credentialApiClient.reconcilePendingCredentials(agent.id);
       await syncAgentRegistrationStatusAction(agent.id);
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
-      setResumePendingCredentialId(null);
-      setPendingBannerRefreshKey((key) => key + 1);
     } catch {
-      // Refetch failed; user can refresh the page.
+      // Refetch failed; banner was cleared — user can refresh the page.
     }
   };
 

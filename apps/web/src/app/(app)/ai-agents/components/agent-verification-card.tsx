@@ -893,6 +893,7 @@ export function AgentVerificationCard({
         resumePendingCredentialId={
           dialogOpen ? resumePendingCredentialId : null
         }
+        onResumePendingCredentialConsumed={onResumePendingCredentialConsumed}
       />
     </Card>
   );
