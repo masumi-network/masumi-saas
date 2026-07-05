@@ -16,6 +16,7 @@ type MockState = {
     balanceAfter: number;
     reason: string;
     reference: string;
+    stripeCheckoutSessionId?: string | null;
     metadata?: Record<string, unknown>;
     createdAt: Date;
   }>;
@@ -116,6 +117,15 @@ function buildTxClient(state: MockState) {
     },
     creditLedgerEntry: {
       findUnique: vi.fn(async ({ where, select }) => {
+        if (where.stripeCheckoutSessionId) {
+          const match = state.ledger.find(
+            (entry) =>
+              entry.stripeCheckoutSessionId === where.stripeCheckoutSessionId,
+          );
+          if (!match) return null;
+          return pickSelected(match, select);
+        }
+
         const key = where.userId_reason_reference;
         if (!key) return null;
         const match = state.ledger.find(
@@ -128,12 +138,16 @@ function buildTxClient(state: MockState) {
         return pickSelected(match, select);
       }),
       create: vi.fn(async ({ data }) => {
-        const exists = state.ledger.some(
-          (entry) =>
+        const exists = state.ledger.some((entry) => {
+          const sameLedgerReference =
             entry.userId === data.userId &&
             entry.reason === data.reason &&
-            entry.reference === data.reference,
-        );
+            entry.reference === data.reference;
+          const sameStripeSession =
+            data.stripeCheckoutSessionId != null &&
+            entry.stripeCheckoutSessionId === data.stripeCheckoutSessionId;
+          return sameLedgerReference || sameStripeSession;
+        });
         if (exists) {
           throw { code: "P2002" };
         }
@@ -144,6 +158,7 @@ function buildTxClient(state: MockState) {
           balanceAfter: data.balanceAfter,
           reason: data.reason,
           reference: data.reference,
+          stripeCheckoutSessionId: data.stripeCheckoutSessionId,
           metadata: data.metadata,
           createdAt: new Date("2026-04-13T10:00:00.000Z"),
         });
@@ -192,11 +207,14 @@ vi.mock("@masumi/database/client", () => ({
 
 const {
   CREDIT_COST,
+  CreditBalanceCapExceededError,
   InsufficientCreditsError,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
+  grantCreditTopUpFromCheckoutSession,
   grantInitialCreditsIfNeeded,
   refundConsumedCredit,
+  wouldExceedCreditBalanceCap,
 } = await import("./service");
 
 describe("credit service", () => {
@@ -447,5 +465,49 @@ describe("credit service", () => {
     expect(rejected[0]?.reason).toBeInstanceOf(InsufficientCreditsError);
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(1);
+  });
+
+  it("idempotently grants stripe checkout credits per session id", async () => {
+    store.current = createState(0);
+
+    const first = await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_123",
+    });
+    expect(first.granted).toBe(true);
+    expect(first.balanceAfter).toBe(10);
+
+    const second = await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_123",
+    });
+    expect(second.granted).toBe(false);
+    expect(second.balanceAfter).toBe(10);
+    expect(store.current.ledger).toHaveLength(1);
+    expect(store.current.ledger[0]).toMatchObject({
+      reason: "stripe_checkout",
+      reference: "cs_test_123",
+      stripeCheckoutSessionId: "cs_test_123",
+      delta: 10,
+    });
+  });
+
+  it("rejects stripe top-up when balance would exceed configured maximum", async () => {
+    store.current = createState(2_000_000_000);
+
+    await expect(
+      grantCreditTopUpFromCheckoutSession({
+        userId: "user-1",
+        credits: 10,
+        checkoutSessionId: "cs_test_cap",
+      }),
+    ).rejects.toBeInstanceOf(CreditBalanceCapExceededError);
+  });
+
+  it("reports whether a stripe top-up would exceed the balance cap", () => {
+    expect(wouldExceedCreditBalanceCap(1_999_999_990, 10)).toBe(false);
+    expect(wouldExceedCreditBalanceCap(1_999_999_991, 10)).toBe(true);
   });
 });

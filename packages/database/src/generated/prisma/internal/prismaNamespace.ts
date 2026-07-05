@@ -3125,6 +3125,7 @@ export const CreditLedgerEntryScalarFieldEnum = {
   balanceAfter: "balanceAfter",
   reason: "reason",
   reference: "reference",
+  stripeCheckoutSessionId: "stripeCheckoutSessionId",
   metadata: "metadata",
   createdAt: "createdAt",
 } as const;

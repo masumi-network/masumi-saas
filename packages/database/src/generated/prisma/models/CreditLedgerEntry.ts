@@ -43,6 +43,7 @@ export type CreditLedgerEntryMinAggregateOutputType = {
   balanceAfter: number | null;
   reason: string | null;
   reference: string | null;
+  stripeCheckoutSessionId: string | null;
   createdAt: Date | null;
 };
 
@@ -53,6 +54,7 @@ export type CreditLedgerEntryMaxAggregateOutputType = {
   balanceAfter: number | null;
   reason: string | null;
   reference: string | null;
+  stripeCheckoutSessionId: string | null;
   createdAt: Date | null;
 };
 
@@ -63,6 +65,7 @@ export type CreditLedgerEntryCountAggregateOutputType = {
   balanceAfter: number;
   reason: number;
   reference: number;
+  stripeCheckoutSessionId: number;
   metadata: number;
   createdAt: number;
   _all: number;
@@ -85,6 +88,7 @@ export type CreditLedgerEntryMinAggregateInputType = {
   balanceAfter?: true;
   reason?: true;
   reference?: true;
+  stripeCheckoutSessionId?: true;
   createdAt?: true;
 };
 
@@ -95,6 +99,7 @@ export type CreditLedgerEntryMaxAggregateInputType = {
   balanceAfter?: true;
   reason?: true;
   reference?: true;
+  stripeCheckoutSessionId?: true;
   createdAt?: true;
 };
 
@@ -105,6 +110,7 @@ export type CreditLedgerEntryCountAggregateInputType = {
   balanceAfter?: true;
   reason?: true;
   reference?: true;
+  stripeCheckoutSessionId?: true;
   metadata?: true;
   createdAt?: true;
   _all?: true;
@@ -216,6 +222,7 @@ export type CreditLedgerEntryGroupByOutputType = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId: string | null;
   metadata: runtime.JsonValue | null;
   createdAt: Date;
   _count: CreditLedgerEntryCountAggregateOutputType | null;
@@ -254,6 +261,10 @@ export type CreditLedgerEntryWhereInput = {
   balanceAfter?: Prisma.IntFilter<"CreditLedgerEntry"> | number;
   reason?: Prisma.StringFilter<"CreditLedgerEntry"> | string;
   reference?: Prisma.StringFilter<"CreditLedgerEntry"> | string;
+  stripeCheckoutSessionId?:
+    | Prisma.StringNullableFilter<"CreditLedgerEntry">
+    | string
+    | null;
   metadata?: Prisma.JsonNullableFilter<"CreditLedgerEntry">;
   createdAt?: Prisma.DateTimeFilter<"CreditLedgerEntry"> | Date | string;
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
@@ -266,6 +277,7 @@ export type CreditLedgerEntryOrderByWithRelationInput = {
   balanceAfter?: Prisma.SortOrder;
   reason?: Prisma.SortOrder;
   reference?: Prisma.SortOrder;
+  stripeCheckoutSessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   user?: Prisma.UserOrderByWithRelationInput;
@@ -274,6 +286,7 @@ export type CreditLedgerEntryOrderByWithRelationInput = {
 export type CreditLedgerEntryWhereUniqueInput = Prisma.AtLeast<
   {
     id?: string;
+    stripeCheckoutSessionId?: string;
     userId_reason_reference?: Prisma.CreditLedgerEntryUserIdReasonReferenceCompoundUniqueInput;
     AND?:
       | Prisma.CreditLedgerEntryWhereInput
@@ -291,7 +304,7 @@ export type CreditLedgerEntryWhereUniqueInput = Prisma.AtLeast<
     createdAt?: Prisma.DateTimeFilter<"CreditLedgerEntry"> | Date | string;
     user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
   },
-  "id" | "userId_reason_reference"
+  "id" | "stripeCheckoutSessionId" | "userId_reason_reference"
 >;
 
 export type CreditLedgerEntryOrderByWithAggregationInput = {
@@ -301,6 +314,7 @@ export type CreditLedgerEntryOrderByWithAggregationInput = {
   balanceAfter?: Prisma.SortOrder;
   reason?: Prisma.SortOrder;
   reference?: Prisma.SortOrder;
+  stripeCheckoutSessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   _count?: Prisma.CreditLedgerEntryCountOrderByAggregateInput;
@@ -324,6 +338,10 @@ export type CreditLedgerEntryScalarWhereWithAggregatesInput = {
   balanceAfter?: Prisma.IntWithAggregatesFilter<"CreditLedgerEntry"> | number;
   reason?: Prisma.StringWithAggregatesFilter<"CreditLedgerEntry"> | string;
   reference?: Prisma.StringWithAggregatesFilter<"CreditLedgerEntry"> | string;
+  stripeCheckoutSessionId?:
+    | Prisma.StringNullableWithAggregatesFilter<"CreditLedgerEntry">
+    | string
+    | null;
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"CreditLedgerEntry">;
   createdAt?:
     | Prisma.DateTimeWithAggregatesFilter<"CreditLedgerEntry">
@@ -337,6 +355,7 @@ export type CreditLedgerEntryCreateInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
   user: Prisma.UserCreateNestedOneWithoutCreditLedgerEntriesInput;
@@ -349,6 +368,7 @@ export type CreditLedgerEntryUncheckedCreateInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
 };
@@ -359,6 +379,10 @@ export type CreditLedgerEntryUpdateInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   user?: Prisma.UserUpdateOneRequiredWithoutCreditLedgerEntriesNestedInput;
@@ -371,6 +395,10 @@ export type CreditLedgerEntryUncheckedUpdateInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -382,6 +410,7 @@ export type CreditLedgerEntryCreateManyInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
 };
@@ -392,6 +421,10 @@ export type CreditLedgerEntryUpdateManyMutationInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -403,6 +436,10 @@ export type CreditLedgerEntryUncheckedUpdateManyInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -430,6 +467,7 @@ export type CreditLedgerEntryCountOrderByAggregateInput = {
   balanceAfter?: Prisma.SortOrder;
   reason?: Prisma.SortOrder;
   reference?: Prisma.SortOrder;
+  stripeCheckoutSessionId?: Prisma.SortOrder;
   metadata?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
@@ -446,6 +484,7 @@ export type CreditLedgerEntryMaxOrderByAggregateInput = {
   balanceAfter?: Prisma.SortOrder;
   reason?: Prisma.SortOrder;
   reference?: Prisma.SortOrder;
+  stripeCheckoutSessionId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -456,6 +495,7 @@ export type CreditLedgerEntryMinOrderByAggregateInput = {
   balanceAfter?: Prisma.SortOrder;
   reason?: Prisma.SortOrder;
   reference?: Prisma.SortOrder;
+  stripeCheckoutSessionId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -580,6 +620,7 @@ export type CreditLedgerEntryCreateWithoutUserInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
 };
@@ -590,6 +631,7 @@ export type CreditLedgerEntryUncheckedCreateWithoutUserInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
 };
@@ -651,6 +693,10 @@ export type CreditLedgerEntryScalarWhereInput = {
   balanceAfter?: Prisma.IntFilter<"CreditLedgerEntry"> | number;
   reason?: Prisma.StringFilter<"CreditLedgerEntry"> | string;
   reference?: Prisma.StringFilter<"CreditLedgerEntry"> | string;
+  stripeCheckoutSessionId?:
+    | Prisma.StringNullableFilter<"CreditLedgerEntry">
+    | string
+    | null;
   metadata?: Prisma.JsonNullableFilter<"CreditLedgerEntry">;
   createdAt?: Prisma.DateTimeFilter<"CreditLedgerEntry"> | Date | string;
 };
@@ -661,6 +707,7 @@ export type CreditLedgerEntryCreateManyUserInput = {
   balanceAfter: number;
   reason: string;
   reference: string;
+  stripeCheckoutSessionId?: string | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
 };
@@ -671,6 +718,10 @@ export type CreditLedgerEntryUpdateWithoutUserInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -681,6 +732,10 @@ export type CreditLedgerEntryUncheckedUpdateWithoutUserInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -691,6 +746,10 @@ export type CreditLedgerEntryUncheckedUpdateManyWithoutUserInput = {
   balanceAfter?: Prisma.IntFieldUpdateOperationsInput | number;
   reason?: Prisma.StringFieldUpdateOperationsInput | string;
   reference?: Prisma.StringFieldUpdateOperationsInput | string;
+  stripeCheckoutSessionId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -706,6 +765,7 @@ export type CreditLedgerEntrySelect<
     balanceAfter?: boolean;
     reason?: boolean;
     reference?: boolean;
+    stripeCheckoutSessionId?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -724,6 +784,7 @@ export type CreditLedgerEntrySelectCreateManyAndReturn<
     balanceAfter?: boolean;
     reason?: boolean;
     reference?: boolean;
+    stripeCheckoutSessionId?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -742,6 +803,7 @@ export type CreditLedgerEntrySelectUpdateManyAndReturn<
     balanceAfter?: boolean;
     reason?: boolean;
     reference?: boolean;
+    stripeCheckoutSessionId?: boolean;
     metadata?: boolean;
     createdAt?: boolean;
     user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
@@ -756,6 +818,7 @@ export type CreditLedgerEntrySelectScalar = {
   balanceAfter?: boolean;
   reason?: boolean;
   reference?: boolean;
+  stripeCheckoutSessionId?: boolean;
   metadata?: boolean;
   createdAt?: boolean;
 };
@@ -770,6 +833,7 @@ export type CreditLedgerEntryOmit<
   | "balanceAfter"
   | "reason"
   | "reference"
+  | "stripeCheckoutSessionId"
   | "metadata"
   | "createdAt",
   ExtArgs["result"]["creditLedgerEntry"]
@@ -809,6 +873,7 @@ export type $CreditLedgerEntryPayload<
       balanceAfter: number;
       reason: string;
       reference: string;
+      stripeCheckoutSessionId: string | null;
       metadata: runtime.JsonValue | null;
       createdAt: Date;
     },
@@ -1445,6 +1510,10 @@ export interface CreditLedgerEntryFieldRefs {
   readonly balanceAfter: Prisma.FieldRef<"CreditLedgerEntry", "Int">;
   readonly reason: Prisma.FieldRef<"CreditLedgerEntry", "String">;
   readonly reference: Prisma.FieldRef<"CreditLedgerEntry", "String">;
+  readonly stripeCheckoutSessionId: Prisma.FieldRef<
+    "CreditLedgerEntry",
+    "String"
+  >;
   readonly metadata: Prisma.FieldRef<"CreditLedgerEntry", "Json">;
   readonly createdAt: Prisma.FieldRef<"CreditLedgerEntry", "DateTime">;
 }
