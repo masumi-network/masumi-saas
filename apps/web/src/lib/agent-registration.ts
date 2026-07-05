@@ -20,6 +20,10 @@ import type {
 } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  findSellingWalletIdByVkey,
+  hydratePaymentSource,
+} from "@/lib/payment-node/payment-source-wallets";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
@@ -45,10 +49,14 @@ export type AgentPricing =
     };
 
 export type RegisterAgentParams = {
+  id?: string;
   name: string;
   description: string | null;
   extendedDescription: string | null;
   apiUrl: string;
+  runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
+  integrationConnectionId?: string | null;
+  providerConfig?: Record<string, unknown> | null;
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
@@ -271,10 +279,15 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
+  const configuredPaymentSourceWithWallets = await hydratePaymentSource(
+    adminClient,
+    configuredPaymentSource,
+  );
+
   const fundingWalletResult = resolveRegistrationFundingWallet({
     network,
     paymentSourceId,
-    sellingWallets: configuredPaymentSource.SellingWallets,
+    sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
   });
   if (!fundingWalletResult.wallet) {
     return {
@@ -334,10 +347,11 @@ async function registerAgentOnChainUntilSetup(
     };
   }
 
-  const sellingWalletId =
-    paymentSource.SellingWallets.find(
-      (w: PaymentSourceWallet) => w.walletVkey === sellingWallet.walletVkey,
-    )?.id ?? null;
+  const sellingWalletId = await findSellingWalletIdByVkey(
+    adminClient,
+    paymentSourceId,
+    sellingWallet.walletVkey,
+  );
   if (!sellingWalletId) {
     console.error(
       "[Payment Node] Could not resolve managed selling wallet ID:",
@@ -394,10 +408,14 @@ async function registerAgentOnChainUntilSetup(
 
   const agent = await prisma.agent.create({
     data: {
+      ...(params.id ? { id: params.id } : {}),
       name: params.name,
       description: params.description,
       extendedDescription: params.extendedDescription,
       apiUrl: params.apiUrl,
+      runtimeProvider: params.runtimeProvider ?? "DIRECT_MIP",
+      integrationConnectionId: params.integrationConnectionId ?? null,
+      providerConfig: params.providerConfig ?? undefined,
       tags: params.tags,
       icon: params.icon,
       userId: user.id,
@@ -580,10 +598,14 @@ export async function completeOnChainRegistration(
         error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
       };
     }
+    const configuredPaymentSourceWithWallets = await hydratePaymentSource(
+      adminClient,
+      configuredPaymentSource,
+    );
     const fundingWalletResult = resolveRegistrationFundingWallet({
       network,
       paymentSourceId: paymentSourceId!,
-      sellingWallets: configuredPaymentSource.SellingWallets,
+      sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
     });
     if (!fundingWalletResult.wallet) {
       return {

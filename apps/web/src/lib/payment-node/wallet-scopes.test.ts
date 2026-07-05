@@ -117,21 +117,16 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
         { hotWalletId: "wallet-funding" },
       ],
     });
-    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
-      PaymentSources: [
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [
         {
-          id: "payment-source-preprod",
-          network: "Preprod",
-          SellingWallets: [
-            {
-              id: "wallet-funding",
-              walletVkey: "funding-vkey",
-              walletAddress: "addr_test1funding",
-              collectionAddress: null,
-              note: "Funding",
-            },
-          ],
-          PurchasingWallets: [],
+          id: "wallet-funding",
+          paymentSourceId: "payment-source-preprod",
+          type: "Selling",
+          walletVkey: "funding-vkey",
+          walletAddress: "addr_test1funding",
+          collectionAddress: null,
+          note: "Funding",
         },
       ],
     });
@@ -141,7 +136,7 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
         getApiKeyStatus: getApiKeyStatusMock,
       })
       .mockReturnValueOnce({
-        getPaymentSources: getPaymentSourcesMock,
+        getWalletList: getWalletListMock,
         updateApiKey: updateApiKeyMock,
       });
     agentReferenceFindManyMock.mockResolvedValue([

@@ -28,6 +28,8 @@ export type * from "./models/RateLimit.js";
 export type * from "./models/EmailSendRateLimit.js";
 export type * from "./models/KycVerification.js";
 export type * from "./models/Agent.js";
+export type * from "./models/IntegrationConnection.js";
+export type * from "./models/MipJob.js";
 export type * from "./models/AgentActivityEvent.js";
 export type * from "./models/OrgApiKey.js";
 export type * from "./models/KycSubmission.js";

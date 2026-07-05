@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { reactAgentMessengerMagicLinkEmail } from "./agent-messenger-magic-link";
+import { formatOtpExpiryMessage } from "./format-otp-expiry-message";
 
 describe("reactAgentMessengerMagicLinkEmail", () => {
   it("renders separate header and powered-by logo URLs", async () => {
@@ -25,7 +26,9 @@ describe("reactAgentMessengerMagicLinkEmail", () => {
         consentAfter: ".",
         button: "Continue to Agent Messenger",
         codeLabel: "Access code",
-        codeExpiry: "This code expires in 5 minutes.",
+        codeExpiry: formatOtpExpiryMessage(
+          "This code expires in {minutes} minutes.",
+        ),
         codeHelp:
           "You can enter this code in Agent Messenger if you prefer not to open the link.",
         footer: "If you didn't request this email, you can safely ignore it.",

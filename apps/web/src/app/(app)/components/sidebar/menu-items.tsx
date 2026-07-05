@@ -6,6 +6,7 @@ import {
   Code,
   Inbox,
   LayoutDashboard,
+  Plug,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
@@ -66,6 +67,12 @@ export default function MenuItems() {
       href: "/earnings",
       label: t("earnings"),
       Icon: TrendingUp,
+    },
+    {
+      key: "integrations",
+      href: "/integrations",
+      label: t("integrations"),
+      Icon: Plug,
     },
   ];
   const developerItem: MenuItemConfig = {

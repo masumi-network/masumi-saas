@@ -426,6 +426,19 @@ describe("startAgentRegistration", () => {
     getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     createPaymentNodeClientMock.mockReturnValue({
       getPaymentSources: getPaymentSourcesMock,
+      getWalletList: vi.fn().mockResolvedValue({
+        Wallets: [
+          {
+            id: "wallet-new",
+            paymentSourceId: "payment-source-preprod",
+            type: "Selling",
+            walletVkey: "selling-vkey",
+            walletAddress: "addr_test1selling",
+            collectionAddress: null,
+            note: "Agent: Demo agent (selling)",
+          },
+        ],
+      }),
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
     });

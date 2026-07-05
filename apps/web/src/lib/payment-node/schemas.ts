@@ -267,6 +267,16 @@ export type RegistryInboxCountResponse = z.infer<
 
 // ─── Payment source ─────────────────────────────────────────────────────────
 
+export const paymentSourceWalletSchema = z.object({
+  id: z.string(),
+  walletVkey: z.string(),
+  walletAddress: z.string(),
+  collectionAddress: z.string().nullable(),
+  note: z.string().nullable(),
+});
+export type PaymentSourceWallet = z.infer<typeof paymentSourceWalletSchema>;
+
+/** GET /payment-source list item (wallets are fetched via GET /wallet/list). */
 export const paymentSourceInfoSchema = z.object({
   id: z.string(),
   network: paymentNodeNetworkSchema,
@@ -276,27 +286,13 @@ export const paymentSourceInfoSchema = z.object({
   policyId: z.string().nullable(),
   lastIdentifierChecked: z.string().nullable(),
   lastCheckedAt: z.string().nullable(),
+  paymentSourceType: z.string().optional(),
+  requiredAdminSignatures: z.number().nullable().optional(),
   AdminWallets: z.array(
     z.object({ walletAddress: z.string(), order: z.number() }),
   ),
-  PurchasingWallets: z.array(
-    z.object({
-      id: z.string(),
-      walletVkey: z.string(),
-      walletAddress: z.string(),
-      collectionAddress: z.string().nullable(),
-      note: z.string().nullable(),
-    }),
-  ),
-  SellingWallets: z.array(
-    z.object({
-      id: z.string(),
-      walletVkey: z.string(),
-      walletAddress: z.string(),
-      collectionAddress: z.string().nullable(),
-      note: z.string().nullable(),
-    }),
-  ),
+  PurchasingWallets: z.array(paymentSourceWalletSchema).default([]),
+  SellingWallets: z.array(paymentSourceWalletSchema).default([]),
   FeeReceiverNetworkWallet: z.object({ walletAddress: z.string() }).nullable(),
   feeRatePermille: z.number(),
 });
@@ -368,6 +364,74 @@ export const listPurchasesOutputSchema = z.object({
   Purchases: z.array(paymentOrPurchaseItemSchema).default([]),
 });
 export type ListPurchasesOutput = z.infer<typeof listPurchasesOutputSchema>;
+
+// ─── Runtime payment endpoints ──────────────────────────────────────────────
+
+export const createPaymentInputSchema = z.object({
+  inputHash: z.string(),
+  network: paymentNodeNetworkSchema,
+  agentIdentifier: z.string(),
+  RequestedFunds: z.array(unitAmountSchema).optional(),
+  payByTime: z.string().optional(),
+  submitResultTime: z.string().optional(),
+  unlockTime: z.string().optional(),
+  externalDisputeUnlockTime: z.string().optional(),
+  metadata: z.string().optional(),
+  identifierFromPurchaser: z.string(),
+});
+export type CreatePaymentInput = z.infer<typeof createPaymentInputSchema>;
+
+export const runtimePaymentResponseSchema = z
+  .object({
+    id: z.union([z.string(), z.number().transform(String)]),
+    blockchainIdentifier: z.string(),
+    agentIdentifier: z.string().nullable().optional(),
+    inputHash: z.string().nullable().optional(),
+    payByTime: z.string().nullable(),
+    submitResultTime: z.string(),
+    unlockTime: z.string(),
+    externalDisputeUnlockTime: z.string(),
+    onChainState: z.string().nullable().optional(),
+    RequestedFunds: z.array(unitAmountSchema).optional(),
+    NextAction: z
+      .object({
+        requestedAction: z.string().nullable().optional(),
+        errorType: z.string().nullable().optional(),
+        errorNote: z.string().nullable().optional(),
+        resultHash: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    SmartContractWallet: z
+      .object({
+        id: z.string().optional(),
+        walletVkey: z.string(),
+        walletAddress: z.string(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+export type RuntimePaymentResponse = z.infer<
+  typeof runtimePaymentResponseSchema
+>;
+
+export const resolvePaymentInputSchema = z.object({
+  blockchainIdentifier: z.string(),
+  network: paymentNodeNetworkSchema,
+  filterSmartContractAddress: z.string().nullable().optional(),
+  includeHistory: z.boolean().optional(),
+});
+export type ResolvePaymentInput = z.infer<typeof resolvePaymentInputSchema>;
+
+export const submitPaymentResultInputSchema = z.object({
+  network: paymentNodeNetworkSchema,
+  submitResultHash: z.string(),
+  blockchainIdentifier: z.string(),
+});
+export type SubmitPaymentResultInput = z.infer<
+  typeof submitPaymentResultInputSchema
+>;
 
 // ─── Income (matches payment node POST /payment/income: PascalCase, Units) ───
 
@@ -481,23 +545,36 @@ export type AddWalletToSourceInput = z.infer<
   typeof addWalletToSourceInputSchema
 >;
 
-export const paymentSourceWalletSchema = z.object({
-  id: z.string(),
-  walletVkey: z.string(),
-  walletAddress: z.string(),
-  collectionAddress: z.string().nullable(),
-  note: z.string().nullable(),
-});
-export type PaymentSourceWallet = z.infer<typeof paymentSourceWalletSchema>;
-
 export const addWalletToSourceOutputSchema = z.object({
   id: z.string(),
   network: paymentNodeNetworkSchema.optional(),
   /** Returned by PATCH /payment-source-extended; pass through to deregister when set. */
   smartContractAddress: z.string().optional(),
-  SellingWallets: z.array(paymentSourceWalletSchema),
-  PurchasingWallets: z.array(paymentSourceWalletSchema),
+  PurchasingWalletsCount: z.number().optional(),
+  SellingWalletsCount: z.number().optional(),
+  SellingWallets: z.array(paymentSourceWalletSchema).optional().default([]),
+  PurchasingWallets: z.array(paymentSourceWalletSchema).optional().default([]),
 });
+
+// ─── Wallet list (GET /wallet/list) ─────────────────────────────────────────
+
+export const walletListItemSchema = z
+  .object({
+    id: z.string(),
+    paymentSourceId: z.string(),
+    type: z.enum(["Selling", "Purchasing"]),
+    walletVkey: z.string(),
+    walletAddress: z.string(),
+    collectionAddress: z.string().nullable(),
+    note: z.string().nullable(),
+  })
+  .passthrough();
+export type WalletListItem = z.infer<typeof walletListItemSchema>;
+
+export const getWalletListOutputSchema = z.object({
+  Wallets: z.array(walletListItemSchema),
+});
+export type GetWalletListOutput = z.infer<typeof getWalletListOutputSchema>;
 export type AddWalletToSourceOutput = z.infer<
   typeof addWalletToSourceOutputSchema
 >;

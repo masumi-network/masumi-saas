@@ -153,6 +153,16 @@ export type KycVerification = Prisma.KycVerificationModel;
  */
 export type Agent = Prisma.AgentModel;
 /**
+ * Model IntegrationConnection
+ *
+ */
+export type IntegrationConnection = Prisma.IntegrationConnectionModel;
+/**
+ * Model MipJob
+ *
+ */
+export type MipJob = Prisma.MipJobModel;
+/**
  * Model AgentActivityEvent
  * Audit log of agent lifecycle events for the Activity feed.
  * Emitted when registration state changes, verification, deregister, or delete.

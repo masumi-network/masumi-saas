@@ -12,11 +12,13 @@ import type {
   AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
+  CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  GetWalletListOutput,
   InboxAgentIdentifierMetadata,
   InboxAgentMetadata,
   ListPaymentsOutput,
@@ -30,6 +32,9 @@ import type {
   RegistryInboxCountResponse,
   RegistryInboxEntry,
   RegistryStatusFilter,
+  ResolvePaymentInput,
+  RuntimePaymentResponse,
+  SubmitPaymentResultInput,
   UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
@@ -37,9 +42,11 @@ import {
   addWalletToSourceOutputSchema,
   createApiKeyInputSchema,
   createApiKeyOutputSchema,
+  createPaymentInputSchema,
   generatedWalletSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
+  getWalletListOutputSchema,
   inboxAgentIdentifierMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
@@ -53,6 +60,9 @@ import {
   registryInboxWalletResponseSchema,
   registryListResponseSchema,
   registryWalletResponseSchema,
+  resolvePaymentInputSchema,
+  runtimePaymentResponseSchema,
+  submitPaymentResultInputSchema,
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
@@ -63,11 +73,13 @@ export type {
   AgentMetadata,
   CreateApiKeyInput,
   CreateApiKeyOutput,
+  CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
+  GetWalletListOutput,
   InboxAgentIdentifierMetadata,
   InboxAgentMetadata,
   ListPaymentsOutput,
@@ -85,6 +97,9 @@ export type {
   RegistryInboxEntry,
   RegistryRequestState,
   RegistryStatusFilter,
+  ResolvePaymentInput,
+  RuntimePaymentResponse,
+  SubmitPaymentResultInput,
   UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
@@ -637,6 +652,38 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       );
     },
 
+    /** List hot wallets (admin). Wallets are no longer embedded on GET /payment-source. */
+    async getWalletList(params?: {
+      take?: number;
+      cursorId?: string;
+      paymentSourceId?: string;
+      walletType?: "Selling" | "Purchasing";
+      walletVkey?: string;
+      walletAddress?: string;
+    }): Promise<GetWalletListOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet/list`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.take != null && { take: String(params.take) }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+            ...(params?.paymentSourceId && {
+              paymentSourceId: params.paymentSourceId,
+            }),
+            ...(params?.walletType && { walletType: params.walletType }),
+            ...(params?.walletVkey && { walletVkey: params.walletVkey }),
+            ...(params?.walletAddress && {
+              walletAddress: params.walletAddress,
+            }),
+          },
+        },
+        getWalletListOutputSchema,
+      );
+    },
+
     /** List payments (READ). Filter by smartContractAddress for a given payment source. */
     async listPayments(params: {
       network: PaymentNodeNetwork;
@@ -808,6 +855,63 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         paymentIncomeOutputSchema,
+      );
+    },
+
+    /** Create a seller-side payment request for a MIP runtime job. */
+    async createPayment(
+      body: CreatePaymentInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = createPaymentInputSchema.parse(body);
+      return requestParse(
+        base,
+        apiKey,
+        `/payment`,
+        {
+          method: "POST",
+          body: parsedBody,
+        },
+        runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Resolve a seller-side payment by blockchain identifier. */
+    async resolvePaymentByBlockchainIdentifier(
+      body: ResolvePaymentInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = resolvePaymentInputSchema.parse({
+        ...body,
+        includeHistory: body.includeHistory ?? false,
+      });
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/resolve-blockchain-identifier`,
+        {
+          method: "POST",
+          body: {
+            ...parsedBody,
+            includeHistory: parsedBody.includeHistory ? "true" : "false",
+          },
+        },
+        runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Submit completed result hash for a seller-side payment request. */
+    async submitPaymentResult(
+      body: SubmitPaymentResultInput,
+    ): Promise<RuntimePaymentResponse> {
+      const parsedBody = submitPaymentResultInputSchema.parse(body);
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/submit-result`,
+        {
+          method: "POST",
+          body: parsedBody,
+        },
+        runtimePaymentResponseSchema,
       );
     },
   };

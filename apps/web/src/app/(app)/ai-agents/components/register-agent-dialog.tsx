@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, Trash2, X } from "lucide-react";
+import { CircleHelp, Plug, Sparkles, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
@@ -29,6 +29,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -43,8 +50,18 @@ import { cn } from "@/lib/utils";
 import { AgentIconPicker } from "./agent-icon-picker";
 
 const CURRENCY_SYMBOL = "$";
+const NEW_LANGDOCK_CONNECTION = "__new__";
 
-type RegisterAgentFormType = AgentFormFields & { apiUrl: string };
+type RuntimeProvider = "DIRECT_MIP" | "LANGDOCK";
+
+type RegisterAgentFormType = AgentFormFields & {
+  runtimeProvider: RuntimeProvider;
+  apiUrl: string;
+  integrationConnectionId: string;
+  langdockApiKey: string;
+  langdockAgentId: string;
+  langdockBaseUrl: string;
+};
 
 interface RegisterAgentDialogProps {
   open: boolean;
@@ -72,6 +89,13 @@ type AgentFormFields = {
   capabilityName?: string;
   capabilityVersion?: string;
   exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+};
+
+type IntegrationConnection = {
+  id: string;
+  name: string;
+  provider: string;
+  metadata?: Record<string, unknown> | null;
 };
 
 function ExampleOutputsFields({
@@ -274,6 +298,9 @@ export function RegisterAgentDialog({
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [connections, setConnections] = useState<IntegrationConnection[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [testingLangdock, setTestingLangdock] = useState(false);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -290,6 +317,14 @@ export function RegisterAgentDialog({
       closedViaConfirmRef.current = false;
       userClosedViaConfirmRef.current = false;
       submitIdRef.current += 1;
+      setConnectionsLoading(true);
+      fetch("/api/integrations/langdock", { credentials: "include" })
+        .then((res) => res.json())
+        .then((json) => {
+          if (Array.isArray(json.data)) setConnections(json.data);
+        })
+        .catch(() => setConnections([]))
+        .finally(() => setConnectionsLoading(false));
     }
   }, [open]);
 
@@ -306,15 +341,14 @@ export function RegisterAgentDialog({
         .max(5000, t("extendedDescriptionMaxLength"))
         .optional()
         .or(z.literal("")),
-      apiUrl: z
-        .string()
-        .url(t("apiUrlInvalid"))
-        .refine(
-          (val) => val.startsWith("http://") || val.startsWith("https://"),
-          {
-            message: t("apiUrlProtocol"),
-          },
-        ),
+      runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]),
+      apiUrl: z.string().optional().or(z.literal("")),
+      integrationConnectionId: z.string().optional().or(z.literal("")),
+      langdockApiKey: z.string().optional().or(z.literal("")),
+      langdockAgentId: z.string().optional().or(z.literal("")),
+      langdockBaseUrl: z
+        .union([z.literal(""), z.string().url().max(250)])
+        .optional(),
       pricingType: z.enum(["Free", "Fixed", "Dynamic"]),
       prices: z.array(z.object({ amount: z.string() })),
       tags: z.string().optional(),
@@ -345,7 +379,48 @@ export function RegisterAgentDialog({
         return filled.length > 0;
       },
       { message: t("priceAmountRequired"), path: ["prices"] },
-    );
+    )
+    .superRefine((data, ctx) => {
+      if (data.runtimeProvider === "DIRECT_MIP") {
+        const apiUrl = data.apiUrl?.trim() ?? "";
+        try {
+          const url = new URL(apiUrl);
+          if (url.protocol !== "http:" && url.protocol !== "https:") {
+            ctx.addIssue({
+              code: "custom",
+              message: t("apiUrlProtocol"),
+              path: ["apiUrl"],
+            });
+          }
+        } catch {
+          ctx.addIssue({
+            code: "custom",
+            message: t("apiUrlInvalid"),
+            path: ["apiUrl"],
+          });
+        }
+      }
+
+      if (data.runtimeProvider === "LANGDOCK") {
+        if (!data.langdockAgentId?.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("langdockAgentIdRequired"),
+            path: ["langdockAgentId"],
+          });
+        }
+        const usingSaved =
+          data.integrationConnectionId &&
+          data.integrationConnectionId !== NEW_LANGDOCK_CONNECTION;
+        if (!usingSaved && !data.langdockApiKey?.trim()) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("langdockApiKeyRequired"),
+            path: ["langdockApiKey"],
+          });
+        }
+      }
+    });
 
   const form = useForm<RegisterAgentFormType>({
     resolver: zodResolver(registerAgentSchema),
@@ -353,7 +428,12 @@ export function RegisterAgentDialog({
       name: "",
       description: "",
       extendedDescription: "",
+      runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
+      integrationConnectionId: NEW_LANGDOCK_CONNECTION,
+      langdockApiKey: "",
+      langdockAgentId: "",
+      langdockBaseUrl: "",
       pricingType: "Fixed",
       prices: [{ amount: "" }],
       tags: "",
@@ -372,6 +452,18 @@ export function RegisterAgentDialog({
     name: "pricingType",
     defaultValue: "Fixed",
   }) as PricingMode;
+
+  const runtimeProvider = useWatch({
+    control: form.control,
+    name: "runtimeProvider",
+    defaultValue: "DIRECT_MIP",
+  }) as RuntimeProvider;
+
+  const selectedConnectionId = useWatch({
+    control: form.control,
+    name: "integrationConnectionId",
+    defaultValue: NEW_LANGDOCK_CONNECTION,
+  });
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
@@ -394,7 +486,12 @@ export function RegisterAgentDialog({
       name: "",
       description: "",
       extendedDescription: "",
+      runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
+      integrationConnectionId: NEW_LANGDOCK_CONNECTION,
+      langdockApiKey: "",
+      langdockAgentId: "",
+      langdockBaseUrl: "",
       pricingType: "Fixed",
       prices: [{ amount: "" }],
       tags: "",
@@ -417,6 +514,47 @@ export function RegisterAgentDialog({
     setShowCloseConfirm(false);
     onSuccessRef.current();
     onCloseRef.current();
+  };
+
+  const testLangdockAndAutofill = async () => {
+    const values = form.getValues();
+    setTestingLangdock(true);
+    try {
+      const usingSaved =
+        values.integrationConnectionId &&
+        values.integrationConnectionId !== NEW_LANGDOCK_CONNECTION;
+      const response = await fetch("/api/integrations/langdock/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...(usingSaved
+            ? { integrationConnectionId: values.integrationConnectionId }
+            : { apiKey: values.langdockApiKey }),
+          agentId: values.langdockAgentId,
+          baseUrl: values.langdockBaseUrl,
+        }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(json.error || t("langdockTestError"));
+      }
+      if (json.agent?.name) {
+        form.setValue("name", json.agent.name, { shouldDirty: true });
+      }
+      if (json.agent?.description) {
+        form.setValue("description", json.agent.description, {
+          shouldDirty: true,
+        });
+      }
+      toast.success(t("langdockTestSuccess"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("langdockTestError"),
+      );
+    } finally {
+      setTestingLangdock(false);
+    }
   };
 
   const onSubmit = async (data: RegisterAgentFormType) => {
@@ -447,10 +585,29 @@ export function RegisterAgentDialog({
               };
 
       const body = {
+        runtimeProvider: data.runtimeProvider,
         name: data.name,
         description: data.description?.trim() ?? "",
         extendedDescription: data.extendedDescription?.trim() ?? "",
-        apiUrl: data.apiUrl,
+        apiUrl: data.runtimeProvider === "DIRECT_MIP" ? data.apiUrl : undefined,
+        integrationConnectionId:
+          data.runtimeProvider === "LANGDOCK" &&
+          data.integrationConnectionId !== NEW_LANGDOCK_CONNECTION
+            ? data.integrationConnectionId
+            : undefined,
+        langdockApiKey:
+          data.runtimeProvider === "LANGDOCK" &&
+          data.integrationConnectionId === NEW_LANGDOCK_CONNECTION
+            ? data.langdockApiKey
+            : undefined,
+        langdockAgentId:
+          data.runtimeProvider === "LANGDOCK"
+            ? data.langdockAgentId
+            : undefined,
+        langdockBaseUrl:
+          data.runtimeProvider === "LANGDOCK"
+            ? data.langdockBaseUrl
+            : undefined,
         tags: tags.join(", "),
         icon: data.icon?.trim() ?? "",
         pricing: pricingBody,
@@ -656,22 +813,200 @@ export function RegisterAgentDialog({
 
                   <FormField
                     control={form.control}
-                    name="apiUrl"
+                    name="runtimeProvider"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("apiUrl")}</FormLabel>
+                        <FormLabel>{t("runtimeProvider")}</FormLabel>
                         <FormControl>
-                          <Input
-                            type="url"
-                            placeholder={t("apiUrlPlaceholder")}
-                            {...field}
-                            className="h-11 font-mono text-sm"
-                          />
+                          <div
+                            className="grid gap-3 sm:grid-cols-2"
+                            role="radiogroup"
+                            aria-label={t("runtimeProvider")}
+                          >
+                            {(
+                              [
+                                {
+                                  value: "DIRECT_MIP" as const,
+                                  titleKey: "runtimeDirectTitle",
+                                  descKey: "runtimeDirectDescription",
+                                  Icon: Plug,
+                                },
+                                {
+                                  value: "LANGDOCK" as const,
+                                  titleKey: "runtimeLangdockTitle",
+                                  descKey: "runtimeLangdockDescription",
+                                  Icon: Sparkles,
+                                },
+                              ] as const
+                            ).map((opt) => {
+                              const selected = field.value === opt.value;
+                              const Icon = opt.Icon;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={selected}
+                                  className={cn(
+                                    "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                    selected
+                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      : "border-border/80 bg-muted/20 hover:bg-muted/40",
+                                  )}
+                                  onClick={() => field.onChange(opt.value)}
+                                >
+                                  <span className="mb-2 flex items-center gap-2 text-sm font-medium">
+                                    <Icon className="h-4 w-4" />
+                                    {t(opt.titleKey)}
+                                  </span>
+                                  <span className="block text-xs text-muted-foreground leading-snug">
+                                    {t(opt.descKey)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {runtimeProvider === "DIRECT_MIP" ? (
+                    <FormField
+                      control={form.control}
+                      name="apiUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("apiUrl")}</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="url"
+                              placeholder={t("apiUrlPlaceholder")}
+                              {...field}
+                              className="h-11 font-mono text-sm"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <div className="space-y-4 rounded-lg border border-border/80 bg-muted/30 p-4">
+                      {connections.length > 0 && (
+                        <FormField
+                          control={form.control}
+                          name="integrationConnectionId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("langdockConnection")}</FormLabel>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                disabled={connectionsLoading}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="h-11">
+                                    <SelectValue
+                                      placeholder={t("langdockConnection")}
+                                    />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value={NEW_LANGDOCK_CONNECTION}>
+                                    {t("langdockNewConnection")}
+                                  </SelectItem>
+                                  {connections.map((connection) => (
+                                    <SelectItem
+                                      key={connection.id}
+                                      value={connection.id}
+                                    >
+                                      {connection.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {selectedConnectionId === NEW_LANGDOCK_CONNECTION && (
+                        <FormField
+                          control={form.control}
+                          name="langdockApiKey"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("langdockApiKey")}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder={t("langdockApiKeyPlaceholder")}
+                                  {...field}
+                                  className="h-11 font-mono text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="langdockAgentId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("langdockAgentId")}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder={t("langdockAgentIdPlaceholder")}
+                                  {...field}
+                                  className="h-11 font-mono text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="langdockBaseUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("langdockBaseUrl")}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="url"
+                                  placeholder="https://api.langdock.com"
+                                  {...field}
+                                  className="h-11 font-mono text-sm"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={testLangdockAndAutofill}
+                        disabled={testingLangdock}
+                        className="gap-2"
+                      >
+                        {testingLangdock ? (
+                          <Spinner size={16} />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {t("langdockTestAutofill")}
+                      </Button>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}

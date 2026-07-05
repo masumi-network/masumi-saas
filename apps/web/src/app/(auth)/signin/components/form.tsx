@@ -11,6 +11,7 @@ import { buildAuthPageHref } from "@/lib/auth/auth-page-callback-url";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import type { MagicLinkSignInInput, SignInInput } from "@/lib/schemas";
 
+import { MagicLinkCheckEmailHeader } from "../../components/magic-link-check-email-header";
 import { MagicLinkCodePanel } from "../../components/magic-link-code-panel";
 import {
   SigninMagicLinkForm,
@@ -61,14 +62,10 @@ export default function SignInForm({
   if (magicLinkEmail) {
     return (
       <div className="w-full space-y-6 animate-page-in">
-        <AuthPageHeader
-          title={t("checkEmail.title")}
-          description={t(
-            isOidcFlow
-              ? "checkEmail.oidcDescription"
-              : "checkEmail.description",
-            { email: magicLinkEmail },
-          )}
+        <MagicLinkCheckEmailHeader
+          email={magicLinkEmail}
+          isOidcFlow={isOidcFlow}
+          namespace="Auth.SignIn"
         />
 
         <MagicLinkCodePanel

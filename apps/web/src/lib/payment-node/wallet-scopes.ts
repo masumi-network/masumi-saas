@@ -6,9 +6,8 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
+import { listSellingWalletIdsByAddresses } from "@/lib/payment-node/payment-source-wallets";
 
-const PAYMENT_SOURCE_PAGE_SIZE = 100;
-const MAX_PAYMENT_SOURCE_PAGES = 10;
 const REGISTRATION_FUNDING_NETWORKS: PaymentNodeNetwork[] = [
   "Preprod",
   "Mainnet",
@@ -62,37 +61,10 @@ async function getRegistrationFundingWalletIds(params: {
   adminClient: ReturnType<typeof createPaymentNodeClient>;
   walletAddresses: Set<string>;
 }): Promise<string[]> {
-  if (params.walletAddresses.size === 0) return [];
-
-  const fundingWalletIds: string[] = [];
-  let cursorId: string | undefined;
-
-  for (let page = 0; page < MAX_PAYMENT_SOURCE_PAGES; page += 1) {
-    const result = await params.adminClient.getPaymentSources({
-      take: PAYMENT_SOURCE_PAGE_SIZE,
-      cursorId,
-    });
-
-    for (const paymentSource of result.PaymentSources) {
-      for (const wallet of paymentSource.SellingWallets) {
-        if (params.walletAddresses.has(wallet.walletAddress)) {
-          fundingWalletIds.push(wallet.id);
-        }
-      }
-    }
-
-    if (result.PaymentSources.length < PAYMENT_SOURCE_PAGE_SIZE) {
-      break;
-    }
-
-    const nextCursor = result.PaymentSources.at(-1)?.id;
-    if (!nextCursor || nextCursor === cursorId) {
-      break;
-    }
-    cursorId = nextCursor;
-  }
-
-  return toUniqueWalletIds(fundingWalletIds);
+  return listSellingWalletIdsByAddresses(
+    params.adminClient,
+    params.walletAddresses,
+  );
 }
 
 export async function ensureUserPaymentNodeKeyScopedToWallets(params: {

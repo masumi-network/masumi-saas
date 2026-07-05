@@ -1,11 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { OtpCodeInput } from "@/components/otp-code-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signInMagicLinkCodeAction } from "@/lib/actions/auth.action";
 
@@ -20,12 +20,15 @@ export function MagicLinkCodePanel({
 }: MagicLinkCodePanelProps) {
   const t = useTranslations("Auth.MagicLinkCode");
   const tErrors = useTranslations("Auth.Errors");
+  const labelId = useId();
+  const errorId = useId();
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
 
-  async function handleSubmit() {
-    if (!otp.trim()) {
+  async function handleSubmit(nextOtp = otp) {
+    const code = nextOtp.trim();
+    if (!code) {
       setInlineError(tErrors("InvalidMagicLinkCode"));
       return;
     }
@@ -36,7 +39,7 @@ export function MagicLinkCodePanel({
     try {
       const formData = new FormData();
       formData.set("email", email);
-      formData.set("otp", otp.trim());
+      formData.set("otp", code);
 
       const result = await signInMagicLinkCodeAction(formData, callbackUrl);
       if ("error" in result) {
@@ -68,25 +71,29 @@ export function MagicLinkCodePanel({
         <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="magic-link-code" className="text-sm font-medium">
-          {t("codeLabel")}
-        </label>
-        <Input
-          id="magic-link-code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder={t("codePlaceholder")}
-          value={otp}
-          maxLength={6}
-          onChange={(event) =>
-            setOtp(event.target.value.replace(/\D+/g, "").slice(0, 6))
-          }
-        />
-      </div>
+      <span id={labelId} className="sr-only">
+        {t("codeLabel")}
+      </span>
+      <OtpCodeInput
+        value={otp}
+        onChange={(next) => {
+          setOtp(next);
+          if (inlineError) setInlineError(null);
+        }}
+        onComplete={(completed) => void handleSubmit(completed)}
+        disabled={isLoading}
+        autoFocus
+        invalid={inlineError !== null}
+        ariaLabelledBy={labelId}
+        ariaDescribedBy={inlineError ? errorId : undefined}
+      />
 
       {inlineError ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <div
+          id={errorId}
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {inlineError}
         </div>
       ) : null}
@@ -95,7 +102,7 @@ export function MagicLinkCodePanel({
         type="button"
         variant="secondary"
         className="w-full"
-        onClick={handleSubmit}
+        onClick={() => void handleSubmit()}
         disabled={isLoading || otp.trim().length === 0}
       >
         {isLoading ? <Spinner size={14} className="mr-2" /> : null}

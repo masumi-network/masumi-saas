@@ -63,8 +63,8 @@
       "login": "サインイン",
       "checkEmail": {
         "title": "メールを確認してください",
-        "description": "{email} にマジックリンクを送信しました。リンクを開いてダッシュボードにサインインしてください。",
-        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて Masumi アカウントでサインインを続行してください。",
+        "description": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いてダッシュボードにサインインしてください。",
+        "oidcDescription": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて Masumi アカウントでサインインを続行してください。",
         "tryAnother": "別のメールアドレスを使用"
       }
     },
@@ -90,8 +90,8 @@
       "useMagicLink": "代わりにマジックリンクを使用 (推奨)",
       "checkEmail": {
         "title": "メールを確認してください",
-        "description": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、ダッシュボードにアクセスしてください。",
-        "oidcDescription": "{email} にマジックリンクを送信しました。リンクを開いて登録を完了し、Masumi アカウントで続行してください。",
+        "description": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて登録を完了し、ダッシュボードにアクセスしてください。",
+        "oidcDescription": "<emailEmphasis>{email}</emailEmphasis> にマジックリンクを送信しました。リンクを開いて登録を完了し、Masumi アカウントで続行してください。",
         "tryAnother": "別のメールアドレスを使用"
       }
     },
@@ -163,7 +163,6 @@
       "title": "コードで確認",
       "description": "リンクを開きたくない場合は、同じメールに記載された6桁のコードを使用してください。",
       "codeLabel": "サインインコード",
-      "codePlaceholder": "000000",
       "submit": "コードで認証",
       "submitting": "コードを確認中...",
       "success": "コードが承認されました。認証中..."
@@ -506,6 +505,57 @@
         }
       }
     },
+    "Onboarding": {
+      "metadata": {
+        "title": "Masumiへようこそ",
+        "description": "始める前の簡単なご案内です。"
+      },
+      "navigation": {
+        "skip": "スキップ",
+        "back": "戻る",
+        "next": "次へ",
+        "getStarted": "始める"
+      },
+      "steps": {
+        "welcome": {
+          "title": "Masumiへようこそ",
+          "description": "MasumiはAIエージェント向けの決済ネットワークです。エスクローのスマートコントラクト、オンチェーンID、公開レジストリにより、自律エージェントは互いを信頼せずに取引できます。"
+        },
+        "agents": {
+          "title": "Masumiネットワークに登録",
+          "description": "エージェントのAPI、料金、メタデータを登録します。Masumiがオンチェーンに登録し、購入者がサービスを見つけてエスクロー保護のジョブで支払えるようになります。"
+        },
+        "organizations": {
+          "title": "組織と本人確認",
+          "description": "ワークスペースを作成・参加するか、個人で利用できます。本人確認はユーザー単位で、組織の設定とは別です。メインネットの準備ができたら完了してください。認証されたエージェントにはネットワーク上で検証可能なクレデンシャルが発行されます。"
+        },
+        "payments": {
+          "title": "クレジットと連携",
+          "description": "Preprodでは無料でテストできます。メインネットに切り替えると、登録などの有料操作にクレジットが使われます。APIキーやOIDCグラントでスタックを接続します。"
+        }
+      },
+      "visuals": {
+        "agents": {
+          "api": "エージェントAPIとメタデータ",
+          "registry": "オンチェーン・レジストリ登録",
+          "escrow": "エスクロー保護の決済"
+        },
+        "organizations": {
+          "workspace": "組織ワークスペース",
+          "members": "チームメンバーとロール",
+          "kyc": "本人確認と検証可能クレデンシャル"
+        },
+        "payments": {
+          "preprod": "Preprodでテスト",
+          "credits": "メインネット・クレジット",
+          "api": "APIキーとOIDC"
+        }
+      },
+      "errors": {
+        "FailedToComplete": "オンボーディングを完了できませんでした。もう一度お試しください。",
+        "UnexpectedError": "予期しないエラーが発生しました。"
+      }
+    },
     "TopUp": {
       "title": "補充する",
       "description": "Stripe Checkout でクレジットを購入し、メインネット利用と有料操作の準備を整えましょう。",
@@ -636,7 +686,8 @@
         "account": "アカウント",
         "inboxAgents": "受信箱",
         "earnings": "収益",
-        "topUp": "チャージ"
+        "topUp": "チャージ",
+        "integrations": "Integrations"
       }
     },
     "ApiKeys": {
@@ -1083,7 +1134,24 @@
         "progressStep2": "資金調達ウォレット",
         "progressStep3": "ネットワークに登録する",
         "registrationStarted": "登録を開始しました。完了したらお知らせします。",
-        "amountPlaceholder": "0.00"
+        "amountPlaceholder": "0.00",
+        "runtimeProvider": "Runtime",
+        "runtimeDirectTitle": "MIP-003 endpoint",
+        "runtimeDirectDescription": "Agent already exposes Masumi endpoints.",
+        "runtimeLangdockTitle": "Langdock",
+        "runtimeLangdockDescription": "Masumi hosts the wrapper and connects to Langdock.",
+        "langdockConnection": "Langdock connection",
+        "langdockNewConnection": "Use new API key",
+        "langdockApiKey": "Langdock API key",
+        "langdockApiKeyPlaceholder": "ld_...",
+        "langdockApiKeyRequired": "Langdock API key is required.",
+        "langdockAgentId": "Langdock agent ID",
+        "langdockAgentIdPlaceholder": "Agent ID from Langdock",
+        "langdockAgentIdRequired": "Langdock agent ID is required.",
+        "langdockBaseUrl": "Langdock base URL",
+        "langdockTestAutofill": "Test and autofill",
+        "langdockTestSuccess": "Langdock agent verified.",
+        "langdockTestError": "Langdock connection check failed."
       },
       "Edit": {
         "title": "エージェントの編集",
@@ -1738,6 +1806,27 @@
         "deregistered": "登録解除済み",
         "deregistrationFailed": "登録解除失敗"
       }
+    },
+    "Integrations": {
+      "title": "Integrations",
+      "description": "Connect external agent platforms for Masumi registration and monetization.",
+      "langdockTitle": "Langdock",
+      "langdockDescription": "Validate a Langdock agent and save its API key for registration.",
+      "connectionName": "Connection name",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "ld_...",
+      "agentId": "Agent ID",
+      "agentIdPlaceholder": "Langdock agent ID",
+      "baseUrl": "Base URL",
+      "testAndSave": "Test and save",
+      "connections": "Saved connections",
+      "connectionsDescription": "Connections available in the agent registration flow.",
+      "connected": "Connected",
+      "refresh": "Refresh",
+      "empty": "No Langdock connections yet.",
+      "loadError": "Failed to load integrations.",
+      "saveError": "Failed to save Langdock connection.",
+      "saveSuccess": "Langdock connection saved."
     }
   },
   "Components": {
@@ -1745,6 +1834,9 @@
       "description": "当社ウェブサイトで最高のエクスペリエンスをお楽しみいただけるよう、Cookie を使用しています。",
       "gotIt": "わかった",
       "learnMore": "もっと詳しく知る"
+    },
+    "OtpCodeInput": {
+      "digitAriaLabel": "{total} 桁中 {index} 桁目"
     },
     "LogoutModal": {
       "title": "本当にログアウトしますか?",
@@ -1815,7 +1907,7 @@
       "linkText": "または、このリンクをコピーしてブラウザに貼り付けます。",
       "footer": "アカウントを作成していない場合は、このメールを無視しても問題ありません。",
       "codeLabel": "確認コード",
-      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeExpiry": "このコードは {minutes} 分で有効期限が切れます。",
       "codeHelp": "コードによる確認を希望する場合は、このコードを Masumi に入力できます。"
     },
     "Invitation": {
@@ -1833,7 +1925,7 @@
       "greeting": "{name} さん、こんにちは。",
       "message": "このコードを Masumi に入力して、メールアドレスを確認しサインインを続行してください。",
       "codeLabel": "確認コード",
-      "expiry": "このコードは 5 分で有効期限が切れます。",
+      "expiry": "このコードは {minutes} 分で有効期限が切れます。",
       "footer": "このコードを要求していない場合は、このメールを無視してかまいません。"
     },
     "MagicLink": {
@@ -1846,7 +1938,7 @@
       "consentAfter": ".",
       "button": "Masumi に続行",
       "codeLabel": "アクセスコード",
-      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeExpiry": "このコードは {minutes} 分で有効期限が切れます。",
       "codeHelp": "リンクを開きたくない場合は、このコードを Masumi に入力できます。",
       "linkText": "バックアップアクセスリンク",
       "footer": "このメールを要求していない場合は、無視してかまいません。"
@@ -1861,7 +1953,7 @@
       "consentAfter": ".",
       "button": "Agent Messenger に続行",
       "codeLabel": "アクセスコード",
-      "codeExpiry": "このコードは 5 分で有効期限が切れます。",
+      "codeExpiry": "このコードは {minutes} 分で有効期限が切れます。",
       "codeHelp": "リンクを開きたくない場合は、このコードを Agent Messenger に入力できます。",
       "linkText": "バックアップ Agent Messenger リンク",
       "footer": "このメールを要求していない場合は、無視してかまいません。"
