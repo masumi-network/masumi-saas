@@ -231,6 +231,31 @@ export const listNetworksSchemaOutput = z.object({
   Networks: z.array(x402NetworkSchema),
 });
 
+export const validateNetworkRpcSchemaInput = z.object({
+  caip2Id: caip2Eip155Schema,
+  rpcUrl: z.string().url(),
+  displayName: z.string().min(1).max(120).optional(),
+});
+
+export const validateNetworkRpcSchemaOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    chainId: z.number().int().positive(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.enum([
+      "invalid_caip2",
+      "invalid_url",
+      "unreachable",
+      "chain_mismatch",
+    ]),
+    message: z.string(),
+    actualChainId: z.number().int().positive().optional(),
+    expectedChainId: z.number().int().positive().optional(),
+  }),
+]);
+
 export const budgetSchema = z
   .object({
     id: z.string(),

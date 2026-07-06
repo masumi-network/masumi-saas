@@ -17,6 +17,7 @@ import {
   listX402PaymentAttempts,
   listX402Settlements,
   listX402WalletBudgets,
+  probeX402NetworkRpc,
   settleX402Payment,
   setX402LowBalanceRule,
   setX402WalletBudget,
@@ -83,6 +84,8 @@ import {
   updateLowBalanceRuleSchemaInput,
   updateWalletSchemaInput,
   upsertNetworkSchemaInput,
+  validateNetworkRpcSchemaInput,
+  validateNetworkRpcSchemaOutput,
   verifySchemaOutput,
   verifySettleSchemaInput,
   walletBalanceSchemaInput,
@@ -558,6 +561,45 @@ export function registerX402Routes(app: X402App): void {
         return c.json(network, 200);
       } catch (error) {
         handleRouteError(error, "x402 upsert network failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/networks/validate-rpc",
+      tags: ["x402"],
+      summary: "Probe an x402 EVM network RPC URL",
+      security,
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: validateNetworkRpcSchemaInput },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "RPC probe result",
+          content: {
+            "application/json": { schema: validateNetworkRpcSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminWrite(authContext);
+        const input = c.req.valid("json");
+
+        return c.json(await probeX402NetworkRpc(input), 200);
+      } catch (error) {
+        handleRouteError(error, "x402 validate network rpc failed");
       }
     },
   );

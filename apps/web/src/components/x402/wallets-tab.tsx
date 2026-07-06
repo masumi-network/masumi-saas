@@ -524,7 +524,7 @@ export function CreateWalletDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (wallet?: X402Wallet) => void;
   defaultType?: WalletType;
 }) {
   const t = useTranslations("App.X402.Wallets");
@@ -538,6 +538,7 @@ export function CreateWalletDialog({
     address: string;
     privateKey: string;
   } | null>(null);
+  const [createdWallet, setCreatedWallet] = useState<X402Wallet | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -562,17 +563,22 @@ export function CreateWalletDialog({
     );
     setIsSaving(false);
     if (!result) return;
+    const { privateKey: generatedPrivateKey, ...createdWallet } = result;
     if (keySource === "generate") {
-      if (result.privateKey) {
-        setBackup({ address: result.address, privateKey: result.privateKey });
+      if (generatedPrivateKey) {
+        setCreatedWallet(createdWallet);
+        setBackup({
+          address: createdWallet.address,
+          privateKey: generatedPrivateKey,
+        });
         return;
       }
       toast.error(t("missingPrivateKey"));
-      onSaved();
+      onSaved(createdWallet);
       return;
     }
     toast.success(t("created"));
-    onSaved();
+    onSaved(createdWallet);
   };
 
   return (
@@ -591,7 +597,10 @@ export function CreateWalletDialog({
           type={type}
           address={backup.address}
           privateKey={backup.privateKey}
-          onDone={onSaved}
+          onDone={() => {
+            onSaved(createdWallet ?? undefined);
+            setCreatedWallet(null);
+          }}
         />
       ) : (
         <form

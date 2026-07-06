@@ -1,7 +1,7 @@
 import { X402EvmWalletType } from "@masumi/database";
 import prisma from "@masumi/database/client";
 import createHttpError from "http-errors";
-import { defineChain, http } from "viem";
+import { createPublicClient, defineChain, http } from "viem";
 
 import { logger } from "./logger.js";
 import {
@@ -154,6 +154,86 @@ export async function assertRpcServesDeclaredChain(
       `x402 network RPC serves chain id ${actualChainId} but ${caip2Network} expects ${expectedChainId}`,
     );
   }
+}
+
+export type X402RpcProbeFailureReason =
+  | "invalid_caip2"
+  | "invalid_url"
+  | "unreachable"
+  | "chain_mismatch";
+
+export type X402RpcProbeResult =
+  | { ok: true; chainId: number }
+  | {
+      ok: false;
+      reason: X402RpcProbeFailureReason;
+      message: string;
+      actualChainId?: number;
+      expectedChainId?: number;
+    };
+
+export async function probeX402NetworkRpc(input: {
+  caip2Id: string;
+  rpcUrl: string;
+  displayName?: string;
+}): Promise<X402RpcProbeResult> {
+  let expectedChainId: number;
+  try {
+    expectedChainId = getEip155ChainId(input.caip2Id);
+  } catch {
+    return {
+      ok: false,
+      reason: "invalid_caip2",
+      message: "x402 network must be a CAIP-2 eip155 chain id",
+    };
+  }
+
+  try {
+    assertSafeRpcUrl(input.rpcUrl);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "x402 network rpcUrl must be a valid URL";
+    return { ok: false, reason: "invalid_url", message };
+  }
+
+  const chain = createChain(
+    input.caip2Id,
+    input.rpcUrl,
+    input.displayName ?? "x402",
+  );
+  const client = createPublicClient({
+    chain,
+    transport: safeHttpTransport(input.rpcUrl),
+  });
+
+  let actualChainId: number;
+  try {
+    actualChainId = await client.getChainId();
+  } catch (error) {
+    logger.warn("x402 network RPC probe failed to reach endpoint", {
+      caip2Id: input.caip2Id,
+      error,
+    });
+    return {
+      ok: false,
+      reason: "unreachable",
+      message: "RPC endpoint is unreachable or did not respond",
+    };
+  }
+
+  if (actualChainId !== expectedChainId) {
+    return {
+      ok: false,
+      reason: "chain_mismatch",
+      message: `RPC serves chain id ${actualChainId} but ${input.caip2Id} expects ${expectedChainId}`,
+      actualChainId,
+      expectedChainId,
+    };
+  }
+
+  return { ok: true, chainId: actualChainId };
 }
 
 export async function getX402NetworkOrThrow(

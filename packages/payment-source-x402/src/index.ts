@@ -2,6 +2,11 @@ export * from "./analytics.js";
 export * from "./balance.js";
 export * from "./counts.js";
 export * from "./encryption.js";
+export {
+  probeX402NetworkRpc,
+  type X402RpcProbeFailureReason,
+  type X402RpcProbeResult,
+} from "./internal.js";
 export * from "./low-balance.js";
 export * from "./network.js";
 export * from "./payment-source.js";

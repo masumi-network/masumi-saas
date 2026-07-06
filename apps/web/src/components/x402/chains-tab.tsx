@@ -1,14 +1,25 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link2, ListFilter, Pencil, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleHelp,
+  Link2,
+  ListFilter,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -34,19 +46,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
 import { shortenAddress } from "@/lib/utils";
-import { x402Mutate } from "@/lib/x402/api";
+import { x402Fetch, x402Mutate } from "@/lib/x402/api";
 import {
   type EvmChainConfig,
   getDefaultStablecoinForChain,
   getEvmChainPresets,
 } from "@/lib/x402/evm-config";
-import type { X402Network } from "@/lib/x402/types";
+import type { X402Network, X402RpcProbeResult } from "@/lib/x402/types";
 import { isTestnetEnv } from "@/lib/x402-rail";
 
+import { CreateWalletDialog } from "./wallets-tab";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
   x402ActionsCellClass,
@@ -98,6 +116,83 @@ const chainSchema = z
   });
 
 type ChainFormValues = z.infer<typeof chainSchema>;
+
+type RpcProbeViewState =
+  | { status: "idle" }
+  | { status: "checking"; key: string }
+  | { status: "valid"; key: string }
+  | { status: "invalid"; key: string; message: string };
+
+function buildRpcProbeKey(caip2Id: string, rpcUrl: string) {
+  return `${caip2Id}|${rpcUrl.trim()}`;
+}
+
+function isProbeableRpcUrl(rpcUrl: string) {
+  try {
+    const url = new URL(rpcUrl);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function RpcUrlProbeIndicator({
+  status,
+  checkingLabel,
+  validLabel,
+  invalidMessage,
+}: {
+  status: RpcProbeViewState["status"];
+  checkingLabel: string;
+  validLabel: string;
+  invalidMessage?: string;
+}) {
+  if (status === "idle") return null;
+
+  const tooltipLabel =
+    status === "checking"
+      ? checkingLabel
+      : status === "valid"
+        ? validLabel
+        : (invalidMessage ?? checkingLabel);
+
+  const icon =
+    status === "checking" ? (
+      <Spinner
+        key="rpc-probe-checking"
+        size={16}
+        className="text-muted-foreground"
+      />
+    ) : status === "valid" ? (
+      <CheckCircle2
+        key="rpc-probe-valid"
+        className="h-4 w-4 animate-in fade-in zoom-in-90 fill-mode-both text-sky-500 duration-300"
+        aria-hidden
+      />
+    ) : (
+      <AlertTriangle
+        key="rpc-probe-invalid"
+        className="h-4 w-4 animate-rpc-probe-vibrate text-destructive"
+        aria-hidden
+      />
+    );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="flex size-4 shrink-0 cursor-help items-center justify-center [&_svg]:block"
+          aria-live="polite"
+          aria-busy={status === "checking"}
+        >
+          {icon}
+          <span className="sr-only">{tooltipLabel}</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">{tooltipLabel}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function ChainsTab() {
   const t = useTranslations("App.X402.Chains");
@@ -507,10 +602,18 @@ export function ChainDialog({
   onSaved: () => void;
 }) {
   const t = useTranslations("App.X402.Chains");
+  const queryClient = useQueryClient();
   const { network } = usePaymentNetwork();
   const wantTestnet = isTestnetEnv(network);
-  const { wallets } = useX402Wallets(open, "Selling");
+  const { wallets, refetch: refetchWallets } = useX402Wallets(open, "Selling");
   const [isSaving, setIsSaving] = useState(false);
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [rpcProbe, setRpcProbe] = useState<RpcProbeViewState>({
+    status: "idle",
+  });
+  const [confirmRpcOpen, setConfirmRpcOpen] = useState(false);
+  const [pendingFormData, setPendingFormData] =
+    useState<ChainFormValues | null>(null);
 
   const {
     register,
@@ -537,6 +640,85 @@ export function ChainDialog({
     [wantTestnet],
   );
   const selectedCaip2Id = useWatch({ control, name: "caip2Id" });
+  const watchedRpcUrl = useWatch({ control, name: "rpcUrl" });
+  const watchedDisplayName = useWatch({ control, name: "displayName" });
+  const debouncedRpcUrl = useDebouncedValue(watchedRpcUrl ?? "", 500);
+  const debouncedCaip2Id = useDebouncedValue(selectedCaip2Id ?? "", 300);
+
+  const runRpcProbe = useCallback(
+    async (
+      caip2Id: string,
+      rpcUrl: string,
+      displayName?: string,
+    ): Promise<RpcProbeViewState> => {
+      const key = buildRpcProbeKey(caip2Id, rpcUrl);
+      setRpcProbe({ status: "checking", key });
+
+      try {
+        const result = await x402Fetch<X402RpcProbeResult>(
+          "/networks/validate-rpc",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              caip2Id,
+              rpcUrl: rpcUrl.trim(),
+              displayName: displayName?.trim() || undefined,
+            }),
+            silentErrors: true,
+          },
+        );
+
+        if (result.ok) {
+          const next: RpcProbeViewState = { status: "valid", key };
+          setRpcProbe(next);
+          return next;
+        }
+
+        const next: RpcProbeViewState = {
+          status: "invalid",
+          key,
+          message: result.message,
+        };
+        setRpcProbe(next);
+        return next;
+      } catch {
+        const next: RpcProbeViewState = {
+          status: "invalid",
+          key,
+          message: t("rpcProbeFailed"),
+        };
+        setRpcProbe(next);
+        return next;
+      }
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    const caip2Id = debouncedCaip2Id.trim();
+    const rpcUrl = debouncedRpcUrl.trim();
+    if (!caip2Id || !rpcUrl || !isProbeableRpcUrl(rpcUrl)) {
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Debounced RPC liveness probe on preset/url fill.
+    void runRpcProbe(caip2Id, rpcUrl, watchedDisplayName);
+  }, [
+    debouncedCaip2Id,
+    debouncedRpcUrl,
+    open,
+    runRpcProbe,
+    watchedDisplayName,
+  ]);
+
+  const handleDialogClose = () => {
+    setRpcProbe({ status: "idle" });
+    setConfirmRpcOpen(false);
+    setPendingFormData(null);
+    onClose();
+  };
 
   useEffect(() => {
     if (!open || editing) return;
@@ -558,226 +740,374 @@ export function ChainDialog({
     }
   };
 
-  const onSubmit = async (data: ChainFormValues) => {
-    setIsSaving(true);
-    const result = await x402Mutate<X402Network>(
-      "/networks",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          caip2Id: data.caip2Id,
-          displayName: data.displayName,
-          rpcUrl: data.rpcUrl,
-          isTestnet: wantTestnet,
-          isEnabled: data.isEnabled,
-          defaultAsset: data.defaultAsset ? data.defaultAsset : null,
-          facilitatorWalletId:
-            data.facilitatorWalletId &&
-            data.facilitatorWalletId !== NO_FACILITATOR
-              ? data.facilitatorWalletId
-              : null,
-        }),
-      },
-      {
-        successMessage: editing ? t("updated") : t("added"),
-        errorMessage: t("saveFailed"),
-      },
-    );
-    setIsSaving(false);
-    if (result) onSaved();
-  };
+  const saveChain = useCallback(
+    async (data: ChainFormValues) => {
+      setIsSaving(true);
+      const result = await x402Mutate<X402Network>(
+        "/networks",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            caip2Id: data.caip2Id,
+            displayName: data.displayName,
+            rpcUrl: data.rpcUrl,
+            isTestnet: wantTestnet,
+            isEnabled: data.isEnabled,
+            defaultAsset: data.defaultAsset ? data.defaultAsset : null,
+            facilitatorWalletId:
+              data.facilitatorWalletId &&
+              data.facilitatorWalletId !== NO_FACILITATOR
+                ? data.facilitatorWalletId
+                : null,
+          }),
+        },
+        {
+          successMessage: editing ? t("updated") : t("added"),
+          errorMessage: t("saveFailed"),
+        },
+      );
+      setIsSaving(false);
+      if (result) {
+        setConfirmRpcOpen(false);
+        setPendingFormData(null);
+        onSaved();
+      }
+    },
+    [editing, onSaved, t, wantTestnet],
+  );
+
+  const onValidSubmit = useCallback(
+    async (data: ChainFormValues) => {
+      const key = buildRpcProbeKey(data.caip2Id, data.rpcUrl);
+      let probe: RpcProbeViewState = { status: "idle" };
+      if (
+        (rpcProbe.status === "valid" ||
+          rpcProbe.status === "invalid" ||
+          rpcProbe.status === "checking") &&
+        rpcProbe.key === key
+      ) {
+        probe = rpcProbe;
+      } else if (isProbeableRpcUrl(data.rpcUrl)) {
+        probe = await runRpcProbe(data.caip2Id, data.rpcUrl, data.displayName);
+      }
+
+      if (probe.status === "checking") {
+        toast.info(t("rpcProbeStillChecking"));
+        return;
+      }
+      if (probe.status === "invalid") {
+        setPendingFormData(data);
+        setConfirmRpcOpen(true);
+        return;
+      }
+      await saveChain(data);
+    },
+    [rpcProbe, runRpcProbe, saveChain, t],
+  );
+
+  const rpcProbeKeyForForm = buildRpcProbeKey(
+    watchedRpcUrl && selectedCaip2Id ? selectedCaip2Id : "",
+    watchedRpcUrl ?? "",
+  );
+  const showRpcProbeStatus =
+    rpcProbe.status !== "idle" && rpcProbe.key === rpcProbeKeyForForm;
 
   return (
-    <X402FormDialog
-      open={open}
-      onClose={onClose}
-      title={editing ? t("editTitle") : t("addTitle")}
-      description={t("dialogDescription")}
-      maxWidthClassName="sm:max-w-lg"
-      bodyClassName="space-y-3 p-5"
-      onSubmit={handleSubmit(onSubmit)}
-      footer={
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            {t("cancel")}
-          </Button>
-          <Button type="submit" variant="primary" disabled={isSaving}>
-            {isSaving
-              ? t("saving")
-              : editing
-                ? t("saveChanges")
-                : t("addChain")}
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-1.5">
-        <label htmlFor="chain-caip2Id" className="text-sm font-medium">
-          {t("fields.caip2Id")}
-        </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
-            id="chain-caip2Id"
-            placeholder="eip155:8453"
-            className="font-mono sm:min-w-0 sm:flex-1"
-            readOnly
-            {...register("caip2Id")}
-          />
-          {!editing && chainPresets.length > 0 ? (
-            <Select
-              value={
-                chainPresets.find((chain) => chain.caip2Id === selectedCaip2Id)
-                  ?.id
-              }
-              onValueChange={(id) => {
-                const chain = chainPresets.find((item) => item.id === id);
-                if (chain) applyChainPreset(chain);
-              }}
+    <>
+      <X402FormDialog
+        open={open}
+        onClose={handleDialogClose}
+        title={editing ? t("editTitle") : t("addTitle")}
+        description={t("dialogDescription")}
+        maxWidthClassName="sm:max-w-xl"
+        bodyClassName="space-y-3 p-5"
+        onSubmit={handleSubmit(onValidSubmit)}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSaving}
             >
-              <SelectTrigger
-                className="w-full shrink-0 sm:w-44"
-                aria-label={t("chainPresetsAria")}
+              {t("cancel")}
+            </Button>
+            <Button type="submit" variant="primary" disabled={isSaving}>
+              {isSaving
+                ? t("saving")
+                : editing
+                  ? t("saveChanges")
+                  : t("addChain")}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-1.5">
+          <label htmlFor="chain-caip2Id" className="text-sm font-medium">
+            {t("fields.caip2Id")}
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              id="chain-caip2Id"
+              placeholder="eip155:8453"
+              className="font-mono sm:min-w-0 sm:flex-1"
+              readOnly
+              {...register("caip2Id")}
+            />
+            {!editing && chainPresets.length > 0 ? (
+              <Select
+                value={
+                  chainPresets.find(
+                    (chain) => chain.caip2Id === selectedCaip2Id,
+                  )?.id
+                }
+                onValueChange={(id) => {
+                  const chain = chainPresets.find((item) => item.id === id);
+                  if (chain) applyChainPreset(chain);
+                }}
               >
-                <SelectValue placeholder={t("chainPresetPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {chainPresets.map((chain) => (
-                  <SelectItem key={chain.id} value={chain.id}>
-                    {chain.displayName}
-                    <span className="text-muted-foreground">
-                      {" · "}
-                      {chain.isTestnet ? t("testnet") : t("mainnet")}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  className="w-full shrink-0 sm:min-w-56 sm:w-auto [&>span]:line-clamp-none"
+                  aria-label={t("chainPresetsAria")}
+                >
+                  <SelectValue placeholder={t("chainPresetPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent className="min-w-64">
+                  {chainPresets.map((chain) => (
+                    <SelectItem
+                      key={chain.id}
+                      value={chain.id}
+                      className="whitespace-nowrap [&_span]:line-clamp-none"
+                    >
+                      {chain.displayName}
+                      <span className="text-muted-foreground">
+                        {" · "}
+                        {chain.isTestnet ? t("testnet") : t("mainnet")}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+          {errors.caip2Id && (
+            <p className="text-xs text-destructive">{errors.caip2Id.message}</p>
+          )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="chain-displayName" className="text-sm font-medium">
+              {t("fields.displayName")}
+            </label>
+            <Input
+              id="chain-displayName"
+              placeholder="Base"
+              {...register("displayName")}
+            />
+            {errors.displayName && (
+              <p className="text-xs text-destructive">
+                {errors.displayName.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="chain-defaultAsset" className="text-sm font-medium">
+              {t("fields.defaultAsset")}
+            </label>
+            <Input
+              id="chain-defaultAsset"
+              placeholder="0x…"
+              className="font-mono"
+              {...register("defaultAsset")}
+            />
+            {errors.defaultAsset && (
+              <p className="text-xs text-destructive">
+                {errors.defaultAsset.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="chain-rpcUrl" className="text-sm font-medium">
+            {t("fields.rpcUrl")}
+          </label>
+          <div className="relative">
+            <Input
+              id="chain-rpcUrl"
+              placeholder="https://mainnet.base.org"
+              className="pr-10"
+              {...register("rpcUrl")}
+            />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
+              <div className="pointer-events-auto flex items-center justify-center">
+                <RpcUrlProbeIndicator
+                  status={showRpcProbeStatus ? rpcProbe.status : "idle"}
+                  checkingLabel={t("rpcProbeChecking")}
+                  validLabel={t("rpcProbeValid")}
+                  invalidMessage={
+                    rpcProbe.status === "invalid" ? rpcProbe.message : undefined
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          {errors.rpcUrl ? (
+            <p className="text-xs text-destructive">{errors.rpcUrl.message}</p>
           ) : null}
         </div>
-        {errors.caip2Id && (
-          <p className="text-xs text-destructive">{errors.caip2Id.message}</p>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="chain-displayName" className="text-sm font-medium">
-            {t("fields.displayName")}
-          </label>
-          <Input
-            id="chain-displayName"
-            placeholder="Base"
-            {...register("displayName")}
-          />
-          {errors.displayName && (
-            <p className="text-xs text-destructive">
-              {errors.displayName.message}
-            </p>
-          )}
-        </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="chain-defaultAsset" className="text-sm font-medium">
-            {t("fields.defaultAsset")}
-          </label>
-          <Input
-            id="chain-defaultAsset"
-            placeholder="0x…"
-            className="font-mono"
-            {...register("defaultAsset")}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium">
+                {t("fields.facilitator")}
+              </label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                    <CircleHelp className="h-3.5 w-3.5" />
+                    <span className="sr-only">{t("facilitatorHint")}</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {t("facilitatorHint")}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 shrink-0 gap-1 px-2 text-xs"
+              onClick={() => setWalletDialogOpen(true)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t("newWallet")}
+            </Button>
+          </div>
+          <Controller
+            control={control}
+            name="facilitatorWalletId"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger aria-label={t("fields.facilitator")}>
+                  <SelectValue
+                    placeholder={t("fields.facilitatorPlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_FACILITATOR}>{t("none")}</SelectItem>
+                  {wallets.map((wallet) => (
+                    <SelectItem
+                      key={wallet.id}
+                      value={wallet.id}
+                      className="font-mono"
+                    >
+                      {shortenAddress(wallet.address, 8)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           />
-          {errors.defaultAsset && (
+          {errors.facilitatorWalletId ? (
             <p className="text-xs text-destructive">
-              {errors.defaultAsset.message}
+              {errors.facilitatorWalletId.message}
             </p>
-          )}
+          ) : null}
         </div>
-      </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="chain-rpcUrl" className="text-sm font-medium">
-          {t("fields.rpcUrl")}
-        </label>
-        <Input
-          id="chain-rpcUrl"
-          placeholder="https://mainnet.base.org"
-          {...register("rpcUrl")}
+        <CreateWalletDialog
+          key={
+            walletDialogOpen
+              ? "chain-facilitator-wallet-open"
+              : "chain-facilitator-wallet-closed"
+          }
+          open={walletDialogOpen}
+          defaultType="Selling"
+          onClose={() => setWalletDialogOpen(false)}
+          onSaved={(wallet) => {
+            setWalletDialogOpen(false);
+            void queryClient
+              .invalidateQueries({ queryKey: ["x402", "wallets"] })
+              .then(() => refetchWallets())
+              .then(() => {
+                if (wallet?.id) {
+                  setValue("facilitatorWalletId", wallet.id, {
+                    shouldValidate: true,
+                  });
+                }
+              });
+          }}
         />
-        {errors.rpcUrl && (
-          <p className="text-xs text-destructive">{errors.rpcUrl.message}</p>
-        )}
-      </div>
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium">{t("fields.facilitator")}</label>
-        <Controller
-          control={control}
-          name="facilitatorWalletId"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger aria-label={t("fields.facilitator")}>
-                <SelectValue placeholder={t("fields.facilitatorPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_FACILITATOR}>{t("none")}</SelectItem>
-                {wallets.map((wallet) => (
-                  <SelectItem
-                    key={wallet.id}
-                    value={wallet.id}
-                    className="font-mono"
-                  >
-                    {shortenAddress(wallet.address, 8)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        {errors.facilitatorWalletId ? (
-          <p className="text-xs text-destructive">
-            {errors.facilitatorWalletId.message}
-          </p>
-        ) : (
-          <p className="text-xs leading-snug text-muted-foreground">
-            {t("facilitatorHint")}
-          </p>
-        )}
-      </div>
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-3">
+            <hr className="h-0 flex-1 border-0 border-t border-border/60" />
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("statusSection")}
+            </span>
+            <hr className="h-0 flex-1 border-0 border-t border-border/60" />
+          </div>
 
-      <Controller
-        control={control}
-        name="isTestnet"
-        render={({ field }) => (
-          <X402TestnetField
-            checked={field.value ?? false}
-            onCheckedChange={field.onChange}
-            disabled
+          <Controller
+            control={control}
+            name="isTestnet"
+            render={({ field }) => (
+              <X402TestnetField
+                checked={field.value ?? false}
+                onCheckedChange={field.onChange}
+                disabled
+              />
+            )}
           />
-        )}
-      />
 
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div>
-          <p className="text-sm font-medium">{t("fields.enabled")}</p>
-          <p className="text-xs text-muted-foreground">{t("enabledHint")}</p>
-        </div>
-        <Controller
-          control={control}
-          name="isEnabled"
-          render={({ field }) => (
-            <Switch
-              aria-label={t("fields.enabled")}
-              checked={field.value}
-              onCheckedChange={field.onChange}
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">{t("fields.enabled")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("enabledHint")}
+              </p>
+            </div>
+            <Controller
+              control={control}
+              name="isEnabled"
+              render={({ field }) => (
+                <Switch
+                  aria-label={t("fields.enabled")}
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
             />
-          )}
-        />
-      </div>
-    </X402FormDialog>
+          </div>
+        </div>
+      </X402FormDialog>
+
+      <ConfirmDialog
+        open={confirmRpcOpen}
+        onOpenChange={(nextOpen) => {
+          if (!isSaving) setConfirmRpcOpen(nextOpen);
+        }}
+        title={t("rpcConfirmTitle")}
+        description={t("rpcConfirmDescription", {
+          rpcUrl: pendingFormData?.rpcUrl ?? watchedRpcUrl ?? "",
+          chainId: pendingFormData?.caip2Id ?? selectedCaip2Id ?? "",
+          details:
+            rpcProbe.status === "invalid"
+              ? rpcProbe.message
+              : t("rpcProbeFailed"),
+        })}
+        confirmText={t("rpcConfirmContinue")}
+        cancelText={t("cancel")}
+        isLoading={isSaving}
+        onConfirm={() => {
+          if (pendingFormData) void saveChain(pendingFormData);
+        }}
+      />
+    </>
   );
 }

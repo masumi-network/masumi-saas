@@ -99,3 +99,17 @@ export type UserApiKeyOption = {
   prefix: string | null;
   start: string | null;
 };
+
+export type X402RpcProbeResult =
+  | { ok: true; chainId: number }
+  | {
+      ok: false;
+      reason:
+        | "invalid_caip2"
+        | "invalid_url"
+        | "unreachable"
+        | "chain_mismatch";
+      message: string;
+      actualChainId?: number;
+      expectedChainId?: number;
+    };

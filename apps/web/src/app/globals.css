@@ -260,6 +260,16 @@
     opacity: 0;
     animation: listItemIn 0.25s ease-out both;
   }
+
+  .animate-rpc-probe-vibrate {
+    animation: rpc-probe-vibrate 0.45s ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-rpc-probe-vibrate {
+      animation: fade-in 0.2s ease-out;
+    }
+  }
 }
 
 @keyframes table-row-fade-in {
@@ -705,6 +715,33 @@ input[type="number"] {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes rpc-probe-vibrate {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  15% {
+    transform: translateX(-2px) rotate(-6deg);
+  }
+
+  30% {
+    transform: translateX(2px) rotate(6deg);
+  }
+
+  45% {
+    transform: translateX(-2px) rotate(-4deg);
+  }
+
+  60% {
+    transform: translateX(2px) rotate(4deg);
+  }
+
+  75% {
+    transform: translateX(-1px);
   }
 }
 
