@@ -126,7 +126,9 @@ export function searchChainRegistry(
 export function pickPreferredRpcUrl(rpcs: unknown): string | null {
   if (!Array.isArray(rpcs)) return null;
 
-  const candidates = rpcs.flatMap((entry) => {
+  type RpcCandidate = { url: string; tracking?: string };
+
+  const candidates = rpcs.flatMap((entry): RpcCandidate[] => {
     if (typeof entry === "string") {
       return [{ url: entry }];
     }
