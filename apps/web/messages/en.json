@@ -1005,6 +1005,7 @@
       "clearAll": "Clear all",
       "dismiss": "Dismiss",
       "agentRegistrationComplete": "Agent registered successfully",
+      "agentOnChainVerificationComplete": "On-chain verification complete",
       "registrationFailed": "Registration failed",
       "registrationTimedOut": "Registration timed out",
       "viewAgent": "View agent"
@@ -1512,6 +1513,7 @@
           "credentialIssuedTitle": "Credential sent to your wallet",
           "credentialIssuedDescription": "Open Veridian and accept the incoming credential offer. When you have accepted it, click the button below to confirm.",
           "confirmWalletAcceptance": "I've accepted the credential",
+          "confirmingWalletAcceptance": "Checking wallet acceptance with Veridian…",
           "acceptanceNotDetectedYet": "We could not confirm wallet acceptance yet. Make sure you accepted the credential in Veridian, then try again.",
           "walletAcceptanceConfirmed": "Wallet acceptance confirmed.",
           "verificationCompleteTitle": "Verification complete",

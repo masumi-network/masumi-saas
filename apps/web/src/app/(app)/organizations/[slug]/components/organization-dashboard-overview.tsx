@@ -42,8 +42,8 @@ import {
   isAgentVerificationFlowEnabled,
   isKybVerificationEnabled,
 } from "@/lib/config/verification.config";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/agent-completion-context";
 import { useOrganizationContext } from "@/lib/context/organization-context";
-import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,

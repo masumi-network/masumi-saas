@@ -137,21 +137,23 @@ export async function finalizePendingVeridianCredential(params: {
       await recordAgentActivityEvent(agentId, "AgentVerified");
     }
 
-    try {
-      await triggerOnChainVerificationWrite({
-        agentId,
-        userId: params.userId,
-        issuedCredential,
-        veridianCredentialId: pendingCredential.id,
-        storedAttributesRaw:
-          pendingCredential.attributes ?? pendingCredential.credentialData,
-      });
-    } catch (error) {
+    // Wallet acceptance is confirmed in DB first; on-chain registry update is
+    // slow (payment-node batch + chain confirm). Run it in the background so
+    // GET /api/credentials/status returns quickly. Agent page reconcile/backfill
+    // retries if this work is dropped when the process exits early.
+    void triggerOnChainVerificationWrite({
+      agentId,
+      userId: params.userId,
+      issuedCredential,
+      veridianCredentialId: pendingCredential.id,
+      storedAttributesRaw:
+        pendingCredential.attributes ?? pendingCredential.credentialData,
+    }).catch((error) => {
       console.error(
         "[Veridian] On-chain verification write failed after credential issued:",
         { agentId, pendingCredentialId: pendingCredential.id, error },
       );
-    }
+    });
   }
 
   return {

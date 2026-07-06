@@ -47,6 +47,7 @@ import {
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
@@ -94,6 +95,7 @@ export function RequestVerificationDialog({
   const t = useTranslations("App.Agents.Details.Verification");
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const tStatus = useTranslations("App.Agents");
+  const { addPendingOnChainVerification } = useAgentCompletion();
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [holderAidInput, setHolderAidInput] = useState("");
@@ -229,6 +231,7 @@ export function RequestVerificationDialog({
     try {
       const resolution = await resolveCredentialAcceptance(pendingCredentialId);
       if (resolution.outcome === "issued") {
+        addPendingOnChainVerification(agent.id);
         setWalletAcceptancePhase("complete");
         toast.success(t("walletAcceptanceConfirmed"));
         await Promise.resolve(onSuccessRef.current());
@@ -247,6 +250,8 @@ export function RequestVerificationDialog({
     isConfirmingAcceptance,
     pendingCredentialId,
     resolveCredentialAcceptance,
+    addPendingOnChainVerification,
+    agent.id,
     t,
   ]);
 
@@ -1139,6 +1144,11 @@ export function RequestVerificationDialog({
                     )}
                     {t("confirmWalletAcceptance")}
                   </Button>
+                  {isConfirmingAcceptance ? (
+                    <p className="text-center text-xs text-muted-foreground">
+                      {t("confirmingWalletAcceptance")}
+                    </p>
+                  ) : null}
                   {issueError ? (
                     <p className="text-sm text-destructive">{issueError}</p>
                   ) : null}

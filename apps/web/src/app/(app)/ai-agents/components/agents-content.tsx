@@ -22,9 +22,9 @@ import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { REGISTRATION_SYNC_STATES } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/agent-completion-context";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 
 import { AgentsDiscovery } from "./agents-discovery";
 import { AgentsTable } from "./agents-table";

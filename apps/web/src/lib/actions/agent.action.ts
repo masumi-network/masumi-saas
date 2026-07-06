@@ -30,6 +30,38 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
 }
 
+/** Returns agent IDs awaiting on-chain verification anchors (registry update in flight). */
+export async function getPendingOnChainVerificationAgentIdsAction(): Promise<
+  string[]
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+    const [preprodAgents, mainnetAgents] = await Promise.all([
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Preprod",
+      }),
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Mainnet",
+      }),
+    ]);
+    return [...preprodAgents, ...mainnetAgents]
+      .filter(
+        (agent) =>
+          agent.verificationStatus === "VERIFIED" &&
+          ["UpdateRequested", "UpdateInitiated"].includes(
+            agent.registrationState,
+          ),
+      )
+      .map((agent) => agent.id);
+  } catch {
+    return [];
+  }
+}
+
 /** Returns agent IDs for the current user that still need on-chain registration work
  *  (stuck after tab close). Used to recover polling on next app load. */
 export async function getPendingRegistrationAgentIdsAction(): Promise<

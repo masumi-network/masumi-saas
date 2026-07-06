@@ -147,15 +147,15 @@ export default async function DashboardOverview({
                       <Link
                         href={`/ai-agents/${agent.id}?from=dashboard`}
                         aria-label={t("agentLinkAria", { name: agent.name })}
-                        className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
+                        className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(9rem,38%)] items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
                       >
                         <div className="flex min-w-0 items-center gap-3 overflow-hidden">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                             <Bot className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                          <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
                             <p
-                              className="min-w-0 flex-1 truncate text-sm font-medium"
+                              className="min-w-0 truncate text-sm font-medium"
                               title={agent.name}
                             >
                               {agent.name}
@@ -172,7 +172,7 @@ export default async function DashboardOverview({
                             ) : null}
                           </div>
                         </div>
-                        <div className="flex min-w-0 items-center justify-end gap-8 md:gap-12">
+                        <div className="flex min-w-0 items-center justify-between gap-4">
                           <Badge
                             variant={getRegistrationStatusBadgeVariant(
                               agent.registrationState,
