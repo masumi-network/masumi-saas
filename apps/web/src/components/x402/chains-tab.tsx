@@ -4,12 +4,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Ban,
   CheckCircle2,
   CircleHelp,
   Link2,
   ListFilter,
+  MoreVertical,
   Pencil,
   Plus,
+  Power,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +24,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -199,6 +208,7 @@ export function ChainsTab() {
   const { networks, isLoading, isRefetching, refetch } = useX402Networks();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Network | null>(null);
+  const [busyChainId, setBusyChainId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [listFilters, setListFilters] = useState<ChainListFilters>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -277,6 +287,28 @@ export function ChainsTab() {
   const openEdit = (network: X402Network) => {
     setEditing(network);
     setDialogOpen(true);
+  };
+
+  const toggleChainEnabled = async (network: X402Network) => {
+    setBusyChainId(network.id);
+    const result = await x402Mutate<X402Network>(
+      "/networks",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          caip2Id: network.caip2Id,
+          displayName: network.displayName,
+          rpcUrl: network.rpcUrl,
+          isTestnet: network.isTestnet,
+          isEnabled: !network.isEnabled,
+          defaultAsset: network.defaultAsset,
+          facilitatorWalletId: network.facilitatorWalletId,
+        }),
+      },
+      { errorMessage: t("toggleFailed") },
+    );
+    setBusyChainId(null);
+    if (result) refetch();
   };
 
   return (
@@ -402,15 +434,44 @@ export function ChainsTab() {
                     )}
                   </TableCell>
                   <TableCell className={x402ActionsCellClass}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label={t("editChain")}
-                      onClick={() => openEdit(network)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("actions")}
+                          disabled={busyChainId === network.id}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[140px]"
+                      >
+                        <DropdownMenuItem onClick={() => openEdit(network)}>
+                          <Pencil className="mr-2 h-4 w-4 shrink-0" />
+                          {t("editChain")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => toggleChainEnabled(network)}
+                          disabled={busyChainId === network.id}
+                        >
+                          {network.isEnabled ? (
+                            <>
+                              <Ban className="mr-2 h-4 w-4 shrink-0" />
+                              {t("disable")}
+                            </>
+                          ) : (
+                            <>
+                              <Power className="mr-2 h-4 w-4 shrink-0" />
+                              {t("enable")}
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

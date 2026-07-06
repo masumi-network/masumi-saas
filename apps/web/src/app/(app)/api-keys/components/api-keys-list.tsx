@@ -1,6 +1,6 @@
 "use client";
 
-import { Key, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import { Key, MoreVertical, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
@@ -198,7 +198,7 @@ export function ApiKeysList({ data }: { data: ApiKeysPageData }) {
                             className="h-8 w-8"
                             aria-label={t("actions")}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
