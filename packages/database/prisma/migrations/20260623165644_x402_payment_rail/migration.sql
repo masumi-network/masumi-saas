@@ -337,5 +337,5 @@ ALTER TABLE "x402_settlement" ADD CONSTRAINT "x402_settlement_paymentAttemptId_f
 
 -- One CAIP-2 chain per organization (org-shared x402 config).
 CREATE UNIQUE INDEX IF NOT EXISTS "x402_network_organization_id_caip2_id_key"
-ON "x402_network" ("organization_id", "caip2_id")
-WHERE "organization_id" IS NOT NULL;
+ON "x402_network" ("organizationId", "caip2Id")
+WHERE "organizationId" IS NOT NULL;
