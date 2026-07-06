@@ -5,11 +5,12 @@ import Image from "next/image";
 import { type ReactNode, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { getEvmChainIconPath } from "@/lib/x402/evm-config";
+import { resolveChainIconSource } from "@/lib/x402/evm-config";
 
 type ChainIconProps = {
   caip2Id: string;
   name?: string;
+  iconSlug?: string | null;
   size?: number;
   className?: string;
 };
@@ -17,13 +18,14 @@ type ChainIconProps = {
 export function ChainIcon({
   caip2Id,
   name,
+  iconSlug,
   size = 20,
   className,
 }: ChainIconProps) {
-  const src = getEvmChainIconPath(caip2Id);
+  const iconSource = resolveChainIconSource(caip2Id, iconSlug, name);
   const [loadError, setLoadError] = useState(false);
 
-  if (!src || loadError) {
+  if (!iconSource || loadError) {
     return (
       <Link2
         className={cn("shrink-0 text-muted-foreground", className)}
@@ -33,9 +35,24 @@ export function ChainIcon({
     );
   }
 
+  if (iconSource.remote) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote chainlist icons vary by host/format
+      <img
+        src={iconSource.src}
+        alt={name ? `${name} icon` : ""}
+        width={size}
+        height={size}
+        className={cn("shrink-0 rounded-full object-contain", className)}
+        aria-hidden={!name}
+        onError={() => setLoadError(true)}
+      />
+    );
+  }
+
   return (
     <Image
-      src={src}
+      src={iconSource.src}
       alt={name ? `${name} icon` : ""}
       width={size}
       height={size}
@@ -50,6 +67,7 @@ export function ChainIcon({
 export function ChainLabel({
   caip2Id,
   name,
+  iconSlug,
   suffix,
   trailing,
   iconSize = 16,
@@ -57,6 +75,7 @@ export function ChainLabel({
 }: {
   caip2Id: string;
   name: string;
+  iconSlug?: string | null;
   suffix?: ReactNode;
   trailing?: ReactNode;
   iconSize?: number;
@@ -64,7 +83,12 @@ export function ChainLabel({
 }) {
   return (
     <div className={cn("flex min-w-0 items-center gap-2", className)}>
-      <ChainIcon caip2Id={caip2Id} name={name} size={iconSize} />
+      <ChainIcon
+        caip2Id={caip2Id}
+        name={name}
+        iconSlug={iconSlug}
+        size={iconSize}
+      />
       <span className="min-w-0 truncate">
         {name}
         {suffix}

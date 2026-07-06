@@ -276,13 +276,20 @@ function resetDefaultMocks() {
   mocks.latestClient = null;
   mocks.mockSupportedPaymentSourceFindUnique.mockResolvedValue(source);
   mocks.mockX402NetworkFindFirst.mockResolvedValue(networkRow);
-  mocks.mockX402EvmWalletFindFirst.mockResolvedValue({
-    id: "wallet-1",
-    address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    type: "Purchasing",
-    encryptedPrivateKey: "encrypted-private-key",
-    deletedAt: null,
-  });
+  mocks.mockX402EvmWalletFindFirst.mockImplementation(
+    async (args?: { where?: { id?: string; type?: string } }) => {
+      if (args?.where?.type != null && args?.where?.id == null) {
+        return null;
+      }
+      return {
+        id: "wallet-1",
+        address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        type: "Purchasing",
+        encryptedPrivateKey: "encrypted-private-key",
+        deletedAt: null,
+      };
+    },
+  );
   mocks.mockApiKeyFindFirst.mockResolvedValue({
     id: API_KEY_ID,
   });
@@ -678,6 +685,25 @@ describe("x402 service", () => {
     expect(mocks.mockBudgetDelete).not.toHaveBeenCalled();
   });
 
+  it("rejects creating a second wallet of the same type for a tenant", async () => {
+    const { createX402ManagedWallet } = await import("./service.js");
+    mocks.mockX402EvmWalletFindFirst.mockImplementationOnce(
+      async (args?: { where?: { id?: string; type?: string } }) => {
+        if (args?.where?.type === "Purchasing" && args?.where?.id == null) {
+          return { id: "existing-wallet" };
+        }
+        return null;
+      },
+    );
+    await expect(
+      createX402ManagedWallet({
+        userId: USER_ID,
+        type: "Purchasing" as never,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(mocks.mockX402EvmWalletCreate).not.toHaveBeenCalled();
+  });
+
   it("maps a duplicate managed wallet address to a 409", async () => {
     const { createX402ManagedWallet } = await import("./service.js");
     mocks.mockX402EvmWalletCreate.mockRejectedValueOnce(
@@ -712,6 +738,21 @@ describe("x402 service", () => {
       privateKey: `0x${"a".repeat(64)}`,
     });
     expect(result.privateKey).toBeNull();
+  });
+
+  it("applies a default note when none is supplied", async () => {
+    const { createX402ManagedWallet } = await import("./service.js");
+    await createX402ManagedWallet({
+      userId: USER_ID,
+      type: "Selling" as never,
+    });
+    expect(mocks.mockX402EvmWalletCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          note: "Facilitator wallet",
+        }),
+      }),
+    );
   });
 
   it("refuses to settle through a retired facilitator wallet", async () => {

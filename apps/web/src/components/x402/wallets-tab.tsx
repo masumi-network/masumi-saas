@@ -11,6 +11,7 @@ import {
   EyeOff,
   KeyRound,
   ListFilter,
+  MoreVertical,
   Pencil,
   Plus,
   ShieldCheck,
@@ -29,6 +30,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { DialogBody, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -85,6 +92,33 @@ type WalletListFilters = {
 type WalletType = X402Wallet["type"];
 type KeySource = "generate" | "import";
 
+function defaultWalletNoteForType(
+  type: WalletType,
+  t: (key: "defaultNotePurchasing" | "defaultNoteSelling") => string,
+): string {
+  return type === "Purchasing"
+    ? t("defaultNotePurchasing")
+    : t("defaultNoteSelling");
+}
+
+export function getWalletSlotAvailability(
+  wallets: ReadonlyArray<{ type: WalletType }>,
+) {
+  const hasPurchasing = wallets.some((wallet) => wallet.type === "Purchasing");
+  const hasSelling = wallets.some((wallet) => wallet.type === "Selling");
+
+  return {
+    hasPurchasing,
+    hasSelling,
+    canCreate: !hasPurchasing || !hasSelling,
+    defaultType: (!hasSelling ? "Selling" : "Purchasing") as WalletType,
+    blockedTypes: [
+      ...(hasPurchasing ? (["Purchasing"] as const) : []),
+      ...(hasSelling ? (["Selling"] as const) : []),
+    ] as WalletType[],
+  };
+}
+
 export function WalletsTab() {
   const t = useTranslations("App.X402.Wallets");
   const { formatRelativeDate } = useFormatDate();
@@ -107,6 +141,10 @@ export function WalletsTab() {
   const [balanceWallet, setBalanceWallet] = useState<X402Wallet | null>(null);
   const [editWallet, setEditWallet] = useState<X402Wallet | null>(null);
   const [walletToRetire, setWalletToRetire] = useState<X402Wallet | null>(null);
+  const slotAvailability = useMemo(
+    () => getWalletSlotAvailability(wallets),
+    [wallets],
+  );
 
   const activeFilterCount = useMemo(
     () => (listFilters.type !== undefined ? 1 : 0),
@@ -198,21 +236,40 @@ export function WalletsTab() {
             isRefreshing={isRefetching}
             size="md"
           />
-          <Button
-            onClick={() => setDialogOpen(true)}
-            size="icon"
-            className="md:hidden"
-            aria-label={t("createWallet")}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => setDialogOpen(true)}
-            className="hidden items-center gap-2 md:flex"
-          >
-            <Plus className="h-4 w-4" />
-            {t("createWallet")}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex md:hidden">
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  size="icon"
+                  disabled={!slotAvailability.canCreate}
+                  aria-label={t("createWallet")}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!slotAvailability.canCreate ? (
+              <TooltipContent>{t("bothWalletsExist")}</TooltipContent>
+            ) : null}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="hidden md:inline-flex">
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  className="items-center gap-2"
+                  disabled={!slotAvailability.canCreate}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("createWallet")}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!slotAvailability.canCreate ? (
+              <TooltipContent>{t("bothWalletsExist")}</TooltipContent>
+            ) : null}
+          </Tooltip>
         </div>
       </div>
 
@@ -276,54 +333,45 @@ export function WalletsTab() {
                     {formatRelativeDate(wallet.createdAt)}
                   </TableCell>
                   <TableCell className={x402ActionsCellClass}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          aria-label={t("balances")}
+                          aria-label={t("columns.actions")}
+                          disabled={retiringId === wallet.id}
+                        >
+                          {retiringId === wallet.id ? (
+                            <Spinner size={16} />
+                          ) : (
+                            <MoreVertical className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[140px]"
+                      >
+                        <DropdownMenuItem
                           onClick={() => setBalanceWallet(wallet)}
                         >
-                          <WalletIcon className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t("balances")}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          aria-label={t("rename")}
-                          onClick={() => setEditWallet(wallet)}
+                          <WalletIcon className="mr-2 h-4 w-4 shrink-0" />
+                          {t("balances")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditWallet(wallet)}>
+                          <Pencil className="mr-2 h-4 w-4 shrink-0" />
+                          {t("rename")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setWalletToRetire(wallet)}
+                          className="text-destructive focus:text-destructive"
                         >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t("rename")}</TooltipContent>
-                    </Tooltip>
-                    {retiringId === wallet.id ? (
-                      <span className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground">
-                        <Spinner size={16} />
-                      </span>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            aria-label={t("retire")}
-                            onClick={() => setWalletToRetire(wallet)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t("retire")}</TooltipContent>
-                      </Tooltip>
-                    )}
+                          <Trash2 className="mr-2 h-4 w-4 shrink-0" />
+                          {t("retire")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -345,8 +393,14 @@ export function WalletsTab() {
       )}
 
       <CreateWalletDialog
-        key={dialogOpen ? "open" : "closed"}
+        key={
+          dialogOpen
+            ? `open-${slotAvailability.defaultType}-${slotAvailability.blockedTypes.join("|")}`
+            : "closed"
+        }
         open={dialogOpen}
+        defaultType={slotAvailability.defaultType}
+        blockedTypes={slotAvailability.blockedTypes}
         onClose={() => setDialogOpen(false)}
         onSaved={() => {
           setDialogOpen(false);
@@ -521,14 +575,25 @@ export function CreateWalletDialog({
   onClose,
   onSaved,
   defaultType = "Purchasing",
+  blockedTypes = [],
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: (wallet?: X402Wallet) => void;
   defaultType?: WalletType;
+  blockedTypes?: ReadonlyArray<WalletType>;
 }) {
   const t = useTranslations("App.X402.Wallets");
-  const [type, setType] = useState<WalletType>(defaultType);
+  const blockedTypeSet = useMemo(() => new Set(blockedTypes), [blockedTypes]);
+  const initialType = blockedTypeSet.has(defaultType)
+    ? defaultType === "Purchasing"
+      ? "Selling"
+      : "Purchasing"
+    : defaultType;
+  const [type, setType] = useState<WalletType>(initialType);
+  const [note, setNote] = useState(() =>
+    defaultWalletNoteForType(initialType, t),
+  );
   const [keySource, setKeySource] = useState<KeySource>("generate");
   const [privateKey, setPrivateKey] = useState("");
   const [showImportKey, setShowImportKey] = useState(false);
@@ -542,6 +607,10 @@ export function CreateWalletDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (blockedTypeSet.has(type)) {
+      setError(t("typeAlreadyExists", { type: t(`types.${type}`) }));
+      return;
+    }
     const trimmed = privateKey.trim();
     if (keySource === "import" && !PRIVATE_KEY_REGEX.test(trimmed)) {
       setError(t("invalidPrivateKey"));
@@ -549,13 +618,17 @@ export function CreateWalletDialog({
     }
     setError(null);
     setIsSaving(true);
+    const trimmedNote = note.trim();
+    const resolvedNote = trimmedNote || defaultWalletNoteForType(type, t);
     const result = await x402Mutate<X402Wallet & { privateKey: string | null }>(
       "/wallets",
       {
         method: "POST",
-        body: JSON.stringify(
-          keySource === "import" ? { type, privateKey: trimmed } : { type },
-        ),
+        body: JSON.stringify({
+          type,
+          note: resolvedNote,
+          ...(keySource === "import" ? { privateKey: trimmed } : {}),
+        }),
       },
       {
         errorMessage: t("createFailed"),
@@ -640,18 +713,28 @@ export function CreateWalletDialog({
                 ).map((option) => {
                   const OptionIcon = option.icon;
                   const selected = type === option.value;
+                  const isBlocked = blockedTypeSet.has(option.value);
                   return (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setType(option.value)}
+                      onClick={() => {
+                        if (!isBlocked) {
+                          setType(option.value);
+                          setNote(defaultWalletNoteForType(option.value, t));
+                        }
+                      }}
+                      disabled={isBlocked}
                       role="radio"
                       aria-checked={selected}
+                      aria-disabled={isBlocked}
                       className={cn(
                         "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         selected
                           ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                           : "border-border hover:bg-muted/50",
+                        isBlocked &&
+                          "cursor-not-allowed opacity-50 hover:bg-transparent",
                       )}
                     >
                       <span className="flex items-center gap-2 text-sm font-medium">
@@ -664,12 +747,30 @@ export function CreateWalletDialog({
                         {t(`directionLabels.${option.value}`)}
                       </span>
                       <span className="text-xs leading-snug text-muted-foreground">
-                        {option.hint}
+                        {isBlocked
+                          ? t("typeAlreadyExists", {
+                              type: t(`types.${option.value}`),
+                            })
+                          : option.hint}
                       </span>
                     </button>
                   );
                 })}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="wallet-note" className="text-sm font-medium">
+                {t("note")}
+              </Label>
+              <Textarea
+                id="wallet-note"
+                placeholder={t("notePlaceholder")}
+                className="min-h-[60px] resize-none"
+                maxLength={250}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">

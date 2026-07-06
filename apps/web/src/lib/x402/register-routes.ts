@@ -30,6 +30,10 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
 import {
+  resolveChainsByCaip2Ids,
+  searchChainsForX402,
+} from "@/lib/x402/chain-registry";
+import {
   requireX402ApiKeyIdForPay,
   resolveX402ApiKeyId,
 } from "@/lib/x402/resolve-api-key";
@@ -77,6 +81,10 @@ import {
   listWalletsSchemaOutput,
   lowBalanceRuleSchema,
   paymentAttemptsCountSchemaInput,
+  resolveChainsSchemaInput,
+  resolveChainsSchemaOutput,
+  searchChainsSchemaInput,
+  searchChainsSchemaOutput,
   setBudgetSchemaInput,
   setLowBalanceRuleSchemaInput,
   settlementsCountSchemaInput,
@@ -600,6 +608,86 @@ export function registerX402Routes(app: X402App): void {
         return c.json(await probeX402NetworkRpc(input), 200);
       } catch (error) {
         handleRouteError(error, "x402 validate network rpc failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/chains/search",
+      tags: ["x402"],
+      summary: "Search public EVM chain metadata for x402 setup",
+      security,
+      request: { query: searchChainsSchemaInput },
+      responses: {
+        200: {
+          description: "Matching chains",
+          content: {
+            "application/json": { schema: searchChainsSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminRead(authContext);
+        const query = c.req.valid("query");
+
+        const chains = await searchChainsForX402({
+          q: query.q,
+          testnet: query.testnet,
+          limit: query.limit,
+        });
+
+        return c.json({ chains }, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 search chains failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/chains/resolve",
+      tags: ["x402"],
+      summary: "Resolve public EVM chain metadata for configured networks",
+      security,
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: resolveChainsSchemaInput },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Resolved chains",
+          content: {
+            "application/json": { schema: resolveChainsSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminRead(authContext);
+        const input = c.req.valid("json");
+
+        const chains = await resolveChainsByCaip2Ids(input.caip2Ids);
+
+        return c.json({ chains }, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 resolve chains failed");
       }
     },
   );

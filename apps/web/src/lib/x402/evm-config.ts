@@ -138,6 +138,33 @@ export function getEvmChainIconPath(caip2Id: string): string | null {
   return icon ? `${EVM_CHAIN_ICON_BASE_PATH}/${icon}.png` : null;
 }
 
+const REMOTE_CHAIN_ICON_BASE_URL = "https://icons.llamao.fi/icons/chains/rsz";
+
+/** Local vendored asset first, then Chainlist / DefiLlama slug. */
+export function inferIconSlugFromDisplayName(
+  displayName?: string | null,
+): string | null {
+  const trimmed = displayName?.trim();
+  if (!trimmed || trimmed.includes(" ")) return null;
+  const slug = trimmed.toLowerCase().replace(/[^a-z0-9-]/g, "");
+  return slug || null;
+}
+
+export function resolveChainIconSource(
+  caip2Id: string,
+  iconSlug?: string | null,
+  displayName?: string | null,
+): { src: string; remote: boolean } | null {
+  const local = getEvmChainIconPath(caip2Id);
+  if (local) return { src: local, remote: false };
+
+  const slug =
+    iconSlug?.trim().toLowerCase() || inferIconSlugFromDisplayName(displayName);
+  if (!slug) return null;
+
+  return { src: `${REMOTE_CHAIN_ICON_BASE_URL}_${slug}.jpg`, remote: true };
+}
+
 /** Chains for the add-chain dialog; omit `isTestnet` to list every preset. */
 export function getEvmChainPresets(isTestnet?: boolean): EvmChainConfig[] {
   if (isTestnet === undefined) {

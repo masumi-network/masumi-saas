@@ -231,6 +231,37 @@ export const listNetworksSchemaOutput = z.object({
   Networks: z.array(x402NetworkSchema),
 });
 
+export const searchChainsSchemaInput = z.object({
+  q: z.string().max(120).default(""),
+  testnet: booleanQuerySchema.optional(),
+  limit: z.coerce.number().min(1).max(30).default(12),
+});
+
+export const chainSearchResultSchema = z
+  .object({
+    chainId: z.number().int().positive(),
+    caip2Id: caip2Eip155Schema,
+    name: z.string(),
+    shortName: z.string(),
+    isTestnet: z.boolean(),
+    rpcUrl: z.string().url().nullable(),
+    icon: z.string().nullable(),
+    isCurated: z.boolean().optional(),
+  })
+  .openapi("X402ChainSearchResult");
+
+export const searchChainsSchemaOutput = z.object({
+  chains: z.array(chainSearchResultSchema),
+});
+
+export const resolveChainsSchemaInput = z.object({
+  caip2Ids: z.array(caip2Eip155Schema).max(100),
+});
+
+export const resolveChainsSchemaOutput = z.object({
+  chains: z.array(chainSearchResultSchema),
+});
+
 export const validateNetworkRpcSchemaInput = z.object({
   caip2Id: caip2Eip155Schema,
   rpcUrl: z.string().url(),

@@ -36,7 +36,7 @@ import { chainsForEnv, isTestnetEnv } from "@/lib/x402-rail";
 
 import { BudgetDialog } from "../budgets-tab";
 import { ChainDialog } from "../chains-tab";
-import { CreateWalletDialog } from "../wallets-tab";
+import { CreateWalletDialog, getWalletSlotAvailability } from "../wallets-tab";
 
 type DialogKind = "wallet" | "chain" | "budget" | null;
 
@@ -86,6 +86,10 @@ export function X402SetupWelcome({
   const hasSellingWallet = wallets.some((wallet) => wallet.type === "Selling");
   const hasPurchasingWallet = wallets.some(
     (wallet) => wallet.type === "Purchasing",
+  );
+  const walletSlots = useMemo(
+    () => getWalletSlotAvailability(wallets),
+    [wallets],
   );
   const hasFacilitator = envChains.some((chain) => !!chain.facilitatorWalletId);
   const configuredChain =
@@ -237,17 +241,19 @@ export function X402SetupWelcome({
           {t("sellingWalletCreated")}
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          {t("createSellingHint")}
-        </p>
+        <>
+          <p className="text-sm text-muted-foreground">
+            {t("createSellingHint")}
+          </p>
+          <Button
+            variant="default"
+            className="gap-2"
+            onClick={() => openWalletDialog("Selling")}
+          >
+            {t("createSellingWallet")}
+          </Button>
+        </>
       )}
-      <Button
-        variant={hasSellingWallet ? "outline" : "default"}
-        className="gap-2"
-        onClick={() => openWalletDialog("Selling")}
-      >
-        {hasSellingWallet ? t("addSellingWallet") : t("createSellingWallet")}
-      </Button>
     </div>
   );
 
@@ -603,6 +609,7 @@ export function X402SetupWelcome({
           }
           open={openDialog === "wallet"}
           defaultType={walletType}
+          blockedTypes={walletSlots.blockedTypes}
           onClose={() => setOpenDialog(null)}
           onSaved={() => {
             setOpenDialog(null);

@@ -60,20 +60,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { useX402Networks, useX402Wallets } from "@/lib/hooks/use-x402";
-import { shortenAddress } from "@/lib/utils";
+import { cn, shortenAddress } from "@/lib/utils";
 import { x402Fetch, x402Mutate } from "@/lib/x402/api";
-import {
-  type EvmChainConfig,
-  getDefaultStablecoinForChain,
-  getEvmChainPresets,
-} from "@/lib/x402/evm-config";
+import type { ChainSearchResult } from "@/lib/x402/chain-registry-types";
+import { getDefaultStablecoinForChain } from "@/lib/x402/evm-config";
 import type { X402Network, X402RpcProbeResult } from "@/lib/x402/types";
 import { isTestnetEnv } from "@/lib/x402-rail";
 
-import { ChainIcon, ChainLabel } from "./chain-icon";
+import { ChainIcon } from "./chain-icon";
+import { ChainPickerDropdown } from "./chain-picker-dropdown";
 import { CreateWalletDialog } from "./wallets-tab";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
@@ -207,6 +206,7 @@ function RpcUrlProbeIndicator({
 export function ChainsTab() {
   const t = useTranslations("App.X402.Chains");
   const { networks, isLoading, isRefetching, refetch } = useX402Networks();
+  const chainIconSlugs = useChainRegistryIcons(networks.map((n) => n.caip2Id));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Network | null>(null);
   const [busyChainId, setBusyChainId] = useState<string | null>(null);
@@ -381,127 +381,149 @@ export function ChainsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredNetworks.map((network, index) => (
-                <TableRow
-                  key={network.id}
-                  className="animate-table-row-in transition-[background-color,opacity] duration-150"
-                  style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-2.5">
-                      <ChainIcon
-                        caip2Id={network.caip2Id}
-                        name={network.displayName}
-                        size={24}
-                      />
-                      <div className="min-w-0">
-                        <div className="font-medium">{network.displayName}</div>
-                        <div className="font-mono text-xs text-muted-foreground">
-                          {network.caip2Id}
+              {filteredNetworks.map((network, index) => {
+                const isDisabled = !network.isEnabled;
+                const disabledRowFadeClass = cn(
+                  "transition-opacity duration-300 ease-in-out",
+                  isDisabled && "opacity-60",
+                );
+                const disabledIconToneClass = cn(
+                  "shrink-0 transition-[filter] duration-300 ease-in-out",
+                  isDisabled && "grayscale",
+                );
+
+                return (
+                  <TableRow
+                    key={network.id}
+                    className="animate-table-row-in transition-[background-color] duration-150"
+                    style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+                  >
+                    <TableCell className={disabledRowFadeClass}>
+                      <div className="flex items-center gap-2.5">
+                        <div className={disabledIconToneClass}>
+                          <ChainIcon
+                            caip2Id={network.caip2Id}
+                            name={network.displayName}
+                            iconSlug={chainIconSlugs.get(network.caip2Id)}
+                            size={24}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium">
+                            {network.displayName}
+                          </div>
+                          <div className="font-mono text-xs text-muted-foreground">
+                            {network.caip2Id}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[260px] truncate font-mono text-sm"
-                    title={network.rpcUrl}
-                  >
-                    {network.rpcUrl}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge
-                        variant={network.isEnabled ? "success" : "secondary"}
-                      >
-                        {network.isEnabled ? t("enabled") : t("disabled")}
-                      </Badge>
-                      <Badge variant="outline">
-                        {network.isTestnet ? t("testnet") : t("mainnet")}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {network.defaultAsset ? (
-                      <div className="flex items-center gap-1">
-                        <span title={network.defaultAsset}>
-                          {shortenAddress(network.defaultAsset, 6)}
-                        </span>
-                        <CopyButton value={network.defaultAsset} />
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "max-w-[260px] truncate font-mono text-sm",
+                        disabledRowFadeClass,
+                      )}
+                      title={network.rpcUrl}
+                    >
+                      {network.rpcUrl}
+                    </TableCell>
+                    <TableCell className={disabledRowFadeClass}>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge
+                          variant={network.isEnabled ? "success" : "secondary"}
+                        >
+                          {network.isEnabled ? t("enabled") : t("disabled")}
+                        </Badge>
+                        <Badge variant="outline">
+                          {network.isTestnet ? t("testnet") : t("mainnet")}
+                        </Badge>
                       </div>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {network.facilitatorWalletId ? (
-                      <div className="flex items-center gap-1">
-                        <span
-                          className="font-mono"
-                          title={
-                            network.facilitatorWalletAddress ??
-                            network.facilitatorWalletId
-                          }
+                    </TableCell>
+                    <TableCell
+                      className={cn("font-mono text-sm", disabledRowFadeClass)}
+                    >
+                      {network.defaultAsset ? (
+                        <div className="flex items-center gap-1">
+                          <span title={network.defaultAsset}>
+                            {shortenAddress(network.defaultAsset, 6)}
+                          </span>
+                          <CopyButton value={network.defaultAsset} />
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className={cn("text-sm", disabledRowFadeClass)}>
+                      {network.facilitatorWalletId ? (
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="font-mono"
+                            title={
+                              network.facilitatorWalletAddress ??
+                              network.facilitatorWalletId
+                            }
+                          >
+                            {network.facilitatorWalletAddress
+                              ? shortenAddress(
+                                  network.facilitatorWalletAddress,
+                                  6,
+                                )
+                              : network.facilitatorWalletId}
+                          </span>
+                          <CopyButton
+                            value={
+                              network.facilitatorWalletAddress ??
+                              network.facilitatorWalletId
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <Badge variant="warning">{t("notSet")}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className={x402ActionsCellClass}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label={t("actions")}
+                            disabled={busyChainId === network.id}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="min-w-[140px]"
                         >
-                          {network.facilitatorWalletAddress
-                            ? shortenAddress(
-                                network.facilitatorWalletAddress,
-                                6,
-                              )
-                            : network.facilitatorWalletId}
-                        </span>
-                        <CopyButton
-                          value={
-                            network.facilitatorWalletAddress ??
-                            network.facilitatorWalletId
-                          }
-                        />
-                      </div>
-                    ) : (
-                      <Badge variant="warning">{t("notSet")}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className={x402ActionsCellClass}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          aria-label={t("actions")}
-                          disabled={busyChainId === network.id}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="min-w-[140px]"
-                      >
-                        <DropdownMenuItem onClick={() => openEdit(network)}>
-                          <Pencil className="mr-2 h-4 w-4 shrink-0" />
-                          {t("editChain")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => toggleChainEnabled(network)}
-                          disabled={busyChainId === network.id}
-                        >
-                          {network.isEnabled ? (
-                            <>
-                              <Ban className="mr-2 h-4 w-4 shrink-0" />
-                              {t("disable")}
-                            </>
-                          ) : (
-                            <>
-                              <Power className="mr-2 h-4 w-4 shrink-0" />
-                              {t("enable")}
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                          <DropdownMenuItem onClick={() => openEdit(network)}>
+                            <Pencil className="mr-2 h-4 w-4 shrink-0" />
+                            {t("editChain")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toggleChainEnabled(network)}
+                            disabled={busyChainId === network.id}
+                          >
+                            {network.isEnabled ? (
+                              <>
+                                <Ban className="mr-2 h-4 w-4 shrink-0" />
+                                {t("disable")}
+                              </>
+                            ) : (
+                              <>
+                                <Power className="mr-2 h-4 w-4 shrink-0" />
+                                {t("enable")}
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -722,11 +744,6 @@ export function ChainDialog({
     },
   });
 
-  const chainPresets = useMemo(
-    () =>
-      getEvmChainPresets().filter((chain) => chain.isTestnet === wantTestnet),
-    [wantTestnet],
-  );
   const selectedCaip2Id = useWatch({ control, name: "caip2Id" });
   const watchedRpcUrl = useWatch({ control, name: "rpcUrl" });
   const watchedDisplayName = useWatch({ control, name: "displayName" });
@@ -817,16 +834,20 @@ export function ChainDialog({
     setValue("isTestnet", wantTestnet);
   }, [editing, open, setValue, wantTestnet]);
 
-  const applyChainPreset = (chain: EvmChainConfig) => {
-    setValue("caip2Id", chain.caip2Id, { shouldValidate: true });
-    setValue("displayName", chain.displayName, { shouldValidate: true });
-    setValue("rpcUrl", chain.rpcUrl, { shouldValidate: true });
-    setValue("isTestnet", chain.isTestnet);
-    const defaultAsset = getDefaultStablecoinForChain(chain.caip2Id);
-    if (defaultAsset) {
-      setValue("defaultAsset", defaultAsset, { shouldValidate: true });
-    }
-  };
+  const applyChainSuggestion = useCallback(
+    (chain: ChainSearchResult) => {
+      setValue("caip2Id", chain.caip2Id, { shouldValidate: true });
+      setValue("displayName", chain.name, { shouldValidate: true });
+      if (chain.rpcUrl) {
+        setValue("rpcUrl", chain.rpcUrl, { shouldValidate: true });
+      }
+      const defaultAsset = getDefaultStablecoinForChain(chain.caip2Id);
+      if (defaultAsset) {
+        setValue("defaultAsset", defaultAsset, { shouldValidate: true });
+      }
+    },
+    [setValue],
+  );
 
   const saveChain = useCallback(
     async (data: ChainFormValues) => {
@@ -935,57 +956,29 @@ export function ChainDialog({
             {t("fields.caip2Id")}
           </label>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              id="chain-caip2Id"
-              placeholder="eip155:8453"
-              className="font-mono sm:min-w-0 sm:flex-1"
-              readOnly
-              {...register("caip2Id")}
-            />
-            {!editing && chainPresets.length > 0 ? (
-              <Select
-                value={
-                  chainPresets.find(
-                    (chain) => chain.caip2Id === selectedCaip2Id,
-                  )?.id
-                }
-                onValueChange={(id) => {
-                  const chain = chainPresets.find((item) => item.id === id);
-                  if (chain) applyChainPreset(chain);
-                }}
-              >
-                <SelectTrigger
-                  className="w-full shrink-0 sm:min-w-56 sm:w-auto [&>span]:line-clamp-none"
-                  aria-label={t("chainPresetsAria")}
-                >
-                  <SelectValue placeholder={t("chainPresetPlaceholder")} />
-                </SelectTrigger>
-                <SelectContent className="min-w-64">
-                  {chainPresets.map((chain) => (
-                    <SelectItem
-                      key={chain.id}
-                      value={chain.id}
-                      className="whitespace-nowrap [&_span]:line-clamp-none"
-                    >
-                      <ChainLabel
-                        caip2Id={chain.caip2Id}
-                        name={chain.displayName}
-                        suffix={
-                          <span className="text-muted-foreground">
-                            {" · "}
-                            {chain.isTestnet ? t("testnet") : t("mainnet")}
-                          </span>
-                        }
-                      />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Input
+                id="chain-caip2Id"
+                placeholder="eip155:8453"
+                className="font-mono"
+                readOnly={!!editing}
+                {...register("caip2Id")}
+              />
+              {errors.caip2Id ? (
+                <p className="text-xs text-destructive">
+                  {errors.caip2Id.message}
+                </p>
+              ) : null}
+            </div>
+            {!editing ? (
+              <ChainPickerDropdown
+                selectedCaip2Id={selectedCaip2Id}
+                selectedDisplayName={watchedDisplayName}
+                onSelectChain={applyChainSuggestion}
+                testnet={wantTestnet}
+              />
             ) : null}
           </div>
-          {errors.caip2Id && (
-            <p className="text-xs text-destructive">{errors.caip2Id.message}</p>
-          )}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1070,16 +1063,18 @@ export function ChainDialog({
                 </TooltipContent>
               </Tooltip>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 shrink-0 gap-1 px-2 text-xs"
-              onClick={() => setWalletDialogOpen(true)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {t("newWallet")}
-            </Button>
+            {wallets.length === 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 gap-1 px-2 text-xs"
+                onClick={() => setWalletDialogOpen(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("newWallet")}
+              </Button>
+            ) : null}
           </div>
           <Controller
             control={control}
@@ -1121,6 +1116,7 @@ export function ChainDialog({
           }
           open={walletDialogOpen}
           defaultType="Selling"
+          blockedTypes={wallets.length > 0 ? ["Selling"] : []}
           onClose={() => setWalletDialogOpen(false)}
           onSaved={(wallet) => {
             setWalletDialogOpen(false);

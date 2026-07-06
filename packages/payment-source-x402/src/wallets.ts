@@ -22,6 +22,40 @@ const WALLET_OUTPUT_SELECT = {
   createdByUserId: true,
 } satisfies Prisma.X402EvmWalletSelect;
 
+function walletTypeLabel(type: X402EvmWalletType): string {
+  return type === X402EvmWalletType.Purchasing ? "Purchasing" : "Selling";
+}
+
+function defaultWalletNote(type: X402EvmWalletType): string {
+  return type === X402EvmWalletType.Purchasing
+    ? "Purchasing wallet"
+    : "Facilitator wallet";
+}
+
+function resolveWalletNote(
+  type: X402EvmWalletType,
+  note?: string | null,
+): string {
+  const trimmed = note?.trim();
+  return trimmed ? trimmed : defaultWalletNote(type);
+}
+
+async function assertTenantWalletSlotAvailable(
+  scope: ReturnType<typeof resolveX402TenantScope>,
+  type: X402EvmWalletType,
+): Promise<void> {
+  const existing = await prisma.x402EvmWallet.findFirst({
+    where: { ...walletOwnershipWhere(scope), type },
+    select: { id: true },
+  });
+  if (existing != null) {
+    throw createHttpError(
+      409,
+      `This workspace already has a ${walletTypeLabel(type)} wallet. Retire it before creating another.`,
+    );
+  }
+}
+
 export async function createX402ManagedWallet({
   userId,
   organizationId,
@@ -37,6 +71,9 @@ export async function createX402ManagedWallet({
   note?: string | null;
   privateKey?: string;
 }) {
+  const scope = resolveX402TenantScope({ userId, organizationId });
+  await assertTenantWalletSlotAvailable(scope, type);
+
   const wasGenerated = privateKey == null;
   const walletPrivateKey = privateKey ?? generatePrivateKey();
   assertValidPrivateKey(walletPrivateKey);
@@ -49,7 +86,7 @@ export async function createX402ManagedWallet({
         organizationId: organizationId ?? null,
         address: account.address,
         type,
-        note: note ?? null,
+        note: resolveWalletNote(type, note),
         encryptedPrivateKey: encrypt(walletPrivateKey),
         createdByUserId: createdByUserId ?? null,
       },
@@ -63,9 +100,16 @@ export async function createX402ManagedWallet({
       "code" in error &&
       (error as { code: string }).code === "P2002"
     ) {
+      const target = (error as { meta?: { target?: string[] } }).meta?.target;
+      if (Array.isArray(target) && target.includes("address")) {
+        throw createHttpError(
+          409,
+          "A managed EVM wallet with this address already exists",
+        );
+      }
       throw createHttpError(
         409,
-        "A managed EVM wallet with this address already exists",
+        `This workspace already has a ${walletTypeLabel(type)} wallet. Retire it before creating another.`,
       );
     }
     throw error;

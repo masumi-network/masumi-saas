@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CircleDollarSign, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -336,6 +336,13 @@ export function BudgetDialog({
       )?.id,
     [assetValue, tokenPresets],
   );
+  const purchasingWallet = wallets[0] ?? null;
+
+  useEffect(() => {
+    if (open && !editing && purchasingWallet) {
+      setValue("evmWalletId", purchasingWallet.id, { shouldValidate: true });
+    }
+  }, [editing, open, purchasingWallet, setValue]);
 
   const handleCreateApiKey = async () => {
     setCreateKeyError(null);
@@ -499,32 +506,38 @@ export function BudgetDialog({
 
       <div className="space-y-2">
         <label className="text-sm font-medium">{t("fields.wallet")}</label>
-        <Controller
-          control={control}
-          name="evmWalletId"
-          render={({ field }) => (
-            <Select
-              value={field.value}
-              onValueChange={field.onChange}
-              disabled={!!editing}
-            >
-              <SelectTrigger aria-label={t("fields.wallet")}>
-                <SelectValue placeholder={t("fields.walletPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {wallets.map((wallet) => (
-                  <SelectItem
-                    key={wallet.id}
-                    value={wallet.id}
-                    className="font-mono"
-                  >
-                    {shortenAddress(wallet.address, 8)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        {wallets.length === 1 && !editing && purchasingWallet ? (
+          <p className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm">
+            {shortenAddress(purchasingWallet.address, 8)}
+          </p>
+        ) : (
+          <Controller
+            control={control}
+            name="evmWalletId"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={!!editing}
+              >
+                <SelectTrigger aria-label={t("fields.wallet")}>
+                  <SelectValue placeholder={t("fields.walletPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {wallets.map((wallet) => (
+                    <SelectItem
+                      key={wallet.id}
+                      value={wallet.id}
+                      className="font-mono"
+                    >
+                      {shortenAddress(wallet.address, 8)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        )}
         {errors.evmWalletId && (
           <p className="text-xs text-destructive">
             {errors.evmWalletId.message}
