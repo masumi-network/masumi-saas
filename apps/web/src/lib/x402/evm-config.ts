@@ -3,6 +3,8 @@ export type EvmStablecoinAddresses = {
   usdt?: string;
 };
 
+export type EvmChainIconSlug = "base" | "ethereum" | "arbitrum" | "optimism";
+
 export type EvmChainConfig = {
   /** Stable key for UI / tests */
   id: string;
@@ -10,10 +12,14 @@ export type EvmChainConfig = {
   displayName: string;
   /** Compact label for autofill chips */
   shortName: string;
+  /** Vendored logo under /assets/chains/{icon}.png */
+  icon: EvmChainIconSlug;
   rpcUrl: string;
   isTestnet: boolean;
   stablecoins: EvmStablecoinAddresses;
 };
+
+const EVM_CHAIN_ICON_BASE_PATH = "/assets/chains";
 
 /** Curated EVM chains for x402 setup (CAIP-2 ids, public RPCs, common stablecoins). */
 export const EVM_CHAINS: readonly EvmChainConfig[] = [
@@ -22,6 +28,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:8453",
     displayName: "Base",
     shortName: "Base",
+    icon: "base",
     rpcUrl: "https://mainnet.base.org",
     isTestnet: false,
     stablecoins: {
@@ -34,6 +41,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:1",
     displayName: "Ethereum",
     shortName: "Ethereum",
+    icon: "ethereum",
     rpcUrl: "https://ethereum.publicnode.com",
     isTestnet: false,
     stablecoins: {
@@ -46,6 +54,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:42161",
     displayName: "Arbitrum One",
     shortName: "Arbitrum",
+    icon: "arbitrum",
     rpcUrl: "https://arb1.arbitrum.io/rpc",
     isTestnet: false,
     stablecoins: {
@@ -58,6 +67,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:10",
     displayName: "Optimism",
     shortName: "Optimism",
+    icon: "optimism",
     rpcUrl: "https://mainnet.optimism.io",
     isTestnet: false,
     stablecoins: {
@@ -70,6 +80,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:84532",
     displayName: "Base Sepolia",
     shortName: "Base Sepolia",
+    icon: "base",
     rpcUrl: "https://base-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
@@ -81,6 +92,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:11155111",
     displayName: "Ethereum Sepolia",
     shortName: "Sepolia",
+    icon: "ethereum",
     // rpc.sepolia.org was discontinued; use PublicNode (same family as mainnet preset).
     rpcUrl: "https://ethereum-sepolia.publicnode.com",
     isTestnet: true,
@@ -93,6 +105,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:421614",
     displayName: "Arbitrum Sepolia",
     shortName: "Arb Sepolia",
+    icon: "arbitrum",
     rpcUrl: "https://arbitrum-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
@@ -104,6 +117,7 @@ export const EVM_CHAINS: readonly EvmChainConfig[] = [
     caip2Id: "eip155:11155420",
     displayName: "Optimism Sepolia",
     shortName: "OP Sepolia",
+    icon: "optimism",
     rpcUrl: "https://optimism-sepolia.publicnode.com",
     isTestnet: true,
     stablecoins: {
@@ -116,6 +130,12 @@ export function getEvmChainByCaip2Id(
   caip2Id: string,
 ): EvmChainConfig | undefined {
   return EVM_CHAINS.find((chain) => chain.caip2Id === caip2Id);
+}
+
+/** Public path for a curated preset chain logo, or null when unknown. */
+export function getEvmChainIconPath(caip2Id: string): string | null {
+  const icon = getEvmChainByCaip2Id(caip2Id)?.icon;
+  return icon ? `${EVM_CHAIN_ICON_BASE_PATH}/${icon}.png` : null;
 }
 
 /** Chains for the add-chain dialog; omit `isTestnet` to list every preset. */

@@ -2001,7 +2001,7 @@
         },
         "purchasingHint": "アウトバウンド決済（予算）の資金 — 買い側。",
         "sellingHint": "チェーンファシリテーターとしてインバウンド決済を処理 — 売り側。",
-        "keySource": "キー",
+        "keySource": "秘密鍵",
         "generateNew": "新規生成",
         "importExisting": "既存をインポート",
         "generateHint": "サーバーで新しいキーペアが生成されます。作成後に一度だけ秘密鍵が表示されます。",

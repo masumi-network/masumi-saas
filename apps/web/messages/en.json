@@ -893,7 +893,7 @@
         },
         "purchasingHint": "Funds outbound payments (budgets) — the buy side.",
         "sellingHint": "Settles inbound payments as a chain facilitator — the sell side.",
-        "keySource": "Key",
+        "keySource": "Private key",
         "generateNew": "Generate new",
         "importExisting": "Import existing",
         "generateHint": "A fresh keypair is generated on the server. You will see the private key once after creation.",

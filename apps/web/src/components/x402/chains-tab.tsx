@@ -73,6 +73,7 @@ import {
 import type { X402Network, X402RpcProbeResult } from "@/lib/x402/types";
 import { isTestnetEnv } from "@/lib/x402-rail";
 
+import { ChainIcon, ChainLabel } from "./chain-icon";
 import { CreateWalletDialog } from "./wallets-tab";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
@@ -387,9 +388,18 @@ export function ChainsTab() {
                   style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                 >
                   <TableCell>
-                    <div className="font-medium">{network.displayName}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {network.caip2Id}
+                    <div className="flex items-center gap-2.5">
+                      <ChainIcon
+                        caip2Id={network.caip2Id}
+                        name={network.displayName}
+                        size={24}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-medium">{network.displayName}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {network.caip2Id}
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell
@@ -424,11 +434,28 @@ export function ChainsTab() {
                   </TableCell>
                   <TableCell className="text-sm">
                     {network.facilitatorWalletId ? (
-                      <span className="font-mono">
-                        {network.facilitatorWalletAddress
-                          ? shortenAddress(network.facilitatorWalletAddress, 6)
-                          : network.facilitatorWalletId}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="font-mono"
+                          title={
+                            network.facilitatorWalletAddress ??
+                            network.facilitatorWalletId
+                          }
+                        >
+                          {network.facilitatorWalletAddress
+                            ? shortenAddress(
+                                network.facilitatorWalletAddress,
+                                6,
+                              )
+                            : network.facilitatorWalletId}
+                        </span>
+                        <CopyButton
+                          value={
+                            network.facilitatorWalletAddress ??
+                            network.facilitatorWalletId
+                          }
+                        />
+                      </div>
                     ) : (
                       <Badge variant="warning">{t("notSet")}</Badge>
                     )}
@@ -940,11 +967,16 @@ export function ChainDialog({
                       value={chain.id}
                       className="whitespace-nowrap [&_span]:line-clamp-none"
                     >
-                      {chain.displayName}
-                      <span className="text-muted-foreground">
-                        {" · "}
-                        {chain.isTestnet ? t("testnet") : t("mainnet")}
-                      </span>
+                      <ChainLabel
+                        caip2Id={chain.caip2Id}
+                        name={chain.displayName}
+                        suffix={
+                          <span className="text-muted-foreground">
+                            {" · "}
+                            {chain.isTestnet ? t("testnet") : t("mainnet")}
+                          </span>
+                        }
+                      />
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -120,7 +120,7 @@
     },
     "purchasingHint": "Finance les paiements sortants (budgets) — le côté achat.",
     "sellingHint": "Règle les paiements entrants en tant que facilitateur de chaîne — le côté vente.",
-    "keySource": "Clé",
+    "keySource": "Clé privée",
     "generateNew": "Générer une nouvelle",
     "importExisting": "Importer une existante",
     "generateHint": "Une nouvelle paire de clés est générée sur le serveur. Vous verrez la clé privée une seule fois après la création.",

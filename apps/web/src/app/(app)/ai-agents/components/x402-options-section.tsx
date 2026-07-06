@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ChainLabel } from "@/components/x402/chain-icon";
 import type { X402NetworkOption } from "@/lib/hooks/use-x402-networks";
 import { cn } from "@/lib/utils";
 import {
@@ -204,21 +205,31 @@ function X402OptionCard({
             </SelectTrigger>
             <SelectContent>
               {networks.map((network) => (
-                <SelectItem key={network.id} value={network.caip2Id}>
-                  <span className="flex items-center gap-2">
-                    <span>{network.displayName}</span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {network.caip2Id}
-                    </span>
-                    {network.isTestnet ? (
-                      <Badge
-                        variant="outline"
-                        className="h-5 px-1.5 text-[10px]"
-                      >
-                        {t("x402TestnetBadge")}
-                      </Badge>
-                    ) : null}
-                  </span>
+                <SelectItem
+                  key={network.id}
+                  value={network.caip2Id}
+                  className="whitespace-nowrap [&_span]:line-clamp-none"
+                >
+                  <ChainLabel
+                    caip2Id={network.caip2Id}
+                    name={network.displayName}
+                    suffix={
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {" "}
+                        {network.caip2Id}
+                      </span>
+                    }
+                    trailing={
+                      network.isTestnet ? (
+                        <Badge
+                          variant="outline"
+                          className="h-5 shrink-0 px-1.5 text-[10px]"
+                        >
+                          {t("x402TestnetBadge")}
+                        </Badge>
+                      ) : null
+                    }
+                  />
                 </SelectItem>
               ))}
             </SelectContent>

@@ -2001,7 +2001,7 @@
         },
         "purchasingHint": "Financia pagos salientes (presupuestos) — el lado de compra.",
         "sellingHint": "Liquida pagos entrantes como facilitador de cadena — el lado de venta.",
-        "keySource": "Clave",
+        "keySource": "Clave privada",
         "generateNew": "Generar nueva",
         "importExisting": "Importar existente",
         "generateHint": "Se genera un nuevo par de claves en el servidor. Verás la clave privada una vez tras la creación.",

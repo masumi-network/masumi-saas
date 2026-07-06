@@ -609,12 +609,21 @@ export function CreateWalletDialog({
         >
           <X402DialogHeader
             title={t("createTitle")}
-            description={t("createDescription")}
+            titleHint={t("createDescription")}
           />
           <DialogBody className="min-h-0 flex-1 space-y-5 overflow-y-auto">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">{t("direction")}</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <Label
+                id="wallet-direction-label"
+                className="text-sm font-medium"
+              >
+                {t("direction")}
+              </Label>
+              <div
+                role="radiogroup"
+                aria-labelledby="wallet-direction-label"
+                className="grid grid-cols-2 gap-2"
+              >
                 {(
                   [
                     {
@@ -636,9 +645,10 @@ export function CreateWalletDialog({
                       key={option.value}
                       type="button"
                       onClick={() => setType(option.value)}
-                      aria-pressed={selected}
+                      role="radio"
+                      aria-checked={selected}
                       className={cn(
-                        "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors",
+                        "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         selected
                           ? "border-primary bg-primary/5 ring-1 ring-primary/40"
                           : "border-border hover:bg-muted/50",
@@ -663,8 +673,24 @@ export function CreateWalletDialog({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">{t("keySource")}</Label>
-              <div className="grid grid-cols-2 gap-1 rounded-lg border bg-muted/40 p-1">
+              <Label
+                id="wallet-key-source-label"
+                className="text-sm font-medium"
+              >
+                {t("keySource")}
+              </Label>
+              <div
+                role="group"
+                aria-labelledby="wallet-key-source-label"
+                className="relative flex rounded-lg border bg-muted/40 p-1"
+              >
+                <div
+                  className="absolute bottom-1 top-1 rounded-md bg-background shadow-sm transition-[left] duration-200 ease-out"
+                  style={{
+                    left: keySource === "generate" ? "4px" : "calc(50% + 4px)",
+                    width: "calc(50% - 8px)",
+                  }}
+                />
                 {(
                   [
                     { value: "generate" as const, label: t("generateNew") },
@@ -678,10 +704,11 @@ export function CreateWalletDialog({
                       setKeySource(tab.value);
                       setError(null);
                     }}
+                    aria-pressed={keySource === tab.value}
                     className={cn(
-                      "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                      "relative z-10 min-w-0 flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       keySource === tab.value
-                        ? "bg-background text-foreground shadow-sm"
+                        ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -698,6 +725,8 @@ export function CreateWalletDialog({
                 <div className="space-y-1.5">
                   <div className="relative">
                     <Textarea
+                      id="wallet-private-key"
+                      aria-label={t("importExisting")}
                       placeholder="0x…"
                       className="min-h-[76px] resize-none pr-10 font-mono text-xs"
                       autoComplete="off"

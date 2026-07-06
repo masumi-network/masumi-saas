@@ -2001,7 +2001,7 @@
         },
         "purchasingHint": "Finanziert ausgehende Zahlungen (Budgets) — die Kaufseite.",
         "sellingHint": "Wickelt eingehende Zahlungen als Chain-Facilitator ab — die Verkaufsseite.",
-        "keySource": "Schlüssel",
+        "keySource": "Privater Schlüssel",
         "generateNew": "Neu generieren",
         "importExisting": "Vorhandenen importieren",
         "generateHint": "Ein neues Schlüsselpaar wird auf dem Server generiert. Sie sehen den privaten Schlüssel einmal nach der Erstellung.",

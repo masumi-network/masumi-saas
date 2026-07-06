@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleHelp } from "lucide-react";
 import type { FormEvent, ReactNode } from "react";
 
 import {
@@ -11,6 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { cn } from "@/lib/utils";
 
@@ -57,9 +63,11 @@ function X402DialogChrome({
 export function X402DialogHeader({
   title,
   description,
+  titleHint,
 }: {
   title: string;
   description?: ReactNode;
+  titleHint?: string;
 }) {
   return (
     <div
@@ -69,7 +77,20 @@ export function X402DialogHeader({
       )}
     >
       <DialogHeader className="text-left">
-        <DialogTitle>{title}</DialogTitle>
+        <DialogTitle className="flex items-center gap-1.5">
+          {title}
+          {titleHint ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                  <CircleHelp className="h-3.5 w-3.5" />
+                  <span className="sr-only">{titleHint}</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">{titleHint}</TooltipContent>
+            </Tooltip>
+          ) : null}
+        </DialogTitle>
         {description ? (
           typeof description === "string" ? (
             <DialogDescription>{description}</DialogDescription>
