@@ -45,8 +45,6 @@ import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusDisplayKey,
-  getVerificationStatusBadgeVariant,
-  getVerificationStatusKey,
 } from "../../../components/agent-utils";
 import {
   AgentX402Options,
@@ -54,6 +52,7 @@ import {
 } from "../../../components/agent-x402-options";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
+import { AgentVerificationOverviewLine } from "../agent-verification-overview-line";
 
 interface AgentDetailsProps {
   agent: Agent;
@@ -93,7 +92,6 @@ export function AgentDetails({
   const tRegister = useTranslations("App.Agents.Register");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tVerification = useTranslations("App.Agents.Details.Verification");
-  const tStatus = useTranslations("App.Agents.status");
   const { formatDate, formatRelativeDate } = useFormatDate();
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
@@ -457,16 +455,7 @@ export function AgentDetails({
                       <p className="text-xs font-medium text-muted-foreground">
                         {t("verification")}
                       </p>
-                      <Badge
-                        variant={getVerificationStatusBadgeVariant(
-                          agent.verificationStatus,
-                        )}
-                        className="shrink-0"
-                      >
-                        {tStatus(
-                          getVerificationStatusKey(agent.verificationStatus),
-                        )}
-                      </Badge>
+                      <AgentVerificationOverviewLine agent={agent} />
                     </div>
                   </div>
                   {onViewVerificationTab ? (

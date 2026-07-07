@@ -1878,6 +1878,18 @@
         "verificationPromptTooltip": "Request verification to link your verified identity and establish trust.",
         "hireInSokosumi": "Hire in Sokosumi",
         "viewInVerificationTab": "View verification",
+        "verificationOverview": {
+          "loading": "Checking verification status…",
+          "verifiedOnChain": "Verified on-chain {timeAgo}",
+          "verifiedOnChainNoTime": "Verified on-chain",
+          "updateInProgress": "Anchoring verification on the Masumi network…",
+          "onChainPending": "Credential issued — waiting for on-chain confirmation",
+          "pending": "Not verified yet",
+          "revoked": "Verification revoked {timeAgo}",
+          "revokedNoTime": "Verification revoked",
+          "expired": "Verification expired {timeAgo}",
+          "expiredNoTime": "Verification expired"
+        },
         "refresh": "Refresh",
         "endpoint": "Endpoint",
         "tags": "Tags",

@@ -1264,6 +1264,18 @@
         "verificationPromptTooltip": "Demandez une vérification pour lier votre identité vérifiée et établir la confiance.",
         "hireInSokosumi": "Location à Sokosumi",
         "viewInVerificationTab": "Voir la vérification",
+        "verificationOverview": {
+          "loading": "Vérification du statut en cours…",
+          "verifiedOnChain": "Vérifié on-chain {timeAgo}",
+          "verifiedOnChainNoTime": "Vérifié on-chain",
+          "updateInProgress": "Ancrage de la vérification sur le réseau Masumi…",
+          "onChainPending": "Credential émis — confirmation on-chain en attente",
+          "pending": "Pas encore vérifié",
+          "revoked": "Vérification révoquée {timeAgo}",
+          "revokedNoTime": "Vérification révoquée",
+          "expired": "Vérification expirée {timeAgo}",
+          "expiredNoTime": "Vérification expirée"
+        },
         "refresh": "Rafraîchir",
         "endpoint": "Point de terminaison",
         "tags": "Balises",

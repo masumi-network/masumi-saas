@@ -1264,6 +1264,18 @@
         "verificationPromptTooltip": "検証をリクエストして、認証済みの本人情報をリンクし、信頼を確立してください。",
         "hireInSokosumi": "ソコスミでレンタル",
         "viewInVerificationTab": "検証を表示",
+        "verificationOverview": {
+          "loading": "検証ステータスを確認中…",
+          "verifiedOnChain": "オンチェーンで検証済み {timeAgo}",
+          "verifiedOnChainNoTime": "オンチェーンで検証済み",
+          "updateInProgress": "Masumiネットワークに検証を記録中…",
+          "onChainPending": "クレデンシャル発行済み — オンチェーン確認待ち",
+          "pending": "未検証",
+          "revoked": "検証が取り消されました {timeAgo}",
+          "revokedNoTime": "検証が取り消されました",
+          "expired": "検証の有効期限切れ {timeAgo}",
+          "expiredNoTime": "検証の有効期限切れ"
+        },
         "refresh": "リフレッシュ",
         "endpoint": "終点",
         "tags": "タグ",

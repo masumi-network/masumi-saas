@@ -1264,6 +1264,18 @@
         "verificationPromptTooltip": "Fordern Sie eine Verifizierung an, um Ihre verifizierte Identität zu verknüpfen und Vertrauen aufzubauen.",
         "hireInSokosumi": "Mieten Sie in Sokosumi",
         "viewInVerificationTab": "Zur Verifizierung",
+        "verificationOverview": {
+          "loading": "Verifizierungsstatus wird geprüft…",
+          "verifiedOnChain": "On-Chain verifiziert {timeAgo}",
+          "verifiedOnChainNoTime": "On-Chain verifiziert",
+          "updateInProgress": "Verifizierung wird im Masumi-Netzwerk verankert…",
+          "onChainPending": "Credential ausgestellt — On-Chain-Bestätigung ausstehend",
+          "pending": "Noch nicht verifiziert",
+          "revoked": "Verifizierung widerrufen {timeAgo}",
+          "revokedNoTime": "Verifizierung widerrufen",
+          "expired": "Verifizierung abgelaufen {timeAgo}",
+          "expiredNoTime": "Verifizierung abgelaufen"
+        },
         "refresh": "Aktualisieren",
         "endpoint": "Endpunkt",
         "tags": "Schlagworte",
