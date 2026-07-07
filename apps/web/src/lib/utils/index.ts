@@ -5,6 +5,7 @@ export {
   type AgentPricing,
   formatBalance,
   formatPricingDisplay,
+  formatPricingDisplayCompact,
 } from "./format-price";
 export { formatX402Amount, groupDigits } from "./x402-format";
 

@@ -89,6 +89,7 @@ const agentListItemSchema = z.object({
   agentIdentifier: z.string().nullable(),
   networkIdentifier: z.string().nullable(),
   pricing: z.any().nullable().optional(),
+  payoutAddress: z.string().nullable().optional(),
   supportedPaymentSources: supportedPaymentSourcesSchema.nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -176,12 +176,12 @@
     background-image:
       radial-gradient(
         ellipse 90% 60% at 50% -12%,
-        color-mix(in srgb, var(--color-masumi-iris-flower) 2%, transparent),
+        color-mix(in srgb, var(--color-masumi-iris-flower) 1.2%, transparent),
         transparent 52%
       ),
       radial-gradient(
         ellipse 50% 35% at 100% 0%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 2%, transparent),
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 1.2%, transparent),
         transparent 55%
       );
   }
@@ -191,12 +191,12 @@
     background-image:
       radial-gradient(
         ellipse 80% 50% at 50% -6%,
-        color-mix(in srgb, var(--color-masumi-electric-pink) 2.5%, transparent),
+        color-mix(in srgb, var(--color-masumi-electric-pink) 1.5%, transparent),
         transparent 50%
       ),
       radial-gradient(
         ellipse 45% 28% at 0% 100%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 6%, transparent),
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 3.5%, transparent),
         transparent 50%
       );
   }
@@ -207,12 +207,12 @@
     background-image:
       radial-gradient(
         ellipse 100% 65% at 50% -16%,
-        color-mix(in srgb, var(--color-masumi-iris-flower) 4%, transparent),
+        color-mix(in srgb, var(--color-masumi-iris-flower) 2.5%, transparent),
         transparent 50%
       ),
       radial-gradient(
         ellipse 60% 40% at 100% 0%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 4%, transparent),
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 2.5%, transparent),
         transparent 50%
       );
   }
@@ -222,12 +222,12 @@
     background-image:
       radial-gradient(
         ellipse 90% 55% at 50% -8%,
-        color-mix(in srgb, var(--color-masumi-electric-pink) 5%, transparent),
+        color-mix(in srgb, var(--color-masumi-electric-pink) 3%, transparent),
         transparent 48%
       ),
       radial-gradient(
         ellipse 50% 30% at 0% 100%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 12%, transparent),
+        color-mix(in srgb, var(--color-masumi-crimson-purple) 7%, transparent),
         transparent 45%
       );
   }

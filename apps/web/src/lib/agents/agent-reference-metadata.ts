@@ -8,3 +8,14 @@ export function getAgentSmartContractAddress(agent: {
   }
   return undefined;
 }
+
+export function getAgentPayoutAddress(agent: {
+  agentReference?: { metadata?: unknown } | null;
+}): string | null {
+  const meta = agent.agentReference?.metadata;
+  if (meta && typeof meta === "object" && "collectionAddress" in meta) {
+    const value = (meta as Record<string, unknown>).collectionAddress;
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  return null;
+}

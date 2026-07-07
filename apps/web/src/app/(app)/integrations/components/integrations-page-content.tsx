@@ -1,13 +1,28 @@
 "use client";
 
-import { CheckCircle2, KeyRound, Plug, RefreshCw } from "lucide-react";
+import { CheckCircle2, Plug, Plus, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFormatDate } from "@/hooks/use-format-date";
+
+import { AddLangdockConnectionDialog } from "./add-langdock-connection-dialog";
+import { IntegrationsTableSkeleton } from "./integrations-table-skeleton";
 
 type Connection = {
   id: string;
@@ -18,15 +33,31 @@ type Connection = {
   updatedAt: string;
 };
 
+const EMPTY_CELL = "\u2014";
+
+function connectionSearchHaystack(connection: Connection): string {
+  const metadata = connection.metadata ?? {};
+  return [
+    connection.name,
+    connection.provider,
+    String(metadata.lastAgentName ?? ""),
+    String(metadata.lastAgentId ?? ""),
+    String(metadata.baseUrl ?? ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
 export function IntegrationsPageContent() {
   const t = useTranslations("App.Integrations");
+  const { formatRelativeDate } = useFormatDate();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [agentId, setAgentId] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
-  const [name, setName] = useState("Langdock");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   const loadConnections = useCallback(async () => {
     setLoading(true);
@@ -39,6 +70,7 @@ export function IntegrationsPageContent() {
       setConnections(json.data ?? []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("loadError"));
+      setConnections([]);
     } finally {
       setLoading(false);
     }
@@ -48,147 +80,157 @@ export function IntegrationsPageContent() {
     void loadConnections();
   }, [loadConnections]);
 
-  const saveConnection = async () => {
-    setSaving(true);
-    try {
-      const response = await fetch("/api/integrations/langdock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          apiKey,
-          agentId,
-          baseUrl,
-          name,
-        }),
-      });
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error || t("saveError"));
-      toast.success(t("saveSuccess"));
-      setApiKey("");
-      setAgentId("");
-      setBaseUrl("");
-      setName("Langdock");
-      await loadConnections();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("saveError"));
-    } finally {
-      setSaving(false);
-    }
-  };
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "f" || e.ctrlKey || e.metaKey || e.altKey)
+        return;
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      )
+        return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const filteredConnections = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
+    if (!q) return connections;
+    return connections.filter((connection) =>
+      connectionSearchHaystack(connection).includes(q),
+    );
+  }, [connections, debouncedSearch]);
+
+  const emptyMessage = debouncedSearch.trim()
+    ? t("noConnectionsMatchingSearch")
+    : t("empty");
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
-      <section className="space-y-4 rounded-lg border border-border bg-background p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted">
-            <Plug className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-base font-medium">{t("langdockTitle")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {t("langdockDescription")}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">{t("connectionName")}</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">{t("apiKey")}</label>
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={t("apiKeyPlaceholder")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">{t("agentId")}</label>
-            <Input
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              placeholder={t("agentIdPlaceholder")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">{t("baseUrl")}</label>
-            <Input
-              type="url"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="https://api.langdock.com"
-            />
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          onClick={saveConnection}
-          disabled={saving || !apiKey.trim() || !agentId.trim()}
-          className="w-full"
-        >
-          {saving && <Spinner size={16} className="mr-2" />}
-          {t("testAndSave")}
-        </Button>
-      </section>
-
-      <section className="space-y-4 rounded-lg border border-border bg-background p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-medium">{t("connections")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {t("connectionsDescription")}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => void loadConnections()}
-            disabled={loading}
-            aria-label={t("refresh")}
+    <>
+      <div className="min-w-0 space-y-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div
+            onClick={() => searchInputRef.current?.focus()}
+            className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
           >
-            {loading ? (
-              <Spinner size={16} />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder={t("searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+            />
+            {!isSearchFocused && (
+              <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
+                {t("searchShortcut")}
+              </kbd>
             )}
-          </Button>
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <RefreshButton
+              onRefresh={() => void loadConnections()}
+              isRefreshing={loading}
+              size="md"
+            />
+            <Button
+              type="button"
+              size="icon"
+              className="h-9 w-9 md:hidden"
+              onClick={() => setDialogOpen(true)}
+              aria-label={t("addConnection")}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              className="hidden h-9 items-center gap-2 md:flex"
+              onClick={() => setDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              {t("addConnection")}
+            </Button>
+          </div>
         </div>
 
-        {connections.length === 0 ? (
-          <div className="flex min-h-48 flex-col items-center justify-center rounded-md border border-dashed border-border px-4 text-center">
-            <KeyRound className="mb-3 h-6 w-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{t("empty")}</p>
-          </div>
+        {loading ? (
+          <IntegrationsTableSkeleton />
+        ) : filteredConnections.length === 0 ? (
+          <DiscoveryEmptyState
+            icon={Plug}
+            message={emptyMessage}
+            description={
+              debouncedSearch.trim() ? undefined : t("emptyDescription")
+            }
+          />
         ) : (
-          <div className="divide-y rounded-md border border-border">
-            {connections.map((connection) => (
-              <div
-                key={connection.id}
-                className="flex items-center justify-between gap-4 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {connection.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {String(connection.metadata?.lastAgentName ?? "Langdock")}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {t("connected")}
-                </span>
-              </div>
-            ))}
+          <div className="overflow-x-auto rounded-xl border border-border/80">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>{t("table.name")}</TableHead>
+                  <TableHead>{t("table.agent")}</TableHead>
+                  <TableHead>{t("table.baseUrl")}</TableHead>
+                  <TableHead>{t("table.lastChecked")}</TableHead>
+                  <TableHead>{t("table.status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredConnections.map((connection) => {
+                  const lastChecked = connection.metadata?.lastCheckedAt;
+                  const lastCheckedLabel =
+                    typeof lastChecked === "string" && lastChecked
+                      ? formatRelativeDate(lastChecked)
+                      : EMPTY_CELL;
+
+                  return (
+                    <TableRow key={connection.id}>
+                      <TableCell className="font-medium">
+                        {connection.name}
+                      </TableCell>
+                      <TableCell className="max-w-[12rem] truncate text-muted-foreground">
+                        {String(
+                          connection.metadata?.lastAgentName ?? EMPTY_CELL,
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-[14rem] truncate font-mono text-xs text-muted-foreground">
+                        {String(connection.metadata?.baseUrl ?? EMPTY_CELL)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {lastCheckedLabel}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          {t("connected")}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
-      </section>
-    </div>
+      </div>
+
+      <AddLangdockConnectionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={() => void loadConnections()}
+      />
+    </>
   );
 }

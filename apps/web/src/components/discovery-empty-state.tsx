@@ -1,16 +1,21 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 type DiscoveryEmptyStateProps = {
   icon: LucideIcon;
   message: string;
+  description?: string;
+  action?: ReactNode;
   className?: string;
 };
 
 export function DiscoveryEmptyState({
   icon: Icon,
   message,
+  description,
+  action,
   className,
 }: DiscoveryEmptyStateProps) {
   return (
@@ -25,6 +30,10 @@ export function DiscoveryEmptyState({
           <Icon className="h-6 w-6 text-muted-foreground" aria-hidden />
         </div>
         <p className="text-base font-medium text-foreground">{message}</p>
+        {description ? (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        ) : null}
+        {action ? <div className="pt-2">{action}</div> : null}
       </div>
     </div>
   );

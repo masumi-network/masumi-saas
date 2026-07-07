@@ -2,6 +2,8 @@
 
 import {
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   ExternalLink,
   Eye,
@@ -1184,7 +1186,9 @@ export function RequestVerificationDialog({
                   variant="outline"
                   onClick={handlePrev}
                   disabled={isSubmitting || isConfirmingAcceptance}
+                  className="gap-2"
                 >
+                  <ChevronLeft className="h-4 w-4" />
                   {t("prev")}
                 </Button>
               )}
@@ -1193,22 +1197,33 @@ export function RequestVerificationDialog({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="inline-flex">
-                        <Button variant="primary" onClick={handleNext} disabled>
+                        <Button
+                          variant="primary"
+                          onClick={handleNext}
+                          disabled
+                          className="gap-2"
+                        >
                           {isTestingEndpoint && (
-                            <Spinner size={16} className="mr-2" />
+                            <Spinner size={16} className="shrink-0" />
                           )}
                           {t("next")}
+                          <ChevronRight className="h-4 w-4" />
                         </Button>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>{getNextDisabledReason()}</TooltipContent>
                   </Tooltip>
                 ) : (
-                  <Button variant="primary" onClick={handleNext}>
+                  <Button
+                    variant="primary"
+                    onClick={handleNext}
+                    className="gap-2"
+                  >
                     {isTestingEndpoint && (
-                      <Spinner size={16} className="mr-2" />
+                      <Spinner size={16} className="shrink-0" />
                     )}
                     {t("next")}
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 )
               ) : isWalletAcceptanceComplete ? (

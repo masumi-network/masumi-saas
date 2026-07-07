@@ -5,6 +5,7 @@ import { getMessages } from "next-intl/server";
 
 import { FooterSections } from "@/components/footer";
 import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
+import { OnboardingLogoPreload } from "@/components/onboarding/onboarding-logo-preload";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
@@ -97,7 +98,12 @@ export default async function AppLayout({
           </X402RailProvider>
         </PaymentNetworkProvider>
       </OrganizationProvider>
-      {showOnboarding ? <OnboardingDialog initialOpen /> : null}
+      {showOnboarding ? (
+        <>
+          <OnboardingLogoPreload />
+          <OnboardingDialog initialOpen />
+        </>
+      ) : null}
     </NextIntlClientProvider>
   );
 }

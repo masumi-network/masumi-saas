@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const TEST_PAYOUT_ADDRESS = "addr_test1qqexamplepayoutaddressqqexamplepayoutqq";
+const TEST_MAINNET_PAYOUT_ADDRESS =
+  "addr1examplepayoutaddressforregistrationtests";
+
 const createPaymentNodeClientMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
 const getBaseUrlMock = vi.fn();
@@ -99,6 +103,12 @@ vi.mock("@/lib/payment-node/tokens", () => ({
     Preprod: { unit: "usdm_preprod", decimals: 6 },
     Mainnet: { unit: "usdm_mainnet", decimals: 6 },
   },
+}));
+
+vi.mock("@masumi/payment-source-x402/supported-payment-sources", () => ({
+  loadSupportedPaymentSourcesForAgent: vi.fn().mockResolvedValue([]),
+  replaceSupportedPaymentSourcesForAgent: vi.fn(),
+  mergeWithDefaultCardanoSource: vi.fn((sources) => sources),
 }));
 
 const {
@@ -267,6 +277,7 @@ describe("startAgentRegistration", () => {
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
+        payoutAddress: TEST_PAYOUT_ADDRESS,
       },
     );
 
@@ -329,6 +340,7 @@ describe("startAgentRegistration", () => {
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
+        payoutAddress: TEST_MAINNET_PAYOUT_ADDRESS,
       },
     );
 
@@ -379,12 +391,49 @@ describe("startAgentRegistration", () => {
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
+        payoutAddress: TEST_MAINNET_PAYOUT_ADDRESS,
       },
     );
 
     expect(result).toStrictEqual({
       success: false,
       error: "Something went wrong. Please try again later.",
+    });
+  });
+
+  it("rejects an invalid payout address for the registration network", async () => {
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Preprod",
+      },
+      {
+        name: "Demo agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+        payoutAddress: "addr1wrongnetwork",
+      },
+    );
+
+    expect(result).toStrictEqual({
+      success: false,
+      error: "Payout address must be a Preprod Cardano address (addr_test…).",
     });
   });
 
@@ -480,10 +529,20 @@ describe("startAgentRegistration", () => {
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
+        payoutAddress: TEST_PAYOUT_ADDRESS,
       },
     );
 
     expect(result).toStrictEqual({ success: true, agentId: "agent-1" });
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        AddSellingWallets: [
+          expect.objectContaining({
+            collectionAddress: TEST_PAYOUT_ADDRESS,
+          }),
+        ],
+      }),
+    );
     expect(ensureUserPaymentNodeKeyScopedToWalletsMock).toHaveBeenCalledWith({
       userId: "user-1",
       walletIds: ["wallet-new"],
@@ -494,6 +553,7 @@ describe("startAgentRegistration", () => {
         sellingWalletId: "wallet-new",
         metadata: expect.objectContaining({
           sellingWalletAddress: "addr_test1selling",
+          collectionAddress: TEST_PAYOUT_ADDRESS,
           fundingWalletId: "wallet-funding",
           fundingWalletVkey: "funding-vkey",
           fundingWalletAddress: "addr_test1funding",

@@ -40,12 +40,19 @@ import {
   findSellingWalletIdByVkey,
   hydratePaymentSource,
 } from "@/lib/payment-node/payment-source-wallets";
+import {
+  humanAmountToSmallestUnit,
+  resolvePricingAssetOption,
+} from "@/lib/payment-node/pricing-assets";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
-import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
+import {
+  normalizePayoutAddress,
+  validatePayoutAddressForNetwork,
+} from "./payment-node/payout-address";
 import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,
@@ -79,6 +86,7 @@ export type RegisterAgentParams = {
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
+  payoutAddress: string;
   supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
@@ -471,6 +479,15 @@ async function registerAgentOnChainUntilSetup(
     return { success: false, error: "At least one tag is required." };
   }
 
+  const payoutAddress = normalizePayoutAddress(params.payoutAddress);
+  const payoutAddressError = validatePayoutAddressForNetwork(
+    payoutAddress,
+    network,
+  );
+  if (payoutAddressError) {
+    return { success: false, error: payoutAddressError };
+  }
+
   const userClient = await getPaymentNodeClientForUser(user.id);
   if (!userClient) {
     return {
@@ -580,7 +597,7 @@ async function registerAgentOnChainUntilSetup(
       {
         walletMnemonic: sellingWallet.walletMnemonic,
         note: `Agent: ${params.name} (selling)`,
-        collectionAddress: null,
+        collectionAddress: payoutAddress,
       },
     ],
   });
@@ -718,6 +735,7 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
+        collectionAddress: payoutAddress,
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
@@ -1132,7 +1150,6 @@ export function buildAgentPricing(
   if (pricing?.pricingType === "Dynamic") {
     return { pricingType: "Dynamic" };
   }
-  const token = USDM[network];
   if (
     pricing?.pricingType === "Fixed" &&
     Array.isArray(pricing.prices) &&
@@ -1140,10 +1157,13 @@ export function buildAgentPricing(
   ) {
     return {
       pricingType: "Fixed",
-      Pricing: pricing.prices.map((p) => ({
-        unit: token.unit,
-        amount: String(Math.round(Number(p.amount) * 10 ** token.decimals)),
-      })),
+      Pricing: pricing.prices.map((p) => {
+        const asset = resolvePricingAssetOption(p.currency, network);
+        return {
+          unit: asset.unit,
+          amount: humanAmountToSmallestUnit(p.amount, asset),
+        };
+      }),
     };
   }
   return { pricingType: "Free" };

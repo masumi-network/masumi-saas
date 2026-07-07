@@ -62,7 +62,6 @@ export async function getDashboardOverview(
       where: { userId },
       select: { id: true, name: true, prefix: true, start: true },
       orderBy: { createdAt: "desc" },
-      take: 5,
     }),
     prisma.apikey.count({ where: { userId } }),
     prisma.agent.count({ where: baseAgentWhere }),

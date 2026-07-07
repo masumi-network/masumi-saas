@@ -20,7 +20,6 @@ import {
 } from "react";
 
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
-import { SectionPanel } from "@/components/section-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,11 +50,18 @@ import { useFormatDate } from "@/hooks/use-format-date";
 import {
   registryDiscoveryClient,
   type RegistryEntry,
-  type RegistryEntryFilter,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { isRegistryUnavailableError } from "@/lib/discovery/registry-unavailable";
 import { formatUnitAmount } from "@/lib/payment-node/format";
 import { getInitials } from "@/lib/utils";
+
+import {
+  AgentsDiscoveryFiltersPopover,
+  countDiscoveryListFilters,
+  type DiscoveryListFilters,
+  discoveryListFiltersToApi,
+} from "./agents-discovery-filters-popover";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -531,6 +537,13 @@ function RegistryAgentListItem({
 export function AgentsDiscovery() {
   const t = useTranslations("App.Agents");
   const { network } = usePaymentNetwork();
+  const [listFilters, setListFilters] = useState<DiscoveryListFilters>({
+    status: "online",
+  });
+  const activeFilterCount = useMemo(
+    () => countDiscoveryListFilters(listFilters),
+    [listFilters],
+  );
   const [registryState, setRegistryState] = useState<
     CursorPageState<RegistryEntry>
   >(() => createCursorPageState<RegistryEntry>());
@@ -579,9 +592,7 @@ export function AgentsDiscovery() {
 
   const fetchRegistryEntries = useCallback(
     async (cursorId?: string, signal?: AbortSignal) => {
-      const filter: RegistryEntryFilter = {
-        status: ["Online"],
-      };
+      const filter = discoveryListFiltersToApi(listFilters);
 
       return registryDiscoveryClient.getRegistryEntries(
         {
@@ -593,11 +604,11 @@ export function AgentsDiscovery() {
         { signal },
       );
     },
-    [network],
+    [listFilters, network],
   );
 
   const searchQueryResult = useInfiniteQuery({
-    queryKey: ["registry-entry-search", network, normalizedSearch],
+    queryKey: ["registry-entry-search", network, normalizedSearch, listFilters],
     initialPageParam: undefined as string | undefined,
     enabled: normalizedSearch.length > 0,
     queryFn: async ({ pageParam, signal }) => {
@@ -607,9 +618,7 @@ export function AgentsDiscovery() {
           limit: PAGE_SIZE,
           cursorId: pageParam,
           query: normalizedSearch,
-          filter: {
-            status: ["Online"],
-          },
+          filter: discoveryListFiltersToApi(listFilters),
         },
         { signal },
       );
@@ -673,7 +682,7 @@ export function AgentsDiscovery() {
 
   useEffect(() => {
     setSearchCurrentPage(1);
-  }, [normalizedSearch, network]);
+  }, [listFilters, normalizedSearch, network]);
 
   const loadRegistryPage = useCallback(
     async (page: number) => {
@@ -831,13 +840,6 @@ export function AgentsDiscovery() {
     void loadRegistryInitial().finally(() => setIsRefreshing(false));
   };
 
-  const summaryLabel = t("Discovery.resultsSummary", {
-    visibleCount: visibleRegistryEntries.length,
-    loadedCount: shouldUseSearchResults
-      ? searchPageItems.length
-      : pageItems.length,
-  });
-
   const emptyLabel = hasActiveSearch
     ? t("Discovery.emptySearch")
     : t("Discovery.empty");
@@ -856,6 +858,7 @@ export function AgentsDiscovery() {
   const activeError = hasActiveSearch
     ? searchErrorMessage
     : registryState.error;
+  const registryUnavailable = isRegistryUnavailableError(activeError);
   const isSearchLoading = hasActiveSearch
     ? isSearchDebouncing ||
       searchQueryResult.isLoading ||
@@ -873,33 +876,11 @@ export function AgentsDiscovery() {
     : getKnownTotalPages(registryState);
 
   return (
-    <SectionPanel>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Badge variant="success">{t("Discovery.onlineOnly")}</Badge>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.sortHint")}
-          </span>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
-            {network}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: activeCurrentPage })}
-          </span>
-          <RefreshButton
-            onRefresh={handleRefresh}
-            size="md"
-            isRefreshing={isRefreshing}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -918,25 +899,38 @@ export function AgentsDiscovery() {
             </kbd>
           )}
         </div>
-        <p className="shrink-0 text-sm text-muted-foreground">{summaryLabel}</p>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <AgentsDiscoveryFiltersPopover
+            filters={listFilters}
+            activeFilterCount={activeFilterCount}
+            network={network}
+            onChange={setListFilters}
+            onClear={() => setListFilters({ status: "online" })}
+          />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            size="md"
+            isRefreshing={isRefreshing}
+          />
+        </div>
       </div>
 
-      {activeError && (
+      {activeError && !registryUnavailable ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {activeError}
         </div>
-      )}
+      ) : null}
 
       {!hasActiveSearch && registryState.isLoading ? (
         <DiscoverySkeleton />
       ) : (
         <>
-          {isSearchLoading && (
+          {isSearchLoading ? (
             <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
               <Spinner size={14} />
               {t("loadingMore")}
             </div>
-          )}
+          ) : null}
 
           {visibleRegistryEntries.length > 0 ? (
             <div className="space-y-3">
@@ -948,6 +942,12 @@ export function AgentsDiscovery() {
                 />
               ))}
             </div>
+          ) : isSearchLoading ? null : registryUnavailable ? (
+            <DiscoveryEmptyState
+              icon={Bot}
+              message={t("Discovery.registryUnavailableTitle")}
+              description={t("Discovery.registryUnavailableDescription")}
+            />
           ) : (
             <DiscoveryEmptyState icon={Bot} message={emptyLabel} />
           )}
@@ -971,6 +971,6 @@ export function AgentsDiscovery() {
           />
         </>
       )}
-    </SectionPanel>
+    </div>
   );
 }

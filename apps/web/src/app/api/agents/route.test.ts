@@ -658,4 +658,39 @@ describe("/api/agents POST", () => {
     expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
     expect(startAgentRegistrationMock).not.toHaveBeenCalled();
   });
+
+  it("rejects x402 payment options for Dynamic pricing", async () => {
+    buildAgentPricingMock.mockReturnValue({ pricingType: "Dynamic" });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Dynamic research assistant",
+          apiUrl: "https://agent.example.com/mip",
+          tags: "research, nlp",
+          pricing: { pricingType: "Dynamic" },
+          supportedPaymentSources: [
+            {
+              chain: "EVM",
+              network: "eip155:84532",
+              scheme: "Exact",
+              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              amount: "10000",
+              decimals: 6,
+              payTo: "0x1111111111111111111111111111111111111111",
+            },
+          ],
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
 });

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type DialogStepDirection = "forward" | "back";
+export type DialogStepDirection = "forward" | "back" | "none";
 
 /** Fade-in-up + stagger delay for nested blocks inside a dialog (e.g. form field groups). */
 export function dialogStaggerClass(index: number): string {
@@ -12,6 +12,9 @@ export function dialogStaggerClass(index: number): string {
 export function dialogStepTransitionClass(
   direction: DialogStepDirection = "forward",
 ): string {
+  if (direction === "none") {
+    return "";
+  }
   return direction === "back"
     ? "animate-dialog-step-in-back"
     : "animate-dialog-step-in-forward";

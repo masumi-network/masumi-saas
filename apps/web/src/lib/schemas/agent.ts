@@ -120,6 +120,10 @@ export const registerAgentBodySchema = z.object({
   capabilityVersion: z.string().max(250).optional().or(z.literal("")),
   exampleOutputs: z.array(exampleOutputSchema).optional(),
   supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
+  payoutAddress: z
+    .string()
+    .min(1, "Payout address is required")
+    .max(250, "Payout address is too long"),
 });
 
 /** Same validation as `POST /api/agents`; `.openapi()` only adds documentation metadata. */
@@ -143,6 +147,7 @@ export const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
     otherUrl: "",
     capabilityName: "Masumi",
     capabilityVersion: "1.0",
+    payoutAddress: "addr_test1qqexamplepayoutaddressqqexamplepayoutqq",
     exampleOutputs: [
       {
         name: "Sample output",
@@ -170,6 +175,14 @@ export const agentsListQuerySchema = z.object({
   registrationStateIn: z.string().optional(),
   search: z.string().optional(),
   network: z.enum(["Mainnet", "Preprod"]).optional(),
+});
+
+/** PATCH /api/agents/{agentId}/payout-address JSON body */
+export const updateAgentPayoutAddressBodySchema = z.object({
+  payoutAddress: z
+    .string()
+    .min(1, "Payout address is required")
+    .max(250, "Payout address is too long"),
 });
 
 /** POST /api/agents/{agentId}/verify JSON body — shared with OpenAPI. */

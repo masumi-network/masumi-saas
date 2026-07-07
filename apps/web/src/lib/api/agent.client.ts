@@ -266,6 +266,16 @@ class AgentApiClient {
     });
   }
 
+  async updatePayoutAddress(
+    agentId: string,
+    payoutAddress: string,
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}/payout-address`, {
+      method: "PATCH",
+      body: JSON.stringify({ payoutAddress }),
+    });
+  }
+
   async getVerificationChallenge(
     agentId: string,
     regenerate = false,
