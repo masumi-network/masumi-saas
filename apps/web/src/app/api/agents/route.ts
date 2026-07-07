@@ -478,7 +478,7 @@ app.openapi(
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
         supportedPaymentSources,
-        payoutAddress: payoutAddress.trim(),
+        payoutAddress: payoutAddress?.trim() ?? "",
       };
 
       const result = await startAgentRegistration(

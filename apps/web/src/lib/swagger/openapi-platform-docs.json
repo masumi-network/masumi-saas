@@ -10811,16 +10811,24 @@
                     "maxItems": 25
                   },
                   "payoutAddress": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 250
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
                   }
                 },
                 "required": [
-                  "name",
-                  "payoutAddress"
+                  "name"
                 ],
-                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).",
+                "description": "At least one tag is required: send `tags` as a comma-separated string (e.g. `\"research, nlp\"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request). `payoutAddress` is required for `Fixed` and `Dynamic` pricing; omit it for `Free`.",
                 "example": {
                   "name": "Research assistant",
                   "description": "Helps with literature review",

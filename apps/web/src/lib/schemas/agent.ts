@@ -35,6 +35,12 @@ const registerAgentPricingSchema = z.discriminatedUnion("pricingType", [
     .openapi({ example: { pricingType: "Dynamic" } }),
 ]);
 
+export function registerAgentPricingRequiresPayoutAddress(
+  pricing: z.infer<typeof registerAgentPricingSchema> | undefined,
+): boolean {
+  return pricing?.pricingType !== "Free";
+}
+
 const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
   url: z.string().url().min(1),
@@ -87,49 +93,65 @@ export const agentMetadataSchema = z
   })
   .strict();
 
-export const registerAgentBodySchema = z.object({
-  runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
-  name: z
-    .string()
-    .min(1, "Name is required")
-    .max(250, "Name must be less than 250 characters"),
-  description: z
-    .string()
-    .max(250, "Description must be 250 characters or less")
-    .optional()
-    .or(z.literal("")),
-  extendedDescription: z
-    .string()
-    .max(5000, "Extended description must be less than 5000 characters")
-    .optional()
-    .or(z.literal("")),
-  apiUrl: agentApiUrlSchema.optional(),
-  integrationConnectionId: z.string().min(1).max(250).optional(),
-  langdockApiKey: z.string().min(1).max(5000).optional(),
-  langdockAgentId: z.string().min(1).max(500).optional(),
-  langdockBaseUrl: z.string().url().max(250).optional().or(z.literal("")),
-  tags: z.string().optional(),
-  icon: z.string().max(2000).optional(),
-  pricing: registerAgentPricingSchema.optional(),
-  termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
-  privacyPolicyUrl: z
-    .union([z.literal(""), z.string().url().max(250)])
-    .optional(),
-  otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
-  capabilityName: z.string().max(250).optional().or(z.literal("")),
-  capabilityVersion: z.string().max(250).optional().or(z.literal("")),
-  exampleOutputs: z.array(exampleOutputSchema).optional(),
-  supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
-  payoutAddress: z
-    .string()
-    .min(1, "Payout address is required")
-    .max(250, "Payout address is too long"),
-});
+export const registerAgentBodySchema = z
+  .object({
+    runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .max(250, "Name must be less than 250 characters"),
+    description: z
+      .string()
+      .max(250, "Description must be 250 characters or less")
+      .optional()
+      .or(z.literal("")),
+    extendedDescription: z
+      .string()
+      .max(5000, "Extended description must be less than 5000 characters")
+      .optional()
+      .or(z.literal("")),
+    apiUrl: agentApiUrlSchema.optional(),
+    integrationConnectionId: z.string().min(1).max(250).optional(),
+    langdockApiKey: z.string().min(1).max(5000).optional(),
+    langdockAgentId: z.string().min(1).max(500).optional(),
+    langdockBaseUrl: z.string().url().max(250).optional().or(z.literal("")),
+    tags: z.string().optional(),
+    icon: z.string().max(2000).optional(),
+    pricing: registerAgentPricingSchema.optional(),
+    termsOfUseUrl: z
+      .union([z.literal(""), z.string().url().max(250)])
+      .optional(),
+    privacyPolicyUrl: z
+      .union([z.literal(""), z.string().url().max(250)])
+      .optional(),
+    otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+    capabilityName: z.string().max(250).optional().or(z.literal("")),
+    capabilityVersion: z.string().max(250).optional().or(z.literal("")),
+    exampleOutputs: z.array(exampleOutputSchema).optional(),
+    supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
+    payoutAddress: z
+      .string()
+      .max(250, "Payout address is too long")
+      .optional()
+      .or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    if (!registerAgentPricingRequiresPayoutAddress(data.pricing)) return;
+
+    const payoutAddress = data.payoutAddress?.trim() ?? "";
+    if (!payoutAddress) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Payout address is required.",
+        path: ["payoutAddress"],
+      });
+    }
+  });
 
 /** Same validation as `POST /api/agents`; `.openapi()` only adds documentation metadata. */
 export const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
   description:
-    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request).',
+    'At least one tag is required: send `tags` as a comma-separated string (e.g. `"research, nlp"`). `pricing.pricingType` accepts `Free`, `Fixed`, or `Dynamic`. `prices` is required only when `pricingType` is `Fixed`; `Free` and `Dynamic` omit it (Dynamic amounts are set per payment/purchase request). `payoutAddress` is required for `Fixed` and `Dynamic` pricing; omit it for `Free`.',
   example: {
     name: "Research assistant",
     description: "Helps with literature review",

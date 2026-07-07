@@ -110,7 +110,7 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       capabilityName: z.string().optional().or(z.literal("")),
       capabilityVersion: z.string().optional().or(z.literal("")),
       exampleOutputs: z.array(z.any()).optional(),
-      payoutAddress: z.string().min(1),
+      payoutAddress: z.string().max(250).optional().or(z.literal("")),
     })
     .strict();
 
@@ -265,6 +265,35 @@ describe("/api/agents POST", () => {
       },
     });
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows Free registration without a payout address", async () => {
+    buildAgentPricingMock.mockReturnValue({ pricingType: "Free" });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          registerAgentBody({
+            pricing: { pricingType: "Free" },
+            payoutAddress: undefined,
+          }),
+        ),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(startAgentRegistrationMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        agentPricing: { pricingType: "Free" },
+        payoutAddress: "",
+      }),
+    );
   });
 
   it("returns 503 when Mainnet payment-source config is missing", async () => {

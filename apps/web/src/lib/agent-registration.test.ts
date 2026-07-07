@@ -423,7 +423,10 @@ describe("startAgentRegistration", () => {
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
-        agentPricing: { pricingType: "Free" },
+        agentPricing: {
+          pricingType: "Fixed",
+          Pricing: [{ unit: "lovelace", amount: "5000000" }],
+        },
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
@@ -435,6 +438,106 @@ describe("startAgentRegistration", () => {
       success: false,
       error: "Payout address must be a Preprod Cardano address (addr_test…).",
     });
+  });
+
+  it("allows Free registration without a payout address", async () => {
+    const generateWalletMock = vi.fn().mockResolvedValue({
+      walletMnemonic: "selling mnemonic",
+      walletAddress: "addr_test1selling",
+      walletVkey: "selling-vkey",
+    });
+    const addWalletsToPaymentSourceMock = vi.fn().mockResolvedValue({
+      id: "payment-source-preprod",
+      network: "Preprod",
+      SellingWallets: [
+        {
+          id: "wallet-funding",
+          walletVkey: "funding-vkey",
+          walletAddress: "addr_test1funding",
+        },
+        {
+          id: "wallet-new",
+          walletVkey: "selling-vkey",
+          walletAddress: "addr_test1selling",
+        },
+      ],
+      smartContractAddress: "addr_test1contract",
+    });
+    const getPaymentSourcesMock = vi.fn().mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "payment-source-preprod",
+          network: "Preprod",
+          SellingWallets: [
+            {
+              id: "wallet-funding",
+              walletVkey: "funding-vkey",
+              walletAddress: "addr_test1funding",
+            },
+          ],
+          PurchasingWallets: [],
+          smartContractAddress: "addr_test1contract",
+        },
+      ],
+    });
+
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      createApiKey: vi.fn(),
+    });
+    getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
+    createPaymentNodeClientMock.mockReturnValue({
+      getPaymentSources: getPaymentSourcesMock,
+      getWalletList: vi.fn().mockResolvedValue({
+        Wallets: [
+          {
+            id: "wallet-new",
+            paymentSourceId: "payment-source-preprod",
+            type: "Selling",
+            walletVkey: "selling-vkey",
+            walletAddress: "addr_test1selling",
+            collectionAddress: null,
+            note: "Agent: Demo agent (selling)",
+          },
+        ],
+      }),
+      generateWallet: generateWalletMock,
+      addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
+    });
+
+    const result = await startAgentRegistration(
+      {
+        user: {
+          id: "user-1",
+          name: "Taylor",
+          email: "taylor@example.com",
+        },
+        activeOrganizationId: null,
+        network: "Preprod",
+      },
+      {
+        name: "Demo agent",
+        description: "Test",
+        extendedDescription: null,
+        apiUrl: "https://agent.example.com",
+        tags: ["demo"],
+        icon: null,
+        agentPricing: { pricingType: "Free" },
+        exampleOutputs: [],
+        capabilityName: "demo",
+        capabilityVersion: "1.0.0",
+      },
+    );
+
+    expect(result).toStrictEqual({ success: true, agentId: "agent-1" });
+    expect(addWalletsToPaymentSourceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        AddSellingWallets: [
+          expect.objectContaining({
+            collectionAddress: "addr_test1selling",
+          }),
+        ],
+      }),
+    );
   });
 
   it("scopes the user key only to the generated selling wallet", async () => {
@@ -525,7 +628,10 @@ describe("startAgentRegistration", () => {
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
-        agentPricing: { pricingType: "Free" },
+        agentPricing: {
+          pricingType: "Fixed",
+          Pricing: [{ unit: "lovelace", amount: "5000000" }],
+        },
         exampleOutputs: [],
         capabilityName: "demo",
         capabilityVersion: "1.0.0",
