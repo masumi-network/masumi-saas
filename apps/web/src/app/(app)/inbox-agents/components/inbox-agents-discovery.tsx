@@ -1,16 +1,16 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ChevronRight, ExternalLink, Inbox, Search } from "lucide-react";
+import { ExternalLink, Inbox, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { DiscoveryTableSkeleton } from "@/components/discovery-table-skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
@@ -40,7 +40,7 @@ import {
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { isRegistryUnavailableError } from "@/lib/discovery/registry-unavailable";
-import { getInitials, shortenAddress } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 
 import {
   countInboxDiscoveryListFilters,
@@ -48,6 +48,7 @@ import {
   type InboxDiscoveryListFilters,
   inboxDiscoveryListFiltersToApi,
 } from "./inbox-agents-discovery-filters-popover";
+import { InboxAgentsDiscoveryTable } from "./inbox-agents-discovery-table";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -130,37 +131,6 @@ function getInboxRegistrationBadgeVariant(
     default:
       return "secondary" as const;
   }
-}
-
-function DiscoverySkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Card
-          key={index}
-          className="rounded-xl border-border/80 py-0 shadow-sm"
-        >
-          <CardContent className="px-4 py-4 sm:px-5">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
-                </div>
-                <div className="h-3 w-full animate-pulse rounded bg-muted" />
-                <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="flex flex-wrap gap-2">
-                  <div className="h-5 w-28 animate-pulse rounded-full bg-muted" />
-                  <div className="h-5 w-20 animate-pulse rounded-full bg-muted" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
 }
 
 function DiscoveryPaginationBar({
@@ -392,77 +362,6 @@ function InboxAgentDetailsDialog({
         </DialogBody>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function InboxAgentListItem({
-  registration,
-  onViewDetails,
-}: {
-  registration: InboxAgentRegistration;
-  onViewDetails: () => void;
-}) {
-  const t = useTranslations("App.Agents");
-  const { formatRelativeDate } = useFormatDate();
-  const policyId = registration.RegistrySource.policyId;
-  const shortDescription = registration.description?.trim();
-
-  return (
-    <button
-      type="button"
-      onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-muted-surface/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
-        <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
-          <AvatarFallback>{getInitials(registration.name)}</AvatarFallback>
-        </Avatar>
-
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
-              {registration.name}
-            </span>
-            <Badge
-              variant={getInboxRegistrationBadgeVariant(registration.status)}
-            >
-              {registration.status}
-            </Badge>
-          </div>
-
-          {shortDescription && (
-            <p className="line-clamp-1 text-sm text-muted-foreground">
-              {shortDescription}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{registration.agentSlug}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span>{formatRelativeDate(registration.statusUpdatedAt)}</span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="primary-muted">{registration.agentSlug}</Badge>
-            <Badge variant="outline-muted">
-              {t("Discovery.metadataVersion", {
-                version: registration.metadataVersion,
-              })}
-            </Badge>
-            <Badge variant="outline-muted">
-              {policyId
-                ? shortenAddress(policyId, 8)
-                : t("Discovery.noPolicyId")}
-            </Badge>
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 self-center text-xs text-muted-foreground sm:flex">
-          <span>{t("Discovery.viewDetails")}</span>
-          <ChevronRight className="h-4 w-4" />
-        </div>
-      </div>
-    </button>
   );
 }
 
@@ -837,7 +736,7 @@ export function InboxAgentsDiscovery() {
       ) : null}
 
       {!hasActiveSearch && state.isLoading ? (
-        <DiscoverySkeleton />
+        <DiscoveryTableSkeleton columns={6} />
       ) : (
         <>
           {isSearchLoading ? (
@@ -848,17 +747,10 @@ export function InboxAgentsDiscovery() {
           ) : null}
 
           {visibleItems.length > 0 ? (
-            <div className="space-y-3">
-              {visibleItems.map((registration) => (
-                <InboxAgentListItem
-                  key={registration.id}
-                  registration={registration}
-                  onViewDetails={() =>
-                    setSelectedInboxRegistration(registration)
-                  }
-                />
-              ))}
-            </div>
+            <InboxAgentsDiscoveryTable
+              registrations={visibleItems}
+              onSelect={setSelectedInboxRegistration}
+            />
           ) : isSearchLoading ? null : registryUnavailable ? (
             <DiscoveryEmptyState
               icon={Inbox}

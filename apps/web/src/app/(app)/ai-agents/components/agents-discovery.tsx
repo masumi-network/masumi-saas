@@ -1,13 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  Bot,
-  ChevronRight,
-  ExternalLink,
-  Search,
-} from "lucide-react";
+import { Activity, Bot, ExternalLink, Search } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
@@ -20,10 +14,10 @@ import {
 } from "react";
 
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { DiscoveryTableSkeleton } from "@/components/discovery-table-skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
@@ -62,6 +56,7 @@ import {
   type DiscoveryListFilters,
   discoveryListFiltersToApi,
 } from "./agents-discovery-filters-popover";
+import { AgentsDiscoveryTable } from "./agents-discovery-table";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -167,37 +162,6 @@ function matchesRegistryLookup(entry: RegistryEntry, query: string) {
     .toLowerCase();
 
   return haystack.includes(query);
-}
-
-function DiscoverySkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Card
-          key={index}
-          className="rounded-xl border-border/80 py-0 shadow-sm"
-        >
-          <CardContent className="px-4 py-4 sm:px-5">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
-                </div>
-                <div className="h-3 w-full animate-pulse rounded bg-muted" />
-                <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="flex flex-wrap gap-2">
-                  <div className="h-5 w-28 animate-pulse rounded-full bg-muted" />
-                  <div className="h-5 w-20 animate-pulse rounded-full bg-muted" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
 }
 
 function DiscoveryPaginationBar({
@@ -448,89 +412,6 @@ function RegistryEntryDetailsDialog({
         </DialogBody>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function RegistryAgentListItem({
-  entry,
-  onViewDetails,
-}: {
-  entry: RegistryEntry;
-  onViewDetails: () => void;
-}) {
-  const t = useTranslations("App.Agents");
-  const { formatRelativeDate } = useFormatDate();
-  const tags = entry.tags ?? [];
-  const capabilityLabel = entry.Capability?.name
-    ? entry.Capability.version
-      ? `${entry.Capability.name} v${entry.Capability.version}`
-      : entry.Capability.name
-    : t("Discovery.noCapability");
-  const pricingLabel = formatPricing(
-    entry,
-    t("Discovery.pricing.free"),
-    t("Discovery.pricing.dynamic"),
-    t("Discovery.pricing.unavailable"),
-  );
-  const publisher = formatPublisher(entry, t("Discovery.authorFallback"));
-  const shortDescription =
-    entry.description?.trim() || t("Details.noDescription");
-
-  return (
-    <button
-      type="button"
-      onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-muted-surface/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
-        <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
-          <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
-          <AvatarFallback>{getInitials(entry.name)}</AvatarFallback>
-        </Avatar>
-
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
-              {entry.name}
-            </span>
-            <Badge variant="success">{entry.status}</Badge>
-          </div>
-
-          <p className="line-clamp-1 text-sm text-muted-foreground">
-            {shortDescription}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{publisher}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span>{formatRelativeDate(entry.updatedAt)}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span className="flex items-center gap-1">
-              <span className="font-medium text-foreground">
-                {t("table.price")}
-              </span>
-              <span>{pricingLabel}</span>
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="primary-muted">{capabilityLabel}</Badge>
-            {tags.length > 0 && (
-              <Badge variant="outline-muted">
-                {tags.length === 1
-                  ? tags[0]
-                  : `+${tags.length} ${t("Discovery.tagsLabel")}`}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 self-center text-xs text-muted-foreground sm:flex">
-          <span>{t("Discovery.viewDetails")}</span>
-          <ChevronRight className="h-4 w-4" />
-        </div>
-      </div>
-    </button>
   );
 }
 
@@ -922,7 +803,7 @@ export function AgentsDiscovery() {
       ) : null}
 
       {!hasActiveSearch && registryState.isLoading ? (
-        <DiscoverySkeleton />
+        <DiscoveryTableSkeleton columns={8} />
       ) : (
         <>
           {isSearchLoading ? (
@@ -933,15 +814,10 @@ export function AgentsDiscovery() {
           ) : null}
 
           {visibleRegistryEntries.length > 0 ? (
-            <div className="space-y-3">
-              {visibleRegistryEntries.map((entry) => (
-                <RegistryAgentListItem
-                  key={entry.id}
-                  entry={entry}
-                  onViewDetails={() => setSelectedRegistryEntry(entry)}
-                />
-              ))}
-            </div>
+            <AgentsDiscoveryTable
+              entries={visibleRegistryEntries}
+              onSelect={setSelectedRegistryEntry}
+            />
           ) : isSearchLoading ? null : registryUnavailable ? (
             <DiscoveryEmptyState
               icon={Bot}
