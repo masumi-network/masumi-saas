@@ -21,7 +21,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import { REGISTRATION_SYNC_STATES } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/agent-completion-context";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
@@ -58,7 +57,6 @@ function getEmptyStateMessageKey(
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const { activeOrganizationId } = useOrganizationContext();
   const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
@@ -71,8 +69,8 @@ export function AgentsContent() {
     ? (sectionParam as (typeof VALID_SECTIONS)[number])
     : "manage";
   const listFilters = useMemo(
-    () => parseAgentListFilters(searchParams, agentVerificationUiEnabled),
-    [agentVerificationUiEnabled, searchParams],
+    () => parseAgentListFilters(searchParams),
+    [searchParams],
   );
   const activeFilterCount = useMemo(
     () => countAgentListFilters(listFilters),
@@ -324,7 +322,6 @@ export function AgentsContent() {
                 <AgentsFiltersPopover
                   filters={listFilters}
                   activeFilterCount={activeFilterCount}
-                  showVerificationFilter={agentVerificationUiEnabled}
                   onChange={pushListFilters}
                   onClear={() => pushListFilters({})}
                 />

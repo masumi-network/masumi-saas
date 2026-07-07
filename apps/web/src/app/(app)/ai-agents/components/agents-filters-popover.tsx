@@ -22,10 +22,31 @@ const FILTER_ALL = "__all__";
 
 export type AgentRegistrationFilter = "registered" | "pending" | "failed";
 
+export type AgentVerificationFilter =
+  | "verified"
+  | "pending"
+  | "unverified"
+  | "revoked"
+  | "expired";
+
 export type AgentListFilters = {
   registration?: AgentRegistrationFilter;
-  verification?: "verified";
+  verification?: AgentVerificationFilter;
 };
+
+const VERIFICATION_FILTER_VALUES = [
+  "verified",
+  "pending",
+  "unverified",
+  "revoked",
+  "expired",
+] as const satisfies readonly AgentVerificationFilter[];
+
+function isAgentVerificationFilter(
+  value: string,
+): value is AgentVerificationFilter {
+  return (VERIFICATION_FILTER_VALUES as readonly string[]).includes(value);
+}
 
 export function countAgentListFilters(filters: AgentListFilters): number {
   let count = 0;
@@ -36,13 +57,28 @@ export function countAgentListFilters(filters: AgentListFilters): number {
 
 export function agentListFiltersToApi(filters: AgentListFilters) {
   const api: {
-    verificationStatus?: "VERIFIED";
+    verificationStatus?: "VERIFIED" | "PENDING" | "REVOKED" | "EXPIRED";
+    unverified?: boolean;
     registrationState?: "RegistrationConfirmed";
     registrationStateIn?: string[];
   } = {};
 
-  if (filters.verification === "verified") {
-    api.verificationStatus = "VERIFIED";
+  switch (filters.verification) {
+    case "verified":
+      api.verificationStatus = "VERIFIED";
+      break;
+    case "pending":
+      api.verificationStatus = "PENDING";
+      break;
+    case "revoked":
+      api.verificationStatus = "REVOKED";
+      break;
+    case "expired":
+      api.verificationStatus = "EXPIRED";
+      break;
+    case "unverified":
+      api.unverified = true;
+      break;
   }
 
   switch (filters.registration) {
@@ -73,13 +109,12 @@ export function agentListFiltersToApi(filters: AgentListFilters) {
 
 export function parseAgentListFilters(
   searchParams: URLSearchParams,
-  verificationUiEnabled: boolean,
 ): AgentListFilters {
   const legacyTab = searchParams.get("tab");
   if (legacyTab && legacyTab !== "all") {
     switch (legacyTab) {
       case "verified":
-        return verificationUiEnabled ? { verification: "verified" } : {};
+        return { verification: "verified" };
       case "registered":
         return { registration: "registered" };
       case "pending":
@@ -99,11 +134,9 @@ export function parseAgentListFilters(
     filters.registration = registration;
   }
 
-  if (
-    verificationUiEnabled &&
-    searchParams.get("verification") === "verified"
-  ) {
-    filters.verification = "verified";
+  const verification = searchParams.get("verification");
+  if (verification && isAgentVerificationFilter(verification)) {
+    filters.verification = verification;
   }
 
   return filters;
@@ -123,7 +156,7 @@ export function agentListFiltersToSearchParams(
   }
 
   if (filters.verification) {
-    params.set("verification", "verified");
+    params.set("verification", filters.verification);
   } else {
     params.delete("verification");
   }
@@ -134,13 +167,11 @@ export function agentListFiltersToSearchParams(
 export function AgentsFiltersPopover({
   filters,
   activeFilterCount,
-  showVerificationFilter,
   onChange,
   onClear,
 }: {
   filters: AgentListFilters;
   activeFilterCount: number;
-  showVerificationFilter: boolean;
   onChange: (next: AgentListFilters) => void;
   onClear: () => void;
 }) {
@@ -215,35 +246,45 @@ export function AgentsFiltersPopover({
             </Select>
           </div>
 
-          {showVerificationFilter ? (
-            <div className="space-y-2">
-              <Label htmlFor="agents-filter-verification">
-                {t("filterVerification")}
-              </Label>
-              <Select
-                value={filters.verification ?? FILTER_ALL}
-                onValueChange={(value) =>
-                  onChange({
-                    ...filters,
-                    verification: value === FILTER_ALL ? undefined : "verified",
-                  })
-                }
-              >
-                <SelectTrigger
-                  id="agents-filter-verification"
-                  className="w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={FILTER_ALL}>
-                    {t("allVerificationStatuses")}
-                  </SelectItem>
-                  <SelectItem value="verified">{t("tabs.verified")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="agents-filter-verification">
+              {t("filterVerification")}
+            </Label>
+            <Select
+              value={filters.verification ?? FILTER_ALL}
+              onValueChange={(value) =>
+                onChange({
+                  ...filters,
+                  verification:
+                    value === FILTER_ALL
+                      ? undefined
+                      : (value as AgentVerificationFilter),
+                })
+              }
+            >
+              <SelectTrigger id="agents-filter-verification" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>
+                  {t("allVerificationStatuses")}
+                </SelectItem>
+                <SelectItem value="verified">{t("tabs.verified")}</SelectItem>
+                <SelectItem value="pending">
+                  {t("verificationFilters.pending")}
+                </SelectItem>
+                <SelectItem value="unverified">
+                  {t("verificationFilters.unverified")}
+                </SelectItem>
+                <SelectItem value="revoked">
+                  {t("verificationFilters.revoked")}
+                </SelectItem>
+                <SelectItem value="expired">
+                  {t("verificationFilters.expired")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
