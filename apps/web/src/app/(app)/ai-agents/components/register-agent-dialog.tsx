@@ -303,7 +303,7 @@ export function RegisterAgentDialog({
           }),
         )
         .optional(),
-      payoutAddress: z.string().min(1, t("payoutAddressRequired")),
+      payoutAddress: z.string().optional().or(z.literal("")),
     })
     .refine(
       (data) => {
@@ -355,21 +355,23 @@ export function RegisterAgentDialog({
       }
 
       const payoutAddress = normalizePayoutAddress(data.payoutAddress ?? "");
-      if (!payoutAddress) {
-        ctx.addIssue({
-          code: "custom",
-          message: t("payoutAddressRequired"),
-          path: ["payoutAddress"],
-        });
-      } else if (!isCardanoAddressForNetwork(payoutAddress, network)) {
-        ctx.addIssue({
-          code: "custom",
-          message:
-            network === "Mainnet"
-              ? t("payoutAddressInvalidMainnet")
-              : t("payoutAddressInvalidPreprod"),
-          path: ["payoutAddress"],
-        });
+      if (data.pricingType !== "Free") {
+        if (!payoutAddress) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("payoutAddressRequired"),
+            path: ["payoutAddress"],
+          });
+        } else if (!isCardanoAddressForNetwork(payoutAddress, network)) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              network === "Mainnet"
+                ? t("payoutAddressInvalidMainnet")
+                : t("payoutAddressInvalidPreprod"),
+            path: ["payoutAddress"],
+          });
+        }
       }
     });
 
@@ -646,7 +648,9 @@ export function RegisterAgentDialog({
         capabilityName: data.capabilityName?.trim() ?? "",
         capabilityVersion: data.capabilityVersion?.trim() ?? "",
         exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
-        payoutAddress: data.payoutAddress.trim(),
+        ...(data.pricingType !== "Free" && data.payoutAddress.trim()
+          ? { payoutAddress: data.payoutAddress.trim() }
+          : {}),
         ...(evmSupportedSources.length > 0
           ? { supportedPaymentSources: evmSupportedSources }
           : {}),
@@ -1021,44 +1025,46 @@ export function RegisterAgentDialog({
                     network={network}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="payoutAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("payoutAddress")}</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                                <CircleHelp className="h-3.5 w-3.5" />
-                                <span className="sr-only">
-                                  {t("payoutAddressHint")}
+                  {pricingType !== "Free" ? (
+                    <FormField
+                      control={form.control}
+                      name="payoutAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel>{t("payoutAddress")}</FormLabel>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                                  <CircleHelp className="h-3.5 w-3.5" />
+                                  <span className="sr-only">
+                                    {t("payoutAddressHint")}
+                                  </span>
                                 </span>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              {t("payoutAddressHint")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={t(
-                              network === "Mainnet"
-                                ? "payoutAddressPlaceholderMainnet"
-                                : "payoutAddressPlaceholderPreprod",
-                            )}
-                            className="h-11 font-mono text-sm"
-                            spellCheck={false}
-                            autoComplete="off"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                {t("payoutAddressHint")}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder={t(
+                                network === "Mainnet"
+                                  ? "payoutAddressPlaceholderMainnet"
+                                  : "payoutAddressPlaceholderPreprod",
+                              )}
+                              className="h-11 font-mono text-sm"
+                              spellCheck={false}
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
 
                   {pricingType === "Fixed" ? (
                     <X402OptionsSection

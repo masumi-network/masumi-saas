@@ -86,7 +86,7 @@ export type RegisterAgentParams = {
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
-  payoutAddress: string;
+  payoutAddress?: string;
   supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
@@ -479,13 +479,18 @@ async function registerAgentOnChainUntilSetup(
     return { success: false, error: "At least one tag is required." };
   }
 
-  const payoutAddress = normalizePayoutAddress(params.payoutAddress);
-  const payoutAddressError = validatePayoutAddressForNetwork(
-    payoutAddress,
-    network,
-  );
-  if (payoutAddressError) {
-    return { success: false, error: payoutAddressError };
+  const isFreePricing = params.agentPricing.pricingType === "Free";
+
+  let payoutAddress = "";
+  if (!isFreePricing) {
+    payoutAddress = normalizePayoutAddress(params.payoutAddress ?? "");
+    const payoutAddressError = validatePayoutAddressForNetwork(
+      payoutAddress,
+      network,
+    );
+    if (payoutAddressError) {
+      return { success: false, error: payoutAddressError };
+    }
   }
 
   const userClient = await getPaymentNodeClientForUser(user.id);
@@ -591,13 +596,16 @@ async function registerAgentOnChainUntilSetup(
   }
 
   const sellingWallet = await adminClient.generateWallet(network);
+  const collectionAddress = isFreePricing
+    ? sellingWallet.walletAddress
+    : payoutAddress;
   const paymentSource = await adminClient.addWalletsToPaymentSource({
     paymentSourceId,
     AddSellingWallets: [
       {
         walletMnemonic: sellingWallet.walletMnemonic,
         note: `Agent: ${params.name} (selling)`,
-        collectionAddress: payoutAddress,
+        collectionAddress,
       },
     ],
   });
@@ -735,7 +743,7 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
-        collectionAddress: payoutAddress,
+        collectionAddress,
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
