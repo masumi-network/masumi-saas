@@ -118,7 +118,7 @@ export const SignupMagicLinkForm = forwardRef<
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col items-center gap-2 w-full"
       >
-        <p className="mx-auto w-full max-w-md text-center text-sm text-muted-foreground">
+        <p className="w-full text-center text-xs leading-snug text-muted-foreground sm:text-sm">
           {t("magicLinkDescription")}
         </p>
 
@@ -164,8 +164,8 @@ export const SignupMagicLinkForm = forwardRef<
           control={form.control}
           name="termsAccepted"
           render={({ field }) => (
-            <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
-              <FormControl>
+            <FormItem className="w-full flex flex-row items-start align-center space-x-3 space-y-0">
+              <FormControl className="mt-0.5">
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={(checked) =>

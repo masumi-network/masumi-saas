@@ -217,8 +217,8 @@ export const SignupPasswordForm = forwardRef<
           control={form.control}
           name="termsAccepted"
           render={({ field }) => (
-            <FormItem className="w-full flex flex-row items-start space-x-3 space-y-0">
-              <FormControl>
+            <FormItem className="w-full flex flex-row items-start align-center space-x-3 space-y-0">
+              <FormControl className="mt-0.5">
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={(checked) =>

@@ -73,7 +73,13 @@ export function SocialAuthButtons({
     });
   };
 
-  if (providers.length === 0) return null;
+  if (providers.length === 0) {
+    return (
+      <div className="flex justify-center" aria-hidden="true">
+        <hr className="h-0 w-10 border-0 border-t border-border/80" />
+      </div>
+    );
+  }
 
   const shared = {
     align: "center" as const,
