@@ -110,6 +110,7 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       capabilityName: z.string().optional().or(z.literal("")),
       capabilityVersion: z.string().optional().or(z.literal("")),
       exampleOutputs: z.array(z.any()).optional(),
+      payoutAddress: z.string().min(1),
     })
     .strict();
 
@@ -134,6 +135,20 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
 
 describe("/api/agents POST", () => {
   let POST: typeof import("./route").POST;
+
+  const TEST_PAYOUT_ADDRESS =
+    "addr_test1qqexamplepayoutaddressqqexamplepayoutqq";
+
+  function registerAgentBody(overrides: Record<string, unknown> = {}) {
+    return {
+      name: "Research assistant",
+      description: "Helps with literature review",
+      apiUrl: "https://agent.example.com/mip",
+      tags: "research, nlp",
+      payoutAddress: TEST_PAYOUT_ADDRESS,
+      ...overrides,
+    };
+  }
 
   const agentResponseShape = {
     id: "agent-1",
@@ -229,12 +244,7 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(registerAgentBody()),
       },
     );
 
@@ -271,12 +281,7 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(registerAgentBody()),
       },
     );
 
@@ -374,12 +379,7 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(registerAgentBody()),
       },
     );
 
@@ -397,13 +397,9 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-          pricing: { pricingType: "Dynamic" },
-        }),
+        body: JSON.stringify(
+          registerAgentBody({ pricing: { pricingType: "Dynamic" } }),
+        ),
       },
     );
 
@@ -424,12 +420,12 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "DIRECT_MIP",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "DIRECT_MIP",
+            apiUrl: undefined,
+          }),
+        ),
       },
     );
 
@@ -446,15 +442,15 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          langdockApiKey: "ld_test",
-          langdockAgentId: "ld-agent-1",
-          langdockBaseUrl: "https://langdock.example.com/api",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            langdockApiKey: "ld_test",
+            langdockAgentId: "ld-agent-1",
+            langdockBaseUrl: "https://langdock.example.com/api",
+          }),
+        ),
       },
     );
 
@@ -515,15 +511,15 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          integrationConnectionId: "connection-1",
-          langdockAgentId: "ld-agent-1",
-          langdockBaseUrl: "",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            integrationConnectionId: "connection-1",
+            langdockAgentId: "ld-agent-1",
+            langdockBaseUrl: "",
+          }),
+        ),
       },
     );
 
@@ -554,14 +550,14 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          langdockApiKey: "bad",
-          langdockAgentId: "ld-agent-1",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            langdockApiKey: "bad",
+            langdockAgentId: "ld-agent-1",
+          }),
+        ),
       },
     );
 
@@ -583,6 +579,7 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           apiUrl: "https://agent.example.com/mip",
           tags: "",
+          payoutAddress: TEST_PAYOUT_ADDRESS,
         }),
       },
     );
@@ -600,22 +597,21 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-          supportedPaymentSources: [
-            {
-              chain: "EVM",
-              network: "not-caip2",
-              scheme: "Exact",
-              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-              amount: "10000",
-              decimals: 6,
-              payTo: "0x1111111111111111111111111111111111111111",
-            },
-          ],
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "not-caip2",
+                scheme: "Exact",
+                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                amount: "10000",
+                decimals: 6,
+                payTo: "0x1111111111111111111111111111111111111111",
+              },
+            ],
+          }),
+        ),
       },
     );
 
@@ -632,23 +628,23 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Free research assistant",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-          pricing: { pricingType: "Free" },
-          supportedPaymentSources: [
-            {
-              chain: "EVM",
-              network: "eip155:84532",
-              scheme: "Exact",
-              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-              amount: "10000",
-              decimals: 6,
-              payTo: "0x1111111111111111111111111111111111111111",
-            },
-          ],
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            name: "Free research assistant",
+            pricing: { pricingType: "Free" },
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "eip155:84532",
+                scheme: "Exact",
+                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                amount: "10000",
+                decimals: 6,
+                payTo: "0x1111111111111111111111111111111111111111",
+              },
+            ],
+          }),
+        ),
       },
     );
 
@@ -667,23 +663,23 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Dynamic research assistant",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-          pricing: { pricingType: "Dynamic" },
-          supportedPaymentSources: [
-            {
-              chain: "EVM",
-              network: "eip155:84532",
-              scheme: "Exact",
-              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-              amount: "10000",
-              decimals: 6,
-              payTo: "0x1111111111111111111111111111111111111111",
-            },
-          ],
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            name: "Dynamic research assistant",
+            pricing: { pricingType: "Dynamic" },
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "eip155:84532",
+                scheme: "Exact",
+                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                amount: "10000",
+                decimals: 6,
+                payTo: "0x1111111111111111111111111111111111111111",
+              },
+            ],
+          }),
+        ),
       },
     );
 
