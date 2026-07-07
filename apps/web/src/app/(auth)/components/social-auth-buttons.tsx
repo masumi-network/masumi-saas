@@ -67,7 +67,7 @@ export function SocialAuthButtons({
   const tSocial = useTranslations("Auth.Social");
 
   const handleSocialSignIn = (provider: OAuthProvider) => {
-    authClient.signIn.social({
+    void authClient.signIn.social({
       provider,
       callbackURL: sanitizeCallbackUrl(callbackURL) ?? "/",
     });

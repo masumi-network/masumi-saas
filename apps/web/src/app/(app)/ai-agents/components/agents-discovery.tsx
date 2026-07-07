@@ -824,11 +824,11 @@ export function AgentsDiscovery() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     if (hasActiveSearch) {
-      searchQueryResult.refetch().finally(() => setIsRefreshing(false));
+      void searchQueryResult.refetch().finally(() => setIsRefreshing(false));
       return;
     }
 
-    loadRegistryInitial().finally(() => setIsRefreshing(false));
+    void loadRegistryInitial().finally(() => setIsRefreshing(false));
   };
 
   const summaryLabel = t("Discovery.resultsSummary", {

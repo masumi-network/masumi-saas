@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -30,13 +31,19 @@ import {
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
+import {
+  canDeregisterAgent,
+  isRegistrationConfirmedOnNetwork,
+  isRegistrationUiPending,
+} from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { formatPricingDisplay } from "@/lib/utils";
+import { cn, formatPricingDisplay } from "@/lib/utils";
 
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "../../../components/agent-utils";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 
@@ -44,7 +51,9 @@ interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
   onDeregisterClick: () => void;
-  onVerificationSuccess?: () => void;
+  onVerificationSuccess?: () => void | Promise<void>;
+  onRefreshStatus?: () => void | Promise<void>;
+  onVerificationDialogClosed?: () => void;
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;
@@ -54,6 +63,8 @@ export function AgentDetails({
   onDeleteClick,
   onDeregisterClick,
   onVerificationSuccess,
+  onRefreshStatus,
+  onVerificationDialogClosed,
 }: AgentDetailsProps) {
   // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
   const [now, setNow] = useState(0);
@@ -78,8 +89,9 @@ export function AgentDetails({
   );
 
   const isVerified = agent.verificationStatus === "VERIFIED";
-  const isRegistrationConfirmed =
-    agent.registrationState === "RegistrationConfirmed";
+  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
+    agent.registrationState,
+  );
   const registrationBadgeVariant = isRegistrationConfirmed
     ? ("success" as const)
     : getRegistrationStatusBadgeVariant(agent.registrationState);
@@ -98,6 +110,22 @@ export function AgentDetails({
     );
     return () => cancelAnimationFrame(id);
   }, [agent.id]);
+
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+
+  const handleRefreshStatus = useCallback(async () => {
+    if (!onRefreshStatus) return;
+    setIsRefreshingStatus(true);
+    try {
+      await onRefreshStatus();
+    } finally {
+      setIsRefreshingStatus(false);
+    }
+  }, [onRefreshStatus]);
+
+  const showRegistrationRefresh =
+    Boolean(onRefreshStatus) &&
+    isRegistrationUiPending(agent.registrationState);
 
   const handleDismissVerificationBanner = useCallback(() => {
     const key = `dismissedAgentVerification_${agent.id}`;
@@ -151,11 +179,29 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            <Badge variant={registrationBadgeVariant} className="shrink-0">
-              {tRegistrationStatus(
-                getRegistrationStatusKey(agent.registrationState),
-              )}
-            </Badge>
+            <div className="flex shrink-0 items-center gap-1">
+              <Badge
+                variant={registrationBadgeVariant}
+                className={cn(
+                  "shrink-0",
+                  getRegistrationStatusBadgeClassName(agent.registrationState),
+                )}
+              >
+                {tRegistrationStatus(
+                  getRegistrationStatusDisplayKey(agent.registrationState),
+                )}
+              </Badge>
+              {showRegistrationRefresh ? (
+                <RefreshButton
+                  onRefresh={handleRefreshStatus}
+                  isRefreshing={isRefreshingStatus}
+                  buttonVariant="ghost"
+                  size="sm"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  aria-label={t("refresh")}
+                />
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Description (short) */}
@@ -332,7 +378,10 @@ export function AgentDetails({
 
         <RequestVerificationDialog
           open={verificationDialogOpen}
-          onOpenChange={setVerificationDialogOpen}
+          onOpenChange={(open) => {
+            setVerificationDialogOpen(open);
+            if (!open) onVerificationDialogClosed?.();
+          }}
           agent={agent}
           kycStatus={kycStatus}
           onSuccess={onVerificationSuccess ?? (() => {})}
@@ -399,7 +448,7 @@ export function AgentDetails({
           agent.registrationState === "RegistrationFailed" ||
           agent.registrationState === "DeregistrationFailed";
         const showDeregisterCard =
-          agent.registrationState === "RegistrationConfirmed" &&
+          canDeregisterAgent(agent.registrationState) &&
           Boolean(agent.agentIdentifier);
         const showDeleteCard =
           pendingOver2Min ||

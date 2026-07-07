@@ -122,7 +122,7 @@ export function DashboardRevenueCard() {
   }, [period, network]);
 
   useEffect(() => {
-    fetchEarnings();
+    void fetchEarnings();
   }, [fetchEarnings]);
 
   const showChart = !isLoading && !error && earnings.length > 0;

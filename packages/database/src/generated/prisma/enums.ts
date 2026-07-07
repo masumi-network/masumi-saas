@@ -30,6 +30,10 @@ export const RegistrationState = {
   DeregistrationInitiated: "DeregistrationInitiated",
   DeregistrationConfirmed: "DeregistrationConfirmed",
   DeregistrationFailed: "DeregistrationFailed",
+  UpdateRequested: "UpdateRequested",
+  UpdateInitiated: "UpdateInitiated",
+  UpdateConfirmed: "UpdateConfirmed",
+  UpdateFailed: "UpdateFailed",
 } as const;
 
 export type RegistrationState =

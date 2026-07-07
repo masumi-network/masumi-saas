@@ -84,7 +84,7 @@ export function SumsubStep({
       }
     };
 
-    initializeSDK();
+    void initializeSDK();
 
     return () => {
       if (sdkRef.current) {

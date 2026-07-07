@@ -24,7 +24,11 @@ export type Agent = {
     | "DeregistrationRequested"
     | "DeregistrationInitiated"
     | "DeregistrationConfirmed"
-    | "DeregistrationFailed";
+    | "DeregistrationFailed"
+    | "UpdateRequested"
+    | "UpdateInitiated"
+    | "UpdateConfirmed"
+    | "UpdateFailed";
   verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   createdAt: Date;
   updatedAt: Date;
@@ -53,4 +57,35 @@ export type AgentVerificationCredentialSummary = {
   credentialAgentDisplayName: string | null;
   credentialAgentApiUrl: string | null;
   registryAgentIdentifier: string | null;
+};
+
+/** Registry NFT KERI/ACDC anchor status for the Credentials tab. */
+export type AgentOnChainVerificationStatus = {
+  configured: boolean;
+  registered: boolean;
+  hasAnchors: boolean;
+  verified: boolean;
+  credentialId: string | null;
+  expiresAt: string | null;
+  schemaSaid: string | null;
+  holderAid: string | null;
+  credentialSaid: string | null;
+  issuerAid: string | null;
+  resolutionSource: "on-chain" | "database" | null;
+  registryAgentIdentifier: string | null;
+  queriedAgentIdentifier: string | null;
+  registryState:
+    | "RegistrationRequested"
+    | "RegistrationInitiated"
+    | "RegistrationConfirmed"
+    | "RegistrationFailed"
+    | "DeregistrationRequested"
+    | "DeregistrationInitiated"
+    | "DeregistrationConfirmed"
+    | "DeregistrationFailed"
+    | "UpdateRequested"
+    | "UpdateInitiated"
+    | "UpdateConfirmed"
+    | "UpdateFailed"
+    | null;
 };

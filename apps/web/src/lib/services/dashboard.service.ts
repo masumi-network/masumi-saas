@@ -89,7 +89,7 @@ export async function getDashboardOverview(
         verificationStatus: true,
         pricing: true,
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { createdAt: "desc" },
       take: 10,
     }),
   ]);

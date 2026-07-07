@@ -31,6 +31,16 @@ export const verificationConfig = {
     process.env.NEXT_PUBLIC_ENABLE_VERIDIAN_AGENT_VERIFICATION,
     false,
   ),
+  /** Prefer registry NFT `Metadata.verifications` when resolving agent verify. */
+  readOnChainAgentVerification: parseFeatureFlag(
+    process.env.VERIDIAN_READ_ON_CHAIN_VERIFICATION,
+    true,
+  ),
+  /** Fall back to SaaS DB (`Agent.verificationStatus`) when chain has no anchors. */
+  dbVerificationFallback: parseFeatureFlag(
+    process.env.VERIDIAN_DB_VERIFICATION_FALLBACK,
+    true,
+  ),
 } as const;
 
 export const verificationFeatureCopy = {
@@ -63,4 +73,15 @@ export function isAgentVerificationFlowEnabled(): boolean {
     verificationConfig.sumsubKycEnabled &&
     verificationConfig.veridianAgentVerificationEnabled
   );
+}
+
+export function shouldReadOnChainAgentVerification(): boolean {
+  if (!verificationConfig.readOnChainAgentVerification) {
+    return false;
+  }
+  return Boolean(process.env.VERIDIAN_AGENT_VERIFICATION_SCHEMA_SAID?.trim());
+}
+
+export function shouldUseDbVerificationFallback(): boolean {
+  return verificationConfig.dbVerificationFallback;
 }

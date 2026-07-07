@@ -9,10 +9,10 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
+import { AgentCompletionProvider } from "@/lib/context/agent-completion-context";
 import { NotificationsProvider } from "@/lib/context/notifications-context";
 import { OrganizationProvider } from "@/lib/context/organization-context";
 import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
-import { RegistrationCompletionProvider } from "@/lib/context/registration-completion-context";
 import { resolveShowOnboarding } from "@/lib/onboarding/resolve-show-onboarding";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
@@ -55,7 +55,7 @@ export default async function AppLayout({
       <OrganizationProvider>
         <PaymentNetworkProvider initialNetwork={initialPaymentNetwork}>
           <NotificationsProvider>
-            <RegistrationCompletionProvider>
+            <AgentCompletionProvider>
               <SidebarProvider
                 defaultOpen={defaultOpen}
                 className="flex max-w-svw overflow-clip"
@@ -90,7 +90,7 @@ export default async function AppLayout({
                   </div>
                 </AppCanvasShell>
               </SidebarProvider>
-            </RegistrationCompletionProvider>
+            </AgentCompletionProvider>
           </NotificationsProvider>
         </PaymentNetworkProvider>
       </OrganizationProvider>

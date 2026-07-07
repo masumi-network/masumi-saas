@@ -5,8 +5,13 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { PendingWalletAcceptanceBanner } from "@/app/ai-agents/components/pending-wallet-acceptance-banner";
 import { Tabs } from "@/components/ui/tabs";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
+import {
+  isRegistrationUiPending,
+  isRegistryVerificationUpdatePending,
+} from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -18,10 +23,10 @@ import { DeleteAgentDialog } from "./delete-agent-dialog";
 import { DeregisterAgentDialog } from "./deregister-agent-dialog";
 import { NetworkMismatchDialog } from "./network-mismatch-dialog";
 import {
-  AgentCredentials,
   AgentDetails,
   AgentEarnings,
   AgentTransactions,
+  AgentVerificationTab,
 } from "./tabs";
 
 interface AgentPageContentProps {
@@ -29,6 +34,8 @@ interface AgentPageContentProps {
 }
 
 const DEFAULT_TAB = "details";
+const VERIFICATION_TAB = "verification";
+const LEGACY_CREDENTIALS_TAB = "credentials";
 
 function isValidNetwork(
   value: string | null | undefined,
@@ -51,6 +58,18 @@ export function AgentPageContent({
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeregistering, setIsDeregistering] = useState(false);
+  const [resumePendingCredentialId, setResumePendingCredentialId] = useState<
+    string | null
+  >(null);
+  const [pendingBannerRefreshKey, setPendingBannerRefreshKey] = useState(0);
+  const initialAgentRef = useRef(initialAgent);
+  initialAgentRef.current = initialAgent;
+
+  // Client-side navigation reuses this component — reset agent-scoped UI state.
+  useEffect(() => {
+    setAgent(initialAgentRef.current);
+    setResumePendingCredentialId(null);
+  }, [initialAgent.id]);
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
@@ -74,11 +93,7 @@ export function AgentPageContent({
     router.back();
   };
 
-  const pendingRegistration =
-    agent.registrationState === "RegistrationRequested" ||
-    agent.registrationState === "RegistrationInitiated" ||
-    agent.registrationState === "DeregistrationRequested" ||
-    agent.registrationState === "DeregistrationInitiated";
+  const pendingRegistration = isRegistrationUiPending(agent.registrationState);
 
   // RegistrationFailed may eventually have an agentIdentifier populated on the
   // payment node (the tx can land on-chain after the initial failure response).
@@ -100,7 +115,16 @@ export function AgentPageContent({
 
   const pollTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Poll while pending: one run then chain next every 12s. Use ref so effect doesn't re-run when syncAndRefetch identity changes.
+  // Always reconcile once on mount — payment-node may be UpdateRequested while
+  // SaaS DB is still RegistrationConfirmed until we sync.
+  const mountSyncAgentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (mountSyncAgentIdRef.current === agent.id) return;
+    mountSyncAgentIdRef.current = agent.id;
+    void syncAndRefetchRef.current();
+  }, [agent.id]);
+
+  // Poll while pending: one run then chain next every 12s.
   useEffect(() => {
     if (!pendingRegistration) return;
     let cancelled = false;
@@ -140,30 +164,49 @@ export function AgentPageContent({
     })();
   }, [agent.id, agent.registrationState]);
 
-  // Silently reconcile any PENDING credentials on mount.
-  // Handles the case where the user accepted the credential in Veridian
-  // after the dialog was closed or the page was reloaded.
+  // Reconcile pending credentials or backfill on-chain anchors when missing.
   useEffect(() => {
-    if (
-      !isAgentVerificationFlowEnabled() ||
-      agent.verificationStatus === "VERIFIED"
-    ) {
+    if (!isAgentVerificationFlowEnabled()) {
       return;
     }
     (async () => {
       const result = await credentialApiClient.reconcilePendingCredentials(
         agent.id,
       );
-      if (result.success && result.data.resolved) {
+      if (result.success) {
+        await syncAgentRegistrationStatusAction(agent.id);
         const next = await agentApiClient.getAgent(agent.id);
         if (next.success && next.data) setAgent(next.data);
       }
     })().catch(() => {
       // Reconcile or refetch failed; ignore.
     });
-  }, [agent.id, agent.verificationStatus]);
+  }, [agent.id]);
 
-  const tabParam = searchParams.get("tab");
+  // Poll while verification anchors are writing on-chain (credential issued, registry update pending).
+  useEffect(() => {
+    if (!isAgentVerificationFlowEnabled()) return;
+    if (agent.verificationStatus !== "VERIFIED") return;
+    if (!isRegistryVerificationUpdatePending(agent.registrationState)) return;
+
+    let cancelled = false;
+    const intervalId = setInterval(() => {
+      if (cancelled) return;
+      void (async () => {
+        await credentialApiClient.reconcilePendingCredentials(agent.id);
+        await syncAndRefetchRef.current();
+      })();
+    }, 12_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [agent.id, agent.registrationState, agent.verificationStatus]);
+
+  const tabParamRaw = searchParams.get("tab");
+  const tabParam =
+    tabParamRaw === LEGACY_CREDENTIALS_TAB ? VERIFICATION_TAB : tabParamRaw;
   const fromParam = searchParams.get("from");
   const isFromDashboard = fromParam === "dashboard";
   const backHref = isFromDashboard ? "/" : "/ai-agents";
@@ -174,7 +217,10 @@ export function AgentPageContent({
     { name: tTabs("detailTabs.transactions"), key: "transactions" },
   ];
   if (agentVerificationUiEnabled) {
-    tabs.push({ name: tTabs("detailTabs.credentials"), key: "credentials" });
+    tabs.push({
+      name: tTabs("detailTabs.verification"),
+      key: VERIFICATION_TAB,
+    });
   }
   const activeTab =
     tabParam && tabs.some((tab) => tab.key === tabParam)
@@ -227,13 +273,26 @@ export function AgentPageContent({
     });
   };
 
-  const handleVerificationSuccess = () => {
-    (async () => {
+  const handleVerificationSuccess = async () => {
+    setResumePendingCredentialId(null);
+    setPendingBannerRefreshKey((key) => key + 1);
+    try {
+      await credentialApiClient.reconcilePendingCredentials(agent.id);
+      await syncAgentRegistrationStatusAction(agent.id);
       const result = await agentApiClient.getAgent(agent.id);
       if (result.success && result.data) setAgent(result.data);
-    })().catch(() => {
-      // Refetch failed; user can refresh the page.
-    });
+    } catch {
+      // Refetch failed; banner was cleared — user can refresh the page.
+    }
+  };
+
+  const handleResumeWalletAcceptance = (pendingCredentialId: string) => {
+    setResumePendingCredentialId(pendingCredentialId);
+    if (activeTab !== VERIFICATION_TAB) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", VERIFICATION_TAB);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
   };
 
   return (
@@ -244,6 +303,13 @@ export function AgentPageContent({
           backHref={backHref}
           backLabel={backLabel}
         />
+        {agentVerificationUiEnabled ? (
+          <PendingWalletAcceptanceBanner
+            agentId={agent.id}
+            refreshKey={pendingBannerRefreshKey}
+            onResume={handleResumeWalletAcceptance}
+          />
+        ) : null}
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
@@ -253,13 +319,24 @@ export function AgentPageContent({
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
+          onRefreshStatus={syncAndRefetch}
+          onVerificationDialogClosed={() =>
+            setPendingBannerRefreshKey((key) => key + 1)
+          }
         />
       )}
 
-      {agentVerificationUiEnabled && activeTab === "credentials" && (
-        <AgentCredentials
+      {agentVerificationUiEnabled && activeTab === VERIFICATION_TAB && (
+        <AgentVerificationTab
           agent={agent}
           onVerificationSuccess={handleVerificationSuccess}
+          resumePendingCredentialId={resumePendingCredentialId}
+          onResumePendingCredentialConsumed={() =>
+            setResumePendingCredentialId(null)
+          }
+          onVerificationDialogClosed={() =>
+            setPendingBannerRefreshKey((key) => key + 1)
+          }
         />
       )}
 

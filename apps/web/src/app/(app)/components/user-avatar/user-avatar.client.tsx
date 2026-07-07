@@ -116,7 +116,7 @@ export default function UserAvatarClient({
   };
 
   const handleSelectWorkspace = (organizationId: string | null) => {
-    orgContext?.setActiveOrganization(organizationId);
+    void orgContext?.setActiveOrganization(organizationId);
     setWorkspacePopoverOpen(false);
   };
 

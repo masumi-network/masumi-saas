@@ -43,7 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { cn } from "@/lib/utils";
 
@@ -286,7 +286,7 @@ export function RegisterAgentDialog({
   onSuccess,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
-  const { addPendingAgent } = useRegistrationCompletion();
+  const { addPendingRegistration } = useAgentCompletion();
 
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
@@ -635,7 +635,7 @@ export function RegisterAgentDialog({
         json.success === true &&
         typeof json.agentId === "string";
       if (registrationAccepted) {
-        addPendingAgent(json.agentId);
+        addPendingRegistration(json.agentId);
         if (closedViaConfirmRef.current) {
           toast.info(t("registrationStarted"));
           onSuccessRef.current();

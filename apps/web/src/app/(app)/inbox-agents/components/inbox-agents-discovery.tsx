@@ -736,11 +736,11 @@ export function InboxAgentsDiscovery() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     if (hasActiveSearch) {
-      searchQueryResult.refetch().finally(() => setIsRefreshing(false));
+      void searchQueryResult.refetch().finally(() => setIsRefreshing(false));
       return;
     }
 
-    loadInitial().finally(() => setIsRefreshing(false));
+    void loadInitial().finally(() => setIsRefreshing(false));
   };
 
   const paginationLabels = {

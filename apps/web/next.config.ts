@@ -164,6 +164,13 @@ function buildSecurityHeaders() {
 const nextConfig: NextConfig = {
   reactCompiler: true,
   skipProxyUrlNormalize: true,
+  // signify-ts → libsodium-wrappers-sumo ESM uses a broken relative import
+  // (`./libsodium-sumo.mjs`); keep these on Node's resolver (CJS works).
+  serverExternalPackages: [
+    "signify-ts",
+    "libsodium-wrappers-sumo",
+    "libsodium-sumo",
+  ],
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },
