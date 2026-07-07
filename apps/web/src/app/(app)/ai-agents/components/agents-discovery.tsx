@@ -1,32 +1,29 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Activity, Bot, ExternalLink, Search } from "lucide-react";
-import Link from "next/link";
+import { Activity, Bot, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  DiscoveryCopyableValue,
+  DiscoveryDetailCard,
+  DiscoveryDetailCardContent,
+  DiscoveryDetailRow,
+  DiscoveryDetailsAvatar,
+  DiscoveryDetailsBody,
+  DiscoveryDetailsDialogContent,
+  DiscoveryDetailsHeader,
+  DiscoveryDetailStat,
+  DiscoveryDetailStatGrid,
+  DiscoveryLinkValue,
+  DiscoveryMetaBadge,
+  DiscoveryMutedValue,
+} from "@/components/discovery-detail-ui";
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
 import { DiscoveryTableSkeleton } from "@/components/discovery-table-skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -250,27 +247,6 @@ function DiscoveryPaginationBar({
   );
 }
 
-function DiscoveryDetailItem({
-  label,
-  children,
-  fullWidth = false,
-}: {
-  label: string;
-  children: ReactNode;
-  fullWidth?: boolean;
-}) {
-  return (
-    <div className={fullWidth ? "space-y-2 sm:col-span-2" : "space-y-2"}>
-      <div className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="rounded-lg border border-border/70 bg-muted-surface/60 px-3 py-3 text-sm">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function RegistryEntryDetailsDialog({
   entry,
   open,
@@ -305,73 +281,63 @@ function RegistryEntryDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[760px]">
-        <DialogHeader className="shrink-0 border-b px-6 py-5">
-          <div className="flex items-start gap-4 pr-8">
-            <Avatar className="h-14 w-14 border border-border/70">
-              <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
-              <AvatarFallback>{getInitials(entry.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <DialogTitle className="text-xl">{entry.name}</DialogTitle>
-                <Badge variant="success">{entry.status}</Badge>
-              </div>
-              <DialogDescription className="leading-6">
-                {entry.description?.trim() || t("Details.noDescription")}
-              </DialogDescription>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="primary-muted">{capabilityLabel}</Badge>
-                <Badge variant="secondary">{paymentLabel}</Badge>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
+      <DiscoveryDetailsDialogContent>
+        <DiscoveryDetailsHeader
+          avatar={
+            <DiscoveryDetailsAvatar
+              name={entry.name}
+              image={entry.image}
+              fallback={getInitials(entry.name)}
+            />
+          }
+          title={entry.name}
+          status={<Badge variant="success">{entry.status}</Badge>}
+          description={entry.description?.trim() || t("Details.noDescription")}
+          meta={
+            <>
+              <DiscoveryMetaBadge variant="primary-muted">
+                {capabilityLabel}
+              </DiscoveryMetaBadge>
+              <DiscoveryMetaBadge variant="secondary">
+                {paymentLabel}
+              </DiscoveryMetaBadge>
+            </>
+          }
+        />
 
-        <DialogBody className="px-6 py-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DiscoveryDetailItem label={t("table.apiUrl")} fullWidth>
-              <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  href={entry.apiBaseUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="min-w-0 flex-1 truncate text-foreground hover:underline"
-                >
-                  {entry.apiBaseUrl}
-                </Link>
-                <CopyButton value={entry.apiBaseUrl} />
-                <Button asChild variant="outline" size="sm2">
-                  <Link
-                    href={entry.apiBaseUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t("Discovery.openEndpoint")}
-                    <ExternalLink className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </DiscoveryDetailItem>
+        <DiscoveryDetailsBody>
+          <DiscoveryDetailCard title={t("table.apiUrl")}>
+            <DiscoveryDetailCardContent>
+              <DiscoveryLinkValue
+                href={entry.apiBaseUrl}
+                openLabel={t("Discovery.openEndpoint")}
+              />
+            </DiscoveryDetailCardContent>
+          </DiscoveryDetailCard>
 
-            <DiscoveryDetailItem label={t("table.agentId")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {entry.agentIdentifier}
-                </span>
-                <CopyButton value={entry.agentIdentifier} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.publisher")}>
+          <DiscoveryDetailCard>
+            <DiscoveryDetailRow label={t("table.agentId")}>
+              <DiscoveryCopyableValue value={entry.agentIdentifier} />
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.publisher")}>
               {publisher}
-            </DiscoveryDetailItem>
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.capability")}>
+              {capabilityLabel}
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.paymentType")}>
+              {paymentLabel}
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("table.price")}>
+              {pricingLabel}
+            </DiscoveryDetailRow>
+          </DiscoveryDetailCard>
 
-            <DiscoveryDetailItem label={t("Discovery.updated")}>
+          <DiscoveryDetailStatGrid>
+            <DiscoveryDetailStat label={t("Discovery.updated")}>
               {formatRelativeDate(entry.updatedAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.health")}>
+            </DiscoveryDetailStat>
+            <DiscoveryDetailStat label={t("Discovery.health")}>
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
                 {t("Discovery.healthValue", {
@@ -379,38 +345,26 @@ function RegistryEntryDetailsDialog({
                   uptimeCheckCount: entry.uptimeCheckCount,
                 })}
               </div>
-            </DiscoveryDetailItem>
+            </DiscoveryDetailStat>
+          </DiscoveryDetailStatGrid>
 
-            <DiscoveryDetailItem label={t("Discovery.capability")}>
-              {capabilityLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.paymentType")}>
-              {paymentLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.price")}>
-              {pricingLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.tags")} fullWidth>
+          <DiscoveryDetailCard title={t("table.tags")}>
+            <DiscoveryDetailCardContent>
               {tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
-                    <Badge key={tag} variant="outline-muted">
-                      {tag}
-                    </Badge>
+                    <DiscoveryMetaBadge key={tag}>{tag}</DiscoveryMetaBadge>
                   ))}
                 </div>
               ) : (
-                <span className="text-muted-foreground">
+                <DiscoveryMutedValue>
                   {t("Discovery.noTags")}
-                </span>
+                </DiscoveryMutedValue>
               )}
-            </DiscoveryDetailItem>
-          </div>
-        </DialogBody>
-      </DialogContent>
+            </DiscoveryDetailCardContent>
+          </DiscoveryDetailCard>
+        </DiscoveryDetailsBody>
+      </DiscoveryDetailsDialogContent>
     </Dialog>
   );
 }

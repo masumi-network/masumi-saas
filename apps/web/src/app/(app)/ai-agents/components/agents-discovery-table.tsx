@@ -82,7 +82,9 @@ export function AgentsDiscoveryTable({
               <TableHead>{t("Discovery.publisher")}</TableHead>
               <TableHead>{t("table.agentId")}</TableHead>
               <TableHead>{t("Discovery.updated")}</TableHead>
-              <TableHead className="text-right">{t("table.actions")}</TableHead>
+              <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
+                {t("table.actions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -107,7 +109,7 @@ export function AgentsDiscoveryTable({
               return (
                 <TableRow
                   key={entry.id}
-                  className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                  className="cursor-pointer hover:bg-muted/50 group animate-table-row-in"
                   style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                   onClick={() => onSelect(entry)}
                 >
@@ -161,11 +163,7 @@ export function AgentsDiscoveryTable({
                   <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
                     {formatRelativeDate(entry.updatedAt)}
                   </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  >
+                  <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -173,6 +171,7 @@ export function AgentsDiscoveryTable({
                           size="icon"
                           className="h-8 w-8"
                           aria-label={t("table.actions")}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>

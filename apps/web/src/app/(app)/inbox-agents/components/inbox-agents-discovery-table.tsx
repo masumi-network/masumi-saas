@@ -66,7 +66,9 @@ export function InboxAgentsDiscoveryTable({
               <TableHead>{t("table.inboxSlug")}</TableHead>
               <TableHead>{tAgents("Discovery.policyId")}</TableHead>
               <TableHead>{tAgents("Discovery.verifiedUpdated")}</TableHead>
-              <TableHead className="text-right">{t("table.actions")}</TableHead>
+              <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
+                {t("table.actions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -77,7 +79,7 @@ export function InboxAgentsDiscoveryTable({
               return (
                 <TableRow
                   key={registration.id}
-                  className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                  className="cursor-pointer hover:bg-muted/50 group animate-table-row-in"
                   style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                   onClick={() => onSelect(registration)}
                 >
@@ -135,11 +137,7 @@ export function InboxAgentsDiscoveryTable({
                   <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
                     {formatRelativeDate(registration.statusUpdatedAt)}
                   </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  >
+                  <TableCell className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background pointer-events-none [&>*]:pointer-events-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -147,6 +145,7 @@ export function InboxAgentsDiscoveryTable({
                           size="icon"
                           className="h-8 w-8"
                           aria-label={t("table.actions")}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>

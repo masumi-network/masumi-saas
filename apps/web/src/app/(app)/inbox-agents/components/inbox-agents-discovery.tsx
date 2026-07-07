@@ -1,25 +1,29 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ExternalLink, Inbox, Search } from "lucide-react";
-import Link from "next/link";
+import { Inbox, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  DiscoveryCopyableValue,
+  DiscoveryDetailCard,
+  DiscoveryDetailCardContent,
+  DiscoveryDetailRow,
+  DiscoveryDetailsAvatar,
+  DiscoveryDetailsBody,
+  DiscoveryDetailsDialogContent,
+  DiscoveryDetailsHeader,
+  DiscoveryDetailStat,
+  DiscoveryDetailStatGrid,
+  DiscoveryLinkValue,
+  DiscoveryMetaBadge,
+  DiscoveryMutedValue,
+} from "@/components/discovery-detail-ui";
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
 import { DiscoveryTableSkeleton } from "@/components/discovery-table-skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -215,27 +219,6 @@ function DiscoveryPaginationBar({
   );
 }
 
-function DiscoveryDetailItem({
-  label,
-  children,
-  fullWidth = false,
-}: {
-  label: string;
-  children: React.ReactNode;
-  fullWidth?: boolean;
-}) {
-  return (
-    <div className={fullWidth ? "space-y-2 sm:col-span-2" : "space-y-2"}>
-      <div className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="rounded-lg border border-border/70 bg-muted-surface/60 px-3 py-3 text-sm">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function InboxAgentDetailsDialog({
   registration,
   open,
@@ -255,112 +238,89 @@ function InboxAgentDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]">
-        <DialogHeader className="shrink-0 border-b px-6 py-5">
-          <div className="flex items-start gap-4 pr-8">
-            <Avatar className="h-14 w-14 border border-border/70">
-              <AvatarFallback>{getInitials(registration.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <DialogTitle className="text-xl">
-                  {registration.name}
-                </DialogTitle>
-                <Badge
-                  variant={getInboxRegistrationBadgeVariant(
-                    registration.status,
-                  )}
-                >
-                  {registration.status}
-                </Badge>
-              </div>
-              <DialogDescription className="leading-6">
-                {registration.description?.trim() || t("Details.noDescription")}
-              </DialogDescription>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="primary-muted">{registration.agentSlug}</Badge>
-                <Badge variant="secondary">{t("Discovery.inboxSource")}</Badge>
-                <Badge variant="outline-muted">
-                  {t("Discovery.metadataVersion", {
-                    version: registration.metadataVersion,
-                  })}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
+      <DiscoveryDetailsDialogContent>
+        <DiscoveryDetailsHeader
+          avatar={
+            <DiscoveryDetailsAvatar
+              name={registration.name}
+              fallback={getInitials(registration.name)}
+            />
+          }
+          title={registration.name}
+          status={
+            <Badge
+              variant={getInboxRegistrationBadgeVariant(registration.status)}
+            >
+              {registration.status}
+            </Badge>
+          }
+          description={
+            registration.description?.trim() || t("Details.noDescription")
+          }
+          meta={
+            <>
+              <DiscoveryMetaBadge variant="primary-muted">
+                {registration.agentSlug}
+              </DiscoveryMetaBadge>
+              <DiscoveryMetaBadge variant="secondary">
+                {t("Discovery.inboxSource")}
+              </DiscoveryMetaBadge>
+              <DiscoveryMetaBadge variant="outline-muted">
+                {t("Discovery.metadataVersion", {
+                  version: registration.metadataVersion,
+                })}
+              </DiscoveryMetaBadge>
+            </>
+          }
+        />
 
-        <DialogBody className="px-6 py-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DiscoveryDetailItem label={t("Discovery.inboxSlug")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate">
-                  {registration.agentSlug}
-                </span>
-                <CopyButton value={registration.agentSlug} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.agentId")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {registration.agentIdentifier}
-                </span>
-                <CopyButton value={registration.agentIdentifier} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.verifiedUpdated")}>
-              {formatRelativeDate(registration.statusUpdatedAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.added")}>
-              {formatRelativeDate(registration.createdAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.policyId")}>
+        <DiscoveryDetailsBody>
+          <DiscoveryDetailCard>
+            <DiscoveryDetailRow label={t("Discovery.inboxSlug")}>
+              <DiscoveryCopyableValue
+                value={registration.agentSlug}
+                mono={false}
+              />
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("table.agentId")}>
+              <DiscoveryCopyableValue value={registration.agentIdentifier} />
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.policyId")}>
               {policyId ? (
-                <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-mono">
-                    {policyId}
-                  </span>
-                  <CopyButton value={policyId} />
-                </div>
+                <DiscoveryCopyableValue value={policyId} />
               ) : (
-                <span className="text-muted-foreground">
+                <DiscoveryMutedValue>
                   {t("Discovery.noPolicyId")}
-                </span>
+                </DiscoveryMutedValue>
               )}
-            </DiscoveryDetailItem>
+            </DiscoveryDetailRow>
+          </DiscoveryDetailCard>
 
-            <DiscoveryDetailItem label={t("Discovery.source")} fullWidth>
+          <DiscoveryDetailStatGrid>
+            <DiscoveryDetailStat label={t("Discovery.verifiedUpdated")}>
+              {formatRelativeDate(registration.statusUpdatedAt)}
+            </DiscoveryDetailStat>
+            <DiscoveryDetailStat label={t("Discovery.added")}>
+              {formatRelativeDate(registration.createdAt)}
+            </DiscoveryDetailStat>
+          </DiscoveryDetailStatGrid>
+
+          <DiscoveryDetailCard title={t("Discovery.source")}>
+            <DiscoveryDetailCardContent>
               {sourceUrl ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="min-w-0 flex-1 truncate text-foreground hover:underline"
-                  >
-                    {sourceUrl}
-                  </Link>
-                  <CopyButton value={sourceUrl} />
-                  <Button asChild variant="outline" size="sm2">
-                    <Link href={sourceUrl} target="_blank" rel="noreferrer">
-                      {t("Discovery.openSource")}
-                      <ExternalLink className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+                <DiscoveryLinkValue
+                  href={sourceUrl}
+                  openLabel={t("Discovery.openSource")}
+                />
               ) : (
-                <span className="text-muted-foreground">
+                <DiscoveryMutedValue>
                   {t("Discovery.noSourceUrl")}
-                </span>
+                </DiscoveryMutedValue>
               )}
-            </DiscoveryDetailItem>
-          </div>
-        </DialogBody>
-      </DialogContent>
+            </DiscoveryDetailCardContent>
+          </DiscoveryDetailCard>
+        </DiscoveryDetailsBody>
+      </DiscoveryDetailsDialogContent>
     </Dialog>
   );
 }
