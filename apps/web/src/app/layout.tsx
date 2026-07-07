@@ -3,12 +3,10 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Suspense } from "react";
 
 import CookieConsent from "@/components/cookie-consent";
 import { GlobalModalsContextProvider } from "@/components/modals/global-modals-context";
 import { QueryProvider } from "@/components/query-provider";
-import { RouteProgressBar } from "@/components/route-progress-bar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { appMono, appSans } from "@/lib/fonts";
@@ -56,9 +54,6 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <NextIntlClientProvider messages={messages}>
-            <Suspense fallback={null}>
-              <RouteProgressBar />
-            </Suspense>
             <QueryProvider>
               <GlobalModalsContextProvider>
                 {children}

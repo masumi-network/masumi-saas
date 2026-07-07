@@ -2,10 +2,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
+import { Suspense } from "react";
 
 import { FooterSections } from "@/components/footer";
 import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
 import { OnboardingLogoPreload } from "@/components/onboarding/onboarding-logo-preload";
+import { RouteProgressBar } from "@/components/route-progress-bar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
@@ -54,6 +56,9 @@ export default async function AppLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
+      <Suspense fallback={null}>
+        <RouteProgressBar />
+      </Suspense>
       <OrganizationProvider>
         <PaymentNetworkProvider initialNetwork={initialPaymentNetwork}>
           <X402RailProvider>
