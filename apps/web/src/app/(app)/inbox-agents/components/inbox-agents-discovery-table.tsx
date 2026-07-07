@@ -75,8 +75,8 @@ export function InboxAgentsDiscoveryTable({
                   onClick={() => onSelect(registration)}
                 >
                   <TableCell className="max-w-56">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <Avatar className="mt-0.5 h-9 w-9 shrink-0 border border-border/70">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar className="h-9 w-9 shrink-0 border border-border/70">
                         <AvatarFallback>
                           {getInitials(registration.name)}
                         </AvatarFallback>
