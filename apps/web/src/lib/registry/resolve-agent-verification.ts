@@ -136,9 +136,28 @@ async function resolveOnChainAgentVerification(params: {
       return null;
     }
 
+    const attrs = extractCredentialAttributes(credential);
+    const credentialAgentId =
+      typeof attrs.agentId === "string" ? attrs.agentId : undefined;
+
+    // Bind the credential to this agent's registry identifier BEFORE trusting
+    // any of its attributes. This check must run on both the valid and invalid
+    // paths: an invalid (expired/revoked) credential still carries
+    // attacker-controlled agentName/apiUrl attributes, and returning a
+    // non-null record here would both surface those wrong values and suppress
+    // the DB fallback for a legitimately verified agent.
+    if (
+      !credentialMatchesAgentRegistryId(credentialAgentId, chainAgentIdentifier)
+    ) {
+      console.error("[Veridian] Credential agentId does not match registry:", {
+        credentialAgentId,
+        chainAgentIdentifier,
+      });
+      return { verified: false };
+    }
+
     const validation = validateCredential(credential);
     if (!validation.isValid) {
-      const attrs = extractCredentialAttributes(credential);
       const agentName =
         typeof attrs.agentName === "string"
           ? attrs.agentName
@@ -160,20 +179,6 @@ async function resolveOnChainAgentVerification(params: {
       }
 
       return null;
-    }
-
-    const attrs = extractCredentialAttributes(credential);
-    const credentialAgentId =
-      typeof attrs.agentId === "string" ? attrs.agentId : undefined;
-
-    if (
-      !credentialMatchesAgentRegistryId(credentialAgentId, chainAgentIdentifier)
-    ) {
-      console.error("[Veridian] Credential agentId does not match registry:", {
-        credentialAgentId,
-        chainAgentIdentifier,
-      });
-      return { verified: false };
     }
 
     const expiresAt = credentialExpiresAt(validation);

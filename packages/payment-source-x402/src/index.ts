@@ -3,6 +3,8 @@ export * from "./balance.js";
 export * from "./counts.js";
 export * from "./encryption.js";
 export {
+  assertSafeRpcUrl,
+  assertSafeRpcUrlResolved,
   probeX402NetworkRpc,
   type X402RpcProbeFailureReason,
   type X402RpcProbeResult,

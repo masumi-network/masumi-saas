@@ -80,11 +80,23 @@ export function humanAmountToSmallestUnit(
   amount: string,
   asset: PricingAssetOption,
 ): string {
-  const value = Number(amount);
-  if (!Number.isFinite(value) || value < 0) {
+  // Parse as an exact decimal string. Going through Number() would lose
+  // precision and, for large or scientific-notation inputs, emit strings like
+  // "1e+27" instead of a base-unit integer. Since this value becomes an
+  // on-chain price we must keep it exact.
+  const trimmed = amount.trim();
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(trimmed);
+  if (!match) {
     throw new Error("Invalid price amount");
   }
-  return String(Math.round(value * 10 ** asset.decimals));
+  const [, intPart, fracPart = ""] = match;
+  if (fracPart.length > asset.decimals) {
+    throw new Error(
+      `Price amount supports at most ${asset.decimals} decimal places`,
+    );
+  }
+  const baseUnits = BigInt(intPart + fracPart.padEnd(asset.decimals, "0"));
+  return baseUnits.toString();
 }
 
 export function estimatePriceUsd(

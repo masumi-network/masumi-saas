@@ -1,4 +1,5 @@
 import type { X402EvmWalletType } from "@masumi/database";
+import { assertSafeRpcUrlResolved } from "@masumi/payment-source-x402";
 
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import type { WebhookEventType } from "@/lib/payment-node/schemas";
@@ -66,6 +67,11 @@ async function deliverWebhook(
   payload: WebhookDeliveryPayload,
 ): Promise<void> {
   try {
+    // SSRF guard: the webhook target is tenant-configured. Reject private,
+    // loopback, link-local, and DNS names that resolve to internal addresses
+    // before we POST. `redirect: "manual"` additionally blocks redirect-based
+    // SSRF below.
+    await assertSafeRpcUrlResolved(url);
     await fetch(url, {
       method: "POST",
       headers: {

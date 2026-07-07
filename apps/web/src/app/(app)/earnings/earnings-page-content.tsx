@@ -1096,7 +1096,14 @@ export function EarningsPageContent() {
                   description={t("mixedUnitsDescription")}
                   className="py-10"
                 />
-              ) : null}
+              ) : (
+                <DiscoveryEmptyState
+                  icon={ChartMetricIcon}
+                  message={t("noDataTitle")}
+                  description={t("noDataDescription")}
+                  className="py-10"
+                />
+              )}
             </div>
 
             <div className="overflow-hidden rounded-xl border border-border/70">

@@ -53,7 +53,10 @@ import {
   type DiscoveryListFilters,
   discoveryListFiltersToApi,
 } from "./agents-discovery-filters-popover";
-import { AgentsDiscoveryTable } from "./agents-discovery-table";
+import {
+  AgentsDiscoveryTable,
+  getDiscoveryStatusBadgeVariant,
+} from "./agents-discovery-table";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -291,7 +294,11 @@ function RegistryEntryDetailsDialog({
             />
           }
           title={entry.name}
-          status={<Badge variant="success">{entry.status}</Badge>}
+          status={
+            <Badge variant={getDiscoveryStatusBadgeVariant(entry.status)}>
+              {entry.status}
+            </Badge>
+          }
           description={entry.description?.trim() || t("Details.noDescription")}
           meta={
             <>

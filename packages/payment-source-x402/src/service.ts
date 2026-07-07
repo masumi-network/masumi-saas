@@ -35,7 +35,7 @@ import { decrypt, encrypt } from "./encryption.js";
 import {
   assertHexAddress,
   assertRpcServesDeclaredChain,
-  assertSafeRpcUrl,
+  assertSafeRpcUrlResolved,
   createChain,
   getEip155ChainId,
   getManagedWalletOrThrow,
@@ -564,7 +564,7 @@ export async function upsertX402Network(
 ) {
   const scope = resolveX402TenantScope(input);
   getEip155ChainId(input.caip2Id);
-  assertSafeRpcUrl(input.rpcUrl);
+  await assertSafeRpcUrlResolved(input.rpcUrl);
   if (input.defaultAsset != null)
     assertHexAddress(input.defaultAsset, "defaultAsset");
   // A facilitator must reference a live Selling wallet. Validating here returns a clear

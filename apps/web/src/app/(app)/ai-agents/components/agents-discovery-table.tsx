@@ -26,6 +26,23 @@ import type { RegistryEntry } from "@/lib/api/registry-discovery.client";
 import { formatUnitAmount } from "@/lib/payment-node/format";
 import { getInitials, shortenAddress } from "@/lib/utils";
 
+export function getDiscoveryStatusBadgeVariant(
+  status: RegistryEntry["status"],
+) {
+  switch (status) {
+    case "Online":
+      return "success" as const;
+    case "Offline":
+      return "secondary-muted" as const;
+    case "Invalid":
+      return "destructive" as const;
+    case "Deregistered":
+      return "outline-muted" as const;
+    default:
+      return "secondary" as const;
+  }
+}
+
 function formatPricing(
   entry: RegistryEntry,
   free: string,
@@ -135,7 +152,11 @@ export function AgentsDiscoveryTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="success">{entry.status}</Badge>
+                    <Badge
+                      variant={getDiscoveryStatusBadgeVariant(entry.status)}
+                    >
+                      {entry.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {pricingLabel}
