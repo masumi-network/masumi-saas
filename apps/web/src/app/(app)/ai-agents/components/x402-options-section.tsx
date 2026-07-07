@@ -121,7 +121,7 @@ function X402OptionsLoadingSkeleton() {
 
 function X402NoChainsBanner({ t }: { t: X402OptionsTranslator }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3">
+    <div className="flex items-center gap-3 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 ring-1 ring-amber-500/20">
         <Link2
           className="h-4 w-4 text-amber-600 dark:text-amber-500"
