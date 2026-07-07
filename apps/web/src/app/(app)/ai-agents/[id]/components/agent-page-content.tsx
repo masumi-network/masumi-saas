@@ -324,6 +324,7 @@ export function AgentPageContent({
             setPendingBannerRefreshKey((key) => key + 1)
           }
           onAgentUpdated={setAgent}
+          onViewVerificationTab={() => handleTabChange(VERIFICATION_TAB)}
         />
       )}
 

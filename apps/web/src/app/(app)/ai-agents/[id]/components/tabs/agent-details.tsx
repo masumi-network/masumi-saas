@@ -45,6 +45,8 @@ import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusDisplayKey,
+  getVerificationStatusBadgeVariant,
+  getVerificationStatusKey,
 } from "../../../components/agent-utils";
 import {
   AgentX402Options,
@@ -61,6 +63,7 @@ interface AgentDetailsProps {
   onRefreshStatus?: () => void | Promise<void>;
   onVerificationDialogClosed?: () => void;
   onAgentUpdated?: (agent: Agent) => void;
+  onViewVerificationTab?: () => void;
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;
@@ -73,6 +76,7 @@ export function AgentDetails({
   onRefreshStatus,
   onVerificationDialogClosed,
   onAgentUpdated,
+  onViewVerificationTab,
 }: AgentDetailsProps) {
   // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
   const [now, setNow] = useState(0);
@@ -89,6 +93,7 @@ export function AgentDetails({
   const tRegister = useTranslations("App.Agents.Register");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tVerification = useTranslations("App.Agents.Details.Verification");
+  const tStatus = useTranslations("App.Agents.status");
   const { formatDate, formatRelativeDate } = useFormatDate();
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
@@ -442,41 +447,42 @@ export function AgentDetails({
               </div>
             </div>
 
-            {/* Request verification CTA */}
-            {showVerificationCta && onVerificationSuccess && (
+            {agentVerificationEnabled ? (
               <>
                 <Separator />
-                <div className="flex gap-3 items-center justify-between">
-                  <div className="flex gap-3 items-center min-w-0">
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("verification")}
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    {isLoadingKyc ? (
-                      <Button variant="primary" size="sm" disabled>
-                        {tVerification("loading")}
-                      </Button>
-                    ) : kycStatus === "APPROVED" ? (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setVerificationDialogOpen(true)}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {t("verification")}
+                      </p>
+                      <Badge
+                        variant={getVerificationStatusBadgeVariant(
+                          agent.verificationStatus,
+                        )}
+                        className="shrink-0"
                       >
-                        {tVerification("requestVerification")}
-                      </Button>
-                    ) : (
-                      <Button variant="primary" size="sm" asChild>
-                        <Link href="/verification">
-                          {tVerification("completeKyc")}
-                        </Link>
-                      </Button>
-                    )}
+                        {tStatus(
+                          getVerificationStatusKey(agent.verificationStatus),
+                        )}
+                      </Badge>
+                    </div>
                   </div>
+                  {onViewVerificationTab ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={onViewVerificationTab}
+                    >
+                      {t("viewInVerificationTab")}
+                    </Button>
+                  ) : null}
                 </div>
               </>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
