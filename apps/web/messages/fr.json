@@ -1036,6 +1036,12 @@
       "filterVerification": "Vérification",
       "allRegistrationStatuses": "Tous les statuts",
       "allVerificationStatuses": "Toute vérification",
+      "verificationFilters": {
+        "pending": "En attente",
+        "unverified": "Non vérifié",
+        "revoked": "Révoqué",
+        "expired": "Expiré"
+      },
       "tabs": {
         "all": "Tous",
         "verified": "Vérifié",

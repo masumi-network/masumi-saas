@@ -1036,6 +1036,12 @@
       "filterVerification": "検証",
       "allRegistrationStatuses": "すべてのステータス",
       "allVerificationStatuses": "すべての検証",
+      "verificationFilters": {
+        "pending": "保留中",
+        "unverified": "未検証",
+        "revoked": "取り消し",
+        "expired": "期限切れ"
+      },
       "tabs": {
         "all": "全て",
         "verified": "確認済み",
