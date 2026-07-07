@@ -170,7 +170,7 @@ export default function MenuItems() {
 
   return (
     <>
-      <SidebarGroup className={cn("w-full", isMobile && "px-3 py-2")}>
+      <SidebarGroup className={cn("w-full pb-0", isMobile && "px-3 pt-2")}>
         <SidebarGroupContent>
           <SidebarMenu className={cn(isMobile && "flex flex-col gap-1.5")}>
             {primaryItems.map((item) => renderItem(item))}
@@ -178,13 +178,16 @@ export default function MenuItems() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup className={cn("w-full mt-4 pt-0", isMobile && "px-3 py-2")}>
-        <div
-          className={cn(
-            "mx-4 mb-4 h-px bg-sidebar-border/80",
-            isMobile && "mx-2.5 mb-3",
-          )}
-        />
+      <div
+        role="separator"
+        aria-hidden
+        className={cn(
+          "mx-4 my-3 h-px shrink-0 bg-sidebar-border/80",
+          isMobile && "mx-2.5",
+        )}
+      />
+
+      <SidebarGroup className={cn("w-full pt-0", isMobile && "px-3 pb-2")}>
         <SidebarGroupContent>
           <SidebarMenu className={cn(isMobile && "flex flex-col gap-1.5")}>
             {developerSectionItems.map((item) =>

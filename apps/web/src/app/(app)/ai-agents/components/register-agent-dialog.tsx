@@ -56,7 +56,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AgentIconPicker } from "./agent-icon-picker";
-import { PricingFields, type AgentPriceField } from "./pricing-fields";
+import { type AgentPriceField, PricingFields } from "./pricing-fields";
 import {
   validateX402Options,
   type X402OptionDraft,

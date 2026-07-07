@@ -171,13 +171,6 @@ export function IntegrationsPageContent() {
             description={
               debouncedSearch.trim() ? undefined : t("emptyDescription")
             }
-            action={
-              debouncedSearch.trim() ? undefined : (
-                <Button type="button" onClick={() => setDialogOpen(true)}>
-                  {t("addConnection")}
-                </Button>
-              )
-            }
           />
         ) : (
           <div className="overflow-x-auto rounded-xl border border-border/80">
