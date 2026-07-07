@@ -90,7 +90,7 @@ describe("getWalletOwnedAgentForUser", () => {
       userId: "user-1",
       externalId: EXTERNAL_ID,
       network: "Preprod",
-      smartContractAddress: SMART_CONTRACT_ADDRESS,
+      filterSmartContractAddress: SMART_CONTRACT_ADDRESS,
     });
   });
 
