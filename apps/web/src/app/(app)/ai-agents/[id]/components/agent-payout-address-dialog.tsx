@@ -56,7 +56,7 @@ export function AgentPayoutAddressDialog({
     setIsSaving(true);
     try {
       const result = await agentApiClient.updatePayoutAddress(agent.id, value);
-      if (!result.success || !result.data) {
+      if (!result.success) {
         toast.error(result.error ?? t("payoutAddressUpdateError"));
         return;
       }
