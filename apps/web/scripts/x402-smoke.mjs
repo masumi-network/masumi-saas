@@ -2,7 +2,7 @@
  * One-off x402 rail smoke test (service layer + optional HTTP).
  * Usage: pnpm --filter @masumi/payment-source-x402 build && node scripts/x402-smoke.mjs
  */
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,38 +32,23 @@ function skip(step, detail) {
   console.log(`⊘ ${step}: ${detail}`);
 }
 
-async function ensureOrgApiKey(prisma, userId) {
-  const member = await prisma.member.findFirst({
-    where: { userId },
-    select: { organizationId: true },
-  });
-  let organizationId = member?.organizationId;
-  if (!organizationId) {
-    const org = await prisma.organization.create({
-      data: {
-        name: "x402 Smoke Org",
-        slug: `x402-smoke-${Date.now()}`,
-      },
-    });
-    await prisma.member.create({
-      data: { userId, organizationId: org.id, role: "owner" },
-    });
-    organizationId = org.id;
-  }
-
-  const existing = await prisma.orgApiKey.findFirst({
-    where: { organizationId },
+async function ensureApiKey(prisma, userId) {
+  const existing = await prisma.apikey.findFirst({
+    where: { userId, name: "x402-smoke-key" },
     select: { id: true },
   });
   if (existing) return existing.id;
 
-  const created = await prisma.orgApiKey.create({
+  const rawKey = `x402smoke_${randomBytes(32).toString("hex")}`;
+  const created = await prisma.apikey.create({
     data: {
+      id: randomUUID(),
       name: "x402-smoke-key",
-      keyHash: `smoke_${randomBytes(32).toString("hex")}`,
-      keyPrefix: "x402smok",
-      organizationId,
-      createdById: userId,
+      prefix: "x402smok",
+      start: rawKey.slice(0, 8),
+      key: rawKey,
+      userId,
+      enabled: true,
     },
     select: { id: true },
   });
@@ -87,8 +72,8 @@ async function runServiceSmoke() {
   if (!user) throw new Error("No verified user in DB");
   pass("setup", `user ${user.email} (${user.id})`);
 
-  const orgApiKeyId = await ensureOrgApiKey(prisma, user.id);
-  pass("org-api-key", orgApiKeyId);
+  const apiKeyId = await ensureApiKey(prisma, user.id);
+  pass("api-key", apiKeyId);
 
   const agent = await prisma.agent.findFirst({
     where: { userId: user.id },
@@ -194,7 +179,7 @@ async function runServiceSmoke() {
 
   await service.setX402WalletBudget({
     userId: user.id,
-    orgApiKeyId,
+    apiKeyId,
     evmWalletId: purchasingWallet.id,
     caip2Network: BASE_SEPOLIA,
     asset: USDC_SEPOLIA,
@@ -211,7 +196,7 @@ async function runServiceSmoke() {
   try {
     const outbound = await service.createX402Payment({
       userId: user.id,
-      orgApiKeyId,
+      apiKeyId,
       caip2NetworkLimit: null,
       evmWalletId: purchasingWallet.id,
       paymentRequired,
@@ -240,7 +225,7 @@ async function runServiceSmoke() {
   });
   pass("list-wallets", `${wallets.length} wallet(s)`);
 
-  return { userId: user.id, orgApiKeyId };
+  return { userId: user.id, apiKeyId };
 }
 
 async function runHttpSmoke() {
