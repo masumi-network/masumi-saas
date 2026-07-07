@@ -5,9 +5,9 @@ import { createPublicClient, defineChain, http } from "viem";
 
 import { logger } from "./logger.js";
 import {
+  activeWalletWhere,
   networkOwnershipWhere,
   resolveX402TenantScope,
-  walletOwnershipWhere,
   type X402ScopeInput,
 } from "./tenant-scope.js";
 
@@ -263,7 +263,7 @@ export async function getManagedWalletOrThrow(
 ) {
   const scope = resolveX402TenantScope(scopeInput);
   const wallet = await prisma.x402EvmWallet.findFirst({
-    where: { id: evmWalletId, ...walletOwnershipWhere(scope) },
+    where: { id: evmWalletId, ...activeWalletWhere(scope) },
   });
   if (wallet == null) {
     throw createHttpError(404, "Managed EVM wallet not found");

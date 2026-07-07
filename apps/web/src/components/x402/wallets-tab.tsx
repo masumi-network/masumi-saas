@@ -9,7 +9,6 @@ import {
   Copy,
   Eye,
   EyeOff,
-  KeyRound,
   ListFilter,
   MoreVertical,
   Pencil,
@@ -36,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -69,7 +69,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useX402WalletsPaginated } from "@/lib/hooks/use-x402";
 import { cn, shortenAddress } from "@/lib/utils";
-import { x402Mutate } from "@/lib/x402/api";
+import { x402Fetch, x402Mutate } from "@/lib/x402/api";
 import type { X402Wallet } from "@/lib/x402/types";
 
 import { EditWalletNoteDialog, WalletBalanceDialog } from "./wallet-extras";
@@ -305,8 +305,18 @@ export function WalletsTab() {
               {filteredWallets.map((wallet, index) => (
                 <TableRow
                   key={wallet.id}
-                  className="animate-table-row-in transition-[background-color,opacity] duration-150"
+                  className="cursor-pointer animate-table-row-in transition-[background-color,opacity] duration-150 hover:bg-muted/50"
                   style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+                  onClick={() => setBalanceWallet(wallet)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setBalanceWallet(wallet);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={t("balances")}
                 >
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -332,7 +342,11 @@ export function WalletsTab() {
                   <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
                     {formatRelativeDate(wallet.createdAt)}
                   </TableCell>
-                  <TableCell className={x402ActionsCellClass}>
+                  <TableCell
+                    className={x402ActionsCellClass}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -604,6 +618,34 @@ export function CreateWalletDialog({
     privateKey: string;
   } | null>(null);
   const [createdWallet, setCreatedWallet] = useState<X402Wallet | null>(null);
+  const backupConfirmedRef = useRef(false);
+  const pendingWalletIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (createdWallet?.id) {
+      pendingWalletIdRef.current = createdWallet.id;
+    }
+  }, [createdWallet?.id]);
+
+  useEffect(() => {
+    if (!open) {
+      backupConfirmedRef.current = false;
+      pendingWalletIdRef.current = null;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      const pendingWalletId = pendingWalletIdRef.current;
+      if (pendingWalletId && !backupConfirmedRef.current) {
+        void x402Fetch("/wallets/cancel-pending", {
+          method: "POST",
+          body: JSON.stringify({ id: pendingWalletId }),
+          silentErrors: true,
+        });
+      }
+    };
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -670,9 +712,25 @@ export function CreateWalletDialog({
           type={type}
           address={backup.address}
           privateKey={backup.privateKey}
-          onDone={() => {
-            onSaved(createdWallet ?? undefined);
+          onDone={async () => {
+            if (!createdWallet) return;
+            const confirmed = await x402Mutate<X402Wallet>(
+              "/wallets/confirm-backup",
+              {
+                method: "POST",
+                body: JSON.stringify({ id: createdWallet.id }),
+              },
+              {
+                successMessage: t("created"),
+                errorMessage: t("createFailed"),
+              },
+            );
+            if (!confirmed) return;
+            backupConfirmedRef.current = true;
+            pendingWalletIdRef.current = null;
+            onSaved(createdWallet);
             setCreatedWallet(null);
+            setBackup(null);
           }}
         />
       ) : (
@@ -684,8 +742,17 @@ export function CreateWalletDialog({
             title={t("createTitle")}
             titleHint={t("createDescription")}
           />
-          <DialogBody className="min-h-0 flex-1 space-y-5 overflow-y-auto">
-            <div className="space-y-2">
+          <DialogBody
+            stagger
+            className="min-h-0 flex-1 space-y-5 overflow-y-auto"
+          >
+            {error ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <div className="space-y-2.5">
               <Label
                 id="wallet-direction-label"
                 className="text-sm font-medium"
@@ -695,7 +762,7 @@ export function CreateWalletDialog({
               <div
                 role="radiogroup"
                 aria-labelledby="wallet-direction-label"
-                className="grid grid-cols-2 gap-2"
+                className="grid grid-cols-2 gap-2.5"
               >
                 {(
                   [
@@ -722,6 +789,7 @@ export function CreateWalletDialog({
                         if (!isBlocked) {
                           setType(option.value);
                           setNote(defaultWalletNoteForType(option.value, t));
+                          setError(null);
                         }
                       }}
                       disabled={isBlocked}
@@ -729,21 +797,26 @@ export function CreateWalletDialog({
                       aria-checked={selected}
                       aria-disabled={isBlocked}
                       className={cn(
-                        "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "flex flex-col gap-2.5 rounded-xl border p-3.5 text-left transition-[border-color,background-color,box-shadow,opacity] duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         selected
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/40"
-                          : "border-border hover:bg-muted/50",
+                          ? "border-primary/80 bg-primary/5 shadow-sm ring-2 ring-primary/20"
+                          : "border-border/70 bg-card/30 hover:border-border hover:bg-muted/40",
                         isBlocked &&
-                          "cursor-not-allowed opacity-50 hover:bg-transparent",
+                          "cursor-not-allowed opacity-60 hover:border-border/70 hover:bg-card/30",
                       )}
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <OptionIcon
+                      <span className="flex items-center gap-2.5 text-sm font-medium">
+                        <span
                           className={cn(
-                            "h-4 w-4",
-                            selected ? "text-primary" : "text-muted-foreground",
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-[background-color,filter,opacity] duration-300 ease-in-out",
+                            selected
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted text-muted-foreground",
+                            isBlocked && "grayscale",
                           )}
-                        />
+                        >
+                          <OptionIcon className="h-4 w-4" />
+                        </span>
                         {t(`directionLabels.${option.value}`)}
                       </span>
                       <span className="text-xs leading-snug text-muted-foreground">
@@ -763,17 +836,16 @@ export function CreateWalletDialog({
               <Label htmlFor="wallet-note" className="text-sm font-medium">
                 {t("note")}
               </Label>
-              <Textarea
+              <Input
                 id="wallet-note"
                 placeholder={t("notePlaceholder")}
-                className="min-h-[60px] resize-none"
                 maxLength={250}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label
                 id="wallet-key-source-label"
                 className="text-sm font-medium"
@@ -783,10 +855,10 @@ export function CreateWalletDialog({
               <div
                 role="group"
                 aria-labelledby="wallet-key-source-label"
-                className="relative flex rounded-lg border bg-muted/40 p-1"
+                className="relative flex rounded-lg border border-border/70 bg-muted/40 p-1"
               >
                 <div
-                  className="absolute bottom-1 top-1 rounded-md bg-background shadow-sm transition-[left] duration-200 ease-out"
+                  className="absolute bottom-1 top-1 rounded-md bg-background shadow-sm transition-[left] duration-300 ease-in-out"
                   style={{
                     left: keySource === "generate" ? "4px" : "calc(50% + 4px)",
                     width: "calc(50% - 8px)",
@@ -807,7 +879,7 @@ export function CreateWalletDialog({
                     }}
                     aria-pressed={keySource === tab.value}
                     className={cn(
-                      "relative z-10 min-w-0 flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "relative z-10 min-w-0 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       keySource === tab.value
                         ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground",
@@ -819,17 +891,17 @@ export function CreateWalletDialog({
               </div>
 
               {keySource === "generate" ? (
-                <p className="text-xs leading-snug text-muted-foreground">
+                <p className="rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
                   {t("generateHint")}
                 </p>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
                   <div className="relative">
                     <Textarea
                       id="wallet-private-key"
                       aria-label={t("importExisting")}
                       placeholder="0x…"
-                      className="min-h-[76px] resize-none pr-10 font-mono text-xs"
+                      className="min-h-[76px] resize-none border-0 bg-background/80 pr-10 font-mono text-xs shadow-none focus-visible:ring-1"
                       autoComplete="off"
                       spellCheck={false}
                       value={privateKey}
@@ -858,12 +930,11 @@ export function CreateWalletDialog({
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
                     {t("importHint")}
                   </p>
                 </div>
               )}
-              {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
           </DialogBody>
           <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
@@ -875,7 +946,11 @@ export function CreateWalletDialog({
             >
               {t("cancel")}
             </Button>
-            <Button type="submit" variant="primary" disabled={isSaving}>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSaving || blockedTypeSet.has(type)}
+            >
               {isSaving ? t("creating") : t("createWallet")}
             </Button>
           </DialogFooter>
@@ -921,83 +996,86 @@ function BackupKeyStep({
     URL.revokeObjectURL(url);
   };
 
+  const copyPrivateKey = async () => {
+    await navigator.clipboard.writeText(privateKey);
+    toast.success(t("keyCopied"));
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <X402DialogHeader
         title={t("backupTitle")}
         description={t("backupDescription")}
       />
-      <DialogBody className="min-h-0 flex-1 space-y-5 overflow-y-auto">
-        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
-          <KeyRound className="h-5 w-5 text-primary" />
-        </div>
-
-        <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+      <DialogBody stagger className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3.5 py-3">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-xs leading-snug text-amber-800 dark:text-amber-200">
+          <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
             {t("backupWarning")}
           </p>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="gap-1.5 px-2.5">
               <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-500" />
-              {t("walletCreated")}
+              {t("newWallet")}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              {t(`types.${type}`)}
-            </span>
+            <Badge variant="outline">{t(`types.${type}`)}</Badge>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-            <span
-              className="flex-1 truncate font-mono text-xs text-muted-foreground"
-              title={address}
-            >
-              {shortenAddress(address, 12)}
-            </span>
-            <CopyButton value={address} className="h-7 w-7 shrink-0" />
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("columns.address")}
+            </p>
+            <div className="flex items-center gap-1 rounded-lg bg-background/70 px-2.5 py-2 ring-1 ring-border/60">
+              <span
+                className="min-w-0 flex-1 truncate font-mono text-xs"
+                title={address}
+              >
+                {shortenAddress(address, 12)}
+              </span>
+              <CopyButton value={address} className="h-7 w-7 shrink-0" />
+            </div>
           </div>
+        </div>
 
-          <div className="relative rounded-lg border border-dashed bg-muted/30 p-3">
+        <div className="space-y-2.5">
+          <p className="text-sm font-medium">{t("keySource")}</p>
+          <div
+            className={cn(
+              "relative min-h-[88px] overflow-hidden rounded-xl border border-dashed border-border/80 bg-muted/25 p-3 transition-[background-color,border-color] duration-300",
+              revealed && "border-border bg-background/60",
+            )}
+          >
             <p
               className={cn(
-                "select-none break-all font-mono text-xs leading-relaxed text-foreground/80 transition-[filter]",
-                !revealed && "blur-md",
+                "break-all font-mono text-xs leading-relaxed transition-[filter,opacity] duration-300 ease-in-out",
+                !revealed && "select-none blur-md opacity-80",
               )}
               aria-hidden={!revealed}
             >
               {privateKey}
             </p>
-            {!revealed && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="absolute inset-0 m-auto h-7 w-fit gap-1.5 px-3"
-                onClick={() => setRevealed(true)}
-              >
-                <Eye className="h-3.5 w-3.5" /> {t("revealKey")}
-              </Button>
-            )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => setRevealed((v) => !v)}
+              onClick={() => setRevealed((value) => !value)}
             >
               {revealed ? (
                 <>
-                  <EyeOff className="h-3.5 w-3.5" /> {t("hide")}
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                  {t("hide")}
                 </>
               ) : (
                 <>
-                  <Eye className="h-3.5 w-3.5" /> {t("show")}
+                  <Eye className="h-3.5 w-3.5" aria-hidden />
+                  {t("show")}
                 </>
               )}
             </Button>
@@ -1005,32 +1083,31 @@ function BackupKeyStep({
               type="button"
               variant="outline"
               size="sm"
-              className="flex-1 gap-1.5"
-              onClick={() => {
-                navigator.clipboard.writeText(privateKey);
-                toast.success(t("keyCopied"));
-              }}
+              className="gap-1.5"
+              onClick={() => void copyPrivateKey()}
             >
-              <Copy className="h-3.5 w-3.5" /> {t("copy")}
+              <Copy className="h-3.5 w-3.5" aria-hidden />
+              {t("copy")}
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="flex-1 gap-1.5"
+              className="gap-1.5"
               onClick={() => setConfirmDownloadOpen(true)}
             >
-              <ArrowDownToLine className="h-3.5 w-3.5" /> {t("download")}
+              <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden />
+              {t("download")}
             </Button>
           </div>
         </div>
 
         <label
           className={cn(
-            "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+            "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color] duration-300",
             confirmed
-              ? "border-green-500/30 bg-green-500/5"
-              : "border-border bg-muted/30",
+              ? "border-primary/25 bg-primary/5"
+              : "border-border/70 bg-muted/20",
           )}
         >
           <Checkbox
@@ -1052,7 +1129,8 @@ function BackupKeyStep({
           onClick={onDone}
           className="gap-1.5"
         >
-          <Check className="h-4 w-4" /> {t("done")}
+          <Check className="h-4 w-4" aria-hidden />
+          {t("done")}
         </Button>
       </DialogFooter>
 

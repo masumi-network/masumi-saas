@@ -106,6 +106,7 @@ export function X402DialogHeader({
 type X402FormDialogProps = DialogChromeProps & {
   title: string;
   description?: ReactNode;
+  titleHint?: string;
   onSubmit: (event: FormEvent) => void;
   bodyClassName?: string;
   bodyStagger?: boolean;
@@ -118,6 +119,7 @@ export function X402FormDialog({
   onClose,
   title,
   description,
+  titleHint,
   maxWidthClassName,
   showCloseButton,
   onInteractOutside,
@@ -141,7 +143,11 @@ export function X402FormDialog({
         onSubmit={onSubmit}
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <X402DialogHeader title={title} description={description} />
+        <X402DialogHeader
+          title={title}
+          description={description}
+          titleHint={titleHint}
+        />
         <DialogBody
           stagger={bodyStagger}
           className={cn(

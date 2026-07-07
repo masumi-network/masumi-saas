@@ -821,6 +821,7 @@ model X402EvmWallet {
   encryptedPrivateKey String                        @db.Text
   note                String?
   deletedAt           DateTime?
+  backupConfirmedAt   DateTime?
   createdByUserId     String?
   FacilitatesNetworks X402Network[]                 @relation("X402NetworkFacilitatorWallet")
   Budgets             X402WalletBudget[]

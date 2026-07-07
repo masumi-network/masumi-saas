@@ -15,6 +15,35 @@ const MESSAGES_DIR = path.join(WEB_ROOT, "messages");
 const X402_I18N_DIR = path.join(WEB_ROOT, "scripts", "x402-i18n");
 const LOCALES = ["ja", "de", "es", "fr"];
 
+/**
+ * @param {Record<string, unknown>} target
+ * @param {Record<string, unknown>} source
+ * @returns {Record<string, unknown>}
+ */
+function deepMerge(target, source) {
+  /** @type {Record<string, unknown>} */
+  const result = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    const existing = result[key];
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      existing &&
+      typeof existing === "object" &&
+      !Array.isArray(existing)
+    ) {
+      result[key] = deepMerge(
+        /** @type {Record<string, unknown>} */ (existing),
+        /** @type {Record<string, unknown>} */ (value),
+      );
+      continue;
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
 for (const locale of LOCALES) {
   const messagesPath = path.join(MESSAGES_DIR, `${locale}.json`);
   const x402Path = path.join(X402_I18N_DIR, `${locale}.json`);
@@ -36,7 +65,10 @@ for (const locale of LOCALES) {
     process.exit(1);
   }
 
-  messages.App.X402 = x402;
+  messages.App.X402 = deepMerge(
+    /** @type {Record<string, unknown>} */ (messages.App.X402 ?? {}),
+    /** @type {Record<string, unknown>} */ (x402),
+  );
 
   fs.writeFileSync(
     messagesPath,

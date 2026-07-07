@@ -137,6 +137,7 @@
     "backupDescription": "Guarda esta clave de forma segura. La necesitas para recuperar la cartera.",
     "backupWarning": "Nunca compartas esta clave. Cualquiera que la tenga puede mover los fondos de esta cartera.",
     "walletCreated": "Cartera creada",
+    "newWallet": "Cartera nueva",
     "revealKey": "Revelar clave privada",
     "hide": "Ocultar",
     "show": "Mostrar",
@@ -393,6 +394,7 @@
   },
   "AgentOptions": {
     "title": "Opciones de pago x402",
+    "optionLabel": "Opción {n}",
     "payTo": "Pagar a",
     "resource": "Recurso",
     "amountLine": "{amount} · {asset}"

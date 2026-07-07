@@ -149,7 +149,7 @@ export function AgentDetails({
           </div>
         )}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-6">
         <Card className="overflow-hidden gap-0 py-0">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
             <CardTitle className="text-base font-semibold">

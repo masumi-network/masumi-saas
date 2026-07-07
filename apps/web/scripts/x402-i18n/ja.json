@@ -137,6 +137,7 @@
     "backupDescription": "このキーを安全に保管してください。ウォレットの復元に必要です。",
     "backupWarning": "このキーを共有しないでください。持っている人は誰でもこのウォレットの資金を移動できます。",
     "walletCreated": "ウォレットを作成しました",
+    "newWallet": "新しいウォレット",
     "revealKey": "秘密鍵を表示",
     "hide": "非表示",
     "show": "表示",
@@ -393,6 +394,7 @@
   },
   "AgentOptions": {
     "title": "x402 決済オプション",
+    "optionLabel": "オプション {n}",
     "payTo": "支払先",
     "resource": "リソース",
     "amountLine": "{amount} · {asset}"

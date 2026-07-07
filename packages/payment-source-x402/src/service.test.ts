@@ -20,6 +20,9 @@ const mocks = vi.hoisted(() => {
     mockX402EvmWalletFindFirst: vi.fn() as MockFn,
     mockApiKeyFindFirst: vi.fn() as MockFn,
     mockX402EvmWalletCreate: vi.fn() as MockFn,
+    mockX402EvmWalletDeleteMany: vi.fn() as MockFn,
+    mockX402EvmWalletUpdate: vi.fn() as MockFn,
+    mockX402EvmWalletDelete: vi.fn() as MockFn,
     mockBudgetFindFirst: vi.fn() as MockFn,
     mockBudgetDelete: vi.fn() as MockFn,
     mockBudgetUpdateMany: vi.fn() as MockFn,
@@ -97,6 +100,9 @@ vi.mock("@masumi/database/client", () => ({
     x402EvmWallet: {
       findFirst: mocks.mockX402EvmWalletFindFirst,
       create: mocks.mockX402EvmWalletCreate,
+      deleteMany: mocks.mockX402EvmWalletDeleteMany,
+      update: mocks.mockX402EvmWalletUpdate,
+      delete: mocks.mockX402EvmWalletDelete,
       findMany: vi.fn(),
     },
     x402WalletBudget: {
@@ -297,9 +303,23 @@ function resetDefaultMocks() {
     id: "wallet-new",
     address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     type: "Purchasing",
+    note: "Purchasing wallet",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     createdByUserId: USER_ID,
+  });
+  mocks.mockX402EvmWalletDeleteMany.mockResolvedValue({ count: 0 });
+  mocks.mockX402EvmWalletUpdate.mockResolvedValue({
+    id: "wallet-new",
+    address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    type: "Purchasing",
+    note: "Purchasing wallet",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    createdByUserId: USER_ID,
+  });
+  mocks.mockX402EvmWalletDelete.mockResolvedValue({
+    id: "wallet-new",
   });
   mocks.mockX402SettlementFindUnique.mockResolvedValue(null);
   mocks.mockX402SettlementUpsert.mockResolvedValue({ id: "settlement-1" });
@@ -728,6 +748,65 @@ describe("x402 service", () => {
       type: "Purchasing" as never,
     });
     expect(result.privateKey).toBe(`0x${"b".repeat(64)}`);
+    expect(mocks.mockX402EvmWalletDeleteMany).toHaveBeenCalled();
+    expect(mocks.mockX402EvmWalletCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          backupConfirmedAt: null,
+        }),
+      }),
+    );
+  });
+
+  it("activates imported wallets immediately", async () => {
+    const { createX402ManagedWallet } = await import("./service.js");
+    await createX402ManagedWallet({
+      userId: USER_ID,
+      type: "Purchasing" as never,
+      privateKey: `0x${"a".repeat(64)}`,
+    });
+    expect(mocks.mockX402EvmWalletCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          backupConfirmedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it("confirms wallet backup", async () => {
+    const { confirmX402WalletBackup } = await import("./service.js");
+    mocks.mockX402EvmWalletFindFirst.mockResolvedValueOnce({
+      id: "wallet-new",
+      backupConfirmedAt: null,
+    });
+    const result = await confirmX402WalletBackup(
+      { userId: USER_ID },
+      "wallet-new",
+    );
+    expect(result.id).toBe("wallet-new");
+    expect(mocks.mockX402EvmWalletUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "wallet-new" },
+        data: { backupConfirmedAt: expect.any(Date) },
+      }),
+    );
+  });
+
+  it("cancels a pending wallet before backup confirmation", async () => {
+    const { cancelX402PendingWallet } = await import("./service.js");
+    mocks.mockX402EvmWalletFindFirst.mockResolvedValueOnce({
+      id: "wallet-new",
+      backupConfirmedAt: null,
+    });
+    const result = await cancelX402PendingWallet(
+      { userId: USER_ID },
+      "wallet-new",
+    );
+    expect(result.id).toBe("wallet-new");
+    expect(mocks.mockX402EvmWalletDelete).toHaveBeenCalledWith({
+      where: { id: "wallet-new" },
+    });
   });
 
   it("does not echo back a caller-supplied private key", async () => {

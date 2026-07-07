@@ -789,6 +789,7 @@
         "addChain": "Add chain",
         "columns": {
           "chain": "Chain",
+          "networkId": "Network ID",
           "rpcUrl": "RPC URL",
           "status": "Status",
           "defaultAsset": "Default asset",
@@ -918,6 +919,7 @@
         "backupDescription": "Store this key securely. You need it to recover the wallet.",
         "backupWarning": "Never share this key. Anyone who has it can move this wallet's funds.",
         "walletCreated": "Wallet created",
+        "newWallet": "New wallet",
         "revealKey": "Reveal private key",
         "hide": "Hide",
         "show": "Show",
@@ -1176,6 +1178,7 @@
       },
       "AgentOptions": {
         "title": "x402 Payment Options",
+        "optionLabel": "Option {n}",
         "payTo": "Pay to",
         "resource": "Resource",
         "amountLine": "{amount} · {asset}"

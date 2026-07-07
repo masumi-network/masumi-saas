@@ -5,6 +5,7 @@ import { logger } from "./logger.js";
 import type { CardanoNetwork } from "./network.js";
 import {
   PaymentSourceType,
+  resolveEvmRegistryExtra,
   type SupportedPaymentSource,
   SupportedPaymentSourceChain,
 } from "./payment-source.js";
@@ -68,7 +69,10 @@ export function serializeSupportedPaymentSources(
           decimals: source.decimals,
           payTo: source.payTo,
           resource: source.resource ?? undefined,
-          extra: jsonObjectToRecord(source.extra),
+          extra: resolveEvmRegistryExtra(
+            jsonObjectToRecord(source.extra),
+            source.decimals ?? undefined,
+          ),
         },
       ];
     }
@@ -112,7 +116,7 @@ function toPrismaCreateRow(
       decimals: source.decimals,
       payTo,
       resource: source.resource ?? null,
-      extra: source.extra ?? undefined,
+      extra: resolveEvmRegistryExtra(source.extra, source.decimals),
     };
   }
 

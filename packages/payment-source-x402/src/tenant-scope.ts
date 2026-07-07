@@ -30,6 +30,16 @@ export function walletOwnershipWhere(
   return { userId: scope.userId, organizationId: null, deletedAt: null };
 }
 
+/** Wallets visible in UI and usable for payments after backup is confirmed. */
+export function activeWalletWhere(
+  scope: X402TenantScope,
+): Prisma.X402EvmWalletWhereInput {
+  return {
+    ...walletOwnershipWhere(scope),
+    backupConfirmedAt: { not: null },
+  };
+}
+
 export function networkOwnershipWhere(
   scope: X402TenantScope,
 ): Prisma.X402NetworkWhereInput {

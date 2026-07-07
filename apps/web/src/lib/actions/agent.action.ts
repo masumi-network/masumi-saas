@@ -20,6 +20,7 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -157,6 +158,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     const entry = await userClient.getRegistryById({
       id: agent.agentReference.externalId,
       network,
+      ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (!entry) return { success: true as const };
 

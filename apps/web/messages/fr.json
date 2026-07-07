@@ -1897,6 +1897,7 @@
         "addChain": "Ajouter une chaîne",
         "columns": {
           "chain": "Chaîne",
+          "networkId": "ID réseau",
           "rpcUrl": "RPC URL",
           "status": "Statut",
           "defaultAsset": "Actif par défaut",
@@ -2026,6 +2027,7 @@
         "backupDescription": "Conservez cette clé en lieu sûr. Vous en avez besoin pour récupérer le portefeuille.",
         "backupWarning": "Ne partagez jamais cette clé. Toute personne qui la possède peut déplacer les fonds de ce portefeuille.",
         "walletCreated": "Portefeuille créé",
+        "newWallet": "Nouveau portefeuille",
         "revealKey": "Révéler la clé privée",
         "hide": "Masquer",
         "show": "Afficher",
@@ -2284,6 +2286,7 @@
       },
       "AgentOptions": {
         "title": "Options de paiement x402",
+        "optionLabel": "Option {n}",
         "payTo": "Payer à",
         "resource": "Ressource",
         "amountLine": "{amount} · {asset}"

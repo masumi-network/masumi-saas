@@ -152,6 +152,14 @@ export const deleteWalletSchemaOutput = z.object({
   id: z.string(),
 });
 
+export const confirmWalletBackupSchemaInput = z.object({
+  id: z.string(),
+});
+
+export const cancelPendingWalletSchemaInput = z.object({
+  id: z.string(),
+});
+
 export const walletNoteSchema = z.string().max(250);
 
 export const walletSchemaOutput = z

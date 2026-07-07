@@ -1897,6 +1897,7 @@
         "addChain": "Chain hinzufügen",
         "columns": {
           "chain": "Chain",
+          "networkId": "Netzwerk-ID",
           "rpcUrl": "RPC URL",
           "status": "Status",
           "defaultAsset": "Standard-Asset",
@@ -2026,6 +2027,7 @@
         "backupDescription": "Bewahren Sie diesen Schlüssel sicher auf. Sie benötigen ihn zur Wiederherstellung der Wallet.",
         "backupWarning": "Teilen Sie diesen Schlüssel niemals. Jeder, der ihn hat, kann die Mittel dieser Wallet bewegen.",
         "walletCreated": "Wallet erstellt",
+        "newWallet": "Neues Wallet",
         "revealKey": "Privaten Schlüssel anzeigen",
         "hide": "Ausblenden",
         "show": "Anzeigen",
@@ -2284,6 +2286,7 @@
       },
       "AgentOptions": {
         "title": "x402-Zahlungsoptionen",
+        "optionLabel": "Option {n}",
         "payTo": "Zahlen an",
         "resource": "Ressource",
         "amountLine": "{amount} · {asset}"

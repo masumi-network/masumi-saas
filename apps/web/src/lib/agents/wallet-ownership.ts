@@ -2,8 +2,13 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
-import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import type { PaymentNodeClient, PaymentNodeNetwork } from "@/lib/payment-node";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  getRegistryListFilters,
+  type RegistryLookupFilter,
+  resolveRegistryLookupFilter,
+} from "@/lib/payment-node/registry-lookup";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const PAYMENT_NODE_REGISTRY_MAX_PAGES = 25;
@@ -25,6 +30,7 @@ type AgentWithReference = {
     externalId: string | null;
     networkIdentifier: string | null;
     sellingWalletVkey: string | null;
+    metadata: unknown;
   } | null;
 };
 
@@ -44,24 +50,20 @@ function isLocallyVisibleWalletOwnedAgent(agent: AgentWithReference): boolean {
   );
 }
 
-async function getVisibleRegistryKeysForUser(
-  userId: string,
+async function mergeRegistryPageIntoKeys(
+  client: PaymentNodeClient,
   network: PaymentNodeNetwork,
-): Promise<{
-  externalIds: Set<string>;
-  agentIdentifiers: Set<string>;
-} | null> {
-  const client = await getPaymentNodeClientForUser(userId);
-  if (!client) return null;
-
-  const externalIds = new Set<string>();
-  const agentIdentifiers = new Set<string>();
+  filter: RegistryLookupFilter,
+  externalIds: Set<string>,
+  agentIdentifiers: Set<string>,
+): Promise<void> {
   let cursorId: string | undefined;
 
   for (let page = 0; page < PAYMENT_NODE_REGISTRY_MAX_PAGES; page += 1) {
     const { Assets } = await client.getRegistry({
       network,
       cursorId,
+      ...filter,
     });
 
     for (const asset of Assets) {
@@ -78,6 +80,30 @@ async function getVisibleRegistryKeysForUser(
       break;
     }
     cursorId = nextCursor;
+  }
+}
+
+async function getVisibleRegistryKeysForUser(
+  userId: string,
+  network: PaymentNodeNetwork,
+): Promise<{
+  externalIds: Set<string>;
+  agentIdentifiers: Set<string>;
+} | null> {
+  const client = await getPaymentNodeClientForUser(userId);
+  if (!client) return null;
+
+  const externalIds = new Set<string>();
+  const agentIdentifiers = new Set<string>();
+
+  for (const filter of getRegistryListFilters(network)) {
+    await mergeRegistryPageIntoKeys(
+      client,
+      network,
+      filter,
+      externalIds,
+      agentIdentifiers,
+    );
   }
 
   return { externalIds, agentIdentifiers };
@@ -163,6 +189,7 @@ export async function getWalletOwnedAgentForUser(params: {
     const entry = await client.getRegistryById({
       id: agent.agentReference.externalId,
       network,
+      ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (entry) return agent;
   }

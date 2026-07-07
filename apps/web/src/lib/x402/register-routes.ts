@@ -1,6 +1,8 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createRoute } from "@hono/zod-openapi";
 import {
+  cancelX402PendingWallet,
+  confirmX402WalletBackup,
   countX402ManagedWallets,
   countX402PaymentAttempts,
   countX402Settlements,
@@ -56,6 +58,8 @@ import {
   analyticsSchemaInput,
   analyticsSchemaOutput,
   budgetSchema,
+  cancelPendingWalletSchemaInput,
+  confirmWalletBackupSchemaInput,
   countSchemaOutput,
   createPaymentSchemaInput,
   createPaymentSchemaOutput,
@@ -482,6 +486,93 @@ export function registerX402Routes(app: X402App): void {
         return c.json(result, 200);
       } catch (error) {
         handleRouteError(error, "x402 delete wallet failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/wallets/confirm-backup",
+      tags: ["x402"],
+      summary: "Confirm managed wallet private-key backup",
+      security,
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: confirmWalletBackupSchemaInput },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Confirmed wallet",
+          content: {
+            "application/json": { schema: walletSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminWrite(authContext);
+        const input = c.req.valid("json");
+
+        const wallet = serializeWallet(
+          await confirmX402WalletBackup(x402Scope(authContext), input.id),
+        );
+
+        return c.json(wallet, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 confirm wallet backup failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/wallets/cancel-pending",
+      tags: ["x402"],
+      summary: "Cancel a pending managed wallet before backup is confirmed",
+      security,
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: cancelPendingWalletSchemaInput },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Cancelled pending wallet id",
+          content: {
+            "application/json": { schema: deleteWalletSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminWrite(authContext);
+        const input = c.req.valid("json");
+
+        const result = await cancelX402PendingWallet(
+          x402Scope(authContext),
+          input.id,
+        );
+
+        return c.json(result, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 cancel pending wallet failed");
       }
     },
   );

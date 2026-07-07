@@ -6,9 +6,9 @@ import {
 import prisma from "@masumi/database/client";
 
 import {
+  activeWalletWhere,
   paymentAttemptOwnershipWhere,
   resolveX402TenantScope,
-  walletOwnershipWhere,
   type X402ScopeInput,
 } from "./tenant-scope.js";
 
@@ -19,7 +19,7 @@ export async function countX402ManagedWallets(
 ) {
   const scope = resolveX402TenantScope(input);
   return prisma.x402EvmWallet.count({
-    where: { ...walletOwnershipWhere(scope), type: input.type },
+    where: { ...activeWalletWhere(scope), type: input.type },
   });
 }
 

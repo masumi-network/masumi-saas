@@ -37,5 +37,8 @@ describe("prepareSupportedPaymentSourcesForRegistration", () => {
     expect(merged).toHaveLength(2);
     expect(merged?.[0]?.chain).toBe("Cardano");
     expect(merged?.[1]?.chain).toBe("EVM");
+    expect(merged?.[1]).toMatchObject({
+      extra: { assetTransferMethod: "permit2", decimals: 6 },
+    });
   });
 });

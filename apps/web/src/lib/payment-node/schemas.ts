@@ -81,6 +81,7 @@ export const registryEntrySchema = z.object({
   description: z.string().nullable(),
   apiBaseUrl: z.string(),
   state: registryRequestStateSchema,
+  error: z.string().nullable().optional(),
   agentIdentifier: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),

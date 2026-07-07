@@ -2,7 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleDollarSign, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CircleDollarSign,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -12,6 +18,12 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -29,6 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { authClient } from "@/lib/auth/auth.client";
 import {
   useUserApiKeys,
@@ -41,6 +54,7 @@ import { x402Mutate } from "@/lib/x402/api";
 import { getEvmTokenPresetsForChain } from "@/lib/x402/evm-token-presets";
 import type { X402Budget } from "@/lib/x402/types";
 
+import { ChainLabel } from "./chain-icon";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
   x402ActionsCellClass,
@@ -220,30 +234,40 @@ export function BudgetsTab() {
                     {groupDigits(budget.spentAmount)}
                   </TableCell>
                   <TableCell className={x402ActionsCellClass}>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label={t("editBudget")}
-                        onClick={() => {
-                          setEditing(budget);
-                          setDialogOpen(true);
-                        }}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("columns.actions")}
+                          disabled={busyId === budget.id}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[140px]"
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={t("deleteBudget")}
-                        disabled={busyId === budget.id}
-                        onClick={() => setBudgetToDelete(budget)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditing(budget);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4 shrink-0" />
+                          {t("editBudget")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setBudgetToDelete(budget)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 shrink-0" />
+                          {t("deleteBudget")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -323,6 +347,9 @@ export function BudgetDialog({
       networks.find((network) => network.caip2Id === selectedNetwork) ?? null,
     [networks, selectedNetwork],
   );
+  const chainIconSlugs = useChainRegistryIcons(
+    useMemo(() => networks.map((network) => network.caip2Id), [networks]),
+  );
   const tokenPresets = useMemo(
     () =>
       getEvmTokenPresetsForChain(selectedNetwork, selectedChain?.defaultAsset),
@@ -400,7 +427,7 @@ export function BudgetDialog({
       open={open}
       onClose={onClose}
       title={editing ? t("editTitle") : t("setTitle")}
-      description={t("dialogDescription")}
+      titleHint={t("dialogDescription")}
       maxWidthClassName="sm:max-w-lg"
       onSubmit={handleSubmit(onSubmit)}
       footer={
@@ -552,13 +579,30 @@ export function BudgetDialog({
           onValueChange={onSelectNetwork}
           disabled={!!editing}
         >
-          <SelectTrigger aria-label={t("fields.chain")}>
-            <SelectValue placeholder={t("fields.chainPlaceholder")} />
+          <SelectTrigger
+            aria-label={t("fields.chain")}
+            className="h-auto min-h-10 items-center py-2 text-left [&>span]:line-clamp-none"
+          >
+            <SelectValue placeholder={t("fields.chainPlaceholder")}>
+              {selectedChain ? (
+                <ChainLabel
+                  caip2Id={selectedChain.caip2Id}
+                  name={selectedChain.displayName}
+                  iconSlug={chainIconSlugs.get(selectedChain.caip2Id)}
+                  className="min-w-0 [&_span]:line-clamp-none"
+                />
+              ) : null}
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="min-w-[var(--radix-select-trigger-width)] w-max max-w-[min(100vw-2rem,24rem)]">
             {networks.map((network) => (
-              <SelectItem key={network.id} value={network.caip2Id}>
-                {network.displayName}
+              <SelectItem
+                key={network.id}
+                value={network.caip2Id}
+                textValue={network.displayName}
+                className="whitespace-nowrap py-2 [&_span]:line-clamp-none"
+              >
+                <span>{network.displayName}</span>
                 <span className="ml-2 font-mono text-xs text-muted-foreground">
                   {network.caip2Id}
                 </span>

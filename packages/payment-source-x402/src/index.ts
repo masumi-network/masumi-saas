@@ -11,6 +11,8 @@ export * from "./low-balance.js";
 export * from "./network.js";
 export * from "./payment-source.js";
 export {
+  cancelX402PendingWallet,
+  confirmX402WalletBackup,
   createX402ManagedWallet,
   createX402Payment,
   deleteX402ManagedWallet,

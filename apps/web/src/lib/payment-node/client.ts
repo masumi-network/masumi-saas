@@ -267,6 +267,9 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistry(params: {
       network: PaymentNodeNetwork;
       cursorId?: string;
+      filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      filterStatus?: RegistryStatusFilter;
     }): Promise<{ Assets: RegistryEntry[] }> {
       return requestParse(
         base,
@@ -277,6 +280,13 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           query: {
             network: params.network,
             ...(params.cursorId && { cursorId: params.cursorId }),
+            ...(params.filterSmartContractAddress && {
+              filterSmartContractAddress: params.filterSmartContractAddress,
+            }),
+            ...(params.filterPaymentSourceType && {
+              filterPaymentSourceType: params.filterPaymentSourceType,
+            }),
+            ...(params.filterStatus && { filterStatus: params.filterStatus }),
           },
         },
         registryListResponseSchema,
@@ -318,6 +328,9 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryById(params: {
       id: string;
       network: PaymentNodeNetwork;
+      /** Required for V2 agents: the registry list defaults to V1 when omitted. */
+      filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
     }): Promise<RegistryEntry | null> {
       // Fetch without a cursorId so the target entry is included in results.
       // Using cursorId for the target's own id would exclude it under standard
@@ -329,6 +342,8 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         const { Assets } = await this.getRegistry({
           network: params.network,
           cursorId,
+          filterSmartContractAddress: params.filterSmartContractAddress,
+          filterPaymentSourceType: params.filterPaymentSourceType,
         });
         const match = Assets.find((a) => a.id === params.id);
         if (match) return match;

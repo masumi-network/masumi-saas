@@ -57,6 +57,8 @@ import {
 // Wallet CRUD lives in ./wallets; re-exported so existing import sites
 // (`@masumi/payment-source-x402`) and the service spec keep one entry point.
 export {
+  cancelX402PendingWallet,
+  confirmX402WalletBackup,
   createX402ManagedWallet,
   deleteX402ManagedWallet,
   getX402ManagedWallet,

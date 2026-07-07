@@ -68,11 +68,16 @@ import { cn, shortenAddress } from "@/lib/utils";
 import { x402Fetch, x402Mutate } from "@/lib/x402/api";
 import type { ChainSearchResult } from "@/lib/x402/chain-registry-types";
 import { getDefaultStablecoinForChain } from "@/lib/x402/evm-config";
-import type { X402Network, X402RpcProbeResult } from "@/lib/x402/types";
+import type {
+  X402Network,
+  X402RpcProbeResult,
+  X402Wallet,
+} from "@/lib/x402/types";
 import { isTestnetEnv } from "@/lib/x402-rail";
 
-import { ChainIcon } from "./chain-icon";
+import { ChainLabel } from "./chain-icon";
 import { ChainPickerDropdown } from "./chain-picker-dropdown";
+import { WalletBalanceDialog } from "./wallet-extras";
 import { CreateWalletDialog } from "./wallets-tab";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
@@ -86,6 +91,19 @@ import { X402TestnetField } from "./x402-testnet-field";
 
 const NO_FACILITATOR = "__none__";
 const FILTER_ALL = "__all__";
+
+function facilitatorWalletFromNetwork(network: X402Network): X402Wallet | null {
+  if (!network.facilitatorWalletId) return null;
+
+  return {
+    id: network.facilitatorWalletId,
+    address: network.facilitatorWalletAddress ?? network.facilitatorWalletId,
+    type: "Selling",
+    note: null,
+    createdAt: "",
+    updatedAt: "",
+  };
+}
 
 type ChainListFilters = {
   enabled?: boolean;
@@ -205,10 +223,12 @@ function RpcUrlProbeIndicator({
 
 export function ChainsTab() {
   const t = useTranslations("App.X402.Chains");
+  const tWallets = useTranslations("App.X402.Wallets");
   const { networks, isLoading, isRefetching, refetch } = useX402Networks();
   const chainIconSlugs = useChainRegistryIcons(networks.map((n) => n.caip2Id));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<X402Network | null>(null);
+  const [balanceWallet, setBalanceWallet] = useState<X402Wallet | null>(null);
   const [busyChainId, setBusyChainId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [listFilters, setListFilters] = useState<ChainListFilters>({});
@@ -371,6 +391,7 @@ export function ChainsTab() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>{t("columns.chain")}</TableHead>
+                <TableHead>{t("columns.networkId")}</TableHead>
                 <TableHead>{t("columns.rpcUrl")}</TableHead>
                 <TableHead>{t("columns.status")}</TableHead>
                 <TableHead>{t("columns.defaultAsset")}</TableHead>
@@ -399,24 +420,21 @@ export function ChainsTab() {
                     style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
                   >
                     <TableCell className={disabledRowFadeClass}>
-                      <div className="flex items-center gap-2.5">
-                        <div className={disabledIconToneClass}>
-                          <ChainIcon
-                            caip2Id={network.caip2Id}
-                            name={network.displayName}
-                            iconSlug={chainIconSlugs.get(network.caip2Id)}
-                            size={24}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-medium">
-                            {network.displayName}
-                          </div>
-                          <div className="font-mono text-xs text-muted-foreground">
-                            {network.caip2Id}
-                          </div>
-                        </div>
-                      </div>
+                      <ChainLabel
+                        caip2Id={network.caip2Id}
+                        name={network.displayName}
+                        iconSlug={chainIconSlugs.get(network.caip2Id)}
+                        iconSize={16}
+                        className={cn(disabledIconToneClass, "font-medium")}
+                      />
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "font-mono text-sm text-muted-foreground",
+                        disabledRowFadeClass,
+                      )}
+                    >
+                      {network.caip2Id}
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -428,16 +446,11 @@ export function ChainsTab() {
                       {network.rpcUrl}
                     </TableCell>
                     <TableCell className={disabledRowFadeClass}>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge
-                          variant={network.isEnabled ? "success" : "secondary"}
-                        >
-                          {network.isEnabled ? t("enabled") : t("disabled")}
-                        </Badge>
-                        <Badge variant="outline">
-                          {network.isTestnet ? t("testnet") : t("mainnet")}
-                        </Badge>
-                      </div>
+                      <Badge
+                        variant={network.isEnabled ? "success" : "secondary"}
+                      >
+                        {network.isEnabled ? t("enabled") : t("disabled")}
+                      </Badge>
                     </TableCell>
                     <TableCell
                       className={cn("font-mono text-sm", disabledRowFadeClass)}
@@ -453,7 +466,35 @@ export function ChainsTab() {
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className={cn("text-sm", disabledRowFadeClass)}>
+                    <TableCell
+                      className={cn(
+                        "text-sm",
+                        disabledRowFadeClass,
+                        network.facilitatorWalletId &&
+                          "cursor-pointer transition-colors duration-150 hover:text-foreground",
+                      )}
+                      onClick={() => {
+                        const wallet = facilitatorWalletFromNetwork(network);
+                        if (wallet) setBalanceWallet(wallet);
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          network.facilitatorWalletId &&
+                          (e.key === "Enter" || e.key === " ")
+                        ) {
+                          e.preventDefault();
+                          const wallet = facilitatorWalletFromNetwork(network);
+                          if (wallet) setBalanceWallet(wallet);
+                        }
+                      }}
+                      tabIndex={network.facilitatorWalletId ? 0 : undefined}
+                      role={network.facilitatorWalletId ? "button" : undefined}
+                      aria-label={
+                        network.facilitatorWalletId
+                          ? tWallets("balances")
+                          : undefined
+                      }
+                    >
                       {network.facilitatorWalletId ? (
                         <div className="flex items-center gap-1">
                           <span
@@ -538,6 +579,13 @@ export function ChainsTab() {
           setDialogOpen(false);
           refetch();
         }}
+      />
+
+      <WalletBalanceDialog
+        key={balanceWallet ? `bal-${balanceWallet.id}` : "bal-closed"}
+        wallet={balanceWallet}
+        open={balanceWallet != null}
+        onClose={() => setBalanceWallet(null)}
       />
     </div>
   );
@@ -927,7 +975,7 @@ export function ChainDialog({
         open={open}
         onClose={handleDialogClose}
         title={editing ? t("editTitle") : t("addTitle")}
-        description={t("dialogDescription")}
+        titleHint={t("dialogDescription")}
         maxWidthClassName="sm:max-w-xl"
         bodyClassName="space-y-3 p-5"
         onSubmit={handleSubmit(onValidSubmit)}
@@ -955,21 +1003,14 @@ export function ChainDialog({
           <label htmlFor="chain-caip2Id" className="text-sm font-medium">
             {t("fields.caip2Id")}
           </label>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Input
-                id="chain-caip2Id"
-                placeholder="eip155:8453"
-                className="font-mono"
-                readOnly={!!editing}
-                {...register("caip2Id")}
-              />
-              {errors.caip2Id ? (
-                <p className="text-xs text-destructive">
-                  {errors.caip2Id.message}
-                </p>
-              ) : null}
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <Input
+              id="chain-caip2Id"
+              placeholder="eip155:8453"
+              className="min-w-0 flex-1 font-mono"
+              readOnly={!!editing}
+              {...register("caip2Id")}
+            />
             {!editing ? (
               <ChainPickerDropdown
                 selectedCaip2Id={selectedCaip2Id}
@@ -979,6 +1020,9 @@ export function ChainDialog({
               />
             ) : null}
           </div>
+          {errors.caip2Id ? (
+            <p className="text-xs text-destructive">{errors.caip2Id.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1081,18 +1125,26 @@ export function ChainDialog({
             name="facilitatorWalletId"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger aria-label={t("fields.facilitator")}>
+                <SelectTrigger
+                  aria-label={t("fields.facilitator")}
+                  className="h-auto min-h-10 items-center py-2 text-left [&>span]:line-clamp-none"
+                >
                   <SelectValue
                     placeholder={t("fields.facilitatorPlaceholder")}
                   />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_FACILITATOR}>{t("none")}</SelectItem>
+                <SelectContent className="min-w-[var(--radix-select-trigger-width)] w-max max-w-[min(100vw-2rem,24rem)]">
+                  <SelectItem
+                    value={NO_FACILITATOR}
+                    className="whitespace-nowrap py-2 [&_span]:line-clamp-none"
+                  >
+                    {t("none")}
+                  </SelectItem>
                   {wallets.map((wallet) => (
                     <SelectItem
                       key={wallet.id}
                       value={wallet.id}
-                      className="font-mono"
+                      className="whitespace-nowrap py-2 font-mono [&_span]:line-clamp-none"
                     >
                       {shortenAddress(wallet.address, 8)}
                     </SelectItem>
@@ -1155,11 +1207,19 @@ export function ChainDialog({
           />
 
           <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
+            <div className="flex items-center gap-1.5">
               <p className="text-sm font-medium">{t("fields.enabled")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("enabledHint")}
-              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                    <CircleHelp className="h-3.5 w-3.5" />
+                    <span className="sr-only">{t("enabledHint")}</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {t("enabledHint")}
+                </TooltipContent>
+              </Tooltip>
             </div>
             <Controller
               control={control}

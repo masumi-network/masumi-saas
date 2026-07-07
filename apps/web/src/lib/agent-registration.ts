@@ -35,6 +35,7 @@ import {
   findSellingWalletIdByVkey,
   hydratePaymentSource,
 } from "@/lib/payment-node/payment-source-wallets";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { USDM } from "@/lib/payment-node/tokens";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
@@ -124,6 +125,12 @@ function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   const ms = Date.parse(lastRegisterAttemptAt);
   if (Number.isNaN(ms)) return false;
   return Date.now() - ms < REGISTER_AGENT_RETRY_COOLDOWN_MS;
+}
+
+function formatRegistryFailureMessage(registryError?: string | null): string {
+  const trimmed = registryError?.trim();
+  if (trimmed) return trimmed;
+  return "Registration was rejected or failed on the network.";
 }
 
 export function shouldCheckRecipientWalletForRegisteredAssets(
@@ -649,6 +656,7 @@ export async function completeOnChainRegistration(
         const entry = await userClient.getRegistryById({
           id: ref.externalId,
           network,
+          ...resolveRegistryLookupFilter(ref.metadata, network),
         });
         if (entry) {
           const state = entry.state as RegistrationState;
@@ -675,8 +683,7 @@ export async function completeOnChainRegistration(
           }
           if (state === "RegistrationFailed") {
             await recordAgentActivityEvent(agentId, "RegistrationFailed");
-            const errorMsg =
-              "Registration was rejected or failed on the network.";
+            const errorMsg = formatRegistryFailureMessage(entry.error);
             await sendAgentRegistrationFailedEmail(
               userId,
               agentId,

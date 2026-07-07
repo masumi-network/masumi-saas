@@ -6,6 +6,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { encrypt } from "./encryption.js";
 import { assertValidPrivateKey } from "./internal.js";
 import {
+  activeWalletWhere,
   networkOwnershipWhere,
   resolveX402TenantScope,
   walletOwnershipWhere,
@@ -56,6 +57,35 @@ async function assertTenantWalletSlotAvailable(
   }
 }
 
+async function deletePendingWalletsForType(
+  scope: ReturnType<typeof resolveX402TenantScope>,
+  type: X402EvmWalletType,
+): Promise<void> {
+  await prisma.x402EvmWallet.deleteMany({
+    where: {
+      ...walletOwnershipWhere(scope),
+      type,
+      backupConfirmedAt: null,
+    },
+  });
+}
+
+async function findOwnedWalletRecord(
+  scope: ReturnType<typeof resolveX402TenantScope>,
+  evmWalletId: string,
+  options?: { includePending?: boolean },
+) {
+  return prisma.x402EvmWallet.findFirst({
+    where: {
+      id: evmWalletId,
+      ...(options?.includePending
+        ? walletOwnershipWhere(scope)
+        : activeWalletWhere(scope)),
+    },
+    select: { id: true, backupConfirmedAt: true },
+  });
+}
+
 export async function createX402ManagedWallet({
   userId,
   organizationId,
@@ -72,12 +102,14 @@ export async function createX402ManagedWallet({
   privateKey?: string;
 }) {
   const scope = resolveX402TenantScope({ userId, organizationId });
+  await deletePendingWalletsForType(scope, type);
   await assertTenantWalletSlotAvailable(scope, type);
 
   const wasGenerated = privateKey == null;
   const walletPrivateKey = privateKey ?? generatePrivateKey();
   assertValidPrivateKey(walletPrivateKey);
   const account = privateKeyToAccount(walletPrivateKey);
+  const backupConfirmedAt = wasGenerated ? null : new Date();
 
   try {
     const created = await prisma.x402EvmWallet.create({
@@ -88,6 +120,7 @@ export async function createX402ManagedWallet({
         type,
         note: resolveWalletNote(type, note),
         encryptedPrivateKey: encrypt(walletPrivateKey),
+        backupConfirmedAt,
         createdByUserId: createdByUserId ?? null,
       },
       select: WALLET_OUTPUT_SELECT,
@@ -125,7 +158,10 @@ export async function listX402ManagedWallets(
 ) {
   const scope = resolveX402TenantScope(input);
   return prisma.x402EvmWallet.findMany({
-    where: { ...walletOwnershipWhere(scope), type: input.type },
+    where: {
+      ...activeWalletWhere(scope),
+      ...(input.type != null ? { type: input.type } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: input.take,
     cursor: input.cursorId ? { id: input.cursorId } : undefined,
@@ -139,7 +175,7 @@ export async function getX402ManagedWallet(
 ) {
   const scope = resolveX402TenantScope(scopeInput);
   const wallet = await prisma.x402EvmWallet.findFirst({
-    where: { id: evmWalletId, ...walletOwnershipWhere(scope) },
+    where: { id: evmWalletId, ...activeWalletWhere(scope) },
     select: WALLET_OUTPUT_SELECT,
   });
   if (wallet == null) {
@@ -156,7 +192,7 @@ export async function updateX402ManagedWallet(
 ) {
   const scope = resolveX402TenantScope(input);
   const existing = await prisma.x402EvmWallet.findFirst({
-    where: { id: input.id, ...walletOwnershipWhere(scope) },
+    where: { id: input.id, ...activeWalletWhere(scope) },
     select: { id: true },
   });
   if (existing == null) {
@@ -175,7 +211,7 @@ export async function deleteX402ManagedWallet(
 ) {
   const scope = resolveX402TenantScope(scopeInput);
   const wallet = await prisma.x402EvmWallet.findFirst({
-    where: { id: evmWalletId, ...walletOwnershipWhere(scope) },
+    where: { id: evmWalletId, ...activeWalletWhere(scope) },
     select: { id: true },
   });
   if (wallet == null) {
@@ -204,5 +240,46 @@ export async function deleteX402ManagedWallet(
     }),
   ]);
 
+  return { id: evmWalletId };
+}
+
+export async function confirmX402WalletBackup(
+  scopeInput: X402ScopeInput,
+  evmWalletId: string,
+) {
+  const scope = resolveX402TenantScope(scopeInput);
+  const wallet = await findOwnedWalletRecord(scope, evmWalletId, {
+    includePending: true,
+  });
+  if (wallet == null) {
+    throw createHttpError(404, "Managed EVM wallet not found");
+  }
+  if (wallet.backupConfirmedAt != null) {
+    throw createHttpError(409, "Wallet backup is already confirmed");
+  }
+
+  return prisma.x402EvmWallet.update({
+    where: { id: evmWalletId },
+    data: { backupConfirmedAt: new Date() },
+    select: WALLET_OUTPUT_SELECT,
+  });
+}
+
+export async function cancelX402PendingWallet(
+  scopeInput: X402ScopeInput,
+  evmWalletId: string,
+) {
+  const scope = resolveX402TenantScope(scopeInput);
+  const wallet = await findOwnedWalletRecord(scope, evmWalletId, {
+    includePending: true,
+  });
+  if (wallet == null) {
+    throw createHttpError(404, "Managed EVM wallet not found");
+  }
+  if (wallet.backupConfirmedAt != null) {
+    throw createHttpError(409, "Only pending wallets can be cancelled");
+  }
+
+  await prisma.x402EvmWallet.delete({ where: { id: evmWalletId } });
   return { id: evmWalletId };
 }

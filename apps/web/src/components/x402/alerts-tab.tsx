@@ -1,7 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bell, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Ban,
+  Bell,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Power,
+  Trash2,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -11,6 +19,12 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -28,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import {
   useX402LowBalanceRules,
   useX402Networks,
@@ -37,10 +52,11 @@ import { cn, formatX402Amount, groupDigits, shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
 import type { X402LowBalanceRule } from "@/lib/x402/types";
 
+import { ChainLabel } from "./chain-icon";
 import { X402FormDialog } from "./x402-form-dialog";
 import {
-  x402ActionsCellWideClass,
-  x402ActionsHeadWideClass,
+  x402ActionsCellClass,
+  x402ActionsHeadClass,
   X402TableEmptyState,
   X402TableLoading,
 } from "./x402-table-ui";
@@ -85,8 +101,9 @@ export function AlertsTab() {
     null,
   );
 
-  const chainLabel = (caip2: string) =>
-    networks.find((n) => n.caip2Id === caip2)?.displayName ?? caip2;
+  const chainIconSlugs = useChainRegistryIcons(
+    useMemo(() => networks.map((network) => network.caip2Id), [networks]),
+  );
 
   const envChainIds = useMemo(
     () => new Set(networks.map((n) => n.caip2Id)),
@@ -156,7 +173,7 @@ export function AlertsTab() {
       </div>
 
       {isLoading || networksLoading ? (
-        <X402TableLoading columns={6} withActions wideActions />
+        <X402TableLoading columns={6} withActions />
       ) : envRules.length === 0 ? (
         <X402TableEmptyState
           icon={Bell}
@@ -188,7 +205,7 @@ export function AlertsTab() {
                     {t(`columns.${col}`)}
                   </TableHead>
                 ))}
-                <TableHead className={x402ActionsHeadWideClass}>
+                <TableHead className={x402ActionsHeadClass}>
                   {t("columns.actions")}
                 </TableHead>
               </TableRow>
@@ -214,8 +231,25 @@ export function AlertsTab() {
                       <CopyButton value={rule.evmWalletAddress} />
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {chainLabel(rule.caip2Network)}
+                  <TableCell>
+                    {(() => {
+                      const network = networks.find(
+                        (item) => item.caip2Id === rule.caip2Network,
+                      );
+                      if (!network) {
+                        return (
+                          <span className="text-sm">{rule.caip2Network}</span>
+                        );
+                      }
+                      return (
+                        <ChainLabel
+                          caip2Id={network.caip2Id}
+                          name={network.displayName}
+                          iconSlug={chainIconSlugs.get(network.caip2Id)}
+                          className="min-w-0"
+                        />
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {assetLabel(rule.asset)}
@@ -233,39 +267,57 @@ export function AlertsTab() {
                       {rule.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className={x402ActionsCellWideClass}>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busyId === rule.id}
-                        onClick={() => toggleEnabled(rule)}
+                  <TableCell className={x402ActionsCellClass}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("columns.actions")}
+                          disabled={busyId === rule.id}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[140px]"
                       >
-                        {rule.enabled ? t("disable") : t("enable")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label={t("editAlert")}
-                        onClick={() => {
-                          setEditing(rule);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={t("deleteAlert")}
-                        disabled={busyId === rule.id}
-                        onClick={() => setRuleToDelete(rule)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditing(rule);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4 shrink-0" />
+                          {t("editAlert")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => toggleEnabled(rule)}
+                          disabled={busyId === rule.id}
+                        >
+                          {rule.enabled ? (
+                            <>
+                              <Ban className="mr-2 h-4 w-4 shrink-0" />
+                              {t("disable")}
+                            </>
+                          ) : (
+                            <>
+                              <Power className="mr-2 h-4 w-4 shrink-0" />
+                              {t("enable")}
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setRuleToDelete(rule)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 shrink-0" />
+                          {t("deleteAlert")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -337,6 +389,14 @@ function AlertDialog({
 
   const assetKind = useWatch({ control, name: "assetKind" });
   const selectedNetwork = useWatch({ control, name: "caip2Network" });
+  const selectedChain = useMemo(
+    () =>
+      networks.find((network) => network.caip2Id === selectedNetwork) ?? null,
+    [networks, selectedNetwork],
+  );
+  const chainIconSlugs = useChainRegistryIcons(
+    useMemo(() => networks.map((network) => network.caip2Id), [networks]),
+  );
 
   const onSubmit = async (data: RuleFormValues) => {
     setIsSaving(true);
@@ -381,7 +441,7 @@ function AlertDialog({
       open={open}
       onClose={onClose}
       title={editing ? t("editTitle") : t("addTitle")}
-      description={t("dialogDescription")}
+      titleHint={t("dialogDescription")}
       onSubmit={handleSubmit(onSubmit)}
       footer={
         <>
@@ -414,17 +474,20 @@ function AlertDialog({
               onValueChange={field.onChange}
               disabled={!!editing}
             >
-              <SelectTrigger aria-label={t("fields.wallet")}>
+              <SelectTrigger
+                aria-label={t("fields.wallet")}
+                className="h-auto min-h-10 items-center py-2 text-left [&>span]:line-clamp-none"
+              >
                 <SelectValue placeholder={t("fields.walletPlaceholder")} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] w-max max-w-[min(100vw-2rem,24rem)]">
                 {wallets.map((wallet) => (
                   <SelectItem
                     key={wallet.id}
                     value={wallet.id}
-                    className="font-mono"
+                    className="whitespace-nowrap py-2 font-mono [&_span]:line-clamp-none"
                   >
-                    {shortenAddress(wallet.address, 8)}
+                    <span>{shortenAddress(wallet.address, 8)}</span>
                     <span className="ml-2 text-muted-foreground">
                       {wallet.type}
                     </span>
@@ -460,13 +523,33 @@ function AlertDialog({
               }}
               disabled={!!editing}
             >
-              <SelectTrigger aria-label={t("fields.chain")}>
-                <SelectValue placeholder={t("fields.chainPlaceholder")} />
+              <SelectTrigger
+                aria-label={t("fields.chain")}
+                className="h-auto min-h-10 items-center py-2 text-left [&>span]:line-clamp-none"
+              >
+                <SelectValue placeholder={t("fields.chainPlaceholder")}>
+                  {selectedChain ? (
+                    <ChainLabel
+                      caip2Id={selectedChain.caip2Id}
+                      name={selectedChain.displayName}
+                      iconSlug={chainIconSlugs.get(selectedChain.caip2Id)}
+                      className="min-w-0 [&_span]:line-clamp-none"
+                    />
+                  ) : null}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] w-max max-w-[min(100vw-2rem,24rem)]">
                 {networks.map((network) => (
-                  <SelectItem key={network.id} value={network.caip2Id}>
-                    {network.displayName}
+                  <SelectItem
+                    key={network.id}
+                    value={network.caip2Id}
+                    textValue={network.displayName}
+                    className="whitespace-nowrap py-2 [&_span]:line-clamp-none"
+                  >
+                    <span>{network.displayName}</span>
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">
+                      {network.caip2Id}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

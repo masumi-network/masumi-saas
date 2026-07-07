@@ -72,6 +72,36 @@ export const supportedPaymentSourceSchema = z.discriminatedUnion("chain", [
 
 export const MAX_SUPPORTED_PAYMENT_SOURCES = 25;
 
+/** Default x402 settlement extra for on-chain registry metadata (permit2 USDC). */
+export const DEFAULT_EVM_REGISTRY_EXTRA = {
+  assetTransferMethod: "permit2",
+} as const;
+
+function isNonEmptyExtraRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    value != null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0
+  );
+}
+
+/** Payment node persists omitted `extra` as null; registry mint requires a JSON object. */
+export function resolveEvmRegistryExtra(
+  extra: unknown,
+  decimals?: number,
+): Record<string, unknown> {
+  if (isNonEmptyExtraRecord(extra)) {
+    return extra;
+  }
+  return {
+    ...DEFAULT_EVM_REGISTRY_EXTRA,
+    ...(decimals != null ? { decimals } : {}),
+  };
+}
+
 export const supportedPaymentSourcesSchema = z
   .array(supportedPaymentSourceSchema)
   .min(1)
@@ -147,6 +177,7 @@ export function normalizeSupportedPaymentSourceInput(
     return {
       ...source,
       address: source.address ?? source.payTo,
+      extra: resolveEvmRegistryExtra(source.extra, source.decimals),
     };
   }
   return source;
