@@ -103,28 +103,28 @@ export default function SignUpForm({
     <div className="w-full space-y-6 animate-page-in">
       <AuthPageHeader title={t("title")} description={t("description")} />
 
-      {oauthProviders.length > 0 && (
+      <div className="flex w-full flex-col gap-4">
         <SocialAuthButtons
           providers={oauthProviders}
           callbackURL={safeCallbackUrl}
         />
-      )}
 
-      {usePassword ? (
-        <SignupPasswordForm
-          ref={passwordRef}
-          seedFromMagicLink={seedPassword}
-          safeCallbackUrl={safeCallbackUrl}
-        />
-      ) : (
-        <SignupMagicLinkForm
-          key={magicFormKey}
-          ref={magicRef}
-          seedFromPassword={seedMagic}
-          safeCallbackUrl={safeCallbackUrl}
-          onMagicLinkSent={(email) => setMagicLinkEmail(email)}
-        />
-      )}
+        {usePassword ? (
+          <SignupPasswordForm
+            ref={passwordRef}
+            seedFromMagicLink={seedPassword}
+            safeCallbackUrl={safeCallbackUrl}
+          />
+        ) : (
+          <SignupMagicLinkForm
+            key={magicFormKey}
+            ref={magicRef}
+            seedFromPassword={seedMagic}
+            safeCallbackUrl={safeCallbackUrl}
+            onMagicLinkSent={(email) => setMagicLinkEmail(email)}
+          />
+        )}
+      </div>
 
       <div className="flex flex-col gap-3 w-full">
         <Button
@@ -137,7 +137,7 @@ export default function SignUpForm({
           {usePassword ? t("useMagicLink") : t("usePassword")}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("hasAccount")}{" "}
           <Link
             href={buildAuthPageHref("/signin", safeCallbackUrl)}
