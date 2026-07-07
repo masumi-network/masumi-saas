@@ -20,6 +20,7 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
@@ -184,17 +185,11 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
 
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const refMeta =
-      (agent.agentReference.metadata as Record<string, unknown> | null) ?? {};
-    const smartContractAddress =
-      (typeof refMeta.smartContractAddress === "string"
-        ? refMeta.smartContractAddress
-        : undefined) ?? paymentNodeConfig.tryGetSmartContractAddress(network);
     const entry = await getRegistryEntryForSync({
       userId: user.id,
       externalId: agent.agentReference.externalId,
       network,
-      smartContractAddress,
+      ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (!entry) return { success: true as const };
 

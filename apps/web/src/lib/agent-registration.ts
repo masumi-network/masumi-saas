@@ -5,6 +5,17 @@
  */
 
 import prisma from "@masumi/database/client";
+import {
+  normalizeSupportedPaymentSourceInput,
+  PaymentSourceType,
+  type SupportedPaymentSource,
+  validateSupportedPaymentSourcesOrThrow,
+} from "@masumi/payment-source-x402/payment-source";
+import {
+  loadSupportedPaymentSourcesForAgent,
+  mergeWithDefaultCardanoSource,
+  replaceSupportedPaymentSourcesForAgent,
+} from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
@@ -29,6 +40,7 @@ import {
   findSellingWalletIdByVkey,
   hydratePaymentSource,
 } from "@/lib/payment-node/payment-source-wallets";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { USDM } from "@/lib/payment-node/tokens";
@@ -67,6 +79,7 @@ export type RegisterAgentParams = {
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
+  supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
   capabilityVersion: string;
@@ -119,6 +132,12 @@ function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   const ms = Date.parse(lastRegisterAttemptAt);
   if (Number.isNaN(ms)) return false;
   return Date.now() - ms < REGISTER_AGENT_RETRY_COOLDOWN_MS;
+}
+
+function formatRegistryFailureMessage(registryError?: string | null): string {
+  const trimmed = registryError?.trim();
+  if (trimmed) return trimmed;
+  return "Registration was rejected or failed on the network.";
 }
 
 export function shouldCheckRecipientWalletForRegisteredAssets(
@@ -318,6 +337,113 @@ function validateRegistrationFundingWalletNetwork(params: {
 }
 
 /**
+ * Merge and validate advertised payment sources before wallet provisioning or credit debit.
+ * Throws when x402/EVM options are submitted without a V2 smart contract address.
+ */
+export function prepareSupportedPaymentSourcesForRegistration(
+  network: PaymentNodeNetwork,
+  smartContractAddress: string | null | undefined,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+): SupportedPaymentSource[] | null {
+  const userSources = (supportedPaymentSources ?? []).map(
+    normalizeSupportedPaymentSourceInput,
+  );
+  if (userSources.length === 0) {
+    return null;
+  }
+
+  const contractAddress = smartContractAddress?.trim();
+  if (!contractAddress) {
+    throw new Error(
+      "Supported payment sources require a configured V2 payment source smart contract address.",
+    );
+  }
+
+  const mergedSources = mergeWithDefaultCardanoSource(
+    network,
+    contractAddress,
+    userSources,
+  );
+  validateSupportedPaymentSourcesOrThrow(
+    mergedSources,
+    network,
+    PaymentSourceType.Web3CardanoV2,
+  );
+  return mergedSources;
+}
+
+function formatSupportedPaymentSourceError(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Invalid supported payment sources";
+}
+
+/**
+ * Read-only preflight: load the configured payment source contract and validate
+ * supported payment sources before registration credits are consumed.
+ */
+export async function validateAgentRegistrationPaymentSourcesPreflight(
+  network: PaymentNodeNetwork,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!supportedPaymentSources?.length) {
+    return { ok: true };
+  }
+
+  let baseUrl: string;
+  let adminKey: string;
+  let paymentSourceId: string;
+  try {
+    baseUrl = paymentNodeConfig.getBaseUrl();
+    adminKey = paymentNodeConfig.getAdminApiKey();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+  } catch (error) {
+    console.error("Payment node config missing for x402 preflight:", error);
+    return {
+      ok: false,
+      error: "Something went wrong. Please try again later.",
+    };
+  }
+
+  const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+  const configuredPaymentSource = await getConfiguredPaymentSource(
+    adminClient,
+    paymentSourceId,
+  );
+  if (!configuredPaymentSource) {
+    return {
+      ok: false,
+      error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+    };
+  }
+
+  if (
+    configuredPaymentSource.network &&
+    configuredPaymentSource.network !== network
+  ) {
+    return {
+      ok: false,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: configuredPaymentSource.network,
+      }),
+    };
+  }
+
+  try {
+    prepareSupportedPaymentSourcesForRegistration(
+      network,
+      configuredPaymentSource.smartContractAddress,
+      supportedPaymentSources,
+    );
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: formatSupportedPaymentSourceError(error) };
+  }
+}
+
+/**
  * Fast path: create agent wallet, ref, and persist funding-wallet context; return agentId immediately.
  * Completion (registerAgent + confirmation polling) is done by POST /api/agents/:id/complete-registration.
  */
@@ -430,6 +556,21 @@ async function registerAgentOnChainUntilSetup(
   });
   if (fundingWalletNetworkError) {
     return { success: false, error: fundingWalletNetworkError };
+  }
+
+  let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
+  try {
+    mergedSupportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        configuredPaymentSource.smartContractAddress,
+        params.supportedPaymentSources,
+      );
+  } catch (error) {
+    return {
+      success: false,
+      error: formatSupportedPaymentSourceError(error),
+    };
   }
 
   const sellingWallet = await adminClient.generateWallet(network);
@@ -592,6 +733,13 @@ async function registerAgentOnChainUntilSetup(
     },
   });
 
+  if (mergedSupportedPaymentSources) {
+    await replaceSupportedPaymentSourcesForAgent(
+      agent.id,
+      mergedSupportedPaymentSources,
+    );
+  }
+
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
   return { success: true, agentId: agent.id };
@@ -629,15 +777,11 @@ export async function completeOnChainRegistration(
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const refMetaForSync = (ref.metadata ?? {}) as RegistrationPayloadStored;
-    const smartContractAddress =
-      refMetaForSync.smartContractAddress ??
-      paymentNodeConfig.tryGetSmartContractAddress(network);
     const entry = await getRegistryEntryForSync({
       userId,
       externalId: ref.externalId,
       network,
-      smartContractAddress,
+      ...resolveRegistryLookupFilter(ref.metadata, network),
     });
     if (entry) {
       return completeRegistrationFromRegistryEntry({
@@ -853,6 +997,14 @@ export async function completeOnChainRegistration(
           }
         : {}),
       AgentPricing: payload.agentPricing,
+      ...(await (async () => {
+        const supportedPaymentSources =
+          await loadSupportedPaymentSourcesForAgent(agent.id);
+        return supportedPaymentSources != null &&
+          supportedPaymentSources.length > 0
+          ? { supportedPaymentSources }
+          : {};
+      })()),
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {

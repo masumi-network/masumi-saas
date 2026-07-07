@@ -23,6 +23,7 @@ import type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -52,6 +53,7 @@ import {
   inboxAgentIdentifierMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
+  listWebhooksOutputSchema,
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
   paymentNodeApiKeySchema,
@@ -87,6 +89,7 @@ export type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -109,6 +112,8 @@ export type {
   Utxo,
   UtxoAmount,
   WalletStatus,
+  WebhookEndpoint,
+  WebhookEventType,
 } from "./schemas";
 
 const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
@@ -283,6 +288,8 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       cursorId?: string;
       limit?: number;
       filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      filterStatus?: RegistryStatusFilter;
     }): Promise<{ Assets: RegistryEntry[] }> {
       return requestParse(
         base,
@@ -298,6 +305,10 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
               params.filterSmartContractAddress !== "" && {
                 filterSmartContractAddress: params.filterSmartContractAddress,
               }),
+            ...(params.filterPaymentSourceType && {
+              filterPaymentSourceType: params.filterPaymentSourceType,
+            }),
+            ...(params.filterStatus && { filterStatus: params.filterStatus }),
           },
         },
         registryListResponseSchema,
@@ -339,50 +350,45 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryById(params: {
       id: string;
       network: PaymentNodeNetwork;
-      /**
-       * Scope the paginated scan to a single payment source. Registry rows are
-       * ordered newest-first per source, and on shared payment nodes the
-       * unfiltered list may not surface a given source's rows within the page
-       * budget. Pass the registration's smart-contract address so a freshly
-       * confirmed row is reachable on the first page.
-       */
       filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
     }): Promise<RegistryEntry | null> {
-      // Fetch without a cursorId so the target entry is included in results.
-      // Using cursorId for the target's own id would exclude it under standard
-      // cursor-based pagination ("entries after this cursor").
       const PAGE_LIMIT = 100;
       const MAX_PAGES = 20;
 
-      const scan = async (
-        filterSmartContractAddress?: string | null,
-      ): Promise<RegistryEntry | null> => {
+      const scan = async (filter?: {
+        filterSmartContractAddress?: string | null;
+        filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      }): Promise<RegistryEntry | null> => {
         let cursorId: string | undefined;
         for (let page = 0; page < MAX_PAGES; page++) {
           const { Assets } = await this.getRegistry({
             network: params.network,
             cursorId,
             limit: PAGE_LIMIT,
-            filterSmartContractAddress,
+            filterSmartContractAddress: filter?.filterSmartContractAddress,
+            filterPaymentSourceType: filter?.filterPaymentSourceType,
           });
           const match = Assets.find((a) => a.id === params.id);
           if (match) return match;
           if (Assets.length === 0) return null;
           const nextCursor = Assets[Assets.length - 1]!.id;
-          // Stale cursor — API didn't advance, bail to avoid an infinite loop.
           if (nextCursor === cursorId) return null;
           cursorId = nextCursor;
         }
         return null;
       };
 
-      const scoped = await scan(params.filterSmartContractAddress);
+      const scoped = await scan({
+        filterSmartContractAddress: params.filterSmartContractAddress,
+        filterPaymentSourceType: params.filterPaymentSourceType,
+      });
       if (scoped) return scoped;
 
-      // The smart-contract filter may be wrong or missing (e.g. legacy rows
-      // without stored metadata on a non-default payment source). Fall back to
-      // an unfiltered scan so the lookup is never worse than unscoped.
-      if (params.filterSmartContractAddress) {
+      if (
+        params.filterSmartContractAddress != null ||
+        params.filterPaymentSourceType != null
+      ) {
         return scan(undefined);
       }
       return null;
@@ -964,6 +970,30 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: parsedBody,
         },
         runtimePaymentResponseSchema,
+      );
+    },
+
+    /** List webhook endpoints registered for the authenticated API key. */
+    async listWebhooks(params?: {
+      paymentSourceId?: string | null;
+      cursorId?: string;
+      limit?: number;
+    }): Promise<ListWebhooksOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/webhooks`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.paymentSourceId != null && {
+              paymentSourceId: params.paymentSourceId,
+            }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+            ...(params?.limit != null && { limit: String(params.limit) }),
+          },
+        },
+        listWebhooksOutputSchema,
       );
     },
   };

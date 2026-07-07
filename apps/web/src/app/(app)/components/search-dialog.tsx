@@ -2,20 +2,25 @@
 
 import {
   Activity,
+  ArrowLeftRight,
+  Bell,
   BookOpen,
   Bot,
   Building2,
   CircleDollarSign,
   Code,
+  Coins,
   ExternalLink,
   History,
   Inbox,
   Key,
   LayoutDashboard,
+  Link2,
   MessageSquare,
   Shield,
   TrendingUp,
   User,
+  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -39,6 +44,8 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { canAccessX402Workspace } from "@/lib/auth/org-roles";
+import { useOrganizationContext } from "@/lib/context/organization-context";
 
 interface SearchDialogProps {
   open: boolean;
@@ -53,6 +60,7 @@ interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>;
   /** Extra filter tokens for cmdk; keep `value` as `key` for stable selection identity. */
   searchKeywords?: string[];
+  requiresX402Access?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -85,6 +93,73 @@ const navigationItems: NavigationItem[] = [
     href: "/earnings",
     icon: TrendingUp,
     searchKeywords: ["earnings", "revenue", "income", "money"],
+  },
+  {
+    key: "x402",
+    href: "/x402",
+    icon: Coins,
+    requiresX402Access: true,
+    searchKeywords: [
+      "x402",
+      "evm",
+      "chains",
+      "wallets",
+      "budgets",
+      "alerts",
+      "payments",
+      "stablecoin",
+      "facilitator",
+      "payment rail",
+    ],
+  },
+  {
+    key: "x402Chains",
+    href: "/x402?tab=Chains",
+    icon: Link2,
+    requiresX402Access: true,
+    searchKeywords: ["x402", "chains", "evm", "rpc", "network"],
+  },
+  {
+    key: "x402Wallets",
+    href: "/x402?tab=Wallets",
+    icon: Wallet,
+    requiresX402Access: true,
+    searchKeywords: [
+      "x402",
+      "wallets",
+      "evm",
+      "managed",
+      "purchasing",
+      "selling",
+    ],
+  },
+  {
+    key: "x402Budgets",
+    href: "/x402?tab=Budgets",
+    icon: CircleDollarSign,
+    requiresX402Access: true,
+    searchKeywords: ["x402", "budgets", "spend", "limits", "api key"],
+  },
+  {
+    key: "x402Alerts",
+    href: "/x402?tab=Alerts",
+    icon: Bell,
+    requiresX402Access: true,
+    searchKeywords: ["x402", "alerts", "low balance", "webhook"],
+  },
+  {
+    key: "x402Payments",
+    href: "/x402?tab=Payments",
+    icon: ArrowLeftRight,
+    requiresX402Access: true,
+    searchKeywords: ["x402", "payments", "verify", "settle"],
+  },
+  {
+    key: "x402Setup",
+    href: "/x402-setup",
+    icon: Coins,
+    requiresX402Access: true,
+    searchKeywords: ["x402", "setup", "onboarding", "evm rail"],
   },
   {
     key: "topUp",
@@ -172,16 +247,21 @@ export function SearchDialog({
 }: SearchDialogProps) {
   const t = useTranslations("App.Search");
   const router = useRouter();
+  const { activeOrganization, activeOrganizationId } = useOrganizationContext();
+  const canAccessX402 = canAccessX402Workspace(
+    activeOrganizationId,
+    activeOrganization?.role,
+  );
   const [search, setSearch] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
   const [, startTransition] = useTransition();
 
   const navigationItemsForSearch = useMemo(
     () =>
-      stripeTopUpEnabled
-        ? navigationItems
-        : navigationItems.filter((item) => item.key !== "topUp"),
-    [stripeTopUpEnabled],
+      navigationItems
+        .filter((item) => stripeTopUpEnabled || item.key !== "topUp")
+        .filter((item) => !item.requiresX402Access || canAccessX402),
+    [canAccessX402, stripeTopUpEnabled],
   );
 
   const handleSelect = useCallback(
@@ -272,7 +352,7 @@ export function SearchDialog({
           {navigationItemsForSearch.map((item) => (
             <CommandItem
               key={item.key}
-              value={item.key}
+              value={`${item.key} ${t(`items.${item.key}`)}`}
               keywords={item.searchKeywords}
               onSelect={() => handleSelect(item.href)}
             >

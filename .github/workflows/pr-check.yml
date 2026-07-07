@@ -47,12 +47,12 @@ jobs:
       - name: Check workflow policy
         run: pnpm run ci:check-workflows
 
-      - name: Verify checked-in OpenAPI JSON
-        run: pnpm --filter web run check-openapi-json
-
       - name: Build
         run: pnpm build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/masumi_saas?schema=public' }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'dev-secret-key-for-ci' }}
           BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL || 'http://localhost:2999' }}
+
+      - name: Verify checked-in OpenAPI JSON
+        run: pnpm --filter web run check-openapi-json

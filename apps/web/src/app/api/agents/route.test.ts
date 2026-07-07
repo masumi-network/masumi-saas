@@ -8,8 +8,10 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const buildAgentPricingMock = vi.fn();
 const startAgentRegistrationMock = vi.fn();
+const validateAgentRegistrationPaymentSourcesPreflightMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
-const shapeAgentWithMergedMetadataMock = vi.fn();
+const shapeAgentForApiMock = vi.fn();
+const loadSupportedPaymentSourcesMapMock = vi.fn();
 const agentFindFirstMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
 const createIntegrationConnectionMock = vi.fn();
@@ -45,6 +47,8 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 vi.mock("@/lib/agent-registration", () => ({
   buildAgentPricing: buildAgentPricingMock,
   startAgentRegistration: startAgentRegistrationMock,
+  validateAgentRegistrationPaymentSourcesPreflight:
+    validateAgentRegistrationPaymentSourcesPreflightMock,
 }));
 
 vi.mock("@/lib/agents/wallet-ownership", () => ({
@@ -57,7 +61,11 @@ vi.mock("@/lib/credits/service", () => ({
 }));
 
 vi.mock("@/lib/api/agent-metadata", () => ({
-  shapeAgentWithMergedMetadata: shapeAgentWithMergedMetadataMock,
+  shapeAgentForApi: shapeAgentForApiMock,
+}));
+
+vi.mock("@masumi/payment-source-x402/supported-payment-sources", () => ({
+  loadSupportedPaymentSourcesMap: loadSupportedPaymentSourcesMapMock,
 }));
 
 vi.mock("@/lib/integrations/connections", () => ({
@@ -172,6 +180,9 @@ describe("/api/agents POST", () => {
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
+    validateAgentRegistrationPaymentSourcesPreflightMock.mockResolvedValue({
+      ok: true,
+    });
     startAgentRegistrationMock.mockResolvedValue({
       success: true,
       agentId: "agent-1",
@@ -199,7 +210,17 @@ describe("/api/agents POST", () => {
       ...agentResponseShape,
       agentReference: null,
     });
-    shapeAgentWithMergedMetadataMock.mockReturnValue(agentResponseShape);
+    loadSupportedPaymentSourcesMapMock.mockResolvedValue(new Map());
+    shapeAgentForApiMock.mockImplementation((agent, sources) => {
+      const { agentReference: _ref, ...rest } = agent as {
+        agentReference?: unknown;
+      };
+      return {
+        ...agentResponseShape,
+        ...rest,
+        supportedPaymentSources: sources ?? null,
+      };
+    });
   });
 
   it("consumes one credit before starting registration", async () => {
@@ -562,6 +583,71 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           apiUrl: "https://agent.example.com/mip",
           tags: "",
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid supportedPaymentSources before registration starts", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Research assistant",
+          apiUrl: "https://agent.example.com/mip",
+          tags: "research, nlp",
+          supportedPaymentSources: [
+            {
+              chain: "EVM",
+              network: "not-caip2",
+              scheme: "Exact",
+              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              amount: "10000",
+              decimals: 6,
+              payTo: "0x1111111111111111111111111111111111111111",
+            },
+          ],
+        }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects x402 payment options for Free pricing", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Free research assistant",
+          apiUrl: "https://agent.example.com/mip",
+          tags: "research, nlp",
+          pricing: { pricingType: "Free" },
+          supportedPaymentSources: [
+            {
+              chain: "EVM",
+              network: "eip155:84532",
+              scheme: "Exact",
+              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              amount: "10000",
+              decimals: 6,
+              payTo: "0x1111111111111111111111111111111111111111",
+            },
+          ],
         }),
       },
     );

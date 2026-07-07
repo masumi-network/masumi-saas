@@ -2,10 +2,15 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 
-import type { PaymentNodeNetwork } from "@/lib/payment-node";
+import type { PaymentNodeClient, PaymentNodeNetwork } from "@/lib/payment-node";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  getRegistryListFilters,
+  type RegistryLookupFilter,
+  resolveRegistryLookupFilter,
+} from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 import { getAgentSmartContractAddress } from "./agent-reference-metadata";
@@ -36,6 +41,7 @@ type AgentWithReference = {
     externalId: string | null;
     networkIdentifier: string | null;
     sellingWalletVkey: string | null;
+    metadata: unknown;
   } | null;
 };
 
@@ -55,24 +61,20 @@ function isLocallyVisibleWalletOwnedAgent(agent: AgentWithReference): boolean {
   );
 }
 
-async function getVisibleRegistryKeysForUser(
-  userId: string,
+async function mergeRegistryPageIntoKeys(
+  client: PaymentNodeClient,
   network: PaymentNodeNetwork,
-): Promise<{
-  externalIds: Set<string>;
-  agentIdentifiers: Set<string>;
-} | null> {
-  const client = await getPaymentNodeClientForUser(userId);
-  if (!client) return null;
-
-  const externalIds = new Set<string>();
-  const agentIdentifiers = new Set<string>();
+  filter: RegistryLookupFilter,
+  externalIds: Set<string>,
+  agentIdentifiers: Set<string>,
+): Promise<void> {
   let cursorId: string | undefined;
 
   for (let page = 0; page < PAYMENT_NODE_REGISTRY_MAX_PAGES; page += 1) {
     const { Assets } = await client.getRegistry({
       network,
       cursorId,
+      ...filter,
     });
 
     for (const asset of Assets) {
@@ -89,6 +91,30 @@ async function getVisibleRegistryKeysForUser(
       break;
     }
     cursorId = nextCursor;
+  }
+}
+
+async function getVisibleRegistryKeysForUser(
+  userId: string,
+  network: PaymentNodeNetwork,
+): Promise<{
+  externalIds: Set<string>;
+  agentIdentifiers: Set<string>;
+} | null> {
+  const client = await getPaymentNodeClientForUser(userId);
+  if (!client) return null;
+
+  const externalIds = new Set<string>();
+  const agentIdentifiers = new Set<string>();
+
+  for (const filter of getRegistryListFilters(network)) {
+    await mergeRegistryPageIntoKeys(
+      client,
+      network,
+      filter,
+      externalIds,
+      agentIdentifiers,
+    );
   }
 
   return { externalIds, agentIdentifiers };
@@ -227,9 +253,6 @@ export async function getWalletOwnedAgentForUser(params: {
   if (isLocallyVisibleWalletOwnedAgent(agent)) return agent;
 
   const network = getAgentNetwork(agent);
-  const smartContractAddress =
-    getAgentSmartContractAddress(agent) ??
-    paymentNodeConfig.tryGetSmartContractAddress(network);
 
   // Prefer the SC-scoped user→admin lookup: admin-minted registrations
   // (funding-wallet SmartContractWallet) are outside the user key's scope.
@@ -238,7 +261,7 @@ export async function getWalletOwnedAgentForUser(params: {
       userId: params.userId,
       externalId: agent.agentReference.externalId,
       network,
-      smartContractAddress,
+      ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (entry) return agent;
   }

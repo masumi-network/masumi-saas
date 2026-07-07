@@ -1,16 +1,28 @@
 import prisma from "@masumi/database/client";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
+import { getActiveOrgMemberRole } from "@/lib/auth/org-admin";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
   userId: string,
   network?: string,
+  activeOrganizationId?: string | null,
 ): Promise<DashboardOverview> {
   const networkFilter = network
     ? { OR: [{ networkIdentifier: network }, { networkIdentifier: null }] }
     : {};
   const baseAgentWhere = { userId, ...networkFilter } as const;
+
+  const orgWorkspace = activeOrganizationId
+    ? await prisma.organization.findUnique({
+        where: { id: activeOrganizationId },
+        select: { id: true, name: true },
+      })
+    : null;
+  const orgMemberRole = activeOrganizationId
+    ? await getActiveOrgMemberRole(userId, activeOrganizationId)
+    : null;
 
   const [
     userWithOrgs,
@@ -124,7 +136,14 @@ export async function getDashboardOverview(
     pricing: a.pricing as Record<string, unknown> | null,
   }));
 
-  const apiKeysList = apiKeysResult.map((k) => ({
+  const apiKeysList = (
+    apiKeysResult as Array<{
+      id: string;
+      name: string | null;
+      prefix: string | null;
+      start: string | null;
+    }>
+  ).map((k) => ({
     id: k.id,
     name: k.name,
     prefix: k.prefix,
@@ -147,6 +166,9 @@ export async function getDashboardOverview(
     agents: agentsList,
     apiKeys: apiKeysList,
     apiKeyCount,
+    apiKeysScope: "personal" as const,
+    apiKeysCanManage: true,
+    activeOrganizationName: orgWorkspace?.name ?? null,
     agentCount,
     verifiedAgentCount,
     runningAgentCount,
