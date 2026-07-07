@@ -44,7 +44,7 @@ function BalanceSkeletonList() {
 
 function isZeroAmount(amount: string): boolean {
   try {
-    return BigInt(amount) === 0n;
+    return BigInt(amount) === BigInt(0);
   } catch {
     return false;
   }
