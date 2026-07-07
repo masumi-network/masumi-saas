@@ -13,7 +13,7 @@ const contactsResponseSchema = z.object({
 
 /**
  * Load a holder's OOBI from the credential server contact list.
- * The server stores OOBI when an AID is connected via resolveOobi.
+ * The server stores OOBI when an AID is connected via connectToAid.
  */
 export async function fetchContactOobi(
   holderAid: string,

@@ -18,9 +18,9 @@ import {
   verificationUnavailableResponse,
 } from "@/lib/swagger/saas-app-openapi";
 import {
+  connectToAid,
   getAgentVerificationSchemaSaid,
   issueCredential,
-  resolveOobi,
 } from "@/lib/veridian";
 import { buildCredentialAttributesForAgent } from "@/lib/veridian/build-registry-verifications";
 import { resolveHolderOobi } from "@/lib/veridian/resolve-holder-oobi";
@@ -212,7 +212,7 @@ app.openapi(
     // Resolve OOBI so the credential server knows the recipient AID
     if (oobi) {
       try {
-        await resolveOobi(oobi);
+        await connectToAid(oobi);
       } catch (error) {
         console.error("Failed to resolve OOBI:", error);
         throw new ApiError(
