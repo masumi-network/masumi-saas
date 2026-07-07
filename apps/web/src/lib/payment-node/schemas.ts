@@ -3,7 +3,10 @@
  * Parse all responses through these so the app stays in sync with the API.
  */
 
-import { supportedPaymentSourcesSchema } from "@masumi/payment-source-x402/payment-source";
+import {
+  supportedPaymentSourceSchema,
+  supportedPaymentSourcesSchema,
+} from "@masumi/payment-source-x402/payment-source";
 import { z } from "zod";
 
 import {
@@ -285,14 +288,8 @@ export const registryAgentOnChainMetadataSchema = z
       .optional(),
     AgentPricing: agentPricingSchema.optional(),
     supportedPaymentSources: z
-      .array(
-        z.object({
-          chain: z.string(),
-          network: paymentNodeNetworkSchema,
-          paymentSourceType: z.string(),
-          address: z.string(),
-        }),
-      )
+      .array(supportedPaymentSourceSchema)
+      .max(25)
       .nullable()
       .optional(),
     verifications: verificationsSchema.nullable().optional(),
