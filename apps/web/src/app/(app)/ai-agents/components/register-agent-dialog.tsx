@@ -56,7 +56,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AgentIconPicker } from "./agent-icon-picker";
-import { PricingFields } from "./pricing-fields";
+import { PricingFields, type AgentPriceField } from "./pricing-fields";
 import {
   validateX402Options,
   type X402OptionDraft,
@@ -447,7 +447,7 @@ export function RegisterAgentDialog({
 
     const first = connections[0]!;
     form.setValue("integrationConnectionId", first.id, { shouldDirty: false });
-    prefillLangdockFromConnection(first, (name, value) =>
+    prefillLangdockFromConnection<RegisterAgentFormType>(first, (name, value) =>
       form.setValue(name, value, { shouldDirty: false }),
     );
   }, [open, connections, connectionsLoading, form]);
@@ -457,8 +457,9 @@ export function RegisterAgentDialog({
       if (connectionId === NEW_LANGDOCK_CONNECTION) return;
       const connection = connections.find((item) => item.id === connectionId);
       if (!connection) return;
-      prefillLangdockFromConnection(connection, (name, value) =>
-        form.setValue(name, value),
+      prefillLangdockFromConnection<RegisterAgentFormType>(
+        connection,
+        (name, value) => form.setValue(name, value),
       );
     },
     [connections, form],
@@ -1010,7 +1011,11 @@ export function RegisterAgentDialog({
                   )}
 
                   <PricingFields
-                    form={form}
+                    form={
+                      form as unknown as UseFormReturn<{
+                        prices: AgentPriceField[];
+                      }>
+                    }
                     t={t}
                     pricingMode={pricingType}
                     network={network}
