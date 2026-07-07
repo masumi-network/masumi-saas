@@ -3,10 +3,11 @@
 import { Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
+import { CompactAgentPricing } from "@/components/compact-agent-pricing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -32,7 +33,8 @@ import {
   isRegistrationUiPending,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { formatPricingDisplay, stripHtml } from "@/lib/utils";
+import { useX402Networks } from "@/lib/hooks/use-x402";
+import { shortenAddress, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
@@ -41,6 +43,10 @@ import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusDisplayKey,
 } from "./agent-utils";
+import {
+  agentsTableShowsX402Column,
+  AgentX402TableCell,
+} from "./agent-x402-options";
 
 interface AgentsTableProps {
   agents: Agent[];
@@ -57,6 +63,14 @@ export function AgentsTable({
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const { formatRelativeDate } = useFormatDate();
+  const { networks: x402Networks } = useX402Networks({
+    silentErrors: true,
+    allEnvironments: true,
+  });
+  const showX402Column = useMemo(
+    () => agentsTableShowsX402Column(agents),
+    [agents],
+  );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [selectedAgentToDelete, setSelectedAgentToDelete] =
@@ -139,8 +153,10 @@ export function AgentsTable({
               <TableHead>{t("table.name")}</TableHead>
               <TableHead>{t("table.added")}</TableHead>
               <TableHead>{t("table.agentId")}</TableHead>
-              <TableHead>{t("table.price")}</TableHead>
               <TableHead>{t("table.apiUrl")}</TableHead>
+              <TableHead>{t("table.price")}</TableHead>
+              <TableHead>{t("table.payoutAddress")}</TableHead>
+              {showX402Column ? <TableHead>{t("table.x402")}</TableHead> : null}
               <TableHead>{t("table.tags")}</TableHead>
               <TableHead>{t("table.status")}</TableHead>
               <TableHead className="text-right sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background">
@@ -234,9 +250,6 @@ export function AgentsTable({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm truncate max-w-32 whitespace-nowrap">
-                    {formatPricingDisplay(agent.pricing)}
-                  </TableCell>
                   <TableCell>
                     <div
                       className="text-xs font-mono truncate max-w-52 flex items-center gap-2"
@@ -255,6 +268,44 @@ export function AgentsTable({
                       />
                     </div>
                   </TableCell>
+                  <TableCell className="text-sm">
+                    <CompactAgentPricing pricing={agent.pricing} />
+                  </TableCell>
+                  <TableCell>
+                    <div
+                      className="text-xs font-mono truncate max-w-44 flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {agent.payoutAddress ? (
+                        <>
+                          <span
+                            className="truncate"
+                            title={agent.payoutAddress}
+                          >
+                            {shortenAddress(agent.payoutAddress, 8)}
+                          </span>
+                          <CopyButton
+                            value={agent.payoutAddress}
+                            className="h-7 w-7 shrink-0"
+                          />
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground font-sans">
+                          {t("table.noPayoutAddress")}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  {showX402Column ? (
+                    <TableCell>
+                      <AgentX402TableCell
+                        sources={agent.supportedPaymentSources}
+                        pricing={agent.pricing}
+                        networks={x402Networks}
+                        emptyLabel={t("table.noX402")}
+                      />
+                    </TableCell>
+                  ) : null}
                   <TableCell>
                     {agent.tags.length > 0 ? (
                       <Badge variant="secondary" className="truncate">

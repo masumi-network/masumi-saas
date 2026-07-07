@@ -709,6 +709,12 @@ export const walletStatusSchema = z.object({
 });
 export type WalletStatus = z.infer<typeof walletStatusSchema>;
 
+export const patchWalletInputSchema = z.object({
+  id: z.string(),
+  newCollectionAddress: z.string().nullable(),
+});
+export type PatchWalletInput = z.infer<typeof patchWalletInputSchema>;
+
 // ─── UTXOs ─────────────────────────────────────────────────────────────────
 
 export const utxoAmountSchema = z.object({

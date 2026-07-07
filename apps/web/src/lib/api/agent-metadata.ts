@@ -1,5 +1,6 @@
 import type { SupportedPaymentSource } from "@masumi/payment-source-x402/payment-source";
 
+import { getAgentPayoutAddress } from "@/lib/agents/agent-reference-metadata";
 import { agentMetadataSchema } from "@/lib/schemas/agent";
 
 const METADATA_KEYS = [
@@ -80,5 +81,6 @@ export function shapeAgentForApi<T extends AgentMetadataSource>(
   return {
     ...shapeAgentWithMergedMetadata(agent),
     supportedPaymentSources: supportedPaymentSources ?? null,
+    payoutAddress: getAgentPayoutAddress(agent),
   };
 }

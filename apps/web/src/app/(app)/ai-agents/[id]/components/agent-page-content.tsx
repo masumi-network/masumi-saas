@@ -323,6 +323,7 @@ export function AgentPageContent({
           onVerificationDialogClosed={() =>
             setPendingBannerRefreshKey((key) => key + 1)
           }
+          onAgentUpdated={setAgent}
         />
       )}
 

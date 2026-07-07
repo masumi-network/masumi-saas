@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CircleHelp,
   DollarSign,
   FileText,
   Fingerprint,
@@ -9,7 +10,7 @@ import {
   Tag,
   Tags,
   Trash2,
-  X,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -38,7 +39,7 @@ import {
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { cn, formatPricingDisplay } from "@/lib/utils";
+import { cn, formatPricingDisplay, shortenAddress } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeClassName,
@@ -50,6 +51,7 @@ import {
   shouldShowAgentX402Options,
 } from "../../../components/agent-x402-options";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
+import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
 
 interface AgentDetailsProps {
   agent: Agent;
@@ -58,6 +60,7 @@ interface AgentDetailsProps {
   onVerificationSuccess?: () => void | Promise<void>;
   onRefreshStatus?: () => void | Promise<void>;
   onVerificationDialogClosed?: () => void;
+  onAgentUpdated?: (agent: Agent) => void;
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;
@@ -69,6 +72,7 @@ export function AgentDetails({
   onVerificationSuccess,
   onRefreshStatus,
   onVerificationDialogClosed,
+  onAgentUpdated,
 }: AgentDetailsProps) {
   // Avoid Date.now() during render (impure). Use state updated in effect so "stuck" appears after ~2 min.
   const [now, setNow] = useState(0);
@@ -82,9 +86,9 @@ export function AgentDetails({
     };
   }, []);
   const t = useTranslations("App.Agents.Details");
+  const tRegister = useTranslations("App.Agents.Register");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tVerification = useTranslations("App.Agents.Details.Verification");
-  const tCommon = useTranslations("Common");
   const { formatDate, formatRelativeDate } = useFormatDate();
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
@@ -102,19 +106,6 @@ export function AgentDetails({
   const showVerificationCta =
     agentVerificationEnabled && !isVerified && isRegistrationConfirmed;
 
-  const [isVerificationBannerDismissed, setIsVerificationBannerDismissed] =
-    useState(true);
-
-  useEffect(() => {
-    const key = `dismissedAgentVerification_${agent.id}`;
-    const dismissed =
-      typeof window !== "undefined" && localStorage.getItem(key) === "1";
-    const id = requestAnimationFrame(() =>
-      setIsVerificationBannerDismissed(dismissed),
-    );
-    return () => cancelAnimationFrame(id);
-  }, [agent.id]);
-
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
 
   const handleRefreshStatus = useCallback(async () => {
@@ -131,51 +122,102 @@ export function AgentDetails({
     Boolean(onRefreshStatus) &&
     isRegistrationUiPending(agent.registrationState);
 
-  const handleDismissVerificationBanner = useCallback(() => {
-    const key = `dismissedAgentVerification_${agent.id}`;
-    localStorage.setItem(key, "1");
-    setIsVerificationBannerDismissed(true);
-  }, [agent.id]);
+  const showVerificationBanner =
+    showVerificationCta && Boolean(onVerificationSuccess);
+
+  const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
+  const showPayoutAddressBanner = !agent.payoutAddress;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      {showVerificationCta &&
-        onVerificationSuccess &&
-        !isVerificationBannerDismissed && (
-          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 rounded-md border border-amber-500/20 bg-amber-500/5 p-6 pr-10">
-            <p className="text-sm text-muted-foreground">
-              {t("verificationPromptDescription")}
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
+      {showPayoutAddressBanner || showVerificationBanner ? (
+        <div className="overflow-hidden rounded-lg border border-border/80 bg-muted/20 divide-y divide-border/80">
+          {showPayoutAddressBanner ? (
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <p className="text-sm text-muted-foreground">
+                  {t("payoutAddressMissing")}
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground">
+                      <CircleHelp className="h-3.5 w-3.5" />
+                      <span className="sr-only">
+                        {tRegister("payoutAddressHint")}
+                      </span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    {tRegister("payoutAddressHint")}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setIsPayoutDialogOpen(true)}
+              >
+                {t("payoutAddressSet")}
+              </Button>
+            </div>
+          ) : null}
+          {showVerificationBanner ? (
+            <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <p className="text-sm text-muted-foreground">
+                  {t("verificationPromptDescription")}
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground">
+                      <CircleHelp className="h-3.5 w-3.5" />
+                      <span className="sr-only">
+                        {t("verificationPromptTooltip")}
+                      </span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    {t("verificationPromptTooltip")}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               {isLoadingKyc ? (
-                <Spinner size={16} className="shrink-0" />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled
+                  className="shrink-0"
+                >
+                  <Spinner size={14} className="mr-2" />
+                  {tVerification("loading")}
+                </Button>
               ) : kycStatus === "APPROVED" ? (
                 <Button
-                  variant="outline"
-                  size="sm2"
+                  variant="primary"
+                  size="sm"
+                  className="shrink-0"
                   onClick={() => setVerificationDialogOpen(true)}
                 >
                   {tVerification("requestVerification")}
                 </Button>
               ) : (
-                <Button variant="outline" size="sm2" asChild>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="shrink-0"
+                  asChild
+                >
                   <Link href="/verification">
                     {tVerification("completeKyc")}
                   </Link>
                 </Button>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-5 w-5 shrink-0"
-              onClick={handleDismissVerificationBanner}
-              aria-label={tCommon("dismiss")}
-            >
-              <X className="h-2.5 w-2.5" />
-            </Button>
-          </div>
-        )}
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-6">
         <Card className="overflow-hidden gap-0 py-0">
@@ -319,6 +361,64 @@ export function AgentDetails({
 
             <Separator />
 
+            {/* Payout address */}
+            <div className="flex gap-3 min-w-0">
+              <Wallet className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("payoutAddress")}
+                  </p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                        <CircleHelp className="h-3.5 w-3.5" />
+                        <span className="sr-only">
+                          {tRegister("payoutAddressHint")}
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      {tRegister("payoutAddressHint")}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  {agent.payoutAddress ? (
+                    <>
+                      <span
+                        className="font-mono text-xs sm:text-sm truncate min-w-0"
+                        title={agent.payoutAddress}
+                      >
+                        {shortenAddress(agent.payoutAddress, 10)}
+                      </span>
+                      <CopyButton
+                        value={agent.payoutAddress}
+                        className="h-7 w-7 shrink-0"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-xs sm:text-sm text-muted-foreground">
+                      {t("payoutAddressNotSet")}
+                    </span>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => setIsPayoutDialogOpen(true)}
+                  >
+                    {agent.payoutAddress
+                      ? t("payoutAddressEdit")
+                      : t("payoutAddressSet")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Tags */}
             <div className="flex gap-3">
               <Tags className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
@@ -396,6 +496,13 @@ export function AgentDetails({
           agent={agent}
           kycStatus={kycStatus}
           onSuccess={onVerificationSuccess ?? (() => {})}
+        />
+
+        <AgentPayoutAddressDialog
+          agent={agent}
+          open={isPayoutDialogOpen}
+          onOpenChange={setIsPayoutDialogOpen}
+          onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
         />
       </div>
 

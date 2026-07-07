@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
-import { SectionPanel } from "@/components/section-panel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,11 +36,18 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormatDate } from "@/hooks/use-format-date";
 import {
   type InboxAgentRegistration,
-  type InboxAgentRegistrationFilter,
   registryDiscoveryClient,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { isRegistryUnavailableError } from "@/lib/discovery/registry-unavailable";
 import { getInitials, shortenAddress } from "@/lib/utils";
+
+import {
+  countInboxDiscoveryListFilters,
+  InboxAgentsDiscoveryFiltersPopover,
+  type InboxDiscoveryListFilters,
+  inboxDiscoveryListFiltersToApi,
+} from "./inbox-agents-discovery-filters-popover";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -462,7 +468,15 @@ function InboxAgentListItem({
 
 export function InboxAgentsDiscovery() {
   const t = useTranslations("App.Agents");
+  const tInbox = useTranslations("App.InboxAgents.Discovery");
   const { network } = usePaymentNetwork();
+  const [listFilters, setListFilters] = useState<InboxDiscoveryListFilters>({
+    status: "pending_verified",
+  });
+  const activeFilterCount = useMemo(
+    () => countInboxDiscoveryListFilters(listFilters),
+    [listFilters],
+  );
   const [state, setState] = useState<CursorPageState<InboxAgentRegistration>>(
     () => createCursorPageState<InboxAgentRegistration>(),
   );
@@ -510,9 +524,7 @@ export function InboxAgentsDiscovery() {
 
   const fetchInboxRegistrations = useCallback(
     async (cursorId?: string, signal?: AbortSignal) => {
-      const filter: InboxAgentRegistrationFilter = {
-        status: ["Pending", "Verified"],
-      };
+      const filter = inboxDiscoveryListFiltersToApi(listFilters);
 
       return registryDiscoveryClient.getInboxAgentRegistrations(
         {
@@ -524,11 +536,16 @@ export function InboxAgentsDiscovery() {
         { signal },
       );
     },
-    [network],
+    [listFilters, network],
   );
 
   const searchQueryResult = useInfiniteQuery({
-    queryKey: ["inbox-agent-registrations-search", network, normalizedSearch],
+    queryKey: [
+      "inbox-agent-registrations-search",
+      network,
+      normalizedSearch,
+      listFilters,
+    ],
     initialPageParam: undefined as string | undefined,
     enabled: normalizedSearch.length > 0,
     queryFn: async ({ pageParam, signal }) => {
@@ -539,9 +556,7 @@ export function InboxAgentsDiscovery() {
             limit: PAGE_SIZE,
             cursorId: pageParam,
             query: normalizedSearch,
-            filter: {
-              status: ["Pending", "Verified"],
-            },
+            filter: inboxDiscoveryListFiltersToApi(listFilters),
           },
           { signal },
         );
@@ -608,7 +623,7 @@ export function InboxAgentsDiscovery() {
 
   useEffect(() => {
     setSearchCurrentPage(1);
-  }, [normalizedSearch, network]);
+  }, [listFilters, normalizedSearch, network]);
 
   const loadPage = useCallback(
     async (page: number) => {
@@ -764,6 +779,7 @@ export function InboxAgentsDiscovery() {
       ? searchQueryResult.error.message
       : null
     : state.error;
+  const registryUnavailable = isRegistryUnavailableError(activeError);
   const activeCurrentPage = hasActiveSearch
     ? searchCurrentPage
     : state.currentPage;
@@ -774,46 +790,12 @@ export function InboxAgentsDiscovery() {
           (searchQueryResult.hasNextPage ? 1 : 0),
       )
     : getKnownTotalPages(state);
-  const summaryLoadedCount =
-    hasActiveSearch && !isSearchPendingWithoutResults
-      ? searchPageItems.length
-      : pageItems.length;
-
-  const summaryLabel = t("Discovery.resultsSummary", {
-    visibleCount: visibleItems.length,
-    loadedCount: summaryLoadedCount,
-  });
-
   return (
-    <SectionPanel>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Badge variant="secondary-muted">
-            {t("Discovery.pendingAndVerified")}
-          </Badge>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.sortHint")}
-          </span>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
-            {network}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: activeCurrentPage })}
-          </span>
-          <RefreshButton
-            onRefresh={handleRefresh}
-            size="md"
-            isRefreshing={isRefreshing}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -832,25 +814,38 @@ export function InboxAgentsDiscovery() {
             </kbd>
           )}
         </div>
-        <p className="shrink-0 text-sm text-muted-foreground">{summaryLabel}</p>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <InboxAgentsDiscoveryFiltersPopover
+            filters={listFilters}
+            activeFilterCount={activeFilterCount}
+            network={network}
+            onChange={setListFilters}
+            onClear={() => setListFilters({ status: "pending_verified" })}
+          />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            size="md"
+            isRefreshing={isRefreshing}
+          />
+        </div>
       </div>
 
-      {activeError && (
+      {activeError && !registryUnavailable ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {activeError}
         </div>
-      )}
+      ) : null}
 
       {!hasActiveSearch && state.isLoading ? (
         <DiscoverySkeleton />
       ) : (
         <>
-          {isSearchLoading && (
+          {isSearchLoading ? (
             <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
               <Spinner size={14} />
               {t("loadingMore")}
             </div>
-          )}
+          ) : null}
 
           {visibleItems.length > 0 ? (
             <div className="space-y-3">
@@ -864,6 +859,12 @@ export function InboxAgentsDiscovery() {
                 />
               ))}
             </div>
+          ) : isSearchLoading ? null : registryUnavailable ? (
+            <DiscoveryEmptyState
+              icon={Inbox}
+              message={tInbox("registryUnavailableTitle")}
+              description={tInbox("registryUnavailableDescription")}
+            />
           ) : (
             <DiscoveryEmptyState icon={Inbox} message={activeEmptyLabel} />
           )}
@@ -887,6 +888,6 @@ export function InboxAgentsDiscovery() {
           />
         </>
       )}
-    </SectionPanel>
+    </div>
   );
 }

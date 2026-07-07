@@ -10,6 +10,7 @@ import { ChainLabel } from "@/components/x402/chain-icon";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { useX402Networks } from "@/lib/hooks/use-x402";
+import type { X402NetworkOption } from "@/lib/hooks/use-x402-networks";
 import { formatX402Amount, shortenAddress } from "@/lib/utils";
 import { getEvmTokenPresetsForChain } from "@/lib/x402/evm-token-presets";
 
@@ -25,7 +26,9 @@ export function shouldShowAgentX402Options(
   sources: SupportedPaymentSource[] | null | undefined,
   pricing: { pricingType?: string } | null | undefined,
 ): boolean {
-  if (pricing?.pricingType === "Free") return false;
+  if (pricing?.pricingType === "Free" || pricing?.pricingType === "Dynamic") {
+    return false;
+  }
   return agentHasX402Options(sources);
 }
 
@@ -38,6 +41,67 @@ function assetDisplayLabel(
     (item) => item.address.toLowerCase() === asset.toLowerCase(),
   );
   return preset?.label ?? shortenAddress(asset, 6);
+}
+
+export function agentsTableShowsX402Column(
+  agents: Array<{
+    supportedPaymentSources: SupportedPaymentSource[] | null;
+    pricing: { pricingType?: string } | null;
+  }>,
+): boolean {
+  return agents.some((agent) =>
+    shouldShowAgentX402Options(agent.supportedPaymentSources, agent.pricing),
+  );
+}
+
+export function AgentX402TableCell({
+  sources,
+  pricing,
+  networks,
+  emptyLabel = "—",
+}: {
+  sources: SupportedPaymentSource[] | null | undefined;
+  pricing: { pricingType?: string } | null | undefined;
+  networks: X402NetworkOption[];
+  emptyLabel?: string;
+}) {
+  if (!shouldShowAgentX402Options(sources, pricing)) {
+    return <span className="text-sm text-muted-foreground">{emptyLabel}</span>;
+  }
+
+  const evmSources = (sources ?? []).filter(
+    (source): source is EvmPaymentSource => source.chain === "EVM",
+  );
+
+  return (
+    <div className="space-y-2">
+      {evmSources.map((source) => {
+        const network = networks.find(
+          (item) => item.caip2Id === source.network,
+        );
+        const chainName = network?.displayName ?? source.network;
+        const assetLabel = assetDisplayLabel(
+          source.network,
+          source.asset,
+          network?.defaultAsset,
+        );
+        const amountLabel = `${formatX402Amount(source.amount, source.decimals)} ${assetLabel}`;
+
+        return (
+          <div
+            key={`${source.network}-${source.asset}-${source.payTo}`}
+            className="min-w-0"
+            title={`${chainName} · ${amountLabel}`}
+          >
+            <p className="text-xs leading-none text-muted-foreground">
+              {chainName}
+            </p>
+            <p className="text-sm tabular-nums leading-tight">{amountLabel}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function AgentX402Options({

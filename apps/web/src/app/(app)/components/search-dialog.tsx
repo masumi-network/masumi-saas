@@ -61,6 +61,8 @@ interface NavigationItem {
   /** Extra filter tokens for cmdk; keep `value` as `key` for stable selection identity. */
   searchKeywords?: string[];
   requiresX402Access?: boolean;
+  /** Omit from the Navigation group until the user types a query. */
+  searchOnly?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -117,6 +119,7 @@ const navigationItems: NavigationItem[] = [
     href: "/x402?tab=Chains",
     icon: Link2,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: ["x402", "chains", "evm", "rpc", "network"],
   },
   {
@@ -124,6 +127,7 @@ const navigationItems: NavigationItem[] = [
     href: "/x402?tab=Wallets",
     icon: Wallet,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: [
       "x402",
       "wallets",
@@ -138,6 +142,7 @@ const navigationItems: NavigationItem[] = [
     href: "/x402?tab=Budgets",
     icon: CircleDollarSign,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: ["x402", "budgets", "spend", "limits", "api key"],
   },
   {
@@ -145,6 +150,7 @@ const navigationItems: NavigationItem[] = [
     href: "/x402?tab=Alerts",
     icon: Bell,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: ["x402", "alerts", "low balance", "webhook"],
   },
   {
@@ -152,13 +158,15 @@ const navigationItems: NavigationItem[] = [
     href: "/x402?tab=Payments",
     icon: ArrowLeftRight,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: ["x402", "payments", "verify", "settle"],
   },
   {
     key: "x402Setup",
-    href: "/x402-setup",
+    href: "/x402?setup=1",
     icon: Coins,
     requiresX402Access: true,
+    searchOnly: true,
     searchKeywords: ["x402", "setup", "onboarding", "evm rail"],
   },
   {
@@ -256,13 +264,17 @@ export function SearchDialog({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [, startTransition] = useTransition();
 
-  const navigationItemsForSearch = useMemo(
-    () =>
-      navigationItems
-        .filter((item) => stripeTopUpEnabled || item.key !== "topUp")
-        .filter((item) => !item.requiresX402Access || canAccessX402),
-    [canAccessX402, stripeTopUpEnabled],
-  );
+  const navigationItemsForSearch = useMemo(() => {
+    const items = navigationItems
+      .filter((item) => stripeTopUpEnabled || item.key !== "topUp")
+      .filter((item) => !item.requiresX402Access || canAccessX402);
+
+    if (!search.trim()) {
+      return items.filter((item) => !item.searchOnly);
+    }
+
+    return items;
+  }, [canAccessX402, search, stripeTopUpEnabled]);
 
   const handleSelect = useCallback(
     (href: string) => {

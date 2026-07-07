@@ -30,6 +30,8 @@ import {
 import { completeOnboardingAction } from "@/lib/actions/onboarding.action";
 import { cn } from "@/lib/utils";
 
+import { ONBOARDING_LOGO_SRC } from "./onboarding-logo-preload";
+
 const STEP_COUNT = 4;
 
 const textRevealClass = (visible: boolean) =>
@@ -58,11 +60,12 @@ function WelcomeStepContent({
   return (
     <>
       <Image
-        src="/assets/logo.png"
+        src={ONBOARDING_LOGO_SRC}
         alt=""
         width={72}
         height={72}
         priority
+        unoptimized
         className="size-[72px] animate-masumi-logo-enter rounded-full"
       />
       <h2

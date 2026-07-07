@@ -285,6 +285,7 @@ app.openapi(
       capabilityVersion,
       exampleOutputs,
       supportedPaymentSources,
+      payoutAddress,
     } = c.req.valid("json");
 
     const tagsArray = tags
@@ -422,6 +423,17 @@ app.openapi(
         );
       }
 
+      if (
+        agentPricing.pricingType === "Dynamic" &&
+        supportedPaymentSources &&
+        supportedPaymentSources.length > 0
+      ) {
+        throw new ApiError(
+          400,
+          "Dynamic pricing agents cannot include x402 payment options.",
+        );
+      }
+
       const paymentSourcesPreflight =
         await validateAgentRegistrationPaymentSourcesPreflight(
           network,
@@ -466,6 +478,7 @@ app.openapi(
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
         supportedPaymentSources,
+        payoutAddress: payoutAddress.trim(),
       };
 
       const result = await startAgentRegistration(

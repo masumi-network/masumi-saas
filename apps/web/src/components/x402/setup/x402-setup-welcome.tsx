@@ -12,7 +12,7 @@ import {
   Wallet as WalletIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,27 @@ import { ChainDialog } from "../chains-tab";
 import { CreateWalletDialog, getWalletSlotAvailability } from "../wallets-tab";
 
 type DialogKind = "wallet" | "chain" | "budget" | null;
+
+function SetupStepAction({
+  hint,
+  children,
+}: {
+  hint?: ReactNode;
+  children: ReactNode;
+}) {
+  if (!hint) {
+    return <div className="flex w-full justify-stretch">{children}</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="min-w-0 text-sm text-muted-foreground">{hint}</div>
+      <div className="w-full shrink-0 sm:w-auto [&_button]:w-full sm:[&_button]:w-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function X402SetupWelcome({
   embedded = false,
@@ -127,15 +148,12 @@ export function X402SetupWelcome({
         ? [
             {
               title: t("walletStepTitle"),
-              description: t("walletStepDescription"),
             },
             {
               title: t("facilitatorStepTitle"),
-              description: t("facilitatorStepDescription", { environment }),
             },
             {
               title: t("payingTitle"),
-              description: t("payingDescription"),
               optional: true,
             },
             {
@@ -146,11 +164,9 @@ export function X402SetupWelcome({
         : [
             {
               title: t("walletStepTitle"),
-              description: t("walletStepDescription"),
             },
             {
               title: t("facilitatorStepTitle"),
-              description: t("facilitatorStepDescription", { environment }),
             },
             {
               title: t("readyTitle"),
@@ -241,18 +257,16 @@ export function X402SetupWelcome({
           {t("sellingWalletCreated")}
         </p>
       ) : (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {t("createSellingHint")}
-          </p>
+        <SetupStepAction hint={t("walletStepDescription")}>
           <Button
-            variant="default"
+            variant="primary"
             className="gap-2"
             onClick={() => openWalletDialog("Selling")}
           >
+            <WalletIcon className="h-4 w-4" />
             {t("createSellingWallet")}
           </Button>
-        </>
+        </SetupStepAction>
       )}
     </div>
   );
@@ -264,43 +278,46 @@ export function X402SetupWelcome({
         hasFacilitator && "border-green-500/20 bg-green-500/[0.04]",
       )}
     >
-      {!hasSellingWallet ? (
-        <p className="flex items-start gap-1.5 text-sm text-amber-600 dark:text-amber-500">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          {t("walletRequiredFirst")}
-        </p>
-      ) : (
-        walletChips("Selling")
-      )}
+      {hasSellingWallet ? walletChips("Selling") : null}
       {hasFacilitator && configuredChain ? (
         <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-500">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {t("facilitatorSet", { chain: configuredChain.displayName })}
         </p>
-      ) : wrongEnvChain ? (
-        <p className="flex items-start gap-1.5 text-sm text-amber-600 dark:text-amber-500">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          {t("facilitatorWrongEnvironment", {
-            chain: wrongEnvChain.displayName,
-            chainEnv: wrongEnvChain.isTestnet
-              ? tChains("testnet")
-              : tChains("mainnet"),
-            environment,
-          })}
-        </p>
-      ) : hasSellingWallet ? (
-        <p className="text-sm text-muted-foreground">
-          {t("assignFacilitatorHint")}
-        </p>
       ) : null}
-      <Button
-        variant={hasFacilitator ? "outline" : "default"}
-        className="gap-2"
-        disabled={!hasSellingWallet}
-        onClick={() => setOpenDialog("chain")}
+      <SetupStepAction
+        hint={
+          !hasSellingWallet ? (
+            <span className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              {t("walletRequiredFirst")}
+            </span>
+          ) : wrongEnvChain ? (
+            <span className="flex items-start gap-1.5 text-amber-600 dark:text-amber-500">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              {t("facilitatorWrongEnvironment", {
+                chain: wrongEnvChain.displayName,
+                chainEnv: wrongEnvChain.isTestnet
+                  ? tChains("testnet")
+                  : tChains("mainnet"),
+                environment,
+              })}
+            </span>
+          ) : hasFacilitator ? null : (
+            t("assignFacilitatorHint")
+          )
+        }
       >
-        {hasFacilitator ? t("manageChain") : t("assignFacilitator")}
-      </Button>
+        <Button
+          variant={hasFacilitator ? "outline" : "primary"}
+          className="gap-2"
+          disabled={!hasSellingWallet}
+          onClick={() => setOpenDialog("chain")}
+        >
+          <Link2 className="h-4 w-4" />
+          {hasFacilitator ? t("manageChain") : t("assignFacilitator")}
+        </Button>
+      </SetupStepAction>
     </div>
   );
 
@@ -317,24 +334,33 @@ export function X402SetupWelcome({
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {t("budgetConfigured")}
         </p>
-      ) : hasPurchasingWallet ? (
-        <p className="text-sm text-muted-foreground">{t("setBudgetHint")}</p>
       ) : null}
-      <Button
-        variant={hasBudget ? "outline" : "default"}
-        className="gap-2"
-        onClick={() =>
-          hasPurchasingWallet
-            ? setOpenDialog("budget")
-            : openWalletDialog("Purchasing")
+      <SetupStepAction
+        hint={
+          hasBudget
+            ? null
+            : hasPurchasingWallet
+              ? t("setBudgetHint")
+              : t("createPurchasingHint")
         }
       >
-        {!hasPurchasingWallet
-          ? t("createPurchasingWallet")
-          : hasBudget
-            ? t("manageBudgets")
-            : t("setBudget")}
-      </Button>
+        <Button
+          variant={hasBudget ? "outline" : "primary"}
+          className="gap-2"
+          onClick={() =>
+            hasPurchasingWallet
+              ? setOpenDialog("budget")
+              : openWalletDialog("Purchasing")
+          }
+        >
+          <WalletIcon className="h-4 w-4" />
+          {!hasPurchasingWallet
+            ? t("createPurchasingWallet")
+            : hasBudget
+              ? t("manageBudgets")
+              : t("setBudget")}
+        </Button>
+      </SetupStepAction>
     </div>
   );
 
@@ -405,16 +431,28 @@ export function X402SetupWelcome({
   const footer = (() => {
     if (currentStep === 0) {
       return (
-        <Button
-          id="x402-setup-get-started"
-          key="x402-setup-get-started"
-          onClick={() => goToStep(1)}
-          className="gap-2"
-          variant="primary"
-        >
-          {t("getStarted")}
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <>
+          {embedded && onFinish ? (
+            <Button
+              id="x402-setup-not-now"
+              key="x402-setup-not-now"
+              variant="ghost"
+              onClick={onFinish}
+            >
+              {t("skipForNow")}
+            </Button>
+          ) : null}
+          <Button
+            id="x402-setup-get-started"
+            key="x402-setup-get-started"
+            onClick={() => goToStep(1)}
+            className="gap-2"
+            variant="primary"
+          >
+            {t("getStarted")}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </>
       );
     }
 
@@ -564,7 +602,7 @@ export function X402SetupWelcome({
     ) : (
       <DialogStepPanel
         stepKey={`setup-body-${currentStep}`}
-        direction={stepDirection}
+        direction={currentStep === 0 ? "none" : stepDirection}
         className={
           currentStep === 0 ? undefined : "dialog-stagger-in space-y-4"
         }
@@ -593,7 +631,7 @@ export function X402SetupWelcome({
               key={`x402-setup-footer-${currentStep}`}
               className={cn(
                 "shrink-0 border-t bg-background px-6 py-4 animate-fade-in-up",
-                currentStep > 0 && "sm:justify-between",
+                embedded && "sm:justify-between",
               )}
             >
               {footer}

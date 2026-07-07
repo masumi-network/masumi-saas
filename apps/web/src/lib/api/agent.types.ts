@@ -18,6 +18,7 @@ export type Agent = {
   agentIdentifier: string | null;
   networkIdentifier: string | null;
   pricing: AgentPricing | null;
+  payoutAddress: string | null;
   supportedPaymentSources: SupportedPaymentSource[] | null;
   registrationState:
     | "RegistrationRequested"

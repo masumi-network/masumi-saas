@@ -1,6 +1,5 @@
 "use client";
 
-import { CircleHelp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -19,11 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useX402Rail } from "@/lib/context/x402-rail-context";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
@@ -119,38 +113,27 @@ function X402SetupDialog({
   const t = useTranslations("App.X402.Setup");
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog open={open}>
       <DialogContent
         className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
-        closeButtonClassName="top-8 right-4 -translate-y-1/2"
+        showCloseButton={false}
+        onInteractOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
       >
         <div
           className={cn(
-            "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+            "shrink-0 border-b bg-masumi-gradient px-6 py-5",
             dialogHeaderEnterClass,
           )}
         >
-          <DialogHeader className="text-left">
-            <div className="flex items-center gap-3 -mb-2">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
               <X402Logo className="h-10 shrink-0" />
-              <div className="flex min-w-0 items-center gap-2">
-                <DialogTitle className="text-xl font-semibold tracking-tight">
-                  {t("dialogTitle")}
-                </DialogTitle>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                      <CircleHelp className="h-4 w-4" />
-                      <span className="sr-only">{t("pageDescription")}</span>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {t("pageDescription")}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+              <DialogTitle className="text-xl font-semibold tracking-tight">
+                {t("dialogTitle")}
+              </DialogTitle>
             </div>
-            <DialogDescription className="sr-only">
+            <DialogDescription className="text-sm text-muted-foreground">
               {t("pageDescription")}
             </DialogDescription>
           </DialogHeader>

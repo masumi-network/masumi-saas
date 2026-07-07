@@ -1,6 +1,8 @@
 /**
  * Format a numeric amount for display (comma-separated, e.g. "1,234.56")
  */
+import { formatUnitAmount as formatPaymentUnitAmount } from "@/lib/payment-node/format";
+
 export function formatBalance(balance: string | number): string {
   if (balance === "" || balance == null) return "";
   const cleanValue = String(balance).replace(/[^\d.]/g, "");
@@ -16,39 +18,101 @@ export type AgentPricing =
   | { pricingType: "Dynamic" }
   | {
       pricingType: "Fixed";
-      prices: Array<{ amount: string; currency?: string }>;
+      prices?: Array<{ amount: string; currency?: string }>;
+      Pricing?: Array<{ unit?: string; amount: string }>;
+      FixedPricing?: {
+        Amounts: Array<{ unit: string; amount: string | number }>;
+      };
     };
 
+type FixedPricingAmount = { unit?: string; amount: string | number };
+
+function formatLegacyPrice(price: {
+  amount: string;
+  currency?: string;
+}): string | null {
+  const raw = parseFloat(price.amount);
+  if (Number.isNaN(raw)) return null;
+  const currency = price.currency?.trim();
+  if (currency && currency !== "USD") {
+    return `${formatBalance(raw.toFixed(2))} ${currency}`;
+  }
+  return `$${formatBalance(raw.toFixed(2))}`;
+}
+
+function collectFixedPriceLabels(
+  pricing: AgentPricing | null | undefined | Record<string, unknown>,
+): string[] | null {
+  if (!pricing || typeof pricing !== "object") return null;
+  if ((pricing as AgentPricing).pricingType === "Free") return ["Free"];
+  if ((pricing as AgentPricing).pricingType === "Dynamic") return ["Dynamic"];
+
+  const fixed = pricing as AgentPricing & {
+    pricingType?: string;
+    prices?: Array<{ amount: string; currency?: string }>;
+    Pricing?: Array<{ unit?: string; amount: string }>;
+    FixedPricing?: {
+      Amounts: Array<{ unit: string; amount: string | number }>;
+    };
+  };
+
+  if (fixed.pricingType !== "Fixed") return null;
+
+  if (fixed.FixedPricing?.Amounts?.length) {
+    return fixed.FixedPricing.Amounts.map((entry) =>
+      formatPaymentUnitAmount(entry.unit ?? "", String(entry.amount)),
+    );
+  }
+
+  if (fixed.Pricing?.length) {
+    return fixed.Pricing.map((entry) =>
+      formatPaymentUnitAmount(entry.unit ?? "", String(entry.amount)),
+    );
+  }
+
+  const legacyPrices = fixed.prices ?? [];
+  if (legacyPrices.length > 0) {
+    const labels = legacyPrices
+      .map((price) => formatLegacyPrice(price))
+      .filter((label): label is string => Boolean(label));
+    return labels.length > 0 ? labels : null;
+  }
+
+  return null;
+}
+
 /**
- * Format agent pricing for display - crypto-less, dollar-based
- * Returns "Free", "$5.00", "$5.00, $10.00", or "—" if empty
+ * Format agent pricing for display.
+ * Returns "Free", "Dynamic", "1.00 USDCx", "10.00 ADA", or "—" if empty.
  */
 export function formatPricingDisplay(
   pricing: AgentPricing | null | undefined | Record<string, unknown>,
 ): string {
-  if (!pricing || typeof pricing !== "object") return "—";
-  if ((pricing as AgentPricing).pricingType === "Free") return "Free";
-  if ((pricing as AgentPricing).pricingType === "Dynamic") return "Dynamic";
-  const fixed = pricing as {
-    pricingType?: string;
-    prices?: Array<{ amount: string }>;
-    Pricing?: Array<{ amount: string }>;
+  const labels = collectFixedPriceLabels(pricing);
+  if (!labels) return "—";
+  return labels.join(", ");
+}
+
+/**
+ * Compact pricing for list views: first price only, then "+N" for extras.
+ * Example: "1,000.00 USDCx +2"
+ */
+export function getPricingDisplayCompactParts(
+  pricing: AgentPricing | null | undefined | Record<string, unknown>,
+): { primary: string; extraCount: number } | null {
+  const labels = collectFixedPriceLabels(pricing);
+  if (!labels || labels.length === 0) return null;
+  return {
+    primary: labels[0]!,
+    extraCount: Math.max(0, labels.length - 1),
   };
-  // New agents: Pricing = on-chain units (6 decimals). Legacy agents: prices = dollar amounts.
-  const usePricing = fixed.Pricing && fixed.Pricing.length > 0;
-  const priceList = usePricing ? fixed.Pricing! : (fixed.prices ?? []);
-  if (fixed.pricingType === "Fixed" && priceList.length) {
-    return (
-      priceList
-        .map((p) => {
-          const raw = parseFloat(p.amount);
-          if (Number.isNaN(raw)) return null;
-          const dollars = usePricing ? raw / 1_000_000 : raw;
-          return `$${formatBalance(dollars.toFixed(2))}`;
-        })
-        .filter(Boolean)
-        .join(", ") || "—"
-    );
-  }
-  return "—";
+}
+
+export function formatPricingDisplayCompact(
+  pricing: AgentPricing | null | undefined | Record<string, unknown>,
+): string {
+  const parts = getPricingDisplayCompactParts(pricing);
+  if (!parts) return "—";
+  if (parts.extraCount === 0) return parts.primary;
+  return `${parts.primary} +${parts.extraCount}`;
 }

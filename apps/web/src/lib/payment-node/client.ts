@@ -24,6 +24,7 @@ import type {
   ListPaymentsOutput,
   ListPurchasesOutput,
   ListWebhooksOutput,
+  PatchWalletInput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -660,6 +661,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: { network },
         },
         generatedWalletSchema,
+      );
+    },
+
+    /** Update wallet fields such as collection address (admin only). */
+    async patchWallet(body: PatchWalletInput): Promise<WalletStatus> {
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet`,
+        {
+          method: "PATCH",
+          body,
+        },
+        walletStatusSchema,
       );
     },
 

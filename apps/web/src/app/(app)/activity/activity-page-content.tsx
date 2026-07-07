@@ -1,12 +1,13 @@
 "use client";
 
-import { Download, RefreshCw, Search } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { Download, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Tabs } from "@/components/ui/tabs";
 import { useFormatDate } from "@/hooks/use-format-date";
 import { useNewTransactionsCount } from "@/lib/hooks/useNewTransactionsCount";
@@ -15,19 +16,17 @@ import type { ActivityFeedItem } from "@/lib/types/activity";
 import {
   ActivityFeedTable,
   type ActivityFeedTableHandle,
-  type ActivityTabFilter,
   LIFECYCLE_LABELS,
 } from "./components/activity-all-feed";
-
-const TAB_KEYS: ActivityTabFilter[] = [
-  "all",
-  "lifecycle",
-  "transactions",
-  "purchases",
-  "payments",
-  "refundRequests",
-  "disputes",
-];
+import { ActivityFiltersPopover } from "./components/activity-filters-popover";
+import {
+  activityPageStateToSearchParams,
+  type ActivitySection,
+  type ActivityTransactionTypeFilter,
+  countActivityFilters,
+  parseActivityPageState,
+  resolveActivityApiFilter,
+} from "./lib/activity-page-state";
 
 export function ActivityPageContent({
   linkAgentsInAdmin = false,
@@ -36,15 +35,45 @@ export function ActivityPageContent({
 }) {
   const t = useTranslations("App.Activity");
   const { formatDate } = useFormatDate();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<ActivityTabFilter>("all");
+  const pageState = useMemo(
+    () => parseActivityPageState(searchParams),
+    [searchParams],
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasItemsToExport, setHasItemsToExport] = useState(false);
   const tableRef = useRef<ActivityFeedTableHandle>(null);
   const { markAllAsRead } = useNewTransactionsCount();
+
+  const apiFilter = useMemo(
+    () =>
+      resolveActivityApiFilter(pageState.section, pageState.transactionFilter),
+    [pageState.section, pageState.transactionFilter],
+  );
+  const activeFilterCount = useMemo(
+    () => countActivityFilters(pageState.section, pageState.transactionFilter),
+    [pageState.section, pageState.transactionFilter],
+  );
+
+  const pushPageState = useCallback(
+    (
+      section: ActivitySection,
+      transactionFilter: ActivityTransactionTypeFilter,
+    ) => {
+      const params = activityPageStateToSearchParams(
+        section,
+        transactionFilter,
+        searchParams,
+      );
+      const query = params.toString();
+      router.replace(query ? `/activity?${query}` : "/activity");
+    },
+    [router, searchParams],
+  );
 
   const handleFilteredItemsChange = useCallback((items: ActivityFeedItem[]) => {
     setHasItemsToExport(items.length > 0);
@@ -53,13 +82,6 @@ export function ActivityPageContent({
   useEffect(() => {
     markAllAsRead();
   }, [markAllAsRead]);
-
-  useEffect(() => {
-    const tab = searchParams.get("tab") as ActivityTabFilter | null;
-    if (tab && TAB_KEYS.includes(tab)) {
-      queueMicrotask(() => setActiveTab(tab));
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,13 +101,15 @@ export function ActivityPageContent({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleTabChange = useCallback((value: string) => {
-    setActiveTab(value as ActivityTabFilter);
-    const url = new URL(window.location.href);
-    if (value === "all") url.searchParams.delete("tab");
-    else url.searchParams.set("tab", value);
-    window.history.replaceState({}, "", url.pathname + url.search);
-  }, []);
+  const handleSectionChange = useCallback(
+    (value: string) => {
+      const section = value as ActivitySection;
+      const transactionFilter =
+        section === "lifecycle" ? "all" : pageState.transactionFilter;
+      pushPageState(section, transactionFilter);
+    },
+    [pageState.transactionFilter, pushPageState],
+  );
 
   const downloadCsv = useCallback(() => {
     const items = tableRef.current?.getFilteredItems() ?? [];
@@ -128,101 +152,102 @@ export function ActivityPageContent({
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `activity-${activeTab}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `activity-${apiFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     const blobUrl = link.href;
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(blobUrl);
-  }, [t, activeTab, formatDate]);
+  }, [t, apiFilter, formatDate]);
 
   const tabConfig = useMemo(
     () => [
       { key: "all", name: t("tabAll") },
       { key: "lifecycle", name: t("tabLifecycle") },
       { key: "transactions", name: t("tabTransactions") },
-      { key: "purchases", name: t("tabPurchases") },
-      { key: "payments", name: t("tabPayments") },
-      { key: "refundRequests", name: t("tabRefundRequests") },
-      { key: "disputes", name: t("tabDisputes") },
     ],
     [t],
   );
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-4">
       <Tabs
         tabs={tabConfig}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
+        activeTab={pageState.section}
+        onTabChange={handleSectionChange}
       />
-      <div className="flex flex-col gap-4 mt-6">
-        <div className="flex items-center justify-between gap-4">
-          <div
-            onClick={() => searchInputRef.current?.focus()}
-            className="flex w-full max-w-64 shrink-0 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:max-w-80"
-          >
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder={t("searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
-            />
-            {!isSearchFocused && (
-              <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
-                {t("searchShortcut")}
-              </kbd>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label={t("refresh")}
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="md:hidden"
-              onClick={downloadCsv}
-              disabled={!hasItemsToExport}
-              aria-label={t("downloadCsv")}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="hidden md:flex items-center gap-2"
-              onClick={downloadCsv}
-              disabled={!hasItemsToExport}
-              aria-label={t("downloadCsv")}
-            >
-              <Download className="h-4 w-4" />
-              {t("downloadCsv")}
-            </Button>
-          </div>
+
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div
+          onClick={() => searchInputRef.current?.focus()}
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            type="search"
+            placeholder={t("searchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+          />
+          {!isSearchFocused && (
+            <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
+              {t("searchShortcut")}
+            </kbd>
+          )}
         </div>
-        <ActivityFeedTable
-          ref={tableRef}
-          filter={activeTab}
-          searchQuery={searchQuery}
-          refreshKey={refreshKey}
-          onFilteredItemsChange={handleFilteredItemsChange}
-          linkAgentsInAdmin={linkAgentsInAdmin}
-        />
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <ActivityFiltersPopover
+            section={pageState.section}
+            transactionFilter={pageState.transactionFilter}
+            activeFilterCount={activeFilterCount}
+            onTransactionFilterChange={(next) =>
+              pushPageState(pageState.section, next)
+            }
+            onClear={() => pushPageState(pageState.section, "all")}
+          />
+          <RefreshButton
+            onRefresh={() => setRefreshKey((k) => k + 1)}
+            size="md"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 md:hidden"
+            onClick={downloadCsv}
+            disabled={!hasItemsToExport}
+            aria-label={t("downloadCsv")}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="hidden h-9 items-center gap-2 md:flex"
+            onClick={downloadCsv}
+            disabled={!hasItemsToExport}
+            aria-label={t("downloadCsv")}
+          >
+            <Download className="h-4 w-4" />
+            {t("downloadCsv")}
+          </Button>
+        </div>
       </div>
+
+      <ActivityFeedTable
+        ref={tableRef}
+        filter={apiFilter}
+        searchQuery={searchQuery}
+        refreshKey={refreshKey}
+        onFilteredItemsChange={handleFilteredItemsChange}
+        linkAgentsInAdmin={linkAgentsInAdmin}
+      />
     </div>
   );
 }
