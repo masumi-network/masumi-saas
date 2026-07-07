@@ -1,11 +1,18 @@
 "use client";
 
+import { Eye, MoreVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -105,8 +112,8 @@ export function AgentsDiscoveryTable({
                   onClick={() => onSelect(entry)}
                 >
                   <TableCell className="max-w-56">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <Avatar className="mt-0.5 h-9 w-9 shrink-0 border border-border/70">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar className="h-9 w-9 shrink-0 border border-border/70">
                         <AvatarImage
                           src={entry.image ?? undefined}
                           alt={entry.name}
@@ -154,17 +161,32 @@ export function AgentsDiscoveryTable({
                   <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
                     {formatRelativeDate(entry.updatedAt)}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onSelect(entry);
-                      }}
-                    >
-                      {t("Discovery.viewDetails")}
-                    </Button>
+                  <TableCell
+                    className="text-right"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={t("table.actions")}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[140px]"
+                      >
+                        <DropdownMenuItem onClick={() => onSelect(entry)}>
+                          <Eye className="mr-2 h-4 w-4 shrink-0" />
+                          {t("Discovery.viewDetails")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               );
