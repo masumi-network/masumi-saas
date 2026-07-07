@@ -54,6 +54,8 @@ vi.mock("@/lib/payment-node", () => ({
     getAdminApiKey: getAdminApiKeyMock,
     getPaymentSourceId: getPaymentSourceIdMock,
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
+    tryGetSmartContractAddress: () => undefined,
+    getRegistryHoldingWalletFundingLovelace: () => "10000000",
   },
 }));
 
@@ -64,6 +66,8 @@ vi.mock("./payment-node/config", () => ({
     getPaymentSourceId: getPaymentSourceIdMock,
     getPaymentSourceIdEnvName: getPaymentSourceIdEnvNameMock,
     getRegistrationFundingWallets: getRegistrationFundingWalletsMock,
+    tryGetSmartContractAddress: () => undefined,
+    getRegistryHoldingWalletFundingLovelace: () => "10000000",
   },
   isPaymentNodeConfigError: (error: unknown) =>
     error instanceof Error && error.name === "PaymentNodeConfigError",
@@ -71,6 +75,18 @@ vi.mock("./payment-node/config", () => ({
 
 vi.mock("@/lib/payment-node/get-user-client", () => ({
   getPaymentNodeClientForUser: getPaymentNodeClientForUserMock,
+}));
+
+const getRegistryEntryForSyncMock = vi.fn();
+const tryCreateAdminPaymentNodeClientMock = vi.fn();
+
+vi.mock("@/lib/payment-node/resolve-registry-entry-for-sync", () => ({
+  getRegistryEntryForSync: getRegistryEntryForSyncMock,
+}));
+
+vi.mock("@/lib/payment-node/get-admin-client", () => ({
+  createAdminPaymentNodeClient: vi.fn(() => createPaymentNodeClientMock()),
+  tryCreateAdminPaymentNodeClient: tryCreateAdminPaymentNodeClientMock,
 }));
 
 vi.mock("@/lib/payment-node/wallet-scopes", () => ({
@@ -563,15 +579,12 @@ describe("completeOnChainRegistration", () => {
     const result = await completeOnChainRegistration("agent-1", "user-1");
 
     expect(result).toStrictEqual({ status: "pending" });
-    expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
-      "https://payment.example.com/api/v1",
-      "admin-key",
-    );
     expect(userRegisteredAgentsByWalletMock).not.toHaveBeenCalled();
     expect(adminRegisterAgentMock).toHaveBeenCalledWith({
       network: "Preprod",
       sellingWalletVkey: "funding-vkey",
       recipientWalletAddress: "addr_test1selling",
+      sendFundingLovelace: "10000000",
       name: "Demo agent",
       apiBaseUrl: "https://agent.example.com",
       description: "Demo description",
@@ -696,5 +709,61 @@ describe("completeOnChainRegistration", () => {
         }),
       }),
     });
+  });
+
+  it("syncs confirmed registration via admin registry lookup when user key cannot see the row", async () => {
+    const confirmedAgent = {
+      id: "agent-1",
+      userId: "user-1",
+      name: "Demo agent",
+      apiUrl: "https://agent.example.com",
+      registrationState: "RegistrationConfirmed",
+      agentIdentifier: "policy+name",
+    };
+    const agent = {
+      ...confirmedAgent,
+      registrationState: "RegistrationRequested",
+      agentIdentifier: null,
+      agentReference: {
+        externalId: "registry-entry-1",
+        networkIdentifier: "Preprod",
+        sellingWalletVkey: "selling-vkey",
+        metadata: {},
+      },
+    };
+
+    agentFindFirstMock.mockResolvedValue(agent);
+    agentFindUniqueMock.mockResolvedValue(agent);
+    agentFindUniqueOrThrowMock.mockResolvedValue(confirmedAgent);
+    getRegistryEntryForSyncMock.mockResolvedValue({
+      id: "registry-entry-1",
+      state: "RegistrationConfirmed",
+      agentIdentifier: "policy+name",
+    });
+
+    const result = await completeOnChainRegistration("agent-1", "user-1");
+
+    expect(result).toStrictEqual({
+      status: "registered",
+      data: confirmedAgent,
+    });
+    expect(getRegistryEntryForSyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        externalId: "registry-entry-1",
+        network: "Preprod",
+      }),
+    );
+    expect(agentUpdateMock).toHaveBeenCalledWith({
+      where: { id: "agent-1" },
+      data: {
+        registrationState: "RegistrationConfirmed",
+        agentIdentifier: "policy+name",
+      },
+    });
+    expect(recordAgentActivityEventMock).toHaveBeenCalledWith(
+      "agent-1",
+      "RegistrationConfirmed",
+    );
   });
 });

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import { resolveRegistrationStateAfterSync } from "@/lib/agents/registration-state";
 import {
   getWalletOwnedAgentForUser,
   listWalletOwnedAgentsForUser,
@@ -19,8 +20,8 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -28,6 +29,38 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   const store = await cookies();
   const value = store.get("payment_network")?.value;
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
+}
+
+/** Returns agent IDs awaiting on-chain verification anchors (registry update in flight). */
+export async function getPendingOnChainVerificationAgentIdsAction(): Promise<
+  string[]
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+    const [preprodAgents, mainnetAgents] = await Promise.all([
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Preprod",
+      }),
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Mainnet",
+      }),
+    ]);
+    return [...preprodAgents, ...mainnetAgents]
+      .filter(
+        (agent) =>
+          agent.verificationStatus === "VERIFIED" &&
+          ["UpdateRequested", "UpdateInitiated"].includes(
+            agent.registrationState,
+          ),
+      )
+      .map((agent) => agent.id);
+  } catch {
+    return [];
+  }
 }
 
 /** Returns agent IDs for the current user that still need on-chain registration work
@@ -150,20 +183,21 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     if (!agent || !agent.agentReference?.externalId)
       return { success: true as const };
 
-    const userClient = await getPaymentNodeClientForUser(user.id);
-    if (!userClient) return { success: true as const };
-
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const entry = await userClient.getRegistryById({
-      id: agent.agentReference.externalId,
+    const entry = await getRegistryEntryForSync({
+      userId: user.id,
+      externalId: agent.agentReference.externalId,
       network,
       ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (!entry) return { success: true as const };
 
-    const registrationState =
-      entry.state as keyof typeof import("@masumi/database/client").RegistrationState;
+    const previousState = agent.registrationState;
+    const registrationState = resolveRegistrationStateAfterSync({
+      previousState,
+      registryState: entry.state,
+    });
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
@@ -177,7 +211,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
       ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
       : existingMeta;
 
-    const previousState = agent.registrationState;
     await prisma.$transaction([
       prisma.agent.update({
         where: { id: agentId },

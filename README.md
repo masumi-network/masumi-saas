@@ -371,6 +371,16 @@ After promoting, admins can sign in at `/admin/signin`.
 - ✅ Responsive design
 - ✅ Server-side rendering with Suspense + skeleton loading
 
+## Branch workflow
+
+Masumi SaaS follows the same promotion model as the payment service:
+
+1. **Feature branches** → open PRs against **`dev`** (staging).
+2. **`dev`** is the integration branch — CI runs on PRs here before changes are exercised on staging.
+3. **`main`** is production — only **`dev`** may merge into **`main`** (enforced in CI).
+
+Direct pushes to `main` and `dev` are blocked locally by the pre-push hook and should be blocked on GitHub via branch protection.
+
 ## Scripts
 
 - `pnpm dev` - Start development server

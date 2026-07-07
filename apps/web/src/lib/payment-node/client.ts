@@ -29,6 +29,7 @@ import type {
   PaymentNodeNetwork,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -36,6 +37,7 @@ import type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
@@ -55,6 +57,7 @@ import {
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
   paymentNodeApiKeySchema,
+  registryAgentIdentifierMetadataSchema,
   registryEntrySchema,
   registryInboxCountResponseSchema,
   registryInboxEntrySchema,
@@ -95,6 +98,7 @@ export type {
   PaymentSourceWallet,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -103,6 +107,7 @@ export type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
@@ -180,6 +185,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         base,
         apiKey,
         `/registry`,
+        {
+          method: "POST",
+          body,
+        },
+        registryEntrySchema,
+      );
+    },
+
+    /** Update registry metadata (pay-authenticated). Use admin API key after SaaS ownership checks. */
+    async updateAgent(body: UpdateAgentInput): Promise<RegistryEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry/update`,
         {
           method: "POST",
           body,
@@ -267,6 +286,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistry(params: {
       network: PaymentNodeNetwork;
       cursorId?: string;
+      limit?: number;
       filterSmartContractAddress?: string | null;
       filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
       filterStatus?: RegistryStatusFilter;
@@ -279,10 +299,12 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           method: "GET",
           query: {
             network: params.network,
+            ...(params.limit != null && { limit: String(params.limit) }),
             ...(params.cursorId && { cursorId: params.cursorId }),
-            ...(params.filterSmartContractAddress && {
-              filterSmartContractAddress: params.filterSmartContractAddress,
-            }),
+            ...(params.filterSmartContractAddress != null &&
+              params.filterSmartContractAddress !== "" && {
+                filterSmartContractAddress: params.filterSmartContractAddress,
+              }),
             ...(params.filterPaymentSourceType && {
               filterPaymentSourceType: params.filterPaymentSourceType,
             }),
@@ -328,30 +350,46 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryById(params: {
       id: string;
       network: PaymentNodeNetwork;
-      /** Required for V2 agents: the registry list defaults to V1 when omitted. */
       filterSmartContractAddress?: string | null;
       filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
     }): Promise<RegistryEntry | null> {
-      // Fetch without a cursorId so the target entry is included in results.
-      // Using cursorId for the target's own id would exclude it under standard
-      // cursor-based pagination ("entries after this cursor").
-      // Each user key only sees their own agents so the result set is small.
+      const PAGE_LIMIT = 100;
       const MAX_PAGES = 20;
-      let cursorId: string | undefined;
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const { Assets } = await this.getRegistry({
-          network: params.network,
-          cursorId,
-          filterSmartContractAddress: params.filterSmartContractAddress,
-          filterPaymentSourceType: params.filterPaymentSourceType,
-        });
-        const match = Assets.find((a) => a.id === params.id);
-        if (match) return match;
-        if (Assets.length === 0) return null;
-        const nextCursor = Assets[Assets.length - 1]!.id;
-        // Stale cursor — API didn't advance, bail to avoid an infinite loop.
-        if (nextCursor === cursorId) return null;
-        cursorId = nextCursor;
+
+      const scan = async (filter?: {
+        filterSmartContractAddress?: string | null;
+        filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      }): Promise<RegistryEntry | null> => {
+        let cursorId: string | undefined;
+        for (let page = 0; page < MAX_PAGES; page++) {
+          const { Assets } = await this.getRegistry({
+            network: params.network,
+            cursorId,
+            limit: PAGE_LIMIT,
+            filterSmartContractAddress: filter?.filterSmartContractAddress,
+            filterPaymentSourceType: filter?.filterPaymentSourceType,
+          });
+          const match = Assets.find((a) => a.id === params.id);
+          if (match) return match;
+          if (Assets.length === 0) return null;
+          const nextCursor = Assets[Assets.length - 1]!.id;
+          if (nextCursor === cursorId) return null;
+          cursorId = nextCursor;
+        }
+        return null;
+      };
+
+      const scoped = await scan({
+        filterSmartContractAddress: params.filterSmartContractAddress,
+        filterPaymentSourceType: params.filterPaymentSourceType,
+      });
+      if (scoped) return scoped;
+
+      if (
+        params.filterSmartContractAddress != null ||
+        params.filterPaymentSourceType != null
+      ) {
+        return scan(undefined);
       }
       return null;
     },
@@ -383,7 +421,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryByAgentIdentifier(params: {
       agentIdentifier: string;
       network: PaymentNodeNetwork;
-    }): Promise<RegistryEntry | null> {
+    }): Promise<RegistryAgentIdentifierMetadata | null> {
       const res = await fetch(
         `${base}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
@@ -397,7 +435,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       }
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {
-        return registryEntrySchema.parse(json.data);
+        return registryAgentIdentifierMetadataSchema.parse(json.data);
       }
       return null;
     },

@@ -886,6 +886,20 @@ const credentialReconcileSuccessSchema = z
     },
   });
 
+const credentialPendingSuccessSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      pendingCredentialId: z.string().nullable(),
+    }),
+  })
+  .openapi({
+    example: {
+      success: true,
+      data: { pendingCredentialId: "cred_123" },
+    },
+  });
+
 const activityTransactionSuccessSchema = z
   .object({
     success: z.literal(true),
@@ -1315,6 +1329,7 @@ export {
   credentialIssueBodySchema,
   credentialIssuerOobiSuccessSchema,
   credentialIssueSuccessSchema,
+  credentialPendingSuccessSchema,
   credentialReconcileSuccessSchema,
   credentialSchemaSaidSuccessSchema,
   credentialStatusSuccessSchema,

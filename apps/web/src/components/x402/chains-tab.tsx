@@ -329,7 +329,7 @@ export function ChainsTab() {
       { errorMessage: t("toggleFailed") },
     );
     setBusyChainId(null);
-    if (result) refetch();
+    if (result) void refetch();
   };
 
   return (
@@ -577,7 +577,7 @@ export function ChainsTab() {
         onClose={() => setDialogOpen(false)}
         onSaved={() => {
           setDialogOpen(false);
-          refetch();
+          void refetch();
         }}
       />
 

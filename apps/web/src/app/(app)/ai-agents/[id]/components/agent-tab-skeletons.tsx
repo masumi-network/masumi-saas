@@ -249,7 +249,7 @@ function TransactionsTabSkeleton() {
   );
 }
 
-function CredentialsTabSkeleton() {
+function VerificationTabSkeleton() {
   return (
     <div className="mx-auto w-full max-w-lg lg:min-w-96">
       <Card className="overflow-hidden pt-0">
@@ -273,7 +273,7 @@ const TAB_SKELETONS = {
   details: DetailsTabSkeleton,
   earnings: EarningsTabSkeleton,
   transactions: TransactionsTabSkeleton,
-  credentials: CredentialsTabSkeleton,
+  verification: VerificationTabSkeleton,
 } as const;
 
 export type TabKey = keyof typeof TAB_SKELETONS;

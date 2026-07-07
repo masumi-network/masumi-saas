@@ -592,6 +592,20 @@ input[type="number"] {
   animation-delay: 0.4s;
 }
 
+@keyframes badgeBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-badge-blink {
+  animation: badgeBlink 1.25s ease-in-out infinite;
+}
+
 /* Stagger direct children in dialog scroll bodies (developers test payment pattern) */
 .dialog-stagger-in > * {
   opacity: 0;
@@ -769,5 +783,10 @@ input[type="number"] {
   .dialog-stagger-in > * {
     opacity: 1 !important;
     animation: none !important;
+  }
+
+  .animate-badge-blink {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }

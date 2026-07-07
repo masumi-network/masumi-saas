@@ -1,7 +1,6 @@
 import { createRoute } from "@hono/zod-openapi";
 import prisma from "@masumi/database/client";
 
-import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -15,10 +14,7 @@ import {
   stdResponses,
   verificationUnavailableResponse,
 } from "@/lib/swagger/saas-app-openapi";
-import {
-  fetchContactCredentials,
-  getAgentVerificationSchemaSaid,
-} from "@/lib/veridian";
+import { finalizePendingVeridianCredential } from "@/lib/veridian/finalize-pending-veridian-credential";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 import { nextHandlers } from "@/server/hono/next";
@@ -65,35 +61,22 @@ app.openapi(
     try {
       const pendingCredential = await prisma.veridianCredential.findFirst({
         where: { id, userId: authContext.user.id },
+        select: {
+          id: true,
+          agentId: true,
+          status: true,
+          credentialId: true,
+        },
       });
 
       if (!pendingCredential) {
         throw new ApiError(404, "Credential not found");
       }
 
-      // Already resolved — return current state immediately
-      if (pendingCredential.status !== "PENDING") {
-        return c.json(
-          {
-            success: true as const,
-            data: {
-              id: pendingCredential.id,
-              credentialId: pendingCredential.credentialId,
-              status: pendingCredential.status,
-            },
-          },
-          200,
-        );
-      }
-
-      const { aid, agentId } = pendingCredential;
-      const schemaSaid = getAgentVerificationSchemaSaid();
-
-      // Get agent's payment node identifier for filtering
-      const agent = agentId
+      const agent = pendingCredential.agentId
         ? await prisma.agent.findFirst({
-            where: { id: agentId },
-            select: { agentIdentifier: true, networkIdentifier: true },
+            where: { id: pendingCredential.agentId },
+            select: { networkIdentifier: true },
           })
         : null;
       requireNetworkedOidcApiScope(authContext, {
@@ -102,77 +85,39 @@ app.openapi(
         network: agent?.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
 
-      // Check Veridian for the accepted credential
-      const credentials = await fetchContactCredentials(aid);
-      const matchingCredentials = credentials.filter((cred) => {
-        const credSchemaSaid = cred.sad?.s || cred.schema?.$id;
-        if (credSchemaSaid !== schemaSaid) return false;
-
-        if (cred.sad?.a && agent?.agentIdentifier) {
-          const credAgentId = cred.sad.a.agentId as string | undefined;
-          return credAgentId === agent.agentIdentifier;
+      let result;
+      try {
+        result = await finalizePendingVeridianCredential({
+          pendingCredentialId: id,
+          userId: authContext.user.id,
+        });
+      } catch (finalizeError) {
+        if (
+          finalizeError instanceof Error &&
+          finalizeError.message === "Credential not found"
+        ) {
+          throw new ApiError(404, "Credential not found");
         }
+        throw finalizeError;
+      }
 
-        return true;
-      });
-
-      if (matchingCredentials.length === 0) {
+      if (result.outcome === "pending") {
         return c.json(
           {
             success: true as const,
-            data: { id: pendingCredential.id, status: "PENDING" as const },
+            data: { id: result.id, status: "PENDING" as const },
           },
           200,
         );
-      }
-
-      const issuedCredential = matchingCredentials.sort((a, b) => {
-        const dateA = new Date((a.sad?.a?.dt as string) || 0).getTime();
-        const dateB = new Date((b.sad?.a?.dt as string) || 0).getTime();
-        return dateB - dateA;
-      })[0];
-
-      if (!issuedCredential?.sad?.d) {
-        return c.json(
-          {
-            success: true as const,
-            data: { id: pendingCredential.id, status: "PENDING" as const },
-          },
-          200,
-        );
-      }
-
-      const credentialId = issuedCredential.sad.d;
-
-      const updated = await prisma.veridianCredential.update({
-        where: { id: pendingCredential.id },
-        data: { credentialId, status: "ISSUED" },
-      });
-
-      if (agentId) {
-        const prior = await prisma.agent.findUnique({
-          where: { id: agentId },
-          select: { verificationStatus: true },
-        });
-        await prisma.agent.update({
-          where: { id: agentId },
-          data: {
-            verificationStatus: "VERIFIED",
-            veridianCredentialId: credentialId,
-          },
-        });
-        if (prior?.verificationStatus !== "VERIFIED") {
-          await recordAgentActivityEvent(agentId, "AgentVerified");
-        }
       }
 
       return c.json(
         {
           success: true as const,
           data: {
-            id: updated.id,
-            credentialId: updated.credentialId,
-            status: updated.status,
+            id: result.id,
+            credentialId: result.credentialId,
+            status: result.status as "ISSUED",
           },
         },
         200,

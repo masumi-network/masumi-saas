@@ -135,7 +135,7 @@ export function BudgetsTab() {
     );
     setBusyId(null);
     setBudgetToDelete(null);
-    if (result) refetch();
+    if (result) void refetch();
   };
 
   return (
@@ -283,7 +283,7 @@ export function BudgetsTab() {
         onClose={() => setDialogOpen(false)}
         onSaved={() => {
           setDialogOpen(false);
-          refetch();
+          void refetch();
         }}
       />
 

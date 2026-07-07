@@ -9,6 +9,8 @@
  *    every locale string and vice versa.
  *  - Every HTML-like tag (<link>, </link>) present in en exists in every
  *    locale string and vice versa.
+ *  - No duplicate keys within the same JSON object (JSON.parse silently
+ *    keeps the last value, so duplicates are easy to miss in review).
  *  - No positional-placeholder artifacts remain (`«N›`, `«N»`, `<N>`,
  *    `「N」`, `——N›`) — these are corruption from some translation tools
  *    that drop the ICU named placeholders.
@@ -60,6 +62,164 @@ function hasPositionalArtifact(s) {
   return POSITIONAL_PATTERNS.some((re) => re.test(s));
 }
 
+/**
+ * Scan raw JSON text for duplicate keys in the same object (JSON.parse drops
+ * earlier duplicates silently).
+ *
+ * @param {string} text
+ * @param {string} locale
+ * @returns {string[]}
+ */
+function findDuplicateKeys(text, locale) {
+  /** @type {string[]} */
+  const errors = [];
+  /** @type {Map<string, number>[]} */
+  const keyStack = [new Map()];
+  /** @type {string[]} */
+  const pathStack = [""];
+
+  let index = 0;
+  let line = 1;
+
+  const errorAt = (message) => {
+    errors.push(`[${locale}] ${message} (line ${line})`);
+  };
+
+  const advanceLine = (char) => {
+    if (char === "\n") line += 1;
+  };
+
+  const peek = () => text[index] ?? "";
+
+  const skipWhitespace = () => {
+    while (index < text.length) {
+      const char = text[index];
+      if (char === " " || char === "\t" || char === "\r" || char === "\n") {
+        advanceLine(char);
+        index += 1;
+        continue;
+      }
+      break;
+    }
+  };
+
+  const readString = () => {
+    const startLine = line;
+    index += 1; // opening quote
+    /** @type {string[]} */
+    const chars = [];
+    while (index < text.length) {
+      const char = text[index];
+      if (char === "\\") {
+        chars.push(char, text[index + 1] ?? "");
+        index += 2;
+        continue;
+      }
+      if (char === '"') {
+        index += 1;
+        return { value: chars.join(""), line: startLine };
+      }
+      advanceLine(char);
+      chars.push(char);
+      index += 1;
+    }
+    errorAt("unterminated JSON string");
+    return { value: "", line: startLine };
+  };
+
+  const skipPrimitive = () => {
+    while (index < text.length) {
+      const char = text[index];
+      if (char === "," || char === "}" || char === "]") break;
+      advanceLine(char);
+      index += 1;
+    }
+  };
+
+  const skipArray = () => {
+    index += 1; // [
+    while (index < text.length) {
+      skipWhitespace();
+      if (peek() === "]") {
+        index += 1;
+        return;
+      }
+      parseValue();
+      skipWhitespace();
+      if (peek() === ",") index += 1;
+    }
+  };
+
+  const parseObject = (parentPath) => {
+    index += 1; // {
+    const keys = new Map();
+    keyStack.push(keys);
+    pathStack.push(parentPath);
+
+    while (index < text.length) {
+      skipWhitespace();
+      if (peek() === "}") {
+        index += 1;
+        keyStack.pop();
+        pathStack.pop();
+        return;
+      }
+
+      if (peek() !== '"') {
+        errorAt(`expected object key string at "${parentPath || "(root)"}"`);
+        skipPrimitive();
+        continue;
+      }
+
+      const { value: key, line: keyLine } = readString();
+      const fullPath = parentPath ? `${parentPath}.${key}` : key;
+      if (keys.has(key)) {
+        errors.push(
+          `[${locale}] duplicate key "${key}" in object "${parentPath || "(root)"}" ` +
+            `(first at line ${keys.get(key)}, again at line ${keyLine})`,
+        );
+      } else {
+        keys.set(key, keyLine);
+      }
+
+      skipWhitespace();
+      if (peek() === ":") index += 1;
+      skipWhitespace();
+      parseValue(fullPath);
+      skipWhitespace();
+      if (peek() === ",") index += 1;
+    }
+
+    keyStack.pop();
+    pathStack.pop();
+  };
+
+  const parseValue = (path = "") => {
+    skipWhitespace();
+    const char = peek();
+    if (char === "{") {
+      parseObject(path);
+      return;
+    }
+    if (char === "[") {
+      skipArray();
+      return;
+    }
+    if (char === '"') {
+      readString();
+      return;
+    }
+    skipPrimitive();
+  };
+
+  skipWhitespace();
+  if (peek() === "{") {
+    parseObject("");
+  }
+
+  return errors;
+}
+
 function listLocales() {
   return fs
     .readdirSync(MESSAGES_DIR)
@@ -82,10 +242,16 @@ function main() {
     process.exit(1);
   }
 
+  const errors = [];
+
+  for (const locale of locales) {
+    const filePath = path.join(MESSAGES_DIR, `${locale}.json`);
+    const raw = fs.readFileSync(filePath, "utf8");
+    errors.push(...findDuplicateKeys(raw, locale));
+  }
+
   const sourceFlat = flatten(loadLocale(SOURCE_LOCALE));
   const sourceKeys = new Set(Object.keys(sourceFlat));
-
-  const errors = [];
 
   for (const locale of locales) {
     if (locale === SOURCE_LOCALE) continue;
@@ -156,7 +322,7 @@ function main() {
   }
 
   console.log(
-    `[i18n] OK: ${locales.length} locales (${[...sourceKeys].length} keys) - structural, placeholder, tag, and artifact checks passed.`,
+    `[i18n] OK: ${locales.length} locales (${[...sourceKeys].length} keys) - duplicate-key, structural, placeholder, tag, and artifact checks passed.`,
   );
 }
 

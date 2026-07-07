@@ -208,9 +208,9 @@ export function WalletsTab() {
     setRetiringId(null);
     setWalletToRetire(null);
     if (result) {
-      queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
-      queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
-      queryClient.invalidateQueries({ queryKey: ["x402", "networks"] });
+      void queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
+      void queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
+      void queryClient.invalidateQueries({ queryKey: ["x402", "networks"] });
     }
   };
 
@@ -418,8 +418,8 @@ export function WalletsTab() {
         onClose={() => setDialogOpen(false)}
         onSaved={() => {
           setDialogOpen(false);
-          queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
-          queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
+          void queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
+          void queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
         }}
       />
 
@@ -437,7 +437,7 @@ export function WalletsTab() {
         onClose={() => setEditWallet(null)}
         onSaved={() => {
           setEditWallet(null);
-          queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
+          void queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
         }}
       />
 

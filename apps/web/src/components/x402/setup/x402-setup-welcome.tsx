@@ -161,9 +161,9 @@ export function X402SetupWelcome({
   );
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
-    queryClient.invalidateQueries({ queryKey: ["x402", "networks"] });
-    queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
+    void queryClient.invalidateQueries({ queryKey: ["x402", "wallets"] });
+    void queryClient.invalidateQueries({ queryKey: ["x402", "networks"] });
+    void queryClient.invalidateQueries({ queryKey: ["x402", "budgets"] });
   };
 
   const openWalletDialog = (type: X402Wallet["type"]) => {

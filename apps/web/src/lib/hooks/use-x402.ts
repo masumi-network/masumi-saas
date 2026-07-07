@@ -199,7 +199,7 @@ export function useX402WalletsPaginated() {
 
   const loadMore = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) {
-      query.fetchNextPage();
+      void query.fetchNextPage();
     }
   }, [query]);
 
@@ -314,7 +314,7 @@ export function useX402PaymentAttempts(filters: X402PaymentFilters = {}) {
 
   const loadMore = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) {
-      query.fetchNextPage();
+      void query.fetchNextPage();
     }
   }, [query]);
 

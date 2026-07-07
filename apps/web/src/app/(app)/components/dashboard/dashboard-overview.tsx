@@ -2,7 +2,7 @@ import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,11 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isAgentLiveOnRegistry } from "@/lib/agents/registration-state";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { formatPricingDisplay, getGreeting } from "@/lib/utils";
+import { cn, formatPricingDisplay, getGreeting } from "@/lib/utils";
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "@/lib/utils/agent-utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
@@ -155,51 +157,70 @@ export default async function DashboardOverview({
               </div>
             ) : (
               <ul className="min-w-0 space-y-3">
-                {agents.map((agent, index) => (
-                  <li
-                    key={agent.id}
-                    className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
-                    style={{
-                      animationDelay: `${Math.min(index, 9) * 40}ms`,
-                    }}
-                  >
-                    <Link
-                      href={`/ai-agents/${agent.id}?from=dashboard`}
-                      aria-label={t("agentLinkAria", { name: agent.name })}
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
+                {agents.map((agent, index) => {
+                  const statusLabel = tRegistrationStatus(
+                    getRegistrationStatusDisplayKey(agent.registrationState),
+                  );
+
+                  return (
+                    <li
+                      key={agent.id}
+                      className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
+                      style={{
+                        animationDelay: `${Math.min(index, 9) * 40}ms`,
+                      }}
                     >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                          <Bot className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <p
-                            className="min-w-0 truncate text-sm font-medium"
-                            title={agent.name}
-                          >
-                            {agent.name}
-                          </p>
-                          {agent.verificationStatus === "VERIFIED" ? (
-                            <AgentVerifiedShield className="-mt-px" />
-                          ) : null}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={getRegistrationStatusBadgeVariant(
-                          agent.registrationState,
-                        )}
-                        className="shrink-0"
+                      <Link
+                        href={`/ai-agents/${agent.id}?from=dashboard`}
+                        aria-label={t("agentLinkAria", { name: agent.name })}
+                        className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(9rem,38%)] items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
                       >
-                        {tRegistrationStatus(
-                          getRegistrationStatusKey(agent.registrationState),
-                        )}
-                      </Badge>
-                      <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
-                        {formatPricingDisplay(agent.pricing)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                            <Bot className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+                            <p
+                              className="min-w-0 truncate text-sm font-medium"
+                              title={agent.name}
+                            >
+                              {agent.name}
+                            </p>
+                            {agent.verificationStatus === "VERIFIED" ? (
+                              <AgentVerificationShieldIndicator
+                                agentId={agent.id}
+                                dbVerificationStatus={agent.verificationStatus}
+                                registered={isAgentLiveOnRegistry(
+                                  agent.registrationState,
+                                )}
+                                className="-mt-px shrink-0"
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex min-w-0 items-center justify-between gap-4">
+                          <Badge
+                            variant={getRegistrationStatusBadgeVariant(
+                              agent.registrationState,
+                            )}
+                            title={statusLabel}
+                            className={cn(
+                              "max-w-[7.5rem] min-w-0 shrink truncate",
+                              getRegistrationStatusBadgeClassName(
+                                agent.registrationState,
+                              ),
+                            )}
+                          >
+                            {statusLabel}
+                          </Badge>
+                          <span className="shrink-0 text-sm text-muted-foreground whitespace-nowrap">
+                            {formatPricingDisplay(agent.pricing)}
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <DashboardRegisterAgentButton agentCount={agentCount} />

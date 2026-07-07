@@ -136,7 +136,7 @@ export function AlertsTab() {
       { errorMessage: t("updateFailed") },
     );
     setBusyId(null);
-    if (result) refetch();
+    if (result) void refetch();
   };
 
   const confirmDelete = async () => {
@@ -150,7 +150,7 @@ export function AlertsTab() {
     );
     setBusyId(null);
     setRuleToDelete(null);
-    if (result) refetch();
+    if (result) void refetch();
   };
 
   return (
@@ -333,7 +333,7 @@ export function AlertsTab() {
         onClose={() => setDialogOpen(false)}
         onSaved={() => {
           setDialogOpen(false);
-          refetch();
+          void refetch();
         }}
       />
 
