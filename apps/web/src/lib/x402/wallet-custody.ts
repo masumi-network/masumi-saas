@@ -2,16 +2,16 @@ import "server-only";
 
 import { X402EvmWalletType } from "@masumi/database";
 import prisma from "@masumi/database/client";
-import type { X402ScopeInput } from "@masumi/payment-source-x402/tenant-scope";
+import type { X402ScopeInput } from "@masumi/payment-source-x402";
 import {
   activeWalletWhere,
   resolveX402TenantScope,
   walletOwnershipWhere,
-} from "@masumi/payment-source-x402/tenant-scope";
-import createHttpError from "http-errors";
+} from "@masumi/payment-source-x402";
 
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { paymentNodeX402WalletSchema } from "@/lib/payment-node/x402-schemas";
+import { ApiError } from "@/server/hono/errors";
 
 const WALLET_OUTPUT_SELECT = {
   id: true,
@@ -47,7 +47,7 @@ async function assertTenantWalletSlotAvailable(
     select: { id: true },
   });
   if (existing != null) {
-    throw createHttpError(
+    throw new ApiError(
       409,
       `This workspace already has a ${type === X402EvmWalletType.Purchasing ? "Purchasing" : "Selling"} wallet. Retire it before creating another.`,
     );
@@ -85,7 +85,7 @@ export async function createX402WalletOnPaymentNode({
 }) {
   const client = await getPaymentNodeClientForUser(userId);
   if (client == null) {
-    throw createHttpError(503, "Payment node not configured for user");
+    throw new ApiError(503, "Payment node not configured for user");
   }
 
   const scope = resolveX402TenantScope({ userId, organizationId });
@@ -129,7 +129,7 @@ export async function createX402WalletOnPaymentNode({
       "code" in error &&
       (error as { code: string }).code === "P2002"
     ) {
-      throw createHttpError(
+      throw new ApiError(
         409,
         "A managed EVM wallet with this address already exists",
       );
@@ -155,7 +155,7 @@ export async function getLocalWalletWithPaymentNodeId(
     },
   });
   if (wallet == null) {
-    throw createHttpError(404, "Managed EVM wallet not found");
+    throw new ApiError(404, "Managed EVM wallet not found");
   }
   return wallet;
 }

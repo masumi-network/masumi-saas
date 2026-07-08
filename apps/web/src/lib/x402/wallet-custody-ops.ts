@@ -2,19 +2,17 @@ import "server-only";
 
 import prisma from "@masumi/database/client";
 import {
+  activeWalletWhere,
   cancelX402PendingWallet,
   deleteX402ManagedWallet,
-  updateX402ManagedWallet,
-} from "@masumi/payment-source-x402";
-import type { X402ScopeInput } from "@masumi/payment-source-x402/tenant-scope";
-import {
-  activeWalletWhere,
   resolveX402TenantScope,
+  updateX402ManagedWallet,
   walletOwnershipWhere,
-} from "@masumi/payment-source-x402/tenant-scope";
-import createHttpError from "http-errors";
+  type X402ScopeInput,
+} from "@masumi/payment-source-x402";
 
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { ApiError } from "@/server/hono/errors";
 
 import {
   getLocalWalletWithPaymentNodeId,
@@ -54,7 +52,7 @@ async function deletePaymentNodeWalletIfCustodied(
   }
   const client = await getPaymentNodeClientForUser(userId);
   if (client == null) {
-    throw createHttpError(503, "Payment node not configured for user");
+    throw new ApiError(503, "Payment node not configured for user");
   }
   await client.deleteX402Wallet({ id: wallet.paymentNodeWalletId });
 }
@@ -67,7 +65,7 @@ export async function updateX402WalletWithCustody(
   if (usesPaymentNodeCustody(wallet) && wallet.paymentNodeWalletId != null) {
     const client = await getPaymentNodeClientForUser(userId);
     if (client == null) {
-      throw createHttpError(503, "Payment node not configured for user");
+      throw new ApiError(503, "Payment node not configured for user");
     }
     await client.updateX402Wallet({
       id: wallet.paymentNodeWalletId,
@@ -97,7 +95,7 @@ export async function cancelX402PendingWalletWithCustody(
     includePending: true,
   });
   if (wallet == null) {
-    throw createHttpError(404, "Managed EVM wallet not found");
+    throw new ApiError(404, "Managed EVM wallet not found");
   }
   await deletePaymentNodeWalletIfCustodied(userId, wallet);
   return cancelX402PendingWallet(scopeInput, evmWalletId);
@@ -123,7 +121,7 @@ export async function proxyCreateX402PaymentIfCustodied(
   }
   const client = await getPaymentNodeClientForUser(userId);
   if (client == null) {
-    throw createHttpError(503, "Payment node not configured for user");
+    throw new ApiError(503, "Payment node not configured for user");
   }
   return client.createX402Payment({
     evmWalletId: wallet.paymentNodeWalletId!,
