@@ -94,7 +94,14 @@ async function resolveOidcAccessTokenContext(
     include: { user: true },
   });
 
-  if (!accessToken?.user || accessToken.accessTokenExpiresAt <= new Date()) {
+  if (
+    !accessToken?.user ||
+    accessToken.accessTokenExpiresAt <= new Date() ||
+    // Reject tokens for banned / soft-deleted accounts. The /token issuance
+    // path already checks this, but pre-existing access tokens are otherwise
+    // valid until expiry — mirror the sign-in ban enforcement here.
+    accessToken.user.banned
+  ) {
     return null;
   }
 

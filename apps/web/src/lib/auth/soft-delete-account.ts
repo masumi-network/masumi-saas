@@ -23,6 +23,10 @@ export const ACCOUNT_SOFT_DELETED_MESSAGE = "__masumi_account_soft_deleted__";
  *   OIDC token path, covering password / magic-link / social sign-in.
  * - API keys mint sessions that DO NOT run the sign-in ban check, so they are
  *   disabled explicitly — the apikey plugin rejects `enabled: false` keys.
+ * - OIDC access tokens are validated per-request by expiry only (see
+ *   `resolveOidcAccessTokenContext`, which additionally checks `banned`), so
+ *   any outstanding tokens are revoked here to avoid up-to-1h of residual API
+ *   access.
  * - All existing sessions are revoked so live cookies stop working immediately.
  *
  * Idempotent: safe to run more than once for the same user.
@@ -41,6 +45,8 @@ export async function softDeleteUserAccount(userId: string): Promise<void> {
     where: { userId },
     data: { enabled: false },
   });
+
+  await prisma.oauthAccessToken.deleteMany({ where: { userId } });
 
   await prisma.session.deleteMany({ where: { userId } });
 }

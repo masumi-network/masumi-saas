@@ -9,6 +9,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
 import { writeOnChainVerificationsFromStoredCredential } from "@/lib/registry/write-on-chain-verifications";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
@@ -20,6 +21,7 @@ import {
   verifyAgentSuccessSchema,
 } from "@/lib/swagger/saas-app-openapi";
 import {
+  extractCredentialAttributes,
   fetchContactCredentials,
   findCredentialBySchema,
   getAgentVerificationSchemaSaid,
@@ -181,6 +183,26 @@ app.openapi(
         }
 
         validatedCredential = selectedCredential;
+
+        // Bind the selected credential to THIS agent's registry identifier
+        // before trusting it. When one wallet AID legitimately holds
+        // verification credentials for several of the caller's agents,
+        // findCredentialBySchema could otherwise return another agent's
+        // credential and mark (and on-chain anchor) the wrong agent VERIFIED.
+        // Mirrors resolve-agent-verification.ts.
+        const credentialAttrs = extractCredentialAttributes(selectedCredential);
+        const credentialAgentId =
+          typeof credentialAttrs.agentId === "string"
+            ? credentialAttrs.agentId
+            : undefined;
+        if (
+          !credentialMatchesAgentRegistryId(
+            credentialAgentId,
+            agent.agentIdentifier ?? "",
+          )
+        ) {
+          throw new ApiError(400, "Credential does not bind to this agent.");
+        }
 
         const validationResult = validateCredential(selectedCredential);
 

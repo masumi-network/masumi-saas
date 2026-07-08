@@ -123,9 +123,14 @@ function toRequirementExtra(value: unknown): X402RequirementExtra {
 }
 
 export function hashX402PaymentPayload(paymentPayload: unknown): string {
-  return createHash("sha256")
-    .update(canonicalStringify(paymentPayload) ?? "")
-    .digest("hex");
+  const canonical = canonicalStringify(paymentPayload);
+  // Never fall back to "": paymentPayloadHash is the settlement idempotency key,
+  // so two payloads that both fail to canonicalize would collide on the same
+  // hash and dedup to a single settlement. Reject instead.
+  if (!canonical) {
+    throw createHttpError(400, "Payment payload could not be canonicalized");
+  }
+  return createHash("sha256").update(canonical).digest("hex");
 }
 
 // The signed x402 payload embeds a reusable payment authorization (EIP-3009 / Permit2
@@ -135,7 +140,11 @@ export function hashX402PaymentPayload(paymentPayload: unknown): string {
 function encryptPaymentPayloadForStorage(
   paymentPayload: unknown,
 ): Prisma.InputJsonValue {
-  return encrypt(canonicalStringify(paymentPayload) ?? "");
+  const canonical = canonicalStringify(paymentPayload);
+  if (!canonical) {
+    throw createHttpError(400, "Payment payload could not be canonicalized");
+  }
+  return encrypt(canonical);
 }
 
 function getPaymentIdentifier(paymentPayload: PaymentPayload): {

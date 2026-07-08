@@ -41,9 +41,13 @@ export async function getIssuerSignifyClient(): Promise<SignifyClientType | null
       const client = new SignifyClient(keriaUrl, bran, Tier.low, bootUrl);
       await client.connect();
       return client;
-    })().catch((error) => {
+    })().catch(() => {
       cachedClient = null;
-      throw error;
+      // SignifyClient constructor/connect receives the `bran` (a secret) and may
+      // embed it in a thrown error. Log only a coarse marker and throw a
+      // sanitized error so the bran never reaches route 500 handlers / logs.
+      console.error("[Veridian] Issuer KERIA connect failed");
+      throw new Error("Issuer KERIA connection failed");
     });
   }
 

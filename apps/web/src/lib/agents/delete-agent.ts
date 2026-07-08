@@ -61,20 +61,36 @@ export async function deleteAgentForUser(params: {
     if (!externalId) {
       return { success: false, error: "No externalId found for this agent." };
     }
-    const baseUrl = paymentNodeConfig.getBaseUrl();
-    const adminKey = paymentNodeConfig.getAdminApiKey();
-    const adminClient = createPaymentNodeClient(baseUrl, adminKey);
-    await adminClient.deleteRegistryEntry(externalId);
 
+    // Delete the SaaS row first, then tear down the registry entry best-effort.
+    // Deletion only runs for non-live agents (the live-state guard above), so an
+    // orphaned registry entry is harmless, whereas the reverse order (registry
+    // first) could leave a stuck SaaS row that can never be deregistered if the
+    // DB delete failed after the entry was already gone. A failed teardown is
+    // logged for reconciliation rather than surfaced as a user error.
     await recordAgentActivityEvent(agentId, "AgentDeleted");
     await prisma.agent.delete({ where: { id: agentId } });
 
+    try {
+      const baseUrl = paymentNodeConfig.getBaseUrl();
+      const adminKey = paymentNodeConfig.getAdminApiKey();
+      const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+      await adminClient.deleteRegistryEntry(externalId);
+    } catch (registryError) {
+      console.error(
+        "[delete-agent] registry teardown failed after DB delete; needs reconciliation",
+        { agentId, externalId, error: registryError },
+      );
+    }
+
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete agent:", error);
+    // Log the raw error server-side only; return a generic message so
+    // payment-node / internal error text is never echoed to the API caller.
+    console.error("Failed to delete agent:", { agentId, error });
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to delete agent",
+      error: "Failed to delete agent",
     };
   }
 }

@@ -69,6 +69,9 @@ function isPrivateIpv4(ip: string): boolean {
   if (a === 192 && b === 168) return true;
   if (a === 169 && b === 254) return true;
   if (a === 100 && b >= 64 && b <= 127) return true;
+  // Multicast (224.0.0.0/4) and reserved / broadcast (240.0.0.0/4, incl.
+  // 255.255.255.255) — not routable public unicast, reject.
+  if (a >= 224) return true;
   return false;
 }
 
@@ -78,9 +81,12 @@ function isPrivateHost(hostname: string): boolean {
   if (host.includes(":")) {
     if (host === "::1" || host === "::") return true;
     if (
-      host.startsWith("fc") ||
+      host.startsWith("fc") || // unique local (fc00::/7)
       host.startsWith("fd") ||
-      /^fe[89ab]/.test(host)
+      /^fe[89ab]/.test(host) || // link-local (fe80::/10)
+      host.startsWith("ff") || // multicast (ff00::/8)
+      host.startsWith("64:ff9b") || // NAT64 (64:ff9b::/96, 64:ff9b:1::/48)
+      host.startsWith("100::") // discard-only prefix (100::/64)
     )
       return true;
     const mapped = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host);

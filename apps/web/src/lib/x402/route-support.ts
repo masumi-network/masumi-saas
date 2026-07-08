@@ -158,6 +158,24 @@ export function getCaip2NetworkLimitFromAuth(
   return limits.length > 0 ? limits : null;
 }
 
+/**
+ * Enforce the OIDC caller's write-network scope for admin write endpoints
+ * (network upsert / RPC probe / low-balance rule) that take a target chain in
+ * the body. Without this, a caller with only `payments:write:preprod` could
+ * create/probe/rule mainnet networks — the pay/verify/settle paths gate on this
+ * via `isAllowedCaip2Network`, but these admin writes did not. No-op for
+ * session callers (limit is null).
+ */
+export function assertCaip2WithinWriteScope(
+  authContext: AuthenticatedApiContext,
+  caip2: string,
+): void {
+  const limit = getCaip2NetworkLimitFromAuth(authContext, "write");
+  if (limit !== null && !limit.includes(caip2)) {
+    throw new ApiError(401, "Unauthorized network");
+  }
+}
+
 function toIsoString(date: Date): string {
   return date.toISOString();
 }

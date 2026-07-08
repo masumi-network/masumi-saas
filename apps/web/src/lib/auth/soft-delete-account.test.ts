@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prismaMock = {
   user: { update: vi.fn() },
   apikey: { updateMany: vi.fn() },
+  oauthAccessToken: { deleteMany: vi.fn() },
   session: { deleteMany: vi.fn() },
 };
 
@@ -20,6 +21,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.user.update.mockResolvedValue({});
   prismaMock.apikey.updateMany.mockResolvedValue({ count: 0 });
+  prismaMock.oauthAccessToken.deleteMany.mockResolvedValue({ count: 0 });
   prismaMock.session.deleteMany.mockResolvedValue({ count: 0 });
 });
 
@@ -40,6 +42,11 @@ describe("softDeleteUserAccount", () => {
     expect(prismaMock.apikey.updateMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },
       data: { enabled: false },
+    });
+    // OIDC access tokens are validated by expiry only, so outstanding tokens
+    // must be revoked or a soft-deleted user keeps API access until they expire.
+    expect(prismaMock.oauthAccessToken.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
     });
     expect(prismaMock.session.deleteMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },

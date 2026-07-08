@@ -23,8 +23,31 @@ const LEGACY_CBC_ALG = "aes-256-cbc";
 const LEGACY_SALT_LEN = 16;
 const LEGACY_IV_LEN = 16;
 
+// scrypt is deliberately expensive (~50-100ms). It runs on every decrypt, and
+// decrypt is on the hot verify/settle/pay path (wallet + facilitator keys).
+// Decrypt salts are stable (read from the stored ciphertext), so memoize the
+// derived key per salt to avoid re-deriving — and blocking the event loop — on
+// repeated use of the same wallet. Bounded LRU; derived keys share the same
+// in-memory trust boundary as the master key, which is already resident.
+const MAX_DERIVED_KEY_CACHE = 256;
+const derivedKeyCache = new Map<string, Buffer>();
+
 function deriveKey(salt: Buffer): Buffer {
-  return scryptSync(x402Config.encryptionKey, salt, KEY_LEN);
+  const saltHex = salt.toString("hex");
+  const cached = derivedKeyCache.get(saltHex);
+  if (cached) {
+    derivedKeyCache.delete(saltHex);
+    derivedKeyCache.set(saltHex, cached);
+    return cached;
+  }
+
+  const key = scryptSync(x402Config.encryptionKey, salt, KEY_LEN);
+  derivedKeyCache.set(saltHex, key);
+  if (derivedKeyCache.size > MAX_DERIVED_KEY_CACHE) {
+    const oldest = derivedKeyCache.keys().next().value;
+    if (oldest !== undefined) derivedKeyCache.delete(oldest);
+  }
+  return key;
 }
 
 export function encrypt(secret: string): string {
