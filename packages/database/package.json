@@ -41,7 +41,8 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "admin:promote": "tsx scripts/admin.ts promote",
     "admin:demote": "tsx scripts/admin.ts demote",
-    "admin:list": "tsx scripts/admin.ts list"
+    "admin:list": "tsx scripts/admin.ts list",
+    "test:db:setup": "bash scripts/setup-test-db.sh"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.0.1",
