@@ -1,3 +1,4 @@
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -10,7 +11,7 @@ import {
 
 export function AgentsTableSkeleton() {
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <HorizontalScrollArea className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -80,6 +81,6 @@ export function AgentsTableSkeleton() {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </HorizontalScrollArea>
   );
 }

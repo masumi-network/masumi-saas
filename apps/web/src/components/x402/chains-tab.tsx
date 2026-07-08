@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -386,7 +387,7 @@ export function ChainsTab() {
       ) : filteredNetworks.length === 0 ? (
         <X402TableEmptyState icon={Link2} message={t("noSearchResults")} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border/80">
+        <HorizontalScrollArea className="rounded-xl border border-border/80">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -567,7 +568,7 @@ export function ChainsTab() {
               })}
             </TableBody>
           </Table>
-        </div>
+        </HorizontalScrollArea>
       )}
 
       <ChainDialog

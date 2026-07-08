@@ -24,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -165,7 +166,7 @@ export function BudgetsTab() {
           message={`${t("emptyTitle")}. ${t("emptyDescription")}`}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border/80">
+        <HorizontalScrollArea className="rounded-xl border border-border/80">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -273,7 +274,7 @@ export function BudgetsTab() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </HorizontalScrollArea>
       )}
 
       <BudgetDialog

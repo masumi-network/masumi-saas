@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -173,7 +174,7 @@ export function IntegrationsPageContent() {
             }
           />
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border/80">
+          <HorizontalScrollArea className="rounded-xl border border-border/80">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -222,7 +223,7 @@ export function IntegrationsPageContent() {
                 })}
               </TableBody>
             </Table>
-          </div>
+          </HorizontalScrollArea>
         )}
       </div>
 
