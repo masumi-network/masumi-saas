@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -224,28 +225,30 @@ function DetailField({
 function InboxAgentsSkeleton() {
   return (
     <div className="rounded-xl border border-border/80">
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <TableHead key={index}>
-                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <TableRow key={index}>
-              {Array.from({ length: 6 }).map((__, cellIndex) => (
-                <TableCell key={cellIndex}>
-                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                </TableCell>
+      <HorizontalScrollArea>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <TableHead key={index}>
+                  <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                </TableHead>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <TableRow key={index}>
+                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  <TableCell key={cellIndex}>
+                    <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </HorizontalScrollArea>
     </div>
   );
 }
@@ -826,103 +829,112 @@ export function InboxAgentsPage() {
             ) : (
               <>
                 <div className="rounded-xl border border-border/80">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead>{t("table.name")}</TableHead>
-                        <TableHead>{t("table.added")}</TableHead>
-                        <TableHead>{t("table.inboxSlug")}</TableHead>
-                        <TableHead>{t("table.agentId")}</TableHead>
-                        <TableHead>{t("table.wallets")}</TableHead>
-                        <TableHead>{t("table.status")}</TableHead>
-                        <TableHead className="text-right">
-                          {t("table.actions")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentItems.map((agent, index) => {
-                        const holdingWallet =
-                          agent.RecipientWallet ?? agent.SmartContractWallet;
+                  <HorizontalScrollArea>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead>{t("table.name")}</TableHead>
+                          <TableHead>{t("table.added")}</TableHead>
+                          <TableHead>{t("table.inboxSlug")}</TableHead>
+                          <TableHead>{t("table.agentId")}</TableHead>
+                          <TableHead>{t("table.wallets")}</TableHead>
+                          <TableHead>{t("table.status")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("table.actions")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentItems.map((agent, index) => {
+                          const holdingWallet =
+                            agent.RecipientWallet ?? agent.SmartContractWallet;
 
-                        return (
-                          <TableRow
-                            key={agent.id}
-                            className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
-                            style={{ animationDelay: `${index * 40}ms` }}
-                            onClick={() => setSelectedAgent(agent)}
-                          >
-                            <TableCell className="max-w-56">
-                              <div className="space-y-1">
-                                <div className="font-medium">{agent.name}</div>
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {agent.description || t("noDescription")}
+                          return (
+                            <TableRow
+                              key={agent.id}
+                              className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                              style={{ animationDelay: `${index * 40}ms` }}
+                              onClick={() => setSelectedAgent(agent)}
+                            >
+                              <TableCell className="max-w-56">
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {agent.name}
+                                  </div>
+                                  <div className="truncate text-xs text-muted-foreground">
+                                    {agent.description || t("noDescription")}
+                                  </div>
                                 </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {formatRelativeDate(agent.createdAt)}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                              {agent.agentSlug}
-                            </TableCell>
-                            <TableCell className="max-w-44">
-                              {agent.agentIdentifier ? (
-                                <div
-                                  className="flex items-center gap-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <span className="truncate font-mono text-xs">
-                                    {shortenAddress(agent.agentIdentifier, 8)}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {formatRelativeDate(agent.createdAt)}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {agent.agentSlug}
+                              </TableCell>
+                              <TableCell className="max-w-44">
+                                {agent.agentIdentifier ? (
+                                  <div
+                                    className="flex items-center gap-2"
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    <span className="truncate font-mono text-xs">
+                                      {shortenAddress(agent.agentIdentifier, 8)}
+                                    </span>
+                                    <CopyButton
+                                      value={agent.agentIdentifier}
+                                      className="h-8 w-8 shrink-0"
+                                    />
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    {DASH}
                                   </span>
-                                  <CopyButton
-                                    value={agent.agentIdentifier}
-                                    className="h-8 w-8 shrink-0"
-                                  />
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">
-                                  {DASH}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              <div>
-                                {t("regWalletPrefix")}{" "}
-                                {shortenAddress(
-                                  agent.SmartContractWallet.walletAddress,
-                                  8,
                                 )}
-                              </div>
-                              <div>
-                                {t("fundWalletPrefix")}{" "}
-                                {shortenAddress(holdingWallet.walletAddress, 8)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={getInboxAgentBadgeVariant(agent.state)}
-                              >
-                                {t(getInboxAgentStatusKey(agent.state))}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setSelectedAgent(agent);
-                                }}
-                              >
-                                {t("details")}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                <div>
+                                  {t("regWalletPrefix")}{" "}
+                                  {shortenAddress(
+                                    agent.SmartContractWallet.walletAddress,
+                                    8,
+                                  )}
+                                </div>
+                                <div>
+                                  {t("fundWalletPrefix")}{" "}
+                                  {shortenAddress(
+                                    holdingWallet.walletAddress,
+                                    8,
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={getInboxAgentBadgeVariant(
+                                    agent.state,
+                                  )}
+                                >
+                                  {t(getInboxAgentStatusKey(agent.state))}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedAgent(agent);
+                                  }}
+                                >
+                                  {t("details")}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </HorizontalScrollArea>
                 </div>
 
                 <InboxAgentsPagination

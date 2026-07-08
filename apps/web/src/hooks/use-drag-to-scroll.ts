@@ -14,6 +14,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 
 export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
   const ref = useRef<T>(null);
+  const isScrollableRef = useRef(false);
   const dragState = useRef<{
     pointerId: number | null;
     startX: number;
@@ -33,7 +34,9 @@ export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
   const updateScrollable = useCallback(() => {
     const element = ref.current;
     if (!element) return;
-    setIsScrollable(element.scrollWidth > element.clientWidth + 1);
+    const next = element.scrollWidth > element.clientWidth + 1;
+    isScrollableRef.current = next;
+    setIsScrollable(next);
   }, []);
 
   useEffect(() => {
@@ -54,21 +57,6 @@ export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
       setIsDragging(false);
     };
 
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
-      if (event.pointerType === "touch") return;
-      if (!isScrollable) return;
-      if (isInteractiveTarget(event.target)) return;
-
-      dragState.current = {
-        pointerId: event.pointerId,
-        startX: event.pageX,
-        startY: event.pageY,
-        scrollLeft: element.scrollLeft,
-        didDrag: false,
-      };
-    };
-
     const onPointerMove = (event: PointerEvent) => {
       const state = dragState.current;
       if (state.pointerId !== event.pointerId) return;
@@ -85,7 +73,6 @@ export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
 
         state.didDrag = true;
         setIsDragging(true);
-        element.setPointerCapture(event.pointerId);
       }
 
       event.preventDefault();
@@ -95,6 +82,10 @@ export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
     const onPointerEnd = (event: PointerEvent) => {
       const state = dragState.current;
       if (state.pointerId !== event.pointerId) return;
+
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerEnd);
+      document.removeEventListener("pointercancel", onPointerEnd);
 
       if (state.didDrag) {
         const suppressClick = (clickEvent: MouseEvent) => {
@@ -107,27 +98,39 @@ export function useDragToScroll<T extends HTMLElement = HTMLDivElement>() {
         });
       }
 
-      if (element.hasPointerCapture(event.pointerId)) {
-        element.releasePointerCapture(event.pointerId);
-      }
-
       resetDragState();
     };
 
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      if (event.pointerType === "touch") return;
+      if (!isScrollableRef.current) return;
+      if (isInteractiveTarget(event.target)) return;
+
+      dragState.current = {
+        pointerId: event.pointerId,
+        startX: event.pageX,
+        startY: event.pageY,
+        scrollLeft: element.scrollLeft,
+        didDrag: false,
+      };
+
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerEnd);
+      document.addEventListener("pointercancel", onPointerEnd);
+    };
+
     element.addEventListener("pointerdown", onPointerDown);
-    element.addEventListener("pointermove", onPointerMove);
-    element.addEventListener("pointerup", onPointerEnd);
-    element.addEventListener("pointercancel", onPointerEnd);
 
     return () => {
       resizeObserver.disconnect();
       mutationObserver.disconnect();
       element.removeEventListener("pointerdown", onPointerDown);
-      element.removeEventListener("pointermove", onPointerMove);
-      element.removeEventListener("pointerup", onPointerEnd);
-      element.removeEventListener("pointercancel", onPointerEnd);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerEnd);
+      document.removeEventListener("pointercancel", onPointerEnd);
     };
-  }, [isScrollable, updateScrollable]);
+  }, [updateScrollable]);
 
   return { ref, isScrollable, isDragging };
 }
