@@ -443,6 +443,7 @@ describe("x402 service", () => {
         payer: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         supportedPaymentSourceId: source.id,
         userId: USER_ID,
+        x402NetworkId: networkRow.id,
       },
     });
     mocks.mockX402PaymentAttemptCreate.mockResolvedValue({
@@ -470,11 +471,15 @@ describe("x402 service", () => {
       },
     });
     expect(mocks.mockFacilitatorSettle).not.toHaveBeenCalled();
+    // The replay attempt must inherit the original settlement's network id —
+    // X402PaymentAttempt.x402NetworkId is non-null, so a missing propagation
+    // would fail the create at runtime.
     expect(mocks.mockX402PaymentAttemptCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           status: "Replayed",
           paymentPayloadHash,
+          x402NetworkId: networkRow.id,
         }),
       }),
     );

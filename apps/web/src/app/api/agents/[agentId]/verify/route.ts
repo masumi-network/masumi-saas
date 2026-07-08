@@ -155,8 +155,18 @@ app.openapi(
           );
         }
 
-        const expectedSchemaSaid =
-          schemaSaid || getAgentVerificationSchemaSaid();
+        // Verification must be granted only via the configured agent
+        // verification credential schema. A client-supplied `schemaSaid`
+        // may narrow to that schema, but must never redirect verification to
+        // a different (e.g. self-issued) credential type.
+        const agentVerificationSchemaSaid = getAgentVerificationSchemaSaid();
+        if (schemaSaid && schemaSaid !== agentVerificationSchemaSaid) {
+          throw new ApiError(
+            400,
+            "Unsupported schemaSaid: agent verification requires the agent verification credential schema.",
+          );
+        }
+        const expectedSchemaSaid = agentVerificationSchemaSaid;
 
         const selectedCredential = findCredentialBySchema(
           credentials,

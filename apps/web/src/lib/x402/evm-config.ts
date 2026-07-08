@@ -184,3 +184,35 @@ export function getDefaultStablecoinForChain(caip2Id: string): string | null {
   const stablecoins = getEvmStablecoinsForChain(caip2Id);
   return stablecoins.usdc ?? stablecoins.usdt ?? null;
 }
+
+/**
+ * Native-gas currency symbol by EVM chain id (CAIP-2). Used for display only —
+ * do NOT assume "ETH" for every chain (Polygon is POL, BNB Chain is BNB, etc.).
+ * Returns null for unknown chains so callers can fall back to a neutral label.
+ * All EVM native currencies use 18 decimals.
+ */
+const EVM_NATIVE_SYMBOL_BY_CAIP2: Readonly<Record<string, string>> = {
+  "eip155:1": "ETH", // Ethereum
+  "eip155:8453": "ETH", // Base
+  "eip155:42161": "ETH", // Arbitrum One
+  "eip155:10": "ETH", // Optimism
+  "eip155:84532": "ETH", // Base Sepolia
+  "eip155:11155111": "ETH", // Sepolia
+  "eip155:421614": "ETH", // Arbitrum Sepolia
+  "eip155:11155420": "ETH", // Optimism Sepolia
+  "eip155:137": "POL", // Polygon
+  "eip155:80002": "POL", // Polygon Amoy
+  "eip155:56": "BNB", // BNB Smart Chain
+  "eip155:97": "tBNB", // BNB Smart Chain Testnet
+  "eip155:43114": "AVAX", // Avalanche C-Chain
+  "eip155:43113": "AVAX", // Avalanche Fuji
+  "eip155:42220": "CELO", // Celo
+  "eip155:100": "xDAI", // Gnosis
+};
+
+export const EVM_NATIVE_DECIMALS = 18;
+
+/** Native-gas symbol for a chain, or null when the chain is not known. */
+export function getEvmNativeCurrencySymbol(caip2Id: string): string | null {
+  return EVM_NATIVE_SYMBOL_BY_CAIP2[caip2Id] ?? null;
+}

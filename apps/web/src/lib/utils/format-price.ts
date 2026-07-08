@@ -5,12 +5,20 @@ import { formatUnitAmount as formatPaymentUnitAmount } from "@/lib/payment-node/
 
 export function formatBalance(balance: string | number): string {
   if (balance === "" || balance == null) return "";
-  const cleanValue = String(balance).replace(/[^\d.]/g, "");
+  const raw = String(balance);
+  // Preserve a leading minus so negative values (refunds/debits) don't render
+  // as positive; strip everything else that isn't a digit or decimal point.
+  const isNegative = raw.trimStart().startsWith("-");
+  const cleanValue = raw.replace(/[^\d.]/g, "");
   const parts = cleanValue.split(".");
   const integerPart = parts[0] ?? "0";
   const decimalPart = parts[1];
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+  const formatted = decimalPart
+    ? `${formattedInteger}.${decimalPart}`
+    : formattedInteger;
+  const hasDigits = cleanValue.replace(/\./g, "").length > 0;
+  return isNegative && hasDigits ? `-${formatted}` : formatted;
 }
 
 export type AgentPricing =

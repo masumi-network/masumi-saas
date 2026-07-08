@@ -30,6 +30,7 @@ import {
 } from "@/lib/integrations/langdock";
 import { getPublicMipAgentBaseUrl } from "@/lib/mip/public-url";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
@@ -450,6 +451,20 @@ app.openapi(
         );
       if (!paymentSourcesPreflight.ok) {
         throw new ApiError(400, paymentSourcesPreflight.error);
+      }
+
+      // Validate the payout address format BEFORE consuming a credit. The
+      // registration path re-validates (defense in depth), but validating here
+      // avoids burning the user's credit on a malformed address that would only
+      // fail later with no refund path.
+      if (agentPricing.pricingType !== "Free") {
+        const payoutAddressError = validatePayoutAddressForNetwork(
+          payoutAddress?.trim() ?? "",
+          network,
+        );
+        if (payoutAddressError) {
+          throw new ApiError(400, payoutAddressError);
+        }
       }
 
       await consumeCreditIfRequired({

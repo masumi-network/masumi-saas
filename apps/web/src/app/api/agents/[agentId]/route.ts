@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi";
 import { loadSupportedPaymentSourcesForAgent } from "@masumi/payment-source-x402/supported-payment-sources";
 
-import { deleteAgentAction } from "@/lib/actions/agent.action";
+import { deleteAgentForUser } from "@/lib/agents/delete-agent";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -126,7 +126,10 @@ app.openapi(
         action: "write",
         network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
-      const result = await deleteAgentAction(agentId, authContext.user.id);
+      const result = await deleteAgentForUser({
+        userId: authContext.user.id,
+        agentId,
+      });
       if (!result.success) {
         const status = result.error === "Agent not found" ? 404 : 400;
         throw new ApiError(status, result.error);

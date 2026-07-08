@@ -18,6 +18,12 @@ import { nextHandlers } from "@/server/hono/next";
 const ROUTE_PATH = "payment/x402";
 const UPSTREAM_PATH = "/payment/x402";
 
+/** Upper bound on the upstream payment-node proxy call (env override). */
+const X402_PROXY_TIMEOUT_MS = (() => {
+  const raw = Number(process.env.PAYMENT_NODE_REQUEST_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 30_000;
+})();
+
 const app = createApiApp("/");
 
 app.post("*", async (c) => {
@@ -30,7 +36,7 @@ app.post("*", async (c) => {
     const network = getEffectivePaymentNetwork(request, body);
     requireNetworkedOidcApiScope(authContext, {
       resource: "payments",
-      action: "read",
+      action: "write",
       network,
     });
 
@@ -63,6 +69,9 @@ app.post("*", async (c) => {
         method: "POST",
         headers,
         body,
+        // Node's fetch has no short default timeout; bound the upstream call so
+        // a stalled payment node can't pin the worker indefinitely.
+        signal: AbortSignal.timeout(X402_PROXY_TIMEOUT_MS),
       },
     );
 

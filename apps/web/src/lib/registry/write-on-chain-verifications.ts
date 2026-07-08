@@ -1,5 +1,9 @@
 import prisma from "@masumi/database/client";
 
+import {
+  isUpdateRequestedStale,
+  STALE_UPDATE_REQUESTED_MS,
+} from "@/lib/agents/registration-state";
 import { sendOnChainVerificationCompleteEmail } from "@/lib/email/send-on-chain-verification-complete";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
@@ -236,7 +240,16 @@ export async function writeOnChainVerifications(params: {
     }
   }
 
-  if (agent.registrationState === "UpdateRequested") {
+  // Skip when an update is genuinely in flight, but fall through when the lock
+  // is stale (a prior attempt was killed after flipping the row to
+  // UpdateRequested but before/around the on-chain submit) so recovery can retry.
+  if (
+    agent.registrationState === "UpdateRequested" &&
+    !isUpdateRequestedStale({
+      registrationState: agent.registrationState,
+      updatedAt: agent.updatedAt,
+    })
+  ) {
     return {
       success: true,
       agentIdentifier: agent.agentIdentifier,
@@ -302,11 +315,27 @@ export async function writeOnChainVerifications(params: {
 
   const previousAgentIdentifier = agent.agentIdentifier;
 
+  // Claim the update lock atomically from a settled state, OR re-claim a stale
+  // UpdateRequested left behind by a killed attempt. Concurrent callers race on
+  // this single updateMany: the winner bumps `updatedAt` (resetting staleness),
+  // so any loser's `updatedAt < threshold` predicate no longer matches and it
+  // falls through to the skip below — no double submit.
+  const staleUpdateRequestedBefore = new Date(
+    Date.now() - STALE_UPDATE_REQUESTED_MS,
+  );
   const lock = await prisma.agent.updateMany({
     where: {
       id: agent.id,
       userId: params.userId,
-      registrationState: { in: ["RegistrationConfirmed", "UpdateFailed"] },
+      OR: [
+        {
+          registrationState: { in: ["RegistrationConfirmed", "UpdateFailed"] },
+        },
+        {
+          registrationState: "UpdateRequested",
+          updatedAt: { lt: staleUpdateRequestedBefore },
+        },
+      ],
     },
     data: { registrationState: "UpdateRequested" },
   });
@@ -578,7 +607,15 @@ export async function backfillOnChainVerificationsForAgent(params: {
     return false;
   }
 
-  if (agent.registrationState === "UpdateRequested") {
+  // A fresh UpdateRequested is genuinely in flight; a stale one is an abandoned
+  // lock — let it fall through so the delegated write path can re-claim + retry.
+  if (
+    agent.registrationState === "UpdateRequested" &&
+    !isUpdateRequestedStale({
+      registrationState: agent.registrationState,
+      updatedAt: agent.updatedAt,
+    })
+  ) {
     return false;
   }
 
