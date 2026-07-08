@@ -4,6 +4,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -189,7 +190,7 @@ function TransactionsTabSkeleton() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-md border">
+      <HorizontalScrollArea className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -244,7 +245,7 @@ function TransactionsTabSkeleton() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </HorizontalScrollArea>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
@@ -153,7 +154,7 @@ export function ApiKeysList({ data }: { data: ApiKeysPageData }) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <HorizontalScrollArea className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -222,7 +223,7 @@ export function ApiKeysList({ data }: { data: ApiKeysPageData }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </HorizontalScrollArea>
         )}
       </div>
 

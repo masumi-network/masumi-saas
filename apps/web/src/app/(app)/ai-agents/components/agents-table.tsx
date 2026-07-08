@@ -11,6 +11,7 @@ import { CompactAgentPricing } from "@/components/compact-agent-pricing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -146,7 +147,7 @@ export function AgentsTable({
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <HorizontalScrollArea>
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -384,7 +385,7 @@ export function AgentsTable({
             })}
           </TableBody>
         </Table>
-      </div>
+      </HorizontalScrollArea>
 
       <DeregisterAgentDialog
         open={isDeregisterDialogOpen}

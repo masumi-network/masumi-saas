@@ -1,3 +1,4 @@
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -10,7 +11,7 @@ import {
 
 export function IntegrationsTableSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border/80">
+    <HorizontalScrollArea className="rounded-xl border border-border/80">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -53,6 +54,6 @@ export function IntegrationsTableSkeleton({ rows = 4 }: { rows?: number }) {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </HorizontalScrollArea>
   );
 }

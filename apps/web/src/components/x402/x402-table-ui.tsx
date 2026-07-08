@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -89,7 +90,7 @@ export function X402TableSkeleton({
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border/80">
+    <HorizontalScrollArea className="rounded-xl border border-border/80">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -128,7 +129,7 @@ export function X402TableSkeleton({
           ))}
         </TableBody>
       </Table>
-    </div>
+    </HorizontalScrollArea>
   );
 }
 
