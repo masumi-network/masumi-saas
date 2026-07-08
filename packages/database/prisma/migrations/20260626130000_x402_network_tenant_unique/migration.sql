@@ -104,6 +104,14 @@ ALTER TABLE "x402_payment_attempt"
   FOREIGN KEY ("x402NetworkId") REFERENCES "x402_network"("id")
   ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- Any row still unmatched after every backfill references a caip2Network with no
+-- corresponding x402_network row (orphaned/legacy data). It cannot satisfy the new
+-- NOT NULL + FK, and its Network relation would be dangling regardless. Remove those
+-- rows here so SET NOT NULL cannot hard-fail the whole migration. On a clean/pre-release
+-- database these DELETEs are no-ops.
+DELETE FROM "x402_wallet_budget" WHERE "x402NetworkId" IS NULL;
+DELETE FROM "x402_payment_attempt" WHERE "x402NetworkId" IS NULL;
+
 ALTER TABLE "x402_wallet_budget" ALTER COLUMN "x402NetworkId" SET NOT NULL;
 ALTER TABLE "x402_payment_attempt" ALTER COLUMN "x402NetworkId" SET NOT NULL;
 

@@ -168,6 +168,7 @@ export function registerX402Routes(app: X402App): void {
 
         const result = await verifyX402Payment({
           userId: authContext.user.id,
+          organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
@@ -214,6 +215,7 @@ export function registerX402Routes(app: X402App): void {
 
         const { webhook, ...result } = await settleX402Payment({
           userId: authContext.user.id,
+          organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
           caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
           supportedPaymentSourceId: input.supportedPaymentSourceId,

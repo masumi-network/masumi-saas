@@ -76,7 +76,11 @@ export async function resolveSmartContractAddressForDeregister(
     }
   }
 
-  const policyId = extractPolicyIdFromAgentIdentifier(agentIdentifier);
+  // Lowercase both sides: the extracted policy id keeps the agentIdentifier's original
+  // casing, while source.policyId is lowercased, so an uppercase-hex identifier would
+  // otherwise never match and silently fall back to the configured default source.
+  const policyId =
+    extractPolicyIdFromAgentIdentifier(agentIdentifier)?.toLowerCase();
   if (policyId) {
     const match = sources.find(
       (source) =>

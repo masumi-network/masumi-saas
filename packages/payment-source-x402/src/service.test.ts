@@ -615,6 +615,49 @@ describe("x402 service", () => {
     expect(mocks.mockFacilitatorVerify).not.toHaveBeenCalled();
   });
 
+  it("rejects verify for a source owned by another user (no facilitator use)", async () => {
+    const { verifyX402Payment } = await import("./service.js");
+    mocks.mockSupportedPaymentSourceFindUnique.mockResolvedValueOnce({
+      ...source,
+      agent: { ...source.agent, userId: "other-user", organizationId: null },
+    });
+
+    await expect(
+      verifyX402Payment({
+        userId: USER_ID,
+        apiKeyId: API_KEY_ID,
+        caip2NetworkLimit: [source.network],
+        supportedPaymentSourceId: source.id,
+        paymentPayload: paymentPayload as never,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(mocks.mockFacilitatorVerify).not.toHaveBeenCalled();
+    expect(mocks.mockX402PaymentAttemptCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects settle for a source in another organization (no facilitator use)", async () => {
+    const { settleX402Payment } = await import("./service.js");
+    mocks.mockSupportedPaymentSourceFindUnique.mockResolvedValueOnce({
+      ...source,
+      agent: { ...source.agent, userId: "other-user", organizationId: "org-b" },
+    });
+
+    await expect(
+      settleX402Payment({
+        userId: USER_ID,
+        organizationId: "org-a",
+        apiKeyId: API_KEY_ID,
+        caip2NetworkLimit: [source.network],
+        supportedPaymentSourceId: source.id,
+        paymentPayload: paymentPayload as never,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(mocks.mockFacilitatorSettle).not.toHaveBeenCalled();
+    expect(mocks.mockX402PaymentAttemptCreate).not.toHaveBeenCalled();
+  });
+
   it("normalizes x402 budget assets to lowercase when upserting", async () => {
     const { setX402WalletBudget } = await import("./service.js");
     const result = await setX402WalletBudget({

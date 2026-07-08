@@ -230,6 +230,26 @@ async function getX402SupportedPaymentSourceOrThrow(
   return source;
 }
 
+/**
+ * Inbound verify/settle must be authorized against the *caller's* tenant, not just the
+ * source id: the facilitator wallet that signs and pays gas belongs to the source owner, so
+ * an unscoped source lookup would let any authenticated tenant spend another tenant's wallet.
+ * Returns 404 (not 403) to avoid disclosing that a source id exists in another tenant.
+ */
+function assertSupportedSourceOwnedByCaller(
+  agent: { userId: string; organizationId: string | null } | null | undefined,
+  caller: X402ScopeInput,
+) {
+  const callerScope = resolveX402TenantScope(caller);
+  const ownedByCaller =
+    callerScope.mode === "org"
+      ? agent?.organizationId === callerScope.organizationId
+      : agent?.organizationId == null && agent?.userId === callerScope.userId;
+  if (!ownedByCaller) {
+    throw createHttpError(404, "x402 supported payment source not found");
+  }
+}
+
 /** Inbound facilitator lookup: org agents share org x402 config; personal agents use owner userId. */
 function facilitatorScopeForAgent(
   agent: { userId: string; organizationId: string | null } | null | undefined,
@@ -896,12 +916,14 @@ export async function listX402Settlements(
 
 export async function verifyX402Payment({
   userId,
+  organizationId,
   apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
+  organizationId?: string | null;
   apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
@@ -910,6 +932,7 @@ export async function verifyX402Payment({
   const source = await getX402SupportedPaymentSourceOrThrow(
     supportedPaymentSourceId,
   );
+  assertSupportedSourceOwnedByCaller(source.agent, { userId, organizationId });
   assertPaymentPayloadMatchesRegisteredResource(source, paymentPayload);
   const requirements = sourceToRequirements(source);
   if (!isAllowedCaip2Network(caip2NetworkLimit, requirements.network)) {
@@ -978,12 +1001,14 @@ export async function verifyX402Payment({
 
 export async function settleX402Payment({
   userId,
+  organizationId,
   apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
+  organizationId?: string | null;
   apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
@@ -992,6 +1017,7 @@ export async function settleX402Payment({
   const source = await getX402SupportedPaymentSourceOrThrow(
     supportedPaymentSourceId,
   );
+  assertSupportedSourceOwnedByCaller(source.agent, { userId, organizationId });
   assertPaymentPayloadMatchesRegisteredResource(source, paymentPayload);
   const requirements = sourceToRequirements(source);
   if (!isAllowedCaip2Network(caip2NetworkLimit, requirements.network)) {

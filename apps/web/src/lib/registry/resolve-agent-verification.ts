@@ -4,6 +4,7 @@ import {
   shouldReadOnChainAgentVerification,
   shouldUseDbVerificationFallback,
 } from "@/lib/config/verification.config";
+import { veridianConfig } from "@/lib/config/veridian.config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import type {
   PaymentNodeNetwork,
@@ -134,6 +135,22 @@ async function resolveOnChainAgentVerification(params: {
     );
     if (!credential?.sad?.d || credential.sad.s !== schemaSaid) {
       return null;
+    }
+
+    // Defence-in-depth: when a trusted issuer AID is pinned, reject any credential
+    // not issued by it (credential.sad.i is the ACDC issuer prefix). This ensures a
+    // change to the credential-server fetch surface can never let a credential from
+    // an untrusted issuer be treated as verified.
+    const trustedIssuerAid = veridianConfig.issuerAid;
+    if (trustedIssuerAid && credential.sad.i !== trustedIssuerAid) {
+      console.error(
+        "[Veridian] Credential issuer AID is not the trusted issuer:",
+        {
+          credentialIssuerAid: credential.sad.i,
+          chainAgentIdentifier,
+        },
+      );
+      return { verified: false };
     }
 
     const attrs = extractCredentialAttributes(credential);

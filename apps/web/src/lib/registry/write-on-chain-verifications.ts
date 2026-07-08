@@ -377,6 +377,12 @@ export async function writeOnChainVerifications(params: {
       userId: params.userId,
       error: pollResult.error,
     });
+
+    // Polling timed out, but the update may still have landed on-chain (confirmation
+    // can exceed the poll window). Reconcile against on-chain state so the agent is
+    // never left pinned in UpdateRequested with no recovery path (which would show
+    // "update in progress" forever and never send the completion email).
+    const credentialSaid = params.credential.sad?.d;
     try {
       const failedEntry = await adminClient.getRegistryById({
         id: registryId,
@@ -388,10 +394,67 @@ export async function writeOnChainVerifications(params: {
           where: { id: agent.id },
           data: { registrationState: "UpdateFailed" },
         });
+        return { success: false, error: pollResult.error };
+      }
+
+      // The identifier bumps on a successful V2 update; fall back to the previous one.
+      const candidateIdentifier =
+        failedEntry?.agentIdentifier &&
+        failedEntry.agentIdentifier !== previousAgentIdentifier
+          ? failedEntry.agentIdentifier
+          : previousAgentIdentifier;
+      const onChain = await adminClient.getRegistryByAgentIdentifier({
+        agentIdentifier: candidateIdentifier,
+        network,
+      });
+      const anchored =
+        credentialSaid != null &&
+        (onChain?.Metadata?.verifications ?? []).some(
+          (entry) => entry.credential.said === credentialSaid,
+        );
+      if (anchored) {
+        // The anchor is on-chain — treat the update as the success it actually was.
+        await prisma.$transaction([
+          prisma.agent.update({
+            where: { id: agent.id },
+            data: {
+              agentIdentifier: candidateIdentifier,
+              registrationState: "RegistrationConfirmed",
+            },
+          }),
+          prisma.agentReference.update({
+            where: { agentId: agent.id },
+            data: {
+              metadata: {
+                ...refMeta,
+                agentIdentifier: candidateIdentifier,
+              },
+            },
+          }),
+        ]);
+        return { success: true, agentIdentifier: candidateIdentifier };
       }
     } catch (error) {
       console.error(
-        "[Veridian] Failed to load registry row after poll error:",
+        "[Veridian] Failed to reconcile registry row after poll error:",
+        {
+          agentId: params.agentId,
+          userId: params.userId,
+          error,
+        },
+      );
+    }
+
+    // Not confirmed on-chain: release the UpdateRequested lock back to
+    // RegistrationConfirmed so a later reconcile/backfill can retry the write.
+    try {
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { registrationState: "RegistrationConfirmed" },
+      });
+    } catch (error) {
+      console.error(
+        "[Veridian] Failed to reset registrationState after poll error:",
         {
           agentId: params.agentId,
           userId: params.userId,

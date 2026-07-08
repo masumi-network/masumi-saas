@@ -87,15 +87,30 @@ export async function updateAgentPayoutAddress(params: {
       ? (agent.agentReference.metadata as Record<string, unknown>)
       : {};
 
-  await prisma.agentReference.update({
-    where: { agentId: agent.id },
-    data: {
-      metadata: {
-        ...existingMeta,
-        collectionAddress: normalized,
+  // The payment-node patch above is the authoritative, money-routing change and has
+  // already succeeded. The agentReference metadata is a local mirror; if this write
+  // fails, log it but still report success rather than throwing a 500 that hides the
+  // fact that the on-chain payout address was updated. The mirror re-syncs on next read.
+  try {
+    await prisma.agentReference.update({
+      where: { agentId: agent.id },
+      data: {
+        metadata: {
+          ...existingMeta,
+          collectionAddress: normalized,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error(
+      "[Payment Node] Payout address updated on-chain but failed to mirror to agentReference metadata:",
+      {
+        agentId: params.agentId,
+        sellingWalletId,
+        error,
+      },
+    );
+  }
 
   return { success: true, payoutAddress: normalized };
 }

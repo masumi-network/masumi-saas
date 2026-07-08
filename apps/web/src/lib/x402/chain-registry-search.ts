@@ -161,11 +161,7 @@ export function pickPreferredRpcUrl(rpcs: unknown): string | null {
     (candidate) => candidate.tracking === "limited",
   );
 
-  return (
-    untracked[0]?.url ??
-    limited[0]?.url ??
-    httpsUrls[0]?.url ??
-    candidates.find((candidate) => candidate.url.startsWith("http://"))?.url ??
-    null
-  );
+  // Only ever suggest https RPC endpoints. A cleartext http:// RPC on a signing/
+  // facilitator path is a downgrade (MITM), so return null rather than fall back to one.
+  return untracked[0]?.url ?? limited[0]?.url ?? httpsUrls[0]?.url ?? null;
 }

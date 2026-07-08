@@ -100,7 +100,7 @@ export function humanAmountToSmallestUnit(
   const kept = fracPart.slice(0, asset.decimals).padEnd(asset.decimals, "0");
   const scaled = BigInt((intPart || "0") + kept);
   const roundUp = fracPart.charAt(asset.decimals) >= "5";
-  return (roundUp ? scaled + 1n : scaled).toString();
+  return (roundUp ? scaled + BigInt(1) : scaled).toString();
 }
 
 export function estimatePriceUsd(
