@@ -1,10 +1,10 @@
 import prisma from "@masumi/database/client";
 
+import { veridianConfig } from "@/lib/config/veridian.config";
 import {
   shouldReadOnChainAgentVerification,
   shouldUseDbVerificationFallback,
 } from "@/lib/config/verification.config";
-import { veridianConfig } from "@/lib/config/veridian.config";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import type {
   PaymentNodeNetwork,
