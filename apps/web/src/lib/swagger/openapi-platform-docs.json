@@ -17168,6 +17168,7 @@
                           },
                           "amount": {
                             "type": "string",
+                            "maxLength": 78,
                             "pattern": "^\\d+$"
                           },
                           "payTo": {
@@ -17466,6 +17467,7 @@
                           },
                           "amount": {
                             "type": "string",
+                            "maxLength": 78,
                             "pattern": "^\\d+$"
                           },
                           "payTo": {
@@ -17784,6 +17786,7 @@
                             },
                             "amount": {
                               "type": "string",
+                              "maxLength": 78,
                               "pattern": "^\\d+$"
                             },
                             "payTo": {
@@ -17876,6 +17879,7 @@
                     },
                     "amount": {
                       "type": "string",
+                      "maxLength": 78,
                       "pattern": "^\\d+$"
                     },
                     "payTo": {
@@ -20290,6 +20294,7 @@
                   },
                   "remainingAmount": {
                     "type": "string",
+                    "maxLength": 78,
                     "pattern": "^\\d+$"
                   }
                 },
@@ -22070,6 +22075,7 @@
                   },
                   "thresholdAmount": {
                     "type": "string",
+                    "maxLength": 78,
                     "pattern": "^\\d+$"
                   },
                   "enabled": {
@@ -22245,6 +22251,7 @@
                   },
                   "thresholdAmount": {
                     "type": "string",
+                    "maxLength": 78,
                     "pattern": "^\\d+$"
                   },
                   "enabled": {
