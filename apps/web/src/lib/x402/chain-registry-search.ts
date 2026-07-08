@@ -1,4 +1,17 @@
+import { assertSafeRpcUrl } from "@masumi/payment-source-x402";
+
 import type { ChainRegistryEntry } from "./chain-registry-types";
+
+/** https RPC whose host is not obviously private/loopback/link-local. */
+function isPublicHttpsRpc(url: string): boolean {
+  if (!url.startsWith("https://")) return false;
+  try {
+    assertSafeRpcUrl(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const TESTNET_NAME_PATTERN =
   /\b(sepolia|goerli|holesky|testnet|amoy|fuji|mumbai|chapel|alfajores|moonbase|devnet|rinkeby|kovan|arb[- ]?sep|op[- ]?sep|base[- ]?sep)\b/i;
@@ -151,8 +164,12 @@ export function pickPreferredRpcUrl(rpcs: unknown): string | null {
     return [];
   });
 
+  // Chainlist is an untrusted upstream feed. Only ever suggest https RPCs whose
+  // host isn't private/loopback/link-local, so a poisoned feed can't surface an
+  // internal-target URL as a "recommended" endpoint. The persist path re-checks
+  // with DNS resolution; this is the cheaper string-level filter for display.
   const httpsUrls = candidates.filter((candidate) =>
-    candidate.url.startsWith("https://"),
+    isPublicHttpsRpc(candidate.url),
   );
   const untracked = httpsUrls.filter(
     (candidate) => candidate.tracking === "none",

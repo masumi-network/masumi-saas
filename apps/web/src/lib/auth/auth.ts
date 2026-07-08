@@ -40,6 +40,7 @@ import {
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
 import {
   ACCOUNT_SOFT_DELETED_MESSAGE,
+  assertUserIsNotSoleOrgOwner,
   softDeleteUserAccount,
 } from "@/lib/auth/soft-delete-account";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
@@ -431,6 +432,9 @@ export const auth = betterAuth({
       // hard delete by throwing, so the row and all its financial/audit data are
       // retained. `deleteAccountAction` treats this sentinel as success.
       beforeDelete: async (user) => {
+        // Refuse if the user is the sole owner of any org (throws a user-facing
+        // message; nothing is disabled yet).
+        await assertUserIsNotSoleOrgOwner(user.id);
         await softDeleteUserAccount(user.id);
         throw new APIError("BAD_REQUEST", {
           message: ACCOUNT_SOFT_DELETED_MESSAGE,

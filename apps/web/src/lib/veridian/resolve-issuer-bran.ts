@@ -10,9 +10,11 @@ export async function resolveIssuerBran(): Promise<string | null> {
     try {
       return await decryptPaymentNodeSecret(veridianConfig.issuerBranEncrypted);
     } catch (error) {
+      // Log only the message (not the full error/stack) to avoid leaking key
+      // material or env details from the decrypt failure.
       console.error(
         "[Veridian] Failed to decrypt VERIDIAN_ISSUER_BRAN_ENCRYPTED:",
-        error,
+        error instanceof Error ? error.message : "unknown error",
       );
       return null;
     }

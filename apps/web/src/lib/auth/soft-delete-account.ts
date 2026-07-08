@@ -15,6 +15,39 @@ export const ACCOUNT_DELETED_BAN_REASON = "account_deleted";
  */
 export const ACCOUNT_SOFT_DELETED_MESSAGE = "__masumi_account_soft_deleted__";
 
+/** User-facing message when a sole org owner tries to delete their account. */
+export const SOLE_ORG_OWNER_BLOCK_MESSAGE =
+  "You are the sole owner of an organization. Transfer ownership (or delete the organization) before deleting your account.";
+
+/**
+ * Block account deletion when the user is the ONLY owner of any organization.
+ * Organizations cannot be hard-deleted (`disableOrganizationDeletion`), so
+ * disabling their sole owner would leave the org unmanageable — no one could
+ * transfer ownership or administer it. Force an explicit hand-off first.
+ *
+ * Throws a plain Error (not the soft-delete sentinel) so `deleteAccountAction`
+ * surfaces the message and does NOT report success.
+ */
+export async function assertUserIsNotSoleOrgOwner(
+  userId: string,
+): Promise<void> {
+  const ownedOrgIds = (
+    await prisma.member.findMany({
+      where: { userId, role: "owner" },
+      select: { organizationId: true },
+    })
+  ).map((member) => member.organizationId);
+
+  for (const organizationId of ownedOrgIds) {
+    const otherOwners = await prisma.member.count({
+      where: { organizationId, role: "owner", userId: { not: userId } },
+    });
+    if (otherOwners === 0) {
+      throw new Error(SOLE_ORG_OWNER_BLOCK_MESSAGE);
+    }
+  }
+}
+
 /**
  * Soft-delete a user account: keep the row (and all of its financial/audit data
  * — payment attempts, settlements, agents) but block every authentication path.

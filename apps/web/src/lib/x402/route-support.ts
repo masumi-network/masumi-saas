@@ -29,6 +29,12 @@ export function rethrowIfHttpError(err: unknown): void {
     typeof (err as { message?: unknown }).message === "string"
   ) {
     const httpErr = err as { statusCode: number; message: string };
+    // Only rethrow values that are plausibly HTTP errors from our service
+    // layer. A foreign lib error that happens to carry a numeric `statusCode`
+    // (out of the HTTP range) must not become an ApiError with a bogus status.
+    if (httpErr.statusCode < 400 || httpErr.statusCode > 599) {
+      return;
+    }
     throw new ApiError(
       httpErr.statusCode as ContentfulStatusCode,
       httpErr.message,

@@ -60,7 +60,7 @@ export const x402PaymentPayloadSchema = z.object({
 });
 
 export const verifySettleSchemaInput = z.object({
-  supportedPaymentSourceId: z.string(),
+  supportedPaymentSourceId: z.string().max(64),
   paymentPayload: x402PaymentPayloadSchema,
   apiKeyId: z.string().optional(),
 });

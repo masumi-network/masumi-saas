@@ -5,6 +5,7 @@ const prismaMock = {
   apikey: { updateMany: vi.fn() },
   oauthAccessToken: { deleteMany: vi.fn() },
   session: { deleteMany: vi.fn() },
+  member: { findMany: vi.fn(), count: vi.fn() },
 };
 
 vi.mock("server-only", () => ({}));
@@ -13,8 +14,10 @@ vi.mock("@masumi/database/client", () => ({ default: prismaMock }));
 const {
   softDeleteUserAccount,
   isAccountSoftDeletedSignal,
+  assertUserIsNotSoleOrgOwner,
   ACCOUNT_DELETED_BAN_REASON,
   ACCOUNT_SOFT_DELETED_MESSAGE,
+  SOLE_ORG_OWNER_BLOCK_MESSAGE,
 } = await import("./soft-delete-account");
 
 beforeEach(() => {
@@ -23,6 +26,8 @@ beforeEach(() => {
   prismaMock.apikey.updateMany.mockResolvedValue({ count: 0 });
   prismaMock.oauthAccessToken.deleteMany.mockResolvedValue({ count: 0 });
   prismaMock.session.deleteMany.mockResolvedValue({ count: 0 });
+  prismaMock.member.findMany.mockResolvedValue([]);
+  prismaMock.member.count.mockResolvedValue(0);
 });
 
 describe("softDeleteUserAccount", () => {
@@ -51,6 +56,35 @@ describe("softDeleteUserAccount", () => {
     expect(prismaMock.session.deleteMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },
     });
+  });
+});
+
+describe("assertUserIsNotSoleOrgOwner", () => {
+  it("passes when the user owns no organizations", async () => {
+    prismaMock.member.findMany.mockResolvedValueOnce([]);
+    await expect(
+      assertUserIsNotSoleOrgOwner("user-1"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("passes when every owned org has another owner", async () => {
+    prismaMock.member.findMany.mockResolvedValueOnce([
+      { organizationId: "org-1" },
+    ]);
+    prismaMock.member.count.mockResolvedValueOnce(1); // another owner exists
+    await expect(
+      assertUserIsNotSoleOrgOwner("user-1"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("blocks when the user is the sole owner of an org", async () => {
+    prismaMock.member.findMany.mockResolvedValueOnce([
+      { organizationId: "org-1" },
+    ]);
+    prismaMock.member.count.mockResolvedValueOnce(0); // no other owners
+    await expect(assertUserIsNotSoleOrgOwner("user-1")).rejects.toThrow(
+      SOLE_ORG_OWNER_BLOCK_MESSAGE,
+    );
   });
 });
 

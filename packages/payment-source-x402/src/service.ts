@@ -630,68 +630,61 @@ export async function upsertX402Network(
     updatedAt: true,
   } satisfies Prisma.X402NetworkSelect;
 
+  const findWhere =
+    scope.mode === "org"
+      ? { organizationId: scope.organizationId, caip2Id: input.caip2Id }
+      : { userId: scope.userId, caip2Id: input.caip2Id, organizationId: null };
+  const createData = {
+    userId: scope.mode === "org" ? input.userId : scope.userId,
+    organizationId: scope.mode === "org" ? scope.organizationId : null,
+    caip2Id: input.caip2Id,
+    displayName: input.displayName,
+    rpcUrl: input.rpcUrl,
+    isTestnet: input.isTestnet ?? false,
+    isEnabled: input.isEnabled ?? true,
+    defaultAsset: input.defaultAsset,
+    facilitatorWalletId: input.facilitatorWalletId,
+    createdByUserId: input.createdByUserId,
+  };
+
+  const existing = await prisma.x402Network.findFirst({
+    where: findWhere,
+    select: { id: true },
+  });
+
   let result: Prisma.X402NetworkGetPayload<{ select: typeof select }>;
-  if (scope.mode === "org") {
-    const existing = await prisma.x402Network.findFirst({
-      where: {
-        organizationId: scope.organizationId,
-        caip2Id: input.caip2Id,
-      },
-      select: { id: true },
+  if (existing != null) {
+    result = await prisma.x402Network.update({
+      where: { id: existing.id },
+      data: updateData,
+      select,
     });
-    result =
-      existing != null
-        ? await prisma.x402Network.update({
-            where: { id: existing.id },
-            data: updateData,
-            select,
-          })
-        : await prisma.x402Network.create({
-            data: {
-              userId: input.userId,
-              organizationId: scope.organizationId,
-              caip2Id: input.caip2Id,
-              displayName: input.displayName,
-              rpcUrl: input.rpcUrl,
-              isTestnet: input.isTestnet ?? false,
-              isEnabled: input.isEnabled ?? true,
-              defaultAsset: input.defaultAsset,
-              facilitatorWalletId: input.facilitatorWalletId,
-              createdByUserId: input.createdByUserId,
-            },
-            select,
-          });
   } else {
-    const existing = await prisma.x402Network.findFirst({
-      where: {
-        userId: scope.userId,
-        caip2Id: input.caip2Id,
-        organizationId: null,
-      },
-      select: { id: true },
-    });
-    result =
-      existing != null
-        ? await prisma.x402Network.update({
-            where: { id: existing.id },
-            data: updateData,
-            select,
-          })
-        : await prisma.x402Network.create({
-            data: {
-              userId: scope.userId,
-              organizationId: null,
-              caip2Id: input.caip2Id,
-              displayName: input.displayName,
-              rpcUrl: input.rpcUrl,
-              isTestnet: input.isTestnet ?? false,
-              isEnabled: input.isEnabled ?? true,
-              defaultAsset: input.defaultAsset,
-              facilitatorWalletId: input.facilitatorWalletId,
-              createdByUserId: input.createdByUserId,
-            },
-            select,
-          });
+    try {
+      result = await prisma.x402Network.create({ data: createData, select });
+    } catch (error) {
+      // Concurrent upsert of the same (tenant, caip2Id) can race between the
+      // findFirst above and this create, tripping the partial-unique index
+      // (P2002). Recover idempotently as an update instead of surfacing a 500.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        (error as { code?: unknown }).code === "P2002"
+      ) {
+        const row = await prisma.x402Network.findFirst({
+          where: findWhere,
+          select: { id: true },
+        });
+        if (row == null) throw error;
+        result = await prisma.x402Network.update({
+          where: { id: row.id },
+          data: updateData,
+          select,
+        });
+      } else {
+        throw error;
+      }
+    }
   }
 
   const { FacilitatorWallet, ...network } = result;

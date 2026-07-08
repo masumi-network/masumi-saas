@@ -17136,7 +17136,8 @@
                 "type": "object",
                 "properties": {
                   "supportedPaymentSourceId": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64
                   },
                   "paymentPayload": {
                     "type": "object",
@@ -17435,7 +17436,8 @@
                 "type": "object",
                 "properties": {
                   "supportedPaymentSourceId": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 64
                   },
                   "paymentPayload": {
                     "type": "object",
