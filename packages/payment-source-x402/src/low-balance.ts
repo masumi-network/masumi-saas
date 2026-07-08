@@ -257,34 +257,48 @@ export async function evaluateX402LowBalanceRules(
       rule.thresholdAmount,
     );
     const previousStatus = rule.status;
-    await prisma.x402EvmWalletLowBalanceRule.update({
-      where: { id: rule.id },
-      data: {
-        status: nextStatus,
-        lastKnownAmount: currentAmount,
-        lastCheckedAt: new Date(),
-        ...(nextStatus === LowBalanceStatus.Low &&
-        previousStatus !== LowBalanceStatus.Low
-          ? { lastAlertedAt: new Date() }
-          : {}),
-      },
-    });
-
-    if (
+    const isTransitionIntoLow =
       nextStatus === LowBalanceStatus.Low &&
-      previousStatus !== LowBalanceStatus.Low
-    ) {
-      alerts.push({
-        userId: rule.EvmWallet.userId,
-        ruleId: rule.id,
-        evmWalletId: rule.evmWalletId,
-        walletAddress: rule.EvmWallet.address,
-        walletType: rule.EvmWallet.type,
-        caip2Network: rule.caip2Network,
-        asset: rule.asset,
-        thresholdAmount: rule.thresholdAmount.toString(),
-        currentAmount: currentAmount.toString(),
-        checkedAt: new Date().toISOString(),
+      previousStatus !== LowBalanceStatus.Low;
+
+    if (isTransitionIntoLow) {
+      // Atomically claim the →Low transition. Two overlapping scheduler runs
+      // both read `previousStatus` as non-Low; without this guard both would
+      // emit a duplicate alert. Only the run whose conditional update actually
+      // flips the row (count === 1) is the one that transitioned it.
+      const claimed = await prisma.x402EvmWalletLowBalanceRule.updateMany({
+        where: { id: rule.id, status: { not: LowBalanceStatus.Low } },
+        data: {
+          status: nextStatus,
+          lastKnownAmount: currentAmount,
+          lastCheckedAt: new Date(),
+          lastAlertedAt: new Date(),
+        },
+      });
+
+      if (claimed.count === 1) {
+        alerts.push({
+          userId: rule.EvmWallet.userId,
+          ruleId: rule.id,
+          evmWalletId: rule.evmWalletId,
+          walletAddress: rule.EvmWallet.address,
+          walletType: rule.EvmWallet.type,
+          caip2Network: rule.caip2Network,
+          asset: rule.asset,
+          thresholdAmount: rule.thresholdAmount.toString(),
+          currentAmount: currentAmount.toString(),
+          checkedAt: new Date().toISOString(),
+        });
+      }
+    } else {
+      // No alerting transition — just record the latest observation.
+      await prisma.x402EvmWalletLowBalanceRule.update({
+        where: { id: rule.id },
+        data: {
+          status: nextStatus,
+          lastKnownAmount: currentAmount,
+          lastCheckedAt: new Date(),
+        },
       });
     }
   }

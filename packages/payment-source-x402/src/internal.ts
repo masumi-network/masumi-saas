@@ -1,3 +1,5 @@
+import { lookup as dnsLookup } from "node:dns/promises";
+
 import { X402EvmWalletType } from "@masumi/database";
 import prisma from "@masumi/database/client";
 import createHttpError from "http-errors";
@@ -67,6 +69,9 @@ function isPrivateIpv4(ip: string): boolean {
   if (a === 192 && b === 168) return true;
   if (a === 169 && b === 254) return true;
   if (a === 100 && b >= 64 && b <= 127) return true;
+  // Multicast (224.0.0.0/4) and reserved / broadcast (240.0.0.0/4, incl.
+  // 255.255.255.255) — not routable public unicast, reject.
+  if (a >= 224) return true;
   return false;
 }
 
@@ -76,9 +81,12 @@ function isPrivateHost(hostname: string): boolean {
   if (host.includes(":")) {
     if (host === "::1" || host === "::") return true;
     if (
-      host.startsWith("fc") ||
+      host.startsWith("fc") || // unique local (fc00::/7)
       host.startsWith("fd") ||
-      /^fe[89ab]/.test(host)
+      /^fe[89ab]/.test(host) || // link-local (fe80::/10)
+      host.startsWith("ff") || // multicast (ff00::/8)
+      host.startsWith("64:ff9b") || // NAT64 (64:ff9b::/96, 64:ff9b:1::/48)
+      host.startsWith("100::") // discard-only prefix (100::/64)
     )
       return true;
     const mapped = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host);
@@ -86,6 +94,12 @@ function isPrivateHost(hostname: string): boolean {
     return false;
   }
   if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return isPrivateIpv4(host);
+  // Non-standard numeric encodings (decimal int "2130706433", hex "0x7f000001",
+  // octal, or short-form dotted "127.1") are not caught by the dotted-quad
+  // check above but still resolve to internal IPs. Treat any all-numeric /
+  // hex host that is not a clean public dotted-quad as unsafe.
+  if (/^0x[0-9a-f]+$/i.test(host)) return true;
+  if (/^[0-9.]+$/.test(host)) return true;
   return false;
 }
 
@@ -110,6 +124,39 @@ export function assertSafeRpcUrl(rpcUrl: string): void {
 export function safeHttpTransport(rpcUrl: string) {
   assertSafeRpcUrl(rpcUrl);
   return http(rpcUrl, { timeout: RPC_REQUEST_TIMEOUT_MS });
+}
+
+/**
+ * DNS-aware SSRF guard. `assertSafeRpcUrl` only inspects the hostname string, so
+ * a public DNS name that resolves to an internal address (169.254.169.254,
+ * 10.x, loopback, …) would slip through. Resolve the host and reject if ANY
+ * resolved address is private/loopback/link-local. Call this at the persist and
+ * probe boundaries so a malicious endpoint is rejected before it is stored or
+ * reached. Note: this does not fully close request-time DNS rebinding on
+ * already-stored URLs (a pinned-lookup dispatcher would be required for that).
+ */
+export async function assertSafeRpcUrlResolved(rpcUrl: string): Promise<void> {
+  assertSafeRpcUrl(rpcUrl);
+  const { hostname } = new URL(rpcUrl);
+  const host = hostname.replace(/^\[|\]$/g, "");
+  // Literal IPs are already fully validated by assertSafeRpcUrl.
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(":")) return;
+
+  let resolved: { address: string }[];
+  try {
+    resolved = await dnsLookup(host, { all: true });
+  } catch {
+    throw createHttpError(
+      400,
+      "x402 network rpcUrl host could not be resolved",
+    );
+  }
+  if (resolved.some((entry) => isPrivateHost(entry.address))) {
+    throw createHttpError(
+      400,
+      "x402 network rpcUrl must not resolve to a private, loopback or link-local address",
+    );
+  }
 }
 
 export function createChain(
@@ -189,7 +236,7 @@ export async function probeX402NetworkRpc(input: {
   }
 
   try {
-    assertSafeRpcUrl(input.rpcUrl);
+    await assertSafeRpcUrlResolved(input.rpcUrl);
   } catch (error) {
     const message =
       error instanceof Error

@@ -10,18 +10,23 @@ export async function resolveIssuerBran(): Promise<string | null> {
     try {
       return await decryptPaymentNodeSecret(veridianConfig.issuerBranEncrypted);
     } catch (error) {
+      // Log only the message (not the full error/stack) to avoid leaking key
+      // material or env details from the decrypt failure.
       console.error(
         "[Veridian] Failed to decrypt VERIDIAN_ISSUER_BRAN_ENCRYPTED:",
-        error,
+        error instanceof Error ? error.message : "unknown error",
       );
       return null;
     }
   }
 
   if (veridianConfig.issuerBranPlain) {
+    // A plaintext issuer bran grants full control of the issuer's KERIA channel.
+    // Refuse to use it in production so a misconfigured deploy fails closed
+    // rather than silently running on an insecurely-stored secret.
     if (process.env.NODE_ENV === "production") {
-      console.warn(
-        "[Veridian] VERIDIAN_ISSUER_BRAN is set in production — use VERIDIAN_ISSUER_BRAN_ENCRYPTED instead",
+      throw new Error(
+        "VERIDIAN_ISSUER_BRAN (plaintext) must not be used in production — set VERIDIAN_ISSUER_BRAN_ENCRYPTED instead.",
       );
     }
     return veridianConfig.issuerBranPlain;

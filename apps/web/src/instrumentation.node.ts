@@ -86,7 +86,11 @@ function startX402LowBalanceMonitor(): void {
         });
       };
       run();
-      setInterval(run, intervalMs);
+      const timer = setInterval(run, intervalMs);
+      // Don't keep the process alive solely for the monitor, and clear the
+      // timer on graceful shutdown so a halted instance stops firing cycles.
+      timer.unref?.();
+      process.once("beforeExit", () => clearInterval(timer));
       console.info("[x402] low-balance monitor started", { intervalMs });
     },
   );

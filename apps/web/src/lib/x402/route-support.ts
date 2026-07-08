@@ -29,6 +29,12 @@ export function rethrowIfHttpError(err: unknown): void {
     typeof (err as { message?: unknown }).message === "string"
   ) {
     const httpErr = err as { statusCode: number; message: string };
+    // Only rethrow values that are plausibly HTTP errors from our service
+    // layer. A foreign lib error that happens to carry a numeric `statusCode`
+    // (out of the HTTP range) must not become an ApiError with a bogus status.
+    if (httpErr.statusCode < 400 || httpErr.statusCode > 599) {
+      return;
+    }
     throw new ApiError(
       httpErr.statusCode as ContentfulStatusCode,
       httpErr.message,
@@ -106,18 +112,28 @@ export async function requireX402BudgetWrite(
   await requireX402SessionBudgetAccess(authContext);
 }
 
+/**
+ * Networks the OIDC caller may act on, or null when unrestricted / not OIDC.
+ *
+ * `action` MUST match the operation being authorized. A write operation
+ * (pay/settle/verify) must gate on WRITE scopes only — otherwise a caller with
+ * `payments:read:mainnet` (+ write on any other network to pass the coarse
+ * pay-access check) would be permitted to move funds on mainnet with only read
+ * scope there. A read operation may use either scope, since write implies read.
+ */
 export function getCaip2NetworkLimitFromAuth(
   authContext: AuthenticatedApiContext,
+  action: "read" | "write",
 ): string[] | null {
   if (authContext.authMethod !== "oidcAccessToken") {
     return null;
   }
 
   const scopes = authContext.oidcScopes;
-  const hasPreprod = scopes.includes(
+  const hasPreprodWrite = scopes.includes(
     buildNetworkedOidcScope("payments", "write", "preprod"),
   );
-  const hasMainnet = scopes.includes(
+  const hasMainnetWrite = scopes.includes(
     buildNetworkedOidcScope("payments", "write", "mainnet"),
   );
   const hasPreprodRead = scopes.includes(
@@ -127,8 +143,11 @@ export function getCaip2NetworkLimitFromAuth(
     buildNetworkedOidcScope("payments", "read", "mainnet"),
   );
 
-  const allowPreprod = hasPreprod || hasPreprodRead;
-  const allowMainnet = hasMainnet || hasMainnetRead;
+  // Read is implied by write; write is NEVER implied by read.
+  const allowPreprod =
+    action === "write" ? hasPreprodWrite : hasPreprodWrite || hasPreprodRead;
+  const allowMainnet =
+    action === "write" ? hasMainnetWrite : hasMainnetWrite || hasMainnetRead;
 
   if (allowPreprod && allowMainnet) {
     return null;
@@ -143,6 +162,24 @@ export function getCaip2NetworkLimitFromAuth(
   }
 
   return limits.length > 0 ? limits : null;
+}
+
+/**
+ * Enforce the OIDC caller's write-network scope for admin write endpoints
+ * (network upsert / RPC probe / low-balance rule) that take a target chain in
+ * the body. Without this, a caller with only `payments:write:preprod` could
+ * create/probe/rule mainnet networks — the pay/verify/settle paths gate on this
+ * via `isAllowedCaip2Network`, but these admin writes did not. No-op for
+ * session callers (limit is null).
+ */
+export function assertCaip2WithinWriteScope(
+  authContext: AuthenticatedApiContext,
+  caip2: string,
+): void {
+  const limit = getCaip2NetworkLimitFromAuth(authContext, "write");
+  if (limit !== null && !limit.includes(caip2)) {
+    throw new ApiError(401, "Unauthorized network");
+  }
 }
 
 function toIsoString(date: Date): string {

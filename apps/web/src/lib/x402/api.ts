@@ -58,7 +58,12 @@ export async function x402Mutate<T>(
   options?: { successMessage?: string; errorMessage?: string },
 ): Promise<T | null> {
   try {
-    const result = await x402Fetch<T>(path, init);
+    // When x402Mutate shows its own error toast, silence x402Fetch's so a single
+    // failure doesn't surface two toasts; otherwise let x402Fetch show the server message.
+    const result = await x402Fetch<T>(path, {
+      ...init,
+      silentErrors: Boolean(options?.errorMessage),
+    });
     if (options?.successMessage) toast.success(options.successMessage);
     return result;
   } catch {

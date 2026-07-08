@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
     mockX402EvmWalletDelete: vi.fn() as MockFn,
     mockBudgetFindFirst: vi.fn() as MockFn,
     mockBudgetDelete: vi.fn() as MockFn,
+    mockBudgetDeleteMany: vi.fn() as MockFn,
     mockBudgetUpdateMany: vi.fn() as MockFn,
     mockBudgetUpdate: vi.fn() as MockFn,
     mockBudgetUpsert: vi.fn() as MockFn,
@@ -110,6 +111,7 @@ vi.mock("@masumi/database/client", () => ({
       update: mocks.mockBudgetUpdate,
       upsert: mocks.mockBudgetUpsert,
       delete: mocks.mockBudgetDelete,
+      deleteMany: mocks.mockBudgetDeleteMany,
       findMany: vi.fn(),
     },
     $transaction: mocks.mockPrismaTransaction,
@@ -346,6 +348,7 @@ function resetDefaultMocks() {
   mocks.mockCreatePaymentPayload.mockResolvedValue(paymentPayload);
   mocks.mockBudgetFindFirst.mockResolvedValue({ id: "budget-1" });
   mocks.mockBudgetDelete.mockResolvedValue({ id: "budget-1" });
+  mocks.mockBudgetDeleteMany.mockResolvedValue({ count: 1 });
   mocks.mockBudgetUpdateMany.mockResolvedValue({ count: 1 });
   mocks.mockBudgetUpdate.mockResolvedValue({ id: "budget-1" });
   mocks.mockBudgetUpsert.mockResolvedValue({
@@ -443,6 +446,7 @@ describe("x402 service", () => {
         payer: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         supportedPaymentSourceId: source.id,
         userId: USER_ID,
+        x402NetworkId: networkRow.id,
       },
     });
     mocks.mockX402PaymentAttemptCreate.mockResolvedValue({
@@ -470,11 +474,15 @@ describe("x402 service", () => {
       },
     });
     expect(mocks.mockFacilitatorSettle).not.toHaveBeenCalled();
+    // The replay attempt must inherit the original settlement's network id —
+    // X402PaymentAttempt.x402NetworkId is non-null, so a missing propagation
+    // would fail the create at runtime.
     expect(mocks.mockX402PaymentAttemptCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           status: "Replayed",
           paymentPayloadHash,
+          x402NetworkId: networkRow.id,
         }),
       }),
     );
@@ -615,6 +623,49 @@ describe("x402 service", () => {
     expect(mocks.mockFacilitatorVerify).not.toHaveBeenCalled();
   });
 
+  it("rejects verify for a source owned by another user (no facilitator use)", async () => {
+    const { verifyX402Payment } = await import("./service.js");
+    mocks.mockSupportedPaymentSourceFindUnique.mockResolvedValueOnce({
+      ...source,
+      agent: { ...source.agent, userId: "other-user", organizationId: null },
+    });
+
+    await expect(
+      verifyX402Payment({
+        userId: USER_ID,
+        apiKeyId: API_KEY_ID,
+        caip2NetworkLimit: [source.network],
+        supportedPaymentSourceId: source.id,
+        paymentPayload: paymentPayload as never,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(mocks.mockFacilitatorVerify).not.toHaveBeenCalled();
+    expect(mocks.mockX402PaymentAttemptCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects settle for a source in another organization (no facilitator use)", async () => {
+    const { settleX402Payment } = await import("./service.js");
+    mocks.mockSupportedPaymentSourceFindUnique.mockResolvedValueOnce({
+      ...source,
+      agent: { ...source.agent, userId: "other-user", organizationId: "org-b" },
+    });
+
+    await expect(
+      settleX402Payment({
+        userId: USER_ID,
+        organizationId: "org-a",
+        apiKeyId: API_KEY_ID,
+        caip2NetworkLimit: [source.network],
+        supportedPaymentSourceId: source.id,
+        paymentPayload: paymentPayload as never,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(mocks.mockFacilitatorSettle).not.toHaveBeenCalled();
+    expect(mocks.mockX402PaymentAttemptCreate).not.toHaveBeenCalled();
+  });
+
   it("normalizes x402 budget assets to lowercase when upserting", async () => {
     const { setX402WalletBudget } = await import("./service.js");
     const result = await setX402WalletBudget({
@@ -686,23 +737,21 @@ describe("x402 service", () => {
 
     expect(result.budgetId).toBe("budget-1");
     expect(result.deletedAt).toBeInstanceOf(Date);
-    expect(mocks.mockBudgetFindFirst).toHaveBeenCalledWith(
+    // Single scoped deleteMany (tenant ownership in the where) — no separate
+    // findFirst → avoids the TOCTOU / P2025 on concurrent delete.
+    expect(mocks.mockBudgetDeleteMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: "budget-1" }),
       }),
     );
-    expect(mocks.mockBudgetDelete).toHaveBeenCalledWith({
-      where: { id: "budget-1" },
-    });
   });
 
   it("rejects deleting a missing x402 wallet budget with a 404", async () => {
     const { deleteX402WalletBudget } = await import("./service.js");
-    mocks.mockBudgetFindFirst.mockResolvedValueOnce(null);
+    mocks.mockBudgetDeleteMany.mockResolvedValueOnce({ count: 0 });
     await expect(
       deleteX402WalletBudget({ userId: USER_ID }, "missing-budget"),
     ).rejects.toMatchObject({ statusCode: 404 });
-    expect(mocks.mockBudgetDelete).not.toHaveBeenCalled();
   });
 
   it("rejects creating a second wallet of the same type for a tenant", async () => {

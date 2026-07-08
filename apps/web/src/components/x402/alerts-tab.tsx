@@ -50,6 +50,10 @@ import {
 } from "@/lib/hooks/use-x402";
 import { cn, formatX402Amount, groupDigits, shortenAddress } from "@/lib/utils";
 import { x402Mutate } from "@/lib/x402/api";
+import {
+  EVM_NATIVE_DECIMALS,
+  getEvmNativeCurrencySymbol,
+} from "@/lib/x402/evm-config";
 import type { X402LowBalanceRule } from "@/lib/x402/types";
 
 import { ChainLabel } from "./chain-icon";
@@ -117,10 +121,17 @@ export function AlertsTab() {
   const formatRuleAmount = (
     amount: string | null | undefined,
     asset: string,
-  ) =>
-    asset === NATIVE
-      ? `${formatX402Amount(amount, 18)} ETH`
-      : `${groupDigits(amount)} ${t("baseUnits")}`;
+    caip2Network: string,
+  ) => {
+    if (asset !== NATIVE) {
+      return `${groupDigits(amount)} ${t("baseUnits")}`;
+    }
+    // Native gas is 18 decimals across EVM chains, but the symbol varies
+    // (ETH / POL / BNB / AVAX …). Fall back to a neutral label when unknown
+    // rather than mislabelling every chain as ETH.
+    const symbol = getEvmNativeCurrencySymbol(caip2Network) ?? t("nativeGas");
+    return `${formatX402Amount(amount, EVM_NATIVE_DECIMALS)} ${symbol}`;
+  };
 
   const assetLabel = (asset: string) =>
     asset === NATIVE ? t("nativeGas") : shortenAddress(asset, 6);
@@ -255,11 +266,19 @@ export function AlertsTab() {
                     {assetLabel(rule.asset)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {formatRuleAmount(rule.thresholdAmount, rule.asset)}
+                    {formatRuleAmount(
+                      rule.thresholdAmount,
+                      rule.asset,
+                      rule.caip2Network,
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm text-muted-foreground">
                     {rule.lastKnownAmount != null
-                      ? formatRuleAmount(rule.lastKnownAmount, rule.asset)
+                      ? formatRuleAmount(
+                          rule.lastKnownAmount,
+                          rule.asset,
+                          rule.caip2Network,
+                        )
                       : "—"}
                   </TableCell>
                   <TableCell>

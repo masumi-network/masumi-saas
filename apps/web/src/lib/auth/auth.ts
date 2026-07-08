@@ -38,6 +38,11 @@ import {
   resetEmailSendLimit,
 } from "@/lib/auth/email-send-rate-limit";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
+import {
+  ACCOUNT_SOFT_DELETED_MESSAGE,
+  assertUserIsNotSoleOrgOwner,
+  softDeleteUserAccount,
+} from "@/lib/auth/soft-delete-account";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
 import {
@@ -422,6 +427,19 @@ export const auth = betterAuth({
     },
     deleteUser: {
       enabled: true,
+      // Soft delete: Better Auth verifies the password before this hook, then we
+      // disable the account (ban + revoke API keys + sessions) and abort the
+      // hard delete by throwing, so the row and all its financial/audit data are
+      // retained. `deleteAccountAction` treats this sentinel as success.
+      beforeDelete: async (user) => {
+        // Refuse if the user is the sole owner of any org (throws a user-facing
+        // message; nothing is disabled yet).
+        await assertUserIsNotSoleOrgOwner(user.id);
+        await softDeleteUserAccount(user.id);
+        throw new APIError("BAD_REQUEST", {
+          message: ACCOUNT_SOFT_DELETED_MESSAGE,
+        });
+      },
     },
   },
   databaseHooks: {
@@ -686,6 +704,11 @@ export const auth = betterAuth({
       },
     }),
     organization({
+      // Soft-delete policy: organizations are never hard-deleted (which would
+      // cascade/SetNull their x402 networks & wallets and can collide with the
+      // personal-scope unique indexes). Disable Better Auth's hard-delete
+      // endpoint; a soft org-delete flow can be added if/when needed.
+      disableOrganizationDeletion: true,
       organizationCreation: {
         afterCreate: async ({ organization: _organization }) => {
           // Organization post-creation logic (e.g., Stripe customer setup)

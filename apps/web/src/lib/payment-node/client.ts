@@ -119,6 +119,17 @@ export type {
 
 const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
 
+/**
+ * Abort a payment-node request that hangs longer than this. Node's global
+ * `fetch` has no short default timeout, so a stalled upstream (dropped TCP,
+ * black-holed connection) would otherwise pin a worker indefinitely. Override
+ * with PAYMENT_NODE_REQUEST_TIMEOUT_MS.
+ */
+const PAYMENT_NODE_REQUEST_TIMEOUT_MS = (() => {
+  const raw = Number(process.env.PAYMENT_NODE_REQUEST_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 30_000;
+})();
+
 type PaymentNodeResponse<T> =
   | { status: "success"; data: T }
   | { status: string; error?: string; message?: string };
@@ -148,9 +159,22 @@ async function requestParse<T>(
       "Content-Type": "application/json",
     },
     body: options.body != null ? JSON.stringify(options.body) : undefined,
+    signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
   });
-  const json = (await res.json()) as PaymentNodeResponse<unknown>;
-  if (!res.ok) {
+  // Read the raw body first so a non-JSON error page (HTML 502/404 from an
+  // upstream gateway) still surfaces the HTTP status in the `${status}: ${msg}`
+  // format that callers (e.g. deregister-agent) parse, rather than throwing an
+  // opaque JSON SyntaxError that hides the status.
+  const rawBody = await res.text();
+  let json: PaymentNodeResponse<unknown> | null = null;
+  try {
+    json = rawBody
+      ? (JSON.parse(rawBody) as PaymentNodeResponse<unknown>)
+      : null;
+  } catch {
+    json = null;
+  }
+  if (!res.ok || json === null) {
     const errObj = json && "error" in json ? json.error : null;
     const msg =
       (errObj && typeof errObj === "object" && "message" in errObj
@@ -164,7 +188,9 @@ async function requestParse<T>(
       "[Payment Node] Request failed:",
       res.status,
       url.toString(),
-      JSON.stringify(json),
+      // Cap the logged body: error responses can echo addresses / ids, and an
+      // unbounded body bloats logs. A short excerpt is enough to diagnose.
+      rawBody.length > 500 ? `${rawBody.slice(0, 500)}…[truncated]` : rawBody,
     );
     throw new Error(`${res.status}: ${msg}`);
   }
@@ -427,6 +453,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         `${base}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
           headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+          signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
         },
       );
       if (res.status === 404) return null;
@@ -450,6 +477,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         `${base}/registry-inbox/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
           headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+          signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
         },
       );
       if (res.status === 404) return null;

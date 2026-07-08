@@ -35,7 +35,7 @@ import { decrypt, encrypt } from "./encryption.js";
 import {
   assertHexAddress,
   assertRpcServesDeclaredChain,
-  assertSafeRpcUrl,
+  assertSafeRpcUrlResolved,
   createChain,
   getEip155ChainId,
   getManagedWalletOrThrow,
@@ -123,9 +123,14 @@ function toRequirementExtra(value: unknown): X402RequirementExtra {
 }
 
 export function hashX402PaymentPayload(paymentPayload: unknown): string {
-  return createHash("sha256")
-    .update(canonicalStringify(paymentPayload) ?? "")
-    .digest("hex");
+  const canonical = canonicalStringify(paymentPayload);
+  // Never fall back to "": paymentPayloadHash is the settlement idempotency key,
+  // so two payloads that both fail to canonicalize would collide on the same
+  // hash and dedup to a single settlement. Reject instead.
+  if (!canonical) {
+    throw createHttpError(400, "Payment payload could not be canonicalized");
+  }
+  return createHash("sha256").update(canonical).digest("hex");
 }
 
 // The signed x402 payload embeds a reusable payment authorization (EIP-3009 / Permit2
@@ -135,7 +140,11 @@ export function hashX402PaymentPayload(paymentPayload: unknown): string {
 function encryptPaymentPayloadForStorage(
   paymentPayload: unknown,
 ): Prisma.InputJsonValue {
-  return encrypt(canonicalStringify(paymentPayload) ?? "");
+  const canonical = canonicalStringify(paymentPayload);
+  if (!canonical) {
+    throw createHttpError(400, "Payment payload could not be canonicalized");
+  }
+  return encrypt(canonical);
 }
 
 function getPaymentIdentifier(paymentPayload: PaymentPayload): {
@@ -228,6 +237,26 @@ async function getX402SupportedPaymentSourceOrThrow(
     throw createHttpError(404, "x402 supported payment source not found");
   }
   return source;
+}
+
+/**
+ * Inbound verify/settle must be authorized against the *caller's* tenant, not just the
+ * source id: the facilitator wallet that signs and pays gas belongs to the source owner, so
+ * an unscoped source lookup would let any authenticated tenant spend another tenant's wallet.
+ * Returns 404 (not 403) to avoid disclosing that a source id exists in another tenant.
+ */
+function assertSupportedSourceOwnedByCaller(
+  agent: { userId: string; organizationId: string | null } | null | undefined,
+  caller: X402ScopeInput,
+) {
+  const callerScope = resolveX402TenantScope(caller);
+  const ownedByCaller =
+    callerScope.mode === "org"
+      ? agent?.organizationId === callerScope.organizationId
+      : agent?.organizationId == null && agent?.userId === callerScope.userId;
+  if (!ownedByCaller) {
+    throw createHttpError(404, "x402 supported payment source not found");
+  }
 }
 
 /** Inbound facilitator lookup: org agents share org x402 config; personal agents use owner userId. */
@@ -564,7 +593,7 @@ export async function upsertX402Network(
 ) {
   const scope = resolveX402TenantScope(input);
   getEip155ChainId(input.caip2Id);
-  assertSafeRpcUrl(input.rpcUrl);
+  await assertSafeRpcUrlResolved(input.rpcUrl);
   if (input.defaultAsset != null)
     assertHexAddress(input.defaultAsset, "defaultAsset");
   // A facilitator must reference a live Selling wallet. Validating here returns a clear
@@ -601,68 +630,61 @@ export async function upsertX402Network(
     updatedAt: true,
   } satisfies Prisma.X402NetworkSelect;
 
+  const findWhere =
+    scope.mode === "org"
+      ? { organizationId: scope.organizationId, caip2Id: input.caip2Id }
+      : { userId: scope.userId, caip2Id: input.caip2Id, organizationId: null };
+  const createData = {
+    userId: scope.mode === "org" ? input.userId : scope.userId,
+    organizationId: scope.mode === "org" ? scope.organizationId : null,
+    caip2Id: input.caip2Id,
+    displayName: input.displayName,
+    rpcUrl: input.rpcUrl,
+    isTestnet: input.isTestnet ?? false,
+    isEnabled: input.isEnabled ?? true,
+    defaultAsset: input.defaultAsset,
+    facilitatorWalletId: input.facilitatorWalletId,
+    createdByUserId: input.createdByUserId,
+  };
+
+  const existing = await prisma.x402Network.findFirst({
+    where: findWhere,
+    select: { id: true },
+  });
+
   let result: Prisma.X402NetworkGetPayload<{ select: typeof select }>;
-  if (scope.mode === "org") {
-    const existing = await prisma.x402Network.findFirst({
-      where: {
-        organizationId: scope.organizationId,
-        caip2Id: input.caip2Id,
-      },
-      select: { id: true },
+  if (existing != null) {
+    result = await prisma.x402Network.update({
+      where: { id: existing.id },
+      data: updateData,
+      select,
     });
-    result =
-      existing != null
-        ? await prisma.x402Network.update({
-            where: { id: existing.id },
-            data: updateData,
-            select,
-          })
-        : await prisma.x402Network.create({
-            data: {
-              userId: input.userId,
-              organizationId: scope.organizationId,
-              caip2Id: input.caip2Id,
-              displayName: input.displayName,
-              rpcUrl: input.rpcUrl,
-              isTestnet: input.isTestnet ?? false,
-              isEnabled: input.isEnabled ?? true,
-              defaultAsset: input.defaultAsset,
-              facilitatorWalletId: input.facilitatorWalletId,
-              createdByUserId: input.createdByUserId,
-            },
-            select,
-          });
   } else {
-    const existing = await prisma.x402Network.findFirst({
-      where: {
-        userId: scope.userId,
-        caip2Id: input.caip2Id,
-        organizationId: null,
-      },
-      select: { id: true },
-    });
-    result =
-      existing != null
-        ? await prisma.x402Network.update({
-            where: { id: existing.id },
-            data: updateData,
-            select,
-          })
-        : await prisma.x402Network.create({
-            data: {
-              userId: scope.userId,
-              organizationId: null,
-              caip2Id: input.caip2Id,
-              displayName: input.displayName,
-              rpcUrl: input.rpcUrl,
-              isTestnet: input.isTestnet ?? false,
-              isEnabled: input.isEnabled ?? true,
-              defaultAsset: input.defaultAsset,
-              facilitatorWalletId: input.facilitatorWalletId,
-              createdByUserId: input.createdByUserId,
-            },
-            select,
-          });
+    try {
+      result = await prisma.x402Network.create({ data: createData, select });
+    } catch (error) {
+      // Concurrent upsert of the same (tenant, caip2Id) can race between the
+      // findFirst above and this create, tripping the partial-unique index
+      // (P2002). Recover idempotently as an update instead of surfacing a 500.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        (error as { code?: unknown }).code === "P2002"
+      ) {
+        const row = await prisma.x402Network.findFirst({
+          where: findWhere,
+          select: { id: true },
+        });
+        if (row == null) throw error;
+        result = await prisma.x402Network.update({
+          where: { id: row.id },
+          data: updateData,
+          select,
+        });
+      } else {
+        throw error;
+      }
+    }
   }
 
   const { FacilitatorWallet, ...network } = result;
@@ -796,14 +818,16 @@ export async function deleteX402WalletBudget(
   budgetId: string,
 ) {
   const scope = resolveX402TenantScope(scopeInput);
-  const existing = await prisma.x402WalletBudget.findFirst({
+  // Scoped deleteMany avoids a TOCTOU between an ownership findFirst and a bare
+  // delete-by-id: a concurrent delete of the same budget would make the second
+  // caller's `delete` throw Prisma P2025 (→ unhandled 500). deleteMany stays
+  // tenant-scoped and is idempotent; count === 0 means not found / already gone.
+  const deleted = await prisma.x402WalletBudget.deleteMany({
     where: { id: budgetId, ...budgetOwnershipWhere(scope) },
-    select: { id: true },
   });
-  if (existing == null) {
+  if (deleted.count === 0) {
     throw createHttpError(404, "x402 wallet budget not found");
   }
-  await prisma.x402WalletBudget.delete({ where: { id: budgetId } });
   return { budgetId, deletedAt: new Date() };
 }
 
@@ -896,12 +920,14 @@ export async function listX402Settlements(
 
 export async function verifyX402Payment({
   userId,
+  organizationId,
   apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
+  organizationId?: string | null;
   apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
@@ -910,6 +936,7 @@ export async function verifyX402Payment({
   const source = await getX402SupportedPaymentSourceOrThrow(
     supportedPaymentSourceId,
   );
+  assertSupportedSourceOwnedByCaller(source.agent, { userId, organizationId });
   assertPaymentPayloadMatchesRegisteredResource(source, paymentPayload);
   const requirements = sourceToRequirements(source);
   if (!isAllowedCaip2Network(caip2NetworkLimit, requirements.network)) {
@@ -978,12 +1005,14 @@ export async function verifyX402Payment({
 
 export async function settleX402Payment({
   userId,
+  organizationId,
   apiKeyId,
   caip2NetworkLimit,
   supportedPaymentSourceId,
   paymentPayload,
 }: {
   userId: string;
+  organizationId?: string | null;
   apiKeyId?: string | null;
   caip2NetworkLimit: string[] | null;
   supportedPaymentSourceId: string;
@@ -992,6 +1021,7 @@ export async function settleX402Payment({
   const source = await getX402SupportedPaymentSourceOrThrow(
     supportedPaymentSourceId,
   );
+  assertSupportedSourceOwnedByCaller(source.agent, { userId, organizationId });
   assertPaymentPayloadMatchesRegisteredResource(source, paymentPayload);
   const requirements = sourceToRequirements(source);
   if (!isAllowedCaip2Network(caip2NetworkLimit, requirements.network)) {

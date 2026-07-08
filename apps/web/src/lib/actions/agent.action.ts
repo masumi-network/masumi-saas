@@ -15,11 +15,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import {
-  createPaymentNodeClient,
-  paymentNodeConfig,
-  type PaymentNodeNetwork,
-} from "@/lib/payment-node";
+import { type PaymentNodeNetwork } from "@/lib/payment-node";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
@@ -275,83 +271,6 @@ export async function getAgentAction(agentId: string) {
     return {
       success: false as const,
       error: "Failed to get agent",
-    };
-  }
-}
-
-export async function deleteAgentAction(agentId: string, userId?: string) {
-  try {
-    const resolvedUserId = userId ?? (await getAuthenticatedOrThrow()).user.id;
-
-    const agent = await getWalletOwnedAgentForUser({
-      userId: resolvedUserId,
-      agentId,
-    });
-
-    if (!agent) {
-      return {
-        success: false as const,
-        error: "Agent not found",
-      };
-    }
-
-    const hasExternalRegistration = Boolean(agent.agentReference?.externalId);
-
-    if (!hasExternalRegistration) {
-      // Legacy agent (created via old POST /api/agents): no payment-node entry;
-      // allow direct delete so the user can remove it.
-      await recordAgentActivityEvent(agentId, "AgentDeleted");
-      await prisma.agent.delete({
-        where: { id: agentId },
-      });
-      return {
-        success: true as const,
-      };
-    }
-
-    const liveStates: (typeof agent.registrationState)[] = [
-      "RegistrationConfirmed",
-      "RegistrationRequested",
-      "RegistrationInitiated",
-      "DeregistrationRequested",
-      "DeregistrationInitiated",
-    ];
-    const isLegacyConfirmed =
-      agent.registrationState === "RegistrationConfirmed" &&
-      !agent.agentIdentifier;
-    if (liveStates.includes(agent.registrationState) && !isLegacyConfirmed) {
-      return {
-        success: false as const,
-        error:
-          "This agent is still active. Please deregister it before deleting.",
-      };
-    }
-
-    const externalId = agent.agentReference!.externalId;
-    if (!externalId) {
-      return {
-        success: false as const,
-        error: "No externalId found for this agent.",
-      };
-    }
-    const baseUrl = paymentNodeConfig.getBaseUrl();
-    const adminKey = paymentNodeConfig.getAdminApiKey();
-    const adminClient = createPaymentNodeClient(baseUrl, adminKey);
-    await adminClient.deleteRegistryEntry(externalId);
-
-    await recordAgentActivityEvent(agentId, "AgentDeleted");
-    await prisma.agent.delete({
-      where: { id: agentId },
-    });
-
-    return {
-      success: true as const,
-    };
-  } catch (error) {
-    console.error("Failed to delete agent:", error);
-    return {
-      success: false as const,
-      error: error instanceof Error ? error.message : "Failed to delete agent",
     };
   }
 }

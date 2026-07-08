@@ -160,6 +160,61 @@ describe("resolveAgentVerification", () => {
     });
   });
 
+  it("does not leak attributes from an invalid credential whose agentId does not match the registry", async () => {
+    getRegistryByAgentIdentifierMock.mockResolvedValue(onChainMetadata);
+    fetchContactCredentialsMock.mockResolvedValue([credential]);
+    validateCredentialMock.mockReturnValue({
+      isValid: false,
+      status: "revoked",
+      details: {},
+    });
+    extractCredentialAttributesMock.mockReturnValue({
+      agentId: "f".repeat(112),
+      agentName: "Attacker Agent",
+      agentApiUrl: "https://attacker.example",
+    });
+    // A legitimately DB-verified agent must not be shadowed by the bogus anchor.
+    mockExactAgentLookup(agentRow);
+    veridianCredentialFindFirstMock.mockResolvedValue({
+      credentialId: "EDBCRED",
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+    });
+
+    const result = await resolveAgentVerification({
+      agentIdentifier: VERSIONED,
+    });
+
+    expect(result).toEqual({ verified: false });
+  });
+
+  it("surfaces its own invalid credential as not verified when the agentId matches", async () => {
+    getRegistryByAgentIdentifierMock.mockResolvedValue(onChainMetadata);
+    fetchContactCredentialsMock.mockResolvedValue([credential]);
+    validateCredentialMock.mockReturnValue({
+      isValid: false,
+      status: "expired",
+      details: { expiresAt: "2020-01-01T00:00:00.000Z" },
+    });
+    extractCredentialAttributesMock.mockReturnValue({
+      agentId: STABLE,
+      agentName: "Cred Agent",
+      agentApiUrl: "https://cred-agent.example",
+    });
+
+    const result = await resolveAgentVerification({
+      agentIdentifier: VERSIONED,
+    });
+
+    expect(result).toEqual({
+      verified: false,
+      credentialId: "ECRED",
+      expiresAt: "2020-01-01T00:00:00.000Z",
+      agentName: "Cred Agent",
+      apiUrl: "https://cred-agent.example",
+      source: "on-chain",
+    });
+  });
+
   it("falls back to database verification when chain has no anchors", async () => {
     getRegistryByAgentIdentifierMock.mockResolvedValue({
       ...onChainMetadata,

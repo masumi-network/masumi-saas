@@ -1,5 +1,9 @@
 import prisma from "@masumi/database/client";
 
+import {
+  isUpdateRequestedStale,
+  STALE_UPDATE_REQUESTED_MS,
+} from "@/lib/agents/registration-state";
 import { sendOnChainVerificationCompleteEmail } from "@/lib/email/send-on-chain-verification-complete";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
 import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
@@ -31,6 +35,8 @@ import { buildVerificationOobis } from "@/lib/veridian/verification-oobis";
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const REGISTRY_UPDATE_POLL_INTERVAL_MS = 3_000;
 const REGISTRY_UPDATE_POLL_TIMEOUT_MS = 120_000;
+/** Bail out of polling after this many consecutive fetch failures. */
+const REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS = 5;
 
 const UPDATE_SUCCESS_STATES = new Set([
   "UpdateConfirmed",
@@ -96,6 +102,7 @@ async function pollRegistryUpdate(
   smartContractAddress: string | undefined,
 ): Promise<{ agentIdentifier: string } | { error: string }> {
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
+  let consecutiveErrors = 0;
 
   while (Date.now() < deadline) {
     let entry;
@@ -105,12 +112,22 @@ async function pollRegistryUpdate(
         network,
         filterSmartContractAddress: smartContractAddress,
       });
+      consecutiveErrors = 0;
     } catch (error) {
+      consecutiveErrors += 1;
       console.error("[Veridian] Registry poll fetch failed (will retry):", {
         registryId,
         network,
+        consecutiveErrors,
         error,
       });
+      // Bail early on a persistent admin-client failure instead of burning the
+      // whole timeout window; the caller reconciles/retries on error.
+      if (consecutiveErrors >= REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS) {
+        return {
+          error: "Registry update polling failed repeatedly; aborting early",
+        };
+      }
       await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
       continue;
     }
@@ -236,7 +253,16 @@ export async function writeOnChainVerifications(params: {
     }
   }
 
-  if (agent.registrationState === "UpdateRequested") {
+  // Skip when an update is genuinely in flight, but fall through when the lock
+  // is stale (a prior attempt was killed after flipping the row to
+  // UpdateRequested but before/around the on-chain submit) so recovery can retry.
+  if (
+    agent.registrationState === "UpdateRequested" &&
+    !isUpdateRequestedStale({
+      registrationState: agent.registrationState,
+      updatedAt: agent.updatedAt,
+    })
+  ) {
     return {
       success: true,
       agentIdentifier: agent.agentIdentifier,
@@ -302,11 +328,27 @@ export async function writeOnChainVerifications(params: {
 
   const previousAgentIdentifier = agent.agentIdentifier;
 
+  // Claim the update lock atomically from a settled state, OR re-claim a stale
+  // UpdateRequested left behind by a killed attempt. Concurrent callers race on
+  // this single updateMany: the winner bumps `updatedAt` (resetting staleness),
+  // so any loser's `updatedAt < threshold` predicate no longer matches and it
+  // falls through to the skip below — no double submit.
+  const staleUpdateRequestedBefore = new Date(
+    Date.now() - STALE_UPDATE_REQUESTED_MS,
+  );
   const lock = await prisma.agent.updateMany({
     where: {
       id: agent.id,
       userId: params.userId,
-      registrationState: { in: ["RegistrationConfirmed", "UpdateFailed"] },
+      OR: [
+        {
+          registrationState: { in: ["RegistrationConfirmed", "UpdateFailed"] },
+        },
+        {
+          registrationState: "UpdateRequested",
+          updatedAt: { lt: staleUpdateRequestedBefore },
+        },
+      ],
     },
     data: { registrationState: "UpdateRequested" },
   });
@@ -377,6 +419,12 @@ export async function writeOnChainVerifications(params: {
       userId: params.userId,
       error: pollResult.error,
     });
+
+    // Polling timed out, but the update may still have landed on-chain (confirmation
+    // can exceed the poll window). Reconcile against on-chain state so the agent is
+    // never left pinned in UpdateRequested with no recovery path (which would show
+    // "update in progress" forever and never send the completion email).
+    const credentialSaid = params.credential.sad?.d;
     try {
       const failedEntry = await adminClient.getRegistryById({
         id: registryId,
@@ -388,10 +436,67 @@ export async function writeOnChainVerifications(params: {
           where: { id: agent.id },
           data: { registrationState: "UpdateFailed" },
         });
+        return { success: false, error: pollResult.error };
+      }
+
+      // The identifier bumps on a successful V2 update; fall back to the previous one.
+      const candidateIdentifier =
+        failedEntry?.agentIdentifier &&
+        failedEntry.agentIdentifier !== previousAgentIdentifier
+          ? failedEntry.agentIdentifier
+          : previousAgentIdentifier;
+      const onChain = await adminClient.getRegistryByAgentIdentifier({
+        agentIdentifier: candidateIdentifier,
+        network,
+      });
+      const anchored =
+        credentialSaid != null &&
+        (onChain?.Metadata?.verifications ?? []).some(
+          (entry) => entry.credential.said === credentialSaid,
+        );
+      if (anchored) {
+        // The anchor is on-chain — treat the update as the success it actually was.
+        await prisma.$transaction([
+          prisma.agent.update({
+            where: { id: agent.id },
+            data: {
+              agentIdentifier: candidateIdentifier,
+              registrationState: "RegistrationConfirmed",
+            },
+          }),
+          prisma.agentReference.update({
+            where: { agentId: agent.id },
+            data: {
+              metadata: {
+                ...refMeta,
+                agentIdentifier: candidateIdentifier,
+              },
+            },
+          }),
+        ]);
+        return { success: true, agentIdentifier: candidateIdentifier };
       }
     } catch (error) {
       console.error(
-        "[Veridian] Failed to load registry row after poll error:",
+        "[Veridian] Failed to reconcile registry row after poll error:",
+        {
+          agentId: params.agentId,
+          userId: params.userId,
+          error,
+        },
+      );
+    }
+
+    // Not confirmed on-chain: release the UpdateRequested lock back to
+    // RegistrationConfirmed so a later reconcile/backfill can retry the write.
+    try {
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { registrationState: "RegistrationConfirmed" },
+      });
+    } catch (error) {
+      console.error(
+        "[Veridian] Failed to reset registrationState after poll error:",
         {
           agentId: params.agentId,
           userId: params.userId,
@@ -515,7 +620,15 @@ export async function backfillOnChainVerificationsForAgent(params: {
     return false;
   }
 
-  if (agent.registrationState === "UpdateRequested") {
+  // A fresh UpdateRequested is genuinely in flight; a stale one is an abandoned
+  // lock — let it fall through so the delegated write path can re-claim + retry.
+  if (
+    agent.registrationState === "UpdateRequested" &&
+    !isUpdateRequestedStale({
+      registrationState: agent.registrationState,
+      updatedAt: agent.updatedAt,
+    })
+  ) {
     return false;
   }
 

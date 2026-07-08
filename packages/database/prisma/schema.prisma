@@ -925,6 +925,7 @@ model X402PaymentAttempt {
   @@index([userId, createdAt])
   @@index([apiKeyId, createdAt])
   @@index([agentId, createdAt])
+  @@index([evmWalletId, createdAt])
   @@index([supportedPaymentSourceId])
   @@index([paymentIdentifier])
   @@index([caip2Network, asset])

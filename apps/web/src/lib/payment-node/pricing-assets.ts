@@ -80,11 +80,27 @@ export function humanAmountToSmallestUnit(
   amount: string,
   asset: PricingAssetOption,
 ): string {
-  const value = Number(amount);
-  if (!Number.isFinite(value) || value < 0) {
+  // Parse as an exact decimal string. Going through Number() would lose
+  // precision and, for large or scientific-notation inputs, emit strings like
+  // "1e+27" instead of a base-unit integer. Since this value becomes an
+  // on-chain price we must keep it exact.
+  const trimmed = amount.trim();
+  // Accept plain decimal notation with an optional leading/trailing dot
+  // (".5", "5."), but reject scientific notation, signs, and other garbage —
+  // the same invalid class the old Number()-based check rejected.
+  const match = /^(\d*)(?:\.(\d*))?$/.exec(trimmed);
+  const intPart = match?.[1] ?? "";
+  const fracPart = match?.[2] ?? "";
+  if (!match || intPart + fracPart === "") {
     throw new Error("Invalid price amount");
   }
-  return String(Math.round(value * 10 ** asset.decimals));
+  // Keep `decimals` fractional digits exactly and round the remainder half-up
+  // (as the previous Math.round did), using BigInt so large values stay exact
+  // instead of collapsing to "1e+27".
+  const kept = fracPart.slice(0, asset.decimals).padEnd(asset.decimals, "0");
+  const scaled = BigInt((intPart || "0") + kept);
+  const roundUp = fracPart.charAt(asset.decimals) >= "5";
+  return (roundUp ? scaled + BigInt(1) : scaled).toString();
 }
 
 export function estimatePriceUsd(

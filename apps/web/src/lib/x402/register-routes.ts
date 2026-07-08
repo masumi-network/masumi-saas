@@ -40,6 +40,7 @@ import {
   resolveX402ApiKeyId,
 } from "@/lib/x402/resolve-api-key";
 import {
+  assertCaip2WithinWriteScope,
   getCaip2NetworkLimitFromAuth,
   requireX402AdminRead,
   requireX402AdminWrite,
@@ -168,8 +169,9 @@ export function registerX402Routes(app: X402App): void {
 
         const result = await verifyX402Payment({
           userId: authContext.user.id,
+          organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
             input.paymentPayload as unknown as VerifyPaymentPayload,
@@ -214,8 +216,9 @@ export function registerX402Routes(app: X402App): void {
 
         const { webhook, ...result } = await settleX402Payment({
           userId: authContext.user.id,
+          organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
             input.paymentPayload as unknown as VerifyPaymentPayload,
@@ -284,7 +287,7 @@ export function registerX402Routes(app: X402App): void {
             authContext,
             input.apiKeyId,
           ),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           evmWalletId: input.evmWalletId,
           paymentRequired:
             input.paymentRequired as unknown as OutboundPaymentRequired,
@@ -648,6 +651,7 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
+        assertCaip2WithinWriteScope(authContext, input.caip2Id);
 
         const network = serializeNetwork(
           await upsertX402Network({
@@ -695,6 +699,7 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
+        assertCaip2WithinWriteScope(authContext, input.caip2Id);
 
         return c.json(await probeX402NetworkRpc(input), 200);
       } catch (error) {
@@ -1226,6 +1231,7 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
+        assertCaip2WithinWriteScope(authContext, input.caip2Network);
 
         const rule = serializeLowBalanceRule(
           await setX402LowBalanceRule({

@@ -1,4 +1,5 @@
 import type { X402EvmWalletType } from "@masumi/database";
+import { assertSafeRpcUrlResolved } from "@masumi/payment-source-x402";
 
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import type { WebhookEventType } from "@/lib/payment-node/schemas";
@@ -50,13 +51,23 @@ async function listAllActiveWebhooksForUser(userId: string) {
 
   const webhooks = [];
   let cursorId: string | undefined;
-  for (let page = 0; page < 20; page++) {
+  const MAX_PAGES = 20;
+  let page = 0;
+  for (; page < MAX_PAGES; page++) {
     const batch = await client.listWebhooks({ limit: 50, cursorId });
     webhooks.push(...batch.Webhooks.filter((webhook) => webhook.isActive));
     if (batch.Webhooks.length < 50) break;
     const nextCursor = batch.Webhooks[batch.Webhooks.length - 1]?.id;
     if (nextCursor == null || nextCursor === cursorId) break;
     cursorId = nextCursor;
+  }
+  // Surface silent truncation: hitting the page cap means a tenant with a very
+  // large number of webhooks would only receive events on a subset.
+  if (page === MAX_PAGES) {
+    console.warn(
+      "[x402] webhook enumeration hit the page cap; some webhooks may not receive events",
+      { userId, maxWebhooks: MAX_PAGES * 50 },
+    );
   }
   return webhooks;
 }
@@ -66,6 +77,11 @@ async function deliverWebhook(
   payload: WebhookDeliveryPayload,
 ): Promise<void> {
   try {
+    // SSRF guard: the webhook target is tenant-configured. Reject private,
+    // loopback, link-local, and DNS names that resolve to internal addresses
+    // before we POST. `redirect: "manual"` additionally blocks redirect-based
+    // SSRF below.
+    await assertSafeRpcUrlResolved(url);
     await fetch(url, {
       method: "POST",
       headers: {

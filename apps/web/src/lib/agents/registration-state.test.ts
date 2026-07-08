@@ -6,8 +6,10 @@ import {
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
+  isUpdateRequestedStale,
   registrationStateFromRegistryEntry,
   resolveRegistrationStateAfterSync,
+  STALE_UPDATE_REQUESTED_MS,
 } from "./registration-state";
 
 describe("registrationStateFromRegistryEntry", () => {
@@ -103,5 +105,39 @@ describe("canDeregisterAgent", () => {
     expect(canDeregisterAgent("UpdateRequested")).toBe(false);
     expect(canDeregisterAgent("UpdateInitiated")).toBe(false);
     expect(canDeregisterAgent("DeregistrationRequested")).toBe(false);
+  });
+});
+
+describe("isUpdateRequestedStale", () => {
+  const now = 1_000_000_000_000;
+
+  it("is false for non-UpdateRequested states regardless of age", () => {
+    expect(
+      isUpdateRequestedStale({
+        registrationState: "RegistrationConfirmed",
+        updatedAt: new Date(now - STALE_UPDATE_REQUESTED_MS * 10),
+        now,
+      }),
+    ).toBe(false);
+  });
+
+  it("is false while a fresh UpdateRequested lock is within the window", () => {
+    expect(
+      isUpdateRequestedStale({
+        registrationState: "UpdateRequested",
+        updatedAt: new Date(now - (STALE_UPDATE_REQUESTED_MS - 1)),
+        now,
+      }),
+    ).toBe(false);
+  });
+
+  it("is true once an UpdateRequested lock exceeds the window", () => {
+    expect(
+      isUpdateRequestedStale({
+        registrationState: "UpdateRequested",
+        updatedAt: new Date(now - STALE_UPDATE_REQUESTED_MS),
+        now,
+      }),
+    ).toBe(true);
   });
 });

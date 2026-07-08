@@ -174,6 +174,10 @@ export async function decryptAuthSecret(
 function transformStoredWhere(
   model: string,
   where?: AdapterWhere[],
+  // Only mutation lookups (update/delete) may match an already-stored digest verbatim.
+  // Read paths (findOne/findMany/count) MUST always re-hash so a leaked digest cannot be
+  // presented as a raw credential to establish or read a session (pass-the-hash).
+  allowStoredDigest = false,
 ): AdapterWhere[] {
   if (!where?.length) {
     return where ?? [];
@@ -187,7 +191,8 @@ function transformStoredWhere(
     ) {
       // Session reads return the persisted digest. Better Auth reuses that value
       // for update/delete lookups; hashing again would miss the row (Prisma P2025).
-      if (isStoredAuthHashDigest(clause.value)) {
+      // This shortcut is confined to mutation lookups — never the auth read path.
+      if (allowStoredDigest && isStoredAuthHashDigest(clause.value)) {
         return clause;
       }
 
@@ -372,7 +377,7 @@ export function securePrismaAuthAdapter(
         const update = await transformStoredData(args.model, args.update);
         const result = await adapter.update({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
           update,
         });
         return restoreWriteResult(args.model, result, args.update);
@@ -384,7 +389,7 @@ export function securePrismaAuthAdapter(
       }) {
         return adapter.updateMany({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
           update: await transformStoredData(args.model, args.update),
         });
       },
@@ -392,7 +397,7 @@ export function securePrismaAuthAdapter(
         try {
           return await adapter.delete({
             ...args,
-            where: transformStoredWhere(args.model, args.where),
+            where: transformStoredWhere(args.model, args.where, true),
           });
         } catch (error) {
           // P2025: "Record to delete does not exist." Treat as success — the
@@ -412,7 +417,7 @@ export function securePrismaAuthAdapter(
       async deleteMany(args: { model: string; where: AdapterWhere[] }) {
         return adapter.deleteMany({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
         });
       },
     };

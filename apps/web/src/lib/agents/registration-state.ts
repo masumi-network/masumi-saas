@@ -83,6 +83,31 @@ export function isRegistryVerificationUpdatePending(state: string): boolean {
   return (REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(state);
 }
 
+/**
+ * How long an agent may sit in `UpdateRequested` before the lock is treated as
+ * stale. The registry-update path flips an agent to `UpdateRequested`
+ * immediately before the on-chain `updateAgent` call; if the process is killed
+ * in that window (e.g. a serverless freeze) the agent would otherwise stay
+ * pinned there forever — every recovery path skips `UpdateRequested`, so the
+ * anchor is never written and the completion email never sends. A stale lock is
+ * safe to re-attempt: the real on-chain update completes well within this
+ * window, and the retry re-claims the lock atomically.
+ */
+export const STALE_UPDATE_REQUESTED_MS = 15 * 60 * 1000;
+
+/** True when an `UpdateRequested` lock is old enough to treat as abandoned. */
+export function isUpdateRequestedStale(params: {
+  registrationState: string;
+  updatedAt: Date;
+  now?: number;
+}): boolean {
+  if (params.registrationState !== "UpdateRequested") {
+    return false;
+  }
+  const now = params.now ?? Date.now();
+  return now - params.updatedAt.getTime() >= STALE_UPDATE_REQUESTED_MS;
+}
+
 /** Agent is on-chain registered enough to start the verification credential flow. */
 export const AGENT_VERIFICATION_ELIGIBLE_STATES = [
   "RegistrationConfirmed",

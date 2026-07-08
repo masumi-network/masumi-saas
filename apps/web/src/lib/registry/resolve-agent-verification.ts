@@ -1,5 +1,6 @@
 import prisma from "@masumi/database/client";
 
+import { veridianConfig } from "@/lib/config/veridian.config";
 import {
   shouldReadOnChainAgentVerification,
   shouldUseDbVerificationFallback,
@@ -136,9 +137,44 @@ async function resolveOnChainAgentVerification(params: {
       return null;
     }
 
+    // Defence-in-depth: when a trusted issuer AID is pinned, reject any credential
+    // not issued by it (credential.sad.i is the ACDC issuer prefix). This ensures a
+    // change to the credential-server fetch surface can never let a credential from
+    // an untrusted issuer be treated as verified.
+    const trustedIssuerAid = veridianConfig.issuerAid;
+    if (trustedIssuerAid && credential.sad.i !== trustedIssuerAid) {
+      console.error(
+        "[Veridian] Credential issuer AID is not the trusted issuer:",
+        {
+          credentialIssuerAid: credential.sad.i,
+          chainAgentIdentifier,
+        },
+      );
+      return { verified: false };
+    }
+
+    const attrs = extractCredentialAttributes(credential);
+    const credentialAgentId =
+      typeof attrs.agentId === "string" ? attrs.agentId : undefined;
+
+    // Bind the credential to this agent's registry identifier BEFORE trusting
+    // any of its attributes. This check must run on both the valid and invalid
+    // paths: an invalid (expired/revoked) credential still carries
+    // attacker-controlled agentName/apiUrl attributes, and returning a
+    // non-null record here would both surface those wrong values and suppress
+    // the DB fallback for a legitimately verified agent.
+    if (
+      !credentialMatchesAgentRegistryId(credentialAgentId, chainAgentIdentifier)
+    ) {
+      console.error("[Veridian] Credential agentId does not match registry:", {
+        credentialAgentId,
+        chainAgentIdentifier,
+      });
+      return { verified: false };
+    }
+
     const validation = validateCredential(credential);
     if (!validation.isValid) {
-      const attrs = extractCredentialAttributes(credential);
       const agentName =
         typeof attrs.agentName === "string"
           ? attrs.agentName
@@ -160,20 +196,6 @@ async function resolveOnChainAgentVerification(params: {
       }
 
       return null;
-    }
-
-    const attrs = extractCredentialAttributes(credential);
-    const credentialAgentId =
-      typeof attrs.agentId === "string" ? attrs.agentId : undefined;
-
-    if (
-      !credentialMatchesAgentRegistryId(credentialAgentId, chainAgentIdentifier)
-    ) {
-      console.error("[Veridian] Credential agentId does not match registry:", {
-        credentialAgentId,
-        chainAgentIdentifier,
-      });
-      return { verified: false };
     }
 
     const expiresAt = credentialExpiresAt(validation);
