@@ -170,7 +170,7 @@ export function registerX402Routes(app: X402App): void {
           userId: authContext.user.id,
           organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
             input.paymentPayload as unknown as VerifyPaymentPayload,
@@ -217,7 +217,7 @@ export function registerX402Routes(app: X402App): void {
           userId: authContext.user.id,
           organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           supportedPaymentSourceId: input.supportedPaymentSourceId,
           paymentPayload:
             input.paymentPayload as unknown as VerifyPaymentPayload,
@@ -286,7 +286,7 @@ export function registerX402Routes(app: X402App): void {
             authContext,
             input.apiKeyId,
           ),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext),
+          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
           evmWalletId: input.evmWalletId,
           paymentRequired:
             input.paymentRequired as unknown as OutboundPaymentRequired,

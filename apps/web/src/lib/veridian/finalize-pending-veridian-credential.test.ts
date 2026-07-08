@@ -9,6 +9,11 @@ const prismaMock = {
     findFirst: vi.fn(),
     update: vi.fn(),
   },
+  // Interactive transaction: run the callback with the same mock as `tx` so the
+  // claim + agent update assertions observe the same spies.
+  $transaction: vi.fn((cb: (tx: typeof prismaMock) => unknown) =>
+    cb(prismaMock),
+  ),
 };
 
 const fetchContactCredentialsMock = vi.fn();

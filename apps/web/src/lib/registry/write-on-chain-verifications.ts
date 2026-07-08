@@ -35,6 +35,8 @@ import { buildVerificationOobis } from "@/lib/veridian/verification-oobis";
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 const REGISTRY_UPDATE_POLL_INTERVAL_MS = 3_000;
 const REGISTRY_UPDATE_POLL_TIMEOUT_MS = 120_000;
+/** Bail out of polling after this many consecutive fetch failures. */
+const REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS = 5;
 
 const UPDATE_SUCCESS_STATES = new Set([
   "UpdateConfirmed",
@@ -100,6 +102,7 @@ async function pollRegistryUpdate(
   smartContractAddress: string | undefined,
 ): Promise<{ agentIdentifier: string } | { error: string }> {
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
+  let consecutiveErrors = 0;
 
   while (Date.now() < deadline) {
     let entry;
@@ -109,12 +112,22 @@ async function pollRegistryUpdate(
         network,
         filterSmartContractAddress: smartContractAddress,
       });
+      consecutiveErrors = 0;
     } catch (error) {
+      consecutiveErrors += 1;
       console.error("[Veridian] Registry poll fetch failed (will retry):", {
         registryId,
         network,
+        consecutiveErrors,
         error,
       });
+      // Bail early on a persistent admin-client failure instead of burning the
+      // whole timeout window; the caller reconciles/retries on error.
+      if (consecutiveErrors >= REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS) {
+        return {
+          error: "Registry update polling failed repeatedly; aborting early",
+        };
+      }
       await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
       continue;
     }

@@ -100,13 +100,6 @@ export async function requireX402SessionBudgetReadAccess(
   }
 }
 
-/** @deprecated Use requireX402SessionBudgetAccess — org admin when org workspace is active. */
-export async function requireX402SessionOrgAdmin(
-  authContext: AuthenticatedApiContext,
-): Promise<void> {
-  await requireX402SessionBudgetAccess(authContext);
-}
-
 export async function requireX402PageAccess(): Promise<void> {
   const authContext = await getAuthenticatedOrThrow({
     requireEmailVerified: false,

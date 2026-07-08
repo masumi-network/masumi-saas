@@ -106,18 +106,28 @@ export async function requireX402BudgetWrite(
   await requireX402SessionBudgetAccess(authContext);
 }
 
+/**
+ * Networks the OIDC caller may act on, or null when unrestricted / not OIDC.
+ *
+ * `action` MUST match the operation being authorized. A write operation
+ * (pay/settle/verify) must gate on WRITE scopes only — otherwise a caller with
+ * `payments:read:mainnet` (+ write on any other network to pass the coarse
+ * pay-access check) would be permitted to move funds on mainnet with only read
+ * scope there. A read operation may use either scope, since write implies read.
+ */
 export function getCaip2NetworkLimitFromAuth(
   authContext: AuthenticatedApiContext,
+  action: "read" | "write",
 ): string[] | null {
   if (authContext.authMethod !== "oidcAccessToken") {
     return null;
   }
 
   const scopes = authContext.oidcScopes;
-  const hasPreprod = scopes.includes(
+  const hasPreprodWrite = scopes.includes(
     buildNetworkedOidcScope("payments", "write", "preprod"),
   );
-  const hasMainnet = scopes.includes(
+  const hasMainnetWrite = scopes.includes(
     buildNetworkedOidcScope("payments", "write", "mainnet"),
   );
   const hasPreprodRead = scopes.includes(
@@ -127,8 +137,11 @@ export function getCaip2NetworkLimitFromAuth(
     buildNetworkedOidcScope("payments", "read", "mainnet"),
   );
 
-  const allowPreprod = hasPreprod || hasPreprodRead;
-  const allowMainnet = hasMainnet || hasMainnetRead;
+  // Read is implied by write; write is NEVER implied by read.
+  const allowPreprod =
+    action === "write" ? hasPreprodWrite : hasPreprodWrite || hasPreprodRead;
+  const allowMainnet =
+    action === "write" ? hasMainnetWrite : hasMainnetWrite || hasMainnetRead;
 
   if (allowPreprod && allowMainnet) {
     return null;

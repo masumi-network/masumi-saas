@@ -96,19 +96,42 @@ export async function finalizePendingVeridianCredential(params: {
     };
   }
 
-  const claim = await prisma.veridianCredential.updateMany({
-    where: {
-      id: pendingCredential.id,
-      userId: params.userId,
-      status: "PENDING",
-    },
-    data: {
-      credentialId,
-      status: "ISSUED",
-    },
+  // Claim the PENDING → ISSUED transition and flip the agent to VERIFIED in a
+  // single transaction. If these were separate writes, a process death between
+  // them would leave the credential ISSUED but the agent un-VERIFIED — and the
+  // recovery path (backfillOnChainVerificationsForAgent) only re-drives agents
+  // that are VERIFIED, so the agent would be stuck forever.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.veridianCredential.updateMany({
+      where: {
+        id: pendingCredential.id,
+        userId: params.userId,
+        status: "PENDING",
+      },
+      data: {
+        credentialId,
+        status: "ISSUED",
+      },
+    });
+
+    if (claim.count === 0) {
+      return false;
+    }
+
+    if (agentId) {
+      await tx.agent.update({
+        where: { id: agentId },
+        data: {
+          verificationStatus: "VERIFIED",
+          veridianCredentialId: credentialId,
+        },
+      });
+    }
+
+    return true;
   });
 
-  if (claim.count === 0) {
+  if (!claimed) {
     const current = await prisma.veridianCredential.findFirst({
       where: { id: pendingCredential.id, userId: params.userId },
     });
@@ -126,13 +149,6 @@ export async function finalizePendingVeridianCredential(params: {
 
   if (agentId) {
     const priorVerified = agent?.verificationStatus === "VERIFIED";
-    await prisma.agent.update({
-      where: { id: agentId },
-      data: {
-        verificationStatus: "VERIFIED",
-        veridianCredentialId: credentialId,
-      },
-    });
     if (!priorVerified) {
       await recordAgentActivityEvent(agentId, "AgentVerified");
     }

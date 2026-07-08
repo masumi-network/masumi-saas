@@ -20,7 +20,10 @@ export const evmAddressSchema = z
 
 export const uintStringSchema = z
   .string()
-  .regex(/^\d+$/, "Expected an unsigned integer string");
+  .regex(/^\d+$/, "Expected an unsigned integer string")
+  // uint256 max is 78 decimal digits; cap length so a multi-KB digit string
+  // can't reach BigInt() and cause a pathological parse.
+  .max(78, "Unsigned integer string is too large");
 
 export const booleanQuerySchema = z
   .enum(["true", "false"])

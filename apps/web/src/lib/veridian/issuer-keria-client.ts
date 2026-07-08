@@ -8,10 +8,18 @@ import { resolveIssuerBran } from "./resolve-issuer-bran";
 import { SignifyClient, signifyReady, Tier } from "./signify-ts-server";
 
 let cachedClient: Promise<SignifyClientType> | null = null;
+let cachedAt = 0;
+
+/**
+ * Time-to-live for the cached issuer client. Without a TTL the client is held
+ * for the whole process lifetime, so a KERIA session expiry or a rotated bran
+ * would leave a stale client that silently fails polls with no way to recover.
+ */
+const ISSUER_CLIENT_TTL_MS = 30 * 60 * 1000;
 
 /**
  * Signify client authenticated as the Masumi credential issuer on KERIA.
- * Reused across status polls within the same process.
+ * Reused across status polls within the same process, refreshed after the TTL.
  */
 export async function getIssuerSignifyClient(): Promise<SignifyClientType | null> {
   const bran = await resolveIssuerBran();
@@ -22,7 +30,12 @@ export async function getIssuerSignifyClient(): Promise<SignifyClientType | null
     return null;
   }
 
+  if (cachedClient && Date.now() - cachedAt >= ISSUER_CLIENT_TTL_MS) {
+    cachedClient = null;
+  }
+
   if (!cachedClient) {
+    cachedAt = Date.now();
     cachedClient = (async () => {
       await signifyReady();
       const client = new SignifyClient(keriaUrl, bran, Tier.low, bootUrl);
@@ -40,4 +53,5 @@ export async function getIssuerSignifyClient(): Promise<SignifyClientType | null
 /** Test helper — reset cached client between tests. */
 export function resetIssuerSignifyClientCache(): void {
   cachedClient = null;
+  cachedAt = 0;
 }

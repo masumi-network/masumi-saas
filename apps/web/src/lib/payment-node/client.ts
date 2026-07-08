@@ -188,7 +188,9 @@ async function requestParse<T>(
       "[Payment Node] Request failed:",
       res.status,
       url.toString(),
-      rawBody,
+      // Cap the logged body: error responses can echo addresses / ids, and an
+      // unbounded body bloats logs. A short excerpt is enough to diagnose.
+      rawBody.length > 500 ? `${rawBody.slice(0, 500)}…[truncated]` : rawBody,
     );
     throw new Error(`${res.status}: ${msg}`);
   }

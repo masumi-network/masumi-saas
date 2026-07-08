@@ -816,14 +816,16 @@ export async function deleteX402WalletBudget(
   budgetId: string,
 ) {
   const scope = resolveX402TenantScope(scopeInput);
-  const existing = await prisma.x402WalletBudget.findFirst({
+  // Scoped deleteMany avoids a TOCTOU between an ownership findFirst and a bare
+  // delete-by-id: a concurrent delete of the same budget would make the second
+  // caller's `delete` throw Prisma P2025 (→ unhandled 500). deleteMany stays
+  // tenant-scoped and is idempotent; count === 0 means not found / already gone.
+  const deleted = await prisma.x402WalletBudget.deleteMany({
     where: { id: budgetId, ...budgetOwnershipWhere(scope) },
-    select: { id: true },
   });
-  if (existing == null) {
+  if (deleted.count === 0) {
     throw createHttpError(404, "x402 wallet budget not found");
   }
-  await prisma.x402WalletBudget.delete({ where: { id: budgetId } });
   return { budgetId, deletedAt: new Date() };
 }
 

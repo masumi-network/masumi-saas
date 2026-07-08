@@ -75,7 +75,10 @@ app.openapi(
 
       const agent = pendingCredential.agentId
         ? await prisma.agent.findFirst({
-            where: { id: pendingCredential.agentId },
+            where: {
+              id: pendingCredential.agentId,
+              userId: authContext.user.id,
+            },
             select: { networkIdentifier: true },
           })
         : null;
