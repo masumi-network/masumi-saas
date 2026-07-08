@@ -410,7 +410,16 @@ app.openapi(
         };
       }
 
-      const agentPricing = buildAgentPricing(network, pricing ?? undefined);
+      let agentPricing: ReturnType<typeof buildAgentPricing>;
+      try {
+        agentPricing = buildAgentPricing(network, pricing ?? undefined);
+      } catch (error) {
+        // An unparseable fixed price is a client input error, not a 500.
+        throw new ApiError(
+          400,
+          error instanceof Error ? error.message : "Invalid agent pricing",
+        );
+      }
 
       if (
         agentPricing.pricingType === "Free" &&

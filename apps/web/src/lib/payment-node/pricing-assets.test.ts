@@ -40,16 +40,27 @@ describe("pricing-assets", () => {
     );
     expect(humanAmountToSmallestUnit("0.000001", usdcx)).toBe("1");
     expect(humanAmountToSmallestUnit("0.5", usdcx)).toBe("500000");
+    // Number-input can yield leading/trailing-dot forms; keep them working.
+    expect(humanAmountToSmallestUnit(".5", usdcx)).toBe("500000");
+    expect(humanAmountToSmallestUnit("5.", usdcx)).toBe("5000000");
   });
 
-  it("rejects invalid, negative, scientific-notation and over-precise amounts", () => {
+  it("rejects invalid, negative and scientific-notation amounts", () => {
     const usdcx = resolvePricingAssetOption("USDCx", "Mainnet");
     expect(() => humanAmountToSmallestUnit("", usdcx)).toThrow();
+    expect(() => humanAmountToSmallestUnit(".", usdcx)).toThrow();
     expect(() => humanAmountToSmallestUnit("-1", usdcx)).toThrow();
     expect(() => humanAmountToSmallestUnit("1e21", usdcx)).toThrow();
     expect(() => humanAmountToSmallestUnit("abc", usdcx)).toThrow();
-    // 7 fractional digits exceeds USDCx's 6 decimals.
-    expect(() => humanAmountToSmallestUnit("1.1234567", usdcx)).toThrow();
+  });
+
+  it("rounds fractional digits beyond the asset's precision half-up", () => {
+    const usdcx = resolvePricingAssetOption("USDCx", "Mainnet");
+    // 7th fractional digit is dropped: >=5 rounds up, <5 rounds down.
+    expect(humanAmountToSmallestUnit("1.1234567", usdcx)).toBe("1123457");
+    expect(humanAmountToSmallestUnit("1.1234564", usdcx)).toBe("1123456");
+    // Rounding carries correctly across the whole value.
+    expect(humanAmountToSmallestUnit("0.9999999", usdcx)).toBe("1000000");
   });
 
   it("estimates USD for stablecoins and ADA", () => {

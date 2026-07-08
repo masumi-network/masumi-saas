@@ -85,18 +85,22 @@ export function humanAmountToSmallestUnit(
   // "1e+27" instead of a base-unit integer. Since this value becomes an
   // on-chain price we must keep it exact.
   const trimmed = amount.trim();
-  const match = /^(\d+)(?:\.(\d+))?$/.exec(trimmed);
-  if (!match) {
+  // Accept plain decimal notation with an optional leading/trailing dot
+  // (".5", "5."), but reject scientific notation, signs, and other garbage —
+  // the same invalid class the old Number()-based check rejected.
+  const match = /^(\d*)(?:\.(\d*))?$/.exec(trimmed);
+  const intPart = match?.[1] ?? "";
+  const fracPart = match?.[2] ?? "";
+  if (!match || intPart + fracPart === "") {
     throw new Error("Invalid price amount");
   }
-  const [, intPart, fracPart = ""] = match;
-  if (fracPart.length > asset.decimals) {
-    throw new Error(
-      `Price amount supports at most ${asset.decimals} decimal places`,
-    );
-  }
-  const baseUnits = BigInt(intPart + fracPart.padEnd(asset.decimals, "0"));
-  return baseUnits.toString();
+  // Keep `decimals` fractional digits exactly and round the remainder half-up
+  // (as the previous Math.round did), using BigInt so large values stay exact
+  // instead of collapsing to "1e+27".
+  const kept = fracPart.slice(0, asset.decimals).padEnd(asset.decimals, "0");
+  const scaled = BigInt((intPart || "0") + kept);
+  const roundUp = fracPart.charAt(asset.decimals) >= "5";
+  return (roundUp ? scaled + 1n : scaled).toString();
 }
 
 export function estimatePriceUsd(
