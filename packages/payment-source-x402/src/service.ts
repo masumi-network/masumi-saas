@@ -279,7 +279,19 @@ async function getClientForWallet(
     getManagedWalletOrThrow(scopeInput, walletId, X402EvmWalletType.Purchasing),
     getX402NetworkOrThrow(scopeInput, caip2Network),
   ]);
-  const privateKey = decrypt(wallet.encryptedPrivateKey) as PrivateKey;
+  const privateKey =
+    wallet.encryptedPrivateKey != null
+      ? (decrypt(wallet.encryptedPrivateKey) as PrivateKey)
+      : null;
+  if (privateKey == null) {
+    if (wallet.paymentNodeWalletId != null) {
+      throw createHttpError(
+        501,
+        "This wallet's private key is custodied on the payment node; use the payment-node signing path",
+      );
+    }
+    throw createHttpError(500, "Managed EVM wallet has no signing key");
+  }
   const account = privateKeyToAccount(privateKey);
   const chain = createChain(
     network.caip2Id,
@@ -340,9 +352,18 @@ async function getFacilitatorForNetwork(
     );
   }
 
-  const privateKey = decrypt(
-    network.FacilitatorWallet.encryptedPrivateKey,
-  ) as PrivateKey;
+  const facilitatorEncryptedKey = network.FacilitatorWallet.encryptedPrivateKey;
+  if (facilitatorEncryptedKey == null) {
+    if (network.FacilitatorWallet.paymentNodeWalletId != null) {
+      throw createHttpError(
+        501,
+        "The facilitator wallet is custodied on the payment node; use the payment-node verify/settle path",
+      );
+    }
+    throw createHttpError(500, "Facilitator wallet has no signing key");
+  }
+
+  const privateKey = decrypt(facilitatorEncryptedKey) as PrivateKey;
   const account = privateKeyToAccount(privateKey);
   const chain = createChain(
     network.caip2Id,

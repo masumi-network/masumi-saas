@@ -21,6 +21,7 @@ const WALLET_OUTPUT_SELECT = {
   createdAt: true,
   updatedAt: true,
   createdByUserId: true,
+  paymentNodeWalletId: true,
 } satisfies Prisma.X402EvmWalletSelect;
 
 function walletTypeLabel(type: X402EvmWalletType): string {

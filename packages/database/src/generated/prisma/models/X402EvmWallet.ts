@@ -33,6 +33,7 @@ export type X402EvmWalletMinAggregateOutputType = {
   address: string | null;
   type: $Enums.X402EvmWalletType | null;
   encryptedPrivateKey: string | null;
+  paymentNodeWalletId: string | null;
   note: string | null;
   deletedAt: Date | null;
   backupConfirmedAt: Date | null;
@@ -48,6 +49,7 @@ export type X402EvmWalletMaxAggregateOutputType = {
   address: string | null;
   type: $Enums.X402EvmWalletType | null;
   encryptedPrivateKey: string | null;
+  paymentNodeWalletId: string | null;
   note: string | null;
   deletedAt: Date | null;
   backupConfirmedAt: Date | null;
@@ -63,6 +65,7 @@ export type X402EvmWalletCountAggregateOutputType = {
   address: number;
   type: number;
   encryptedPrivateKey: number;
+  paymentNodeWalletId: number;
   note: number;
   deletedAt: number;
   backupConfirmedAt: number;
@@ -79,6 +82,7 @@ export type X402EvmWalletMinAggregateInputType = {
   address?: true;
   type?: true;
   encryptedPrivateKey?: true;
+  paymentNodeWalletId?: true;
   note?: true;
   deletedAt?: true;
   backupConfirmedAt?: true;
@@ -94,6 +98,7 @@ export type X402EvmWalletMaxAggregateInputType = {
   address?: true;
   type?: true;
   encryptedPrivateKey?: true;
+  paymentNodeWalletId?: true;
   note?: true;
   deletedAt?: true;
   backupConfirmedAt?: true;
@@ -109,6 +114,7 @@ export type X402EvmWalletCountAggregateInputType = {
   address?: true;
   type?: true;
   encryptedPrivateKey?: true;
+  paymentNodeWalletId?: true;
   note?: true;
   deletedAt?: true;
   backupConfirmedAt?: true;
@@ -207,7 +213,8 @@ export type X402EvmWalletGroupByOutputType = {
   organizationId: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey: string | null;
+  paymentNodeWalletId: string | null;
   note: string | null;
   deletedAt: Date | null;
   backupConfirmedAt: Date | null;
@@ -244,7 +251,14 @@ export type X402EvmWalletWhereInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFilter<"X402EvmWallet">
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFilter<"X402EvmWallet"> | string;
+  encryptedPrivateKey?:
+    | Prisma.StringNullableFilter<"X402EvmWallet">
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.StringNullableFilter<"X402EvmWallet">
+    | string
+    | null;
   note?: Prisma.StringNullableFilter<"X402EvmWallet"> | string | null;
   deletedAt?:
     | Prisma.DateTimeNullableFilter<"X402EvmWallet">
@@ -279,7 +293,8 @@ export type X402EvmWalletOrderByWithRelationInput = {
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   address?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
-  encryptedPrivateKey?: Prisma.SortOrder;
+  encryptedPrivateKey?: Prisma.SortOrderInput | Prisma.SortOrder;
+  paymentNodeWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   note?: Prisma.SortOrderInput | Prisma.SortOrder;
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   backupConfirmedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -309,7 +324,14 @@ export type X402EvmWalletWhereUniqueInput = Prisma.AtLeast<
     type?:
       | Prisma.EnumX402EvmWalletTypeFilter<"X402EvmWallet">
       | $Enums.X402EvmWalletType;
-    encryptedPrivateKey?: Prisma.StringFilter<"X402EvmWallet"> | string;
+    encryptedPrivateKey?:
+      | Prisma.StringNullableFilter<"X402EvmWallet">
+      | string
+      | null;
+    paymentNodeWalletId?:
+      | Prisma.StringNullableFilter<"X402EvmWallet">
+      | string
+      | null;
     note?: Prisma.StringNullableFilter<"X402EvmWallet"> | string | null;
     deletedAt?:
       | Prisma.DateTimeNullableFilter<"X402EvmWallet">
@@ -346,7 +368,8 @@ export type X402EvmWalletOrderByWithAggregationInput = {
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   address?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
-  encryptedPrivateKey?: Prisma.SortOrder;
+  encryptedPrivateKey?: Prisma.SortOrderInput | Prisma.SortOrder;
+  paymentNodeWalletId?: Prisma.SortOrderInput | Prisma.SortOrder;
   note?: Prisma.SortOrderInput | Prisma.SortOrder;
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   backupConfirmedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -383,8 +406,13 @@ export type X402EvmWalletScalarWhereWithAggregatesInput = {
     | Prisma.EnumX402EvmWalletTypeWithAggregatesFilter<"X402EvmWallet">
     | $Enums.X402EvmWalletType;
   encryptedPrivateKey?:
-    | Prisma.StringWithAggregatesFilter<"X402EvmWallet">
-    | string;
+    | Prisma.StringNullableWithAggregatesFilter<"X402EvmWallet">
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.StringNullableWithAggregatesFilter<"X402EvmWallet">
+    | string
+    | null;
   note?:
     | Prisma.StringNullableWithAggregatesFilter<"X402EvmWallet">
     | string
@@ -411,7 +439,8 @@ export type X402EvmWalletCreateInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -432,7 +461,8 @@ export type X402EvmWalletUncheckedCreateInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -451,7 +481,14 @@ export type X402EvmWalletUpdateInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -488,7 +525,14 @@ export type X402EvmWalletUncheckedUpdateInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -518,7 +562,8 @@ export type X402EvmWalletCreateManyInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -533,7 +578,14 @@ export type X402EvmWalletUpdateManyMutationInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -564,7 +616,14 @@ export type X402EvmWalletUncheckedUpdateManyInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -606,6 +665,7 @@ export type X402EvmWalletCountOrderByAggregateInput = {
   address?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   encryptedPrivateKey?: Prisma.SortOrder;
+  paymentNodeWalletId?: Prisma.SortOrder;
   note?: Prisma.SortOrder;
   deletedAt?: Prisma.SortOrder;
   backupConfirmedAt?: Prisma.SortOrder;
@@ -621,6 +681,7 @@ export type X402EvmWalletMaxOrderByAggregateInput = {
   address?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   encryptedPrivateKey?: Prisma.SortOrder;
+  paymentNodeWalletId?: Prisma.SortOrder;
   note?: Prisma.SortOrder;
   deletedAt?: Prisma.SortOrder;
   backupConfirmedAt?: Prisma.SortOrder;
@@ -636,6 +697,7 @@ export type X402EvmWalletMinOrderByAggregateInput = {
   address?: Prisma.SortOrder;
   type?: Prisma.SortOrder;
   encryptedPrivateKey?: Prisma.SortOrder;
+  paymentNodeWalletId?: Prisma.SortOrder;
   note?: Prisma.SortOrder;
   deletedAt?: Prisma.SortOrder;
   backupConfirmedAt?: Prisma.SortOrder;
@@ -985,7 +1047,8 @@ export type X402EvmWalletCreateWithoutUserInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1004,7 +1067,8 @@ export type X402EvmWalletUncheckedCreateWithoutUserInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1075,7 +1139,14 @@ export type X402EvmWalletScalarWhereInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFilter<"X402EvmWallet">
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFilter<"X402EvmWallet"> | string;
+  encryptedPrivateKey?:
+    | Prisma.StringNullableFilter<"X402EvmWallet">
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.StringNullableFilter<"X402EvmWallet">
+    | string
+    | null;
   note?: Prisma.StringNullableFilter<"X402EvmWallet"> | string | null;
   deletedAt?:
     | Prisma.DateTimeNullableFilter<"X402EvmWallet">
@@ -1099,7 +1170,8 @@ export type X402EvmWalletCreateWithoutOrganizationInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1118,7 +1190,8 @@ export type X402EvmWalletUncheckedCreateWithoutOrganizationInput = {
   userId: string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1178,7 +1251,8 @@ export type X402EvmWalletCreateWithoutFacilitatesNetworksInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1198,7 +1272,8 @@ export type X402EvmWalletUncheckedCreateWithoutFacilitatesNetworksInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1244,7 +1319,14 @@ export type X402EvmWalletUpdateWithoutFacilitatesNetworksInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1280,7 +1362,14 @@ export type X402EvmWalletUncheckedUpdateWithoutFacilitatesNetworksInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1307,7 +1396,8 @@ export type X402EvmWalletCreateWithoutLowBalanceRulesInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1327,7 +1417,8 @@ export type X402EvmWalletUncheckedCreateWithoutLowBalanceRulesInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1373,7 +1464,14 @@ export type X402EvmWalletUpdateWithoutLowBalanceRulesInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1409,7 +1507,14 @@ export type X402EvmWalletUncheckedUpdateWithoutLowBalanceRulesInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1436,7 +1541,8 @@ export type X402EvmWalletCreateWithoutBudgetsInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1456,7 +1562,8 @@ export type X402EvmWalletUncheckedCreateWithoutBudgetsInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1502,7 +1609,14 @@ export type X402EvmWalletUpdateWithoutBudgetsInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1538,7 +1652,14 @@ export type X402EvmWalletUncheckedUpdateWithoutBudgetsInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1565,7 +1686,8 @@ export type X402EvmWalletCreateWithoutPaymentAttemptsInput = {
   updatedAt?: Date | string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1585,7 +1707,8 @@ export type X402EvmWalletUncheckedCreateWithoutPaymentAttemptsInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1631,7 +1754,14 @@ export type X402EvmWalletUpdateWithoutPaymentAttemptsInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1667,7 +1797,14 @@ export type X402EvmWalletUncheckedUpdateWithoutPaymentAttemptsInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1695,7 +1832,8 @@ export type X402EvmWalletCreateManyUserInput = {
   organizationId?: string | null;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1710,7 +1848,14 @@ export type X402EvmWalletUpdateWithoutUserInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1745,7 +1890,14 @@ export type X402EvmWalletUncheckedUpdateWithoutUserInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1779,7 +1931,14 @@ export type X402EvmWalletUncheckedUpdateManyWithoutUserInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1804,7 +1963,8 @@ export type X402EvmWalletCreateManyOrganizationInput = {
   userId: string;
   address: string;
   type: $Enums.X402EvmWalletType;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string | null;
+  paymentNodeWalletId?: string | null;
   note?: string | null;
   deletedAt?: Date | string | null;
   backupConfirmedAt?: Date | string | null;
@@ -1819,7 +1979,14 @@ export type X402EvmWalletUpdateWithoutOrganizationInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1851,7 +2018,14 @@ export type X402EvmWalletUncheckedUpdateWithoutOrganizationInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1882,7 +2056,14 @@ export type X402EvmWalletUncheckedUpdateManyWithoutOrganizationInput = {
   type?:
     | Prisma.EnumX402EvmWalletTypeFieldUpdateOperationsInput
     | $Enums.X402EvmWalletType;
-  encryptedPrivateKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  encryptedPrivateKey?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  paymentNodeWalletId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   deletedAt?:
     | Prisma.NullableDateTimeFieldUpdateOperationsInput
@@ -1993,6 +2174,7 @@ export type X402EvmWalletSelect<
     address?: boolean;
     type?: boolean;
     encryptedPrivateKey?: boolean;
+    paymentNodeWalletId?: boolean;
     note?: boolean;
     deletedAt?: boolean;
     backupConfirmedAt?: boolean;
@@ -2027,6 +2209,7 @@ export type X402EvmWalletSelectCreateManyAndReturn<
     address?: boolean;
     type?: boolean;
     encryptedPrivateKey?: boolean;
+    paymentNodeWalletId?: boolean;
     note?: boolean;
     deletedAt?: boolean;
     backupConfirmedAt?: boolean;
@@ -2050,6 +2233,7 @@ export type X402EvmWalletSelectUpdateManyAndReturn<
     address?: boolean;
     type?: boolean;
     encryptedPrivateKey?: boolean;
+    paymentNodeWalletId?: boolean;
     note?: boolean;
     deletedAt?: boolean;
     backupConfirmedAt?: boolean;
@@ -2069,6 +2253,7 @@ export type X402EvmWalletSelectScalar = {
   address?: boolean;
   type?: boolean;
   encryptedPrivateKey?: boolean;
+  paymentNodeWalletId?: boolean;
   note?: boolean;
   deletedAt?: boolean;
   backupConfirmedAt?: boolean;
@@ -2087,6 +2272,7 @@ export type X402EvmWalletOmit<
   | "address"
   | "type"
   | "encryptedPrivateKey"
+  | "paymentNodeWalletId"
   | "note"
   | "deletedAt"
   | "backupConfirmedAt"
@@ -2144,7 +2330,14 @@ export type $X402EvmWalletPayload<
       organizationId: string | null;
       address: string;
       type: $Enums.X402EvmWalletType;
-      encryptedPrivateKey: string;
+      /**
+       * Custodial EVM private key (legacy). New wallets use paymentNodeWalletId instead.
+       */
+      encryptedPrivateKey: string | null;
+      /**
+       * Payment-node X402EvmWallet.id when keys are custodied on the payment service.
+       */
+      paymentNodeWalletId: string | null;
       note: string | null;
       deletedAt: Date | null;
       backupConfirmedAt: Date | null;
@@ -2838,6 +3031,7 @@ export interface X402EvmWalletFieldRefs {
   readonly address: Prisma.FieldRef<"X402EvmWallet", "String">;
   readonly type: Prisma.FieldRef<"X402EvmWallet", "X402EvmWalletType">;
   readonly encryptedPrivateKey: Prisma.FieldRef<"X402EvmWallet", "String">;
+  readonly paymentNodeWalletId: Prisma.FieldRef<"X402EvmWallet", "String">;
   readonly note: Prisma.FieldRef<"X402EvmWallet", "String">;
   readonly deletedAt: Prisma.FieldRef<"X402EvmWallet", "DateTime">;
   readonly backupConfirmedAt: Prisma.FieldRef<"X402EvmWallet", "DateTime">;

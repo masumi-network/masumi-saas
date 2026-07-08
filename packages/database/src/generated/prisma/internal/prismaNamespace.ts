@@ -3910,6 +3910,7 @@ export const X402EvmWalletScalarFieldEnum = {
   address: "address",
   type: "type",
   encryptedPrivateKey: "encryptedPrivateKey",
+  paymentNodeWalletId: "paymentNodeWalletId",
   note: "note",
   deletedAt: "deletedAt",
   backupConfirmedAt: "backupConfirmedAt",

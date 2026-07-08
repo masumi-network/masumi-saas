@@ -1,15 +1,12 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createRoute } from "@hono/zod-openapi";
 import {
-  cancelX402PendingWallet,
   confirmX402WalletBackup,
   countX402ManagedWallets,
   countX402PaymentAttempts,
   countX402Settlements,
-  createX402ManagedWallet,
   createX402Payment,
   deleteX402LowBalanceRule,
-  deleteX402ManagedWallet,
   deleteX402WalletBudget,
   getX402Analytics,
   getX402WalletBalances,
@@ -24,7 +21,6 @@ import {
   setX402LowBalanceRule,
   setX402WalletBudget,
   updateX402LowBalanceRule,
-  updateX402ManagedWallet,
   upsertX402Network,
   verifyX402Payment,
 } from "@masumi/payment-source-x402";
@@ -35,6 +31,7 @@ import {
   resolveChainsByCaip2Ids,
   searchChainsForX402,
 } from "@/lib/x402/chain-registry";
+import { createX402WalletWithCustody } from "@/lib/x402/create-wallet";
 import {
   requireX402ApiKeyIdForPay,
   resolveX402ApiKeyId,
@@ -107,6 +104,12 @@ import {
   walletsCountSchemaInput,
   x402NetworkSchema,
 } from "@/lib/x402/schemas";
+import {
+  cancelX402PendingWalletWithCustody,
+  deleteX402WalletWithCustody,
+  proxyCreateX402PaymentIfCustodied,
+  updateX402WalletWithCustody,
+} from "@/lib/x402/wallet-custody-ops";
 import { triggerX402Payment } from "@/lib/x402/webhook-events";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 
@@ -280,9 +283,32 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402PayAccess(authContext);
         const input = c.req.valid("json");
+        const scope = x402Scope(authContext);
+
+        const proxied = await proxyCreateX402PaymentIfCustodied(
+          authContext.user.id,
+          scope,
+          {
+            evmWalletId: input.evmWalletId,
+            paymentRequired: input.paymentRequired,
+            preferredNetwork: input.preferredNetwork,
+            preferredAsset: input.preferredAsset,
+            paymentIdentifier: input.paymentIdentifier,
+          },
+        );
+        if (proxied != null) {
+          return c.json(
+            {
+              ...proxied,
+              caip2Network: String(proxied.caip2Network),
+              paymentPayload: proxied.paymentPayload as Record<string, unknown>,
+            },
+            200,
+          );
+        }
 
         const result = await createX402Payment({
-          ...x402Scope(authContext),
+          ...scope,
           apiKeyId: await requireX402ApiKeyIdForPay(
             authContext,
             input.apiKeyId,
@@ -385,7 +411,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const wallet = serializeWallet(
-          await createX402ManagedWallet({
+          await createX402WalletWithCustody({
             userId: authContext.user.id,
             organizationId: authContext.activeOrganizationId,
             createdByUserId: authContext.user.id,
@@ -435,7 +461,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const wallet = serializeWallet(
-          await updateX402ManagedWallet({
+          await updateX402WalletWithCustody(authContext.user.id, {
             ...x402Scope(authContext),
             id: input.id,
             note: input.note,
@@ -481,7 +507,8 @@ export function registerX402Routes(app: X402App): void {
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const result = await deleteX402ManagedWallet(
+        const result = await deleteX402WalletWithCustody(
+          authContext.user.id,
           x402Scope(authContext),
           input.id,
         );
@@ -568,7 +595,8 @@ export function registerX402Routes(app: X402App): void {
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const result = await cancelX402PendingWallet(
+        const result = await cancelX402PendingWalletWithCustody(
+          authContext.user.id,
           x402Scope(authContext),
           input.id,
         );
