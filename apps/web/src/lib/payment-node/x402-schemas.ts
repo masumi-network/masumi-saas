@@ -15,11 +15,6 @@ export const paymentNodeX402WalletListSchema = z.object({
   Wallets: z.array(paymentNodeX402WalletSchema.omit({ privateKey: true })),
 });
 
-export const paymentNodeX402CreatePaymentOutputSchema = z.record(
-  z.string(),
-  z.unknown(),
-);
-
 export const paymentNodeX402VerifyOutputSchema = z.record(
   z.string(),
   z.unknown(),

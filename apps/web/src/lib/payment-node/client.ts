@@ -72,8 +72,8 @@ import {
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
+import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 import {
-  paymentNodeX402CreatePaymentOutputSchema,
   paymentNodeX402SettleOutputSchema,
   paymentNodeX402VerifyOutputSchema,
   paymentNodeX402WalletSchema,
@@ -1069,7 +1069,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         apiKey,
         `/x402/pay`,
         { method: "POST", body },
-        paymentNodeX402CreatePaymentOutputSchema,
+        createPaymentSchemaOutput,
       );
     },
 
