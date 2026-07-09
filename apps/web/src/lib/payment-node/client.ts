@@ -6,6 +6,8 @@
 
 import { z } from "zod";
 
+import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
+
 import type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
@@ -72,7 +74,6 @@ import {
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
-import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 import {
   paymentNodeX402SettleOutputSchema,
   paymentNodeX402VerifyOutputSchema,
