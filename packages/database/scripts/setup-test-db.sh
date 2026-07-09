@@ -29,6 +29,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 (
   cd "$SCRIPT_DIR/.."
   pnpm exec prisma migrate deploy
+  pnpm exec prisma generate --no-hints
+  pnpm build
 )
 
 echo "Test database ready: ${DATABASE_URL}"
