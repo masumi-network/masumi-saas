@@ -89,7 +89,7 @@ export default function UserAvatarClient({
 
   const handleDocumentation = () => {
     setDropdownOpen(false);
-    window.open("https://docs.masumi.network/", "_blank");
+    window.open("https://www.masumi.network/dev/masumi/", "_blank");
   };
   const { isMobile, toggleSidebar, setIsHovered, setPreventCollapse } =
     useSidebar();

@@ -25,7 +25,7 @@ export function Header() {
               className="hidden md:flex"
             >
               <a
-                href="https://docs.masumi.network/"
+                href="https://www.masumi.network/dev/masumi/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"
@@ -36,7 +36,7 @@ export function Header() {
             </Button>
             <Button variant="outline" size="icon" asChild className="md:hidden">
               <a
-                href="https://docs.masumi.network/"
+                href="https://www.masumi.network/dev/masumi/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t("documentation")}
