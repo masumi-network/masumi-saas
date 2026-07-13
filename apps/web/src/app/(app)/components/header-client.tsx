@@ -86,7 +86,7 @@ export function HeaderClient({
                 className="hidden md:flex"
               >
                 <a
-                  href="https://docs.masumi.network/"
+                  href="https://www.masumi.network/dev/masumi/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
@@ -122,7 +122,7 @@ export function HeaderClient({
                 className="w-8 h-8 md:hidden"
               >
                 <a
-                  href="https://docs.masumi.network/"
+                  href="https://www.masumi.network/dev/masumi/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={t("documentation")}

@@ -5,5 +5,5 @@ import { redirect } from "next/navigation";
  * `redirect()` → 307 temporary; see README (avoid 308 caching while the hub URL may change).
  */
 export default function DocsIndexPage() {
-  redirect("https://docs.masumi.network/");
+  redirect("https://www.masumi.network/dev/masumi/");
 }
