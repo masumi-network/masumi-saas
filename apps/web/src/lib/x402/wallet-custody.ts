@@ -9,7 +9,12 @@ import {
   walletOwnershipWhere,
 } from "@masumi/payment-source-x402";
 
+import { rethrowPaymentNodeClientError } from "@/lib/payment-node/errors";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import {
+  resolveDefaultPaymentNodeCaip2Network,
+  resolvePaymentNodeNetworkId,
+} from "@/lib/payment-node/resolve-payment-node-x402-network";
 import { paymentNodeX402WalletSchema } from "@/lib/payment-node/x402-schemas";
 import { ApiError } from "@/server/hono/errors";
 
@@ -22,6 +27,8 @@ const WALLET_OUTPUT_SELECT = {
   updatedAt: true,
   createdByUserId: true,
   paymentNodeWalletId: true,
+  paymentNodeNetworkId: true,
+  caip2Network: true,
 } as const;
 
 function defaultWalletNote(type: X402EvmWalletType): string {
@@ -67,6 +74,14 @@ async function deletePendingWalletsForType(
   });
 }
 
+async function resolveWalletCaip2Network(
+  caip2Network?: string | null,
+): Promise<string> {
+  const trimmed = caip2Network?.trim();
+  if (trimmed) return trimmed;
+  return resolveDefaultPaymentNodeCaip2Network();
+}
+
 /** Create wallet on payment node and persist tenant metadata + reference in SaaS DB. */
 export async function createX402WalletOnPaymentNode({
   userId,
@@ -75,6 +90,7 @@ export async function createX402WalletOnPaymentNode({
   type,
   note,
   privateKey,
+  caip2Network,
 }: {
   userId: string;
   organizationId?: string | null;
@@ -82,6 +98,7 @@ export async function createX402WalletOnPaymentNode({
   type: X402EvmWalletType;
   note?: string | null;
   privateKey?: string;
+  caip2Network?: string | null;
 }) {
   const client = await getPaymentNodeClientForUser(userId);
   if (client == null) {
@@ -92,13 +109,23 @@ export async function createX402WalletOnPaymentNode({
   await deletePendingWalletsForType(scope, type);
   await assertTenantWalletSlotAvailable(scope, type);
 
-  const pnWallet = paymentNodeX402WalletSchema.parse(
-    await client.createX402Wallet({
-      type,
-      note: resolveWalletNote(type, note),
-      privateKey,
-    }),
-  );
+  const resolvedCaip2Network = await resolveWalletCaip2Network(caip2Network);
+  const paymentNodeNetworkId =
+    await resolvePaymentNodeNetworkId(resolvedCaip2Network);
+
+  let pnWallet;
+  try {
+    pnWallet = paymentNodeX402WalletSchema.parse(
+      await client.createX402Wallet({
+        networkId: paymentNodeNetworkId,
+        type,
+        note: resolveWalletNote(type, note),
+        privateKey,
+      }),
+    );
+  } catch (error) {
+    rethrowPaymentNodeClientError(error);
+  }
 
   const wasGenerated = privateKey == null;
   const backupConfirmedAt = wasGenerated ? null : new Date();
@@ -112,6 +139,8 @@ export async function createX402WalletOnPaymentNode({
         type,
         note: resolveWalletNote(type, note),
         paymentNodeWalletId: pnWallet.id,
+        paymentNodeNetworkId: pnWallet.networkId,
+        caip2Network: pnWallet.caip2Network,
         encryptedPrivateKey: null,
         backupConfirmedAt,
         createdByUserId: createdByUserId ?? null,

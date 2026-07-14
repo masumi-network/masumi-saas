@@ -225,7 +225,7 @@ export function RegisterAgentDialog({
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
   const { networks: x402Networks, isLoading: x402NetworksLoading } =
-    useX402Networks({ silentErrors: true });
+    useX402Networks({ silentErrors: true, requireFacilitator: true });
   const [x402Options, setX402Options] = useState<X402OptionDraft[]>([]);
   const [x402Error, setX402Error] = useState<string | null>(null);
 

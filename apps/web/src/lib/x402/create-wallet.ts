@@ -14,6 +14,7 @@ export async function createX402WalletWithCustody(params: {
   type: Parameters<typeof createX402WalletOnPaymentNode>[0]["type"];
   note?: string | null;
   privateKey?: string;
+  caip2Network?: string | null;
 }) {
   const client = await getPaymentNodeClientForUser(params.userId);
   if (client != null) {

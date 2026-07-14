@@ -174,7 +174,12 @@ export function WalletsTab() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+      if (
+        !event.key ||
+        event.key.toLowerCase() !== "f" ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
         return;
       }
 
@@ -591,12 +596,15 @@ export function CreateWalletDialog({
   onSaved,
   defaultType = "Purchasing",
   blockedTypes = [],
+  caip2Network,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: (wallet?: X402Wallet) => void;
   defaultType?: WalletType;
   blockedTypes?: ReadonlyArray<WalletType>;
+  /** When set, binds the custody wallet to this chain on the payment node (PR #694). */
+  caip2Network?: string;
 }) {
   const t = useTranslations("App.X402.Wallets");
   const blockedTypeSet = useMemo(() => new Set(blockedTypes), [blockedTypes]);
@@ -670,6 +678,7 @@ export function CreateWalletDialog({
         body: JSON.stringify({
           type,
           note: resolvedNote,
+          ...(caip2Network ? { caip2Network } : {}),
           ...(keySource === "import" ? { privateKey: trimmed } : {}),
         }),
       },

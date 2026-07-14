@@ -75,8 +75,10 @@ import {
   walletStatusSchema,
 } from "./schemas";
 import {
+  paymentNodeX402NetworkListSchema,
   paymentNodeX402SettleOutputSchema,
   paymentNodeX402VerifyOutputSchema,
+  paymentNodeX402WalletListSchema,
   paymentNodeX402WalletSchema,
 } from "./x402-schemas";
 
@@ -1025,6 +1027,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
 
     /** Create a managed x402 EVM wallet on the payment node (keys custodied there). */
     async createX402Wallet(body: {
+      networkId: string;
       type: "Purchasing" | "Selling";
       note?: string | null;
       privateKey?: string;
@@ -1035,6 +1038,41 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         `/x402/wallets`,
         { method: "POST", body },
         paymentNodeX402WalletSchema,
+      );
+    },
+
+    async listX402Wallets(params?: {
+      take?: number;
+      cursorId?: string;
+      type?: "Purchasing" | "Selling";
+      networkId?: string;
+    }) {
+      const query: Record<string, string> = {};
+      if (params?.take != null) query.take = String(params.take);
+      if (params?.cursorId != null) query.cursorId = params.cursorId;
+      if (params?.type != null) query.type = params.type;
+      if (params?.networkId != null) query.networkId = params.networkId;
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets`,
+        { method: "GET", query },
+        paymentNodeX402WalletListSchema,
+      );
+    },
+
+    /** List x402 networks registered on the payment node (admin only). */
+    async listX402Networks(params?: { isTestnet?: boolean }) {
+      const query: Record<string, string> = {};
+      if (params?.isTestnet != null) {
+        query.isTestnet = params.isTestnet ? "true" : "false";
+      }
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/networks`,
+        { method: "GET", query },
+        paymentNodeX402NetworkListSchema,
       );
     },
 
@@ -1055,6 +1093,16 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         `/x402/wallets/delete`,
         { method: "POST", body },
         z.object({ id: z.string() }),
+      );
+    },
+
+    async bindX402WalletToNetwork(body: { id: string; networkId: string }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/bind-network`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema.omit({ privateKey: true }),
       );
     },
 

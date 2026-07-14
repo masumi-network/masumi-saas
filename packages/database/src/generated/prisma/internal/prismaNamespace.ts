@@ -3911,6 +3911,8 @@ export const X402EvmWalletScalarFieldEnum = {
   type: "type",
   encryptedPrivateKey: "encryptedPrivateKey",
   paymentNodeWalletId: "paymentNodeWalletId",
+  paymentNodeNetworkId: "paymentNodeNetworkId",
+  caip2Network: "caip2Network",
   note: "note",
   deletedAt: "deletedAt",
   backupConfirmedAt: "backupConfirmedAt",

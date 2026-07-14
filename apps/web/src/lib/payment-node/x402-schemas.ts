@@ -1,7 +1,26 @@
 import { z } from "zod";
 
+export const paymentNodeX402NetworkSchema = z.object({
+  id: z.string(),
+  caip2Id: z.string().regex(/^eip155:\d+$/),
+  displayName: z.string(),
+  rpcUrl: z.string(),
+  isTestnet: z.boolean(),
+  isEnabled: z.boolean(),
+  defaultAsset: z.string().nullable(),
+  facilitatorWalletId: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+
+export const paymentNodeX402NetworkListSchema = z.object({
+  Networks: z.array(paymentNodeX402NetworkSchema),
+});
+
 export const paymentNodeX402WalletSchema = z.object({
   id: z.string(),
+  networkId: z.string(),
+  caip2Network: z.string().regex(/^eip155:\d+$/),
   address: z.string(),
   type: z.enum(["Purchasing", "Selling"]),
   note: z.string().nullable(),

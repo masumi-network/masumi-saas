@@ -864,7 +864,8 @@
         "saveChanges": "Save changes",
         "updated": "Chain updated",
         "added": "Chain added",
-        "saveFailed": "Failed to save chain"
+        "saveFailed": "Failed to save chain",
+        "paymentNodeUnsupported": "{chain} is not supported by the payment node."
       },
       "Wallets": {
         "description": "Purchasing wallets pay out; Selling wallets settle inbound.",

@@ -2,16 +2,30 @@
 
 import { toast } from "sonner";
 
-type X402ApiError = { error?: string; message?: string };
+import { PAYMENT_NODE_CHAIN_UNSUPPORTED_CODE } from "@/lib/x402/error-codes";
+
+type X402ApiError = {
+  error?: string;
+  message?: string;
+  code?: string;
+};
 
 export class X402ApiRequestError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: string,
   ) {
     super(message);
     this.name = "X402ApiRequestError";
   }
+}
+
+function isPaymentNodeChainUnsupported(err: X402ApiRequestError): boolean {
+  return (
+    err.code === PAYMENT_NODE_CHAIN_UNSUPPORTED_CODE ||
+    err.message.toLowerCase().includes("not supported by the payment node")
+  );
 }
 
 export async function x402Fetch<T>(
@@ -46,7 +60,7 @@ export async function x402Fetch<T>(
     const message =
       json.error ?? json.message ?? `Request failed (${response.status})`;
     if (!silentErrors) toast.error(message);
-    throw new X402ApiRequestError(message, response.status);
+    throw new X402ApiRequestError(message, response.status, json.code);
   }
 
   return json;
@@ -55,7 +69,12 @@ export async function x402Fetch<T>(
 export async function x402Mutate<T>(
   path: string,
   init: RequestInit,
-  options?: { successMessage?: string; errorMessage?: string },
+  options?: {
+    successMessage?: string;
+    errorMessage?: string;
+    /** i18n message when the payment node does not support the chain. */
+    paymentNodeUnsupportedMessage?: string;
+  },
 ): Promise<T | null> {
   try {
     // When x402Mutate shows its own error toast, silence x402Fetch's so a single
@@ -66,8 +85,19 @@ export async function x402Mutate<T>(
     });
     if (options?.successMessage) toast.success(options.successMessage);
     return result;
-  } catch {
-    if (options?.errorMessage) toast.error(options.errorMessage);
+  } catch (err) {
+    if (err instanceof X402ApiRequestError) {
+      if (
+        isPaymentNodeChainUnsupported(err) &&
+        options?.paymentNodeUnsupportedMessage
+      ) {
+        toast.error(options.paymentNodeUnsupportedMessage);
+      } else if (options?.errorMessage) {
+        toast.error(options.errorMessage);
+      }
+    } else if (options?.errorMessage) {
+      toast.error(options.errorMessage);
+    }
     return null;
   }
 }

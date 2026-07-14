@@ -165,7 +165,12 @@ export function PaymentsTab() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+      if (
+        !event.key ||
+        event.key.toLowerCase() !== "f" ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
         return;
       }
 

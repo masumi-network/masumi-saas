@@ -39,7 +39,13 @@ import {
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { cn, formatPricingDisplay, shortenAddress } from "@/lib/utils";
+import { registerAgentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
+import {
+  type AgentPricing,
+  cn,
+  formatPricingDisplay,
+  shortenAddress,
+} from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeClassName,
@@ -129,7 +135,10 @@ export function AgentDetails({
     showVerificationCta && Boolean(onVerificationSuccess);
 
   const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
-  const showPayoutAddressBanner = !agent.payoutAddress;
+  const requiresPayoutAddress = registerAgentPricingRequiresPayoutAddress(
+    agent.pricing as AgentPricing | undefined,
+  );
+  const showPayoutAddressBanner = requiresPayoutAddress && !agent.payoutAddress;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -364,63 +373,67 @@ export function AgentDetails({
 
             <Separator />
 
-            {/* Payout address */}
-            <div className="flex gap-3 min-w-0">
-              <Wallet className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t("payoutAddress")}
-                  </p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                        <CircleHelp className="h-3.5 w-3.5" />
-                        <span className="sr-only">
+            {requiresPayoutAddress ? (
+              <>
+                {/* Payout address */}
+                <div className="flex gap-3 min-w-0">
+                  <Wallet className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {t("payoutAddress")}
+                      </p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                            <CircleHelp className="h-3.5 w-3.5" />
+                            <span className="sr-only">
+                              {tRegister("payoutAddressHint")}
+                            </span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
                           {tRegister("payoutAddressHint")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      {agent.payoutAddress ? (
+                        <>
+                          <span
+                            className="font-mono text-xs sm:text-sm truncate min-w-0"
+                            title={agent.payoutAddress}
+                          >
+                            {shortenAddress(agent.payoutAddress, 10)}
+                          </span>
+                          <CopyButton
+                            value={agent.payoutAddress}
+                            className="h-7 w-7 shrink-0"
+                          />
+                        </>
+                      ) : (
+                        <span className="text-xs sm:text-sm text-muted-foreground">
+                          {t("payoutAddressNotSet")}
                         </span>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      {tRegister("payoutAddressHint")}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                  {agent.payoutAddress ? (
-                    <>
-                      <span
-                        className="font-mono text-xs sm:text-sm truncate min-w-0"
-                        title={agent.payoutAddress}
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => setIsPayoutDialogOpen(true)}
                       >
-                        {shortenAddress(agent.payoutAddress, 10)}
-                      </span>
-                      <CopyButton
-                        value={agent.payoutAddress}
-                        className="h-7 w-7 shrink-0"
-                      />
-                    </>
-                  ) : (
-                    <span className="text-xs sm:text-sm text-muted-foreground">
-                      {t("payoutAddressNotSet")}
-                    </span>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7"
-                    onClick={() => setIsPayoutDialogOpen(true)}
-                  >
-                    {agent.payoutAddress
-                      ? t("payoutAddressEdit")
-                      : t("payoutAddressSet")}
-                  </Button>
+                        {agent.payoutAddress
+                          ? t("payoutAddressEdit")
+                          : t("payoutAddressSet")}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <Separator />
+                <Separator />
+              </>
+            ) : null}
 
             {/* Tags */}
             <div className="flex gap-3">
@@ -493,12 +506,14 @@ export function AgentDetails({
           onSuccess={onVerificationSuccess ?? (() => {})}
         />
 
-        <AgentPayoutAddressDialog
-          agent={agent}
-          open={isPayoutDialogOpen}
-          onOpenChange={setIsPayoutDialogOpen}
-          onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
-        />
+        {requiresPayoutAddress ? (
+          <AgentPayoutAddressDialog
+            agent={agent}
+            open={isPayoutDialogOpen}
+            onOpenChange={setIsPayoutDialogOpen}
+            onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
+          />
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">

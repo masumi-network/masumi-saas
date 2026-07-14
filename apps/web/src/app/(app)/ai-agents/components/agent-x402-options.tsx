@@ -9,8 +9,8 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { ChainLabel } from "@/components/x402/chain-icon";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
-import { useX402Networks } from "@/lib/hooks/use-x402";
 import type { X402NetworkOption } from "@/lib/hooks/use-x402-networks";
+import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { formatX402Amount, shortenAddress } from "@/lib/utils";
 import { getEvmTokenPresetsForChain } from "@/lib/x402/evm-token-presets";
 
@@ -111,7 +111,7 @@ export function AgentX402Options({
 }) {
   const t = useTranslations("App.X402.AgentOptions");
   const tBrand = useTranslations("App.X402");
-  const { networks } = useX402Networks({
+  const { networks } = usePaymentNodeSupportedX402Networks({
     silentErrors: true,
     allEnvironments: true,
   });

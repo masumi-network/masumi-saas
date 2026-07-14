@@ -26,6 +26,10 @@ import {
 } from "@masumi/payment-source-x402";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  getPaymentNodeX402NetworkByCaip2,
+  listPaymentNodeX402Networks,
+} from "@/lib/payment-node/resolve-payment-node-x402-network";
 import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
 import {
   resolveChainsByCaip2Ids,
@@ -79,6 +83,8 @@ import {
   listPaymentAttemptsSchemaOutput,
   listSettlementsSchemaInput,
   listSettlementsSchemaOutput,
+  listSupportedNetworksSchemaInput,
+  listSupportedNetworksSchemaOutput,
   listWalletsSchemaInput,
   listWalletsSchemaOutput,
   lowBalanceRuleSchema,
@@ -257,7 +263,7 @@ export function registerX402Routes(app: X402App): void {
       tags: ["x402"],
       summary: "Sign outbound x402 payment",
       description:
-        "Sign an outbound payment for a forwarded HTTP 402 response. Debits a managed-wallet budget and returns the X-PAYMENT header payload.",
+        "Sign an outbound payment for a forwarded HTTP 402 response. Returns the X-PAYMENT header payload. Custodied wallets may return 402 when budget or on-chain balance is insufficient.",
       security,
       request: {
         body: {
@@ -418,6 +424,7 @@ export function registerX402Routes(app: X402App): void {
             type: input.type,
             note: input.note,
             privateKey: input.privateKey,
+            caip2Network: input.caip2Network,
           }),
         );
 
@@ -650,6 +657,45 @@ export function registerX402Routes(app: X402App): void {
 
   app.openapi(
     createRoute({
+      method: "get",
+      path: "/networks/supported",
+      tags: ["x402"],
+      summary: "List payment-node supported x402 EVM chains",
+      description:
+        "Chains registered on the payment node that tenants may configure or select in agent x402 options.",
+      security,
+      request: { query: listSupportedNetworksSchemaInput },
+      responses: {
+        200: {
+          description: "Supported chains",
+          content: {
+            "application/json": { schema: listSupportedNetworksSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminRead(authContext);
+        const query = c.req.valid("query");
+
+        const Networks = await listPaymentNodeX402Networks({
+          isTestnet: query.isTestnet,
+        });
+
+        return c.json({ Networks }, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 list supported networks failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
       method: "post",
       path: "/networks",
       tags: ["x402"],
@@ -681,11 +727,21 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
         assertCaip2WithinWriteScope(authContext, input.caip2Id);
 
+        const paymentNodeNetwork = await getPaymentNodeX402NetworkByCaip2(
+          input.caip2Id,
+        );
+
         const network = serializeNetwork(
           await upsertX402Network({
             ...x402Scope(authContext),
             createdByUserId: authContext.user.id,
-            ...input,
+            caip2Id: input.caip2Id,
+            displayName: input.displayName || paymentNodeNetwork.displayName,
+            rpcUrl: paymentNodeNetwork.rpcUrl,
+            isTestnet: paymentNodeNetwork.isTestnet,
+            isEnabled: input.isEnabled,
+            defaultAsset: input.defaultAsset,
+            facilitatorWalletId: input.facilitatorWalletId,
           }),
         );
 

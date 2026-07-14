@@ -11,9 +11,14 @@ import {
   type X402ScopeInput,
 } from "@masumi/payment-source-x402";
 
+import { rethrowPaymentNodeClientError } from "@/lib/payment-node/errors";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { ApiError } from "@/server/hono/errors";
 
+import {
+  extractCaip2FromPayInput,
+  resolvePaymentNodeWalletIdForCaip2,
+} from "./payment-node-wallet-network";
 import {
   getLocalWalletWithPaymentNodeId,
   usesPaymentNodeCustody,
@@ -123,11 +128,43 @@ export async function proxyCreateX402PaymentIfCustodied(
   if (client == null) {
     throw new ApiError(503, "Payment node not configured for user");
   }
-  return client.createX402Payment({
-    evmWalletId: wallet.paymentNodeWalletId!,
-    paymentRequired: input.paymentRequired,
-    preferredNetwork: input.preferredNetwork,
-    preferredAsset: input.preferredAsset,
-    paymentIdentifier: input.paymentIdentifier,
+
+  const tenantScope = resolveX402TenantScope(scopeInput);
+  const walletRecord = await prisma.x402EvmWallet.findFirst({
+    where: {
+      id: input.evmWalletId,
+      ...activeWalletWhere(tenantScope),
+    },
+    select: {
+      address: true,
+      type: true,
+      paymentNodeWalletId: true,
+    },
   });
+  if (walletRecord?.paymentNodeWalletId == null) {
+    throw new ApiError(404, "Managed EVM wallet not found");
+  }
+
+  const caip2Network = extractCaip2FromPayInput(input);
+  let paymentNodeWalletId = walletRecord.paymentNodeWalletId;
+  if (caip2Network != null) {
+    paymentNodeWalletId = await resolvePaymentNodeWalletIdForCaip2(client, {
+      paymentNodeWalletId: walletRecord.paymentNodeWalletId,
+      address: walletRecord.address,
+      type: walletRecord.type === "Purchasing" ? "Purchasing" : "Selling",
+      caip2Network,
+    });
+  }
+
+  try {
+    return await client.createX402Payment({
+      evmWalletId: paymentNodeWalletId,
+      paymentRequired: input.paymentRequired,
+      preferredNetwork: input.preferredNetwork,
+      preferredAsset: input.preferredAsset,
+      paymentIdentifier: input.paymentIdentifier,
+    });
+  } catch (error) {
+    rethrowPaymentNodeClientError(error);
+  }
 }

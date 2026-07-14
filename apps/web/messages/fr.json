@@ -2147,7 +2147,8 @@
         "saveChanges": "Enregistrer les modifications",
         "updated": "Chaîne mise à jour",
         "added": "Chaîne ajoutée",
-        "saveFailed": "Échec de l'enregistrement de la chaîne"
+        "saveFailed": "Échec de l'enregistrement de la chaîne",
+        "paymentNodeUnsupported": "{chain} n'est pas prise en charge par le nœud de paiement."
       },
       "Wallets": {
         "description": "Les portefeuilles d'achat paient ; les portefeuilles de vente règlent les paiements entrants.",

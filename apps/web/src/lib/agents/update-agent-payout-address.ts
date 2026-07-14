@@ -11,6 +11,8 @@ import {
   normalizePayoutAddress,
   validatePayoutAddressForNetwork,
 } from "@/lib/payment-node/payout-address";
+import { registerAgentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
+import type { AgentPricing } from "@/lib/utils";
 
 function getAgentNetwork(agent: {
   networkIdentifier: string | null;
@@ -57,6 +59,17 @@ export async function updateAgentPayoutAddress(params: {
 
       if (!agent?.agentReference) {
         return { success: false as const, error: "Agent not found." };
+      }
+
+      if (
+        !registerAgentPricingRequiresPayoutAddress(
+          agent.pricing as AgentPricing | undefined,
+        )
+      ) {
+        return {
+          success: false as const,
+          error: "Free agents do not use a payout address.",
+        };
       }
 
       const network = getAgentNetwork(agent);

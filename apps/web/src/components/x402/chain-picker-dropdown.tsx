@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ChevronsUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -21,30 +20,29 @@ import {
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { cn } from "@/lib/utils";
-import { x402Fetch } from "@/lib/x402/api";
-import type { ChainSearchResult } from "@/lib/x402/chain-registry-types";
 import {
-  type EvmChainConfig,
-  getEvmChainByCaip2Id,
-  getEvmChainPresets,
-} from "@/lib/x402/evm-config";
+  type PaymentNodeSupportedX402Network,
+  usePaymentNodeSupportedX402NetworksQuery,
+} from "@/lib/hooks/use-x402-supported-networks";
+import { cn } from "@/lib/utils";
+import type { ChainSearchResult } from "@/lib/x402/chain-registry-types";
+import { getEvmChainByCaip2Id } from "@/lib/x402/evm-config";
 
 import { ChainIcon, ChainLabel } from "./chain-icon";
 
-type ChainSearchResponse = {
-  chains: ChainSearchResult[];
-};
-
-function presetToSearchResult(preset: EvmChainConfig): ChainSearchResult {
+function supportedToSearchResult(
+  network: PaymentNodeSupportedX402Network,
+): ChainSearchResult {
+  const chainId = Number(network.caip2Id.split(":")[1]);
+  const preset = getEvmChainByCaip2Id(network.caip2Id);
   return {
-    chainId: Number(preset.caip2Id.split(":")[1]),
-    caip2Id: preset.caip2Id,
-    name: preset.displayName,
-    shortName: preset.shortName,
-    isTestnet: preset.isTestnet,
-    rpcUrl: preset.rpcUrl,
-    icon: preset.icon,
+    chainId: Number.isFinite(chainId) ? chainId : 0,
+    caip2Id: network.caip2Id,
+    name: network.displayName,
+    shortName: network.displayName,
+    isTestnet: network.isTestnet,
+    rpcUrl: network.rpcUrl,
+    icon: preset?.icon ?? null,
     isCurated: true,
   };
 }
@@ -96,11 +94,19 @@ export function ChainPickerDropdown({
   const [lastSelected, setLastSelected] = useState<ChainSearchResult | null>(
     null,
   );
-  const debouncedSearch = useDebouncedValue(searchQuery, 250);
+  const debouncedSearch = useDebouncedValue(searchQuery, 150);
 
-  const defaultChains = useMemo(
-    () => getEvmChainPresets(testnet).map(presetToSearchResult),
-    [testnet],
+  const { networks, isLoading } = usePaymentNodeSupportedX402NetworksQuery({
+    allEnvironments: true,
+    silentErrors: true,
+  });
+
+  const supportedChains = useMemo(
+    () =>
+      networks
+        .filter((network) => network.isTestnet === testnet)
+        .map(supportedToSearchResult),
+    [networks, testnet],
   );
 
   const selectedChain = useMemo(() => {
@@ -108,13 +114,10 @@ export function ChainPickerDropdown({
 
     if (lastSelected?.caip2Id === selectedCaip2Id) return lastSelected;
 
-    const preset = getEvmChainByCaip2Id(selectedCaip2Id);
-    if (preset) return presetToSearchResult(preset);
-
-    const fromDefaults = defaultChains.find(
+    const fromSupported = supportedChains.find(
       (chain) => chain.caip2Id === selectedCaip2Id,
     );
-    if (fromDefaults) return fromDefaults;
+    if (fromSupported) return fromSupported;
 
     const displayName = selectedDisplayName?.trim();
     if (displayName) {
@@ -133,33 +136,22 @@ export function ChainPickerDropdown({
 
     return null;
   }, [
-    defaultChains,
     lastSelected,
     selectedCaip2Id,
     selectedDisplayName,
+    supportedChains,
     testnet,
   ]);
 
-  const isSearching = debouncedSearch.trim().length > 0;
-
-  const { data, isFetching } = useQuery({
-    queryKey: ["x402", "chain-search", debouncedSearch, testnet],
-    queryFn: () => {
-      const params = new URLSearchParams({
-        q: debouncedSearch.trim(),
-        testnet: String(testnet),
-        limit: "12",
-      });
-      return x402Fetch<ChainSearchResponse>(
-        `/chains/search?${params.toString()}`,
-        { silentErrors: true },
-      );
-    },
-    enabled: open && isSearching,
-    staleTime: 60_000,
-  });
-
-  const displayedChains = isSearching ? (data?.chains ?? []) : defaultChains;
+  const searchLower = debouncedSearch.trim().toLowerCase();
+  const displayedChains = useMemo(() => {
+    if (!searchLower) return supportedChains;
+    return supportedChains.filter(
+      (chain) =>
+        chain.name.toLowerCase().includes(searchLower) ||
+        chain.caip2Id.toLowerCase().includes(searchLower),
+    );
+  }, [searchLower, supportedChains]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -199,7 +191,7 @@ export function ChainPickerDropdown({
             onValueChange={setSearchQuery}
           />
           <CommandList>
-            {isSearching && isFetching ? (
+            {isLoading ? (
               <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
                 <Spinner size={14} />
                 {t("chainSearchLoading")}
@@ -207,11 +199,7 @@ export function ChainPickerDropdown({
             ) : displayedChains.length === 0 ? (
               <CommandEmpty>{t("chainSearchEmpty")}</CommandEmpty>
             ) : (
-              <CommandGroup
-                heading={
-                  isSearching ? t("chainSearchResults") : t("chainDefaults")
-                }
-              >
+              <CommandGroup heading={t("chainDefaults")}>
                 {displayedChains.map((chain) => (
                   <CommandItem
                     key={chain.caip2Id}
