@@ -2,7 +2,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { ApiError } from "@/server/hono/errors";
 
-const PAYMENT_NODE_ERROR_RE = /^(\d{3}): (.*)$/s;
+const PAYMENT_NODE_ERROR_RE = /^(\d{3}): (.*)$/;
 
 /**
  * Map payment-node client errors (`${status}: ${message}`) to ApiError so x402
