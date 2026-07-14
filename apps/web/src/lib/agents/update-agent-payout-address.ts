@@ -11,8 +11,7 @@ import {
   normalizePayoutAddress,
   validatePayoutAddressForNetwork,
 } from "@/lib/payment-node/payout-address";
-import { registerAgentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
-import type { AgentPricing } from "@/lib/utils";
+import { agentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
 
 function getAgentNetwork(agent: {
   networkIdentifier: string | null;
@@ -62,8 +61,8 @@ export async function updateAgentPayoutAddress(params: {
       }
 
       if (
-        !registerAgentPricingRequiresPayoutAddress(
-          agent.pricing as AgentPricing | undefined,
+        !agentPricingRequiresPayoutAddress(
+          agent.pricing as { pricingType?: string } | null,
         )
       ) {
         return {

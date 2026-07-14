@@ -39,13 +39,8 @@ import {
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
-import { registerAgentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
-import {
-  type AgentPricing,
-  cn,
-  formatPricingDisplay,
-  shortenAddress,
-} from "@/lib/utils";
+import { agentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
+import { cn, formatPricingDisplay, shortenAddress } from "@/lib/utils";
 
 import {
   getRegistrationStatusBadgeClassName,
@@ -135,8 +130,8 @@ export function AgentDetails({
     showVerificationCta && Boolean(onVerificationSuccess);
 
   const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
-  const requiresPayoutAddress = registerAgentPricingRequiresPayoutAddress(
-    agent.pricing as AgentPricing | undefined,
+  const requiresPayoutAddress = agentPricingRequiresPayoutAddress(
+    agent.pricing,
   );
   const showPayoutAddressBanner = requiresPayoutAddress && !agent.payoutAddress;
 
