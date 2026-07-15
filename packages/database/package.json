@@ -32,7 +32,7 @@
     "prepare": "pnpm exec prisma generate --no-hints && pnpm build",
     "prisma:generate": "pnpm exec prisma generate --no-hints && pnpm build",
     "prisma:migrate:dev": "pnpm exec prisma migrate dev && pnpm exec prisma generate --no-hints && pnpm build",
-    "prisma:migrate:deploy": "pnpm exec prisma migrate deploy",
+    "prisma:migrate:deploy": "pnpm exec prisma migrate deploy && pnpm exec prisma generate --no-hints && pnpm build",
     "prisma:migrate:reset": "pnpm exec prisma migrate reset",
     "prisma:studio": "pnpm exec prisma studio",
     "lint": "eslint --max-warnings 0 .",
@@ -41,7 +41,8 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "admin:promote": "tsx scripts/admin.ts promote",
     "admin:demote": "tsx scripts/admin.ts demote",
-    "admin:list": "tsx scripts/admin.ts list"
+    "admin:list": "tsx scripts/admin.ts list",
+    "test:db:setup": "bash scripts/setup-test-db.sh"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.0.1",

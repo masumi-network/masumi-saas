@@ -822,7 +822,14 @@ model X402EvmWallet {
   organization        Organization?                 @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   address             String
   type                X402EvmWalletType
-  encryptedPrivateKey String                        @db.Text
+  /// Custodial EVM private key (legacy). New wallets use paymentNodeWalletId instead.
+  encryptedPrivateKey String?                       @db.Text
+  /// Payment-node X402EvmWallet.id when keys are custodied on the payment service.
+  paymentNodeWalletId String?
+  /// Payment-node X402Network.id for custody wallets (network-bound in PR #694).
+  paymentNodeNetworkId String?
+  /// CAIP-2 chain id of the payment-node network this wallet is bound to.
+  caip2Network         String?
   note                String?
   deletedAt           DateTime?
   backupConfirmedAt   DateTime?
@@ -837,6 +844,9 @@ model X402EvmWallet {
   @@index([userId])
   @@index([organizationId])
   @@index([type])
+  @@index([paymentNodeWalletId])
+  @@index([paymentNodeNetworkId])
+  @@index([caip2Network])
   @@map("x402_evm_wallet")
 }
 

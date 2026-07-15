@@ -34,7 +34,7 @@ import {
   isRegistrationUiPending,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { useX402Networks } from "@/lib/hooks/use-x402";
+import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { shortenAddress, stripHtml } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
@@ -64,7 +64,7 @@ export function AgentsTable({
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const { formatRelativeDate } = useFormatDate();
-  const { networks: x402Networks } = useX402Networks({
+  const { networks: x402Networks } = usePaymentNodeSupportedX402Networks({
     silentErrors: true,
     allEnvironments: true,
   });

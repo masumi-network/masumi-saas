@@ -41,6 +41,13 @@ export function registerAgentPricingRequiresPayoutAddress(
   return pricing?.pricingType !== "Free";
 }
 
+/** UI/server guard when pricing may come from stored agent JSON (looser than register schema). */
+export function agentPricingRequiresPayoutAddress(
+  pricing: { pricingType?: string } | null | undefined,
+): boolean {
+  return pricing?.pricingType !== "Free";
+}
+
 const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
   url: z.string().url().min(1),

@@ -34,6 +34,11 @@
             "type": "string",
             "nullable": true
           },
+          "caip2Network": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^eip155:\\d+$"
+          },
           "createdByUserId": {
             "type": "string",
             "nullable": true
@@ -137,6 +142,41 @@
           "createdByUserId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "X402SupportedNetwork": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caip2Id": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "rpcUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "isTestnet": {
+            "type": "boolean"
+          },
+          "defaultAsset": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^0x[a-fA-F0-9]{40}$"
+          }
+        },
+        "required": [
+          "id",
+          "caip2Id",
+          "displayName",
+          "rpcUrl",
+          "isTestnet",
+          "defaultAsset"
         ]
       },
       "X402ChainSearchResult": {
@@ -17739,7 +17779,7 @@
           "x402"
         ],
         "summary": "Sign outbound x402 payment",
-        "description": "Sign an outbound payment for a forwarded HTTP 402 response. Debits a managed-wallet budget and returns the X-PAYMENT header payload.",
+        "description": "Sign an outbound payment for a forwarded HTTP 402 response. Returns the X-PAYMENT header payload. Custodied wallets may return 402 when budget or on-chain balance is insufficient.",
         "security": [
           {
             "apiKeyHeader": []
@@ -18269,6 +18309,10 @@
                   "note": {
                     "type": "string",
                     "maxLength": 250
+                  },
+                  "caip2Network": {
+                    "type": "string",
+                    "pattern": "^eip155:\\d+$"
                   },
                   "privateKey": {
                     "type": "string",
@@ -19346,6 +19390,182 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/X402Network"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/x402/networks/supported": {
+      "get": {
+        "tags": [
+          "x402"
+        ],
+        "summary": "List payment-node supported x402 EVM chains",
+        "description": "Chains registered on the payment node that tenants may configure or select in agent x402 options.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "isTestnet",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supported chains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Networks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/X402SupportedNetwork"
+                      }
+                    }
+                  },
+                  "required": [
+                    "Networks"
+                  ]
                 }
               }
             }

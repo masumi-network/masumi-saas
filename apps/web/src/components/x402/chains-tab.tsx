@@ -278,7 +278,12 @@ export function ChainsTab() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "f" || event.ctrlKey || event.metaKey) {
+      if (
+        !event.key ||
+        event.key.toLowerCase() !== "f" ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
         return;
       }
 
@@ -327,7 +332,12 @@ export function ChainsTab() {
           facilitatorWalletId: network.facilitatorWalletId,
         }),
       },
-      { errorMessage: t("toggleFailed") },
+      {
+        errorMessage: t("toggleFailed"),
+        paymentNodeUnsupportedMessage: t("paymentNodeUnsupported", {
+          chain: network.caip2Id,
+        }),
+      },
     );
     setBusyChainId(null);
     if (result) void refetch();
@@ -922,6 +932,9 @@ export function ChainDialog({
         {
           successMessage: editing ? t("updated") : t("added"),
           errorMessage: t("saveFailed"),
+          paymentNodeUnsupportedMessage: t("paymentNodeUnsupported", {
+            chain: data.caip2Id,
+          }),
         },
       );
       setIsSaving(false);
@@ -1170,6 +1183,7 @@ export function ChainDialog({
           open={walletDialogOpen}
           defaultType="Selling"
           blockedTypes={wallets.length > 0 ? ["Selling"] : []}
+          caip2Network={selectedCaip2Id?.trim() || undefined}
           onClose={() => setWalletDialogOpen(false)}
           onSaved={(wallet) => {
             setWalletDialogOpen(false);

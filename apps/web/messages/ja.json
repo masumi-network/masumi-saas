@@ -2147,7 +2147,8 @@
         "saveChanges": "変更を保存",
         "updated": "チェーンを更新しました",
         "added": "チェーンを追加しました",
-        "saveFailed": "チェーンの保存に失敗しました"
+        "saveFailed": "チェーンの保存に失敗しました",
+        "paymentNodeUnsupported": "{chain} はペイメントノードでサポートされていません。"
       },
       "Wallets": {
         "description": "購入ウォレットは支払い、販売ウォレットはインバウンド決済を処理します。",

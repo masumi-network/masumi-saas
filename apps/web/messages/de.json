@@ -2147,7 +2147,8 @@
         "saveChanges": "Änderungen speichern",
         "updated": "Chain aktualisiert",
         "added": "Chain hinzugefügt",
-        "saveFailed": "Chain konnte nicht gespeichert werden"
+        "saveFailed": "Chain konnte nicht gespeichert werden",
+        "paymentNodeUnsupported": "{chain} wird vom Payment Node nicht unterstützt."
       },
       "Wallets": {
         "description": "Kauf-Wallets zahlen aus; Verkaufs-Wallets wickeln eingehende Zahlungen ab.",

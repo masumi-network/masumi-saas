@@ -1,15 +1,12 @@
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createRoute } from "@hono/zod-openapi";
 import {
-  cancelX402PendingWallet,
   confirmX402WalletBackup,
   countX402ManagedWallets,
   countX402PaymentAttempts,
   countX402Settlements,
-  createX402ManagedWallet,
   createX402Payment,
   deleteX402LowBalanceRule,
-  deleteX402ManagedWallet,
   deleteX402WalletBudget,
   getX402Analytics,
   getX402WalletBalances,
@@ -24,17 +21,21 @@ import {
   setX402LowBalanceRule,
   setX402WalletBudget,
   updateX402LowBalanceRule,
-  updateX402ManagedWallet,
   upsertX402Network,
   verifyX402Payment,
 } from "@masumi/payment-source-x402";
 
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  getPaymentNodeX402NetworkByCaip2,
+  listPaymentNodeX402Networks,
+} from "@/lib/payment-node/resolve-payment-node-x402-network";
 import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
 import {
   resolveChainsByCaip2Ids,
   searchChainsForX402,
 } from "@/lib/x402/chain-registry";
+import { createX402WalletWithCustody } from "@/lib/x402/create-wallet";
 import {
   requireX402ApiKeyIdForPay,
   resolveX402ApiKeyId,
@@ -82,6 +83,8 @@ import {
   listPaymentAttemptsSchemaOutput,
   listSettlementsSchemaInput,
   listSettlementsSchemaOutput,
+  listSupportedNetworksSchemaInput,
+  listSupportedNetworksSchemaOutput,
   listWalletsSchemaInput,
   listWalletsSchemaOutput,
   lowBalanceRuleSchema,
@@ -107,6 +110,12 @@ import {
   walletsCountSchemaInput,
   x402NetworkSchema,
 } from "@/lib/x402/schemas";
+import {
+  cancelX402PendingWalletWithCustody,
+  deleteX402WalletWithCustody,
+  proxyCreateX402PaymentIfCustodied,
+  updateX402WalletWithCustody,
+} from "@/lib/x402/wallet-custody-ops";
 import { triggerX402Payment } from "@/lib/x402/webhook-events";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
 
@@ -254,7 +263,7 @@ export function registerX402Routes(app: X402App): void {
       tags: ["x402"],
       summary: "Sign outbound x402 payment",
       description:
-        "Sign an outbound payment for a forwarded HTTP 402 response. Debits a managed-wallet budget and returns the X-PAYMENT header payload.",
+        "Sign an outbound payment for a forwarded HTTP 402 response. Returns the X-PAYMENT header payload. Custodied wallets may return 402 when budget or on-chain balance is insufficient.",
       security,
       request: {
         body: {
@@ -280,9 +289,32 @@ export function registerX402Routes(app: X402App): void {
         });
         await requireX402PayAccess(authContext);
         const input = c.req.valid("json");
+        const scope = x402Scope(authContext);
+
+        const proxied = await proxyCreateX402PaymentIfCustodied(
+          authContext.user.id,
+          scope,
+          {
+            evmWalletId: input.evmWalletId,
+            paymentRequired: input.paymentRequired,
+            preferredNetwork: input.preferredNetwork,
+            preferredAsset: input.preferredAsset,
+            paymentIdentifier: input.paymentIdentifier,
+          },
+        );
+        if (proxied != null) {
+          return c.json(
+            {
+              ...proxied,
+              caip2Network: String(proxied.caip2Network),
+              paymentPayload: proxied.paymentPayload as Record<string, unknown>,
+            },
+            200,
+          );
+        }
 
         const result = await createX402Payment({
-          ...x402Scope(authContext),
+          ...scope,
           apiKeyId: await requireX402ApiKeyIdForPay(
             authContext,
             input.apiKeyId,
@@ -385,13 +417,14 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const wallet = serializeWallet(
-          await createX402ManagedWallet({
+          await createX402WalletWithCustody({
             userId: authContext.user.id,
             organizationId: authContext.activeOrganizationId,
             createdByUserId: authContext.user.id,
             type: input.type,
             note: input.note,
             privateKey: input.privateKey,
+            caip2Network: input.caip2Network,
           }),
         );
 
@@ -435,7 +468,7 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
 
         const wallet = serializeWallet(
-          await updateX402ManagedWallet({
+          await updateX402WalletWithCustody(authContext.user.id, {
             ...x402Scope(authContext),
             id: input.id,
             note: input.note,
@@ -481,7 +514,8 @@ export function registerX402Routes(app: X402App): void {
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const result = await deleteX402ManagedWallet(
+        const result = await deleteX402WalletWithCustody(
+          authContext.user.id,
           x402Scope(authContext),
           input.id,
         );
@@ -568,7 +602,8 @@ export function registerX402Routes(app: X402App): void {
         await requireX402AdminWrite(authContext);
         const input = c.req.valid("json");
 
-        const result = await cancelX402PendingWallet(
+        const result = await cancelX402PendingWalletWithCustody(
+          authContext.user.id,
           x402Scope(authContext),
           input.id,
         );
@@ -622,6 +657,45 @@ export function registerX402Routes(app: X402App): void {
 
   app.openapi(
     createRoute({
+      method: "get",
+      path: "/networks/supported",
+      tags: ["x402"],
+      summary: "List payment-node supported x402 EVM chains",
+      description:
+        "Chains registered on the payment node that tenants may configure or select in agent x402 options.",
+      security,
+      request: { query: listSupportedNetworksSchemaInput },
+      responses: {
+        200: {
+          description: "Supported chains",
+          content: {
+            "application/json": { schema: listSupportedNetworksSchemaOutput },
+          },
+        },
+        ...stdResponses,
+      },
+    }),
+    async (c) => {
+      try {
+        const authContext = await getAuthenticatedOrThrow(c.req.raw, {
+          requireEmailVerified: false,
+        });
+        await requireX402AdminRead(authContext);
+        const query = c.req.valid("query");
+
+        const Networks = await listPaymentNodeX402Networks({
+          isTestnet: query.isTestnet,
+        });
+
+        return c.json({ Networks }, 200);
+      } catch (error) {
+        handleRouteError(error, "x402 list supported networks failed");
+      }
+    },
+  );
+
+  app.openapi(
+    createRoute({
       method: "post",
       path: "/networks",
       tags: ["x402"],
@@ -653,11 +727,21 @@ export function registerX402Routes(app: X402App): void {
         const input = c.req.valid("json");
         assertCaip2WithinWriteScope(authContext, input.caip2Id);
 
+        const paymentNodeNetwork = await getPaymentNodeX402NetworkByCaip2(
+          input.caip2Id,
+        );
+
         const network = serializeNetwork(
           await upsertX402Network({
             ...x402Scope(authContext),
             createdByUserId: authContext.user.id,
-            ...input,
+            caip2Id: input.caip2Id,
+            displayName: input.displayName || paymentNodeNetwork.displayName,
+            rpcUrl: paymentNodeNetwork.rpcUrl,
+            isTestnet: paymentNodeNetwork.isTestnet,
+            isEnabled: input.isEnabled,
+            defaultAsset: input.defaultAsset,
+            facilitatorWalletId: input.facilitatorWalletId,
           }),
         );
 

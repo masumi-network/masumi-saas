@@ -4,7 +4,9 @@
  * Responses are parsed with Zod schemas to stay in sync with the payment node API.
  */
 
-import type { z } from "zod";
+import { z } from "zod";
+
+import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 
 import type {
   AddWalletToSourceInput,
@@ -72,6 +74,13 @@ import {
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
+import {
+  paymentNodeX402NetworkListSchema,
+  paymentNodeX402SettleOutputSchema,
+  paymentNodeX402VerifyOutputSchema,
+  paymentNodeX402WalletListSchema,
+  paymentNodeX402WalletSchema,
+} from "./x402-schemas";
 
 export type {
   AddWalletToSourceInput,
@@ -1013,6 +1022,129 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: parsedBody,
         },
         runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Create a managed x402 EVM wallet on the payment node (keys custodied there). */
+    async createX402Wallet(body: {
+      networkId: string;
+      type: "Purchasing" | "Selling";
+      note?: string | null;
+      privateKey?: string;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema,
+      );
+    },
+
+    async listX402Wallets(params?: {
+      take?: number;
+      cursorId?: string;
+      type?: "Purchasing" | "Selling";
+      networkId?: string;
+    }) {
+      const query: Record<string, string> = {};
+      if (params?.take != null) query.take = String(params.take);
+      if (params?.cursorId != null) query.cursorId = params.cursorId;
+      if (params?.type != null) query.type = params.type;
+      if (params?.networkId != null) query.networkId = params.networkId;
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets`,
+        { method: "GET", query },
+        paymentNodeX402WalletListSchema,
+      );
+    },
+
+    /** List x402 networks registered on the payment node (admin only). */
+    async listX402Networks(params?: { isTestnet?: boolean }) {
+      const query: Record<string, string> = {};
+      if (params?.isTestnet != null) {
+        query.isTestnet = params.isTestnet ? "true" : "false";
+      }
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/networks`,
+        { method: "GET", query },
+        paymentNodeX402NetworkListSchema,
+      );
+    },
+
+    async updateX402Wallet(body: { id: string; note?: string | null }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/update`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema.omit({ privateKey: true }),
+      );
+    },
+
+    async deleteX402Wallet(body: { id: string }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/delete`,
+        { method: "POST", body },
+        z.object({ id: z.string() }),
+      );
+    },
+
+    async bindX402WalletToNetwork(body: { id: string; networkId: string }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/bind-network`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema.omit({ privateKey: true }),
+      );
+    },
+
+    async createX402Payment(body: {
+      evmWalletId: string;
+      paymentRequired: unknown;
+      preferredNetwork?: string;
+      preferredAsset?: string;
+      paymentIdentifier?: string;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/pay`,
+        { method: "POST", body },
+        createPaymentSchemaOutput,
+      );
+    },
+
+    async verifyX402Payment(body: {
+      supportedPaymentSourceId: string;
+      paymentPayload: unknown;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/verify`,
+        { method: "POST", body },
+        paymentNodeX402VerifyOutputSchema,
+      );
+    },
+
+    async settleX402Payment(body: {
+      supportedPaymentSourceId: string;
+      paymentPayload: unknown;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/settle`,
+        { method: "POST", body },
+        paymentNodeX402SettleOutputSchema,
       );
     },
 

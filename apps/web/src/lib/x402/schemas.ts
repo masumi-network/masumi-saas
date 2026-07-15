@@ -171,6 +171,7 @@ export const walletSchemaOutput = z
     address: evmAddressSchema,
     type: z.nativeEnum(X402EvmWalletType),
     note: z.string().nullable(),
+    caip2Network: caip2Eip155Schema.nullable().optional(),
     createdByUserId: z.string().nullable(),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -180,6 +181,7 @@ export const walletSchemaOutput = z
 export const createWalletSchemaInput = z.object({
   type: z.nativeEnum(X402EvmWalletType),
   note: walletNoteSchema.optional(),
+  caip2Network: caip2Eip155Schema.optional(),
   privateKey: z
     .string()
     .regex(/^0x[a-fA-F0-9]{64}$/)
@@ -240,6 +242,25 @@ export const listNetworksSchemaInput = z.object({
 
 export const listNetworksSchemaOutput = z.object({
   Networks: z.array(x402NetworkSchema),
+});
+
+export const supportedNetworkSchema = z
+  .object({
+    id: z.string(),
+    caip2Id: caip2Eip155Schema,
+    displayName: z.string(),
+    rpcUrl: z.string().url(),
+    isTestnet: z.boolean(),
+    defaultAsset: evmAddressSchema.nullable(),
+  })
+  .openapi("X402SupportedNetwork");
+
+export const listSupportedNetworksSchemaInput = z.object({
+  isTestnet: booleanQuerySchema.optional(),
+});
+
+export const listSupportedNetworksSchemaOutput = z.object({
+  Networks: z.array(supportedNetworkSchema),
 });
 
 export const searchChainsSchemaInput = z.object({

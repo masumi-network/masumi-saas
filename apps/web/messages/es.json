@@ -2147,7 +2147,8 @@
         "saveChanges": "Guardar cambios",
         "updated": "Cadena actualizada",
         "added": "Cadena añadida",
-        "saveFailed": "No se pudo guardar la cadena"
+        "saveFailed": "No se pudo guardar la cadena",
+        "paymentNodeUnsupported": "{chain} no es compatible con el nodo de pagos."
       },
       "Wallets": {
         "description": "Las carteras de compra pagan; las carteras de venta liquidan los pagos entrantes.",
