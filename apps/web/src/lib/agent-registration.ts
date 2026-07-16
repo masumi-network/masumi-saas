@@ -79,7 +79,6 @@ export type RegisterAgentParams = {
   id?: string;
   name: string;
   description: string | null;
-  extendedDescription: string | null;
   apiUrl: string;
   runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
   integrationConnectionId?: string | null;
@@ -704,7 +703,6 @@ async function registerAgentOnChainUntilSetup(
       ...(params.id ? { id: params.id } : {}),
       name: params.name,
       description: params.description,
-      extendedDescription: params.extendedDescription,
       apiUrl: params.apiUrl,
       runtimeProvider: params.runtimeProvider ?? "DIRECT_MIP",
       integrationConnectionId: params.integrationConnectionId ?? null,

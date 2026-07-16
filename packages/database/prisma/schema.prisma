@@ -437,7 +437,6 @@ model Agent {
   id                  String  @id @default(cuid())
   name                String
   description         String? // Short tagline, max 250 chars
-  extendedDescription String? // Optional detailed overview (Markdown supported)
   apiUrl              String
   userId              String
   user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)

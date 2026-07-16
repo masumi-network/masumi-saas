@@ -5580,10 +5580,6 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "extendedDescription": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "apiUrl": {
                           "type": "string",
                           "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -5768,7 +5764,6 @@
                         "userId",
                         "name",
                         "description",
-                        "extendedDescription",
                         "apiUrl",
                         "organizationId",
                         "registrationState",
@@ -5797,7 +5792,6 @@
                       "userId": "clu01exampleuser0001",
                       "name": "Research assistant",
                       "description": "Helps with literature review",
-                      "extendedDescription": null,
                       "apiUrl": "https://agent.example.com/mip",
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
@@ -7018,10 +7012,6 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "extendedDescription": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "apiUrl": {
                           "type": "string",
                           "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -7206,7 +7196,6 @@
                         "userId",
                         "name",
                         "description",
-                        "extendedDescription",
                         "apiUrl",
                         "organizationId",
                         "registrationState",
@@ -7233,7 +7222,6 @@
                       "userId": "clu01exampleuser0001",
                       "name": "Research assistant",
                       "description": "Helps with literature review",
-                      "extendedDescription": null,
                       "apiUrl": "https://agent.example.com/mip",
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
@@ -7448,10 +7436,6 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "extendedDescription": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "apiUrl": {
                           "type": "string",
                           "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -7636,7 +7620,6 @@
                         "userId",
                         "name",
                         "description",
-                        "extendedDescription",
                         "apiUrl",
                         "organizationId",
                         "registrationState",
@@ -7663,7 +7646,6 @@
                       "userId": "clu01exampleuser0001",
                       "name": "Research assistant",
                       "description": "Helps with literature review",
-                      "extendedDescription": null,
                       "apiUrl": "https://agent.example.com/mip",
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
@@ -9330,10 +9312,6 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "extendedDescription": {
-                          "type": "string",
-                          "nullable": true
-                        },
                         "apiUrl": {
                           "type": "string",
                           "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -9518,7 +9496,6 @@
                         "userId",
                         "name",
                         "description",
-                        "extendedDescription",
                         "apiUrl",
                         "organizationId",
                         "registrationState",
@@ -9545,7 +9522,6 @@
                       "userId": "clu01exampleuser0001",
                       "name": "Research assistant",
                       "description": "Helps with literature review",
-                      "extendedDescription": null,
                       "apiUrl": "https://agent.example.com/mip",
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",
@@ -10071,10 +10047,6 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "extendedDescription": {
-                            "type": "string",
-                            "nullable": true
-                          },
                           "apiUrl": {
                             "type": "string",
                             "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -10259,7 +10231,6 @@
                           "userId",
                           "name",
                           "description",
-                          "extendedDescription",
                           "apiUrl",
                           "organizationId",
                           "registrationState",
@@ -10294,7 +10265,6 @@
                         "userId": "clu01exampleuser0001",
                         "name": "Research assistant",
                         "description": "Helps with literature review",
-                        "extendedDescription": null,
                         "apiUrl": "https://agent.example.com/mip",
                         "organizationId": null,
                         "registrationState": "RegistrationConfirmed",
@@ -10488,20 +10458,6 @@
                       {
                         "type": "string",
                         "maxLength": 250
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          ""
-                        ]
-                      }
-                    ]
-                  },
-                  "extendedDescription": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 5000
                       },
                       {
                         "type": "string",
@@ -10872,7 +10828,6 @@
                 "example": {
                   "name": "Research assistant",
                   "description": "Helps with literature review",
-                  "extendedDescription": "",
                   "apiUrl": "https://agent.example.com/mip",
                   "runtimeProvider": "DIRECT_MIP",
                   "tags": "research, nlp",
@@ -10934,10 +10889,6 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "extendedDescription": {
                           "type": "string",
                           "nullable": true
                         },
@@ -11125,7 +11076,6 @@
                         "userId",
                         "name",
                         "description",
-                        "extendedDescription",
                         "apiUrl",
                         "organizationId",
                         "registrationState",
@@ -11154,7 +11104,6 @@
                       "userId": "clu01exampleuser0001",
                       "name": "Research assistant",
                       "description": "Helps with literature review",
-                      "extendedDescription": null,
                       "apiUrl": "https://agent.example.com/mip",
                       "organizationId": null,
                       "registrationState": "RegistrationConfirmed",

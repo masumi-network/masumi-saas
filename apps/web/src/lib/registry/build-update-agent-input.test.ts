@@ -95,6 +95,6 @@ describe("buildUpdateAgentInput", () => {
       verifications: [],
     });
 
-    expect(input.image).toContain("/agent-icons/bot");
+    expect(input.image).toMatch(/^ipfs:\/\//);
   });
 });

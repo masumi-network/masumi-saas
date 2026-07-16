@@ -56,7 +56,6 @@ function matchesAgentSearch(
   agent: {
     name: string;
     description: string | null;
-    extendedDescription: string | null;
     apiUrl: string;
     tags: string[];
   },
@@ -68,7 +67,6 @@ function matchesAgentSearch(
   return (
     agent.name.toLowerCase().includes(query) ||
     agent.description?.toLowerCase().includes(query) === true ||
-    agent.extendedDescription?.toLowerCase().includes(query) === true ||
     agent.apiUrl.toLowerCase().includes(query) ||
     agent.tags.some((tag) => tag.toLowerCase().includes(query))
   );
@@ -269,7 +267,6 @@ app.openapi(
     const {
       name,
       description,
-      extendedDescription,
       apiUrl,
       runtimeProvider,
       integrationConnectionId,
@@ -485,9 +482,6 @@ app.openapi(
         id: agentId,
         name,
         description: description?.trim() || null,
-        extendedDescription: (extendedDescription?.trim() || null) as
-          | string
-          | null,
         apiUrl: resolvedApiUrl,
         runtimeProvider: selectedRuntimeProvider,
         integrationConnectionId: resolvedIntegrationConnectionId,

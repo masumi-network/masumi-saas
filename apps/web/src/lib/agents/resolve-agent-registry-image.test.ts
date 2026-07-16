@@ -18,10 +18,11 @@ describe("resolveAgentRegistryImage", () => {
     );
   });
 
-  it("maps preset keys to hosted icon URLs", () => {
+  it("maps preset keys to IPFS icon URLs", () => {
     expect(resolveAgentRegistryImage("bot")).toBe(
       resolvePresetAgentIconUrl("bot"),
     );
+    expect(resolveAgentRegistryImage("bot")).toMatch(/^ipfs:\/\//);
   });
 
   it("returns undefined for empty or unknown values", () => {

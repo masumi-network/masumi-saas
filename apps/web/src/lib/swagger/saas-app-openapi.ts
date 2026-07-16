@@ -72,7 +72,6 @@ const agentListItemSchema = z.object({
   userId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  extendedDescription: z.string().nullable(),
   apiUrl: z.string().openapi({
     description:
       "Agent API base URL. In production it must be a public HTTPS endpoint.",
@@ -121,7 +120,6 @@ const agentsListSuccessSchema = z
           userId: "clu01exampleuser0001",
           name: "Research assistant",
           description: "Helps with literature review",
-          extendedDescription: null,
           apiUrl: "https://agent.example.com/mip",
           organizationId: null,
           registrationState: "RegistrationConfirmed",
@@ -148,7 +146,6 @@ const exampleAgentItem = {
   userId: "clu01exampleuser0001",
   name: "Research assistant",
   description: "Helps with literature review",
-  extendedDescription: null,
   apiUrl: "https://agent.example.com/mip",
   organizationId: null,
   registrationState: "RegistrationConfirmed",

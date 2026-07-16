@@ -269,7 +269,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Demo agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
@@ -332,7 +331,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Mainnet agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
@@ -383,7 +381,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Mainnet agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
@@ -419,7 +416,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Demo agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
@@ -517,7 +513,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Demo agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,
@@ -624,7 +619,6 @@ describe("startAgentRegistration", () => {
       {
         name: "Demo agent",
         description: "Test",
-        extendedDescription: null,
         apiUrl: "https://agent.example.com",
         tags: ["demo"],
         icon: null,

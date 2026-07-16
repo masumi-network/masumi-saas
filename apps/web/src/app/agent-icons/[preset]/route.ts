@@ -1,3 +1,7 @@
+/**
+ * Legacy HTTP fallback for agents registered before IPFS preset icons.
+ * New registrations use ipfs:// URLs from agent-icon-ipfs.generated.ts.
+ */
 import { NextResponse } from "next/server";
 
 import {
@@ -5,30 +9,34 @@ import {
   isPresetIconKey,
 } from "@/lib/constants/agent-icons";
 
-const PRESET_COLORS: Record<string, string> = {
-  bot: "#6366f1",
-  sparkles: "#a855f7",
-  zap: "#f59e0b",
-  code: "#0ea5e9",
-  image: "#ec4899",
-  database: "#14b8a6",
-  fileText: "#64748b",
-  messageSquare: "#22c55e",
-  book: "#b45309",
-  brain: "#8b5cf6",
-  cpu: "#475569",
-  globe: "#06b6d4",
-  mic: "#ef4444",
-  headphones: "#f97316",
-  palette: "#d946ef",
-  search: "#3b82f6",
-  graduationCap: "#10b981",
-  briefcase: "#78716c",
-  video: "#e11d48",
-};
+const PRESET_PALETTE = [
+  "#6366f1",
+  "#a855f7",
+  "#f59e0b",
+  "#0ea5e9",
+  "#ec4899",
+  "#14b8a6",
+  "#22c55e",
+  "#8b5cf6",
+  "#06b6d4",
+  "#ef4444",
+  "#f97316",
+  "#3b82f6",
+  "#10b981",
+  "#e11d48",
+  "#78716c",
+];
+
+function presetColor(preset: string): string {
+  let hash = 0;
+  for (let i = 0; i < preset.length; i += 1) {
+    hash = (hash * 31 + preset.charCodeAt(i)) >>> 0;
+  }
+  return PRESET_PALETTE[hash % PRESET_PALETTE.length] ?? "#6366f1";
+}
 
 function buildPresetIconSvg(preset: string): string {
-  const fill = PRESET_COLORS[preset] ?? "#6366f1";
+  const fill = presetColor(preset);
   const label = preset.slice(0, 2).toUpperCase();
 
   return `<?xml version="1.0" encoding="UTF-8"?>

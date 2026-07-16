@@ -3,7 +3,6 @@
 import {
   CircleHelp,
   DollarSign,
-  FileText,
   Fingerprint,
   Link2,
   ShieldCheck,
@@ -16,8 +15,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
-import { HtmlContent } from "@/components/html-content";
-import { Markdown } from "@/components/markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,31 +266,6 @@ export function AgentDetails({
                     <p className="text-sm text-muted-foreground">
                       {agent.description}
                     </p>
-                  </div>
-                </div>
-                <Separator />
-              </>
-            )}
-
-            {/* Extended Description */}
-            {agent.extendedDescription && (
-              <>
-                <div className="flex gap-3">
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">
-                      {t("extendedDescription")}
-                    </p>
-                    {/<[a-z][\s\S]*>/i.test(agent.extendedDescription) ? (
-                      <HtmlContent
-                        html={agent.extendedDescription}
-                        className="text-sm"
-                      />
-                    ) : (
-                      <Markdown className="text-sm">
-                        {agent.extendedDescription}
-                      </Markdown>
-                    )}
                   </div>
                 </div>
                 <Separator />

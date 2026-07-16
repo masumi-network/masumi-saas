@@ -1,4 +1,4 @@
-import { appConfig } from "@/lib/config/app.config";
+import { resolvePresetAgentIconIpfsUrl } from "@/lib/constants/agent-icon-ipfs";
 import {
   type AgentIconPresetKey,
   isIconUrl,
@@ -16,8 +16,7 @@ function normalizeIconUrl(value: string): string {
 }
 
 export function resolvePresetAgentIconUrl(preset: AgentIconPresetKey): string {
-  const base = appConfig.appUrl.replace(/\/$/, "");
-  return `${base}/agent-icons/${preset}`;
+  return resolvePresetAgentIconIpfsUrl(preset);
 }
 
 export function resolveAgentRegistryImage(

@@ -3667,7 +3667,6 @@ export const AgentScalarFieldEnum = {
   id: "id",
   name: "name",
   description: "description",
-  extendedDescription: "extendedDescription",
   apiUrl: "apiUrl",
   userId: "userId",
   organizationId: "organizationId",
