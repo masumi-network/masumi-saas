@@ -19,6 +19,7 @@ import {
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
+import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
@@ -992,6 +993,8 @@ export async function completeOnChainRegistration(
       return { agent: existing, eventType: null, pending: true };
     }
 
+    const registryImage = resolveAgentRegistryImage(agent.icon);
+
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
@@ -1001,6 +1004,7 @@ export async function completeOnChainRegistration(
       name: agent.name,
       apiBaseUrl: agent.apiUrl,
       description: agent.description?.trim() ?? "",
+      ...(registryImage ? { image: registryImage } : {}),
       Tags: agent.tags,
       ExampleOutputs: payload.exampleOutputs,
       Capability: {

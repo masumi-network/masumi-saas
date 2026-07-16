@@ -323,6 +323,7 @@ export async function writeOnChainVerifications(params: {
     registryEntry,
     onChainMetadata,
     storedRegistration: refMeta.registrationPayload ?? null,
+    agentIcon: agent.icon,
     verifications,
   });
 

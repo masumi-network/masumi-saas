@@ -197,6 +197,7 @@ export const registerAgentInputSchema = z.object({
   name: z.string(),
   apiBaseUrl: z.string(),
   description: z.string(),
+  image: z.string().max(250).optional(),
   Tags: z.array(z.string()),
   ExampleOutputs: z.array(
     z.object({ name: z.string(), url: z.string(), mimeType: z.string() }),
