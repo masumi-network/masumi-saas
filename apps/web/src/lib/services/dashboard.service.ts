@@ -2,6 +2,12 @@ import prisma from "@masumi/database/client";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
 import { getActiveOrgMemberRole } from "@/lib/auth/org-admin";
+import {
+  formatLovelaceBalanceDisplay,
+  resolveSellingWalletsAdaBalance,
+} from "@/lib/payment-node/address-balance";
+import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
@@ -135,6 +141,11 @@ export async function getDashboardOverview(
     pricing: a.pricing as Record<string, unknown> | null,
   }));
 
+  const balance = await resolveDashboardBalance(
+    userId,
+    network === "Mainnet" ? "Mainnet" : "Preprod",
+  );
+
   const apiKeysList = (
     apiKeysResult as Array<{
       id: string;
@@ -173,7 +184,23 @@ export async function getDashboardOverview(
     runningAgentCount,
     pendingAgentCount,
     failedAgentCount,
-    // TODO: Integrate real balance from payment/wallet service
-    balance: "0",
+    balance,
   };
+}
+
+async function resolveDashboardBalance(
+  userId: string,
+  network: PaymentNodeNetwork,
+): Promise<string> {
+  const client = await getPaymentNodeClientForUser(userId);
+  if (!client) {
+    return formatLovelaceBalanceDisplay(0n);
+  }
+
+  try {
+    return await resolveSellingWalletsAdaBalance(client, network);
+  } catch (error) {
+    console.error("[Dashboard] Failed to resolve wallet balance:", error);
+    return formatLovelaceBalanceDisplay(0n);
+  }
 }
