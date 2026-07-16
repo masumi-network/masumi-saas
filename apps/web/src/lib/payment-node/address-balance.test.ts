@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   addressHasConfirmedBalance,
   formatLovelaceBalanceDisplay,
   readLovelaceFromBalanceAmounts,
+  resolveAdaBalanceForAddresses,
 } from "./address-balance";
+import type { PaymentNodeClient } from "./client";
 
 describe("address-balance", () => {
   it("sums lovelace entries and ignores other assets", () => {
@@ -33,5 +35,28 @@ describe("address-balance", () => {
   it("formats ADA for dashboard display", () => {
     expect(formatLovelaceBalanceDisplay(2_500_000n)).toBe("2.5 ADA");
     expect(formatLovelaceBalanceDisplay(0n)).toBe("0 ADA");
+  });
+
+  it("sums balances for the provided addresses", async () => {
+    const getBalance = vi
+      .fn()
+      .mockResolvedValueOnce({
+        Balance: [{ unit: "lovelace", quantity: 1_000_000 }],
+      })
+      .mockResolvedValueOnce({
+        Balance: [{ unit: "lovelace", quantity: 2_000_000 }],
+      });
+    const client = {
+      getBalance,
+    };
+
+    const balance = await resolveAdaBalanceForAddresses(
+      client as unknown as PaymentNodeClient,
+      "Preprod",
+      ["addr_test1one", "addr_test1two", "addr_test1one"],
+    );
+
+    expect(balance).toBe("3 ADA");
+    expect(getBalance).toHaveBeenCalledTimes(2);
   });
 });
