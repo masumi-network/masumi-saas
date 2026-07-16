@@ -179,7 +179,7 @@ ${urlEntries}
 export function resolvePresetAgentIconIpfsUrl(
   preset: AgentIconPresetKey,
 ): string {
-  return AGENT_ICON_IPFS_URLS[preset];
+  return AGENT_ICON_IPFS_URLS[preset as keyof typeof AGENT_ICON_IPFS_URLS];
 }
 `;
 
