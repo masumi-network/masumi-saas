@@ -8,10 +8,12 @@ import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client"
 import type { BalanceAmount } from "./schemas";
 import { resolveSellingWalletAddresses } from "./selling-wallet-addresses";
 
+const ZERO_LOVELACE = BigInt(0);
+
 export function readLovelaceFromBalanceAmounts(
   amounts: ReadonlyArray<Pick<BalanceAmount, "unit" | "quantity">>,
 ): bigint {
-  let total = 0n;
+  let total = ZERO_LOVELACE;
   for (const entry of amounts) {
     if (entry.unit === "" || entry.unit === "lovelace") {
       total += BigInt(entry.quantity);
@@ -23,7 +25,7 @@ export function readLovelaceFromBalanceAmounts(
 export function addressHasConfirmedBalance(
   amounts: ReadonlyArray<Pick<BalanceAmount, "unit" | "quantity">>,
 ): boolean {
-  return readLovelaceFromBalanceAmounts(amounts) > 0n;
+  return readLovelaceFromBalanceAmounts(amounts) > ZERO_LOVELACE;
 }
 
 export async function fetchAddressBalance(
@@ -51,7 +53,7 @@ export async function checkAddressHasConfirmedBalance(
 }
 
 export function formatLovelaceBalanceDisplay(lovelace: bigint): string {
-  if (lovelace <= 0n) {
+  if (lovelace <= ZERO_LOVELACE) {
     return formatUnitAmount("lovelace", "0");
   }
   return formatUnitAmount("lovelace", lovelace.toString());
@@ -67,10 +69,10 @@ export async function resolveAdaBalanceForAddresses(
   ];
 
   if (uniqueAddresses.length === 0) {
-    return formatLovelaceBalanceDisplay(0n);
+    return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
   }
 
-  let totalLovelace = 0n;
+  let totalLovelace = ZERO_LOVELACE;
   for (const address of uniqueAddresses) {
     const balance = await fetchAddressBalance(client, { address, network });
     totalLovelace += readLovelaceFromBalanceAmounts(balance);
@@ -91,7 +93,7 @@ export async function resolveUserSellingWalletsBalance(
 
   const client = await getPaymentNodeClientForUser(userId);
   if (!client) {
-    return formatLovelaceBalanceDisplay(0n);
+    return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
   }
 
   try {
@@ -101,6 +103,6 @@ export async function resolveUserSellingWalletsBalance(
       "[Payment Node] Failed to resolve selling wallet balance:",
       error,
     );
-    return formatLovelaceBalanceDisplay(0n);
+    return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
   }
 }
