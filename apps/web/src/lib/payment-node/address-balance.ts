@@ -34,6 +34,22 @@ export async function fetchAddressBalance(
   return Balance;
 }
 
+export async function checkAddressHasConfirmedBalance(
+  client: PaymentNodeClient,
+  params: { address: string; network: PaymentNodeNetwork },
+): Promise<boolean> {
+  try {
+    const balance = await fetchAddressBalance(client, params);
+    return addressHasConfirmedBalance(balance);
+  } catch (error) {
+    console.error(
+      "[Payment Node] Failed to check confirmed address balance:",
+      error,
+    );
+    return false;
+  }
+}
+
 export function formatLovelaceBalanceDisplay(lovelace: bigint): string {
   if (lovelace <= 0n) {
     return formatUnitAmount("lovelace", "0");
