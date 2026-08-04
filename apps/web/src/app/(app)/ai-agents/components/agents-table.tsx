@@ -35,7 +35,7 @@ import {
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
-import { shortenAddress, stripHtml } from "@/lib/utils";
+import { shortenAddress } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
@@ -217,10 +217,7 @@ export function AgentsTable({
                       ) : null}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {agent.description ??
-                        (agent.extendedDescription
-                          ? stripHtml(agent.extendedDescription)
-                          : undefined)}
+                      {agent.description}
                     </div>
                   </TableCell>
                   <TableCell className="text-xs whitespace-nowrap">

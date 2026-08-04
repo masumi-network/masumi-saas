@@ -1,3 +1,4 @@
+import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import type {
   PaymentNodeNetwork,
   RegistryAgentIdentifierMetadata,
@@ -27,6 +28,7 @@ type BuildUpdateAgentInputParams = {
   registryEntry: RegistryEntry;
   onChainMetadata: RegistryAgentIdentifierMetadata;
   storedRegistration?: StoredRegistrationPayload | null;
+  agentIcon?: string | null;
   verifications: Verification[];
 };
 
@@ -53,6 +55,8 @@ export function buildUpdateAgentInput(
 ): UpdateAgentInput {
   const { registryEntry, onChainMetadata, storedRegistration } = params;
   const metadata = onChainMetadata.Metadata;
+  const image =
+    metadata.image ?? resolveAgentRegistryImage(params.agentIcon) ?? undefined;
 
   const exampleOutputs =
     metadata.ExampleOutputs ?? storedRegistration?.exampleOutputs ?? [];
@@ -94,6 +98,7 @@ export function buildUpdateAgentInput(
     name: metadata.name ?? registryEntry.name,
     apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl,
     description: metadata.description ?? registryEntry.description ?? "",
+    ...(image ? { image } : {}),
     Tags:
       metadata.Tags && metadata.Tags.length > 0
         ? metadata.Tags

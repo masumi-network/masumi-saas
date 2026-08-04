@@ -10,7 +10,6 @@ export type Agent = {
   id: string;
   name: string;
   description: string | null;
-  extendedDescription: string | null;
   apiUrl: string;
   tags: string[];
   icon: string | null;

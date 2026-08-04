@@ -15,7 +15,6 @@ import {
   NEW_LANGDOCK_CONNECTION,
   prefillLangdockFromConnection,
 } from "@/components/integrations/langdock-connection-fields";
-import { RichTextEditor } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -38,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -86,7 +86,6 @@ type PricingMode = "Free" | "Fixed" | "Dynamic";
 type AgentFormFields = {
   name: string;
   description?: string;
-  extendedDescription?: string;
   pricingType: PricingMode;
   prices: Array<{ amount: string; asset: string }>;
   tags?: string;
@@ -263,11 +262,6 @@ export function RegisterAgentDialog({
         .max(250, t("descriptionMaxLength"))
         .optional()
         .or(z.literal("")),
-      extendedDescription: z
-        .string()
-        .max(5000, t("extendedDescriptionMaxLength"))
-        .optional()
-        .or(z.literal("")),
       runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]),
       apiUrl: z.string().optional().or(z.literal("")),
       integrationConnectionId: z.string().optional().or(z.literal("")),
@@ -380,7 +374,6 @@ export function RegisterAgentDialog({
     defaultValues: {
       name: "",
       description: "",
-      extendedDescription: "",
       runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
       integrationConnectionId: NEW_LANGDOCK_CONNECTION,
@@ -487,7 +480,6 @@ export function RegisterAgentDialog({
     form.reset({
       name: "",
       description: "",
-      extendedDescription: "",
       runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
       integrationConnectionId: NEW_LANGDOCK_CONNECTION,
@@ -619,7 +611,6 @@ export function RegisterAgentDialog({
         runtimeProvider: data.runtimeProvider,
         name: data.name,
         description: data.description?.trim() ?? "",
-        extendedDescription: data.extendedDescription?.trim() ?? "",
         apiUrl: data.runtimeProvider === "DIRECT_MIP" ? data.apiUrl : undefined,
         integrationConnectionId:
           data.runtimeProvider === "LANGDOCK" &&
@@ -762,15 +753,14 @@ export function RegisterAgentDialog({
                       value={field.value ?? "bot"}
                       onChange={field.onChange}
                       onClearError={() => form.clearErrors("icon")}
-                      onClearIcon={() => form.setValue("icon", "bot")}
                       translations={{
                         icon: t("icon"),
                         iconTooltip: t("iconTooltip"),
                         iconDescription: t("iconDescription"),
-                        iconCustomUrlPlaceholder: t("iconCustomUrlPlaceholder"),
+                        iconSearchPlaceholder: t("iconSearchPlaceholder"),
+                        iconSearchEmpty: t("iconSearchEmpty"),
                         scrollLeft: t("scrollLeft"),
                         scrollRight: t("scrollRight"),
-                        iconClear: t("iconClear"),
                       }}
                     />
                   )}
@@ -805,10 +795,10 @@ export function RegisterAgentDialog({
                       <FormItem>
                         <FormLabel>{t("description")}</FormLabel>
                         <FormControl>
-                          <Input
+                          <Textarea
                             placeholder={t("descriptionPlaceholder")}
                             {...field}
-                            className="h-11"
+                            className="min-h-24 resize-none"
                             maxLength={251}
                           />
                         </FormControl>
@@ -817,37 +807,6 @@ export function RegisterAgentDialog({
                           {" / "}
                           {250}
                         </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="extendedDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>{t("extendedDescription")}</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                                <CircleHelp className="h-4 w-4" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("descriptionRichTextHint")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <FormControl>
-                          <RichTextEditor
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            placeholder={t("extendedDescriptionPlaceholder")}
-                            minHeight="min-h-28"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

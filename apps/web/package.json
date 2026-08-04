@@ -41,7 +41,8 @@
     "i18n:audit:fr": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/fr.json",
     "i18n:audit:es": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale messages/es.json",
     "i18n:audit": "python3 ../../scripts/i18n-audit-locale.py --source messages/en.json --locale",
-    "i18n:validate": "node scripts/validate-i18n.mjs"
+    "i18n:validate": "node scripts/validate-i18n.mjs",
+    "agent-icons:ipfs": "tsx scripts/generate-agent-icon-ipfs.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "8.4.0",
@@ -125,6 +126,7 @@
     "baseline-browser-mapping": "2.10.18",
     "cross-env": "10.1.0",
     "eslint": "8.57.1",
+    "ipfs-only-hash": "4.0.0",
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react": "7.37.5",
     "openapi-typescript": "7.13.0",

@@ -75,4 +75,26 @@ describe("buildUpdateAgentInput", () => {
     expect(input.verifications).toHaveLength(1);
     expect(input.agentIdentifier).toBe(onChainMetadata.agentIdentifier);
   });
+
+  it("uses agent icon when on-chain metadata has no image", () => {
+    const input = buildUpdateAgentInput({
+      network: "Preprod",
+      agentIdentifier: "a".repeat(120),
+      registryEntry,
+      onChainMetadata: {
+        policyId: "a".repeat(56),
+        assetName: "b".repeat(64),
+        agentIdentifier: "a".repeat(120),
+        Metadata: {
+          name: "On-chain Name",
+          apiBaseUrl: "https://api.example/agent",
+          metadataVersion: 2,
+        },
+      },
+      agentIcon: "bot",
+      verifications: [],
+    });
+
+    expect(input.image).toMatch(/^ipfs:\/\//);
+  });
 });

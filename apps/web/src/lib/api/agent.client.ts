@@ -166,7 +166,6 @@ class AgentApiClient {
   async registerAgent(data: {
     name: string;
     description?: string;
-    extendedDescription?: string;
     apiUrl: string;
     tags?: string;
     icon?: string;

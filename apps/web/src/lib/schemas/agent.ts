@@ -112,11 +112,6 @@ export const registerAgentBodySchema = z
       .max(250, "Description must be 250 characters or less")
       .optional()
       .or(z.literal("")),
-    extendedDescription: z
-      .string()
-      .max(5000, "Extended description must be less than 5000 characters")
-      .optional()
-      .or(z.literal("")),
     apiUrl: agentApiUrlSchema.optional(),
     integrationConnectionId: z.string().min(1).max(250).optional(),
     langdockApiKey: z.string().min(1).max(5000).optional(),
@@ -162,7 +157,6 @@ export const registerAgentOpenApiBodySchema = registerAgentBodySchema.openapi({
   example: {
     name: "Research assistant",
     description: "Helps with literature review",
-    extendedDescription: "",
     apiUrl: "https://agent.example.com/mip",
     runtimeProvider: "DIRECT_MIP",
     tags: "research, nlp",
@@ -230,11 +224,6 @@ const registerAgentFormBaseSchema = z.object({
     .min(1, "Name is required")
     .max(250, "Name must be less than 250 characters"),
   description: z.string().max(250).optional().or(z.literal("")),
-  extendedDescription: z
-    .string()
-    .max(5000, "Extended description must be less than 5000 characters")
-    .optional()
-    .or(z.literal("")),
   apiUrl: agentApiUrlSchema,
   tags: z.string().optional(),
   icon: z.string().max(2000).optional().or(z.literal("")),
