@@ -18,6 +18,7 @@ import type {
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
+  GetBalanceOutput,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
   GetWalletListOutput,
@@ -50,6 +51,7 @@ import {
   createApiKeyOutputSchema,
   createPaymentInputSchema,
   generatedWalletSchema,
+  getBalanceOutputSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
   getWalletListOutputSchema,
@@ -86,12 +88,14 @@ export type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
   AgentMetadata,
+  BalanceAmount,
   CreateApiKeyInput,
   CreateApiKeyOutput,
   CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
+  GetBalanceOutput,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
   GetWalletListOutput,
@@ -739,6 +743,26 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         getUtxosOutputSchema,
+      );
+    },
+
+    /** Get confirmed address balance (READ). Prefer over paging /utxos for totals. */
+    async getBalance(params: {
+      address: string;
+      network: PaymentNodeNetwork;
+    }): Promise<GetBalanceOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/balance`,
+        {
+          method: "GET",
+          query: {
+            address: params.address,
+            network: params.network,
+          },
+        },
+        getBalanceOutputSchema,
       );
     },
 

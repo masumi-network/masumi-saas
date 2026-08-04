@@ -589,6 +589,15 @@
             },
             "description": "List of Cardano networks this API key is allowed to access"
           },
+          "ChainIdLimit": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "description": "CAIP-2 chain identifiers this API key is allowed to access"
+          },
           "RemainingUsageCredits": {
             "type": "array",
             "items": {
@@ -600,7 +609,7 @@
                 },
                 "amount": {
                   "type": "string",
-                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                 }
               },
               "required": [
@@ -648,6 +657,7 @@
           "canAdmin",
           "usageLimited",
           "NetworkLimit",
+          "ChainIdLimit",
           "RemainingUsageCredits",
           "status",
           "walletScopeEnabled",
@@ -832,6 +842,81 @@
           "LowBalanceRules"
         ]
       },
+      "PaymentProxy_WalletListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the wallet"
+          },
+          "paymentSourceId": {
+            "type": "string",
+            "description": "Id of the payment source this wallet belongs to"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Selling",
+              "Purchasing"
+            ],
+            "description": "Whether this is a Selling (seller side) or Purchasing (buyer side) wallet"
+          },
+          "walletVkey": {
+            "type": "string",
+            "description": "Payment key hash of the wallet"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "Cardano address of the wallet"
+          },
+          "collectionAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional collection address for this wallet. Null if not set"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional note about this wallet. Null if not set"
+          },
+          "LowBalanceSummary": {
+            "type": "object",
+            "properties": {
+              "isLow": {
+                "type": "boolean",
+                "description": "Whether any enabled low-balance rule for this wallet is currently below threshold"
+              },
+              "lowRuleCount": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "How many enabled rules for this wallet are currently in low state"
+              },
+              "lastCheckedAt": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time",
+                "description": "Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked"
+              }
+            },
+            "required": [
+              "isLow",
+              "lowRuleCount",
+              "lastCheckedAt"
+            ],
+            "description": "Aggregated low-balance status for the wallet"
+          }
+        },
+        "required": [
+          "id",
+          "paymentSourceId",
+          "type",
+          "walletVkey",
+          "walletAddress",
+          "collectionAddress",
+          "note",
+          "LowBalanceSummary"
+        ]
+      },
       "PaymentProxy_GeneratedWalletSecret": {
         "type": "object",
         "properties": {
@@ -880,6 +965,11 @@
             "nullable": true,
             "description": "Identifier of the agent that is being paid"
           },
+          "agentName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the agent when known"
+          },
           "pricingType": {
             "type": "string",
             "enum": [
@@ -912,6 +1002,16 @@
             "type": "string",
             "nullable": true,
             "description": "Amount of collateral to return in lovelace. Null if no collateral"
+          },
+          "buyerReturnAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional buyer return address stored with the request"
+          },
+          "sellerReturnAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional seller return address stored with the request"
           },
           "externalDisputeUnlockTime": {
             "type": "string",
@@ -971,6 +1071,8 @@
               "ResultSubmitted",
               "RefundRequested",
               "Disputed",
+              "WithdrawAuthorized",
+              "RefundAuthorized",
               "Withdrawn",
               "RefundWithdrawn",
               "DisputedWithdrawn",
@@ -1159,6 +1261,8 @@
                   "ResultSubmitted",
                   "RefundRequested",
                   "Disputed",
+                  "WithdrawAuthorized",
+                  "RefundAuthorized",
                   "Withdrawn",
                   "RefundWithdrawn",
                   "DisputedWithdrawn",
@@ -1175,6 +1279,8 @@
                   "ResultSubmitted",
                   "RefundRequested",
                   "Disputed",
+                  "WithdrawAuthorized",
+                  "RefundAuthorized",
                   "Withdrawn",
                   "RefundWithdrawn",
                   "DisputedWithdrawn",
@@ -1263,6 +1369,8 @@
                     "ResultSubmitted",
                     "RefundRequested",
                     "Disputed",
+                    "WithdrawAuthorized",
+                    "RefundAuthorized",
                     "Withdrawn",
                     "RefundWithdrawn",
                     "DisputedWithdrawn",
@@ -1279,6 +1387,8 @@
                     "ResultSubmitted",
                     "RefundRequested",
                     "Disputed",
+                    "WithdrawAuthorized",
+                    "RefundAuthorized",
                     "Withdrawn",
                     "RefundWithdrawn",
                     "DisputedWithdrawn",
@@ -1315,7 +1425,7 @@
               "properties": {
                 "amount": {
                   "type": "string",
-                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                 },
                 "unit": {
                   "type": "string",
@@ -1385,6 +1495,14 @@
                 ],
                 "description": "The Cardano network (Mainnet, Preprod, or Preview)"
               },
+              "paymentSourceType": {
+                "type": "string",
+                "enum": [
+                  "Web3CardanoV1",
+                  "Web3CardanoV2"
+                ],
+                "description": "Payment source type for adapter dispatch"
+              },
               "smartContractAddress": {
                 "type": "string",
                 "description": "Address of the smart contract managing this payment"
@@ -1398,6 +1516,7 @@
             "required": [
               "id",
               "network",
+              "paymentSourceType",
               "smartContractAddress",
               "policyId"
             ],
@@ -1458,12 +1577,15 @@
           "updatedAt",
           "blockchainIdentifier",
           "agentIdentifier",
+          "agentName",
           "pricingType",
           "lastCheckedAt",
           "payByTime",
           "submitResultTime",
           "unlockTime",
           "collateralReturnLovelace",
+          "buyerReturnAddress",
+          "sellerReturnAddress",
           "externalDisputeUnlockTime",
           "requestedById",
           "resultHash",
@@ -1514,6 +1636,11 @@
             "type": "string",
             "nullable": true,
             "description": "Identifier of the agent that is being purchased"
+          },
+          "agentName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the agent when known"
           },
           "pricingType": {
             "type": "string",
@@ -1583,6 +1710,8 @@
               "ResultSubmitted",
               "RefundRequested",
               "Disputed",
+              "WithdrawAuthorized",
+              "RefundAuthorized",
               "Withdrawn",
               "RefundWithdrawn",
               "DisputedWithdrawn",
@@ -1594,6 +1723,16 @@
             "type": "string",
             "nullable": true,
             "description": "Amount of collateral to return in lovelace. Null if no collateral"
+          },
+          "buyerReturnAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional buyer return address stored with the request"
+          },
+          "sellerReturnAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional seller return address stored with the request"
           },
           "cooldownTime": {
             "type": "number",
@@ -1629,7 +1768,9 @@
                   "UnSetRefundRequestedRequested",
                   "UnSetRefundRequestedInitiated",
                   "WithdrawRefundRequested",
-                  "WithdrawRefundInitiated"
+                  "WithdrawRefundInitiated",
+                  "AuthorizeWithdrawalRequested",
+                  "AuthorizeWithdrawalInitiated"
                 ],
                 "description": "Next action required for this purchase"
               },
@@ -1691,7 +1832,9 @@
                     "UnSetRefundRequestedRequested",
                     "UnSetRefundRequestedInitiated",
                     "WithdrawRefundRequested",
-                    "WithdrawRefundInitiated"
+                    "WithdrawRefundInitiated",
+                    "AuthorizeWithdrawalRequested",
+                    "AuthorizeWithdrawalInitiated"
                   ],
                   "description": "Next action required for this purchase"
                 },
@@ -1782,6 +1925,8 @@
                   "ResultSubmitted",
                   "RefundRequested",
                   "Disputed",
+                  "WithdrawAuthorized",
+                  "RefundAuthorized",
                   "Withdrawn",
                   "RefundWithdrawn",
                   "DisputedWithdrawn",
@@ -1798,6 +1943,8 @@
                   "ResultSubmitted",
                   "RefundRequested",
                   "Disputed",
+                  "WithdrawAuthorized",
+                  "RefundAuthorized",
                   "Withdrawn",
                   "RefundWithdrawn",
                   "DisputedWithdrawn",
@@ -1886,6 +2033,8 @@
                     "ResultSubmitted",
                     "RefundRequested",
                     "Disputed",
+                    "WithdrawAuthorized",
+                    "RefundAuthorized",
                     "Withdrawn",
                     "RefundWithdrawn",
                     "DisputedWithdrawn",
@@ -1902,6 +2051,8 @@
                     "ResultSubmitted",
                     "RefundRequested",
                     "Disputed",
+                    "WithdrawAuthorized",
+                    "RefundAuthorized",
                     "Withdrawn",
                     "RefundWithdrawn",
                     "DisputedWithdrawn",
@@ -1998,6 +2149,13 @@
                   "Mainnet"
                 ]
               },
+              "paymentSourceType": {
+                "type": "string",
+                "enum": [
+                  "Web3CardanoV1",
+                  "Web3CardanoV2"
+                ]
+              },
               "smartContractAddress": {
                 "type": "string"
               },
@@ -2009,6 +2167,7 @@
             "required": [
               "id",
               "network",
+              "paymentSourceType",
               "smartContractAddress",
               "policyId"
             ]
@@ -2068,6 +2227,7 @@
           "updatedAt",
           "blockchainIdentifier",
           "agentIdentifier",
+          "agentName",
           "pricingType",
           "lastCheckedAt",
           "payByTime",
@@ -2082,6 +2242,8 @@
           "requestedById",
           "onChainState",
           "collateralReturnLovelace",
+          "buyerReturnAddress",
+          "sellerReturnAddress",
           "cooldownTime",
           "cooldownTimeOtherParty",
           "inputHash",
@@ -2266,7 +2428,7 @@
                           "properties": {
                             "amount": {
                               "type": "string",
-                              "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                              "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                             },
                             "unit": {
                               "type": "string",
@@ -2329,8 +2491,269 @@
               "metadataVersion": {
                 "type": "integer",
                 "minimum": 1,
-                "maximum": 1,
-                "description": "Version of the metadata schema (currently only version 1 is supported)"
+                "maximum": 2,
+                "description": "Version of the metadata schema"
+              },
+              "supportedPaymentSources": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "Cardano"
+                          ],
+                          "description": "The blockchain this payment source is available on"
+                        },
+                        "network": {
+                          "type": "string",
+                          "enum": [
+                            "Preprod",
+                            "Mainnet"
+                          ],
+                          "description": "The Cardano network this payment source is available on"
+                        },
+                        "paymentSourceType": {
+                          "type": "string",
+                          "enum": [
+                            "Web3CardanoV1",
+                            "Web3CardanoV2"
+                          ],
+                          "description": "The configured payment source type"
+                        },
+                        "address": {
+                          "type": "string",
+                          "maxLength": 250,
+                          "description": "The escrow smart contract address for this payment source"
+                        }
+                      },
+                      "required": [
+                        "chain",
+                        "network",
+                        "paymentSourceType",
+                        "address"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "EVM"
+                          ],
+                          "description": "The chain family used by standard x402"
+                        },
+                        "network": {
+                          "type": "string",
+                          "pattern": "^eip155:\\d+$",
+                          "description": "CAIP-2 EVM network id, for example eip155:8453"
+                        },
+                        "paymentSourceType": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "Web3CardanoV1",
+                            "Web3CardanoV2",
+                            null
+                          ],
+                          "description": "The configured payment source type"
+                        },
+                        "address": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "Alias for payTo, kept for existing payment-source shape"
+                        },
+                        "scheme": {
+                          "type": "string",
+                          "enum": [
+                            "Exact"
+                          ],
+                          "description": "x402 payment scheme"
+                        },
+                        "asset": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "ERC-20 token contract address"
+                        },
+                        "amount": {
+                          "type": "string",
+                          "pattern": "^\\d+$",
+                          "description": "Atomic token amount"
+                        },
+                        "decimals": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 255,
+                          "description": "ERC-20 token decimals"
+                        },
+                        "payTo": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "EVM address receiving the x402 payment"
+                        },
+                        "resource": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "Optional absolute resource URL this x402 option protects"
+                        },
+                        "extra": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "nullable": true
+                          },
+                          "description": "Additional x402 metadata"
+                        }
+                      },
+                      "required": [
+                        "chain",
+                        "network",
+                        "scheme",
+                        "asset",
+                        "amount",
+                        "decimals",
+                        "payTo"
+                      ]
+                    }
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 25,
+                "description": "Payment sources advertised by this registry entry. Null for legacy metadata."
+              },
+              "verifications": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "description": "Verification method discriminator, e.g. \"KERI-ACDC\""
+                    },
+                    "schemaVersion": {
+                      "type": "string",
+                      "maxLength": 16,
+                      "description": "Version of this verification block"
+                    },
+                    "issuer": {
+                      "type": "object",
+                      "properties": {
+                        "aid": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Issuer KERI AID (ACDC sad.i) — the root trust anchor"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the issuer KEL (key state) for signature verification"
+                        }
+                      },
+                      "required": [
+                        "aid",
+                        "oobi"
+                      ],
+                      "description": "Credential issuer identity"
+                    },
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential schema SAID (ACDC sad.s)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the JSON schema; a verifier checks its hash equals said"
+                        }
+                      },
+                      "required": [
+                        "said",
+                        "oobi"
+                      ],
+                      "description": "Credential schema — the ACDC structure definition"
+                    },
+                    "credential": {
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential SAID (ACDC sad.d)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI/endpoint serving the signed ACDC; a verifier checks its hash equals said"
+                        },
+                        "registry": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential status registry / TEL SAID (ACDC sad.ri) for independent revocation checks"
+                        }
+                      },
+                      "required": [
+                        "said",
+                        "oobi"
+                      ],
+                      "description": "The verifiable credential (ACDC)"
+                    },
+                    "holder": {
+                      "type": "object",
+                      "properties": {
+                        "aid": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Issuee/holder KERI AID (ACDC sad.a.i)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the holder KEL"
+                        }
+                      },
+                      "required": [
+                        "aid",
+                        "oobi"
+                      ],
+                      "description": "Credential holder/issuee identity"
+                    },
+                    "baseUrl": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "Optional witness/KERIA resolver root for live key-state (\"verify at time T\") and TEL queries"
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "issuer",
+                    "schema",
+                    "credential",
+                    "holder"
+                  ]
+                },
+                "maxItems": 10,
+                "description": "KERI/Veridian verification claims advertised by this registry entry. Null when none."
               }
             },
             "required": [
@@ -2341,7 +2764,9 @@
               "Author",
               "AgentPricing",
               "image",
-              "metadataVersion"
+              "metadataVersion",
+              "supportedPaymentSources",
+              "verifications"
             ],
             "description": "On-chain metadata for the agent"
           }
@@ -2520,7 +2945,7 @@
                           "properties": {
                             "amount": {
                               "type": "string",
-                              "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                              "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                             },
                             "unit": {
                               "type": "string",
@@ -2583,8 +3008,269 @@
               "metadataVersion": {
                 "type": "integer",
                 "minimum": 1,
-                "maximum": 1,
-                "description": "Version of the metadata schema (currently only version 1 is supported)"
+                "maximum": 2,
+                "description": "Version of the metadata schema"
+              },
+              "supportedPaymentSources": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "Cardano"
+                          ],
+                          "description": "The blockchain this payment source is available on"
+                        },
+                        "network": {
+                          "type": "string",
+                          "enum": [
+                            "Preprod",
+                            "Mainnet"
+                          ],
+                          "description": "The Cardano network this payment source is available on"
+                        },
+                        "paymentSourceType": {
+                          "type": "string",
+                          "enum": [
+                            "Web3CardanoV1",
+                            "Web3CardanoV2"
+                          ],
+                          "description": "The configured payment source type"
+                        },
+                        "address": {
+                          "type": "string",
+                          "maxLength": 250,
+                          "description": "The escrow smart contract address for this payment source"
+                        }
+                      },
+                      "required": [
+                        "chain",
+                        "network",
+                        "paymentSourceType",
+                        "address"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "EVM"
+                          ],
+                          "description": "The chain family used by standard x402"
+                        },
+                        "network": {
+                          "type": "string",
+                          "pattern": "^eip155:\\d+$",
+                          "description": "CAIP-2 EVM network id, for example eip155:8453"
+                        },
+                        "paymentSourceType": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "Web3CardanoV1",
+                            "Web3CardanoV2",
+                            null
+                          ],
+                          "description": "The configured payment source type"
+                        },
+                        "address": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "Alias for payTo, kept for existing payment-source shape"
+                        },
+                        "scheme": {
+                          "type": "string",
+                          "enum": [
+                            "Exact"
+                          ],
+                          "description": "x402 payment scheme"
+                        },
+                        "asset": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "ERC-20 token contract address"
+                        },
+                        "amount": {
+                          "type": "string",
+                          "pattern": "^\\d+$",
+                          "description": "Atomic token amount"
+                        },
+                        "decimals": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 255,
+                          "description": "ERC-20 token decimals"
+                        },
+                        "payTo": {
+                          "type": "string",
+                          "pattern": "^0x[a-fA-F0-9]{40}$",
+                          "description": "EVM address receiving the x402 payment"
+                        },
+                        "resource": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "Optional absolute resource URL this x402 option protects"
+                        },
+                        "extra": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "nullable": true
+                          },
+                          "description": "Additional x402 metadata"
+                        }
+                      },
+                      "required": [
+                        "chain",
+                        "network",
+                        "scheme",
+                        "asset",
+                        "amount",
+                        "decimals",
+                        "payTo"
+                      ]
+                    }
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 25,
+                "description": "Payment sources advertised by this registry entry. Null for legacy metadata."
+              },
+              "verifications": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "description": "Verification method discriminator, e.g. \"KERI-ACDC\""
+                    },
+                    "schemaVersion": {
+                      "type": "string",
+                      "maxLength": 16,
+                      "description": "Version of this verification block"
+                    },
+                    "issuer": {
+                      "type": "object",
+                      "properties": {
+                        "aid": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Issuer KERI AID (ACDC sad.i) — the root trust anchor"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the issuer KEL (key state) for signature verification"
+                        }
+                      },
+                      "required": [
+                        "aid",
+                        "oobi"
+                      ],
+                      "description": "Credential issuer identity"
+                    },
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential schema SAID (ACDC sad.s)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the JSON schema; a verifier checks its hash equals said"
+                        }
+                      },
+                      "required": [
+                        "said",
+                        "oobi"
+                      ],
+                      "description": "Credential schema — the ACDC structure definition"
+                    },
+                    "credential": {
+                      "type": "object",
+                      "properties": {
+                        "said": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential SAID (ACDC sad.d)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI/endpoint serving the signed ACDC; a verifier checks its hash equals said"
+                        },
+                        "registry": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Credential status registry / TEL SAID (ACDC sad.ri) for independent revocation checks"
+                        }
+                      },
+                      "required": [
+                        "said",
+                        "oobi"
+                      ],
+                      "description": "The verifiable credential (ACDC)"
+                    },
+                    "holder": {
+                      "type": "object",
+                      "properties": {
+                        "aid": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "description": "Issuee/holder KERI AID (ACDC sad.a.i)"
+                        },
+                        "oobi": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "OOBI resolving the holder KEL"
+                        }
+                      },
+                      "required": [
+                        "aid",
+                        "oobi"
+                      ],
+                      "description": "Credential holder/issuee identity"
+                    },
+                    "baseUrl": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "Optional witness/KERIA resolver root for live key-state (\"verify at time T\") and TEL queries"
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "issuer",
+                    "schema",
+                    "credential",
+                    "holder"
+                  ]
+                },
+                "maxItems": 10,
+                "description": "KERI/Veridian verification claims advertised by this registry entry. Null when none."
               }
             },
             "required": [
@@ -2595,7 +3281,9 @@
               "Author",
               "AgentPricing",
               "image",
-              "metadataVersion"
+              "metadataVersion",
+              "supportedPaymentSources",
+              "verifications"
             ],
             "description": "On-chain metadata for the agent"
           }
@@ -2719,7 +3407,11 @@
               "DeregistrationRequested",
               "DeregistrationInitiated",
               "DeregistrationConfirmed",
-              "DeregistrationFailed"
+              "DeregistrationFailed",
+              "UpdateRequested",
+              "UpdateInitiated",
+              "UpdateConfirmed",
+              "UpdateFailed"
             ],
             "description": "Current state of the registration process"
           },
@@ -2802,7 +3494,7 @@
                       "properties": {
                         "amount": {
                           "type": "string",
-                          "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                          "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                         },
                         "unit": {
                           "type": "string",
@@ -2857,6 +3549,272 @@
             ],
             "description": "Pricing information for the agent"
           },
+          "sendFundingLovelace": {
+            "type": "string",
+            "nullable": true,
+            "description": "Effective lovelace amount explicitly configured for the NFT output. Null means the default minimum NFT funding is used."
+          },
+          "supportedPaymentSources": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "chain": {
+                      "type": "string",
+                      "enum": [
+                        "Cardano"
+                      ],
+                      "description": "The blockchain this payment source is available on"
+                    },
+                    "network": {
+                      "type": "string",
+                      "enum": [
+                        "Preprod",
+                        "Mainnet"
+                      ],
+                      "description": "The Cardano network this payment source is available on"
+                    },
+                    "paymentSourceType": {
+                      "type": "string",
+                      "enum": [
+                        "Web3CardanoV1",
+                        "Web3CardanoV2"
+                      ],
+                      "description": "The configured payment source type"
+                    },
+                    "address": {
+                      "type": "string",
+                      "maxLength": 250,
+                      "description": "The escrow smart contract address for this payment source"
+                    }
+                  },
+                  "required": [
+                    "chain",
+                    "network",
+                    "paymentSourceType",
+                    "address"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "chain": {
+                      "type": "string",
+                      "enum": [
+                        "EVM"
+                      ],
+                      "description": "The chain family used by standard x402"
+                    },
+                    "network": {
+                      "type": "string",
+                      "pattern": "^eip155:\\d+$",
+                      "description": "CAIP-2 EVM network id, for example eip155:8453"
+                    },
+                    "paymentSourceType": {
+                      "type": "string",
+                      "nullable": true,
+                      "enum": [
+                        "Web3CardanoV1",
+                        "Web3CardanoV2",
+                        null
+                      ],
+                      "description": "The configured payment source type"
+                    },
+                    "address": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                      "description": "Alias for payTo, kept for existing payment-source shape"
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "Exact"
+                      ],
+                      "description": "x402 payment scheme"
+                    },
+                    "asset": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                      "description": "ERC-20 token contract address"
+                    },
+                    "amount": {
+                      "type": "string",
+                      "pattern": "^\\d+$",
+                      "description": "Atomic token amount"
+                    },
+                    "decimals": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "description": "ERC-20 token decimals"
+                    },
+                    "payTo": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                      "description": "EVM address receiving the x402 payment"
+                    },
+                    "resource": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "Optional absolute resource URL this x402 option protects"
+                    },
+                    "extra": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "description": "Additional x402 metadata"
+                    }
+                  },
+                  "required": [
+                    "chain",
+                    "network",
+                    "scheme",
+                    "asset",
+                    "amount",
+                    "decimals",
+                    "payTo"
+                  ]
+                }
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 25,
+            "description": "Payment sources advertised by this registry entry. Null for legacy metadata."
+          },
+          "verifications": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "method": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40,
+                  "description": "Verification method discriminator, e.g. \"KERI-ACDC\""
+                },
+                "schemaVersion": {
+                  "type": "string",
+                  "maxLength": 16,
+                  "description": "Version of this verification block"
+                },
+                "issuer": {
+                  "type": "object",
+                  "properties": {
+                    "aid": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Issuer KERI AID (ACDC sad.i) — the root trust anchor"
+                    },
+                    "oobi": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "OOBI resolving the issuer KEL (key state) for signature verification"
+                    }
+                  },
+                  "required": [
+                    "aid",
+                    "oobi"
+                  ],
+                  "description": "Credential issuer identity"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "said": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Credential schema SAID (ACDC sad.s)"
+                    },
+                    "oobi": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "OOBI resolving the JSON schema; a verifier checks its hash equals said"
+                    }
+                  },
+                  "required": [
+                    "said",
+                    "oobi"
+                  ],
+                  "description": "Credential schema — the ACDC structure definition"
+                },
+                "credential": {
+                  "type": "object",
+                  "properties": {
+                    "said": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Credential SAID (ACDC sad.d)"
+                    },
+                    "oobi": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "OOBI/endpoint serving the signed ACDC; a verifier checks its hash equals said"
+                    },
+                    "registry": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Credential status registry / TEL SAID (ACDC sad.ri) for independent revocation checks"
+                    }
+                  },
+                  "required": [
+                    "said",
+                    "oobi"
+                  ],
+                  "description": "The verifiable credential (ACDC)"
+                },
+                "holder": {
+                  "type": "object",
+                  "properties": {
+                    "aid": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "description": "Issuee/holder KERI AID (ACDC sad.a.i)"
+                    },
+                    "oobi": {
+                      "type": "string",
+                      "maxLength": 500,
+                      "format": "uri",
+                      "description": "OOBI resolving the holder KEL"
+                    }
+                  },
+                  "required": [
+                    "aid",
+                    "oobi"
+                  ],
+                  "description": "Credential holder/issuee identity"
+                },
+                "baseUrl": {
+                  "type": "string",
+                  "maxLength": 500,
+                  "format": "uri",
+                  "description": "Optional witness/KERIA resolver root for live key-state (\"verify at time T\") and TEL queries"
+                }
+              },
+              "required": [
+                "method",
+                "issuer",
+                "schema",
+                "credential",
+                "holder"
+              ]
+            },
+            "maxItems": 10,
+            "description": "KERI/Veridian verification claims advertised by this registry entry. Null when none."
+          },
           "SmartContractWallet": {
             "type": "object",
             "properties": {
@@ -2874,6 +3832,25 @@
               "walletAddress"
             ],
             "description": "Smart contract wallet managing this agent registration"
+          },
+          "RecipientWallet": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "walletVkey": {
+                "type": "string",
+                "description": "Payment key hash of the managed recipient wallet"
+              },
+              "walletAddress": {
+                "type": "string",
+                "description": "Cardano address of the managed recipient wallet"
+              }
+            },
+            "required": [
+              "walletVkey",
+              "walletAddress"
+            ],
+            "description": "Managed wallet that receives the registry NFT. Null when the minting wallet receives it"
           },
           "CurrentTransaction": {
             "type": "object",
@@ -2943,7 +3920,11 @@
           "ExampleOutputs",
           "agentIdentifier",
           "AgentPricing",
+          "sendFundingLovelace",
+          "supportedPaymentSources",
+          "verifications",
           "SmartContractWallet",
+          "RecipientWallet",
           "CurrentTransaction"
         ]
       },
@@ -2972,6 +3953,19 @@
             ],
             "description": "The Cardano network (Mainnet, Preprod, or Preview)"
           },
+          "paymentSourceType": {
+            "type": "string",
+            "enum": [
+              "Web3CardanoV1",
+              "Web3CardanoV2"
+            ],
+            "description": "Payment source type for adapter dispatch"
+          },
+          "requiredAdminSignatures": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Required weighted admin signatures for Web3CardanoV2 sources. Null for Web3CardanoV1."
+          },
           "policyId": {
             "type": "string",
             "nullable": true,
@@ -2999,22 +3993,9 @@
             },
             "description": "List of admin wallets for dispute resolution"
           },
-          "PurchasingWallets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PaymentProxy_PurchasingWallet"
-            },
-            "description": "List of wallets used for purchasing (buyer side)"
-          },
-          "SellingWallets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PaymentProxy_SellingWallet"
-            },
-            "description": "List of wallets used for selling (seller side)"
-          },
           "FeeReceiverNetworkWallet": {
             "type": "object",
+            "nullable": true,
             "properties": {
               "walletAddress": {
                 "type": "string",
@@ -3038,13 +4019,13 @@
           "createdAt",
           "updatedAt",
           "network",
+          "paymentSourceType",
+          "requiredAdminSignatures",
           "policyId",
           "smartContractAddress",
           "lastIdentifierChecked",
           "lastCheckedAt",
           "AdminWallets",
-          "PurchasingWallets",
-          "SellingWallets",
           "FeeReceiverNetworkWallet",
           "feeRatePermille"
         ]
@@ -3064,128 +4045,6 @@
         "required": [
           "walletAddress",
           "order"
-        ]
-      },
-      "PaymentProxy_PurchasingWallet": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the purchasing wallet"
-          },
-          "walletVkey": {
-            "type": "string",
-            "description": "Payment key hash of the purchasing wallet"
-          },
-          "walletAddress": {
-            "type": "string",
-            "description": "Cardano address of the purchasing wallet"
-          },
-          "collectionAddress": {
-            "type": "string",
-            "nullable": true,
-            "description": "Optional collection address for this wallet. Null if not set"
-          },
-          "note": {
-            "type": "string",
-            "nullable": true,
-            "description": "Optional note about this wallet. Null if not set"
-          },
-          "LowBalanceSummary": {
-            "type": "object",
-            "properties": {
-              "isLow": {
-                "type": "boolean",
-                "description": "Whether any enabled low-balance rule for this wallet is currently below threshold"
-              },
-              "lowRuleCount": {
-                "type": "integer",
-                "minimum": 0,
-                "description": "How many enabled rules for this wallet are currently in low state"
-              },
-              "lastCheckedAt": {
-                "type": "string",
-                "nullable": true,
-                "format": "date-time",
-                "description": "Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked"
-              }
-            },
-            "required": [
-              "isLow",
-              "lowRuleCount",
-              "lastCheckedAt"
-            ],
-            "description": "Aggregated low-balance status for the wallet"
-          }
-        },
-        "required": [
-          "id",
-          "walletVkey",
-          "walletAddress",
-          "collectionAddress",
-          "note",
-          "LowBalanceSummary"
-        ]
-      },
-      "PaymentProxy_SellingWallet": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the selling wallet"
-          },
-          "walletVkey": {
-            "type": "string",
-            "description": "Payment key hash of the selling wallet"
-          },
-          "walletAddress": {
-            "type": "string",
-            "description": "Cardano address of the selling wallet"
-          },
-          "collectionAddress": {
-            "type": "string",
-            "nullable": true,
-            "description": "Optional collection address for this wallet. Null if not set"
-          },
-          "note": {
-            "type": "string",
-            "nullable": true,
-            "description": "Optional note about this wallet. Null if not set"
-          },
-          "LowBalanceSummary": {
-            "type": "object",
-            "properties": {
-              "isLow": {
-                "type": "boolean",
-                "description": "Whether any enabled low-balance rule for this wallet is currently below threshold"
-              },
-              "lowRuleCount": {
-                "type": "integer",
-                "minimum": 0,
-                "description": "How many enabled rules for this wallet are currently in low state"
-              },
-              "lastCheckedAt": {
-                "type": "string",
-                "nullable": true,
-                "format": "date-time",
-                "description": "Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked"
-              }
-            },
-            "required": [
-              "isLow",
-              "lowRuleCount",
-              "lastCheckedAt"
-            ],
-            "description": "Aggregated low-balance status for the wallet"
-          }
-        },
-        "required": [
-          "id",
-          "walletVkey",
-          "walletAddress",
-          "collectionAddress",
-          "note",
-          "LowBalanceSummary"
         ]
       },
       "PaymentProxy_PaymentSourceExtended": {
@@ -3213,6 +4072,19 @@
             ],
             "description": "The Cardano network"
           },
+          "paymentSourceType": {
+            "type": "string",
+            "enum": [
+              "Web3CardanoV1",
+              "Web3CardanoV2"
+            ],
+            "description": "Payment source type for adapter dispatch"
+          },
+          "requiredAdminSignatures": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Required weighted admin signatures for Web3CardanoV2 sources. Null for Web3CardanoV1."
+          },
           "policyId": {
             "type": "string",
             "nullable": true,
@@ -3221,6 +4093,15 @@
           "smartContractAddress": {
             "type": "string",
             "description": "Address of the smart contract for this payment source"
+          },
+          "contractSyncStatus": {
+            "type": "string",
+            "enum": [
+              "in_sync",
+              "outdated_contract",
+              "custom_address"
+            ],
+            "description": "Whether a Web3CardanoV2 source is on the current on-chain contract. \"outdated_contract\": registry policyId differs from the current default (retired contract — agents orphaned, payment address stale); \"custom_address\": current version but a non-default admin-wallet address; \"in_sync\": matches the current default (also for V1 and any non-V2 source)."
           },
           "PaymentSourceConfig": {
             "type": "object",
@@ -3279,138 +4160,17 @@
             },
             "description": "List of admin wallets for dispute resolution (exactly 3 required)"
           },
-          "PurchasingWallets": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Unique identifier for the purchasing wallet"
-                },
-                "walletVkey": {
-                  "type": "string",
-                  "description": "Payment key hash of the purchasing wallet"
-                },
-                "walletAddress": {
-                  "type": "string",
-                  "description": "Cardano address of the purchasing wallet"
-                },
-                "collectionAddress": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Optional collection address for this wallet. Null if not set"
-                },
-                "note": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Optional note about this wallet. Null if not set"
-                },
-                "LowBalanceSummary": {
-                  "type": "object",
-                  "properties": {
-                    "isLow": {
-                      "type": "boolean",
-                      "description": "Whether any enabled low-balance rule for this wallet is currently below threshold"
-                    },
-                    "lowRuleCount": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "description": "How many enabled rules for this wallet are currently in low state"
-                    },
-                    "lastCheckedAt": {
-                      "type": "string",
-                      "nullable": true,
-                      "format": "date-time",
-                      "description": "Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked"
-                    }
-                  },
-                  "required": [
-                    "isLow",
-                    "lowRuleCount",
-                    "lastCheckedAt"
-                  ],
-                  "description": "Aggregated low-balance status for the wallet"
-                }
-              },
-              "required": [
-                "id",
-                "walletVkey",
-                "walletAddress",
-                "collectionAddress",
-                "note",
-                "LowBalanceSummary"
-              ]
-            },
-            "description": "List of wallets used for purchasing (buyer side)"
+          "PurchasingWalletsCount": {
+            "type": "integer",
+            "description": "Number of active purchasing wallets. Fetch the wallets themselves via GET /wallet/list."
           },
-          "SellingWallets": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "Unique identifier for the selling wallet"
-                },
-                "walletVkey": {
-                  "type": "string",
-                  "description": "Payment key hash of the selling wallet"
-                },
-                "walletAddress": {
-                  "type": "string",
-                  "description": "Cardano address of the selling wallet"
-                },
-                "collectionAddress": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Optional collection address for this wallet. Null if not set"
-                },
-                "note": {
-                  "type": "string",
-                  "nullable": true,
-                  "description": "Optional note about this wallet. Null if not set"
-                },
-                "LowBalanceSummary": {
-                  "type": "object",
-                  "properties": {
-                    "isLow": {
-                      "type": "boolean",
-                      "description": "Whether any enabled low-balance rule for this wallet is currently below threshold"
-                    },
-                    "lowRuleCount": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "description": "How many enabled rules for this wallet are currently in low state"
-                    },
-                    "lastCheckedAt": {
-                      "type": "string",
-                      "nullable": true,
-                      "format": "date-time",
-                      "description": "Timestamp of the latest low-balance evaluation across this wallet rules. Null if never checked"
-                    }
-                  },
-                  "required": [
-                    "isLow",
-                    "lowRuleCount",
-                    "lastCheckedAt"
-                  ],
-                  "description": "Aggregated low-balance status for the wallet"
-                }
-              },
-              "required": [
-                "id",
-                "walletVkey",
-                "walletAddress",
-                "collectionAddress",
-                "note",
-                "LowBalanceSummary"
-              ]
-            },
-            "description": "List of wallets used for selling (seller side)"
+          "SellingWalletsCount": {
+            "type": "integer",
+            "description": "Number of active selling wallets. Fetch the wallets themselves via GET /wallet/list."
           },
           "FeeReceiverNetworkWallet": {
             "type": "object",
+            "nullable": true,
             "properties": {
               "walletAddress": {
                 "type": "string",
@@ -3434,15 +4194,18 @@
           "createdAt",
           "updatedAt",
           "network",
+          "paymentSourceType",
+          "requiredAdminSignatures",
           "policyId",
           "smartContractAddress",
+          "contractSyncStatus",
           "PaymentSourceConfig",
           "lastIdentifierChecked",
           "syncInProgress",
           "lastCheckedAt",
           "AdminWallets",
-          "PurchasingWallets",
-          "SellingWallets",
+          "PurchasingWalletsCount",
+          "SellingWalletsCount",
           "FeeReceiverNetworkWallet",
           "feeRatePermille"
         ]
@@ -3515,7 +4278,27 @@
             "nullable": true,
             "minimum": 0,
             "maximum": 100000000000000,
-            "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+            "description": "The quantity of the asset in its smallest unit. For ADA, this is lovelace (1 ADA = 1000000 lovelace)"
+          }
+        },
+        "required": [
+          "unit",
+          "quantity"
+        ]
+      },
+      "PaymentProxy_BalanceAmount": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string",
+            "description": "Asset policy id + asset name concatenated. Use an empty string for ADA/lovelace e.g (1000000 lovelace = 1 ADA)"
+          },
+          "quantity": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100000000000000,
+            "description": "The quantity of the asset in its smallest unit. For ADA, this is lovelace (1 ADA = 1000000 lovelace)"
           }
         },
         "required": [
@@ -3567,6 +4350,299 @@
           "createdAt",
           "updatedAt",
           "network"
+        ]
+      },
+      "PaymentProxy_InboxAgentMetadata": {
+        "type": "object",
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "description": "Policy ID of the inbox registry NFT"
+          },
+          "assetName": {
+            "type": "string",
+            "description": "Asset name of the inbox registry NFT"
+          },
+          "agentIdentifier": {
+            "type": "string",
+            "description": "Full inbox agent identifier (policy ID + asset name)"
+          },
+          "Metadata": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 120,
+                "description": "Name of the inbox agent"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 500,
+                "description": "Description of the inbox agent. Null if not provided"
+              },
+              "agentSlug": {
+                "type": "string",
+                "maxLength": 80,
+                "description": "Canonical inbox agent slug"
+              },
+              "metadataVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1,
+                "description": "Version of the metadata schema (currently only version 1 is supported)"
+              }
+            },
+            "required": [
+              "name",
+              "agentSlug",
+              "metadataVersion"
+            ],
+            "description": "On-chain metadata for the inbox agent"
+          }
+        },
+        "required": [
+          "policyId",
+          "assetName",
+          "agentIdentifier",
+          "Metadata"
+        ]
+      },
+      "PaymentProxy_InboxAgentIdentifierMetadata": {
+        "type": "object",
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "description": "Policy ID of the inbox registry NFT"
+          },
+          "assetName": {
+            "type": "string",
+            "description": "Asset name of the inbox registry NFT"
+          },
+          "agentIdentifier": {
+            "type": "string",
+            "description": "Full inbox agent identifier (policy ID + asset name)"
+          },
+          "Metadata": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 120,
+                "description": "Name of the inbox agent"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 500,
+                "description": "Description of the inbox agent. Null if not provided"
+              },
+              "agentSlug": {
+                "type": "string",
+                "maxLength": 80,
+                "description": "Canonical inbox agent slug"
+              },
+              "metadataVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1,
+                "description": "Version of the metadata schema (currently only version 1 is supported)"
+              }
+            },
+            "required": [
+              "name",
+              "agentSlug",
+              "metadataVersion"
+            ],
+            "description": "On-chain metadata for the inbox agent"
+          }
+        },
+        "required": [
+          "policyId",
+          "assetName",
+          "agentIdentifier",
+          "Metadata"
+        ]
+      },
+      "PaymentProxy_RegistryInboxEntry": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if registration failed. Null if no error"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the inbox registration request"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the inbox agent"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Description of the inbox agent. Null if not provided"
+          },
+          "agentSlug": {
+            "type": "string",
+            "description": "Canonical slug registered for the inbox agent"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RegistrationRequested",
+              "RegistrationInitiated",
+              "RegistrationConfirmed",
+              "RegistrationFailed",
+              "DeregistrationRequested",
+              "DeregistrationInitiated",
+              "DeregistrationConfirmed",
+              "DeregistrationFailed",
+              "UpdateRequested",
+              "UpdateInitiated",
+              "UpdateConfirmed",
+              "UpdateFailed"
+            ],
+            "description": "Current state of the inbox registration process"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the inbox registration request was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the inbox registration request was last updated"
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Timestamp when the inbox registration was last checked. Null if never checked"
+          },
+          "agentIdentifier": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 57,
+            "maxLength": 250,
+            "description": "Full inbox agent identifier (policy ID + asset name). Null if not yet minted"
+          },
+          "metadataVersion": {
+            "type": "integer",
+            "description": "Version of the inbox metadata schema"
+          },
+          "sendFundingLovelace": {
+            "type": "string",
+            "nullable": true,
+            "description": "Effective lovelace amount explicitly configured for the NFT output. Null means the default minimum NFT funding is used."
+          },
+          "SmartContractWallet": {
+            "type": "object",
+            "properties": {
+              "walletVkey": {
+                "type": "string",
+                "description": "Payment key hash of the minting wallet"
+              },
+              "walletAddress": {
+                "type": "string",
+                "description": "Cardano address of the minting wallet"
+              }
+            },
+            "required": [
+              "walletVkey",
+              "walletAddress"
+            ],
+            "description": "Minting wallet managing this inbox registration"
+          },
+          "RecipientWallet": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "walletVkey": {
+                "type": "string",
+                "description": "Payment key hash of the managed recipient wallet"
+              },
+              "walletAddress": {
+                "type": "string",
+                "description": "Cardano address of the managed recipient wallet"
+              }
+            },
+            "required": [
+              "walletVkey",
+              "walletAddress"
+            ],
+            "description": "Managed wallet that receives the inbox registry NFT. Null when the minting wallet receives it"
+          },
+          "CurrentTransaction": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "txHash": {
+                "type": "string",
+                "nullable": true,
+                "description": "Cardano transaction hash"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Pending",
+                  "Confirmed",
+                  "FailedViaTimeout",
+                  "FailedViaManualReset",
+                  "RolledBack"
+                ],
+                "description": "Current status of the transaction"
+              },
+              "confirmations": {
+                "type": "number",
+                "nullable": true,
+                "description": "Number of block confirmations for this transaction. Null if not yet confirmed"
+              },
+              "fees": {
+                "type": "string",
+                "nullable": true,
+                "description": "Fees of the transaction"
+              },
+              "blockHeight": {
+                "type": "number",
+                "nullable": true,
+                "description": "Block height of the transaction"
+              },
+              "blockTime": {
+                "type": "number",
+                "nullable": true,
+                "description": "Block time of the transaction"
+              }
+            },
+            "required": [
+              "txHash",
+              "status",
+              "confirmations",
+              "fees",
+              "blockHeight",
+              "blockTime"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "id",
+          "name",
+          "description",
+          "agentSlug",
+          "state",
+          "createdAt",
+          "updatedAt",
+          "lastCheckedAt",
+          "agentIdentifier",
+          "metadataVersion",
+          "sendFundingLovelace",
+          "SmartContractWallet",
+          "RecipientWallet",
+          "CurrentTransaction"
         ]
       },
       "PaymentProxy_MonitoringStatus": {
@@ -3718,6 +4794,557 @@
         "required": [
           "message",
           "stopped"
+        ]
+      },
+      "PaymentProxy_X402AvailableNetwork": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque x402 network id accepted by managed-wallet endpoints"
+          },
+          "caip2Id": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$",
+            "description": "CAIP-2 EVM chain id, for example eip155:8453"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human readable chain name"
+          },
+          "isTestnet": {
+            "type": "boolean",
+            "description": "Whether this chain belongs to the testnet environment"
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "description": "Whether this chain may currently be used for x402 payments"
+          },
+          "defaultAsset": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^0x[a-fA-F0-9]{40}$",
+            "description": "Default settlement asset (token contract) for this chain"
+          }
+        },
+        "required": [
+          "id",
+          "caip2Id",
+          "displayName",
+          "isTestnet",
+          "isEnabled",
+          "defaultAsset"
+        ]
+      },
+      "PaymentProxy_X402Network": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caip2Id": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$",
+            "description": "CAIP-2 EVM chain id, for example eip155:8453"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human readable chain name"
+          },
+          "rpcUrl": {
+            "type": "string",
+            "description": "HTTP(S) RPC endpoint used to talk to the chain"
+          },
+          "isTestnet": {
+            "type": "boolean",
+            "description": "Whether this chain is a testnet (paired with the Cardano Preprod environment)"
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "description": "Whether this chain may be used for x402 payments"
+          },
+          "defaultAsset": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^0x[a-fA-F0-9]{40}$",
+            "description": "Default settlement asset (token contract) for this chain"
+          },
+          "facilitatorWalletId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id of the managed EVM wallet used to settle payments on this chain (self-hosted facilitator)"
+          },
+          "facilitatorWalletAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resolved address of the facilitator wallet. Null when no self-hosted facilitator is set."
+          },
+          "facilitatorUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "HTTPS URL of a remote x402 facilitator used to settle payments on this chain (no owned wallet needed)"
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id of the API key that created this chain configuration"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "caip2Id",
+          "displayName",
+          "rpcUrl",
+          "isTestnet",
+          "isEnabled",
+          "defaultAsset",
+          "facilitatorWalletId",
+          "facilitatorWalletAddress",
+          "facilitatorUrl",
+          "createdById",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaymentProxy_X402Wallet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the managed EVM wallet"
+          },
+          "networkId": {
+            "type": "string",
+            "description": "Id of the x402 network (payment source) this wallet is bound to"
+          },
+          "caip2Network": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$",
+            "description": "CAIP-2 chain id of the network this wallet is bound to"
+          },
+          "address": {
+            "type": "string",
+            "pattern": "^0x[a-fA-F0-9]{40}$",
+            "description": "The EVM address derived from the wallet private key"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Purchasing",
+              "Selling"
+            ],
+            "description": "Purchasing wallets fund outbound payments; Selling wallets settle inbound ones as facilitators"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional human-readable label for the wallet"
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id of the API key that created this wallet"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "networkId",
+          "caip2Network",
+          "address",
+          "type",
+          "note",
+          "createdById",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaymentProxy_X402WalletCreated": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaymentProxy_X402Wallet"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "privateKey": {
+                "type": "string",
+                "nullable": true,
+                "description": "The generated 0x-prefixed private key, returned ONCE so you can back it up. It is null when you supplied your own key, is never stored in plaintext, and can never be retrieved again. Save it now."
+              }
+            },
+            "required": [
+              "privateKey"
+            ]
+          }
+        ]
+      },
+      "PaymentProxy_X402Budget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "apiKeyId": {
+            "type": "string",
+            "description": "API key the budget is granted to"
+          },
+          "evmWalletId": {
+            "type": "string",
+            "description": "Managed EVM wallet the budget draws from"
+          },
+          "evmWalletAddress": {
+            "type": "string",
+            "description": "Resolved address of the managed EVM wallet the budget draws from"
+          },
+          "caip2Network": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$"
+          },
+          "asset": {
+            "type": "string",
+            "pattern": "^0x[a-fA-F0-9]{40}$",
+            "description": "Token contract the budget is denominated in"
+          },
+          "remainingAmount": {
+            "type": "string",
+            "description": "Remaining spendable amount, in token base units"
+          },
+          "spentAmount": {
+            "type": "string",
+            "description": "Amount already spent, in token base units"
+          },
+          "createdById": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id of the API key that created this budget"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "apiKeyId",
+          "evmWalletId",
+          "evmWalletAddress",
+          "caip2Network",
+          "asset",
+          "remainingAmount",
+          "spentAmount",
+          "createdById",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaymentProxy_X402PaymentAttempt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "InboundVerify",
+              "InboundSettle",
+              "OutboundPayment"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PaymentRequired",
+              "Verified",
+              "Settled",
+              "Failed",
+              "Replayed"
+            ]
+          },
+          "apiKeyId": {
+            "type": "string"
+          },
+          "evmWalletId": {
+            "type": "string",
+            "nullable": true
+          },
+          "registryRequestId": {
+            "type": "string",
+            "nullable": true
+          },
+          "supportedPaymentSourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "caip2Network": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Payment amount in token base units"
+          },
+          "payTo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Immutable payee-address snapshot. Null only for legacy transition rows without a snapshot."
+          },
+          "payer": {
+            "type": "string",
+            "nullable": true
+          },
+          "resource": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentIdentifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "facilitator": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "self_hosted",
+                  "remote",
+                  "unknown"
+                ],
+                "description": "Whether an owned wallet, a remote URL, or an unknown legacy facilitator settled"
+              },
+              "address": {
+                "type": "string",
+                "nullable": true,
+                "description": "Self-hosted facilitator wallet address; null for remote or unknown legacy mode"
+              }
+            },
+            "required": [
+              "mode",
+              "address"
+            ],
+            "description": "The facilitator that settled this inbound payment; null for outbound payments and verifies."
+          },
+          "Settlement": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "success": {
+                "type": "boolean"
+              },
+              "txHash": {
+                "type": "string",
+                "nullable": true,
+                "description": "On-chain settlement transaction hash"
+              },
+              "amount": {
+                "type": "string",
+                "nullable": true,
+                "description": "Settled amount in token base units"
+              },
+              "payer": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "success",
+              "txHash",
+              "amount",
+              "payer",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "direction",
+          "status",
+          "apiKeyId",
+          "evmWalletId",
+          "registryRequestId",
+          "supportedPaymentSourceId",
+          "caip2Network",
+          "asset",
+          "amount",
+          "payTo",
+          "payer",
+          "resource",
+          "paymentIdentifier",
+          "errorReason",
+          "errorMessage",
+          "facilitator",
+          "Settlement"
+        ]
+      },
+      "PaymentProxy_X402SettlementRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentAttemptId": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "txHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "caip2Network": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true
+          },
+          "payer": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "paymentAttemptId",
+          "success",
+          "txHash",
+          "caip2Network",
+          "amount",
+          "payer"
+        ]
+      },
+      "PaymentProxy_X402LowBalanceRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "evmWalletId": {
+            "type": "string"
+          },
+          "evmWalletAddress": {
+            "type": "string"
+          },
+          "caip2Network": {
+            "type": "string",
+            "pattern": "^eip155:\\d+$"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "thresholdAmount": {
+            "type": "string",
+            "description": "Alert threshold in base units"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Unknown",
+              "Healthy",
+              "Low"
+            ]
+          },
+          "lastKnownAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastAlertedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "evmWalletId",
+          "evmWalletAddress",
+          "caip2Network",
+          "asset",
+          "thresholdAmount",
+          "enabled",
+          "status",
+          "lastKnownAmount",
+          "lastCheckedAt",
+          "lastAlertedAt",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "RegistryProxy_PaymentInformation": {
@@ -25538,10 +27165,10 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment list/count endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment list/count endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
             "in": "query"
           },
@@ -25554,6 +27181,8 @@
                 "ResultSubmitted",
                 "RefundRequested",
                 "Disputed",
+                "WithdrawAuthorized",
+                "RefundAuthorized",
                 "Withdrawn",
                 "RefundWithdrawn",
                 "DisputedWithdrawn"
@@ -25568,10 +27197,34 @@
           {
             "schema": {
               "type": "string",
-              "description": "Search query to filter by ID, hash, state, network, wallet address, or amount"
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment list/count endpoints default to Web3CardanoV1 for backwards compatibility."
             },
             "required": false,
-            "description": "Search query to filter by ID, hash, state, network, wallet address, or amount",
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment list/count endpoints default to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When true, only returns payments that require manual resolution: the next action is WaitingForManualAction or an error was recorded on it"
+            },
+            "required": false,
+            "description": "When true, only returns payments that require manual resolution: the next action is WaitingForManualAction or an error was recorded on it",
+            "name": "filterNeedsManualAction",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Search query to filter by ID, hash, agent name, state, network, wallet address, or amount"
+            },
+            "required": false,
+            "description": "Search query to filter by ID, hash, agent name, state, network, wallet address, or amount",
             "name": "searchQuery",
             "in": "query"
           },
@@ -25625,6 +27278,7 @@
                           "id": "cuid_v2_auto_generated",
                           "blockchainIdentifier": "blockchain_identifier",
                           "agentIdentifier": "agent_identifier",
+                          "agentName": "Example Agent",
                           "pricingType": "Fixed",
                           "createdAt": "1970-01-20T20:00:36.260Z",
                           "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -25636,6 +27290,8 @@
                           "payByTime": null,
                           "cooldownTimeOtherParty": 0,
                           "collateralReturnLovelace": null,
+                          "buyerReturnAddress": null,
+                          "sellerReturnAddress": null,
                           "requestedById": "requester_id",
                           "resultHash": "result_hash",
                           "onChainState": null,
@@ -25656,6 +27312,7 @@
                           "PaymentSource": {
                             "id": "payment_source_id",
                             "network": "Preprod",
+                            "paymentSourceType": "Web3CardanoV1",
                             "smartContractAddress": "address",
                             "policyId": "policy_id"
                           },
@@ -25731,6 +27388,14 @@
                     "minLength": 57,
                     "maxLength": 250,
                     "description": "The identifier of the agent that will be paid"
+                  },
+                  "paymentSourceType": {
+                    "type": "string",
+                    "enum": [
+                      "Web3CardanoV1",
+                      "Web3CardanoV2"
+                    ],
+                    "description": "Expected payment source type for this request"
                   },
                   "RequestedFunds": {
                     "type": "array",
@@ -25830,6 +27495,11 @@
                     "type": "string",
                     "description": "Metadata to be stored with the payment request"
                   },
+                  "sellerReturnAddress": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "description": "Optional seller return address. Defaults to the selling hot wallet collection address when available."
+                  },
                   "identifierFromPurchaser": {
                     "type": "string",
                     "minLength": 14,
@@ -25890,6 +27560,11 @@
                           "nullable": true,
                           "description": "Identifier of the agent that is being paid"
                         },
+                        "agentName": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Display name of the agent when known"
+                        },
                         "pricingType": {
                           "type": "string",
                           "enum": [
@@ -25922,6 +27597,16 @@
                           "type": "string",
                           "nullable": true,
                           "description": "Amount of collateral to return in lovelace. Null if no collateral"
+                        },
+                        "buyerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional buyer return address stored with the request"
+                        },
+                        "sellerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional seller return address stored with the request"
                         },
                         "externalDisputeUnlockTime": {
                           "type": "string",
@@ -25981,6 +27666,8 @@
                             "ResultSubmitted",
                             "RefundRequested",
                             "Disputed",
+                            "WithdrawAuthorized",
+                            "RefundAuthorized",
                             "Withdrawn",
                             "RefundWithdrawn",
                             "DisputedWithdrawn",
@@ -26093,6 +27780,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -26109,6 +27798,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -26144,7 +27835,7 @@
                             "properties": {
                               "amount": {
                                 "type": "string",
-                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                               },
                               "unit": {
                                 "type": "string",
@@ -26214,6 +27905,14 @@
                               ],
                               "description": "The Cardano network (Mainnet, Preprod, or Preview)"
                             },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ],
+                              "description": "Payment source type for adapter dispatch"
+                            },
                             "smartContractAddress": {
                               "type": "string",
                               "description": "Address of the smart contract managing this payment"
@@ -26227,6 +27926,7 @@
                           "required": [
                             "id",
                             "network",
+                            "paymentSourceType",
                             "smartContractAddress",
                             "policyId"
                           ],
@@ -26287,12 +27987,15 @@
                         "updatedAt",
                         "blockchainIdentifier",
                         "agentIdentifier",
+                        "agentName",
                         "pricingType",
                         "lastCheckedAt",
                         "payByTime",
                         "submitResultTime",
                         "unlockTime",
                         "collateralReturnLovelace",
+                        "buyerReturnAddress",
+                        "sellerReturnAddress",
                         "externalDisputeUnlockTime",
                         "requestedById",
                         "resultHash",
@@ -26330,6 +28033,7 @@
                       "id": "cuid_v2_auto_generated",
                       "blockchainIdentifier": "blockchain_identifier",
                       "agentIdentifier": "agent_identifier",
+                      "agentName": "Example Agent",
                       "pricingType": "Fixed",
                       "createdAt": "1970-01-20T20:00:36.260Z",
                       "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -26341,6 +28045,8 @@
                       "payByTime": null,
                       "cooldownTimeOtherParty": 0,
                       "collateralReturnLovelace": null,
+                      "buyerReturnAddress": null,
+                      "sellerReturnAddress": null,
                       "requestedById": "requester_id",
                       "resultHash": "result_hash",
                       "onChainState": null,
@@ -26361,6 +28067,7 @@
                       "PaymentSource": {
                         "id": "payment_source_id",
                         "network": "Preprod",
+                        "paymentSourceType": "Web3CardanoV1",
                         "smartContractAddress": "address",
                         "policyId": "policy_id"
                       },
@@ -26536,39 +28243,7 @@
                             "walletAddress": "wallet_address"
                           },
                           "lastCheckedAt": "1970-01-20T20:00:36.260Z",
-                          "lastIdentifierChecked": "identifier",
-                          "PurchasingWallets": [
-                            {
-                              "collectionAddress": null,
-                              "note": "note",
-                              "walletVkey": "wallet_vkey",
-                              "walletAddress": "wallet_address",
-                              "id": "unique_cuid_v2_auto_generated"
-                            },
-                            {
-                              "collectionAddress": "send_refunds_to_this_address",
-                              "note": "note",
-                              "walletVkey": "wallet_vkey",
-                              "walletAddress": "wallet_address",
-                              "id": "unique_cuid_v2_auto_generated"
-                            }
-                          ],
-                          "SellingWallets": [
-                            {
-                              "collectionAddress": "null_will_use_selling_wallet_as_revenue_address",
-                              "note": "note",
-                              "walletVkey": "wallet_vkey",
-                              "walletAddress": "wallet_address",
-                              "id": "unique_cuid_v2_auto_generated"
-                            },
-                            {
-                              "collectionAddress": "send_revenue_to_this_address",
-                              "note": "note",
-                              "walletVkey": "wallet_vkey",
-                              "walletAddress": "wallet_address",
-                              "id": "unique_cuid_v2_auto_generated"
-                            }
-                          ]
+                          "lastIdentifierChecked": "identifier"
                         }
                       ]
                     }
@@ -26665,6 +28340,11 @@
                           "nullable": true,
                           "description": "Identifier of the agent that is being paid"
                         },
+                        "agentName": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Display name of the agent when known"
+                        },
                         "pricingType": {
                           "type": "string",
                           "enum": [
@@ -26697,6 +28377,16 @@
                           "type": "string",
                           "nullable": true,
                           "description": "Amount of collateral to return in lovelace. Null if no collateral"
+                        },
+                        "buyerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional buyer return address stored with the request"
+                        },
+                        "sellerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional seller return address stored with the request"
                         },
                         "externalDisputeUnlockTime": {
                           "type": "string",
@@ -26756,6 +28446,8 @@
                             "ResultSubmitted",
                             "RefundRequested",
                             "Disputed",
+                            "WithdrawAuthorized",
+                            "RefundAuthorized",
                             "Withdrawn",
                             "RefundWithdrawn",
                             "DisputedWithdrawn",
@@ -26868,6 +28560,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -26884,6 +28578,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -26919,7 +28615,7 @@
                             "properties": {
                               "amount": {
                                 "type": "string",
-                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                               },
                               "unit": {
                                 "type": "string",
@@ -26989,6 +28685,14 @@
                               ],
                               "description": "The Cardano network (Mainnet, Preprod, or Preview)"
                             },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ],
+                              "description": "Payment source type for adapter dispatch"
+                            },
                             "smartContractAddress": {
                               "type": "string",
                               "description": "Address of the smart contract managing this payment"
@@ -27002,6 +28706,7 @@
                           "required": [
                             "id",
                             "network",
+                            "paymentSourceType",
                             "smartContractAddress",
                             "policyId"
                           ],
@@ -27062,12 +28767,15 @@
                         "updatedAt",
                         "blockchainIdentifier",
                         "agentIdentifier",
+                        "agentName",
                         "pricingType",
                         "lastCheckedAt",
                         "payByTime",
                         "submitResultTime",
                         "unlockTime",
                         "collateralReturnLovelace",
+                        "buyerReturnAddress",
+                        "sellerReturnAddress",
                         "externalDisputeUnlockTime",
                         "requestedById",
                         "resultHash",
@@ -27105,6 +28813,7 @@
                       "id": "cuid_v2_auto_generated",
                       "blockchainIdentifier": "blockchain_identifier",
                       "agentIdentifier": "agent_identifier",
+                      "agentName": "Example Agent",
                       "pricingType": "Fixed",
                       "createdAt": "1970-01-20T20:00:36.260Z",
                       "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -27116,6 +28825,8 @@
                       "payByTime": null,
                       "cooldownTimeOtherParty": 0,
                       "collateralReturnLovelace": null,
+                      "buyerReturnAddress": null,
+                      "sellerReturnAddress": null,
                       "requestedById": "requester_id",
                       "resultHash": "result_hash",
                       "onChainState": null,
@@ -27136,6 +28847,7 @@
                       "PaymentSource": {
                         "id": "payment_source_id",
                         "network": "Preprod",
+                        "paymentSourceType": "Web3CardanoV1",
                         "smartContractAddress": "address",
                         "policyId": "policy_id"
                       },
@@ -27248,12 +28960,36 @@
           {
             "schema": {
               "type": "string",
-              "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "When true, only counts payments that require manual resolution: the next action is WaitingForManualAction or an error was recorded on it"
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "When true, only counts payments that require manual resolution: the next action is WaitingForManualAction or an error was recorded on it",
+            "name": "filterNeedsManualAction",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "nullable": true,
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment count defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
+            },
+            "required": false,
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment count defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment count defaults to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment count defaults to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           }
         ],
@@ -27382,11 +29118,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           },
           {
@@ -27439,6 +29189,7 @@
                           "id": "cuid_v2_auto_generated",
                           "blockchainIdentifier": "blockchain_identifier",
                           "agentIdentifier": "agent_identifier",
+                          "agentName": "Example Agent",
                           "pricingType": "Fixed",
                           "createdAt": "1970-01-20T20:00:36.260Z",
                           "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -27450,6 +29201,8 @@
                           "payByTime": null,
                           "cooldownTimeOtherParty": 0,
                           "collateralReturnLovelace": null,
+                          "buyerReturnAddress": null,
+                          "sellerReturnAddress": null,
                           "requestedById": "requester_id",
                           "resultHash": "result_hash",
                           "onChainState": null,
@@ -27470,6 +29223,7 @@
                           "PaymentSource": {
                             "id": "payment_source_id",
                             "network": "Preprod",
+                            "paymentSourceType": "Web3CardanoV1",
                             "smartContractAddress": "address",
                             "policyId": "policy_id"
                           },
@@ -27588,11 +29342,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           },
           {
@@ -27645,6 +29413,7 @@
                           "id": "cuid_v2_auto_generated",
                           "blockchainIdentifier": "blockchain_identifier",
                           "agentIdentifier": "agent_identifier",
+                          "agentName": "Example Agent",
                           "pricingType": "Fixed",
                           "createdAt": "1970-01-20T20:00:36.260Z",
                           "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -27656,6 +29425,8 @@
                           "payByTime": null,
                           "cooldownTimeOtherParty": 0,
                           "collateralReturnLovelace": null,
+                          "buyerReturnAddress": null,
+                          "sellerReturnAddress": null,
                           "requestedById": "requester_id",
                           "resultHash": "result_hash",
                           "onChainState": null,
@@ -27676,6 +29447,7 @@
                           "PaymentSource": {
                             "id": "payment_source_id",
                             "network": "Preprod",
+                            "paymentSourceType": "Web3CardanoV1",
                             "smartContractAddress": "address",
                             "policyId": "policy_id"
                           },
@@ -27794,11 +29566,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, payment diff endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, payment diff endpoints default to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           },
           {
@@ -27851,6 +29637,7 @@
                           "id": "cuid_v2_auto_generated",
                           "blockchainIdentifier": "blockchain_identifier",
                           "agentIdentifier": "agent_identifier",
+                          "agentName": "Example Agent",
                           "pricingType": "Fixed",
                           "createdAt": "1970-01-20T20:00:36.260Z",
                           "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -27862,6 +29649,8 @@
                           "payByTime": null,
                           "cooldownTimeOtherParty": 0,
                           "collateralReturnLovelace": null,
+                          "buyerReturnAddress": null,
+                          "sellerReturnAddress": null,
                           "requestedById": "requester_id",
                           "resultHash": "result_hash",
                           "onChainState": null,
@@ -27882,6 +29671,7 @@
                           "PaymentSource": {
                             "id": "payment_source_id",
                             "network": "Preprod",
+                            "paymentSourceType": "Web3CardanoV1",
                             "smartContractAddress": "address",
                             "policyId": "policy_id"
                           },
@@ -27944,6 +29734,7 @@
                   "blockchainIdentifier": {
                     "type": "string",
                     "minLength": 1,
+                    "maxLength": 8000,
                     "description": "The blockchain identifier of the payment request"
                   },
                   "network": {
@@ -28023,6 +29814,11 @@
                           "nullable": true,
                           "description": "Identifier of the agent that is being paid"
                         },
+                        "agentName": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Display name of the agent when known"
+                        },
                         "pricingType": {
                           "type": "string",
                           "enum": [
@@ -28055,6 +29851,16 @@
                           "type": "string",
                           "nullable": true,
                           "description": "Amount of collateral to return in lovelace. Null if no collateral"
+                        },
+                        "buyerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional buyer return address stored with the request"
+                        },
+                        "sellerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional seller return address stored with the request"
                         },
                         "externalDisputeUnlockTime": {
                           "type": "string",
@@ -28114,6 +29920,8 @@
                             "ResultSubmitted",
                             "RefundRequested",
                             "Disputed",
+                            "WithdrawAuthorized",
+                            "RefundAuthorized",
                             "Withdrawn",
                             "RefundWithdrawn",
                             "DisputedWithdrawn",
@@ -28226,6 +30034,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -28242,6 +30052,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -28277,7 +30089,7 @@
                             "properties": {
                               "amount": {
                                 "type": "string",
-                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                               },
                               "unit": {
                                 "type": "string",
@@ -28347,6 +30159,14 @@
                               ],
                               "description": "The Cardano network (Mainnet, Preprod, or Preview)"
                             },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ],
+                              "description": "Payment source type for adapter dispatch"
+                            },
                             "smartContractAddress": {
                               "type": "string",
                               "description": "Address of the smart contract managing this payment"
@@ -28360,6 +30180,7 @@
                           "required": [
                             "id",
                             "network",
+                            "paymentSourceType",
                             "smartContractAddress",
                             "policyId"
                           ],
@@ -28420,12 +30241,15 @@
                         "updatedAt",
                         "blockchainIdentifier",
                         "agentIdentifier",
+                        "agentName",
                         "pricingType",
                         "lastCheckedAt",
                         "payByTime",
                         "submitResultTime",
                         "unlockTime",
                         "collateralReturnLovelace",
+                        "buyerReturnAddress",
+                        "sellerReturnAddress",
                         "externalDisputeUnlockTime",
                         "requestedById",
                         "resultHash",
@@ -28668,6 +30492,14 @@
                       "Mainnet"
                     ],
                     "description": "The Cardano network to query income from"
+                  },
+                  "filterPaymentSourceType": {
+                    "type": "string",
+                    "enum": [
+                      "Web3CardanoV1",
+                      "Web3CardanoV2"
+                    ],
+                    "description": "Filter by payment source type. When omitted, income totals default to Web3CardanoV1 for backwards compatibility."
                   }
                 },
                 "required": [
@@ -28732,7 +30564,7 @@
                                   "unit",
                                   "amount"
                                 ],
-                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                               }
                             },
                             "blockchainFees": {
@@ -28763,7 +30595,7 @@
                                   "unit",
                                   "amount"
                                 ],
-                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                               }
                             },
                             "blockchainFees": {
@@ -28794,7 +30626,7 @@
                                   "unit",
                                   "amount"
                                 ],
-                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                               }
                             },
                             "blockchainFees": {
@@ -28839,7 +30671,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -28888,7 +30720,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -28937,7 +30769,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -28982,7 +30814,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -29026,7 +30858,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -29070,7 +30902,7 @@
                                     "unit",
                                     "amount"
                                   ],
-                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 10000000 lovelace) and its unit is \"\""
+                                  "description": "The amount of the unit in the smallest unit. Meaning if the unit is ADA, the amount is in lovelace (1 ADA = 1000000 lovelace) and its unit is \"\""
                                 }
                               },
                               "blockchainFees": {
@@ -29309,6 +31141,8 @@
                 "properties": {
                   "blockchainIdentifier": {
                     "type": "string",
+                    "minLength": 1,
+                    "maxLength": 8000,
                     "description": "The blockchain identifier to resolve"
                   },
                   "network": {
@@ -29507,11 +31341,14 @@
                   },
                   "submitResultHash": {
                     "type": "string",
-                    "maxLength": 250,
+                    "minLength": 64,
+                    "maxLength": 64,
+                    "pattern": "^[0-9a-fA-F]{64}$",
                     "description": "The hash of the AI agent result to be submitted, should be sha256 hash of the result, therefore needs to be in hex string format"
                   },
                   "blockchainIdentifier": {
                     "type": "string",
+                    "minLength": 1,
                     "maxLength": 8000,
                     "description": "The identifier of the payment"
                   }
@@ -29564,6 +31401,11 @@
                           "nullable": true,
                           "description": "Identifier of the agent that is being paid"
                         },
+                        "agentName": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Display name of the agent when known"
+                        },
                         "pricingType": {
                           "type": "string",
                           "enum": [
@@ -29596,6 +31438,16 @@
                           "type": "string",
                           "nullable": true,
                           "description": "Amount of collateral to return in lovelace. Null if no collateral"
+                        },
+                        "buyerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional buyer return address stored with the request"
+                        },
+                        "sellerReturnAddress": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Optional seller return address stored with the request"
                         },
                         "externalDisputeUnlockTime": {
                           "type": "string",
@@ -29655,6 +31507,8 @@
                             "ResultSubmitted",
                             "RefundRequested",
                             "Disputed",
+                            "WithdrawAuthorized",
+                            "RefundAuthorized",
                             "Withdrawn",
                             "RefundWithdrawn",
                             "DisputedWithdrawn",
@@ -29767,6 +31621,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -29783,6 +31639,8 @@
                                 "ResultSubmitted",
                                 "RefundRequested",
                                 "Disputed",
+                                "WithdrawAuthorized",
+                                "RefundAuthorized",
                                 "Withdrawn",
                                 "RefundWithdrawn",
                                 "DisputedWithdrawn",
@@ -29818,7 +31676,7 @@
                             "properties": {
                               "amount": {
                                 "type": "string",
-                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                                "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                               },
                               "unit": {
                                 "type": "string",
@@ -29888,6 +31746,14 @@
                               ],
                               "description": "The Cardano network (Mainnet, Preprod, or Preview)"
                             },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ],
+                              "description": "Payment source type for adapter dispatch"
+                            },
                             "smartContractAddress": {
                               "type": "string",
                               "description": "Address of the smart contract managing this payment"
@@ -29901,6 +31767,7 @@
                           "required": [
                             "id",
                             "network",
+                            "paymentSourceType",
                             "smartContractAddress",
                             "policyId"
                           ],
@@ -29961,12 +31828,15 @@
                         "updatedAt",
                         "blockchainIdentifier",
                         "agentIdentifier",
+                        "agentName",
                         "pricingType",
                         "lastCheckedAt",
                         "payByTime",
                         "submitResultTime",
                         "unlockTime",
                         "collateralReturnLovelace",
+                        "buyerReturnAddress",
+                        "sellerReturnAddress",
                         "externalDisputeUnlockTime",
                         "requestedById",
                         "resultHash",
@@ -30004,6 +31874,7 @@
                       "id": "cuid_v2_auto_generated",
                       "blockchainIdentifier": "blockchain_identifier",
                       "agentIdentifier": "agent_identifier",
+                      "agentName": "Example Agent",
                       "pricingType": "Fixed",
                       "createdAt": "1970-01-20T20:00:36.260Z",
                       "updatedAt": "1970-01-20T20:00:36.260Z",
@@ -30015,6 +31886,8 @@
                       "payByTime": null,
                       "cooldownTimeOtherParty": 0,
                       "collateralReturnLovelace": null,
+                      "buyerReturnAddress": null,
+                      "sellerReturnAddress": null,
                       "requestedById": "requester_id",
                       "resultHash": "result_hash",
                       "onChainState": null,
@@ -30035,6 +31908,7 @@
                       "PaymentSource": {
                         "id": "payment_source_id",
                         "network": "Preprod",
+                        "paymentSourceType": "Web3CardanoV1",
                         "smartContractAddress": "address",
                         "policyId": "policy_id"
                       },
@@ -30171,11 +32045,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no V2-aware filters, registry list/count endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no V2-aware filters, registry list/count endpoints default to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no source/address/identifier support filters, the endpoint defaults to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no source/address/identifier support filters, the endpoint defaults to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           },
           {
@@ -30197,11 +32085,43 @@
           {
             "schema": {
               "type": "string",
-              "description": "Search query to filter by name, description, tags, wallet address, state, or price"
+              "description": "Search query to filter by name, description, tags, minting or recipient wallet address, state, or price"
             },
             "required": false,
-            "description": "Search query to filter by name, description, tags, wallet address, state, or price",
+            "description": "Search query to filter by name, description, tags, minting or recipient wallet address, state, or price",
             "name": "searchQuery",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 57,
+              "maxLength": 250,
+              "description": "When set, return only the registry entry whose on-chain agent identifier matches exactly (same scope as list: network, payment source, and wallet permissions). This exact lookup does not apply the default Web3CardanoV1 compatibility filter."
+            },
+            "required": false,
+            "description": "When set, return only the registry entry whose on-chain agent identifier matches exactly (same scope as list: network, payment source, and wallet permissions). This exact lookup does not apply the default Web3CardanoV1 compatibility filter.",
+            "name": "filterAgentIdentifier",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Return only entries that advertise a supported payment source with this address (the Cardano smart-contract address, or an EVM x402 payTo/address). Matched server-side so callers do not have to fetch every entry and filter client-side. Combined with filterSupportedPaymentSourceNetworks as a logical OR. This V2-aware filter opts out of the default Web3CardanoV1 compatibility filter."
+            },
+            "required": false,
+            "description": "Return only entries that advertise a supported payment source with this address (the Cardano smart-contract address, or an EVM x402 payTo/address). Matched server-side so callers do not have to fetch every entry and filter client-side. Combined with filterSupportedPaymentSourceNetworks as a logical OR. This V2-aware filter opts out of the default Web3CardanoV1 compatibility filter.",
+            "name": "filterSupportedPaymentSourceAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of supported-payment-source networks to match (Cardano network name, or CAIP-2 EVM chain ids such as eip155:8453). Returns entries advertising a supported payment source on any of these networks. Combined with filterSupportedPaymentSourceAddress as a logical OR. This V2-aware filter opts out of the default Web3CardanoV1 compatibility filter."
+            },
+            "required": false,
+            "description": "Comma-separated list of supported-payment-source networks to match (Cardano network name, or CAIP-2 EVM chain ids such as eip155:8453). Returns entries advertising a supported payment source on any of these networks. Combined with filterSupportedPaymentSourceAddress as a logical OR. This V2-aware filter opts out of the default Web3CardanoV1 compatibility filter.",
+            "name": "filterSupportedPaymentSourceNetworks",
             "in": "query"
           }
         ],
@@ -30283,6 +32203,10 @@
                             "walletVkey": "wallet_vkey",
                             "walletAddress": "wallet_address"
                           },
+                          "RecipientWallet": {
+                            "walletVkey": "recipient_wallet_vkey",
+                            "walletAddress": "recipient_wallet_address"
+                          },
                           "CurrentTransaction": null
                         }
                       ]
@@ -30328,8 +32252,282 @@
                   },
                   "sellingWalletVkey": {
                     "type": "string",
-                    "maxLength": 250,
+                    "minLength": 56,
+                    "maxLength": 56,
+                    "pattern": "^[0-9a-fA-F]{56}$",
                     "description": "The payment key of a specific wallet used for the registration"
+                  },
+                  "recipientWalletAddress": {
+                    "type": "string",
+                    "minLength": 58,
+                    "maxLength": 120,
+                    "pattern": "^(addr1|addr_test1)[0-9a-z]+$",
+                    "description": "Optional managed hot wallet address on the same payment source that should receive the minted registry NFT. If omitted, the minting wallet receives it."
+                  },
+                  "sendFundingLovelace": {
+                    "type": "string",
+                    "maxLength": 17,
+                    "pattern": "^\\d+$",
+                    "description": "Optional lovelace amount to include with the minted NFT output. If provided below the minimum NFT funding, the current minimum is still used."
+                  },
+                  "supportedPaymentSources": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "chain": {
+                              "type": "string",
+                              "enum": [
+                                "Cardano"
+                              ],
+                              "description": "The blockchain this payment source is available on"
+                            },
+                            "network": {
+                              "type": "string",
+                              "enum": [
+                                "Preprod",
+                                "Mainnet"
+                              ],
+                              "description": "The Cardano network this payment source is available on"
+                            },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2"
+                              ],
+                              "description": "The configured payment source type"
+                            },
+                            "address": {
+                              "type": "string",
+                              "maxLength": 250,
+                              "description": "The escrow smart contract address for this payment source"
+                            }
+                          },
+                          "required": [
+                            "chain",
+                            "network",
+                            "paymentSourceType",
+                            "address"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "chain": {
+                              "type": "string",
+                              "enum": [
+                                "EVM"
+                              ],
+                              "description": "The chain family used by standard x402"
+                            },
+                            "network": {
+                              "type": "string",
+                              "pattern": "^eip155:\\d+$",
+                              "description": "CAIP-2 EVM network id, for example eip155:8453"
+                            },
+                            "paymentSourceType": {
+                              "type": "string",
+                              "nullable": true,
+                              "enum": [
+                                "Web3CardanoV1",
+                                "Web3CardanoV2",
+                                null
+                              ],
+                              "description": "The configured payment source type"
+                            },
+                            "address": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "Alias for payTo, kept for existing payment-source shape"
+                            },
+                            "scheme": {
+                              "type": "string",
+                              "enum": [
+                                "Exact"
+                              ],
+                              "description": "x402 payment scheme"
+                            },
+                            "asset": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "ERC-20 token contract address"
+                            },
+                            "amount": {
+                              "type": "string",
+                              "pattern": "^\\d+$",
+                              "description": "Atomic token amount"
+                            },
+                            "decimals": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 255,
+                              "description": "ERC-20 token decimals"
+                            },
+                            "payTo": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "EVM address receiving the x402 payment"
+                            },
+                            "resource": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri",
+                              "description": "Optional absolute resource URL this x402 option protects"
+                            },
+                            "extra": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "nullable": true
+                              },
+                              "description": "Additional x402 metadata"
+                            }
+                          },
+                          "required": [
+                            "chain",
+                            "network",
+                            "scheme",
+                            "asset",
+                            "amount",
+                            "decimals",
+                            "payTo"
+                          ]
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 25,
+                    "description": "Payment sources to persist for this registry request. If omitted, mint metadata advertises the active payment source."
+                  },
+                  "verifications": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "method": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40,
+                          "description": "Verification method discriminator, e.g. \"KERI-ACDC\""
+                        },
+                        "schemaVersion": {
+                          "type": "string",
+                          "maxLength": 16,
+                          "description": "Version of this verification block"
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "aid": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "description": "Issuer KERI AID (ACDC sad.i) — the root trust anchor"
+                            },
+                            "oobi": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri",
+                              "description": "OOBI resolving the issuer KEL (key state) for signature verification"
+                            }
+                          },
+                          "required": [
+                            "aid",
+                            "oobi"
+                          ],
+                          "description": "Credential issuer identity"
+                        },
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "said": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "description": "Credential schema SAID (ACDC sad.s)"
+                            },
+                            "oobi": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri",
+                              "description": "OOBI resolving the JSON schema; a verifier checks its hash equals said"
+                            }
+                          },
+                          "required": [
+                            "said",
+                            "oobi"
+                          ],
+                          "description": "Credential schema — the ACDC structure definition"
+                        },
+                        "credential": {
+                          "type": "object",
+                          "properties": {
+                            "said": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "description": "Credential SAID (ACDC sad.d)"
+                            },
+                            "oobi": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri",
+                              "description": "OOBI/endpoint serving the signed ACDC; a verifier checks its hash equals said"
+                            },
+                            "registry": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "description": "Credential status registry / TEL SAID (ACDC sad.ri) for independent revocation checks"
+                            }
+                          },
+                          "required": [
+                            "said",
+                            "oobi"
+                          ],
+                          "description": "The verifiable credential (ACDC)"
+                        },
+                        "holder": {
+                          "type": "object",
+                          "properties": {
+                            "aid": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "description": "Issuee/holder KERI AID (ACDC sad.a.i)"
+                            },
+                            "oobi": {
+                              "type": "string",
+                              "maxLength": 500,
+                              "format": "uri",
+                              "description": "OOBI resolving the holder KEL"
+                            }
+                          },
+                          "required": [
+                            "aid",
+                            "oobi"
+                          ],
+                          "description": "Credential holder/issuee identity"
+                        },
+                        "baseUrl": {
+                          "type": "string",
+                          "maxLength": 500,
+                          "format": "uri",
+                          "description": "Optional witness/KERIA resolver root for live key-state (\"verify at time T\") and TEL queries"
+                        }
+                      },
+                      "required": [
+                        "method",
+                        "issuer",
+                        "schema",
+                        "credential",
+                        "holder"
+                      ]
+                    },
+                    "maxItems": 10,
+                    "description": "Optional KERI/Veridian verification claims advertised in the registry metadata for independent third-party verification. Accepted on any registration; surfaced in the UI for V2 registries only."
                   },
                   "ExampleOutputs": {
                     "type": "array",
@@ -30379,6 +32577,7 @@
                   "apiBaseUrl": {
                     "type": "string",
                     "maxLength": 250,
+                    "format": "uri",
                     "description": "Base URL of the agent, to request interactions"
                   },
                   "description": {
@@ -30431,7 +32630,7 @@
                                 "amount": {
                                   "type": "string",
                                   "maxLength": 25,
-                                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 10000000 lovelace)"
+                                  "description": "The quantity of the asset. Make sure to convert it from the underlying smallest unit (in case of decimals, multiply it by the decimal factor e.g. for 1 ADA = 1000000 lovelace)"
                                 }
                               },
                               "required": [
@@ -30573,6 +32772,8 @@
                     "other": "Other Legal Information URL"
                   },
                   "sellingWalletVkey": "wallet_vkey",
+                  "recipientWalletAddress": "recipient_wallet_address",
+                  "sendFundingLovelace": "7500000",
                   "Capability": {
                     "name": "Capability Name",
                     "version": "1.0.0"
@@ -30658,10 +32859,44 @@
                           }
                         ]
                       },
+                      "sendFundingLovelace": null,
+                      "supportedPaymentSources": [
+                        {
+                          "chain": "Cardano",
+                          "network": "Preprod",
+                          "paymentSourceType": "Web3CardanoV2",
+                          "address": "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm"
+                        }
+                      ],
+                      "verifications": [
+                        {
+                          "method": "KERI-ACDC",
+                          "schemaVersion": "1",
+                          "issuer": {
+                            "aid": "EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y",
+                            "oobi": "https://witness.example.com/oobi/EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y/witness"
+                          },
+                          "schema": {
+                            "said": "EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p",
+                            "oobi": "https://schema.example.com/oobi/EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p"
+                          },
+                          "credential": {
+                            "said": "EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "oobi": "https://cred.example.com/oobi/EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "registry": "ER7yQ3kL9mN2pT5vX8a1b4c7d0e3f6g9h2j5k8l1m4n7"
+                          },
+                          "holder": {
+                            "aid": "EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4",
+                            "oobi": "https://keria.example.com/oobi/EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4/agent/EAgnt"
+                          },
+                          "baseUrl": "https://verify.example.com"
+                        }
+                      ],
                       "SmartContractWallet": {
                         "walletVkey": "wallet_vkey",
                         "walletAddress": "wallet_address"
                       },
+                      "RecipientWallet": null,
                       "CurrentTransaction": null
                     }
                   }
@@ -30817,10 +33052,44 @@
                           }
                         ]
                       },
+                      "sendFundingLovelace": null,
+                      "supportedPaymentSources": [
+                        {
+                          "chain": "Cardano",
+                          "network": "Preprod",
+                          "paymentSourceType": "Web3CardanoV2",
+                          "address": "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm"
+                        }
+                      ],
+                      "verifications": [
+                        {
+                          "method": "KERI-ACDC",
+                          "schemaVersion": "1",
+                          "issuer": {
+                            "aid": "EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y",
+                            "oobi": "https://witness.example.com/oobi/EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y/witness"
+                          },
+                          "schema": {
+                            "said": "EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p",
+                            "oobi": "https://schema.example.com/oobi/EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p"
+                          },
+                          "credential": {
+                            "said": "EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "oobi": "https://cred.example.com/oobi/EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "registry": "ER7yQ3kL9mN2pT5vX8a1b4c7d0e3f6g9h2j5k8l1m4n7"
+                          },
+                          "holder": {
+                            "aid": "EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4",
+                            "oobi": "https://keria.example.com/oobi/EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4/agent/EAgnt"
+                          },
+                          "baseUrl": "https://verify.example.com"
+                        }
+                      ],
                       "SmartContractWallet": {
                         "walletVkey": "wallet_vkey",
                         "walletAddress": "wallet_address"
                       },
+                      "RecipientWallet": null,
                       "CurrentTransaction": null
                     }
                   }
@@ -31116,11 +33385,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, count defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, count defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, count defaults to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, count defaults to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           }
         ],
@@ -31194,6 +33477,7 @@
                     "type": "string",
                     "minLength": 57,
                     "maxLength": 250,
+                    "pattern": "^[0-9a-fA-F]+$",
                     "description": "The identifier of the registration (asset) to be deregistered"
                   },
                   "network": {
@@ -31206,7 +33490,9 @@
                   },
                   "smartContractAddress": {
                     "type": "string",
-                    "maxLength": 250,
+                    "minLength": 58,
+                    "maxLength": 120,
+                    "pattern": "^(addr1|addr_test1)[0-9a-z]+$",
                     "description": "The smart contract address of the payment contract to which the registration belongs"
                   }
                 },
@@ -31289,10 +33575,44 @@
                           }
                         ]
                       },
+                      "sendFundingLovelace": null,
+                      "supportedPaymentSources": [
+                        {
+                          "chain": "Cardano",
+                          "network": "Preprod",
+                          "paymentSourceType": "Web3CardanoV2",
+                          "address": "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm"
+                        }
+                      ],
+                      "verifications": [
+                        {
+                          "method": "KERI-ACDC",
+                          "schemaVersion": "1",
+                          "issuer": {
+                            "aid": "EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y",
+                            "oobi": "https://witness.example.com/oobi/EIaIeKvfBLmZf3wfqB0oR1uM5n8m9k2pQ7rT4sV1wX3y/witness"
+                          },
+                          "schema": {
+                            "said": "EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p",
+                            "oobi": "https://schema.example.com/oobi/EJ1gXWfzLyW2u0YY5Zb8c4d6e9f1g3h5j7k9l2m4n6p"
+                          },
+                          "credential": {
+                            "said": "EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "oobi": "https://cred.example.com/oobi/EHpH79tPZoSl7VJZ7xMi3JWF4rH9wZ2ntGvKABd9N14z",
+                            "registry": "ER7yQ3kL9mN2pT5vX8a1b4c7d0e3f6g9h2j5k8l1m4n7"
+                          },
+                          "holder": {
+                            "aid": "EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4",
+                            "oobi": "https://keria.example.com/oobi/EBcd1ef2gh3ij4kl5mn6op7qr8st9uv0wx1yz2ab3cd4/agent/EAgnt"
+                          },
+                          "baseUrl": "https://verify.example.com"
+                        }
+                      ],
                       "SmartContractWallet": {
                         "walletVkey": "wallet_vkey",
                         "walletAddress": "wallet_address"
                       },
+                      "RecipientWallet": null,
                       "CurrentTransaction": null
                     }
                   }
@@ -31426,11 +33746,25 @@
             "schema": {
               "type": "string",
               "nullable": true,
-              "description": "The smart contract address of the payment source"
+              "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, registry diff defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source."
             },
             "required": false,
-            "description": "The smart contract address of the payment source",
+            "description": "The smart contract address of the payment source. When omitted with no explicit payment source type, registry diff defaults to Web3CardanoV1 for backwards compatibility. Supplying this field queries that exact V1 or V2 source.",
             "name": "filterSmartContractAddress",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Web3CardanoV1",
+                "Web3CardanoV2"
+              ],
+              "description": "Filter by payment source type. When omitted with no smart-contract-address filter, registry diff defaults to Web3CardanoV1 for backwards compatibility."
+            },
+            "required": false,
+            "description": "Filter by payment source type. When omitted with no smart-contract-address filter, registry diff defaults to Web3CardanoV1 for backwards compatibility.",
+            "name": "filterPaymentSourceType",
             "in": "query"
           }
         ],

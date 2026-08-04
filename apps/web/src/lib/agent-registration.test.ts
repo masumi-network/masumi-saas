@@ -719,6 +719,9 @@ describe("completeOnChainRegistration", () => {
     agentFindFirstMock.mockResolvedValue(agent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegisteredAgentsByWallet: userRegisteredAgentsByWalletMock,
+      getBalance: vi.fn().mockResolvedValue({
+        Balance: [{ unit: "lovelace", quantity: 5_000_000 }],
+      }),
     });
     createPaymentNodeClientMock.mockReturnValue({
       registerAgent: adminRegisterAgentMock,
@@ -826,6 +829,9 @@ describe("completeOnChainRegistration", () => {
     agentFindFirstMock.mockResolvedValue(agent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegisteredAgentsByWallet: userRegisteredAgentsByWalletMock,
+      getBalance: vi.fn().mockResolvedValue({
+        Balance: [{ unit: "lovelace", quantity: 5_000_000 }],
+      }),
     });
     getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     createPaymentNodeClientMock.mockReturnValue({
@@ -869,6 +875,55 @@ describe("completeOnChainRegistration", () => {
         }),
       }),
     });
+  });
+
+  it("waits for recipient wallet funding via balance before submitting registration", async () => {
+    const userGetBalanceMock = vi.fn().mockResolvedValue({ Balance: [] });
+    const adminRegisterAgentMock = vi.fn();
+    const agent = {
+      id: "agent-1",
+      userId: "user-1",
+      name: "Demo agent",
+      description: "Demo description",
+      apiUrl: "https://agent.example.com",
+      tags: ["demo"],
+      registrationState: "RegistrationRequested",
+      agentReference: {
+        externalId: null,
+        networkIdentifier: "Preprod",
+        sellingWalletVkey: "selling-vkey",
+        metadata: {
+          sellingWalletAddress: "addr_test1selling",
+          fundingWalletVkey: "funding-vkey",
+          registrationPayload: {
+            exampleOutputs: [],
+            capabilityName: "demo",
+            capabilityVersion: "1.0.0",
+            authorName: "Taylor",
+            authorEmail: "taylor@example.com",
+            agentPricing: { pricingType: "Free" },
+          },
+        },
+      },
+    };
+
+    agentFindFirstMock.mockResolvedValue(agent);
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getBalance: userGetBalanceMock,
+    });
+    createPaymentNodeClientMock.mockReturnValue({
+      registerAgent: adminRegisterAgentMock,
+    });
+
+    const result = await completeOnChainRegistration("agent-1", "user-1");
+
+    expect(result).toStrictEqual({ status: "pending" });
+    expect(userGetBalanceMock).toHaveBeenCalledWith({
+      address: "addr_test1selling",
+      network: "Preprod",
+    });
+    expect(adminRegisterAgentMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   it("syncs confirmed registration via admin registry lookup when user key cannot see the row", async () => {

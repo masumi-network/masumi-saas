@@ -736,6 +736,16 @@ export type GetUtxosOutput = z.infer<typeof getUtxosOutputSchema>;
 export type Utxo = z.infer<typeof utxoSchema>;
 export type UtxoAmount = z.infer<typeof utxoAmountSchema>;
 
+// ─── Address balance (GET /balance) ─────────────────────────────────────────
+
+export const balanceAmountSchema = utxoAmountSchema;
+export type BalanceAmount = z.infer<typeof balanceAmountSchema>;
+
+export const getBalanceOutputSchema = z.object({
+  Balance: z.array(balanceAmountSchema),
+});
+export type GetBalanceOutput = z.infer<typeof getBalanceOutputSchema>;
+
 // ─── Webhooks ───────────────────────────────────────────────────────────────
 
 export const webhookEventTypeSchema = z.enum([
