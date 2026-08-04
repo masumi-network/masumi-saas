@@ -27,7 +27,6 @@ import {
   paymentNodeConfig,
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
-import { checkAddressHasConfirmedBalance } from "@/lib/payment-node/address-balance";
 import type {
   PaymentSourceInfo,
   PaymentSourceWallet,
@@ -903,14 +902,6 @@ export async function completeOnChainRegistration(
       return { status: "error", error: fundingWalletNetworkError };
     }
     fundingWalletVkey = fundingWalletResult.wallet.walletVkey;
-  }
-
-  const isRecipientWalletFunded = await checkAddressHasConfirmedBalance(
-    userClient,
-    { address, network },
-  );
-  if (!isRecipientWalletFunded) {
-    return { status: "pending" };
   }
 
   const updatedAgent = await prisma.$transaction(async (tx) => {

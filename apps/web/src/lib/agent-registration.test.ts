@@ -719,9 +719,6 @@ describe("completeOnChainRegistration", () => {
     agentFindFirstMock.mockResolvedValue(agent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegisteredAgentsByWallet: userRegisteredAgentsByWalletMock,
-      getBalance: vi.fn().mockResolvedValue({
-        Balance: [{ unit: "lovelace", quantity: 5_000_000 }],
-      }),
     });
     createPaymentNodeClientMock.mockReturnValue({
       registerAgent: adminRegisterAgentMock,
@@ -829,9 +826,6 @@ describe("completeOnChainRegistration", () => {
     agentFindFirstMock.mockResolvedValue(agent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
       getRegisteredAgentsByWallet: userRegisteredAgentsByWalletMock,
-      getBalance: vi.fn().mockResolvedValue({
-        Balance: [{ unit: "lovelace", quantity: 5_000_000 }],
-      }),
     });
     getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     createPaymentNodeClientMock.mockReturnValue({
@@ -877,9 +871,17 @@ describe("completeOnChainRegistration", () => {
     });
   });
 
-  it("waits for recipient wallet funding via balance before submitting registration", async () => {
-    const userGetBalanceMock = vi.fn().mockResolvedValue({ Balance: [] });
-    const adminRegisterAgentMock = vi.fn();
+  it("submits registerAgent without requiring recipient balance first", async () => {
+    const adminRegisterAgentMock = vi.fn().mockResolvedValue({
+      id: "registry-entry-1",
+      state: "RegistrationInitiated",
+      agentIdentifier: null,
+    });
+    const txQueryRawMock = vi.fn().mockResolvedValue([{ externalId: null }]);
+    const txAgentFindUniqueOrThrowMock = vi.fn().mockResolvedValue({
+      id: "agent-1",
+      registrationState: "RegistrationInitiated",
+    });
     const agent = {
       id: "agent-1",
       userId: "user-1",
@@ -909,21 +911,34 @@ describe("completeOnChainRegistration", () => {
 
     agentFindFirstMock.mockResolvedValue(agent);
     getPaymentNodeClientForUserMock.mockResolvedValue({
-      getBalance: userGetBalanceMock,
+      getRegisteredAgentsByWallet: vi.fn().mockResolvedValue({ Assets: [] }),
     });
     createPaymentNodeClientMock.mockReturnValue({
       registerAgent: adminRegisterAgentMock,
     });
+    transactionMock.mockImplementation(async (callback) =>
+      callback({
+        $queryRaw: txQueryRawMock,
+        agent: {
+          findUniqueOrThrow: txAgentFindUniqueOrThrowMock,
+          update: agentUpdateMock,
+        },
+        agentReference: {
+          update: agentReferenceUpdateMock,
+        },
+      }),
+    );
 
     const result = await completeOnChainRegistration("agent-1", "user-1");
 
     expect(result).toStrictEqual({ status: "pending" });
-    expect(userGetBalanceMock).toHaveBeenCalledWith({
-      address: "addr_test1selling",
-      network: "Preprod",
-    });
-    expect(adminRegisterAgentMock).not.toHaveBeenCalled();
-    expect(transactionMock).not.toHaveBeenCalled();
+    expect(adminRegisterAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientWalletAddress: "addr_test1selling",
+        sendFundingLovelace: "10000000",
+      }),
+    );
+    expect(transactionMock).toHaveBeenCalled();
   });
 
   it("syncs confirmed registration via admin registry lookup when user key cannot see the row", async () => {
