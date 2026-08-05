@@ -37,40 +37,42 @@ import routeApp28 from "../../../app/api/earnings/route";
 import routeApp29 from "../../../app/api/health/route";
 import routeApp30 from "../../../app/api/locale/route";
 import routeApp31 from "../../../app/api/oidc/spacetimedb/token/route";
-import routeApp32 from "../../../app/api/register/email/route";
-import routeApp33 from "../../../app/api/registry-discovery/inbox-agent-identifier/route";
-import routeApp34 from "../../../app/api/registry-discovery/inbox-agent-registrations/route";
-import routeApp35, { routeMeta as routeMeta35 } from "../../../app/api/v1/agents/[agentId]/route";
-import routeApp36, { routeMeta as routeMeta36 } from "../../../app/api/v1/agents/route";
-import routeApp37, { routeMeta as routeMeta37 } from "../../../app/api/v1/agents/verify/route";
-import routeApp38 from "../../../app/api/v1/capability/route";
-import routeApp39 from "../../../app/api/v1/inbox-agent-registration-search/route";
-import routeApp40, { routeMeta as routeMeta40 } from "../../../app/api/v1/inbox-agents/[inboxAgentId]/deregister/route";
-import routeApp41, { routeMeta as routeMeta41 } from "../../../app/api/v1/inbox-agents/[inboxAgentId]/route";
-import routeApp42, { routeMeta as routeMeta42 } from "../../../app/api/v1/inbox-agents/route";
-import routeApp43 from "../../../app/api/v1/payment-information/route";
-import routeApp44 from "../../../app/api/v1/payment-source/route";
-import routeApp45 from "../../../app/api/v1/payment/authorize-refund/route";
-import routeApp46 from "../../../app/api/v1/payment/count/route";
-import routeApp47 from "../../../app/api/v1/payment/diff/next-action/route";
-import routeApp48 from "../../../app/api/v1/payment/diff/onchain-state-or-result/route";
-import routeApp49 from "../../../app/api/v1/payment/diff/route";
-import routeApp50 from "../../../app/api/v1/payment/error-state-recovery/route";
-import routeApp51 from "../../../app/api/v1/payment/income/route";
-import routeApp52 from "../../../app/api/v1/payment/resolve-blockchain-identifier/route";
-import routeApp53 from "../../../app/api/v1/payment/route";
-import routeApp54 from "../../../app/api/v1/payment/submit-result/route";
-import routeApp55 from "../../../app/api/v1/payment/x402/route";
-import routeApp56 from "../../../app/api/v1/registry-diff/route";
-import routeApp57 from "../../../app/api/v1/registry-entry-search/route";
-import routeApp58 from "../../../app/api/v1/registry-entry/route";
-import routeApp59 from "../../../app/api/v1/registry/agent-identifier/route";
-import routeApp60 from "../../../app/api/v1/registry/count/route";
-import routeApp61 from "../../../app/api/v1/registry/deregister/route";
-import routeApp62 from "../../../app/api/v1/registry/diff/route";
-import routeApp63 from "../../../app/api/v1/registry/route";
-import routeApp64, { routeMeta as routeMeta64 } from "../../../app/api/v1/x402/[[...path]]/route";
-import routeApp65 from "../../../app/api/webhooks/sumsub/route";
+import routeApp32 from "../../../app/api/public/network/register/route";
+import routeApp33 from "../../../app/api/public/network/register/verify/route";
+import routeApp34 from "../../../app/api/register/email/route";
+import routeApp35 from "../../../app/api/registry-discovery/inbox-agent-identifier/route";
+import routeApp36 from "../../../app/api/registry-discovery/inbox-agent-registrations/route";
+import routeApp37, { routeMeta as routeMeta37 } from "../../../app/api/v1/agents/[agentId]/route";
+import routeApp38, { routeMeta as routeMeta38 } from "../../../app/api/v1/agents/route";
+import routeApp39, { routeMeta as routeMeta39 } from "../../../app/api/v1/agents/verify/route";
+import routeApp40 from "../../../app/api/v1/capability/route";
+import routeApp41 from "../../../app/api/v1/inbox-agent-registration-search/route";
+import routeApp42, { routeMeta as routeMeta42 } from "../../../app/api/v1/inbox-agents/[inboxAgentId]/deregister/route";
+import routeApp43, { routeMeta as routeMeta43 } from "../../../app/api/v1/inbox-agents/[inboxAgentId]/route";
+import routeApp44, { routeMeta as routeMeta44 } from "../../../app/api/v1/inbox-agents/route";
+import routeApp45 from "../../../app/api/v1/payment-information/route";
+import routeApp46 from "../../../app/api/v1/payment-source/route";
+import routeApp47 from "../../../app/api/v1/payment/authorize-refund/route";
+import routeApp48 from "../../../app/api/v1/payment/count/route";
+import routeApp49 from "../../../app/api/v1/payment/diff/next-action/route";
+import routeApp50 from "../../../app/api/v1/payment/diff/onchain-state-or-result/route";
+import routeApp51 from "../../../app/api/v1/payment/diff/route";
+import routeApp52 from "../../../app/api/v1/payment/error-state-recovery/route";
+import routeApp53 from "../../../app/api/v1/payment/income/route";
+import routeApp54 from "../../../app/api/v1/payment/resolve-blockchain-identifier/route";
+import routeApp55 from "../../../app/api/v1/payment/route";
+import routeApp56 from "../../../app/api/v1/payment/submit-result/route";
+import routeApp57 from "../../../app/api/v1/payment/x402/route";
+import routeApp58 from "../../../app/api/v1/registry-diff/route";
+import routeApp59 from "../../../app/api/v1/registry-entry-search/route";
+import routeApp60 from "../../../app/api/v1/registry-entry/route";
+import routeApp61 from "../../../app/api/v1/registry/agent-identifier/route";
+import routeApp62 from "../../../app/api/v1/registry/count/route";
+import routeApp63 from "../../../app/api/v1/registry/deregister/route";
+import routeApp64 from "../../../app/api/v1/registry/diff/route";
+import routeApp65 from "../../../app/api/v1/registry/route";
+import routeApp66, { routeMeta as routeMeta66 } from "../../../app/api/v1/x402/[[...path]]/route";
+import routeApp67 from "../../../app/api/webhooks/sumsub/route";
 
 export type RouteDocumentKey = "platform" | "public-v1";
 
@@ -117,38 +119,40 @@ export const routeAppManifest = [
   { app: routeApp29 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/health/route.ts" },
   { app: routeApp30 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/locale/route.ts" },
   { app: routeApp31 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/oidc/spacetimedb/token/route.ts" },
-  { app: routeApp32 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/register/email/route.ts" },
-  { app: routeApp33 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/registry-discovery/inbox-agent-identifier/route.ts" },
-  { app: routeApp34 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/registry-discovery/inbox-agent-registrations/route.ts" },
-  { app: routeApp35 as unknown as OpenAPIHono, meta: routeMeta35, filePath: "src/app/api/v1/agents/[agentId]/route.ts" },
-  { app: routeApp36 as unknown as OpenAPIHono, meta: routeMeta36, filePath: "src/app/api/v1/agents/route.ts" },
-  { app: routeApp37 as unknown as OpenAPIHono, meta: routeMeta37, filePath: "src/app/api/v1/agents/verify/route.ts" },
-  { app: routeApp38 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/capability/route.ts" },
-  { app: routeApp39 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/inbox-agent-registration-search/route.ts" },
-  { app: routeApp40 as unknown as OpenAPIHono, meta: routeMeta40, filePath: "src/app/api/v1/inbox-agents/[inboxAgentId]/deregister/route.ts" },
-  { app: routeApp41 as unknown as OpenAPIHono, meta: routeMeta41, filePath: "src/app/api/v1/inbox-agents/[inboxAgentId]/route.ts" },
-  { app: routeApp42 as unknown as OpenAPIHono, meta: routeMeta42, filePath: "src/app/api/v1/inbox-agents/route.ts" },
-  { app: routeApp43 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment-information/route.ts" },
-  { app: routeApp44 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment-source/route.ts" },
-  { app: routeApp45 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/authorize-refund/route.ts" },
-  { app: routeApp46 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/count/route.ts" },
-  { app: routeApp47 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/next-action/route.ts" },
-  { app: routeApp48 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/onchain-state-or-result/route.ts" },
-  { app: routeApp49 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/route.ts" },
-  { app: routeApp50 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/error-state-recovery/route.ts" },
-  { app: routeApp51 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/income/route.ts" },
-  { app: routeApp52 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/resolve-blockchain-identifier/route.ts" },
-  { app: routeApp53 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/route.ts" },
-  { app: routeApp54 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/submit-result/route.ts" },
-  { app: routeApp55 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/x402/route.ts" },
-  { app: routeApp56 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-diff/route.ts" },
-  { app: routeApp57 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-entry-search/route.ts" },
-  { app: routeApp58 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-entry/route.ts" },
-  { app: routeApp59 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/agent-identifier/route.ts" },
-  { app: routeApp60 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/count/route.ts" },
-  { app: routeApp61 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/deregister/route.ts" },
-  { app: routeApp62 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/diff/route.ts" },
-  { app: routeApp63 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/route.ts" },
-  { app: routeApp64 as unknown as OpenAPIHono, meta: routeMeta64, filePath: "src/app/api/v1/x402/[[...path]]/route.ts" },
-  { app: routeApp65 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/webhooks/sumsub/route.ts" },
+  { app: routeApp32 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/public/network/register/route.ts" },
+  { app: routeApp33 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/public/network/register/verify/route.ts" },
+  { app: routeApp34 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/register/email/route.ts" },
+  { app: routeApp35 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/registry-discovery/inbox-agent-identifier/route.ts" },
+  { app: routeApp36 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/registry-discovery/inbox-agent-registrations/route.ts" },
+  { app: routeApp37 as unknown as OpenAPIHono, meta: routeMeta37, filePath: "src/app/api/v1/agents/[agentId]/route.ts" },
+  { app: routeApp38 as unknown as OpenAPIHono, meta: routeMeta38, filePath: "src/app/api/v1/agents/route.ts" },
+  { app: routeApp39 as unknown as OpenAPIHono, meta: routeMeta39, filePath: "src/app/api/v1/agents/verify/route.ts" },
+  { app: routeApp40 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/capability/route.ts" },
+  { app: routeApp41 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/inbox-agent-registration-search/route.ts" },
+  { app: routeApp42 as unknown as OpenAPIHono, meta: routeMeta42, filePath: "src/app/api/v1/inbox-agents/[inboxAgentId]/deregister/route.ts" },
+  { app: routeApp43 as unknown as OpenAPIHono, meta: routeMeta43, filePath: "src/app/api/v1/inbox-agents/[inboxAgentId]/route.ts" },
+  { app: routeApp44 as unknown as OpenAPIHono, meta: routeMeta44, filePath: "src/app/api/v1/inbox-agents/route.ts" },
+  { app: routeApp45 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment-information/route.ts" },
+  { app: routeApp46 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment-source/route.ts" },
+  { app: routeApp47 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/authorize-refund/route.ts" },
+  { app: routeApp48 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/count/route.ts" },
+  { app: routeApp49 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/next-action/route.ts" },
+  { app: routeApp50 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/onchain-state-or-result/route.ts" },
+  { app: routeApp51 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/diff/route.ts" },
+  { app: routeApp52 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/error-state-recovery/route.ts" },
+  { app: routeApp53 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/income/route.ts" },
+  { app: routeApp54 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/resolve-blockchain-identifier/route.ts" },
+  { app: routeApp55 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/route.ts" },
+  { app: routeApp56 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/submit-result/route.ts" },
+  { app: routeApp57 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/payment/x402/route.ts" },
+  { app: routeApp58 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-diff/route.ts" },
+  { app: routeApp59 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-entry-search/route.ts" },
+  { app: routeApp60 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry-entry/route.ts" },
+  { app: routeApp61 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/agent-identifier/route.ts" },
+  { app: routeApp62 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/count/route.ts" },
+  { app: routeApp63 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/deregister/route.ts" },
+  { app: routeApp64 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/diff/route.ts" },
+  { app: routeApp65 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/v1/registry/route.ts" },
+  { app: routeApp66 as unknown as OpenAPIHono, meta: routeMeta66, filePath: "src/app/api/v1/x402/[[...path]]/route.ts" },
+  { app: routeApp67 as unknown as OpenAPIHono, meta: undefined, filePath: "src/app/api/webhooks/sumsub/route.ts" },
 ] satisfies RouteAppManifestEntry[];
