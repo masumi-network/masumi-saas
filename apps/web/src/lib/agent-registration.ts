@@ -399,7 +399,7 @@ export function prepareSupportedPaymentSourcesForRegistration(
   const hasEvm = userSources.some((source) => source.chain === "EVM");
   // x402-first ads: keep Cardano escrow Free so we do not require Cardano fixed units.
   const resolvedCardanoPricing = hasEvm
-    ? { pricingType: PricingType.Free as const }
+    ? { pricingType: PricingType.Free }
     : cardanoPricing;
 
   const mergedSources = mergeWithDefaultCardanoSource(
