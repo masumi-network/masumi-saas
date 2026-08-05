@@ -103,7 +103,7 @@ app.openapi(
         response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
         return response;
       }
-      throw new ApiError(result.status ?? 400, result.error);
+      throw new ApiError(result.status === 401 ? 401 : 400, result.error);
     }
 
     const response = c.json(

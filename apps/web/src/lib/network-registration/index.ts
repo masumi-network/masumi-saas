@@ -706,7 +706,7 @@ export async function completeNetworkRegistrationWithOtp(params: {
       error: string;
       needsKyc?: boolean;
       kycContinueUrl?: string;
-      status?: number;
+      status?: 400 | 401 | 403;
     }
 > {
   const email = params.email.trim().toLowerCase();
